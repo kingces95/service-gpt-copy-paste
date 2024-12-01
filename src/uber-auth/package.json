@@ -1,0 +1,9 @@
+{
+  "name": "uber-auth",
+  "version": "1.0.0",
+  "dependencies": {
+    "deepmerge": "^4.3.1",
+    "express": "^4.21.1"
+  },
+  "type": "module"
+}

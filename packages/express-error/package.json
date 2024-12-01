@@ -1,0 +1,14 @@
+{
+  "name": "@kingjs/express-error",
+  "version": "1.0.0",
+  "description": "A base ExpressError class for managing HTTP errors in Express applications.",
+  "main": "index.mjs",
+  "keywords": [
+    "express",
+    "http",
+    "error",
+    "middleware"
+  ],
+  "author": "Chris King",
+  "license": "MIT"
+}

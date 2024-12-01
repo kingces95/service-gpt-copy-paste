@@ -1,0 +1,15 @@
+{
+  "name": "@kingjs/express-invoke",
+  "version": "1.0.0",
+  "description": "An Express middleware function to invoke a handler with req and res, managing async results and errors.",
+  "main": "index.mjs",
+  "keywords": [
+    "express",
+    "middleware",
+    "invoke",
+    "async",
+    "handler"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}

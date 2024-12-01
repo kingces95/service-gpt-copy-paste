@@ -1,0 +1,15 @@
+{
+  "name": "@kingjs/express-send-error",
+  "version": "1.0.0",
+  "description": "An Express middleware to send error results if ExpressError caught.",
+  "main": "index.mjs",
+  "keywords": [
+    "express",
+    "middleware",
+    "send",
+    "result",
+    "response"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}

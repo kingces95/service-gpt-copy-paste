@@ -1,0 +1,12 @@
+{
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "src/*"
+  ],
+  "scripts": {
+    "start": "node src/uber-auth/index.mjs",
+    "kbpost": "node src/keyboard-post/index.mjs",
+    "install-packages": "yarn install"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "@kingjs/express-send-result",
+  "version": "1.0.0",
+  "description": "An Express middleware to send response results if set, or pass to the next handler.",
+  "main": "index.mjs",
+  "keywords": [
+    "express",
+    "middleware",
+    "send",
+    "result",
+    "response"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}

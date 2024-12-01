@@ -1,0 +1,32 @@
+
+#!/clipboard/shell/cmd.exe wsl bash
+git ls-files | grep "packages/.*/package.json"
+
+#!/clipboard/shell/wsl bash
+git ls-files | grep "packages/.*/package.json"
+
+#!/clipboard/shell/bash
+git ls-files | grep "packages/.*/package.json"
+
+#!/clipboard/shell/wsl cat
+Hello World
+
+#!/clipboard/shell/wsl bash
+git ls-files | grep "packages/.*/package.json" | xargs zip my-packages.zip
+
+#!/clipboard/shell/cmd for %f in ("my-packages.zip") do @echo %~dpnxf
+#!/clipboard/shell/cmd cmd /c "for %f in ("my-packages.zip") do @echo %~dpnxf"
+
+#!/clipboard/shell/cmd cmd
+echo hi
+for %f in ("my-packages.zip") do @echo %~dpnxf
+
+#!/clipboard/shell/cmd powershell -Command -
+Write-Output (Resolve-Path 'my-packages.zip').Path
+
+#!/clipboard/shell/wsl sleep 2
+
+#!/clipboard/shell/bash sleep 2
+
+#!/clipboard/shell/wsl bash
+unzip -o /mnt/c/Users/chris/Downloads/my-packages-updated.zip -d .
