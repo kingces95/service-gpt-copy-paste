@@ -3,6 +3,13 @@
   "version": "1.0.0",
   "description": "An Express middleware to send error results if ExpressError caught.",
   "main": "index.mjs",
+  "type": "module",
+  "exports": {
+    ".": "./index.mjs"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "peerDependencies": {},
   "keywords": [
     "express",
     "middleware",

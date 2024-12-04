@@ -3,6 +3,13 @@
   "version": "1.0.0",
   "description": "An Express middleware to send response results if set, or pass to the next handler.",
   "main": "index.mjs",
+  "type": "module",
+  "exports": {
+    ".": "./index.mjs"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "peerDependencies": {},
   "keywords": [
     "express",
     "middleware",

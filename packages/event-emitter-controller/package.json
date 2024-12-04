@@ -1,7 +1,7 @@
 {
-  "name": "@kingjs/express-error",
+  "name": "@kingjs/event-emitter-controller",
   "version": "1.0.0",
-  "description": "A base ExpressError class for managing HTTP errors in Express applications.",
+  "description": "A class to expose EventEmitters as AbortController signals.",
   "main": "index.mjs",
   "type": "module",
   "exports": {
@@ -10,12 +10,6 @@
   "dependencies": {},
   "devDependencies": {},
   "peerDependencies": {},
-  "keywords": [
-    "express",
-    "http",
-    "error",
-    "middleware"
-  ],
   "author": "Chris King",
   "license": "MIT"
 }

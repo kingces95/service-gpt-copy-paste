@@ -1,3 +1,4 @@
+#!/clipboard/throw
 
 #!/clipboard/shell/cmd.exe wsl bash
 git ls-files | grep "packages/.*/package.json"
@@ -24,9 +25,65 @@ for %f in ("my-packages.zip") do @echo %~dpnxf
 #!/clipboard/shell/cmd powershell -Command -
 Write-Output (Resolve-Path 'my-packages.zip').Path
 
+#!/clipboard/shell/ps
+Write-Output (Resolve-Path 'my-packages.zip').Path
+
+#!/clipboard/shell/wsl sleep 20
 #!/clipboard/shell/wsl sleep 2
 
-#!/clipboard/shell/bash sleep 2
+#!/clipboard/shell/wsl bash 
+sleep 2
+
+#!/clipboard/shell/badroute 
 
 #!/clipboard/shell/wsl bash
 unzip -o /mnt/c/Users/chris/Downloads/my-packages-updated.zip -d .
+
+#!/clipboard/shell/bash
+for i in {1..5}; do
+  echo "Line $i"
+  sleep 1
+done
+
+#!/clipboard/shell/bash
+for i in {1..500}; do
+  echo "Line $i" >&2
+done
+
+#!/clipboard/shell/bash
+for i in {1..5}; do
+  echo "Standard output line $i"
+  echo "Error output line $i" >&2
+  sleep 1
+done
+
+#!/clipboard/rest/bad https://jsonplaceholder.typicode.com/todos/1
+#!/clipboard/rest/get https://jsonplaceholder.typicode.com/todos/1
+#!/clipboard/rest/post https://jsonplaceholder.typicode.com/posts
+{
+  "title": "foo",
+  "body": "bar",
+  "userId": 1
+}
+#!/clipboard/rest/put https://jsonplaceholder.typicode.com/posts/1
+{
+  "title": "updated title",
+  "body": "updated body",
+  "userId": 1
+}
+#!/clipboard/rest/delete https://jsonplaceholder.typicode.com/posts/1
+#!/clipboard/rest/patch https://jsonplaceholder.typicode.com/posts/1
+{
+  "title": "updated only the title"
+}
+#!/clipboard/rest/head https://jsonplaceholder.typicode.com/posts/1
+#!/clipboard/rest/options https://jsonplaceholder.typicode.com/posts
+
+404
+#!/clipboard/rest/get https://jsonplaceholder.typicode.com/posts/9999999
+
+500
+#!/clipboard/rest/post https://jsonplaceholder.typicode.com/posts
+{
+  "invalidField": true
+}

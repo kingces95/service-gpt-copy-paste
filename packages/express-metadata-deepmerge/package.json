@@ -3,6 +3,15 @@
   "version": "1.0.0",
   "description": "An Express middleware for attaching metadata to requests using deep merge.",
   "main": "index.mjs",
+  "type": "module",
+  "exports": {
+    ".": "./index.mjs"
+  },
+  "dependencies": {
+    "deepmerge": "^4.3.1"
+  },
+  "devDependencies": {},
+  "peerDependencies": {},
   "keywords": [
     "express",
     "middleware",
@@ -10,8 +19,5 @@
     "deepmerge"
   ],
   "author": "Your Name",
-  "license": "MIT",
-  "dependencies": {
-    "deepmerge": "^4.3.1"
-  }
+  "license": "MIT"
 }
