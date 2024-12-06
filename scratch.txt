@@ -46,6 +46,10 @@ for i in {1..5}; do
 done
 
 #!/clipboard/shell/bash
+echo "Hello World"
+exit 1
+
+#!/clipboard/shell/bash
 for i in {1..500}; do
   echo "Line $i" >&2
 done

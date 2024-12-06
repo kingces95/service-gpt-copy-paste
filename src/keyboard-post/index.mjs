@@ -1,15 +1,18 @@
 // Import required modules
 import os from 'os'
+import { EventEmitter } from 'events'
 import clipboardy from 'clipboardy'
 import ora from 'ora'
 import { debounce } from 'lodash-es'
 import EventEmitterController from '@kingjs/event-emitter-controller'
+import { Subject, interval } from 'rxjs'
+import { switchMap, filter, first, concatMap } from 'rxjs/operators'
 import { handleShellRoute, normalizeShellRoute } from './shell-route.mjs'
 import { handleRestCommand, normalizeRestRoute } from './rest-route.mjs'
 
 const NEW_LINE = os.EOL
 const POLL_MS = 200
-const DEBOUNCE_MS = 300
+const DEBOUNCE_MS = 50
 
 class Canvas {
   constructor({ debounceMs, write }) {
@@ -80,111 +83,156 @@ class Canvas {
     this.spinner.succeed(this.formatHeadline(message))
   }
 
+  renderWarning(message) {
+    this.spinner.warn(this.formatHeadline(message))
+  }
+
   renderFailure(message) {
     this.spinner.fail(this.formatHeadline(message))
   }
 }
 
-async function handleThrowCommand() {
-  throw new Error('This is a test error for handling purposes')
-}
+class Clippy extends EventEmitter {
+  static isCommand(content) {
+    return content.startsWith('#!/clipboard/')
+  }
 
-async function main() {
-  let sigintController
-  let canvas
-  try {    
-    await clipboardy.write('')
-
-    while (true) {
-      canvas = new Canvas({ 
-        debounceMs: DEBOUNCE_MS,
-        write: (output) => clipboardy.write(output)
-      })
-      
-      // listen for command to be copied to clipboard
-      await canvas.renderStart('Listening...')
-      let clipboardContent
-      while (true) {
-        clipboardContent = await clipboardy.read()
-        if (clipboardContent.startsWith('#!/clipboard/'))
-          break
-        await new Promise(resolve => setTimeout(resolve, POLL_MS))
-      }
-      
-      // accumulate output to the clipboard
-      await canvas.renderProcessing('Processing...')
-      await clipboardy.write('')
-      const accumulate = canvas.renderUpdate.bind(canvas)
-
-      // initialize signal for aborting on SIGINT
-      sigintController = new EventEmitterController(process, 'SIGINT')
-      const sigint = sigintController.signal
-      sigint.addEventListener('abort', () => {
-        canvas.renderUpdate({ state: 'Interrupting...' })
-      })
-
-      const [firstLine, ...bodyLines] = (clipboardContent.trimEnd() + NEW_LINE).split(NEW_LINE)
-      const [shebang, ...rest] = firstLine.trim().split(' ')
-      const [_, _clipboard, route, ...routeRest] = shebang.split('/')
-
-      switch (route) {
-        case 'shell': {
-          const { error, shell, commandRest, newLine } = normalizeShellRoute(routeRest.join('/'), rest)
-          if (error) {
-            canvas.renderFailure(`Shell command failed to execute: ${error}`)
-            break
-          }
-
-          const command = commandRest.join(' ')
-          const body = bodyLines.join(newLine)
-          const { code, signal } = await handleShellRoute(
-            shell, command, body, sigint, accumulate)
-
-          if (code === 0) {
-            canvas.renderSuccess('Shell command executed successfully')
-          } else if (signal) {
-            canvas.renderFailure(`Shell command terminated by signal: ${signal}`)
-          } else {
-            canvas.renderFailure(`Shell command exited with code: 0x${code.toString(16)}`)
-          }          
-          break
-        }
-        case 'throw': {
-          await handleThrowCommand()
-          canvas.renderSuccess('Throw command executed successfully')
-          break
-        }
-        case 'rest': {
-          const { error, method, commandRest } = normalizeRestRoute(routeRest.join('/'), rest)
-          if (error) {
-            canvas.renderFailure(`${method} failed to execute: ${error}`)
-            break
-          }
-
-          const url = commandRest[0]
-          const body = bodyLines.join(NEW_LINE)
-          const { status } = await handleRestCommand(method, url, body, sigint, accumulate)
-          if (status >= 200 && status < 300) {
-            canvas.renderSuccess(`${method} executed successfully with status: ${status}`)
-          } else {
-            canvas.renderFailure(`${method} failed with status: ${status}`)
-          }
-          break
-        }
-        default:
-          canvas.renderFailure(['Invalid route:', route].join(NEW_LINE))
-      }
-
-      sigintController.unregister()
+  async processCommand(command, signal) {
+    let hasError = false
+    const update = ({ output, error }) => {
+      hasError = hasError || error
+      this.emit('update', { output, error })
     }
-  } catch (error) {
-    if (canvas)
-      canvas.renderFailure('Internal error')
-    console.error(error.stack)
-  } finally {
-    if (sigintController) 
-      sigintController.unregister()
+
+    const [firstLine, ...bodyLines] = (command.trimEnd() + NEW_LINE).split(NEW_LINE)
+    const [shebang, ...rest] = firstLine.trim().split(' ')
+    const [_, _clipboard, route, ...routeRest] = shebang.split('/')
+
+    this.emit('processing', 'Processing...')
+
+    switch (route) {
+      case 'shell': {
+        const { error, shell, commandRest, newLine } = normalizeShellRoute(routeRest.join('/'), rest)
+        if (error) {
+          this.emit('failure', `Shell command failed to execute: ${error}`)
+          return
+        }
+
+        const cmd = commandRest.join(' ')
+        const body = bodyLines.join(newLine)
+        const { code, signal: exitSignal } = await handleShellRoute(shell, cmd, body, signal, update)
+
+        if (code === 0) {
+          if (!hasError)
+            this.emit('success', 'Shell command executed successfully')
+          else
+            this.emit('warning', `Shell command executed successfully but wrote to stderr`)
+        } else if (exitSignal) {
+          this.emit('failure', `Shell command terminated by signal: ${exitSignal}`)
+        } else {
+          this.emit('failure', `Shell command exited with code: 0x${code.toString(16)}`)
+        }
+        break
+      }
+      case 'throw': {
+        throw new Error('This is an error thrown for testing.')
+      }
+      case 'rest': {
+        const { error, method, commandRest } = normalizeRestRoute(routeRest.join('/'), rest)
+        if (error) {
+          this.emit('failure', `${method} failed to execute: ${error}`)
+          return
+        }
+
+        const url = commandRest[0]
+        const body = bodyLines.join(NEW_LINE)
+        const { status } = await handleRestCommand(method, url, body, signal, update)
+        if (status >= 200 && status < 300) {
+          if (!hasError)
+            this.emit('success', `${method} executed successfully with status: ${status}`)
+          else
+            this.emit('warning', `${method} executed successfully with status: ${status}, but wrote to stderr`)
+        } else {
+          this.emit('failure', `${method} failed with status: ${status}`)
+        }
+        break
+      }
+      default:
+        this.emit('failure', `Invalid route: ${route}`)
+    }
   }
 }
 
-main()
+async function startListening() {
+  const canvas = new Canvas({
+    debounceMs: DEBOUNCE_MS,
+    write: (output) => clipboardy.write(output)
+  })
+
+  const eventSubject = new Subject()
+
+  eventSubject.pipe(
+    concatMap(task => task()) // Process tasks sequentially
+  ).subscribe({
+    complete: () => {
+      startListening() // Restart listening after command processing completes
+    },
+    error: (error) => {
+      canvas.renderFailure('Intenral Error')
+      console.log(error.stack)
+    },
+  })
+
+  const clippy = new Clippy()
+
+  clippy.on('processing', (state) => {
+    eventSubject.next(async () => canvas.renderProcessing(state))
+  })
+
+  clippy.on('update', (data) => {
+    eventSubject.next(async () => canvas.renderUpdate(data))
+  })
+
+  clippy.on('success', (message) => {
+    eventSubject.next(async () => canvas.renderSuccess(message))
+  })
+
+  clippy.on('warning', (message) => {
+    eventSubject.next(async () => canvas.renderWarning(message))
+  })
+
+  clippy.on('failure', (message) => {
+    eventSubject.next(async () => canvas.renderFailure(message))
+  })
+
+  canvas.renderStart('Listening...')
+
+  interval(POLL_MS).pipe(
+    switchMap(() => clipboardy.read()),
+    filter(Clippy.isCommand),
+    first()
+  ).subscribe({
+    next: async (clipboardContent) => {
+      // Create a signal for aborting on SIGINT
+      const sigintController = new EventEmitterController(process, 'SIGINT')
+      try {
+        const signal = sigintController.signal
+        signal.addEventListener('abort', () => {
+          canvas.renderUpdate({ state: 'Interrupting...' })
+        })
+        await clipboardy.write('') // Clear clipboard
+        await clippy.processCommand(clipboardContent, signal)
+      } catch (error) {
+        eventSubject.error(error)
+      } finally {
+        sigintController.unregister() // Cleanup after command execution
+        eventSubject.complete()
+      }
+    },
+    error: (error) => {
+      eventSubject.error(error)
+    }
+  })
+}
+
+startListening()

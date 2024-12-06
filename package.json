@@ -6,7 +6,7 @@
   ],
   "scripts": {
     "start": "node src/uber-auth/index.mjs",
-    "clippy": "node src/keyboard-post/index.mjs",
+    "clippy": "node src/clippy/index.mjs",
     "install-packages": "yarn install"
   }
 }
