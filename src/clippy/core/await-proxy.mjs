@@ -1,5 +1,5 @@
 import { Subject, of, timer } from 'rxjs'
-import { concatMap, throttleTime, retry as retryOperation, delay } from 'rxjs/operators'
+import { concatMap, throttleTime, retry as retryOperation } from 'rxjs/operators'
 import collateBy from '@kingjs/rx-collate-by'
 
 export default class AwaitProxy {

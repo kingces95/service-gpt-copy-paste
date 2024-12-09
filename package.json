@@ -6,7 +6,11 @@
   ],
   "scripts": {
     "start": "node src/uber-auth/index.mjs",
-    "clippy": "node src/clippy/index.mjs",
-    "install-packages": "yarn install"
+    "clippy:cli": "node src/clippy/cli/index.mjs",
+    "clippy:toolbar": "npx electron src/clippy/menubar/index.mjs",
+    "build:toolbar": "electron-builder --dir",
+    "dist:toolbar": "electron-builder",
+    "install-packages": "yarn install",
+    "test": "jest"
   }
 }
