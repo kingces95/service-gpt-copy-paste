@@ -1,5 +1,6 @@
 // Import required modules
 import ora from 'ora'
+import { interval } from 'rxjs'
 
 export default class Terminal {
   constructor() {
@@ -7,6 +8,7 @@ export default class Terminal {
     this.outputCount = 0
     this.errorCount = 0
     this.state = ''
+    this.spinner.color = 'gray'
     this.spinner.start()
   }
 
@@ -25,6 +27,8 @@ export default class Terminal {
     let charCountFormatted = ''
     if (this.outputCount > 0 || this.errorCount > 0)
       charCountFormatted = `(${outputCountFormatted}/${errorCountFormatted})`
+    if (this.errorCount)
+      this.spinner.color = 'yellow'
     return [this.state, charCountFormatted].filter(Boolean).join(' ')
   }
 
@@ -39,6 +43,15 @@ export default class Terminal {
       this.state = state
     }
     this.spinner.text = this.formatHeadline(this.state)
+  }
+
+  renderInterrupt(state) {
+    this.renderUpdate({ state })
+  }
+
+  renderStart(state) {
+    this.spinner.color = 'blue'
+    this.renderUpdate({ state })
   }
 
   renderSuccess(state) {

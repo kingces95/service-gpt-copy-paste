@@ -1,31 +1,22 @@
 // Import required modules
 import clipboardy from 'clipboardy'
 import EventEmitterController from '@kingjs/event-emitter-controller'
-import { interval } from 'rxjs'
-import { switchMap, filter, first, throttleTime } from 'rxjs/operators'
 import Clippy from './clippy.mjs'
 import Terminal from './terminal.mjs'
 import Accumulator from './accumulator.mjs'
 import AwaitProxy from './await-proxy.mjs'
-
-const POLL_MS = 200
-const THROTTLE_MS = 200
+import pollUntil from './poll-unil.mjs'
+import Clipboard from './clipboard.mjs'
 
 async function startListening() {
   const clippy = new Clippy()
   const accumulator = new Accumulator()
+  const clipboard = new Clipboard()
   const terminal = new AwaitProxy(new Terminal(), {
-    pipeline: (source) => source.pipe(throttleTime(THROTTLE_MS)),
-    executor: (resolve, reject) => {
-      clippy.on('end', resolve) // Resolves when clippy signals that it's done
-    }
+    throttle: [ 'renderUpdate' ],
+    end: [ 'renderSuccess', 'renderWarning', 'renderFailure' ]
   })
-
-  // Listen to data from accumulator and feed updates to the terminal
-  accumulator.on('data', ({ outputCount, errorCount }) => {
-    terminal.renderUpdate({ outputCount, errorCount })
-  })
-
+  
   clippy.on('update', (data) => {
     accumulator.accumulate(data)
   })
@@ -33,47 +24,57 @@ async function startListening() {
   clippy.on('success', (message) => {
     terminal.renderSuccess(message)
   })
-
+  
   clippy.on('warning', (message) => {
     terminal.renderWarning(message)
   })
-
+  
   clippy.on('failure', (message) => {
     terminal.renderFailure(message)
   })
+  
+  // Update clipboard with accumulated data
+  accumulator.on('data', (data) => {
+    clipboard.renderUpdate(data)
+  })
 
-  terminal.renderUpdate({ state: 'Listening...' })
+  // Listen to data from accumulator and feed updates to the terminal
+  accumulator.on('data', (data) => {
+    terminal.renderUpdate(data)
+  })
+  
+  await terminal.renderUpdate({ state: 'Listening...' })
 
-  interval(POLL_MS).pipe(
-    switchMap(() => clipboardy.read()),
-    filter(Clippy.isScript),
-    first()
-  ).subscribe({
+  pollUntil({
+    fetch: () => clipboardy.read(),
+    test: Clippy.isScript,
     next: async (clipboardContent) => {
-      // Create a signal for aborting on SIGINT
-      const sigintController = new EventEmitterController(process, 'SIGINT')
+      let sigintController
       try {
+        // Create a signal for aborting on SIGINT
+        sigintController = new EventEmitterController(process, 'SIGINT')
         const signal = sigintController.signal
         signal.addEventListener('abort', () => {
-          terminal.renderUpdate({ state: 'Interrupting...' })
+          terminal.renderInterrupt('Interrupting...')
         })
 
-        terminal.renderUpdate({ state: 'Processing...' })
-        await clipboardy.write('') // Clear clipboard
+        await terminal.renderStart('Processing...')
+        await clipboard.renderStart()
         await clippy.processScript(clipboardContent, signal)
         await terminal // Wait for all terminal tasks to complete
-        startListening() // Restart listening after the terminal completes rendering
-      } catch (error) {
-        terminal.renderFailure('Internal Error')
-        console.log(error.stack)
+        await startListening() // Restart listening after the terminal completes rendering
+      } catch(error) {
+        console.log('Internal error during script processing.')
+        console.log(error?.stack || error)
       } finally {
         // Cleanup after command execution
-        sigintController.unregister()
+        if (sigintController)
+          sigintController.unregister()
       }
     },
     error: (error) => {
-      terminal.renderFailure('Internal Error')
-      console.log(error.stack)
+      console.log('Internal error during polling.')
+      console.log(error?.stack || error)
     }
   })
 }

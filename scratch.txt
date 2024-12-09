@@ -50,12 +50,21 @@ echo "Hello World"
 exit 1
 
 #!/clipboard/shell/bash
+echo "Hello World" >&2
+exit 1
+
+#!/clipboard/shell/bash
 for i in {1..500}; do
   echo "Line $i" >&2
 done
 
 #!/clipboard/shell/bash
-for i in {1..5}; do
+for i in {1..500}; do
+  echo "Line $i"
+done
+
+#!/clipboard/shell/bash
+for i in {1..50}; do
   echo "Standard output line $i"
   echo "Error output line $i" >&2
   sleep 1

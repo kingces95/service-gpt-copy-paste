@@ -1,0 +1,23 @@
+{
+  "name": "@kingjs/rx-collate-by",
+  "version": "1.0.0",
+  "description": "An RxJS operator that sequentially groups events from a source observable into distinct inner observables whenever the grouping key changes. Inner observables are completed as soon as a new group starts, enabling precise and efficient processing of event streams.",
+  "main": "index.mjs",
+  "type": "module",
+  "exports": {
+    ".": "./index.mjs"
+  },
+  "keywords": [
+    "rxjs",
+    "operators",
+    "grouping",
+    "event streams",
+    "collation",
+    "observables"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "rxjs": "^7.8.0"
+  }
+}
