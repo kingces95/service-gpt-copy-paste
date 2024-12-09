@@ -18,6 +18,7 @@ export default class Clipboard {
     // Update the clipboard with the new formatted content
     if (formattedOutput) {
       await clipboardy.write(formattedOutput)
+      // throw Error('Simulated clipboardy.write error.')
     }
   }
 }

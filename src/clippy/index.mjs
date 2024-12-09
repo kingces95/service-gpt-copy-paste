@@ -8,42 +8,47 @@ import AwaitProxy from './await-proxy.mjs'
 import pollUntil from './poll-unil.mjs'
 import Clipboard from './clipboard.mjs'
 
+const DELAY_MS = 200
+const RETRY = 4
+
 async function startListening() {
   const clippy = new Clippy()
   const accumulator = new Accumulator()
-  const clipboard = new Clipboard()
+  const clipboard = new AwaitProxy(new Clipboard(), {
+    throttle: { renderUpdate: { ms: DELAY_MS } },
+    retry: { renderUpdate: { attempts: RETRY, ms: DELAY_MS } }
+  })
   const terminal = new AwaitProxy(new Terminal(), {
-    throttle: [ 'renderUpdate' ],
+    throttle: { renderUpdate: { ms: DELAY_MS } },
     end: [ 'renderSuccess', 'renderWarning', 'renderFailure' ]
   })
-  
+
   clippy.on('update', (data) => {
     accumulator.accumulate(data)
   })
 
   clippy.on('success', (message) => {
+    clipboard[AwaitProxy.END_METHOD]()
     terminal.renderSuccess(message)
   })
-  
+
   clippy.on('warning', (message) => {
+    clipboard[AwaitProxy.END_METHOD]()
     terminal.renderWarning(message)
   })
-  
+
   clippy.on('failure', (message) => {
+    clipboard[AwaitProxy.END_METHOD]()
     terminal.renderFailure(message)
   })
-  
-  // Update clipboard with accumulated data
+
+  // Update with accumulated data
   accumulator.on('data', (data) => {
+    terminal.renderUpdate(data)
     clipboard.renderUpdate(data)
   })
 
-  // Listen to data from accumulator and feed updates to the terminal
-  accumulator.on('data', (data) => {
-    terminal.renderUpdate(data)
-  })
-  
-  await terminal.renderUpdate({ state: 'Listening...' })
+  terminal.renderUpdate({ state: 'Listening...' })
 
   pollUntil({
     fetch: () => clipboardy.read(),
@@ -58,11 +63,12 @@ async function startListening() {
           terminal.renderInterrupt('Interrupting...')
         })
 
-        await terminal.renderStart('Processing...')
-        await clipboard.renderStart()
+        terminal.renderStart('Processing...')
+        clipboard.renderStart()
         await clippy.processScript(clipboardContent, signal)
         await terminal // Wait for all terminal tasks to complete
-        await startListening() // Restart listening after the terminal completes rendering
+        await clipboard
+        startListening() // Restart listening after the terminal completes rendering
       } catch(error) {
         console.log('Internal error during script processing.')
         console.log(error?.stack || error)

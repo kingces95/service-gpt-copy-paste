@@ -1,73 +1,88 @@
-import { Subject } from 'rxjs'
-import { concatMap, throttleTime } from 'rxjs/operators'
+import { Subject, of, timer } from 'rxjs'
+import { concatMap, throttleTime, retry as retryOperation, delay } from 'rxjs/operators'
 import collateBy from '@kingjs/rx-collate-by'
 
-export default class AwaitProxy extends Promise {
+export default class AwaitProxy {
+  static END_METHOD = Symbol('endMethod')
+
   constructor(target, declarations = {}) {
-    let resolveComplete
-    let resolveReject
-
-    super((resolve, reject) => {
-      resolveComplete = resolve
-      resolveReject = reject
-    })
-
     this.target = target
     this.subject = new Subject()
-    this.resolveComplete = resolveComplete
 
-    const { throttleMs = 200, throttle = [], end = [] } = declarations
-    const throttledMethods = new Set(throttle)
+    const { throttle = {}, retry = {}, end = [] } = declarations
     const endMethods = new Set(end)
 
-    // Define pipeline for task processing
     const source = this.subject.pipe(
-      collateBy((task) => (task.isThrottled ? 'throttle' : 'normal')),
-      concatMap((grouped) =>
-        grouped.key === 'throttle'
-          ? grouped.pipe(
-              throttleTime(throttleMs, null, { trailing: true }),
-              concatMap((task) => task.execute())
+      collateBy((task) => (task.throttleConfig ? 'throttle' : 'normal')),
+      concatMap((group) =>
+        group.key === 'throttle'
+          ? group.pipe(
+              throttleTime(
+                group[0].throttleConfig.ms,
+                null,
+                { trailing: true }
+              )
             )
-          : grouped.pipe(concatMap((task) => task.execute()))
+          : group
+      ),
+      concatMap((task) =>
+        of(task).pipe(
+          concatMap((task) => task.execute()),
+          retryOperation({
+            count: task.retryConfig ? task.retryConfig.attempts - 1 : 0,
+            delay: (error, attempt) => 
+              timer(task.retryConfig.ms * (attempt + 1)**2)
+          })
+        )
       )
     )
 
-    source.subscribe({
-      error: (err) => {
-        resolveReject(err) // Reject the promise on error
-      },
-      complete: () => {
-        resolveComplete() // Resolve the promise when complete
-      }
+    this.proxyPromise = new Promise((resolveProxy, rejectProxy) => {
+      source.subscribe({
+        next: ({ isEndMethod }) => {
+          if (isEndMethod) {
+            this.subject.complete()
+          }
+        },
+        error: (err) => {
+          rejectProxy(err)
+        },
+        complete: () => {
+          resolveProxy()
+        }
+      })
     })
 
     return new Proxy(this, {
       get: (proxy, property) => {
+        if (property in this.proxyPromise) {
+          return this.proxyPromise[property].bind(this.proxyPromise)
+        }
+
+        if (property === AwaitProxy.END_METHOD) {
+          return () => {
+            this.subject.next({
+              execute: async () => ({ isEndMethod: true })
+            })
+          }
+        }
+
         if (typeof this.target[property] === 'function') {
           return (...args) => {
-            const methodName = property
-            const isThrottled = throttledMethods.has(methodName)
-            const isEndMethod = endMethods.has(methodName)
+            const throttleConfig = throttle[property]
+            const retryConfig = retry[property]
+            const isEndMethod = endMethods.has(property)
 
-            return new Promise((resolve, reject) => {
-              this.subject.next({
-                execute: async () => {
-                  try {
-                    const result = await this.target[property](...args)
-                    resolve(result)
-
-                    if (isEndMethod) {
-                      this.subject.complete()
-                    }
-                  } catch (err) {
-                    reject(err)
-                    this.subject.error(err)
-                  }
-                },
-                isThrottled
-              })
+            let result
+            this.subject.next({
+              execute: async () => {
+                result = await this.target[property](...args)
+                return { isEndMethod }
+              },
+              throttleConfig,
+              retryConfig
             })
+            return result
           }
         }
 

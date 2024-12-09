@@ -47,7 +47,6 @@ done
 
 #!/clipboard/shell/bash
 echo "Hello World"
-exit 1
 
 #!/clipboard/shell/bash
 echo "Hello World" >&2
