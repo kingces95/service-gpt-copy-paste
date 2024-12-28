@@ -1,0 +1,16 @@
+{
+  "name": "@kingjs/rx-from-listener",
+  "version": "1.0.0",
+  "description": "RxJS compatible listener with start/stop lifecycle management.",
+  "main": "index.mjs",
+  "type": "module",
+  "exports": {
+    ".": "./index.mjs"
+  },
+  "dependencies": {
+    "rxjs": "^7.5.0",
+    "clipboardy": "^3.0.0"
+  },
+  "author": "Chris King",
+  "license": "MIT"
+}

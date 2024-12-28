@@ -6,11 +6,21 @@
   ],
   "scripts": {
     "start": "node src/uber-auth/index.mjs",
-    "clippy:cli": "node src/clippy/cli/index.mjs",
+    "clippy": "node src/clippy/cli/index.mjs",
     "clippy:toolbar": "npx electron src/clippy/menubar/index.mjs",
     "build:toolbar": "electron-builder --dir",
     "dist:toolbar": "electron-builder",
     "install-packages": "yarn install",
     "test": "jest"
+  },
+  "type": "module",
+  "devDependencies": {
+    "@vitest/coverage-c8": "^0.33.0",
+    "@vitest/coverage-v8": "^2.1.8",
+    "jest": "^29.7.0",
+    "vitest": "^2.1.8"
+  },
+  "dependencies": {
+    "lodash.merge": "^4.6.2"
   }
 }

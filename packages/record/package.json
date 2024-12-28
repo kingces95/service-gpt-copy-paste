@@ -1,0 +1,15 @@
+{
+  "name": "@kingjs/record",
+  "version": "1.0.0",
+  "description": "Record splitting per unix bash rules.",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "peerDependencies": {},
+  "author": "Chris King",
+  "license": "MIT"
+}

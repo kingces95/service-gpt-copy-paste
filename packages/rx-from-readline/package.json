@@ -1,0 +1,15 @@
+{
+  "name": "@kingjs/rx-from-readline",
+  "version": "1.0.0",
+  "description": "RxJS observable of a readline.",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {
+    "rxjs": "^7.5.0"
+  },
+  "author": "Chris King",
+  "license": "MIT"
+}

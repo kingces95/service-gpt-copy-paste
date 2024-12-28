@@ -1,0 +1,16 @@
+{
+  "name": "@kingjs/stream-close-all",
+  "version": "1.0.0",
+  "description": "Close streams and wait for them all to finish closing.",
+  "main": "index.mjs",
+  "type": "module",
+  "exports": {
+    ".": "./index.mjs"
+  },
+  "keywords": [
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+  }
+}

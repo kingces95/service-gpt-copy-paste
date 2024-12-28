@@ -1,0 +1,16 @@
+{
+  "name": "@kingjs/rx-from-stream",
+  "version": "1.0.0",
+  "description": "RxJS observable of a stream.",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {
+    "rxjs": "^7.5.0",
+    "clipboardy": "^3.0.0"
+  },
+  "author": "Chris King",
+  "license": "MIT"
+}

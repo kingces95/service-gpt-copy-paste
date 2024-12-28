@@ -1,3 +1,4 @@
+
 #!/clipboard/throw
 
 #!/clipboard/shell/cmd.exe wsl bash
@@ -99,3 +100,20 @@ done
 {
   "invalidField": true
 }
+
+node src\clippy\index.js http get https://jsonplaceholder.typicode.com/todos/1
+./src/clippy/index.js http get https://jsonplaceholder.typicode.com/todos/1
+rlwrap node --inspect ./src/clippy/index.js http post https://jsonplaceholder.typicode.com/posts <<EOF
+{
+  "title": "foo",
+  "body": "bar",
+  "userId": 1
+}
+EOF
+./src/clippy/index.js http post https://jsonplaceholder.typicode.com/posts <<EOF | cat
+{
+  "title": "foo",
+  "body": "bar",
+  "userId": 1
+}
+EOF

@@ -21,6 +21,8 @@ function normalize(route, args, newLine = NEW_LINE) {
 
     case 'cmd':
     case 'cmd.exe':
+      if (args[0] == 'wsl')
+        newLine = NEW_LINE_UNIX
       return { shell: 'cmd.exe', args, newLine }
 
     default:

@@ -1,0 +1,15 @@
+{
+  "name": "@kingjs/rx-spawn",
+  "version": "1.0.0",
+  "description": "Class Spawn which can be extended with a RxJS workflow to expose a cli backend.",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {
+    "rxjs": "^7.5.0"
+  },
+  "author": "Chris King",
+  "license": "MIT"
+}
