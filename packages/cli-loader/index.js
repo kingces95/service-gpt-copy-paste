@@ -17,7 +17,9 @@ class CliShim {
     const loader = new CliLoader(args, namespace)
 
     for (const [name, node] of Object.entries(classes)) {
-      loader.loadTree(name, node)
+      if (!name.endsWith('$')) {
+        loader.load(name, node)
+      }
     }
 
     loader.run()
@@ -26,16 +28,22 @@ class CliShim {
 
 class CliLoader {
 
-  static getMetadata(CliClass) {
-    let metadata = {}
+  static getMetadata(node) {
+    let metadata = { options: {} }
 
-    // Traverse the prototype chain to collect and merge metadata
-    let currentClass = CliClass
-    while (currentClass) {
-      if (currentClass.metadata) {
-        metadata = merge({}, currentClass.metadata, metadata)
+    if (typeof node === 'function') {
+      // Traverse the prototype chain to collect and merge metadata
+      let currentClass = node
+      while (currentClass) {
+        if (currentClass.metadata) {
+          metadata = merge({}, currentClass.metadata, metadata)
+        }
+        currentClass = Object.getPrototypeOf(currentClass)
       }
-      currentClass = Object.getPrototypeOf(currentClass)
+      metadata.isCliClass = true
+    } else if (typeof node === 'object' && node !== null) {
+      metadata.description = node.description$ || 'Group of subcommands'
+      metadata.isCliClass = false
     }
 
     return metadata
@@ -48,27 +56,11 @@ class CliLoader {
     this.namespace = namespace
   }
 
-  loadTree(name, node) {
-    if (typeof node === 'function') {
-      this.load(name, node)
-    } else {
-      this.yargs.command(
-        name,
-        'Group of subcommands',
-        () => {},
-        (args) => {
-          const subArgs = args._.slice(1) // Pass remaining subcommand arguments
-          CliShim.run(node, subArgs, `${this.namespace} ${name}`)
-        }
-      )
-    }
-  }
-
-  load(name, CliClass) {
-    const metadata = CliLoader.getMetadata(CliClass)
+  load(name, node) {
+    const metadata = CliLoader.getMetadata(node)
 
     this.yargs.command(
-      name === '$0' ? metadata.command : [name, metadata.command].filter(Boolean).join(' '),
+      name,
       metadata.description || '',
       (yargs) => {
         if (metadata.arguments) {
@@ -81,13 +73,21 @@ class CliLoader {
         }
       },
       (args) => {
-        CliRuntime.entrypoint(CliClass, args)
+        if (metadata.isCliClass) {
+          console.log(args)
+          //CliRuntime.entrypoint(node, args)
+        } else {
+          console.log(args)
+          const subArgs = [...this.args]
+          subArgs.unshift(name)
+          CliShim.run(node, subArgs, `${this.namespace} ${name}`)
+        }
       }
     )
   }
 
   run() {
-    this.yargs.demandCommand(1, 'You must specify a subcommand').help().argv
+    let args = this.yargs.demandCommand(1, 'You must specify a subcommand').argv
   }
 }
 

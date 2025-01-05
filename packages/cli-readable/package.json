@@ -1,7 +1,7 @@
 {
-  "name": "@kingjs/record",
+  "name": "@kingjs/cli-stream",
   "version": "1.0.0",
-  "description": "Record splitting per unix bash rules.",
+  "description": "Class to emulate bash read and mapfile.",
   "main": "index.js",
   "type": "module",
   "exports": {

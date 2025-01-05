@@ -13,12 +13,12 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Launch HTTP POST Example",
+      "name": "Launch Poll",
       "skipFiles": [
         "<node_internals>/**"
       ],
       "program": "${workspaceFolder}\\src\\clippy\\index.js",
-      "args": ["http", "post", "https://jsonplaceholder.typicode.com/posts"],
+      "args": ["poll", "--help"],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal"
     },

@@ -3,25 +3,33 @@ import { EventEmitter } from 'events'
 import { PassThrough } from 'stream'
 
 class Cli extends EventEmitter {
+  static metadata = Object.freeze({
+    options: {
+      help: { type: 'boolean', describe: 'Show help', default: false },
+      version: { type: 'boolean', describe: 'Show version number', default: false },
+      verbose: { type: 'boolean', describe: 'Provide verbose output', default: false },
+    }
+  })
+  
   static isErrored(state) {
     return state === 'error'
   }
   
   static isFinished(state) {
-    return state === 'exit' || state === 'close'
+    return state === 'exit' || state === 'close' || this.isErrored(state)
   }
   
   static isSuccess(state, code, signal) {
     // shell semantic is 0 for success, otherwise failure
-    return Cli.isFinished(state) && !code && !signal
+    return Cli.isFinished(state) && !Cli.isErrored(state) && !code && !signal
   }
 
   static isFailure(state, code) {
-    return Cli.isFinished(state) && code
+    return Cli.isFinished(state) && !Cli.isErrored(state) && code
   }
 
   static isAborted(state, _, signal) {
-    return Cli.isFinished(state) && signal
+    return Cli.isFinished(state) && !Cli.isErrored(state) && signal
   }
   
   static toError(err) {
@@ -34,11 +42,15 @@ class Cli extends EventEmitter {
     )
   }
 
-  constructor() {
+  constructor({ abort, verbose } = {}) {
     super()
+    this.verbose = verbose
+
     this.stdin = new PassThrough()
     this.stdout = new PassThrough()
     this.stderr = new PassThrough()
+
+    setTimeout(() => this.is$('processing'))
   }
 
   is$(event, ...data) {
@@ -64,13 +76,13 @@ class Cli extends EventEmitter {
     this.emit$('error', Cli.toError(err))
   }  
   
-  async finish$(code, signal = null) { 
+  async exitAndClose$(code, signal = null) { 
     this.exit$(code, signal)
     await this.$close(code, signal)
   }    
-  success$() { this.finish$(0) }
-  failure$(code = 1) { this.finish$(code) }
-  aborted$(signal = 'SIGINT') { this.finish$(null, signal) }
+  success$() { this.exitAndClose$(0) }
+  failure$(code = 1) { this.exitAndClose$(code) }
+  aborted$(signal = 'SIGINT') { this.exitAndClose$(null, signal) }
   
   toString(state, result, ...rest) {
     if (Cli.isSuccess(state, result, ...rest))

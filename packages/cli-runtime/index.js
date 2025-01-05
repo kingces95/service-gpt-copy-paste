@@ -16,11 +16,12 @@ export default class CliRuntime {
     cli.on('close', () => process.off('SIGINT', abort))
 
     process.stdin.pipe(cli.stdin)
+    
     if (process.stdout.isTTY) {
       new CliRuntime(cli)
     } else {
-      cli.stdout.pipe(process.stdout, { end: false })
-      cli.stderr.pipe(process.stderr, { end: false })
+      cli.stdout.pipe(process.stdout)
+      cli.stderr.pipe(process.stderr)
     }
 
     cli.on('close', (result) => process.exit(result ? 1 : 0))
@@ -37,13 +38,22 @@ export default class CliRuntime {
     cli.stderr.on('data', (chunk) => (this.bytes.error += chunk.length))
 
     cli.on('status', (state, ...result) => {
+      if (this.cli.verbose 
+        && !Cli.isFinished(this.status.state) 
+        && state != this.status.state) {
+        this.spinner.info(this.toHeadline())
+        this.spinner.start()
+      }
+
       this.status.state = state
       this.status.result = result
     })
 
     this.subscription = interval(200).pipe(
       tap(() => {
-        this.spinner.text = this.toHeadline()
+        const headline = this.toHeadline()
+        if (headline != this.spinner.text)
+          this.spinner.text = headline
       })  
     ).subscribe()  
 

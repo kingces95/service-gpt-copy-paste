@@ -1,49 +1,10 @@
 #!/usr/bin/env node
 
 import clipboardy from 'clipboardy'
-import { interval, timer, Subject, merge } from 'rxjs'
-import { switchMap, tap, filter, first, retry, share, takeUntil } from 'rxjs/operators'
-import fromAbortSignal from '@kingjs/rx-from-abort-signal'
-import concatWrite from '@kingjs/rx-concat-write'
+import { interval, timer } from 'rxjs'
+import { switchMap, tap, filter, first, retry, takeUntil } from 'rxjs/operators'
+import CliRx from '@kingjs/cli-rx'
 import { Cli } from '@kingjs/cli'
-import { CliShim } from '@kingjs/cli-loader'
-
-class CliRx extends Cli {
-  constructor(options) {
-    const { signal, ...rest } = options
-    super(rest)
-
-    this.signal = fromAbortSignal(signal).pipe(share())
-    this.errorSubject = new Subject()
-  }
-
-  writeError(data) {
-    this.errorSubject.next(data)
-  }
-
-  start(workflow) {
-    this.is$('starting')
-
-    const stdoutPipeline = workflow.pipe(
-      takeUntil(this.signal),
-      concatWrite(this.stdout),
-      tap({ complete: () => this.errorSubject.complete() }),
-    )
-
-    const stderrPipeline = this.errorSubject.pipe(
-      concatWrite(this.stderr)
-    )
-
-    return merge(stdoutPipeline, stderrPipeline).subscribe({
-      complete: () => {
-        this.success$()
-      },
-      error: (err) => {
-        this.error$(err)
-      },
-    })
-  }
-}
 
 class CliPoller extends CliRx {
   static metadata = Object.freeze({
@@ -54,7 +15,7 @@ class CliPoller extends CliRx {
     }
   })
 
-  constructor(options) {
+  constructor(options, ...workflow) {
     const { 
       pollMs, 
       errorRate, 
@@ -62,17 +23,10 @@ class CliPoller extends CliRx {
       ...rest 
     } = { ...Cli.getDefaults(CliPoller.metadata.options), ...options}
     
-    super(rest)
-    this.pollMs = pollMs
-    this.errorRate = errorRate
-    this.errorMs = errorMs
-  }
-
-  startPolling(...workflow) {
-    const pollingWorkflow = interval(this.pollMs).pipe(
+    super(rest, interval(pollMs).pipe(
       tap(() => this.is$('polling')),
       switchMap(async () => {
-        if (Math.random() < this.errorRate) {
+        if (Math.random() < errorRate) {
           throw new Error('Simulated polling error')
         }
       }),
@@ -81,12 +35,10 @@ class CliPoller extends CliRx {
         count: Infinity,
         delay: (error) => {
           this.is$('retrying', error)
-          return timer(this.errorMs).pipe(takeUntil(this.signal))
+          return timer(errorMs).pipe(takeUntil(this.signal))
         },
       }),
-    )
-
-    this.start(pollingWorkflow)
+    ))
   }
 }
 
@@ -105,14 +57,13 @@ export default class CliPollClipboard extends CliPoller {
       ...rest 
     } = { ...Cli.getDefaults(CliPollClipboard.metadata.options), ...options}
     
-    super(rest)
-    this.prefix = prefix
-
-    this.startPolling(
+    super(rest,
       switchMap(() => clipboardy.read()),
-      filter((content) => content.startsWith(this.prefix)),
-      first(),
+      filter((content) => content.startsWith(prefix)),
+      first()
     )
+
+    return this
   }
   
   toString(state, result) {
@@ -122,5 +73,3 @@ export default class CliPollClipboard extends CliPoller {
     return super.toString(state, result)
   }
 }
-
-CliShim.runIf(import.meta.url, CliPollClipboard)

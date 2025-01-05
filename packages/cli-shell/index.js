@@ -1,87 +1,22 @@
-#!/usr/bin/env node
+import { hideBin } from 'yargs/helpers'
+import url from 'url'
+import path from 'path'
 
-import { Cli } from '@kingjs/cli'
-import { CliShim } from '@kingjs/cli-loader'
-import { spawn } from 'child_process'
+export default class CliShell {
 
-class CliShell extends Cli {
-  static metadata = Object.freeze({
-    command: '<command> [args...]',
-    description: 'Run a shell command',
-    arguments : {
-      command: { describe: 'The command to execute', type: 'string', demandOption: true },
-      args: { describe: 'Arguments for the command', type: 'array', default: [] }
-    },
-  })
-
-  constructor({ shell, command, args, signal }) {
-    super()
-
-    this.args = args
-    this.command = command
-
-    // Launch the shell command
-    const child = spawn(command, args, {
-      shell,
-      env: process.env,
-      stdio: ['pipe', 'pipe', 'pipe']
-    })
-    
-    // Handle piping streams
-    this.stdin.pipe(child.stdin)
-    child.stdout.pipe(this.stdout)
-    child.stderr.pipe(this.stderr)
-    
-    // Handle abort signal
-    signal.addEventListener('abort', () => {
-      if (!child.killed) {
-        child.kill('SIGINT')
-      }
-    })
-    
-    // Handle process events
-    child.on('exit', (code, signal) => this.exit$(code, signal))
-    child.on('close', () => this.$close())
-    child.on('error', (err) => this.error$(err))
-    
-    // Handle status update
-    setTimeout(() => this.is$('processing'))
+  static runIf(mainUrl, ctor) {
+    if (url.fileURLToPath(mainUrl) === path.resolve(process.argv[1])) {
+      CliShell.run({ '$0': ctor })
+    }
   }
 
-  toString(state, result, ...rest) {
-    if (Cli.isSuccess(state, result, ...rest))
-      return `Shell command '${this.command}' completed successfully`
+  static run(classes, args = hideBin(process.argv), namespace) {
+    const loader = new CliLoader(args, namespace)
 
-    if (Cli.isFailure(state, result, ...rest))
-      return `Shell command '${this.command}' exited with code ${result}`
-
-    if (Cli.isAborted(state, result, ...rest)) {
-      const [ signal ] = rest
-      return `Shell command '${this.command}' aborted due to ${signal}`
+    for (const [name, node] of Object.entries(classes)) {
+      loader.loadTree(name, node)
     }
 
-    return super.toString(state, result, ...rest)
+    loader.run()
   }
 }
-
-class CliBashShell extends CliShell {
-  static metadata = Object.freeze({
-    description: 'Run a bash shell command',
-  })
-  
-  constructor(args) {
-    super({ shell: 'bash', ...args })
-  }
-}
-
-class CliCmdShell extends CliShell {
-  static metadata = Object.freeze({
-    description: 'Run a cmd shell command',
-  })
-  
-  constructor(args) {
-    super({ shell: 'cmd.exe', ...args })
-  }
-}
-
-export { CliBashShell, CliCmdShell, CliShell }

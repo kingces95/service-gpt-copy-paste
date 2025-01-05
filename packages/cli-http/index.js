@@ -1,27 +1,24 @@
 #!/usr/bin/env node
 
 import { Cli } from '@kingjs/cli'
-import { CliShim } from '@kingjs/cli-loader'
 import axios from 'axios'
 import { fromReadline } from '@kingjs/rx-from-readline'
 import readline from 'readline/promises'
 import { reduce } from 'rxjs/operators'
-import Record from '@kingjs/record'
 
 class CliHttp extends Cli {
   static metadata = Object.freeze({
-    command: '<url>',
-    description: '',
-    arguments: {
-      url: { describe: 'The URL to request', type: 'string', demandOption: true }
-    },
+    description: 'Send a HTTP request',
+    arguments: [
+      { name: 'url', describe: 'The URL to request', type: 'string', demandOption: true }
+    ],
     options: {
       headers: { type: 'number', describe: 'Number of lines devoted to HTTP headers in stdin', default: 0 }
     }
   })
 
-  constructor({ url, headers, signal }, method, isUpdate = false) {
-    super()
+  constructor({ url, headers, signal, method, isUpdate, ...rest }) {
+    super({ signal, ...rest })
 
     // Activate readline interface
     const readlineInterface = readline.createInterface({ input: this.stdin })
@@ -32,7 +29,6 @@ class CliHttp extends Cli {
     // Process headers and body, then execute
     CliHttp.processLines(lines$, headers, isUpdate).then(async ({ headers, body }) => {
       try {
-        this.is$('processing')
         const response = await axios({
           url,
           method,
@@ -112,8 +108,8 @@ for (const { name, method, description, isUpdate } of METHODS) {
       description
     })
 
-    constructor({ url, headers, signal }) {
-      super({ url, headers, signal }, method, isUpdate)
+    constructor(...args) {
+      super({ method, isUpdate, ...args }, )
     }
   }
 }
