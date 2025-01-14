@@ -9,9 +9,9 @@ import { Cli } from '@kingjs/cli'
 class CliPoller extends CliRx {
   static metadata = Object.freeze({
     options: {
-      pollMs: { type: 'number', default: 200, describe: 'Polling interval in milliseconds.' },
-      errorRate: { type: 'number', default: 0.01, describe: 'Simulated polling error rate.' },
-      errorMs: { type: 'number', default: 1000, describe: 'Milliseconds to delay after error.' },
+      pollMs: { type: 'number', default: 200, description: 'Polling interval in milliseconds.' },
+      errorRate: { type: 'number', default: 0.01, description: 'Simulated polling error rate.' },
+      errorMs: { type: 'number', default: 1000, description: 'Milliseconds to delay after error.' },
     }
   })
 
@@ -47,7 +47,7 @@ export default class CliPollClipboard extends CliPoller {
     name: 'poll',
     description: 'Poll clipboard content',
     options: {
-      prefix: { type: 'string', default: '!#/clipboard/', describe: 'Prefix to match in clipboard content.' },
+      prefix: { type: 'string', default: '!#/clipboard/', description: 'Prefix to match in clipboard content.' },
     }
   })
 

@@ -5,9 +5,9 @@ import { PassThrough } from 'stream'
 class Cli extends EventEmitter {
   static metadata = Object.freeze({
     options: {
-      help: { type: 'boolean', describe: 'Show help', default: false },
-      version: { type: 'boolean', describe: 'Show version number', default: false },
-      verbose: { type: 'boolean', describe: 'Provide verbose output', default: false },
+      help: { type: 'boolean', description: 'Show help' },
+      version: { type: 'boolean', description: 'Show version number' },
+      verbose: { type: 'boolean', description: 'Provide verbose output' },
     }
   })
   

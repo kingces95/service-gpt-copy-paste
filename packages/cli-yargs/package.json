@@ -1,7 +1,7 @@
 {
-  "name": "@kingjs/cli-loader",
+  "name": "@kingjs/cli-yargs",
   "version": "1.0.0",
-  "description": "Classes for loading metadata found on javascript classes.",
+  "description": "Use yargs to parse command lines and show help.",
   "main": "index.js",
   "type": "module",
   "exports": {

@@ -7,12 +7,12 @@ class CliEval extends Cli {
   static metadata = Object.freeze({
     description: 'Evaluate a shell command',
     arguments : [
-      { name: 'exe', describe: 'The command to execute', type: 'string', demandOption: true },
-      { name: 'args', describe: 'Arguments for the command', type: 'array', default: [] }
+      { name: 'exe', description: 'The command to execute', type: 'string', demandOption: true },
+      { name: 'args', description: 'Arguments for the command', type: 'array', default: [] }
     ],
   })
 
-  constructor({ shell, command, args, signal }) {
+  constructor({ shell, exe: command, args, signal }) {
     super({ signal })
 
     this.args = args

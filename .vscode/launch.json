@@ -13,12 +13,12 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Launch Poll",
+      "name": "Launch Clippy",
       "skipFiles": [
         "<node_internals>/**"
       ],
       "program": "${workspaceFolder}\\src\\clippy\\index.js",
-      "args": ["poll", "--help"],
+      "args": ["eval", "bash", "foo", "bar"],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal"
     },

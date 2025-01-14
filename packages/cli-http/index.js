@@ -10,10 +10,10 @@ class CliHttp extends Cli {
   static metadata = Object.freeze({
     description: 'Send a HTTP request',
     arguments: [
-      { name: 'url', describe: 'The URL to request', type: 'string', demandOption: true }
+      { name: 'url', description: 'The URL to request', type: 'string', demandOption: true }
     ],
     options: {
-      headers: { type: 'number', describe: 'Number of lines devoted to HTTP headers in stdin', default: 0 }
+      headers: { type: 'number', description: 'Number of lines devoted to HTTP headers in stdin', default: 0 }
     }
   })
 
@@ -103,7 +103,7 @@ const METHODS = [
 const generatedClasses = {}
 
 for (const { name, method, description, isUpdate } of METHODS) {
-  generatedClasses[name] = class extends CliHttp {
+  const httpMethodCls = class extends CliHttp {
     static metadata = Object.freeze({
       description
     })
@@ -112,6 +112,8 @@ for (const { name, method, description, isUpdate } of METHODS) {
       super({ method, isUpdate, ...args }, )
     }
   }
+  Object.defineProperty(httpMethodCls, "name", { value: name });
+  generatedClasses[name] = httpMethodCls
 }
 
 export const { CliGet, CliPost, CliPut, CliDelete, CliPatch, CliHead } = generatedClasses

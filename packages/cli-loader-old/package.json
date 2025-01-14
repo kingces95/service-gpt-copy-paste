@@ -1,7 +1,7 @@
 {
-  "name": "@kingjs/cli-loader",
+  "name": "@kingjs/cli-loader-old",
   "version": "1.0.0",
-  "description": "Classes for loading metadata found on javascript classes.",
+  "description": "Framework for loading and executing command line tools.",
   "main": "index.js",
   "type": "module",
   "exports": {

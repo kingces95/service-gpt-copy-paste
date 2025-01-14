@@ -1,0 +1,12 @@
+index.js eval bash <exe> [args...]
+
+Evaluate a bash shell command
+
+Positionals:
+  exe   The command to execute                               [string] [required]
+  args  Arguments for the command                                        [array]
+
+Options (global)
+  --help     Show help                                                 [boolean]
+  --verbose  Provide verbose output                                    [boolean]
+  --version  Show version number                                       [boolean]
