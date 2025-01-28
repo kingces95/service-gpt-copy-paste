@@ -48,15 +48,15 @@ class CliHttp extends Cli {
 
         response.data.on('end', () => {
           if (response.status >= 200 && response.status < 300) {
-            this.success$()
+            this.done$()
           } else {
             this.stderr.write(`HTTP request failed with status ${response.status}: ${response.statusText}\n`)
-            this.failure$()
+            this.fail$()
           }
         })
       } catch (error) {
         if (axios.isCancel(error) || error.code === 'ERR_CANCELED') {
-          this.aborted$()
+          this.abort$()
         } else {
           this.stderr.write(`Network error: ${error.message}\n`)
           this.error$(error)

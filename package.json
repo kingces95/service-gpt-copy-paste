@@ -21,8 +21,10 @@
     "vitest": "^2.1.8"
   },
   "dependencies": {
+    "@napi-rs/clipboard": "^1.1.2",
     "chalk": "^5.4.1",
     "lodash": "^4.17.21",
-    "lodash.merge": "^4.6.2"
+    "lodash.merge": "^4.6.2",
+    "node-clipboardy": "^1.0.3"
   }
 }

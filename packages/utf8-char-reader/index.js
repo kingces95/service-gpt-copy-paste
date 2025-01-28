@@ -1,11 +1,11 @@
 export default class Utf8CharReader {
   constructor() {
     this.buffer = []; // Buffer for partial character bytes
-    this.expectedBytes = 0; // Number of bytes needed for a full character
+    this.charLength = 0; // Number of bytes needed for a full character
     this.charCount = 0; // Tracks the number of complete characters processed
   }
 
-  static determineExpectedBytes(byte) {
+  static decodeCharLength(byte) {
     // Determine the number of bytes based on the first byte
     if ((byte & 0b10000000) === 0) {
       return 1; // Single-byte character
@@ -21,17 +21,15 @@ export default class Utf8CharReader {
   }
 
   processByte(byte) {
-    if (this.expectedBytes === 0) {
-      this.expectedBytes = Utf8CharReader.determineExpectedBytes(byte);
-    }
+    if (this.charLength === 0)
+      this.charLength = Utf8CharReader.decodeCharLength(byte);
 
     // Add the byte to the buffer
     this.buffer.push(byte);
 
     // Check if the buffer now contains a full character
-    if (this.buffer.length === this.expectedBytes) {
+    if (--this.charLength == 0) {
       this.charCount++; // Increment the character count
-      this.expectedBytes = 0; // Reset state for the next character
       return true; // Signal that a full character was processed
     }
 
@@ -39,8 +37,6 @@ export default class Utf8CharReader {
   }
 
   toString() {
-    const result = Buffer.from(this.buffer).toString('utf8');
-    this.buffer = []; // Clear the buffer after converting to string
-    return result;
+    return Buffer.from(this.buffer).toString('utf8');
   }
 }

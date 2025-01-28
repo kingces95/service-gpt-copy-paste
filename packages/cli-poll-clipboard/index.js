@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import clipboardy from 'clipboardy'
+import { Clipboard } from '@napi-rs/clipboard'
 import { interval, timer } from 'rxjs'
-import { switchMap, tap, filter, first, retry, takeUntil } from 'rxjs/operators'
+import { switchMap, exhaustMap, tap, filter, first, retry, takeUntil } from 'rxjs/operators'
 import CliRx from '@kingjs/cli-rx'
 import { Cli } from '@kingjs/cli'
 
@@ -25,7 +25,7 @@ class CliPoller extends CliRx {
     
     super(rest, interval(pollMs).pipe(
       tap(() => this.is$('polling')),
-      switchMap(async () => {
+      switchMap(async () => { 
         if (Math.random() < errorRate) {
           throw new Error('Simulated polling error')
         }
@@ -35,7 +35,7 @@ class CliPoller extends CliRx {
         count: Infinity,
         delay: (error) => {
           this.is$('retrying', error)
-          return timer(errorMs).pipe(takeUntil(this.signal))
+          return timer(errorMs).pipe(takeUntil(this.signalRx))
         },
       }),
     ))
@@ -57,8 +57,9 @@ export default class CliPollClipboard extends CliPoller {
       ...rest 
     } = { ...Cli.getDefaults(CliPollClipboard.metadata.options), ...options}
     
+    const clipboard = new Clipboard()
     super(rest,
-      switchMap(() => clipboardy.read()),
+      exhaustMap(async () => clipboard.getText()),
       filter((content) => content.startsWith(prefix)),
       first()
     )
@@ -66,10 +67,10 @@ export default class CliPollClipboard extends CliPoller {
     return this
   }
   
-  toString(state, result) {
-    if (Cli.isSuccess(state, result)) {
+  toString() {
+    if (this.succeeded)
       return `Clipboard polling succeeded`
-    }
-    return super.toString(state, result)
+
+    return super.toString()
   }
 }

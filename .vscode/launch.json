@@ -18,9 +18,16 @@
         "<node_internals>/**"
       ],
       "program": "${workspaceFolder}\\src\\clippy\\index.js",
-      "args": ["eval", "bash", "foo", "bar"],
+      "args": ["--stdis"],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal"
+    },
+    {
+      "type": "node",
+      "request": "attach",
+      "name": "Attach to Node.js Process",
+      "port": 9230,
+      "skipFiles": ["<node_internals>/**"]
     },
     {
       "type": "node",

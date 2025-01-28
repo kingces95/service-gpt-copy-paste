@@ -1,7 +1,7 @@
 {
-  "name": "@kingjs/cli-stream",
+  "name": "@kingjs/cli-fd-readable",
   "version": "1.0.0",
-  "description": "Class to emulate bash read and mapfile.",
+  "description": "Class to precisely read from a file descriptor.",
   "main": "index.js",
   "type": "module",
   "exports": {

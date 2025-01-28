@@ -2,10 +2,10 @@
   "name": "@kingjs/rx-from-abort-signal",
   "version": "1.0.0",
   "description": "Observable that throws when an abort signal is received.",
-  "main": "index.mjs",
+  "main": "index.js",
   "type": "module",
   "exports": {
-    ".": "./index.mjs"
+    ".": "./index.js"
   },
   "dependencies": {
     "rxjs": "^7.5.0"

@@ -4,6 +4,7 @@ import { CliLoader } from '@kingjs/cli-loader'
 import { CliGroupInfo } from '@kingjs/cli-info'
 import { CliBashEval, CliCmdEval } from '@kingjs/cli-eval'
 import { CliGet, CliPost, CliPut, CliDelete, CliPatch, CliHead } from '@kingjs/cli-http'
+import CliOrb from '@kingjs/cli-orb'
 import CliPollClipboard from '@kingjs/cli-poll-clipboard'
 import toPojoSymbol from '@kingjs/cli-node'
 import CliYargs from '@kingjs/cli-yargs'
@@ -28,7 +29,9 @@ const metadata = {
     bash: CliBashEval,
     cmd: CliCmdEval
   },
-  poll: CliPollClipboard
+  orb: CliOrb,
+  poll: CliPollClipboard,
+  '*': Cli,
 }
 
 class CliReflect extends Cli {

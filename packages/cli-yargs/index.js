@@ -63,19 +63,10 @@ export default class CliYargs {
     }
   }
 
-  static loadGroups(yargs$, context) {
-    const [[_, pojo], ...restContext] = context;
-
-    // First set of options with no modifier
+  static loadOptions(yargs$, group, pojo) {
     for (const [name, option] of Object.entries(pojo.options ?? {})) {
       yargs$.option(name, CliYargs.buildOption(option));
-    }
-
-    // Group the remaining options by their parent
-    for (const [parentName, parentPojo] of restContext) {
-      for (const [name] of Object.entries(parentPojo.options ?? {})) {
-        yargs$.group(name, `Options (${parentName})`);
-      }
+      yargs$.group(name, `Options (${group}):`);
     }
   }
 
@@ -86,7 +77,7 @@ export default class CliYargs {
     CliYargs.loadPositionals(yargs$, context);
 
     // load options
-    CliYargs.loadGroups(yargs$, context);
+    CliYargs.loadOptions(yargs$, name, pojo);
 
     // load groups
     for (const [name, group] of Object.entries(pojo.groups ?? {})) {

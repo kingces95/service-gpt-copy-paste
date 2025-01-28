@@ -1,10 +1,15 @@
-
 import { Observable } from 'rxjs';
 
-export default function fromAbortSignal(signal) {
+class AbortError extends Error {
+  constructor() {
+    super('Aborted')
+  }
+}
+
+function fromAbortSignal(signal) {
   return new Observable((observer) => {
     const abortHandler = () => {
-      observer.error(new Error('Aborted'))
+      observer.error(new AbortError())
     }
 
     signal.addEventListener('abort', abortHandler)
@@ -13,4 +18,9 @@ export default function fromAbortSignal(signal) {
       signal.removeEventListener('abort', abortHandler)
     }
   })
+}
+
+export {
+  fromAbortSignal,
+  AbortError
 }

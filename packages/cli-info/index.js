@@ -1,8 +1,6 @@
 import Lazy from '@kingjs/lazy'
 import {
-  CliClassInfo,
-  CliClassOptionInfo,
-  CliClassPositionalInfo
+  CliClassInfo
 } from '@kingjs/cli-loader'
 
 class CliInfo {
@@ -115,7 +113,7 @@ class CliMemberInfo extends CliInfo {
 }
 
 class CliCommandInfo extends CliMemberInfo {
-  static DefaultCommandName = '*'
+  static DefaultCommandName = '$'
 
   constructor(loader, cls, name, parent) {
     super(loader, name, parent)

@@ -38,24 +38,22 @@ class CliEval extends Cli {
     })
     
     // Handle process events
-    child.on('exit', (code, signal) => this.exit$(code, signal))
+    child.on('exit', (code, signal) => this.done$(code, signal))
     child.on('close', () => this.$close())
     child.on('error', (err) => this.error$(err))
   }
 
-  toString(state, result, ...rest) {
-    if (Cli.isSuccess(state, result, ...rest))
+  toString() {
+    if (this.succeeded)
       return `Shell command '${this.command}' completed successfully`
 
-    if (Cli.isFailure(state, result, ...rest))
-      return `Shell command '${this.command}' exited with code ${result}`
+    if (this.failed)
+      return `Shell command '${this.command}' exited with code ${this.state$.data}`
 
-    if (Cli.isAborted(state, result, ...rest)) {
-      const [ signal ] = rest
-      return `Shell command '${this.command}' aborted due to ${signal}`
-    }
+    if (this.aborted)
+      return `Shell command '${this.command}' aborted`
 
-    return super.toString(state, result, ...rest)
+    return super.toString()
   }
 }
 

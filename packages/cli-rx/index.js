@@ -2,20 +2,20 @@
 
 import { Subject, merge } from 'rxjs'
 import { tap, share, takeUntil } from 'rxjs/operators'
-import fromAbortSignal from '@kingjs/rx-from-abort-signal'
+import { AbortError, fromAbortSignal } from '@kingjs/rx-from-abort-signal'
 import concatWrite from '@kingjs/rx-concat-write'
 import { Cli } from '@kingjs/cli'
 
 export default class CliRx extends Cli {
-  constructor({ signal, ...rest }, workflow) {
-    super({ signal, ...rest })
+  constructor(args, workflow) {
+    super(args)
 
     this.errorSubject = new Subject()
     
-    const signalRx = fromAbortSignal(signal).pipe(share())
+    this.signalRx = fromAbortSignal(this.signal).pipe(share())
     
     const stdoutPipeline = workflow.pipe(
-      takeUntil(signalRx),
+      takeUntil(this.signalRx),
       concatWrite(this.stdout),
       tap({ complete: () => this.errorSubject.complete() }),
     )
@@ -29,7 +29,10 @@ export default class CliRx extends Cli {
         this.success$()
       },
       error: (err) => {
-        this.error$(err)
+        if (err instanceof AbortError)
+          this.abort$()
+        else
+          this.error$(err)
       },
     })
   }

@@ -655,6 +655,72 @@
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
+"@napi-rs/clipboard-darwin-arm64@1.1.2":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@napi-rs/clipboard-darwin-arm64/-/clipboard-darwin-arm64-1.1.2.tgz#b440c1056c5ac3ed2658695b4783fa562b286e34"
+  integrity sha512-PNNM+RVE2KMCMjYhzohAA5kvV+qyxdpByHqvzuqvVoD9tFpCOCQrnFX8yRDXrf5O55Stj39amN3p1Q67TxWRLw==
+
+"@napi-rs/clipboard-darwin-x64@1.1.2":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@napi-rs/clipboard-darwin-x64/-/clipboard-darwin-x64-1.1.2.tgz#22d53b426e6e4634f08a42c3cf61de143c1d1c84"
+  integrity sha512-Htz6x1MZ/Z0n30uYW2e09lfOwyTHDJgYnBLIi7+iMnwuKN+AN3YpVCDLkaq2xzMndov2Zf9bVC1XE/c0ExCovQ==
+
+"@napi-rs/clipboard-linux-arm-gnueabihf@1.1.2":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@napi-rs/clipboard-linux-arm-gnueabihf/-/clipboard-linux-arm-gnueabihf-1.1.2.tgz#8d533bce0c8f2799b561a630ef0c20c337ccfed3"
+  integrity sha512-pJJMQzdUSL6VeYO6Hc6vQTmDbeV71BEpcOCaD2fxrGfL7I2tW3FDnl5b3AAqyeeVGelPvBqZXf98J4uiLwaaWA==
+
+"@napi-rs/clipboard-linux-arm64-gnu@1.1.2":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@napi-rs/clipboard-linux-arm64-gnu/-/clipboard-linux-arm64-gnu-1.1.2.tgz#89ae8975afa2a3ed1f32a116c27420a5ef784717"
+  integrity sha512-/d4FJKnZ/hva7cBUSBv4DxkffBzTPGkjXG7YQwxRyic4CKfCeMdvEqg2t13spDBXlQYl1KXGGSfzdM1r3hR6AQ==
+
+"@napi-rs/clipboard-linux-arm64-musl@1.1.2":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@napi-rs/clipboard-linux-arm64-musl/-/clipboard-linux-arm64-musl-1.1.2.tgz#2474f9218c237839d08fe7a4da016e559197665f"
+  integrity sha512-J8xzr9x3Wn9O3Tvb088mV/IxfIW1WK2WyOT1FvTGbpw+mpAzICJxDfEHkL3MBxV4w3JZXteGIEcU3xkC1XlrWA==
+
+"@napi-rs/clipboard-linux-x64-gnu@1.1.2":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@napi-rs/clipboard-linux-x64-gnu/-/clipboard-linux-x64-gnu-1.1.2.tgz#508e361b1969712f04cbc432f9c6efa9677aa724"
+  integrity sha512-FwgiM/8uHbwJjy0yGKFAbrMu10oDeXA9zU+xQZ2R7NyLe9exHUk6/KgMNrUUr+eIJnkirGy0N77VorXjAtFUVA==
+
+"@napi-rs/clipboard-linux-x64-musl@1.1.2":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@napi-rs/clipboard-linux-x64-musl/-/clipboard-linux-x64-musl-1.1.2.tgz#91ff5b030f3848f4157c338fbaabce12a00d45d1"
+  integrity sha512-3tMmRhpVb7iYWkEzobdoEpzFDGqNdtHP/LwLJYZOKreOBI8GszEIshbtjXIFhAfpD+x3RvjXiFowzNChX+CGNw==
+
+"@napi-rs/clipboard-win32-arm64-msvc@1.1.2":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@napi-rs/clipboard-win32-arm64-msvc/-/clipboard-win32-arm64-msvc-1.1.2.tgz#117609c61930de8da6fae87953be87620432ae6a"
+  integrity sha512-hFJQwQdLz8C/ocG5FjbKM0/+OxdnaaLOdUFWZaSa69s6XcF53U5uTvTUlmKhMNuqllqf9V3R3bF5Ada7yeuWlg==
+
+"@napi-rs/clipboard-win32-ia32-msvc@1.1.2":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@napi-rs/clipboard-win32-ia32-msvc/-/clipboard-win32-ia32-msvc-1.1.2.tgz#b3114946ddbd0379fdd2c6388206cb2b9f0011d7"
+  integrity sha512-ZI3dbHhf0zVIYJDF4G3lGlJSUQgliGgfDWc+1SEKgjIEmmX3cBh/vaL2N9hpNh5LyNk+RBMD/+N7hOG1/e6UJw==
+
+"@napi-rs/clipboard-win32-x64-msvc@1.1.2":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@napi-rs/clipboard-win32-x64-msvc/-/clipboard-win32-x64-msvc-1.1.2.tgz#ff5b4c9da2463f5643b021eaec9aa8d9b6afa0b8"
+  integrity sha512-8dNtCAD6X7FaLrC4XBqp5ySU4PGB22Dpy0bGiPBOVNw8W9zw3EhtE0yNnGao03c4k/06GOOoFPeobWQfcja+hw==
+
+"@napi-rs/clipboard@^1.1.2":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@napi-rs/clipboard/-/clipboard-1.1.2.tgz#3817ed41cdc19bb232873a1d1bb758bc81af0220"
+  integrity sha512-q2AR+5XLWcUGoF5LVEc0kpm2tGRFnYPSNRO9Klhbw0BloyciicrGwMMO4khcQV5EIpYlmj9GEGfLoi/uWtE0DA==
+  optionalDependencies:
+    "@napi-rs/clipboard-darwin-arm64" "1.1.2"
+    "@napi-rs/clipboard-darwin-x64" "1.1.2"
+    "@napi-rs/clipboard-linux-arm-gnueabihf" "1.1.2"
+    "@napi-rs/clipboard-linux-arm64-gnu" "1.1.2"
+    "@napi-rs/clipboard-linux-arm64-musl" "1.1.2"
+    "@napi-rs/clipboard-linux-x64-gnu" "1.1.2"
+    "@napi-rs/clipboard-linux-x64-musl" "1.1.2"
+    "@napi-rs/clipboard-win32-arm64-msvc" "1.1.2"
+    "@napi-rs/clipboard-win32-ia32-msvc" "1.1.2"
+    "@napi-rs/clipboard-win32-x64-msvc" "1.1.2"
+
 "@pkgjs/parseargs@^0.11.0":
   version "0.11.0"
   resolved "https://registry.yarnpkg.com/@pkgjs/parseargs/-/parseargs-0.11.0.tgz#a77ea742fab25775145434eb1d2328cf5013ac33"
@@ -3007,6 +3073,15 @@ negotiator@0.6.3:
   version "0.6.3"
   resolved "https://registry.npmjs.org/negotiator/-/negotiator-0.6.3.tgz"
   integrity sha512-+EUsqGPLsM+j/zdChZjsnX51g4XrHFOIXwfnCVPGlQk/k5giakcKsuxCObBRu6DSm9opw/O6slWbJdghQM4bBg==
+
+node-clipboardy@^1.0.3:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/node-clipboardy/-/node-clipboardy-1.0.3.tgz#75a408b6e61ec11c29187274f502dfb3a96a764c"
+  integrity sha512-/ErAFOtWDNhZh38rrwlAo05Soxbht/rgWugLOt2Ds+NDpZ+2sPiGiwOmFWzV+65fUYjwi+EJfHByIJ4waTHbVg==
+  dependencies:
+    arch "^2.2.0"
+    execa "^5.1.1"
+    is-wsl "^2.2.0"
 
 node-int64@^0.4.0:
   version "0.4.0"
