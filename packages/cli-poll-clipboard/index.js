@@ -34,12 +34,25 @@ class CliPoller extends CliRx {
       retry({
         count: Infinity,
         delay: (error) => {
-          this.is$('retrying', error)
+          this.retryError$ = error
+          this.is$('retrying')
           return timer(errorMs).pipe(takeUntil(this.signalRx))
         },
       }),
     ))
+
+    this.retryError$ = null
   }
+
+  get polling() { return this.state$ == 'polling' }
+  get retrying() { return this.state$ == 'retrying' }
+
+  toString() {
+    if (this.retrying)
+      return `${super.toString()} (${this.retryError$})`
+    
+    return super.toString()
+  }  
 }
 
 export default class CliPollClipboard extends CliPoller {

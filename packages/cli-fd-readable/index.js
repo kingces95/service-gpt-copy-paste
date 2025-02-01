@@ -2,10 +2,10 @@ import fs from 'fs'
 import { Readable } from 'stream'
 
 export default class CliFdReadable extends Readable {
-  constructor(fd, ifs = ' ') {
-    super(ifs)
+  constructor({ fd }) {
+    super()
     this.fd = fd
-    this.offset = 0 // Tracks file offset for async reads
+    this.count = 0 // Tracks file offset for async reads
     this.reading = false // Indicates if an async read is in progress
     this.exact = true
   }
@@ -29,7 +29,7 @@ export default class CliFdReadable extends Readable {
     const buffer$ = Buffer.alloc(size) // Set a conventional buffer size
 
     // Initiate the asynchronous read operation
-    fs.read(this.fd, buffer$, 0, buffer$.length, this.offset, (err, bytesRead, buffer) => {
+    fs.read(this.fd, buffer$, 0, buffer$.length, this.count, (err, bytesRead, buffer) => {
       this.reading = false
       if (err) {
         this.destroy(err)
@@ -37,7 +37,7 @@ export default class CliFdReadable extends Readable {
       }
 
       if (bytesRead > 0) {
-        this.offset += bytesRead
+        this.count += bytesRead
         const slice = buffer.slice(0, bytesRead)
         this.push(slice) // Push only the bytes read
       } else {

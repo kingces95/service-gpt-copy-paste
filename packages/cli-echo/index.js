@@ -53,7 +53,11 @@ export function write(stream, signal, line, encoding = 'utf8') {
   return writeBuffer$(stream, signal, buffer, encoding)
 }
 
+export function joinFields(ifs, values) {
+  return values.join(ifs[0])
+}
+
 export function writeRecord(stream, signal, ifs, values, encoding = 'utf8') {
-  const record = values.join(ifs[0])
+  const record = joinFields(ifs, values)
   return write(stream, signal, record, encoding) // Use write to append a newline
 }

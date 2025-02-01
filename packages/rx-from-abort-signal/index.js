@@ -1,12 +1,7 @@
 import { Observable } from 'rxjs';
+import { AbortError } from '@kingjs/abort-error'
 
-class AbortError extends Error {
-  constructor() {
-    super('Aborted')
-  }
-}
-
-function fromAbortSignal(signal) {
+export function fromAbortSignal(signal) {
   return new Observable((observer) => {
     const abortHandler = () => {
       observer.error(new AbortError())
@@ -18,9 +13,4 @@ function fromAbortSignal(signal) {
       signal.removeEventListener('abort', abortHandler)
     }
   })
-}
-
-export {
-  fromAbortSignal,
-  AbortError
 }

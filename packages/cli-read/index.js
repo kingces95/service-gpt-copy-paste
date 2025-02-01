@@ -1,4 +1,5 @@
 import Utf8CharReader from '@kingjs/utf8-char-reader'
+import { AbortError } from '@kingjs/abort-error'
 
 const NEW_LINE_BYTE = 0x0A
 
@@ -38,7 +39,7 @@ export async function readByte(stream, signal) {
 
     const onAbort = () => {
       cleanup()
-      reject(new Error('Aborted'))
+      reject(new AbortError())
     }
 
     const cleanup = () => {
@@ -71,7 +72,12 @@ export async function readString(stream, signal, charCount) {
   return charReader.toString() // Convert the buffered bytes to a string
 }
 
-export async function read(stream, signal) {
+export async function read(streamOrLine, signal) {
+  if (typeof streamOrLine == 'string') {
+    return streamOrLine
+  }
+
+  const stream = streamOrLine
   const charReader = new Utf8CharReader()
 
   while (true) {
@@ -102,22 +108,47 @@ export function* split$(line, count, ifs = ' ') {
   yield line.slice(lastIndex)
 }
 
-export async function readArray(stream, signal, ifs) {
-  const line = await read(stream, signal)
+export async function readArray(streamOrLine, signal, ifs) {
+  const line = await read(streamOrLine, signal)
   const iterator = split$(line, Infinity, ifs)
   return Array.from(iterator)
 }
 
-export async function readRecord(stream, signal, ifs, fields) {
-  const line = await read(stream, signal)
-  const iterator = split$(line, fields.length, ifs)
+export async function readRecord(streamOrLine, signal, ifs, fields) {
+  const line = await read(streamOrLine, signal)
+  let record = {}
 
-  const record = {}
-  let index = 0
+  if (Array.isArray(fields)) {
+    const iterator = split$(line, fields.length, ifs)
+    fields.forEach((field, index) => {
+      record[field] = iterator.next().value
+    })
+  } else if (typeof fields === 'object') {
+    const fieldNames = Object.keys(fields)
+    const iterator = split$(line, fieldNames.length, ifs)
 
-  for (const value of iterator) {
-    record[fields[index]] = value
-    index++
+    fieldNames.forEach((field, index) => {
+      const value = iterator.next().value
+      if (value === undefined || value === null) 
+        return
+
+      var type = fields[field]
+      if (type == '#') type = 'number'
+      if (type == '!') type = 'boolean'
+
+      if (type === 'number') {
+        record[field] = Number(value)
+
+      } else if (type === 'boolean') {
+        record[field] = !(
+          value === '' 
+          || value === 'false' 
+          || value === 'False' 
+          || value === '0')
+      } else {
+        record[field] = value
+      }
+    })
   }
 
   return record
