@@ -1,7 +1,7 @@
 {
-  "name": "@kingjs/cli-node",
+  "name": "@kingjs/pojo-trim",
   "version": "1.0.0",
-  "description": "CLI info tree to POJO.",
+  "description": "Delete null/undefined properties and empty object/arrays.",
   "main": "index.js",
   "type": "module",
   "exports": {

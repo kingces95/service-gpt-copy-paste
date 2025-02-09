@@ -5,9 +5,12 @@ import { write, joinFields } from '@kingjs/cli-echo'
 import { Console } from 'console'
 import { CliFdReadable } from '@kingjs/cli-fd-readable'
 import { CliFdWritable }from '@kingjs/cli-fd-writable'
+import { CliLoader } from '@kingjs/cli-loader'
+import { cliLoaderToPojo } from '@kingjs/cli-loader-to-pojo'
 import assert from 'assert'
+import util from 'util'
 
-const CLI_INFO_SYMBOL = Symbol('Cli Info')
+const CLI_LOADING_SYMBOL = Symbol('Cli loading')
 
 const DEFAULT_IFS = ' '
 const STDIN_FD = 0
@@ -22,15 +25,50 @@ const EXIT_SIGINT = EXIT_ABORT + 2
 const IFS = DEFAULT_IFS
 
 export class Cli {
-  static metadata = Object.freeze({
-    options: {
-      help: { type: 'boolean', description: 'Show help' },
-      version: { type: 'boolean', description: 'Show version number' },
-      verbose: { type: 'boolean', description: 'Provide verbose output' },
-    }
-  })
+  static loader = new CliLoader()
+  static __dumpLoader() {
+    cliLoaderToPojo(Cli.loader)
+      .then(pojo => {
+        console.error(util.inspect(pojo, { colors: true, depth: null }))
+        // console.error(JSON.stringify(pojo, null, 2))
+      })
+  }
 
-  static InfoSymbol = CLI_INFO_SYMBOL
+  static descriptions = {
+    help: 'Show help',
+    version: 'Show version number',
+    verbose: 'Provide verbose output',
+  }
+  static aliases = {
+    help: ['h'],
+    verbose: ['v'],
+  }
+  static info = Cli.load()
+
+  static loading = CLI_LOADING_SYMBOL
+  static isLoading(args) {
+    return args[0] === CLI_LOADING_SYMBOL
+  }
+
+  static load() {
+    assert(!Object.hasOwn(this, 'info'))
+    new this()
+    assert(Object.hasOwn(this, 'info'))
+    return this.info
+  }
+
+  static saveDefaults(...args) {
+    if (args[0] == CLI_LOADING_SYMBOL)
+      return true
+    
+    if (Object.hasOwn(this, 'info'))
+      return false
+
+    // console.error('loading', this.name, args)
+    this.info = Cli.loader.load(this, args)
+    // console.error([...this.info.parameters()])
+    return true
+  }
 
   static async splitArray(line) {
     return splitArray(line, IFS)
@@ -44,9 +82,9 @@ export class Cli {
     return joinFields(IFS, fields)
   }
 
-  constructor({ verbose, [Cli.InfoSymbol]: info } = {}) {
-    this.verbose = verbose
-    this.info = info
+  constructor({ help = false, version = '0.0', verbose = false } = {}) {
+    if (Cli.isLoading(arguments) || Cli.saveDefaults({ help, version, verbose }))
+      return
     
     // handle graceful shutdown
     this.exitCode = undefined
@@ -147,3 +185,5 @@ export class Cli {
     return 'Running...'
   }
 }
+
+// Cli.__dumpLoader()

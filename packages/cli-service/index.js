@@ -10,20 +10,21 @@ const STDOUT_FD = 1
 const IFS = ' '
 
 export class CliService extends Cli {
-  static metadata = Object.freeze({
-    options: {
-      stdis: { type: 'boolean', description: 'Provide status updates' },
-      stdisFd: { 
-        type: 'number', 
-        description: 'Fd to report status if stdis is set', 
-        env: 'STDIS_FD',
-        default: STDOUT_FD
-      }
-    }
-  })
+  static descriptions = {
+    stdis: 'Provide status updates',
+    stdisFd: 'Fd to report status if stdis is set',
+  }
+  static info = CliService.load()
 
-  constructor({ stdis, stdisFd = STDOUT_FD, ...options } = {}) {
-    super(options)
+  constructor({ 
+    stdis = false, 
+    stdisFd = STDOUT_FD, 
+    ...rest 
+  } = { }) {
+    if (Cli.isLoading(arguments) || CliService.saveDefaults({ stdis, stdisFd }))
+      return super(Cli.loading)
+
+    super(rest)
     this.heartbeatService = new CliServiceHeartbeat()
     this.stdis = stdis ? new CliFdWritable({ fd: stdisFd }) : streamNull
     
@@ -109,3 +110,5 @@ export class CliService extends Cli {
     return state.charAt(0).toUpperCase() + state.slice(1) + '...'
   }
 }
+
+// CliService.__dumpLoader()

@@ -4,22 +4,27 @@ import { Cli } from '@kingjs/cli'
 import { spawn } from 'child_process'
 
 class CliEval extends Cli {
-  static metadata = Object.freeze({
-    description: 'Evaluate a shell command',
-    arguments : [
-      { name: 'exe', description: 'The command to execute', type: 'string', demandOption: true },
-      { name: 'args', description: 'Arguments for the command', type: 'array', default: [] }
-    ],
-  })
+  static description = 'Evaluate a shell command'
+  static descriptions = {
+    exe: 'The command to execute',
+    args: 'Arguments for the command',
+    shell: 'The shell to use'
+  }
+  static choices = {
+    shell: [ 'bash', 'cmd.exe' ]
+  }
+  static info = CliEval.load()
 
-  constructor({ shell, exe: command, args, signal }) {
-    super({ signal })
-
+  constructor(exe, args = [], { shell, ...rest } = { }) {
+    if (Cli.isLoading(arguments) || CliEval.saveDefaults(exe, args, { shell }))
+      return super(Cli.loading)
+    
+    super(rest)
     this.args = args
-    this.command = command
+    this.command = exe
 
     // Launch the shell command
-    const child = spawn(command, args, {
+    const child = spawn(this.command, args, {
       shell,
       env: process.env,
       stdio: ['pipe', 'pipe', 'pipe']
@@ -31,10 +36,8 @@ class CliEval extends Cli {
     child.stderr.pipe(this.stderr)
     
     // Handle abort signal
-    signal.addEventListener('abort', () => {
-      if (!child.killed) {
-        child.kill('SIGINT')
-      }
+    process.on('SIGINT', () => {
+      child.kill('SIGINT')
     })
     
     // Handle process events
@@ -57,24 +60,35 @@ class CliEval extends Cli {
   }
 }
 
-class CliBashEval extends CliEval {
-  static metadata = Object.freeze({
-    description: 'Evaluate a bash shell command',
-  })
+class CliEvalBash extends CliEval {
+  static description = 'Evaluate a bash shell command'
+  static info = CliEvalBash.load()
   
-  constructor(args) {
-    super({ shell: 'bash', ...args })
+  constructor(...args) {
+    if (Cli.isLoading(arguments) || CliEvalBash.saveDefaults({ }))
+      return super(Cli.loading)
+
+    this.verify(CliEvalBash, ...args)
+    super(...args, { shell: 'bash' })
   }
 }
 
-class CliCmdEval extends CliEval {
-  static metadata = Object.freeze({
-    description: 'Evaluate a cmd shell command',
-  })
+class CliEvalCmd extends CliEval {
+  static description = 'Evaluate a cmd shell command'
+  static info = CliEvalCmd.load()
   
-  constructor(args) {
-    super({ shell: 'cmd.exe', ...args })
+  constructor(...args) {
+    if (Cli.isLoading(arguments) || CliEvalCmd.saveDefaults({ }))
+      return super(Cli.loading)
+
+    super(...args, { shell: 'cmd.exe' })
   }
 }
 
-export { CliBashEval, CliCmdEval, CliEval }
+export { 
+  CliEvalBash as CliBashEval, 
+  CliEvalCmd as CliCmdEval, 
+  CliEval 
+}
+
+CliEval.__dumpLoader()

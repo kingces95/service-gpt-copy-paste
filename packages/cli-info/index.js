@@ -1,18 +1,15 @@
-import Lazy from '@kingjs/lazy'
-import {
-  CliClassInfo
-} from '@kingjs/cli-loader'
+import assert from 'assert'
+import { CliClassInfo } from '@kingjs/cli-loader'
+import { LoadAsync, LoadAsyncGenerator } from '@kingjs/load'
+import { TypeName, ModuleName } from '@kingjs/node-name'
 
 class CliInfo {
-  get name() { return this.name$ }
-  get description() { throw new Error('Description is not implemented.') }
-
   constructor(loader, name, parent) {
     this.loader$ = loader
     this.name$ = name
     this.parent$ = parent
 
-    this.hierarchy$ = Lazy.fromGenerator(function* () {
+    this.hierarchy$ = new LoadAsyncGenerator(async function* () {
       let current = this
       while (current) {
         yield current
@@ -31,8 +28,11 @@ class CliInfo {
 
   get parent() { return this.parent$ }
   get loader() { return this.loader$ }
+  get name() { return this.name$ }
 
-  *hierarchy() { yield* this.hierarchy$.value }
+  async description() { throw new Error('Description is not implemented.') }
+
+  async hierarchy() { return await this.hierarchy$.load() }
   toString() { return this.name }
 }
 
@@ -48,6 +48,8 @@ class CliParameterInfo extends CliInfo {
     this.classParameter = classParameter
   }
 
+  get isParameter() { return true }
+
   get aliases() { return this.classParameter?.aliases }
   get choices() { return this.classParameter?.choices }
   get conflicts() { return this.classParameter?.conflicts }
@@ -60,17 +62,17 @@ class CliParameterInfo extends CliInfo {
   get isBoolean() { return this.classParameter?.type === 'boolean' }
   get isNumber() { return this.classParameter?.type === 'number' }
   get description() { return this.classParameter?.description }
-
-  get isParameter() { return true }
 }
 
 class CliPositionalInfo extends CliParameterInfo {
   get isPositional() { return true }
+
   get position() { return this.classParameter?.position }
 }
 
 class CliOptionInfo extends CliParameterInfo {
   get isOption() { return true }
+  
   get isDemandOption() { return this.classParameter?.isDemandOption }
   get isGlobal() { return this.classParameter?.isGlobal }
   get isHidden() { return this.classParameter?.isHidden }
@@ -79,25 +81,39 @@ class CliOptionInfo extends CliParameterInfo {
 }
 
 class CliMemberInfo extends CliInfo {
-  static commonAncestor(members) {
-    const classes = members.map(member => member.classInfo$.value)
-    return CliClassInfo.commonAncestor(classes)
+  static async create(loader, groupOrClsOrModuleName, name, parent) {
+    const group = groupOrClsOrModuleName
+    if (typeof group == 'object') {
+      return new CliGroupInfo(loader, group, name, parent)
+    }
+
+    const clsOrModuleName = groupOrClsOrModuleName
+    if (typeof clsOrModuleName == 'function' || typeof clsOrModuleName == 'string') {
+      return new CliCommandInfo(loader, clsOrModuleName, name, parent)
+    }
+
+    assert('Bad CliMemberInfo activation arguments')
+  }
+
+  static async commonAncestor(members) {
+    const classes = await Promise.all(members.map(async member => await member.classInfo$.load()))
+    return await CliClassInfo.commonAncestor(classes)
   }
   
   constructor(loader, name, parent) {
     super(loader, name, parent)
 
-    this.classInfoHierarchy$ = Lazy.fromGenerator(function* () {
-      const parentClassInfo = this.parent?.classInfo$.value
-      for (const classInfo of this.classInfo$.value.hierarchy()) {
+    this.classInfoHierarchy$ = new LoadAsyncGenerator(async function* () {
+      const parentClassInfo = await this.parent?.classInfo$.load()
+      for (const classInfo of await this.classInfo$.load(async o => await o.hierarchy())) {
         if (parentClassInfo && classInfo === parentClassInfo) 
           break
         yield classInfo
       }
     }, this)
 
-    this.parameters$ = Lazy.fromGenerator(function* () {
-      for (const classInfo of [...this.classInfoHierarchy$.value].reverse()) {
+    this.parameters$ = new LoadAsyncGenerator(async function* () {
+      for (const classInfo of (await this.classInfoHierarchy$.load()).reverse()) {
         for (const classParameter of classInfo.parameters()) {
           yield CliParameterInfo.create(classParameter, this)
         }
@@ -105,9 +121,9 @@ class CliMemberInfo extends CliInfo {
     }, this)
   }
 
-  *parameters() { yield* this.parameters$.value }
-  *options() { yield* this.parameters().filter(param => param.isOption) }
-  *positionals() { yield* this.parameters().filter(param => param.isPositional) }
+  async parameters() { return await this.parameters$.load() }
+  async options() { return (await this.parameters()).filter(param => param.isOption) }
+  async positionals() { return (await this.parameters()).filter(param => param.isPositional) }
 
   get isMember() { return true }
 }
@@ -115,52 +131,61 @@ class CliMemberInfo extends CliInfo {
 class CliCommandInfo extends CliMemberInfo {
   static DefaultCommandName = '$'
 
-  constructor(loader, cls, name, parent) {
+  constructor(loader, clsOrTypeName, name, parent) {
     super(loader, name, parent)
-    this.classInfo$ = new Lazy(() => this.loader.load(cls))
+    this.classInfo$ = new LoadAsync(async () => {
+      const typeName = clsOrTypeName
+      if (typeof typeName == 'string') {
+        clsOrTypeName = await TypeName.load(typeName, { typeMissingIsError: true })
+      }
+
+      const cls = clsOrTypeName
+      assert(typeof cls == 'function', `Expected function but got ${typeof cls}: ${cls}`)
+      return this.loader.load(cls)
+    })
   }
 
   get isCommand() { return true }
   get isDefaultCommand() { return this.name === CliCommandInfo.DefaultCommandName }
-  get description() { return this.classInfo$.value.description }
-
-  run(args) { this.classInfo$.value.activate(args) }
+  
+  async description() { return await this.classInfo$.load(o => o.description) }
+  async run(args) { return await this.classInfo$.load(o => o.activate(args)) }
 }
 
 class CliGroupInfo extends CliMemberInfo {
+  
   constructor(loader, groupData, name, parent) {
     super(loader, name, parent)
     this.groupData = groupData
 
-    this.members$ = Lazy.fromGenerator(function* () {
-      for (const [name, clsOrGroup] of Object.entries(groupData)) {
+    this.members$ = new LoadAsyncGenerator(async function* () {
+      for (const [name, clsOrGroupOrModuleName] of Object.entries(groupData)) {
         if (name.endsWith('$'))
           continue
-        yield typeof clsOrGroup === 'function'
-          ? new CliCommandInfo(loader, clsOrGroup, name, this)
-          : new CliGroupInfo(loader, clsOrGroup, name, this)
+        yield CliMemberInfo.create(loader, clsOrGroupOrModuleName, name, this)
       }
     }, this)
     
-    this.classInfo$ = new Lazy(() => {
-      return CliMemberInfo.commonAncestor([...this.members()])
+    this.classInfo$ = new LoadAsync(async () => {
+      return await CliMemberInfo.commonAncestor(await this.members())
     })
   }
 
-  *groups() { yield* this.members().filter(member => member.isGroup) }
-  *commands() { yield* this.members().filter(member => member.isCommand) }
-  *members() { yield* this.members$.value }
+  async groups() { return (await this.members()).filter(member => member.isGroup) }
+  async commands() { return (await this.members()).filter(member => member.isCommand) }
+  async members() { return this.members$.load() }
 
   get isGroup() { return true }
-  get defaultCommand() {
-    for (const command of this.commands()) {
-      if (command.isDefaultCommand) return command
+  async defaultCommand() {
+    for (const command of await this.commands()) {
+      if (command.isDefaultCommand) 
+        return command
     }
     return null
   }
-  get description() { 
+  async description() { 
     return this.groupData.description$ 
-      || this.defaultCommand?.description 
+      || await (await this.defaultCommand())?.description() 
       || '<missing group description>'
   }
 }

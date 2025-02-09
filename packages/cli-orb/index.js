@@ -18,21 +18,21 @@ const NORMAL_COLOR = 'cyan'
 const WARN_COLOR = 'yellow'
 
 export default class CliOrb extends Cli {
-  static metadata = Object.freeze({
-    name: 'orb',
-    description: 'Tool for rendering status to tty',
-    options: {
-      cpuHot: { type: 'number', default: CPU_HOT, description: 'Threshold for high CPU usage' },
-      memHot: { type: 'number', default: MEM_HOT, description: 'Threshold for high memory usage' }
-    }
-  })
+  static description = 'Tool for rendering status to tty'
+  static descriptions = {
+    cpuHot: 'Threshold for high CPU usage',
+    memHot: 'Threshold for high memory usage',
+  }
+  static info = CliOrb.load()
   
-  constructor(options) {
-    super(options)
-    
-    this.cpuHot = options.cpuHot || CPU_HOT
-    this.memHot = options.memHot || MEM_HOT
+  constructor({ cpuHot = CPU_HOT, memHot = MEM_HOT, ...rest } = { }) {
+    if (Cli.isLoading(arguments) || CliOrb.saveDefaults({ cpuHot, memHot }))
+      return super(Cli.loading)
 
+    super(rest)
+    
+    this.cpuHot = cpuHot
+    this.memHot = memHot
     this.stats = { in: 0, out: 0, error: 0 }
     this.message = ''
     
@@ -106,7 +106,7 @@ export default class CliOrb extends Cli {
           const { warnType, warnMessage } = await Cli.splitRecord(rest, ['warnType', 'warnMessage'])
           this.message = warnMessage
           this.spinner.color = WARN_COLOR
-          
+
         } else {
           this.message = rest
           this.spinner.color = NORMAL_COLOR
@@ -156,3 +156,5 @@ export default class CliOrb extends Cli {
     return parts.join('')
   }
 }
+
+// CliOrb.__dumpLoader()

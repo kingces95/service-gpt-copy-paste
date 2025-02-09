@@ -1,5 +1,4 @@
 import {
-  CliInfo,
   CliParameterInfo,
   CliOptionInfo,
   CliPositionalInfo,
@@ -8,7 +7,7 @@ import {
   CliGroupInfo
 } from '@kingjs/cli-info'
 
-import { toPojoSymbol, toPojo } from '@kingjs/to-pojo'
+import { toPojoSymbol, objectToPojo } from '@kingjs/to-pojo'
 
 CliParameterInfo[toPojoSymbol] = {
   name: 'string',
@@ -51,6 +50,11 @@ CliGroupInfo[toPojoSymbol] = {
   commands: 'map'
 }
 
-CliInfo.prototype[toPojoSymbol] = toPojo
+function cliInfoToPojo(info, ...args) {
+  return objectToPojo.call(info, ...args)
+}
 
-export default toPojoSymbol
+export {
+  toPojoSymbol,
+  cliInfoToPojo
+}

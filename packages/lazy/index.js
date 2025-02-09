@@ -1,8 +1,4 @@
-export default class Lazy {
-  static fromGenerator(generator, scope) {
-    return new Lazy(() => [...generator.call(scope)])
-  }
-
+export class Lazy {
   constructor(load) {
     this.load = load
   }
@@ -12,5 +8,11 @@ export default class Lazy {
       this.value$ = this.load()
     }
     return this.value$
+  }
+}
+
+export class LazyGenerator extends Lazy {
+  constructor(generator, scope) {
+    super(() => [...generator.call(scope)])
   }
 }

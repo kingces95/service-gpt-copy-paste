@@ -1,25 +1,22 @@
 #!/usr/bin/env node
+import { Cli } from '@kingjs/cli'
+import { CliRxPoller } from '@kingjs/cli-rx-poller'
 import { Clipboard } from '@napi-rs/clipboard'
 import { exhaustMap, filter, first } from 'rxjs/operators'
-import { CliPoller } from '@kingjs/cli-poller'
 
 const PREFIX = '!#/clipboard/'
 
-export default class CliPollClipboard extends CliPoller {
-  static metadata = Object.freeze({
-    name: 'poll',
-    description: 'Poll clipboard content',
-    options: {
-      prefix: { type: 'string', default: PREFIX, description: 'Prefix to match in clipboard content.' },
-    }
-  })
+export class CliPollClipboard extends CliRxPoller {
+  static info = CliPollClipboard.load()
+  static description = 'Poll clipboard content'
+  static descriptions = {
+    prefix: 'Prefix to match in clipboard content.'
+  }
 
-  constructor(options) {
-    const { 
-      prefix = PREFIX, 
-      ...rest 
-    } = options
-    
+  constructor({ prefix = PREFIX, ...rest } = { }) {
+    if (Cli.isLoading(arguments) || CliPollClipboard.saveDefaults({ prefix }))
+      return super(Cli.loading)
+
     const clipboard = new Clipboard()
     super(rest,
       exhaustMap(async () => clipboard.getText()),
@@ -30,3 +27,5 @@ export default class CliPollClipboard extends CliPoller {
     return this
   }
 }
+
+// CliPollClipboard.__dumpLoader()

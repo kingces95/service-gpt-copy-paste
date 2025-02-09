@@ -1,32 +1,34 @@
 #!/usr/bin/env node
 
+import { Cli } from '@kingjs/cli'
+import { CliRx } from '@kingjs/cli-rx'
 import { interval, timer } from 'rxjs'
 import { switchMap, tap, retry, takeUntil } from 'rxjs/operators'
-import CliRx from '@kingjs/cli-rx'
 
 const POLL_MS = 200
 const ERROR_RATE = 0.01
 const ERROR_MS = 1000
 
-export class CliPoller extends CliRx {
-  static metadata = Object.freeze({
-    options: {
-      pollMs: { type: 'number', default: POLL_MS, description: 'Polling interval in milliseconds.' },
-      errorRate: { type: 'number', default: ERROR_RATE, description: 'Simulated polling error rate.' },
-      errorMs: { type: 'number', default: ERROR_MS, description: 'Milliseconds to delay after error.' },
-      writeError: { type: 'boolean', description: 'Write error messages to stderr.' },
-    }
-  })
+export class CliRxPoller extends CliRx {
+  static info = CliRxPoller.load()
+  static descriptions = {
+    pollMs: 'Polling interval in milliseconds.',
+    errorRate: 'Simulated polling error rate.',
+    errorMs: 'Milliseconds to delay after error.',
+    writeError: 'Write error messages to stderr.',
+  }
 
-  constructor(options, ...workflow) {
-    const { 
-      pollMs = POLL_MS, 
-      errorRate = ERROR_RATE, 
-      errorMs = ERROR_MS, 
-      writeError,
-      ...rest 
-    } = options
-    
+  constructor({ 
+    pollMs = POLL_MS,
+    errorRate = ERROR_RATE,
+    errorMs = ERROR_MS,
+    writeError = false,
+    ...rest
+  } = { }, ...workflow) {
+    if (Cli.isLoading(arguments) || CliRxPoller.saveDefaults({ 
+      pollMs, errorRate, errorMs, writeError }))
+      return super(Cli.loading)
+
     super(rest, interval(pollMs).pipe(
       tap(() => this.is$('polling')),
       switchMap(async () => { 
@@ -60,3 +62,5 @@ export class CliPoller extends CliRx {
     return super.toString()
   }  
 }
+
+// CliRxPoller.__dumpLoader()

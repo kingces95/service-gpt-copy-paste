@@ -1,0 +1,15 @@
+{
+  "name": "@kingjs/cli-info-to-pojo",
+  "version": "1.0.0",
+  "description": "Cli info tree to pojo.",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "peerDependencies": {},
+  "author": "Chris King",
+  "license": "MIT"
+}

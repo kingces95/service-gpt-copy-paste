@@ -1,5 +1,5 @@
 {
-  "name": "@kingjs/cli-poller",
+  "name": "@kingjs/cli-rx-poller",
   "version": "1.0.0",
   "description": "A tool to robustly poll.",
   "main": "index.js",

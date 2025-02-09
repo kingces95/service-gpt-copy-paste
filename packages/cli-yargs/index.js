@@ -6,15 +6,15 @@ export default class CliYargs {
   static symbol = Symbol('CliYargs.MemberInfo')
 
   static buildCommand(name, positionals = []) {
-    const parts = [name];
+    const parts = [name]
 
     for (const positional of positionals) {
-      const isOptional = positional.type === 'array' || positional.default !== undefined;
-      const part = isOptional ? `[${positional.name}...]` : `<${positional.name}>`;
-      parts.push(part);
+      const isOptional = positional.type === 'array' || positional.default !== undefined
+      const part = isOptional ? `[${positional.name}...]` : `<${positional.name}>`
+      parts.push(part)
     }
 
-    return parts.join(' ');
+    return parts.join(' ')
   }
 
   static buildPositional(positional) {
@@ -29,7 +29,7 @@ export default class CliYargs {
       implies: positional?.implies,
       normalize: positional?.normalize,
       type: positional?.type,
-    };
+    }
   }
 
   static buildOption(option) {
@@ -52,32 +52,32 @@ export default class CliYargs {
       hidden: option?.hidden,
       number: option?.type === 'number',
       string: option?.type === 'string',
-    };
+    }
   }
 
   static loadPositionals(yargs$, context) {
     for (const [_, pojo] of context) {
       for (const positional of pojo.positionals ?? []) {
-        yargs$.positional(positional.name, CliYargs.buildPositional(positional));
+        yargs$.positional(positional.name, CliYargs.buildPositional(positional))
       }
     }
   }
 
   static loadOptions(yargs$, group, pojo) {
     for (const [name, option] of Object.entries(pojo.options ?? {})) {
-      yargs$.option(name, CliYargs.buildOption(option));
-      yargs$.group(name, `Options (${group}):`);
+      yargs$.option(name, CliYargs.buildOption(option))
+      yargs$.group(name, `Options (${group}):`)
     }
   }
 
   static load(yargs$, pojo, name = 'global', parentContext = []) {
-    const context = [[name, pojo], ...parentContext];
+    const context = [[name, pojo], ...parentContext]
 
     // load positionals
-    CliYargs.loadPositionals(yargs$, context);
+    CliYargs.loadPositionals(yargs$, context)
 
     // load options
-    CliYargs.loadOptions(yargs$, name, pojo);
+    CliYargs.loadOptions(yargs$, name, pojo)
 
     // load groups
     for (const [name, group] of Object.entries(pojo.groups ?? {})) {
@@ -86,7 +86,7 @@ export default class CliYargs {
         group.description || '<missing group description>',
         (subYargs) => CliYargs.load(subYargs, group, name, context),
         (argv) => argv[CliYargs.memberInfoSymbol] = group
-      );
+      )
     }
 
     // load commands
@@ -96,22 +96,22 @@ export default class CliYargs {
         command.description || '<missing command description>',
         (subYargs) => CliYargs.load(subYargs, command, name, context),
         (argv) => argv[CliYargs.memberInfoSymbol] = command
-      );
+      )
     }
   }
 
   constructor(pojo) {
     this.yargs$ = yargs()
-      .demandCommand(1, `You need to specify a command`);
+      .demandCommand(1, `You need to specify a command`)
 
-    CliYargs.load(this.yargs$, pojo);
+    CliYargs.load(this.yargs$, pojo)
   }
 
   parse(argv = hideBin(process.argv)) {
-    var args = this.yargs$.parse(argv);
-    var command = args[CliYargs.memberInfoSymbol];
-    delete args[CliYargs.memberInfoSymbol];
-    return { command, args };
+    var args = this.yargs$.parse(argv)
+    var command = args[CliYargs.memberInfoSymbol]
+    delete args[CliYargs.memberInfoSymbol]
+    return { command, args }
   }
 }
 
