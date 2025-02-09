@@ -9,6 +9,14 @@ import CliPollClipboard from '@kingjs/cli-poll-clipboard'
 import toPojoSymbol from '@kingjs/cli-node'
 import CliYargs from '@kingjs/cli-yargs'
 
+class CliReflect extends Cli {
+  constructor({ ...rest }) {
+    super(rest)
+
+    console.log(this.info.parent[toPojoSymbol]())
+  }
+}
+
 const metadata = {
   http: {
     get: CliGet,
@@ -31,19 +39,14 @@ const metadata = {
   },
   orb: CliOrb,
   poll: CliPollClipboard,
-  '*': Cli,
-}
-
-class CliReflect extends Cli {
-  constructor({ signal }) {
-    super(signal)
-  }
+  reflect: CliReflect,
 }
 
 const loader = new CliLoader()
 const group = new CliGroupInfo(loader, metadata)
-const pojo = group[toPojoSymbol]()
-//console.log(JSON.stringify(group[toPojoSymbol](), null, 2))
+const pojo = group[toPojoSymbol]({ attachSource: true })
+// console.log(JSON.stringify(group[toPojoSymbol](), null, 2))
 const cli = new CliYargs(pojo)
 const { command: { [toPojoSymbol]: command }, args } = cli.parse()
+args[Cli.InfoSymbol] = command
 command.run(args)

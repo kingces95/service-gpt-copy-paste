@@ -2,15 +2,19 @@ import _ from 'lodash'
 
 export const toPojoSymbol = Symbol('to-pojo-metadata')
 
-export function toPojo(info) {
-  const [_, pojo] = toPojo$(this) 
+export function toPojo(options = {}) {
+  const [_, pojo] = toPojo$(this, options) 
   return pojo
 }
 
-function toPojo$(info) {
-  const result = {
-    [toPojoSymbol]: info
+function toPojo$(info, options) {
+  const result = { }
+  const { attachSource } = options
+
+  if (attachSource) {
+    result[toPojoSymbol] = info
   }
+
   let name = null
 
   for (const key in info.constructor[toPojoSymbol]) {
@@ -41,7 +45,7 @@ function toPojo$(info) {
     if (type === 'map') {
       const map = {}
       for (const item of _.sortBy([...value.call(info)], o => o.name)) {
-        const [name, pojo] = toPojo$(item)
+        const [name, pojo] = toPojo$(item, options)
         map[name] = pojo
         delete pojo.name
       }
@@ -55,7 +59,7 @@ function toPojo$(info) {
     if (type === 'list') {
       const list = []
       for (const item of value.call(info)) {
-        const [_, pojo] = toPojo$(item)
+        const [_, pojo] = toPojo$(item, options)
         list.push(pojo)
       }
       if (list.length === 0) {

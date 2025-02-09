@@ -1,0 +1,16 @@
+{
+  "name": "@kingjs/stream-null",
+  "version": "1.0.0",
+  "description": "Return the /dev/null stream.",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "keywords": [
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+  }
+}

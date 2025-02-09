@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 import { readChar, readString, read, readArray, readRecord } from '@kingjs/cli-read'
-import { write, writeRecord, joinFields } from '@kingjs/cli-echo'
+import { splitRecord, splitArray } from '@kingjs/cli-read'
+import { write, joinFields } from '@kingjs/cli-echo'
 import { Console } from 'console'
-import CliFdReadable from '@kingjs/cli-fd-readable'
-import CliFdWritable from '@kingjs/cli-fd-writable'
+import { CliFdReadable } from '@kingjs/cli-fd-readable'
+import { CliFdWritable }from '@kingjs/cli-fd-writable'
 import assert from 'assert'
+
+const CLI_INFO_SYMBOL = Symbol('Cli Info')
 
 const DEFAULT_IFS = ' '
 const STDIN_FD = 0
@@ -18,7 +21,7 @@ const EXIT_SIGINT = EXIT_ABORT + 2
 
 const IFS = DEFAULT_IFS
 
-class Cli {
+export class Cli {
   static metadata = Object.freeze({
     options: {
       help: { type: 'boolean', description: 'Show help' },
@@ -27,26 +30,23 @@ class Cli {
     }
   })
 
-  static toError(err) {
-    return err instanceof Error ? err : new Error(err || 'Internal error')
+  static InfoSymbol = CLI_INFO_SYMBOL
+
+  static async splitArray(line) {
+    return splitArray(line, IFS)
   }
 
-  static getDefaults(options = {}) {
-    return Object.fromEntries(
-      Object.entries(options).map(([key, { default: value }]) => [key, value])
-    )
+  static async splitRecord(line, fields) {
+    return splitRecord(line, IFS, fields)
   }
 
-  static async readArray(line) {
-    return readArray(line, null, IFS)
+  static joinFields(fields) {
+    return joinFields(IFS, fields)
   }
 
-  static async readRecord(line, fields) {
-    return readRecord(line, null, IFS, fields)
-  }
-
-  constructor({ verbose } = {}) {
+  constructor({ verbose, [Cli.InfoSymbol]: info } = {}) {
     this.verbose = verbose
+    this.info = info
     
     // handle graceful shutdown
     this.exitCode = undefined
@@ -80,7 +80,7 @@ class Cli {
   }
 
   async writeRecord(fields) {
-    return this.write(joinFields(IFS, fields))
+    return write(Cli.joinFields(fields))
   }
 
   async readChar() {
@@ -118,7 +118,10 @@ class Cli {
   async error$(error) {
     this.exitError = error
     this.exitCode = EXIT_ERRORED
-    console.error(Cli.toError(error))
+    error = error instanceof Error 
+      ? error 
+      : new Error(err || 'Internal error')
+    console.error(error)
   }
 
   get running() { return process.exitCode === undefined }
@@ -129,7 +132,10 @@ class Cli {
 
   toString() {
     if (this.succeeded)
-      return 'Command succeeded'
+      if (this.stderr.count)
+        return 'Command succeeded with warnings'
+      else
+        return 'Command succeeded'
     if (this.aborted)
       return `Command aborted`
     if (this.failed)
@@ -141,5 +147,3 @@ class Cli {
     return 'Running...'
   }
 }
-
-export { Cli }

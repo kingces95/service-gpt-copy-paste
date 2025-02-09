@@ -1,7 +1,7 @@
 import fs from 'fs'
 import { Writable } from 'stream'
 
-export default class CliFdWritable extends Writable {
+export class CliFdWritable extends Writable {
   constructor({ fd, autoClose = true }) {
     super()
     this.fd = fd

@@ -161,7 +161,7 @@ class CliGroupInfo extends CliMemberInfo {
   get description() { 
     return this.groupData.description$ 
       || this.defaultCommand?.description 
-      || '<default description>'
+      || '<missing group description>'
   }
 }
 

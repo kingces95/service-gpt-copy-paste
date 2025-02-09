@@ -72,12 +72,7 @@ export async function readString(stream, signal, charCount) {
   return charReader.toString() // Convert the buffered bytes to a string
 }
 
-export async function read(streamOrLine, signal) {
-  if (typeof streamOrLine == 'string') {
-    return streamOrLine
-  }
-
-  const stream = streamOrLine
+export async function read(stream, signal) {
   const charReader = new Utf8CharReader()
 
   while (true) {
@@ -108,15 +103,23 @@ export function* split$(line, count, ifs = ' ') {
   yield line.slice(lastIndex)
 }
 
-export async function readArray(streamOrLine, signal, ifs) {
-  const line = await read(streamOrLine, signal)
+export async function readArray(stream, signal, ifs) {
+  const line = await read(stream, signal)
+  return splitArray(line, ifs)
+}
+
+export async function splitArray(line, ifs) {
   const iterator = split$(line, Infinity, ifs)
   return Array.from(iterator)
 }
 
-export async function readRecord(streamOrLine, signal, ifs, fields) {
-  const line = await read(streamOrLine, signal)
-  let record = {}
+export async function readRecord(stream, signal, ifs, fields) {
+  const line = await read(stream, signal)
+  return splitRecord(line, ifs, fields)
+}
+
+export async function splitRecord(line, ifs, fields) {
+  let record = { }
 
   if (Array.isArray(fields)) {
     const iterator = split$(line, fields.length, ifs)

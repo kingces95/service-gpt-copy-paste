@@ -1,16 +1,37 @@
 import { Cli } from '@kingjs/cli'
 import { AbortError } from '@kingjs/abort-error'
 import ora from 'ora'
+import os from 'os'
+import process from 'process'
+
+const CPU_HOT = 80
+const MEM_HOT = 90
+
+const NORMAL_INTERVAL = 100
+const HOT_INTERVAL = 50
+
+const DOTS_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+const DOTS2_FRAMES = ['⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷']
+
+const INIT_COLOR = 'gray'
+const NORMAL_COLOR = 'cyan'
+const WARN_COLOR = 'yellow'
 
 export default class CliOrb extends Cli {
   static metadata = Object.freeze({
     name: 'orb',
     description: 'Tool for rendering status to tty',
-    options: { }
+    options: {
+      cpuHot: { type: 'number', default: CPU_HOT, description: 'Threshold for high CPU usage' },
+      memHot: { type: 'number', default: MEM_HOT, description: 'Threshold for high memory usage' }
+    }
   })
   
   constructor(options) {
     super(options)
+    
+    this.cpuHot = options.cpuHot || CPU_HOT
+    this.memHot = options.memHot || MEM_HOT
 
     this.stats = { in: 0, out: 0, error: 0 }
     this.message = ''
@@ -25,15 +46,16 @@ export default class CliOrb extends Cli {
   }
 
   formatNumber(num) {
-    if (num >= 1e6) return (num / 1e6).toFixed(1) + 'm';
-    if (num >= 1e3) return (num / 1e3).toFixed(1) + 'k';
-    return num.toString();
+    if (num >= 1e6) return (num / 1e6).toFixed(1) + 'm'
+    if (num >= 1e3) return (num / 1e3).toFixed(1) + 'k'
+    return num.toString()
   }
 
   async start() {
-    this.spinner = ora({ 
-      spinner: 'dots', 
-    }).start();
+    this.spinner = ora({ spinner: { 
+      interval: NORMAL_INTERVAL, 
+      frames: DOTS_FRAMES
+    }, color: INIT_COLOR}).start()
 
     while (true) {
       try {
@@ -44,14 +66,16 @@ export default class CliOrb extends Cli {
         const { type, rest } = record
 
         if (type == 'data') {
-          this.stats = await Cli.readRecord(
-            rest, { inCount: '#', outCount: '#', errorCount: '#' }) 
+          this.stats = await Cli.splitRecord(
+            rest, { inCount: '#', outCount: '#', errorCount: '#', cpu: '#', memory: '#' }) 
+
+          this.adjustSpinner(this.stats.cpu, this.stats.memory)
           this.spinner.text = this.toString()
           continue
         }
 
         if (type == 'exiting') {
-          const { code } = await Cli.readRecord(rest, { code: '#' })
+          const { code } = await Cli.splitRecord(rest, { code: '#' })
           process.exitCode = code
           continue
         }
@@ -59,19 +83,37 @@ export default class CliOrb extends Cli {
         if (['succeeded', 'failed', 'aborted', 'errored'].includes(type)) {
           this.message = rest
 
+          this.stats.cpu = 0
+          this.stats.memory = 0
+
           if (type === 'succeeded') {
-            this.spinner.succeed(this.toString())
+            if (this.stats.errorCount) {
+              this.spinner.warn(this.toString())
+            } else {
+              this.spinner.succeed(this.toString())
+            }
           } else {
             this.spinner.fail(this.toString())
           }
           break
         } 
-        
-        this.message = rest
+
+        if (type == 'initializing') {
+          this.message = rest
+          this.spinner.color = INIT_COLOR
+
+        } else if (type == 'warning') {
+          const { warnType, warnMessage } = await Cli.splitRecord(rest, ['warnType', 'warnMessage'])
+          this.message = warnMessage
+          this.spinner.color = WARN_COLOR
+          
+        } else {
+          this.message = rest
+          this.spinner.color = NORMAL_COLOR
+        }
+
         this.spinner.text = this.toString()
       } catch (err) {
-        // ignore interrupt and instead wait for a 
-        // (1) finish status or (2) stdin closure.
         if (err instanceof AbortError)
           continue
         
@@ -82,31 +124,35 @@ export default class CliOrb extends Cli {
     }
   }
 
+  adjustSpinner(cpu, memory) {
+    this.spinner.spinner = {
+      interval: cpu < this.cpuHot ? NORMAL_INTERVAL : HOT_INTERVAL,
+      frames: memory < this.memHot ? DOTS_FRAMES : DOTS2_FRAMES
+    }
+  }
+
   toString() {
-    const { inCount, outCount, errorCount } = this.stats;
-    const parts = [this.message];
-    const statsParts = [];
+    const { inCount, outCount, errorCount, cpu, memory } = this.stats
+    const parts = []
+
+    parts.push(this.message, ' ')
 
     if (inCount || outCount) {
       if (inCount) {
-        statsParts.push(this.formatNumber(inCount));
+        parts.push(this.formatNumber(inCount))
       }
   
-      statsParts.push('>');
+      parts.push('>')
       
       if (outCount) {
-        statsParts.push(this.formatNumber(outCount));
+        parts.push(this.formatNumber(outCount))
       }
     }
      
     if (errorCount) {
-      statsParts.push('!', this.formatNumber(errorCount));
+      parts.push('!', this.formatNumber(errorCount))
     }
 
-    if (statsParts.length) {
-      parts.push(' ','(', ...statsParts, ')');
-    }
-
-    return parts.join('');
+    return parts.join('')
   }
 }

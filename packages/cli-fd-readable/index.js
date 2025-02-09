@@ -1,7 +1,7 @@
 import fs from 'fs'
 import { Readable } from 'stream'
 
-export default class CliFdReadable extends Readable {
+export class CliFdReadable extends Readable {
   constructor({ fd }) {
     super()
     this.fd = fd

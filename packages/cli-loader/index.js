@@ -87,7 +87,7 @@ class CliClassInfo extends CliLoaderInfo {
     super(loader, cls.name)
     this.cls$ = cls
 
-    this.description$ = new Lazy(() => this.metadata.description)
+    this.description$ = new Lazy(() => this.metadata?.description)
 
     this.metadata$ = new Lazy(
       // harvest metadata declared on the class; do not inherit metadata

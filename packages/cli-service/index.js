@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 import { Cli } from '@kingjs/cli'
 import { writeRecord } from '@kingjs/cli-echo'
-import CliFdWritable from '@kingjs/cli-fd-writable'
+import { streamNull } from '@kingjs/stream-null'
+import { CliServiceHeartbeat } from '@kingjs/cli-service-heartbeat'
+import { CliFdWritable } from '@kingjs/cli-fd-writable'
 import assert from 'assert'
 
 const STDOUT_FD = 1
@@ -22,18 +24,17 @@ export class CliService extends Cli {
 
   constructor({ stdis, stdisFd = STDOUT_FD, ...options } = {}) {
     super(options)
-    this.heartbeat = false
-        
+    this.heartbeatService = new CliServiceHeartbeat()
+    this.stdis = stdis ? new CliFdWritable({ fd: stdisFd }) : streamNull
+    
     const abortController = new AbortController()
     this.signal = abortController.signal
 
-    // handle abort initiation
     process.once('SIGINT', () => {
       this.is$('aborting')
       abortController.abort()
     })
 
-    // handle graceful shutdown
     process.once('beforeExit', async () => {
       const code = process.exitCode
       assert(code !== undefined)
@@ -43,50 +44,34 @@ export class CliService extends Cli {
         this.succeeded ? 'succeeded' :
         this.aborted ? 'aborted' :
         this.errored ? 'errored' :
-        'failed')
+        'failed'
+      )
     })
 
-    if (stdis) {
-      this.stdis = new CliFdWritable({ fd: stdisFd })
-      this.heartbeat = true
-      this.start$()
-    }
-    
-    // report status
+    this.heartbeatService.start$((cpu, memory) => {
+      this.update$('data', 
+        this.stdin.count, this.stdout.count, this.stderr.count, 
+        cpu, memory)
+    })
     this.is$('initializing')
   }
 
   async update$(...fields) {
-    if (this.stdis) {
-      await writeRecord(this.stdis, this.signal, IFS, [...fields])
-    }
+    await writeRecord(this.stdis, this.signal, IFS, [...fields])
   }
 
+  async warnThat$(name) {
+    this.state$ = name
+    await this.update$('warning', name, this.toString())
+  }
+  
   async is$(name) {
     this.state$ = name
     await this.update$(name, this.toString())
   }
 
-  async start$() {
-    let report = () => this.update$(
-      'data', this.stdin.count, this.stdout.count, this.stderr.count)
-
-    let ms = 0
-    while (this.heartbeat) {
-      await new Promise((resolve) => setTimeout(resolve, 100))
-      ms += 100
-      if (ms < 1000) 
-        continue
-      
-      report()
-      ms = 0
-    }
-
-    report()
-  }
-
   async stop$() {
-    this.heartbeat = false
+    await this.heartbeatService.stop$()
     await this.is$('stopping')
   }
 
@@ -119,9 +104,7 @@ export class CliService extends Cli {
   get stopping() { return this.state$ == 'stopping' }
 
   toString() {
-    if (!this.running)
-      return super.toString()
-    
+    if (!this.running) return super.toString()
     const state = this.state$
     return state.charAt(0).toUpperCase() + state.slice(1) + '...'
   }

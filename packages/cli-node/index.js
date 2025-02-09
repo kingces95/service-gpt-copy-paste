@@ -1,4 +1,5 @@
 import {
+  CliInfo,
   CliParameterInfo,
   CliOptionInfo,
   CliPositionalInfo,
@@ -50,6 +51,6 @@ CliGroupInfo[toPojoSymbol] = {
   commands: 'map'
 }
 
-CliGroupInfo.prototype[toPojoSymbol] = toPojo
+CliInfo.prototype[toPojoSymbol] = toPojo
 
 export default toPojoSymbol
