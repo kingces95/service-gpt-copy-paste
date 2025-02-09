@@ -26,7 +26,7 @@ class CliHttp extends Cli {
     '@kingjs/cli-http CliHttpPatch',
     '@kingjs/cli-http CliHttpHead',
   ]
-  static info = CliHttp.load()
+  static meta = CliHttp.load()
 
   constructor(url, headers = 0, { method = 'GET', ...rest } = { }) {
     if (Cli.isLoading(arguments) || CliHttp.saveDefaults(url, headers, { method }))
@@ -132,7 +132,7 @@ for (const [name, { method, description }] of Object.entries(METHODS))  {
   Object.defineProperty(httpMethodCls, "name", { value: name });
   generatedClasses[name] = httpMethodCls
   
-  httpMethodCls.info = httpMethodCls.load()
+  httpMethodCls.meta = httpMethodCls.load()
 }
 
 export { CliHttp }

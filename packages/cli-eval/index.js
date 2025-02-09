@@ -13,7 +13,7 @@ class CliEval extends Cli {
   static choices = {
     shell: [ 'bash', 'cmd.exe' ]
   }
-  static info = CliEval.load()
+  static meta = CliEval.load()
 
   constructor(exe, args = [], { shell, ...rest } = { }) {
     if (Cli.isLoading(arguments) || CliEval.saveDefaults(exe, args, { shell }))
@@ -62,7 +62,7 @@ class CliEval extends Cli {
 
 class CliEvalBash extends CliEval {
   static description = 'Evaluate a bash shell command'
-  static info = CliEvalBash.load()
+  static meta = CliEvalBash.load()
   
   constructor(...args) {
     if (Cli.isLoading(arguments) || CliEvalBash.saveDefaults({ }))
@@ -75,7 +75,7 @@ class CliEvalBash extends CliEval {
 
 class CliEvalCmd extends CliEval {
   static description = 'Evaluate a cmd shell command'
-  static info = CliEvalCmd.load()
+  static meta = CliEvalCmd.load()
   
   constructor(...args) {
     if (Cli.isLoading(arguments) || CliEvalCmd.saveDefaults({ }))
@@ -91,4 +91,4 @@ export {
   CliEval 
 }
 
-CliEval.__dumpLoader()
+// CliEval.__dumpLoader()

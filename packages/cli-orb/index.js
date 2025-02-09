@@ -23,7 +23,7 @@ export default class CliOrb extends Cli {
     cpuHot: 'Threshold for high CPU usage',
     memHot: 'Threshold for high memory usage',
   }
-  static info = CliOrb.load()
+  static meta = CliOrb.load()
   
   constructor({ cpuHot = CPU_HOT, memHot = MEM_HOT, ...rest } = { }) {
     if (Cli.isLoading(arguments) || CliOrb.saveDefaults({ cpuHot, memHot }))

@@ -1,7 +1,7 @@
 {
-  "name": "@kingjs/cli-loader",
+  "name": "@kingjs/cli-meta-to-pojo",
   "version": "1.0.0",
-  "description": "Classes for loading metadata found on javascript classes.",
+  "description": "Cli meta to pojo.",
   "main": "index.js",
   "type": "module",
   "exports": {

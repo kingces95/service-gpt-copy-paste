@@ -4,11 +4,11 @@ import { splitRecord, splitArray } from '@kingjs/cli-read'
 import { write, joinFields } from '@kingjs/cli-echo'
 import { Console } from 'console'
 import { CliFdReadable } from '@kingjs/cli-fd-readable'
-import { CliFdWritable }from '@kingjs/cli-fd-writable'
-import { CliLoader } from '@kingjs/cli-loader'
-import { cliLoaderToPojo } from '@kingjs/cli-loader-to-pojo'
+import { CliFdWritable } from '@kingjs/cli-fd-writable'
+import { CliMetaLoader } from '@kingjs/cli-meta-loader'
+import { cliMetaToPojo } from '@kingjs/cli-meta-to-pojo'
+import { dumpPojo } from '@kingjs/dump-pojo'
 import assert from 'assert'
-import util from 'util'
 
 const CLI_LOADING_SYMBOL = Symbol('Cli loading')
 
@@ -23,16 +23,11 @@ const EXIT_ABORT = 128
 const EXIT_SIGINT = EXIT_ABORT + 2
 
 const IFS = DEFAULT_IFS
+const loader = new CliMetaLoader()
 
 export class Cli {
-  static loader = new CliLoader()
-  static __dumpLoader() {
-    cliLoaderToPojo(Cli.loader)
-      .then(pojo => {
-        console.error(util.inspect(pojo, { colors: true, depth: null }))
-        // console.error(JSON.stringify(pojo, null, 2))
-      })
-  }
+  static __dumpLoader() { cliMetaToPojo(loader).then(dumpPojo) }
+  static __dumpMetadata() { cliMetaToPojo(this.metadata).then(dumpPojo) }
 
   static descriptions = {
     help: 'Show help',
@@ -43,7 +38,7 @@ export class Cli {
     help: ['h'],
     verbose: ['v'],
   }
-  static info = Cli.load()
+  static metadata = Cli.load()
 
   static loading = CLI_LOADING_SYMBOL
   static isLoading(args) {
@@ -51,22 +46,22 @@ export class Cli {
   }
 
   static load() {
-    assert(!Object.hasOwn(this, 'info'))
+    assert(!Object.hasOwn(this, 'metadata'))
     new this()
-    assert(Object.hasOwn(this, 'info'))
-    return this.info
+    assert(Object.hasOwn(this, 'metadata'))
+    return this.metadata
   }
 
   static saveDefaults(...args) {
     if (args[0] == CLI_LOADING_SYMBOL)
       return true
     
-    if (Object.hasOwn(this, 'info'))
+    if (Object.hasOwn(this, 'metadata'))
       return false
 
     // console.error('loading', this.name, args)
-    this.info = Cli.loader.load(this, args)
-    // console.error([...this.info.parameters()])
+    this.metadata = loader.load(this, args)
+    // console.error([...this.metadata.parameters()])
     return true
   }
 
@@ -186,4 +181,5 @@ export class Cli {
   }
 }
 
+// Cli.__dumpMetadata()
 // Cli.__dumpLoader()

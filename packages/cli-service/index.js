@@ -14,7 +14,7 @@ export class CliService extends Cli {
     stdis: 'Provide status updates',
     stdisFd: 'Fd to report status if stdis is set',
   }
-  static info = CliService.load()
+  static meta = CliService.load()
 
   constructor({ 
     stdis = false, 

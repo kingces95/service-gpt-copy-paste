@@ -1,0 +1,15 @@
+{
+  "name": "@kingjs/cli-meta-loader",
+  "version": "1.0.0",
+  "description": "Classes for loading metadata found on javascript classes.",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "peerDependencies": {},
+  "author": "Chris King",
+  "license": "MIT"
+}

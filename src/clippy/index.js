@@ -2,7 +2,7 @@ import _ from 'lodash'
 import CliYargs from '@kingjs/cli-yargs'
 import { cliInfoToPojo, toPojoSymbol } from '@kingjs/cli-info-to-pojo'
 import { Cli } from '@kingjs/cli'
-import { CliLoader } from '@kingjs/cli-loader'
+import { CliMetaLoader } from '@kingjs/cli-meta-loader'
 import { CliGroupInfo } from '@kingjs/cli-info'
 
 import { CliBashEval, CliCmdEval } from '@kingjs/cli-eval'
@@ -18,7 +18,7 @@ class Clippy extends Cli {
     '@kingjs/cli-http',
     '@kingjs/cli-eval',
   ]
-  static info = Clippy.load()
+  static meta = Clippy.load()
 
   constructor(options = { }) {
     if (Cli.isLoading(arguments) || Clippy.saveDefaults(options))
@@ -69,7 +69,7 @@ const metadata = {
   // reflect: CliReflect,
 }
 
-const loader = new CliLoader()
+const loader = new CliMetaLoader()
 const group = new CliGroupInfo(loader, metadata)
 
 const infoPojo = await cliInfoToPojo(group, { attachSource: true })

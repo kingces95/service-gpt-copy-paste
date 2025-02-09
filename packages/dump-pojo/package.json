@@ -1,7 +1,7 @@
 {
-  "name": "@kingjs/cli-loader-to-pojo",
+  "name": "@kingjs/dump-pojo",
   "version": "1.0.0",
-  "description": "Cli loader tree to pojo.",
+  "description": "Dump pojo to console.",
   "main": "index.js",
   "type": "module",
   "exports": {

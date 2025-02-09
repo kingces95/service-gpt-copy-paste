@@ -7,11 +7,11 @@ import { exhaustMap, filter, first } from 'rxjs/operators'
 const PREFIX = '!#/clipboard/'
 
 export class CliPollClipboard extends CliRxPoller {
-  static info = CliPollClipboard.load()
   static description = 'Poll clipboard content'
   static descriptions = {
     prefix: 'Prefix to match in clipboard content.'
   }
+  static meta = CliPollClipboard.load()
 
   constructor({ prefix = PREFIX, ...rest } = { }) {
     if (Cli.isLoading(arguments) || CliPollClipboard.saveDefaults({ prefix }))
@@ -28,4 +28,4 @@ export class CliPollClipboard extends CliRxPoller {
   }
 }
 
-// CliPollClipboard.__dumpLoader()
+CliPollClipboard.__dumpLoader()
