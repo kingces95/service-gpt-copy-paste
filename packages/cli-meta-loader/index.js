@@ -58,10 +58,19 @@ class CliMetaParameterInfo extends CliMetaInfo {
     this.type$ = CliMetaParameterInfo.getType(dfault)
   }
 
-  get isParameter() { return true }
-  get default() { return this.default$ }
   get classInfo() { return this.classInfo$ }
+  get isParameter() { return true }
+  get isOption() { return !this.isPositional }
+  get isPositional() { return this.position != undefined }
+
+  get description() { return this.classInfo.cls$?.parameter?.[this.name] }
+  get normalize() { this.classInfo.cls$?.normalize?.[this.name] }
+
+  get default() { return this.default$ }
   get hasDefault() { return this.hasDefault$ } 
+  get require() { return !this.hasDefault } 
+  get defaultDescription() { return this.classInfo.cls$?.defaultDescription?.[this.name] }
+  get coerce() { return this.classInfo.cls$?.coerce?.[this.name] }
 
   get type() { return this.type$ }
   get isArray() { return this.type === 'array' }
@@ -69,21 +78,15 @@ class CliMetaParameterInfo extends CliMetaInfo {
   get isBoolean() { return this.type === 'boolean' }
   get isNumber() { return this.type === 'number' } 
   get isCount() { return this.type === 'count' } 
-
-  get description() { return this.classInfo.cls$?.descriptions?.[this.name] }
   
   *aliases() { yield* this.classInfo.cls$?.aliases?.[this.name] ?? [] }
   *choices() { yield* this.classInfo.cls$?.choices?.[this.name] ?? [] }
-  *coerce() { yield* this.classInfo.cls$?.coercions?.[this.name] ?? [] }
   *conflicts() { yield* this.classInfo.cls$?.conflicts?.[this.name] ?? [] }
-  *defaultDescription() { yield* this.classInfo.cls$?.defaultDescriptions?.[this.name] ?? [] }
-  *implies() { yield* this.classInfo.cls$?.implications?.[this.name] ?? [] }
-  *normalize() { yield* this.classInfo.cls$?.normalizations?.[this.name] ?? [] }
+  *implications() { yield* this.classInfo.cls$?.implications?.[this.name] ?? [] }
 
   // CliClassOptionInfo
-  get require() { return !this.hasDefault } 
-  get global() { return false } 
-  get hidden() { return false }
+  get local() { return this.classInfo.cls$?.local?.[this.name] } 
+  get hidden() { return this.classInfo.cls$?.hidden?.[this.name] } 
 
   // CliClassPositionalInfo
   get position() { return undefined }
@@ -139,7 +142,7 @@ class CliMetaClassInfo extends CliMetaInfo {
     )
 
     this.positionals$ = new LazyGenerator(function* () {
-      const names = Object.keys(cls.descriptions)
+      const names = Object.keys(cls.parameter)
       for (let i = 0; i < defaults.length - 1; i++) {
         const name = names[i]
         yield new CliMetaPositionalInfo(this, name, defaults[i], i)

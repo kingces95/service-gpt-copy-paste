@@ -28,11 +28,13 @@ CliMetaParameterInfo[toPojoSymbol] = {
 
   type: 'string',
   require: 'boolean',
+  local: 'boolean',
+  hide: 'boolean',
   position: 'number',
   aliases: 'list',
   choices: 'list',
   conflicts: 'list',
-  implies: 'list',
+  implications: 'list',
 
   // coerce, defaultDescription, normalize
 }

@@ -10,7 +10,7 @@ const ERROR_RATE = 0.01
 const ERROR_MS = 1000
 
 export class CliRxPoller extends CliRx {
-  static descriptions = {
+  static parameter = {
     pollMs: 'Polling interval in milliseconds.',
     errorRate: 'Simulated polling error rate.',
     errorMs: 'Milliseconds to delay after error.',
@@ -25,8 +25,7 @@ export class CliRxPoller extends CliRx {
     writeError = false,
     ...rest
   } = { }, ...workflow) {
-    if (Cli.isLoading(arguments) || CliRxPoller.saveDefaults({ 
-      pollMs, errorRate, errorMs, writeError }))
+    if (new.target.super(arguments, { pollMs, errorRate, errorMs, writeError }))
       return super(Cli.loading)
 
     super(rest, interval(pollMs).pipe(

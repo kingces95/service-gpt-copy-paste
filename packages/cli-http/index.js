@@ -6,11 +6,11 @@ import { fromReadline } from '@kingjs/rx-from-readline'
 import readline from 'readline/promises'
 import { reduce } from 'rxjs/operators'
 
-const updateHttpMethods = ['POST', 'PUT', 'PATCH']
+const HTTP_UPDATE_METHODS = ['POST', 'PUT', 'PATCH']
 
-class CliHttp extends Cli {
+export class CliHttp extends Cli {
   static description = 'Send a HTTP request'
-  static descriptions = {
+  static parameter = {
     url: 'The url to request',
     headers: 'The number of lines to read as the HTTP header',
     method: 'The HTTP method to use',
@@ -18,23 +18,26 @@ class CliHttp extends Cli {
   static choices = {
     method: [ 'GET', 'PUT', 'POST', 'DELETE', 'PATCH', 'HEAD' ]
   }
-  static commands = [
-    '@kingjs/cli-http CliHttpPost',
-    '@kingjs/cli-http CliHttpGet',
-    '@kingjs/cli-http CliHttpPut',
-    '@kingjs/cli-http CliHttpDelete',
-    '@kingjs/cli-http CliHttpPatch',
-    '@kingjs/cli-http CliHttpHead',
-  ]
+  static local = {
+    method: true
+  }
+  static commands = {
+    post: '@kingjs/cli-http CliHttpPost',
+    get: '@kingjs/cli-http CliHttpGet',
+    put: '@kingjs/cli-http CliHttpPut',
+    delete: '@kingjs/cli-http CliHttpDelete',
+    patch: '@kingjs/cli-http CliHttpPatch',
+    head: '@kingjs/cli-http CliHttpHead',
+  }
   static meta = CliHttp.load()
 
   constructor(url, headers = 0, { method = 'GET', ...rest } = { }) {
-    if (Cli.isLoading(arguments) || CliHttp.saveDefaults(url, headers, { method }))
+    if (new.target.super(arguments, url, headers, { method }))
       return super(Cli.loading)
 
     super(rest)
 
-    const isUpdate = updateHttpMethods.includes(method)
+    const isUpdate = HTTP_UPDATE_METHODS.includes(method)
 
     // Activate readline interface
     const readlineInterface = readline.createInterface({ input: this.stdin })
@@ -107,42 +110,33 @@ class CliHttp extends Cli {
   }
 }
 
-const METHODS = {
-  CliHttpGet: { method: 'GET', description: 'Make a GET request' },
-  CliHttpPost: { method: 'POST', description: 'Make a POST request' },
-  CliHttpPut: { method: 'PUT', description: 'Make a PUT request' },
-  CliHttpDelete: { method: 'DELETE', description: 'Make a DELETE request' },
-  CliHttpPatch: { method: 'PATCH', description: 'Make a PATCH request' },
-  CliHttpHead: { method: 'HEAD', description: 'Make a HEAD request'  }
-}
+const exports = Object.fromEntries(
+  Object.entries({
+    CliHttpGet: { method: 'GET', description: 'Perform an http GET request' },
+    CliHttpPost: { method: 'POST', description: 'Perform an http POST request' },
+    CliHttpPut: { method: 'PUT', description: 'Perform an http PUT request' },
+    CliHttpDelete: { method: 'DELETE', description: 'Perform an http DELETE request' },
+    CliHttpPatch: { method: 'PATCH', description: 'Perform an http PATCH request' },
+    CliHttpHead: { method: 'HEAD', description: 'Perform an http HEAD request' }
+  }).map(([name, { method, description }]) => [
+    name,
+    CliHttp.extend({
+      name,
+      description,
+      ctor: function (url, headers = 0, options = {}) {
+        return !this ? [url, headers, {}] : [url, headers, { method, ...options }]
+      }
+    })
+  ])
+)
 
-const generatedClasses = {}
-
-for (const [name, { method, description }] of Object.entries(METHODS))  {
-  const httpMethodCls = class extends CliHttp {
-  static description = description
-
-    constructor(...args) {
-      if (Cli.isLoading(arguments) || generatedClasses[name].saveDefaults({ }))
-        return super(Cli.loading)
-  
-      super(...args, { method })
-    }
-  }
-  Object.defineProperty(httpMethodCls, "name", { value: name });
-  generatedClasses[name] = httpMethodCls
-  
-  httpMethodCls.meta = httpMethodCls.load()
-}
-
-export { CliHttp }
 export const { 
-  CliHttpGet, 
-  CliHttpPost, 
-  CliHttpPut, 
-  CliHttpDelete, 
-  CliHttpPatch, 
-  CliHttpHead 
-} = generatedClasses
+  CliHttpGet,
+  CliHttpPost,
+  CliHttpPut,
+  CliHttpDelete,
+  CliHttpPatch,
+  CliHttpHead,
+} = exports
 
 CliHttp.__dumpLoader()

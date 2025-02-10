@@ -18,15 +18,15 @@ CliParameterInfo[toPojoSymbol] = {
   default: 'any',
   defaultDescription: 'string',
   implies: 'array',
-  isNormalized: 'boolean',
-  type: 'string'
+  normalized: 'boolean',
+  type: 'string',
+  require: 'boolean',
 }
 
 CliOptionInfo[toPojoSymbol] = {
   ...CliParameterInfo[toPojoSymbol],
-  isDemandOption: 'boolean',
   isGlobal: 'boolean',
-  isHidden: 'boolean'
+  isHidden: 'boolean',
 }
 
 CliPositionalInfo[toPojoSymbol] = {

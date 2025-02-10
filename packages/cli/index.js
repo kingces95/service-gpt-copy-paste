@@ -29,7 +29,7 @@ export class Cli {
   static __dumpLoader() { cliMetaToPojo(loader).then(dumpPojo) }
   static __dumpMetadata() { cliMetaToPojo(this.metadata).then(dumpPojo) }
 
-  static descriptions = {
+  static parameter = {
     help: 'Show help',
     version: 'Show version number',
     verbose: 'Provide verbose output',
@@ -41,8 +41,30 @@ export class Cli {
   static metadata = Cli.load()
 
   static loading = CLI_LOADING_SYMBOL
-  static isLoading(args) {
-    return args[0] === CLI_LOADING_SYMBOL
+
+  static extend({ name, ctor, ...metadata }) {
+    const cls = class extends this {
+      constructor(...args) {
+        var defaults = ctor.call()
+  
+        if (new.target.super(arguments, ...defaults))
+          return super(Cli.loading)
+    
+        super(...ctor.call(this, ...args))
+      }
+    }
+    Object.defineProperty(cls, "name", { value: name });
+    
+    const knownKeys = ['name', 'ctor']
+    for (const [key, value] of Object.entries(metadata)) {
+      if (knownKeys.includes(key))
+        continue
+      cls[key] = value
+    }
+  
+    cls.meta = cls.load()
+  
+    return cls
   }
 
   static load() {
@@ -52,16 +74,15 @@ export class Cli {
     return this.metadata
   }
 
-  static saveDefaults(...args) {
-    if (args[0] == CLI_LOADING_SYMBOL)
+  static super(_arguments, ...args) {
+    const isLoading = _arguments[0] === CLI_LOADING_SYMBOL
+    if (isLoading)
       return true
     
     if (Object.hasOwn(this, 'metadata'))
       return false
 
-    // console.error('loading', this.name, args)
     this.metadata = loader.load(this, args)
-    // console.error([...this.metadata.parameters()])
     return true
   }
 
@@ -78,7 +99,7 @@ export class Cli {
   }
 
   constructor({ help = false, version = '0.0', verbose = false } = {}) {
-    if (Cli.isLoading(arguments) || Cli.saveDefaults({ help, version, verbose }))
+    if (new.target.super(arguments, { help, version, verbose }))
       return
     
     // handle graceful shutdown

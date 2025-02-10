@@ -12,7 +12,7 @@ export class CliRx extends CliService {
   static meta = CliRx.load()
 
   constructor(options = { }, workflow) {
-    if (Cli.isLoading(arguments) || CliRx.saveDefaults(options))
+    if (new.target.super(arguments, options))
       return super(Cli.loading)
 
     super(options)

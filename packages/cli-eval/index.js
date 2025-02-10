@@ -5,7 +5,7 @@ import { spawn } from 'child_process'
 
 class CliEval extends Cli {
   static description = 'Evaluate a shell command'
-  static descriptions = {
+  static parameter = {
     exe: 'The command to execute',
     args: 'Arguments for the command',
     shell: 'The shell to use'
@@ -13,10 +13,14 @@ class CliEval extends Cli {
   static choices = {
     shell: [ 'bash', 'cmd.exe' ]
   }
+  static commands = {
+    bash: '@kingjs/cli-eval CliEvalBash',
+    cmd: '@kingjs/cli-eval CliEvalCmd',
+  }
   static meta = CliEval.load()
 
   constructor(exe, args = [], { shell, ...rest } = { }) {
-    if (Cli.isLoading(arguments) || CliEval.saveDefaults(exe, args, { shell }))
+    if (new.target.super(arguments, exe, args, { shell }))
       return super(Cli.loading)
     
     super(rest)
@@ -65,7 +69,7 @@ class CliEvalBash extends CliEval {
   static meta = CliEvalBash.load()
   
   constructor(...args) {
-    if (Cli.isLoading(arguments) || CliEvalBash.saveDefaults({ }))
+    if (new.target.super(arguments, { }))
       return super(Cli.loading)
 
     this.verify(CliEvalBash, ...args)
@@ -78,7 +82,7 @@ class CliEvalCmd extends CliEval {
   static meta = CliEvalCmd.load()
   
   constructor(...args) {
-    if (Cli.isLoading(arguments) || CliEvalCmd.saveDefaults({ }))
+    if (new.target.super(arguments, { }))
       return super(Cli.loading)
 
     super(...args, { shell: 'cmd.exe' })
@@ -86,8 +90,8 @@ class CliEvalCmd extends CliEval {
 }
 
 export { 
-  CliEvalBash as CliBashEval, 
-  CliEvalCmd as CliCmdEval, 
+  CliEvalBash, 
+  CliEvalCmd, 
   CliEval 
 }
 
