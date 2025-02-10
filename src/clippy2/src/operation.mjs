@@ -7,7 +7,7 @@ export default class Operation extends EventEmitter {
 
     // Validate AbortSignal
     if (signal && !(signal instanceof AbortSignal)) {
-      throw new Error('Operation constructor expects an AbortSignal as the signal parameter.')
+      throw new Error('Operation constructor expects an AbortSignal as the signal parameters.')
     }
 
     this.signal = signal

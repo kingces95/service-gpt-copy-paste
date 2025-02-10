@@ -6,8 +6,8 @@ import {
   CliCommandInfo,
   CliGroupInfo
 } from '@kingjs/cli-info'
-
-import { toPojoSymbol, objectToPojo } from '@kingjs/to-pojo'
+import { trimPojo } from '@kingjs/pojo-trim'
+import { toPojoSymbol, toPojo } from '@kingjs/pojo-to'
 
 CliParameterInfo[toPojoSymbol] = {
   name: 'string',
@@ -36,7 +36,7 @@ CliPositionalInfo[toPojoSymbol] = {
 CliMemberInfo[toPojoSymbol] = {
   name: 'string',
   description: 'string',
-  options: 'map',
+  options: 'infos',
   positionals: 'list'
 }
 
@@ -46,15 +46,11 @@ CliCommandInfo[toPojoSymbol] = {
 
 CliGroupInfo[toPojoSymbol] = {
   ...CliMemberInfo[toPojoSymbol],
-  groups: 'map',
-  commands: 'map'
+  groups: 'infos',
+  commands: 'infos'
 }
 
-function cliInfoToPojo(info, ...args) {
-  return objectToPojo.call(info, ...args)
-}
-
-export {
-  toPojoSymbol,
-  cliInfoToPojo
+export async function cliInfoToPojo(info) {
+  const pojo = await toPojo.call(info)
+  return trimPojo(pojo)
 }

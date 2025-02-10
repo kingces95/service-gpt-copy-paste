@@ -1,10 +1,8 @@
 import _ from 'lodash'
-import CliYargs from '@kingjs/cli-yargs'
-import { cliInfoToPojo, toPojoSymbol } from '@kingjs/cli-info-to-pojo'
 import { Cli } from '@kingjs/cli'
-import { CliMetaLoader } from '@kingjs/cli-meta-loader'
-import { CliGroupInfo } from '@kingjs/cli-info'
-import { CliHttpGet } from '@kingjs/cli-http'
+// import CliYargs from '@kingjs/cli-yargs'
+// import { cliInfoToPojo, toPojoSymbol } from '@kingjs/cli-info-to-pojo'
+// import { CliMetaLoader } from '@kingjs/cli-meta-loader'
 
 class Clippy extends Cli {
   static description = 'My funky cli'
@@ -14,10 +12,16 @@ class Clippy extends Cli {
     http: '@kingjs/cli-http',
     eval: '@kingjs/cli-eval',
     moo: {
-      foo: {
-        bar: CliHttpGet,
-        baz: CliHttpGet,
-      },
+      description: 'My moo command',
+      commands: {
+        foo: {
+          description: 'My foo command',
+          commands: {
+            bar: '@kingjs/cli-http CliHttpGet',
+            baz: '@kingjs/cli-http CliHttpGet',
+          }
+        },
+      }
     },
   }
   static meta = Clippy.load()

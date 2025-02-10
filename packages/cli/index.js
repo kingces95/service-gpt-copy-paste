@@ -29,7 +29,7 @@ export class Cli {
   static __dumpLoader() { cliMetaToPojo(loader).then(dumpPojo) }
   static __dumpMetadata() { cliMetaToPojo(this.metadata).then(dumpPojo) }
 
-  static parameter = {
+  static parameters = {
     help: 'Show help',
     version: 'Show version number',
     verbose: 'Provide verbose output',

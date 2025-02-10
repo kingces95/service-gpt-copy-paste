@@ -5,7 +5,7 @@ import { spawn } from 'child_process'
 
 class CliEval extends Cli {
   static description = 'Evaluate a shell command'
-  static parameter = {
+  static parameters = {
     exe: 'The command to execute',
     args: 'Arguments for the command',
     shell: 'The shell to use'

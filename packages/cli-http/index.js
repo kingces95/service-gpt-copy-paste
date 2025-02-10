@@ -10,7 +10,7 @@ const HTTP_UPDATE_METHODS = ['POST', 'PUT', 'PATCH']
 
 export class CliHttp extends Cli {
   static description = 'Send a HTTP request'
-  static parameter = {
+  static parameters = {
     url: 'The url to request',
     headers: 'The number of lines to read as the HTTP header',
     method: 'The HTTP method to use',
@@ -123,8 +123,8 @@ const exports = Object.fromEntries(
     CliHttp.extend({
       name,
       description,
-      ctor: function (url, headers = 0, options = {}) {
-        return !this ? [url, headers, {}] : [url, headers, { method, ...options }]
+      ctor: function (url, headers, options = {}) {
+        return !this ? [{ }] : [url, headers, { method, ...options }]
       }
     })
   ])
@@ -138,5 +138,5 @@ export const {
   CliHttpPatch,
   CliHttpHead,
 } = exports
-
-CliHttp.__dumpLoader()
+  
+// CliHttp.__dumpLoader()

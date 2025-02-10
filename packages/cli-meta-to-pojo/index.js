@@ -4,11 +4,11 @@ import {
   CliMetaClassInfo,
   CliMetaLoader
 } from '@kingjs/cli-meta-loader'
-
-import { toPojoSymbol, mapToPojo, objectToPojo } from '@kingjs/to-pojo'
+import { trimPojo } from '@kingjs/pojo-trim'
+import { toPojoSymbol, toPojo } from '@kingjs/pojo-to'
 
 CliMetaLoader[toPojoSymbol] = {
-  classes: 'map',
+  classes: 'infos',
 }
 
 CliMetaInfo[toPojoSymbol] = {
@@ -18,7 +18,8 @@ CliMetaInfo[toPojoSymbol] = {
 
 CliMetaClassInfo[toPojoSymbol] = {
   ...CliMetaInfo[toPojoSymbol],
-  parameters: 'map',
+  parameters: 'infos',
+  commands: 'any',
 }
 
 CliMetaParameterInfo[toPojoSymbol] = {
@@ -39,9 +40,11 @@ CliMetaParameterInfo[toPojoSymbol] = {
   // coerce, defaultDescription, normalize
 }
 
-export function cliMetaToPojo(meta, ...args) {
-  if (meta instanceof CliMetaLoader) {
-    return mapToPojo(meta.classes(), ...args)
-  }
-  return objectToPojo(meta, ...args)
+export async function cliMetaToPojo(meta) {
+  let pojo = await toPojo(meta)
+
+  if (meta instanceof CliMetaLoader)
+    pojo = pojo.classes
+  
+  return trimPojo(pojo)
 }

@@ -19,7 +19,7 @@ const WARN_COLOR = 'yellow'
 
 export default class CliOrb extends Cli {
   static description = 'Tool for rendering status to tty'
-  static parameter = {
+  static parameters = {
     cpuHot: 'Threshold for high CPU usage',
     memHot: 'Threshold for high memory usage',
   }

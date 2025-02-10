@@ -10,7 +10,7 @@ const STDOUT_FD = 1
 const IFS = ' '
 
 export class CliService extends Cli {
-  static parameter = {
+  static parameters = {
     stdis: 'Provide status updates',
     stdisFd: 'Fd to report status if stdis is set',
   }

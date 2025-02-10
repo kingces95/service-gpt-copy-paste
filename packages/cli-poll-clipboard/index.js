@@ -8,7 +8,7 @@ const PREFIX = '!#/clipboard/'
 
 export class CliPollClipboard extends CliRxPoller {
   static description = 'Poll clipboard content'
-  static parameter = {
+  static parameters = {
     prefix: 'Prefix to match in clipboard content.'
   }
   static meta = CliPollClipboard.load()

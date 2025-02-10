@@ -1,12 +1,12 @@
 import _ from 'lodash'
 
-export function pojoTrim(object) {
+export function trimPojo(object) {
   if (_.isArray(object)) {
     if (!object.length)
       return
 
     return object
-      .map(pojoTrim)
+      .map(trimPojo)
       .filter(
         value => value !== null && 
                  value !== undefined && 
@@ -19,7 +19,7 @@ export function pojoTrim(object) {
       return
     
     return _.transform(object, (result, value, key) => {
-      const trimmedValue = pojoTrim(value)
+      const trimmedValue = trimPojo(value)
       if (
         trimmedValue !== null && 
         trimmedValue !== undefined && 

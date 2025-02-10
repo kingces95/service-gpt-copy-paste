@@ -63,7 +63,7 @@ class CliMetaParameterInfo extends CliMetaInfo {
   get isOption() { return !this.isPositional }
   get isPositional() { return this.position != undefined }
 
-  get description() { return this.classInfo.cls$?.parameter?.[this.name] }
+  get description() { return this.classInfo.cls$?.parameters?.[this.name] }
   get normalize() { this.classInfo.cls$?.normalize?.[this.name] }
 
   get default() { return this.default$ }
@@ -141,8 +141,10 @@ class CliMetaClassInfo extends CliMetaInfo {
       () => this.loader.load(Object.getPrototypeOf(cls.prototype)?.constructor)
     )
 
+    this.commands$ = Object.hasOwn(cls, 'commands') ? cls.commands : null
+
     this.positionals$ = new LazyGenerator(function* () {
-      const names = Object.keys(cls.parameter)
+      const names = Object.keys(cls.parameters)
       for (let i = 0; i < defaults.length - 1; i++) {
         const name = names[i]
         yield new CliMetaPositionalInfo(this, name, defaults[i], i)
@@ -166,6 +168,7 @@ class CliMetaClassInfo extends CliMetaInfo {
 
   get baseClass() { return this.baseClass$.value }
   get description() { return this.cls$.description }
+  get commands() { return this.commands$ }
 
   *parameters() { yield* this.parameters$.value }
   *positionals() { yield* this.positionals$.value }

@@ -1,5 +1,5 @@
 {
-  "name": "@kingjs/to-pojo",
+  "name": "@kingjs/pojo-to",
   "version": "1.0.0",
   "description": "Convert an tree of class instances into a pojo.",
   "main": "index.js",
