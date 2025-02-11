@@ -5,9 +5,9 @@ import { write, joinFields } from '@kingjs/cli-echo'
 import { Console } from 'console'
 import { CliFdReadable } from '@kingjs/cli-fd-readable'
 import { CliFdWritable } from '@kingjs/cli-fd-writable'
-import { CliMetaLoader } from '@kingjs/cli-meta-loader'
-import { cliMetaToPojo } from '@kingjs/cli-meta-to-pojo'
-import { dumpPojo } from '@kingjs/dump-pojo'
+import { CliMetadatLoader } from '@kingjs/cli-metadata'
+import { cliMetadataToPojo } from '@kingjs/cli-metadata-to-pojo'
+import { dumpPojo } from '@kingjs/pojo-dump'
 import assert from 'assert'
 
 const CLI_LOADING_SYMBOL = Symbol('Cli loading')
@@ -23,11 +23,11 @@ const EXIT_ABORT = 128
 const EXIT_SIGINT = EXIT_ABORT + 2
 
 const IFS = DEFAULT_IFS
-const loader = new CliMetaLoader()
+const loader = new CliMetadatLoader()
 
 export class Cli {
-  static __dumpLoader() { cliMetaToPojo(loader).then(dumpPojo) }
-  static __dumpMetadata() { cliMetaToPojo(this.metadata).then(dumpPojo) }
+  static __dumpLoader() { cliMetadataToPojo(loader).then(dumpPojo) }
+  static __dumpMetadata() { cliMetadataToPojo(this.metadata).then(dumpPojo) }
 
   static parameters = {
     help: 'Show help',

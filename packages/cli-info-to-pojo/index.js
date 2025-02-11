@@ -7,7 +7,7 @@ import {
   CliGroupInfo
 } from '@kingjs/cli-info'
 import { trimPojo } from '@kingjs/pojo-trim'
-import { toPojoSymbol, toPojo } from '@kingjs/pojo-to'
+import { toPojoSymbol, toPojo } from '@kingjs/pojo'
 
 CliParameterInfo[toPojoSymbol] = {
   name: 'string',

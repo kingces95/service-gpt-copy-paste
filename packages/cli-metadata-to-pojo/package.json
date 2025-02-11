@@ -1,7 +1,7 @@
 {
-  "name": "@kingjs/dump-pojo",
+  "name": "@kingjs/cli-metadata-to-pojo",
   "version": "1.0.0",
-  "description": "Dump pojo to console.",
+  "description": "Cli meta to pojo.",
   "main": "index.js",
   "type": "module",
   "exports": {

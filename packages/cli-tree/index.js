@@ -1,6 +1,6 @@
 import parse from 'yargs'
 import { hideBin } from 'yargs/helpers'
-import { CliMetaLoader } from '@kingjs/cli-meta-loader'
+import { CliMetadatLoader } from '@kingjs/cli-metadata'
 
 export default class CliTree {
   static globalOptions(yargs) {
@@ -67,7 +67,7 @@ export default class CliTree {
   }
 
   static configureCommand(yargs, name, member, bind) {
-    const metadata = CliMetaLoader.getMetadata(member)
+    const metadata = CliMetadatLoader.getMetadata(member)
     yargs.command(
       name,
       metadata.description || '',

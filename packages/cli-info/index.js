@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { CliMetaClassInfo } from '@kingjs/cli-meta-loader'
+import { CliClassMetadata } from '@kingjs/cli-metadata'
 import { LoadAsync, LoadAsyncGenerator } from '@kingjs/load'
 import { TypeName } from '@kingjs/node-name'
 
@@ -74,7 +74,7 @@ class CliMemberInfo extends CliInfo {
 
   static async commonAncestor(members) {
     const classes = await Promise.all(members.map(async member => await member.mdClass$.load()))
-    return await CliMetaClassInfo.commonAncestor(classes)
+    return await CliClassMetadata.commonAncestor(classes)
   }
   
   constructor(name, parent) {

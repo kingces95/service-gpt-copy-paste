@@ -2,7 +2,7 @@ import _ from 'lodash'
 import { Lazy, LazyGenerator } from '@kingjs/lazy'
 import assert from 'assert'
 
-class CliMetaInfo {
+class CliMetadata {
   constructor(loader, name) {
     this.loader$ = loader
     this.name$ = name
@@ -20,7 +20,7 @@ class CliMetaInfo {
   toString() { return this.name }
 }
 
-class CliMetaParameterInfo extends CliMetaInfo {
+class CliParameterMetadata extends CliMetadata {
 
   static getType(dfault) {
     if (dfault === null) {
@@ -55,7 +55,7 @@ class CliMetaParameterInfo extends CliMetaInfo {
     this.classInfo$ = classInfo
     this.default$ = dfault
     this.hasDefault$ = dfault !== undefined
-    this.type$ = CliMetaParameterInfo.getType(dfault)
+    this.type$ = CliParameterMetadata.getType(dfault)
   }
 
   get classInfo() { return this.classInfo$ }
@@ -94,7 +94,7 @@ class CliMetaParameterInfo extends CliMetaInfo {
   toString() { return `${super.toString()} : ${this.classInfo.toString()}` }
 }
 
-class CliMetaOptionInfo extends CliMetaParameterInfo {
+class CliOptionMetadata extends CliParameterMetadata {
   constructor(classInfo, name, dfault) {
     super(classInfo, name, dfault)
   }
@@ -104,7 +104,7 @@ class CliMetaOptionInfo extends CliMetaParameterInfo {
   toString() { return `option/${this.type} ${super.toString()}` }
 }
 
-class CliMetaPositionalInfo extends CliMetaParameterInfo {
+class CliPostionalMetadata extends CliParameterMetadata {
   constructor(classInfo, name, dfault, position) {
     super(classInfo, name, dfault)
 
@@ -117,7 +117,7 @@ class CliMetaPositionalInfo extends CliMetaParameterInfo {
   toString() { return `positional ${super.toString()}` }
 }
 
-class CliMetaClassInfo extends CliMetaInfo {
+class CliClassMetadata extends CliMetadata {
   static commonAncestor(classes) {
     const hierarchies = classes.map(cls => [...cls.hierarchy()].reverse())
     const commonAncestors = _.intersection(...hierarchies)
@@ -147,14 +147,14 @@ class CliMetaClassInfo extends CliMetaInfo {
       const names = Object.keys(cls.parameters)
       for (let i = 0; i < defaults.length - 1; i++) {
         const name = names[i]
-        yield new CliMetaPositionalInfo(this, name, defaults[i], i)
+        yield new CliPostionalMetadata(this, name, defaults[i], i)
       }
     }, this)
 
     this.options$ = new LazyGenerator(function* () {
       const options = defaults[defaults.length - 1]
       for (const [name, dfault] of Object.entries(options)) {
-        yield new CliMetaOptionInfo(this, name, dfault)
+        yield new CliOptionMetadata(this, name, dfault)
       }
     }, this)
 
@@ -184,7 +184,7 @@ class CliMetaClassInfo extends CliMetaInfo {
   activate(args) { new this.cls$(args) }
 }
 
-class CliMetaLoader {
+class CliMetadatLoader {
   constructor() {
     this.cache$ = null
     this.Cli$ = null
@@ -202,7 +202,7 @@ class CliMetaLoader {
     if (!this.cache$) {
       assert(cls.name == 'Cli')
       this.cache$ = new Map()
-      this.Cli$ = new CliMetaClassInfo(this, cls, defaults)
+      this.Cli$ = new CliClassMetadata(this, cls, defaults)
       this.cache$.set(cls, this.Cli$)
       return this.cache$.get(cls)
     }
@@ -214,7 +214,7 @@ class CliMetaLoader {
 
     if (!this.cache$.has(cls)) {
       assert(defaults)
-      this.cache$.set(cls, new CliMetaClassInfo(this, cls, defaults))
+      this.cache$.set(cls, new CliClassMetadata(this, cls, defaults))
     }
 
     return this.cache$.get(cls)
@@ -222,8 +222,8 @@ class CliMetaLoader {
 }
 
 export {
-  CliMetaInfo,
-  CliMetaParameterInfo,
-  CliMetaClassInfo,
-  CliMetaLoader
+  CliMetadata,
+  CliParameterMetadata,
+  CliClassMetadata,
+  CliMetadatLoader
 }
