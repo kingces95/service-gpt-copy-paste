@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import { Cli } from '@kingjs/cli'
 import { CliRxPoller } from '@kingjs/cli-rx-poller'
 import { Clipboard } from '@napi-rs/clipboard'
 import { exhaustMap, filter, first } from 'rxjs/operators'
@@ -11,11 +10,12 @@ export class CliPollClipboard extends CliRxPoller {
   static parameters = {
     prefix: 'Prefix to match in clipboard content.'
   }
-  static meta = CliPollClipboard.load()
+  static defaults = CliPollClipboard.loadDefaults()
+  static meta = import.meta
 
   constructor({ prefix = PREFIX, ...rest } = { }) {
-    if (new.target.super(arguments, { prefix }))
-      return super(Cli.loading)
+    if (CliPollClipboard.loadingDefaults(new.target, { prefix }))
+      return super()
 
     const clipboard = new Clipboard()
     super(rest,
@@ -28,4 +28,4 @@ export class CliPollClipboard extends CliRxPoller {
   }
 }
 
-// CliPollClipboard.__dumpLoader()
+// CliPollClipboard.__dumpMetadata()

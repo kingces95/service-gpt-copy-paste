@@ -22,18 +22,19 @@ export class CliHttp extends Cli {
     method: true
   }
   static commands = {
-    post: '@kingjs/cli-http CliHttpPost',
-    get: '@kingjs/cli-http CliHttpGet',
-    put: '@kingjs/cli-http CliHttpPut',
-    delete: '@kingjs/cli-http CliHttpDelete',
-    patch: '@kingjs/cli-http CliHttpPatch',
-    head: '@kingjs/cli-http CliHttpHead',
+    post: 'CliHttpPost',
+    get: 'CliHttpGet',
+    put: 'CliHttpPut',
+    delete: 'CliHttpDelete',
+    patch: 'CliHttpPatch',
+    head: 'CliHttpHead',
   }
-  static meta = CliHttp.load()
+  static defaults = CliHttp.loadDefaults()
+  static meta = import.meta
 
   constructor(url, headers = 0, { method = 'GET', ...rest } = { }) {
-    if (new.target.super(arguments, url, headers, { method }))
-      return super(Cli.loading)
+    if (CliHttp.loadingDefaults(new.target, url, headers, { method }))
+      return super()
 
     super(rest)
 
@@ -123,6 +124,7 @@ const exports = Object.fromEntries(
     CliHttp.extend({
       name,
       description,
+      meta: import.meta,
       ctor: function (url, headers, options = {}) {
         return !this ? [{ }] : [url, headers, { method, ...options }]
       }
@@ -139,4 +141,6 @@ export const {
   CliHttpHead,
 } = exports
   
-// CliHttp.__dumpLoader()
+// CliHttp.__dumpMetadata()
+// CliHttpGet.__dumpMetadata()
+

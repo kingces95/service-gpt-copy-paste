@@ -5,12 +5,17 @@ import { write, joinFields } from '@kingjs/cli-echo'
 import { Console } from 'console'
 import { CliFdReadable } from '@kingjs/cli-fd-readable'
 import { CliFdWritable } from '@kingjs/cli-fd-writable'
-import { CliMetadatLoader } from '@kingjs/cli-metadata'
-import { cliMetadataToPojo } from '@kingjs/cli-metadata-to-pojo'
-import { dumpPojo } from '@kingjs/pojo-dump'
+import { moduleNameFromMetaUrl } from '@kingjs/node-name-from-meta-url'
 import assert from 'assert'
+async function __import() {
+  const { loader } = await import('@kingjs/cli-metadata')
+  const { cliMetadataToPojo } = await import('@kingjs/cli-metadata-to-pojo')
+  const { dumpPojo } = await import('@kingjs/pojo-dump')
+  return { loader, toPojo: cliMetadataToPojo, dumpPojo }
+}
 
-const CLI_LOADING_SYMBOL = Symbol('Cli loading')
+const DEFAULTS = Symbol('defaults loading')
+const TYPE_NAME = Symbol('typeName')
 
 const DEFAULT_IFS = ' '
 const STDIN_FD = 0
@@ -23,11 +28,12 @@ const EXIT_ABORT = 128
 const EXIT_SIGINT = EXIT_ABORT + 2
 
 const IFS = DEFAULT_IFS
-const loader = new CliMetadatLoader()
 
 export class Cli {
-  static __dumpLoader() { cliMetadataToPojo(loader).then(dumpPojo) }
-  static __dumpMetadata() { cliMetadataToPojo(this.metadata).then(dumpPojo) }
+  static async __dumpMetadata() { 
+    const { loader, toPojo, dumpPojo } = await __import()
+    toPojo(loader.load(this)).then(dumpPojo) 
+  }
 
   static parameters = {
     help: 'Show help',
@@ -38,23 +44,35 @@ export class Cli {
     help: ['h'],
     verbose: ['v'],
   }
-  static metadata = Cli.load()
+  static defaults = Cli.loadDefaults()
+  static meta = import.meta
 
-  static loading = CLI_LOADING_SYMBOL
+  static async typeName() { 
+    if (!Object.hasOwn(this, TYPE_NAME)) {
+      if (!this.name || !Object.hasOwn(this, 'meta')) 
+        return null
+      const moduleName = await moduleNameFromMetaUrl(this.meta?.url) 
+      this[TYPE_NAME] = moduleName.type(this.name)
+    }
+    return this[TYPE_NAME]
+  }
+  static async moduleName() { return (await this.typeName())?.moduleName }
+  static async url() { return (await this.typeName())?.url }
+  static async fullName() { return (await this.typeName())?.fullName }
 
   static extend({ name, ctor, ...metadata }) {
-    const cls = class extends this {
+    const cls = class cls extends this {
       constructor(...args) {
-        var defaults = ctor.call()
+        var defaults = ctor?.call() ?? []
   
-        if (new.target.super(arguments, ...defaults))
-          return super(Cli.loading)
+        if (cls.loadingDefaults(new.target, ...defaults))
+          return super()
     
-        super(...ctor.call(this, ...args))
+        super(...ctor?.call(this, ...args))
       }
     }
     Object.defineProperty(cls, "name", { value: name });
-    
+
     const knownKeys = ['name', 'ctor']
     for (const [key, value] of Object.entries(metadata)) {
       if (knownKeys.includes(key))
@@ -62,27 +80,26 @@ export class Cli {
       cls[key] = value
     }
   
-    cls.meta = cls.load()
+    cls.defaults = cls.loadDefaults()
   
     return cls
   }
 
-  static load() {
-    assert(!Object.hasOwn(this, 'metadata'))
-    new this()
-    assert(Object.hasOwn(this, 'metadata'))
-    return this.metadata
+  static loadDefaults() {
+    assert(!Object.hasOwn(this, 'defaults'))
+    const defaults = new this()
+    return defaults
   }
 
-  static super(_arguments, ...args) {
-    const isLoading = _arguments[0] === CLI_LOADING_SYMBOL
-    if (isLoading)
-      return true
-    
-    if (Object.hasOwn(this, 'metadata'))
+  static loadingDefaults(newTarget, ...defaults) {
+    if (Object.hasOwn(newTarget, 'defaults'))
       return false
 
-    this.metadata = loader.load(this, args)
+    if (this != newTarget)
+      return true
+    
+    assert(!Object.hasOwn(newTarget, 'defaults'))
+    newTarget[DEFAULTS] = defaults
     return true
   }
 
@@ -99,9 +116,12 @@ export class Cli {
   }
 
   constructor({ help = false, version = '0.0', verbose = false } = {}) {
-    if (new.target.super(arguments, { help, version, verbose }))
-      return
-    
+    if (Cli.loadingDefaults(new.target, { help, version, verbose })) {
+      const defaults = new.target[DEFAULTS]
+      delete new.target[DEFAULTS]
+      return defaults
+    }
+
     // handle graceful shutdown
     this.exitCode = undefined
     process.once('beforeExit', async () => {
@@ -203,4 +223,3 @@ export class Cli {
 }
 
 // Cli.__dumpMetadata()
-// Cli.__dumpLoader()

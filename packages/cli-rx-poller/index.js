@@ -16,7 +16,8 @@ export class CliRxPoller extends CliRx {
     errorMs: 'Milliseconds to delay after error.',
     writeError: 'Write error messages to stderr.',
   }
-  static meta = CliRxPoller.load()
+  static defaults = CliRxPoller.loadDefaults()
+  static meta = import.meta
 
   constructor({ 
     pollMs = POLL_MS,
@@ -25,8 +26,8 @@ export class CliRxPoller extends CliRx {
     writeError = false,
     ...rest
   } = { }, ...workflow) {
-    if (new.target.super(arguments, { pollMs, errorRate, errorMs, writeError }))
-      return super(Cli.loading)
+    if (CliRxPoller.loadingDefaults(new.target, { pollMs, errorRate, errorMs, writeError }))
+      return super()
 
     super(rest, interval(pollMs).pipe(
       tap(() => this.is$('polling')),
@@ -62,4 +63,4 @@ export class CliRxPoller extends CliRx {
   }  
 }
 
-// CliRxPoller.__dumpLoader()
+// CliRxPoller.__dumpMetadata()

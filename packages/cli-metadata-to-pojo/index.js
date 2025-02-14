@@ -2,29 +2,35 @@ import {
   CliMetadata,
   CliParameterMetadata,
   CliClassMetadata,
-  CliMetadatLoader
+  CliMetadataLoader
 } from '@kingjs/cli-metadata'
+import { NodeName } from '@kingjs/node-name'
 import { trimPojo } from '@kingjs/pojo-trim'
-import { toPojoSymbol, toPojo } from '@kingjs/pojo'
+import { toPojo } from '@kingjs/pojo'
 
-CliMetadatLoader[toPojoSymbol] = {
+const symbol = Symbol('cli-metadata-to-pojo')
+
+CliMetadataLoader[symbol] = {
   classes: 'infos',
 }
 
-CliMetadata[toPojoSymbol] = {
+CliMetadata[symbol] = {
   name: 'string',
   description: 'string',
 }
 
-CliClassMetadata[toPojoSymbol] = {
-  ...CliMetadata[toPojoSymbol],
+CliClassMetadata[symbol] = {
+  ...CliMetadata[symbol],
+  fullName: 'string',
+  url: 'url',
   parameters: 'infos',
   commands: 'any',
 }
 
-CliParameterMetadata[toPojoSymbol] = {
-  ...CliMetadata[toPojoSymbol],
+NodeName[symbol] = 'toString'
 
+CliParameterMetadata[symbol] = {
+  ...CliMetadata[symbol],
   default: 'any',
 
   type: 'string',
@@ -40,11 +46,7 @@ CliParameterMetadata[toPojoSymbol] = {
   // coerce, defaultDescription, normalize
 }
 
-export async function cliMetadataToPojo(meta) {
-  let pojo = await toPojo(meta)
-
-  if (meta instanceof CliMetadatLoader)
-    pojo = pojo.classes
-  
+export async function cliMetadataToPojo(metadata) {
+  let pojo = await toPojo(metadata, symbol)
   return trimPojo(pojo)
 }

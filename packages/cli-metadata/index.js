@@ -1,6 +1,18 @@
 import _ from 'lodash'
 import { Lazy, LazyGenerator } from '@kingjs/lazy'
-import assert from 'assert'
+import { Cli } from '@kingjs/cli'
+import { TypeName } from '@kingjs/node-name'
+
+const PARAMETER_METADATA_NAMES =  [ 
+  // arrays
+  'aliases', 'choices', 'commands', 'conflicts', 'implications', 
+  // functions
+  'coerce',
+  // strings
+  'defaultDescription', 
+  // booleans
+  'hidden', 'local', 'normalize'
+]
 
 class CliMetadata {
   constructor(loader, name) {
@@ -17,7 +29,7 @@ class CliMetadata {
   get name() { return this.name$ }
   get description() { throw new Error('abstract') }
 
-  toString() { return this.name }
+  toString() { return `name=${this.name}` }
 }
 
 class CliParameterMetadata extends CliMetadata {
@@ -56,6 +68,7 @@ class CliParameterMetadata extends CliMetadata {
     this.default$ = dfault
     this.hasDefault$ = dfault !== undefined
     this.type$ = CliParameterMetadata.getType(dfault)
+    this.metadata = classInfo.getParameterMetadata$(name)
   }
 
   get classInfo() { return this.classInfo$ }
@@ -63,35 +76,37 @@ class CliParameterMetadata extends CliMetadata {
   get isOption() { return !this.isPositional }
   get isPositional() { return this.position != undefined }
 
-  get description() { return this.classInfo.cls$?.parameters?.[this.name] }
-  get normalize() { this.classInfo.cls$?.normalize?.[this.name] }
-
-  get default() { return this.default$ }
-  get hasDefault() { return this.hasDefault$ } 
-  get require() { return !this.hasDefault } 
-  get defaultDescription() { return this.classInfo.cls$?.defaultDescription?.[this.name] }
-  get coerce() { return this.classInfo.cls$?.coerce?.[this.name] }
-
+  // parameter type
   get type() { return this.type$ }
   get isArray() { return this.type === 'array' }
   get isString() { return this.type === 'string' } 
   get isBoolean() { return this.type === 'boolean' }
   get isNumber() { return this.type === 'number' } 
   get isCount() { return this.type === 'count' } 
+  get normalize() { return this.metadata.normalize } // TODO: make path 1st class
+  get coerce() { return this.metadata.coerce }
   
-  *aliases() { yield* this.classInfo.cls$?.aliases?.[this.name] ?? [] }
-  *choices() { yield* this.classInfo.cls$?.choices?.[this.name] ?? [] }
-  *conflicts() { yield* this.classInfo.cls$?.conflicts?.[this.name] ?? [] }
-  *implications() { yield* this.classInfo.cls$?.implications?.[this.name] ?? [] }
+  get description() { return this.metadata.description }
+
+  // default/require/optional
+  get default() { return this.default$ }
+  get hasDefault() { return this.hasDefault$ } 
+  get require() { return !this.hasDefault } 
+  get defaultDescription() { return this.metadata.defaultDescription }
 
   // CliClassOptionInfo
-  get local() { return this.classInfo.cls$?.local?.[this.name] } 
-  get hidden() { return this.classInfo.cls$?.hidden?.[this.name] } 
+  get local() { return this.metadata.local }
+  get hidden() { return this.metadata.hidden }
+
+  *aliases() { yield* this.metadata.aliases ?? [] }
+  *choices() { yield* this.metadata.choices ?? [] }
+  *conflicts() { yield* this.metadata.conflicts ?? [] }
+  *implications() { yield* this.metadata.implications ?? [] }
 
   // CliClassPositionalInfo
   get position() { return undefined }
 
-  toString() { return `${super.toString()} : ${this.classInfo.toString()}` }
+  toString() { return `${super.toString()}, class={ ${this.classInfo.toString() }}` }
 }
 
 class CliOptionMetadata extends CliParameterMetadata {
@@ -101,7 +116,7 @@ class CliOptionMetadata extends CliParameterMetadata {
 
   get isOption() { return true } 
 
-  toString() { return `option/${this.type} ${super.toString()}` }
+  toString() { return `option, type=${this.type}, ${super.toString()}` }
 }
 
 class CliPostionalMetadata extends CliParameterMetadata {
@@ -114,7 +129,7 @@ class CliPostionalMetadata extends CliParameterMetadata {
   get isPositional() { return true }
   get position() { return this.position$ }
 
-  toString() { return `positional ${super.toString()}` }
+  toString() { return `positional, ${super.toString()}` }
 }
 
 class CliClassMetadata extends CliMetadata {
@@ -125,9 +140,31 @@ class CliClassMetadata extends CliMetadata {
     return result
   }
 
-  constructor(loader, cls, defaults = [{ }]) {
-    super(loader, cls.name)
-    this.cls$ = cls
+  constructor(loader, name, cls) {
+    super(loader, name)
+    this.class$ = cls
+
+    const parameters = this.getOwnClassMetadata$('parameters') || { }
+    const defaults = this.getOwnClassMetadata$('defaults') || [{ }]
+
+    this.meta = this.class.meta
+
+    this.fullName$ = new Lazy(() => this.class.fullName())
+    this.url$ = new Lazy(() => this.class.url())
+    this.typeName$ = new Lazy(() => this.class.typeName())
+    this.moduleName$ = new Lazy(() => this.class.moduleName())
+
+    this.description$ = this.getOwnClassMetadata$('description')
+    this.commands$ = new Lazy(() => {
+      const commands = this.getOwnClassMetadata$('commands') ?? { }
+      const result = { }
+      for (const [name, cls] of Object.entries(commands)) {
+        if (cls instanceof Cli) { result[name] = loader.load(cls) } // early
+        if (typeof cls === 'string') { result[name] = TypeName.from(cls) } // late
+        if (typeof cls === 'object') { result[name] = Cli.extend(cls) } // anonymous
+      }
+      return result
+    })
 
     this.hierarchy$ = new LazyGenerator(function* () {
       let current = this
@@ -141,10 +178,8 @@ class CliClassMetadata extends CliMetadata {
       () => this.loader.load(Object.getPrototypeOf(cls.prototype)?.constructor)
     )
 
-    this.commands$ = Object.hasOwn(cls, 'commands') ? cls.commands : null
-
     this.positionals$ = new LazyGenerator(function* () {
-      const names = Object.keys(cls.parameters)
+      const names = Object.keys(parameters)
       for (let i = 0; i < defaults.length - 1; i++) {
         const name = names[i]
         yield new CliPostionalMetadata(this, name, defaults[i], i)
@@ -164,66 +199,73 @@ class CliClassMetadata extends CliMetadata {
     }, this)
   }
 
-  get isClass() { return true }
+  async fullName() { return await this.fullName$.value }
+  async url() { return await this.url$.value }
+  async typeName() { return await this.typeName$.value }
+  async moduleName() { return await this.moduleName$.value }
 
+  getOwnClassMetadata$(metadataName) {
+    return Object.hasOwn(this.class, metadataName) ? this.class[metadataName] : null
+  }
+
+  getParameterMetadata$(parameterName) {
+    return PARAMETER_METADATA_NAMES.reduce((acc, metadataName) => {
+      const metadata = this.getOwnClassMetadata$(metadataName)
+      const metadatum = metadata?.[parameterName]
+      acc[metadataName] = metadatum
+      return acc  
+    }, { })
+  }
+
+  get isClass() { return true }
+  
+  get class() { return this.class$ }
   get baseClass() { return this.baseClass$.value }
-  get description() { return this.cls$.description }
-  get commands() { return this.commands$ }
+  get description() { return this.description$.value }
+  get commands() { return this.commands$.value }
 
   *parameters() { yield* this.parameters$.value }
   *positionals() { yield* this.positionals$.value }
   *options() { yield* this.options$.value }
   *hierarchy() { yield* this.hierarchy$.value }
 
-  isSubClassOf(cls) {
-    if (!cls)
+  isSubClassOf(classMetadata) {
+    if (!classMetadata)
       return false
-    return this.cls$.prototype instanceof cls.cls$
+    return this.class.prototype instanceof classMetadata.class
   }
 
-  activate(args) { new this.cls$(args) }
+  activate(args) { new this.class(args) }
 }
 
-class CliMetadatLoader {
+class CliMetadataLoader {
   constructor() {
-    this.cache$ = null
-    this.Cli$ = null
+    this.cache$ = new Map()
   }
 
-  get Cli() { return this.Cli$ }
+  get Cli() { return this.load(Cli) }
   *classes() { yield *this.cache$.values() }
 
-  load(cls, defaults) {  
-    if (!cls) {
+  load(cls) {
+    if (!cls)
       return null
-    }
 
-    // bootstrap
-    if (!this.cache$) {
-      assert(cls.name == 'Cli')
-      this.cache$ = new Map()
-      this.Cli$ = new CliClassMetadata(this, cls, defaults)
-      this.cache$.set(cls, this.Cli$)
-      return this.cache$.get(cls)
-    }
-
-    const Cli = this.Cli.cls$
-    if (cls !== Cli && !(cls.prototype instanceof Cli)) {
+    if (cls !== Cli && !(cls.prototype instanceof Cli))
       return null
-    }
 
-    if (!this.cache$.has(cls)) {
-      assert(defaults)
-      this.cache$.set(cls, new CliClassMetadata(this, cls, defaults))
-    }
+    if (!this.cache$.has(cls))
+      this.cache$.set(cls, new CliClassMetadata(this, cls.name, cls))
 
     return this.cache$.get(cls)
   }
 }
 
+const loader = new CliMetadataLoader()
+
 export {
+  loader,
   CliMetadata,
   CliParameterMetadata,
   CliClassMetadata,
-  CliMetadatLoader
+  CliMetadataLoader
 }

@@ -25,6 +25,7 @@
     "chalk": "^5.4.1",
     "lodash": "^4.17.21",
     "lodash.merge": "^4.6.2",
-    "node-clipboardy": "^1.0.3"
+    "node-clipboardy": "^1.0.3",
+    "read-pkg-up": "^11.0.0"
   }
 }

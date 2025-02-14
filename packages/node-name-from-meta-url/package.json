@@ -1,7 +1,7 @@
 {
-  "name": "@kingjs/node-name-parse",
+  "name": "@kingjs/node-name-from-meta-url",
   "version": "1.0.0",
-  "description": "Parse strings pointing at node class.",
+  "description": "Construct a node type name from meta-url.",
   "main": "index.js",
   "type": "module",
   "exports": {

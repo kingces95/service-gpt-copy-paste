@@ -17,12 +17,13 @@ class CliEval extends Cli {
     bash: '@kingjs/cli-eval CliEvalBash',
     cmd: '@kingjs/cli-eval CliEvalCmd',
   }
-  static meta = CliEval.load()
+  static defaults = CliEval.loadDefaults()
+  static meta = import.meta
 
   constructor(exe, args = [], { shell, ...rest } = { }) {
-    if (new.target.super(arguments, exe, args, { shell }))
-      return super(Cli.loading)
-    
+    if (CliEval.loadingDefaults(new.target, exe, args, { shell }))
+      return super()
+
     super(rest)
     this.args = args
     this.command = exe
@@ -66,11 +67,12 @@ class CliEval extends Cli {
 
 class CliEvalBash extends CliEval {
   static description = 'Evaluate a bash shell command'
-  static meta = CliEvalBash.load()
+  static defaults = CliEvalBash.loadDefaults()
+  static meta = import.meta
   
   constructor(...args) {
-    if (new.target.super(arguments, { }))
-      return super(Cli.loading)
+    if (CliEvalBash.loadingDefaults(new.target, { }))
+      return super()
 
     this.verify(CliEvalBash, ...args)
     super(...args, { shell: 'bash' })
@@ -79,11 +81,12 @@ class CliEvalBash extends CliEval {
 
 class CliEvalCmd extends CliEval {
   static description = 'Evaluate a cmd shell command'
-  static meta = CliEvalCmd.load()
+  static defaults = CliEvalCmd.loadDefaults()
+  static meta = import.meta
   
   constructor(...args) {
-    if (new.target.super(arguments, { }))
-      return super(Cli.loading)
+    if (CliEvalCmd.loadingDefaults(new.target, { }))
+      return super()
 
     super(...args, { shell: 'cmd.exe' })
   }
@@ -95,4 +98,4 @@ export {
   CliEval 
 }
 
-// CliEval.__dumpLoader()
+// CliEval.__dumpMetadata()

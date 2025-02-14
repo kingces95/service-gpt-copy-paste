@@ -2,7 +2,7 @@ import _ from 'lodash'
 import { Cli } from '@kingjs/cli'
 // import CliYargs from '@kingjs/cli-yargs'
 // import { cliInfoToPojo, toPojoSymbol } from '@kingjs/cli-info-to-pojo'
-// import { CliMetadatLoader } from '@kingjs/cli-metadata'
+// import { CliMetadataLoader } from '@kingjs/cli-metadata'
 
 class Clippy extends Cli {
   static description = 'My funky cli'
@@ -12,31 +12,33 @@ class Clippy extends Cli {
     http: '@kingjs/cli-http',
     eval: '@kingjs/cli-eval',
     moo: {
-      description: 'My moo command',
-      commands: {
-        foo: {
-          description: 'My foo command',
-          commands: {
-            bar: '@kingjs/cli-http CliHttpGet',
-            baz: '@kingjs/cli-http CliHttpGet',
-          }
-        },
-      }
+      // description: 'My moo command',
+      // scope: import.meta,
+      // commands: {
+      //   foo: {
+      //     description: 'My foo command',
+      //     commands: {
+      //       bar: '@kingjs/cli-http, CliHttpGet',
+      //       baz: '@kingjs/cli-http, CliHttpGet',
+      //     }
+      //   },
+      // }
     },
   }
-  static meta = Clippy.load()
+  static defaults = Clippy.loadDefaults()
+  static meta = import.meta
 
   constructor(options = { }) {
-    if (new.target.super(arguments, options))
-      return super(Cli.loading)
+    if (Clippy.loadingDefaults(new.target, options))
+      return super()
 
     super(options)
   }
 }
 
-Clippy.__dumpLoader()
+Clippy.__dumpMetadata()
 
-// const loader = new CliMetadatLoader()
+// const loader = new CliMetadataLoader()
 // const group = new CliGroupInfo(loader, metadata)
 
 // const infoPojo = await cliInfoToPojo(group, { attachSource: true })

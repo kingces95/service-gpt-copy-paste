@@ -23,11 +23,12 @@ export default class CliOrb extends Cli {
     cpuHot: 'Threshold for high CPU usage',
     memHot: 'Threshold for high memory usage',
   }
-  static meta = CliOrb.load()
+  static defaults = CliOrb.loadDefaults()
+  static meta = import.meta
   
   constructor({ cpuHot = CPU_HOT, memHot = MEM_HOT, ...rest } = { }) {
-    if (new.target.super(arguments, { cpuHot, memHot }))
-      return super(Cli.loading)
+    if (CliOrb.loadingDefaults(new.target, { cpuHot, memHot }))
+      return super()
 
     super(rest)
     
@@ -157,4 +158,4 @@ export default class CliOrb extends Cli {
   }
 }
 
-// CliOrb.__dumpLoader()
+// CliOrb.__dumpMetadata()

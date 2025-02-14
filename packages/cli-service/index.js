@@ -14,15 +14,16 @@ export class CliService extends Cli {
     stdis: 'Provide status updates',
     stdisFd: 'Fd to report status if stdis is set',
   }
-  static meta = CliService.load()
+  static defaults = CliService.loadDefaults()
+  static meta = import.meta
 
   constructor({ 
     stdis = false, 
     stdisFd = STDOUT_FD, 
     ...rest 
   } = { }) {
-    if (new.target.super(arguments, { stdis, stdisFd }))
-      return super(Cli.loading)
+    if (CliService.loadingDefaults(new.target, { stdis, stdisFd })) 
+      return super()
 
     super(rest)
     this.heartbeatService = new CliServiceHeartbeat()
@@ -111,4 +112,4 @@ export class CliService extends Cli {
   }
 }
 
-// CliService.__dumpLoader()
+// CliService.__dumpMetadata()
