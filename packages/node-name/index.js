@@ -6,51 +6,88 @@ async function __import() {
   return { toPojo: nodeNameToPojo, dumpPojo }
 }
 
-export const SCHEME = 'node://'
+export const SCHEME = 'nodejs:'
 export const HOST = 'nodejs.org'
 export const GLOBAL = 'global'
 export const LOCAL = 'local'
+export const DEFAULT = 'default'
+
+const JSON_IMPORT_OPTIONS = { with: { type: 'json' } }
+
+function assert(value, message) { 
+  if (!value) throw new Error(message || 'Assertion failed.') 
+}
+function isAlphanumeric(value) { return /^[a-zA-Z0-9-_.]+$/.test(value) }
+function isCapitalized(value) { return value[0] === value[0].toUpperCase() }
+function isNotCapitalized(value) { return value[0] !== value[0].toUpperCase() }
+function isTypeName(value) { return value && isAlphanumeric(value) && isCapitalized(value) }
+function isScopeName(value) { return value && isAlphanumeric(value) && isNotCapitalized(value) }
+function assertAreTypeNames(...values) {
+  if (values.some(v => !isTypeName(v))) {
+    throw new Error(`Expected TypeName, got "${values.join(', ')}".`)
+  }
+}
+function assertAreScopeNames(...values) {
+  if (values.some(v => !isScopeName(v))) {
+    throw new Error(`Expected ScopeName, got: ${values.join(', ')}`)
+  }
+}
+function snakeToCamelCase(value) {
+  return value.replace(/_([a-z])/g, (_, c) => c.toUpperCase())
+}
+function perlToCamelCase(value) {
+  return value.replace(/-([a-z])/g, (_, c) => c.toUpperCase())
+}
+function capitalize(value) {
+  return value[0].toUpperCase() + value.slice(1)
+}
 
 export class NodeName {
   async __dump() { 
     const { toPojo, dumpPojo } = await __import()
-    toPojo(this).then(dumpPojo) 
+    const pojo = await toPojo(this)
+    await dumpPojo(pojo) 
   }
 
-  static assertAlphanumeric(...values) {
-    if (values.some(v => !/^[a-zA-Z0-9-_]+$/.test(v))) {
-      throw new Error(`Values must be alphanumeric, including '-' and '_'; got "${values.join(', ')}".`)
+  static scopeToTypeCase(value) {
+    return capitalize(snakeToCamelCase(perlToCamelCase(value)))
+  }
+  
+  static fromScope(scope, name, ...exports) {
+    return new ModuleName({ scope, name, exports })
+  }
+
+  static fromName(name, ...exports) {
+    return ModuleName.fromScope(GLOBAL, name, ...exports)
+  }
+
+  static from(value, moduleName) {
+    const parts = NodeName.parse(value)
+    if (parts.packageName) return new NodeName(parts)
+
+    if (!moduleName)
+      throw new Error(`Cannot resolve ${value} without a module name.`)
+    return new NodeName({ ...moduleName.moduleParts, ...parts })
+  }
+
+  static parse(value) {
+    // e.g. node://nodejs.org/myModule#myNs.MyType
+    if (value.includes(SCHEME)) {
+      return NodeName.parseUrl(value)
     }
-  }
 
-  constructor(id, parts, segments, path) {
-    if (new.target === NodeName) {
-      throw new Error("Cannot instantiate abstract class NodeName.")
-    }
-    this.parts = parts
-    this.segments = segments
-    this.path = path
-    this.url = new URL(id)
-    this.id = this.url.toString()
-  }
-
-  toString() {
-    return this.id
-  }
-}
-
-export class ModuleName extends NodeName {
-  static local = new ModuleName({ scope: LOCAL, segments: [] })
-
-  static fromUrl(value) {
-    return new ModuleName(ModuleName.parseUrl(value))
+    // e.g. myModule
+    // e.g. myNs.MyType
+    return NodeName.parseQualifiedTypeName(value)
   }
 
   static parseUrl(value) {
-    // e.g. node://nodejs.org/myScope/myModule/mySubModule
-    // e.g. node://nodejs.org/global/myModule/mySubModule
+    const [ moduleImport, hash ] = value.split('#')
+
+    // e.g. node://nodejs.org/myScope/myModule/myExport/mySubExport
+    // e.g. node://nodejs.org/global/myModule/myExport
     // e.g. node://nodejs.org/global/myModule
-    const url = new URL(value)
+    const url = new URL(moduleImport)
     
     if (url.protocol !== SCHEME) {
       throw new Error(`Expected scheme "${SCHEME}", got "${url.protocol}".`)
@@ -60,211 +97,366 @@ export class ModuleName extends NodeName {
       throw new Error(`Expected host "${HOST}", got "${url.host}".`)
     }
 
+    // e.g. myScope
     const scope = url.pathname.split('/')[1]
-    const segments = url.pathname.split('/').slice(2)
+
+    // e.g. myModule
+    const packageName = url.pathname.split('/')[2]
     
-    NodeName.assertAlphanumeric(scope, ...segments)
-    return { scope, segments }
-  }
-
-  static fromImport(value) {
-    return new ModuleName(ModuleName.parseImport(value))
-  }
-  
-  static parseImport(value) {
-    const parts = value.split('/')
-    const isScoped = parts[0].startsWith('@')
-    const scope = isScoped ? parts.shift().slice(1) : GLOBAL
-    const segments = parts
-
-    NodeName.assertAlphanumeric(scope, ...segments)
-    return { scope, segments }
-  }
-
-  static scope(scope, ...names) {
-    return new ModuleName({ scope, segments: names })
-  }
-
-  static name(...names) {
-    return ModuleName.scope(GLOBAL, ...names)
-  }
-
-  constructor(parts) {
-    const { scope = GLOBAL, segments = [] } = parts
-    ModuleName.assertAlphanumeric(scope, ...segments)
-
-    if (segments.length === 0 && scope !== LOCAL) {
-      throw new Error("ModuleName must have at least one path segment.")
-    }
+    // e.g. myExport, mySubExport
+    const exports = url.pathname.split('/').slice(3) 
     
-    const path = segments.join('/') || null
-    const tokens = [`${SCHEME}${HOST}`, scope, path].filter(Boolean)
-    const id = tokens.join('/')
-    super(id, parts, segments, path)
-
-    this.scope = scope
-  }
-
-  get import() {
-    if (this.isLocal)
-      return null
-    const tokens = []
-    if (this.scope !== GLOBAL) {
-      tokens.push(`@${this.scope}`)
-    }
-    tokens.push(this.path)
-    return tokens.join('/')
-  }
-
-  get isScoped() {
-    return !this.isGlobal && !this.isLocal
-  }
-
-  get isGlobal() {
-    return this.scope === GLOBAL
-  }
-
-  get isLocal() {
-    return this.scope === LOCAL
-  }
-
-  scope(scope) {
-    return ModuleName.scope(scope).name(...this.parts.segments)
-  }
-
-  name(...names) {
-    return new ModuleName({ scope: this.scope, segments: [...this.parts.segments, ...names] })
-  }
-
-  type(...names) {
-    return new TypeName({ module: this.parts, segments: names })
-  }
-}
-
-export class TypeName extends NodeName {
-
-  static fromUrl(value) {
-    return new TypeName(TypeName.parseUrl(value))
-  }
-  
-  static parseUrl(value) {
-    const url = new URL(value)
-    const segments = url.hash ? url.hash.slice(1).split('.') : []
+    assertAreScopeNames(scope, packageName, ...exports)
+    const moduleParts = { scope, packageName, exports }
+    const fullNameParts = hash ? NodeName.parseFullName(hash) : { }
     
-    NodeName.assertAlphanumeric(...segments)
-    return { 
-      module: ModuleName.parseUrl(url.origin + url.pathname.split('#')[0]), 
-      segments 
-    }
-  }
-
-  static fromFullName(value) {
-    const parts = TypeName.parseFullName(value)
-    return new TypeName(parts)
+    return { ...moduleParts, ...fullNameParts }
   }
 
   static parseFullName(value) {
+    // e.g. myNs.MyType
+    // e.g. myNs.mySubNs.MyType
+    // e.g. MyType
+    // e.g. MyType+MyNestedType
+    // e.g. MyType+MyNestedType+MyNestedNestedType
+    // e.g. myNs.mySubNs.MyType+MyNestedType
+    const dotSplit = value.split('.')
+    const namespaces = dotSplit.slice(0, -1)
+    const pluses = dotSplit[dotSplit.length - 1]
+    const plusSplit = pluses.split('+')
+    const name = plusSplit.pop()
+    const nestings = plusSplit
+
+    assertAreScopeNames(...namespaces)
+    assertAreTypeNames(...nestings)
+    assert(isTypeName(name) || isScopeName(name))
+    return { namespaces, nestings, name }
+  }
+  
+  static parseImport(value) {
+    // e.g. @myScope/myModule
+    // e.g. @myScope/myModule/myExport
+    // e.g. myModule
+    // e.g. myModule/myExport
+    // e.g. myModule/myExport/mySubExport
+
+    const parts = value.split('/')
+    const isScoped = parts[0].startsWith('@')
+    // e.g. myScope
+    const scope = isScoped ? parts.shift().slice(1) : GLOBAL
+    // e.g. myModule
+    const packageName = parts.shift()
+    // e.g. myExport, mySubExport
+    const exports = parts
+
+    assertAreScopeNames(scope, packageName, ...exports)
+    return { scope, packageName, exports }
+  }
+
+  static parseQualifiedTypeName(value) {
+    if (!value)
+      return { }
+    
     // e.g @myScope/myModule, MyType
     // e.g @myScope/myModule, myNs.MyType
     // e.g myModule, MyType
-    // e.g myModule
-    // e.g MyType
-    // e.g myNs.MyType
-    if (!value)
-      return { }
-
     if (value.includes(',')) {
-      return { 
-        module: ModuleName.parseImport(typeParts[0]), 
-        segments: TypeName.parseName(typeParts[1])
-      }
-    }
-
-    if (value.includes('.')) { 
-      return { segments: TypeName.parseName(value) } 
+      const [moduleImport, fullName] = value.split(/,\s*/) 
+      const fullNameParts = NodeName.parseFullName(fullName)
+      const moduleParts = NodeName.parseImport(moduleImport)
+      return { ...moduleParts, ...fullNameParts }
     }
     
+    // e.g myNs.MyType
+    if (value.includes('.') || value.includes('+')) { 
+      return NodeName.parseFullName(value) 
+    }
+    
+    // e.g @myScope/myModule
     if (value.includes('/')) { 
-      return { module: ModuleName.parseImport(value) } 
+      return { ...NodeName.parseImport(value) } 
     }
     
+    // e.g MyType
     if (value[0] === value[0].toUpperCase()) { 
-      return { segments: TypeName.parseName(value) } 
+      return NodeName.parseFullName(value)
     }
     
-    return { module: ModuleName.parseImport(value) }
+    // e.g myModule
+    // Could be a namespace, but we choose to treat it as an import
+    // hence the name parseQualifiedTypeName, not just parseQualifiedName
+    return { ...NodeName.parseImport(value) }
   }
 
-  static fromName(value) {
-    return new TypeName(TypeName.parseName(value))
-  }
+  constructor(parts) {
 
-  static parseName(value) {
-    // e.g. MyType
-    // e.g. myNs.MyType
-    const segments = value.split('.')
-    NodeName.assertAlphanumeric(...segments)
-    return { segments }
-  }
+    // module parts
+    const { scope = GLOBAL, packageName, exports = [] } = parts
+    assertAreScopeNames(scope, packageName, ...exports)
+    this.scope = scope // e.g. myScope
+    this.packageName = packageName // e.g. myModule
+    this.exports = exports.length ? exports : undefined // e.g. myExport, mySubExport
 
-  static from(value) {
-    return new TypeName(TypeName.parse(value))
-  }
+    // full name parts
+    const { namespaces = [], nestings = [], name } = parts
+    assertAreScopeNames(...namespaces)
+    assertAreTypeNames(...nestings)
+    if (name)
+      assert(isTypeName(name) || isScopeName(name))
+    this.namespaces = namespaces.length ? namespaces : undefined
+    this.nestings = nestings.length ? nestings : undefined
+    this.name = name
 
-  static parse(value) {
-    if (value.includes('#')) {
-      return TypeName.parseUrl(value)
-    }
-
-    return TypeName.parseFullName(value)
+    if (this.nestings && !isTypeName(name))
+      throw new Error(`Expected TypeName, got "${name}".`)
   }
   
-  constructor(parts) {
-    const { module = ModuleName.local.parts, segments = [] } = parts
-    if (!segments.length) {
-      segments.push('default')
+  get type() {
+    if (this.isExportName) return 'export'
+    if (this.isNamespace) return 'namespace'
+    if (this.isTypeName) return 'type'
+    throw new Error('Unknown type.')
+  }
+  
+  get isExportName() { return !this.name }
+  get isNamespace() { return isScopeName(this.name) }
+  get isTypeName() { return isTypeName(this.name) }
+
+  get isGlobal() { return this.scope === GLOBAL }
+  get isScoped() { return !!this.scope && !this.isGlobal }
+
+  get parentUrl() { return this.parent?.url }
+  get parent() {
+    if (this.nestings) {
+      const nestings = [...this.nestings]
+      const name = nestings.pop()
+      return new NodeName({
+        ...this.moduleParts,
+        namespaces: this.namespaces,
+        nestings: nestings.length ? nestings : undefined,
+        name,
+      })
     }
 
-    const moduleName = new ModuleName(module)
-    const url = moduleName.url 
-    const tokens = [url.toString()]
-    const path = segments.join('.')
-    tokens.push('#', path)
+    if (this.namespaces) {
+      const namespaces = [...this.namespaces]
+      const name = namespaces.pop()
+      return new NodeName({
+        ...this.moduleParts,
+        namespaces: namespaces.length ? namespaces : undefined,
+        name,
+      })
+    }
 
-    const id = tokens.join('')
-    super(id, parts, segments, path)
+    if (this.name) {
+      return new NodeName({
+        ...this.moduleParts
+      })
+    }
 
-    this.moduleName = moduleName
-    this.fullName = `${moduleName.import}, ${path}`
-    this.namespace = !segments.length ? null : segments.slice(0, -1).join('.')
-    this.name = segments[segments.length - 1]
+    if (this.exports) {
+      const exports = [...this.exports]
+      exports.pop()
+      return new NodeName({
+        ...this.moduleParts,
+        exports: exports.length ? exports : undefined,
+      })
+    }
+
+    return null
   }
 
-  get isRelative() {
-    return !this.moduleName
+  get moduleParts() {
+    return { 
+      scope: this.scope, 
+      packageName: this.packageName, 
+      exports: this.exports 
+    }
   }
 
-  get isDefault() {
-    return this.path.length === 0
+  get fullNameParts() {
+    return { 
+      namespaces: this.namespaces, 
+      nestings: this.nestings, 
+      name: this.name 
+    }
   }
 
-  name(...names) {
-    return new TypeName({ 
-      module: this.moduleName, 
-      segments: [...this.parts.segments, ...names] 
+  get moduleName() { 
+    return new NodeName({ 
+      scope: this.scope, 
+      packageName: this.packageName, 
+      exports: this.exports 
     })
   }
 
+  get pacakgeName() {
+    return new NodeName({ 
+      scope: this.scope,
+      packageName: this.packageName,
+    })
+  }
+
+  addExport(...exports) {
+    return new ModuleName({ 
+      scope: this.scope, 
+      packageName: this.packageName,
+      exports: [...(this.exports || []), ...exports] 
+    })
+  }
+
+  addType(...names) {
+    return new TypeName({ 
+      ...this.moduleParts, 
+      name: names.pop(), 
+      namespaces: [...names],
+    })
+  }
+
+  addNamespace(...names) {
+    const namespaces = [...this.namespaces, ...[this.name], ...names]
+    const name = namespaces.pop()
+    return new TypeName({ 
+      ...this.moduleParts, 
+      namespaces: namespaces.length ? namespaces : undefined,
+      name
+    })
+  }
+
+  addName(...names) {
+    const nestings = [...this.nestings, ...[this.name], ...names]
+    const name = namespaces.pop()
+    return new TypeName({ 
+      ...this.moduleParts, 
+      namespaces: this.namespaces,
+      nestings: nestings.length ? nestings : undefined,
+      name,
+    })
+  }
+
+  get importString() {
+    
+    // e.g. myExport/mySubExport
+    const path = [
+      this.packageName, 
+      ...(this.exports || [])
+    ].filter(Boolean).join('/')
+
+    // e.g. @myScope/myModule/myExport/mySubExport
+    const result = this.isScoped 
+      ? `@${this.scope}/${path}` 
+      : path
+
+    return result
+  }
+
+  get namespace() { return this.namespaces?.join('.') || null }
+  get nesting() { return this.nestings?.join('+') || null }
+
+  get fullName() {
+    return [
+      this.namespace,
+      [
+        this.nesting, 
+        this.name
+      ].filter(Boolean).join('+')
+    ].filter(Boolean).join('.') || null
+  }
+
+  get qualifiedName() {
+    return [
+      this.importString, 
+      this.fullName
+    ].filter(Boolean).join(', ')
+  }
+
+  get url() {
+    // e.g. node://nodejs.org/myScope/myModule/myExport/mySubExport
+    // e.g. node://nodejs.org/global/myModule/myExport
+    // e.g. node://nodejs.org/global/myModule
+    // e.g. node://nodejs.org/global/myModule#myNs.MyType
+    // e.g. node://nodejs.org/global/myModule#myNs.MyType+MyNestedType
+    // e.g. node://nodejs.org/global/myModule#myNs.MyType+MyNestedType+MyNested
+    return new URL([
+      [
+        `${SCHEME}//${HOST}`, 
+        this.scope, 
+        this.packageName, 
+        ...(this.exports || [])
+      ].filter(Boolean).join('/'), 
+      this.fullName
+    ].filter(Boolean).join('#'))  
+  }
+
+  async import() { 
+    if (!this.isExportName)
+      throw new Error('Cannot import a non-export name.')
+    return import(this.importString) 
+  }
+
+  async importJson() { 
+    if (!this.isExportName)
+      throw new Error('Cannot import a non-export name.')
+    const module = await import(this.importString, JSON_IMPORT_OPTIONS)
+    return module?.default 
+  }
+
+  async getType() {
+    if (this.isExportName)
+      return await this.import().default
+
+    if (this.isNamespace)
+      throw new Error('Cannot load a namespace as a type.')
+
+    const scope = this.parent.isTypeName ?
+      await this.parent.loadType() :
+      await this.parent.loadNamespace()
+
+    return await scope[this.name]
+  }
+
+  async getNamespace() {
+    if (this.isExportName)
+      return await this.import()
+
+    if (this.isTypeName)
+      throw new Error('Cannot load a type as a namespace.')
+
+    const scope = this.parent.loadNamespace()
+    return await scope[this.name]
+  }
+
   toString() {
-    return this.fullName
+    return this.qualifiedName
   }
 }
 
-// const scopedModuleName = ModuleName.scope('myScope', 'mySub0', 'mySub1', 'myModule')
-// scopedModuleName.type('myNs0', 'myNs1', 'MyType').__dump()
+async function test() {
+  const ids = [
+    'nodejs://nodejs.org/myScope/myModule/myExport',
+    'nodejs://nodejs.org/myScope/myModule/myExport#myNs.mySubNs.MyType+MyNestedType+MyNestedNestedType',
+    'nodejs://nodejs.org/myScope/myModule#myNs.mySubNs.MyType+MyNestedType',
+    'nodejs://nodejs.org/myScope/myModule#myNs.mySubNs.MyType',
+    'nodejs://nodejs.org/myScope/myModule#myNs.MyType',
+    'nodejs://nodejs.org/myScope/myModule#MyType',
+    'nodejs://nodejs.org/myScope/myModule',
+    'nodejs://nodejs.org/global/myModule',
+    'nodejs://nodejs.org/global/my-module',
+    'nodejs://nodejs.org/global/my_module',
+    '@myScope/myModule, myNs.MyType',
+    '@myScope/myModule, MyType',
+    '@myScope/myModule',
+    'myModule, myNs.MyType',
+    'myModule, myNs.mySubNs',
+    'myModule, myNs',
+    'myModule, MyType',
+    'myModule',
+  ]
+  for (var id of ids) {
+    console.error(`-- ${id}`)
+    const typeName = await NodeName.from(id)
+    await typeName.__dump()
+  }
+}
 
-// const moduleName = ModuleName.local
-// moduleName.type('myNs', 'myType').__dump()
-
-// const globalModuleName = ModuleName.name('mySub0', 'mySub1', 'myModule')
-// globalModuleName.type('myNs0', 'myNs1', 'MyType').__dump()
+test()

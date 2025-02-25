@@ -8,7 +8,7 @@ import { reduce } from 'rxjs/operators'
 
 const HTTP_UPDATE_METHODS = ['POST', 'PUT', 'PATCH']
 
-export class CliHttp extends Cli {
+class CliHttp extends Cli {
   static description = 'Send a HTTP request'
   static parameters = {
     url: 'The url to request',
@@ -30,7 +30,6 @@ export class CliHttp extends Cli {
     head: 'CliHttpHead',
   }
   static defaults = CliHttp.loadDefaults()
-  static meta = import.meta
 
   constructor(url, headers = 0, { method = 'GET', ...rest } = { }) {
     if (CliHttp.loadingDefaults(new.target, url, headers, { method }))
@@ -124,7 +123,6 @@ const exports = Object.fromEntries(
     CliHttp.extend({
       name,
       description,
-      meta: import.meta,
       ctor: function (url, headers, options = {}) {
         return !this ? [{ }] : [url, headers, { method, ...options }]
       }
@@ -132,6 +130,7 @@ const exports = Object.fromEntries(
   ])
 )
 
+export default CliHttp
 export const { 
   CliHttpGet,
   CliHttpPost,

@@ -7,26 +7,24 @@ import { Cli } from '@kingjs/cli'
 class Clippy extends Cli {
   static description = 'My funky cli'
   static commands = {
-    orb: '@kingjs/cli-orb',
-    poll: '@kingjs/cli-poll-clipboard',
-    http: '@kingjs/cli-http',
-    eval: '@kingjs/cli-eval',
+    // orb: '@kingjs/cli-orb',
+    // poll: '@kingjs/cli-poll-clipboard',
+    // http: '@kingjs/cli-http',
+    // eval: '@kingjs/cli-eval',
     moo: {
-      // description: 'My moo command',
-      // scope: import.meta,
-      // commands: {
-      //   foo: {
-      //     description: 'My foo command',
-      //     commands: {
-      //       bar: '@kingjs/cli-http, CliHttpGet',
-      //       baz: '@kingjs/cli-http, CliHttpGet',
-      //     }
-      //   },
-      // }
+      description: 'My moo command',
+      commands: {
+        foo: {
+          description: 'My foo command',
+          commands: {
+            bar: '@kingjs/cli-http, CliHttpGet',
+            baz: '@kingjs/cli-http, CliHttpGet',
+          }
+        },
+      }
     },
   }
   static defaults = Clippy.loadDefaults()
-  static meta = import.meta
 
   constructor(options = { }) {
     if (Clippy.loadingDefaults(new.target, options))
@@ -36,7 +34,31 @@ class Clippy extends Cli {
   }
 }
 
+export default {
+  description: 'My funky cli',
+  commands: {
+    orb: '@kingjs/cli-orb',
+    poll: '@kingjs/cli-poll-clipboard',
+    http: '@kingjs/cli-http',
+    eval: '@kingjs/cli-eval',
+    moo: {
+      description: 'My moo command',
+      commands: {
+        foo: {
+          description: 'My foo command',
+          commands: {
+            bar: '@kingjs/cli-http, CliHttpGet',
+            baz: '@kingjs/cli-http, CliHttpGet',
+          }
+        },
+      }
+    },
+  }
+}
+
 Clippy.__dumpMetadata()
+// .then(() => Clippy.__dumpLoader())
+// Clippy.__dumpLoader()
 
 // const loader = new CliMetadataLoader()
 // const group = new CliGroupInfo(loader, metadata)

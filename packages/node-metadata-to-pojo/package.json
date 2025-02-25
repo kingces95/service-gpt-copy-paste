@@ -1,11 +1,11 @@
 {
-  "name": "@kingjs/cli-metadata",
+  "name": "@kingjs/node-metadata-to-pojo",
   "version": "1.0.0",
-  "description": "Classes for loading metadata found on javascript classes.",
+  "description": "Construct a pojo given a node metadata.",
+  "main": "index.js",
   "type": "module",
   "exports": {
-    ".": "./index.js",
-    "./package.json": "./package.json"
+    ".": "./index.js"
   },
   "dependencies": {},
   "devDependencies": {},

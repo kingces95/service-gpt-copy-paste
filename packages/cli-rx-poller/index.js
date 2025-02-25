@@ -17,7 +17,6 @@ export class CliRxPoller extends CliRx {
     writeError: 'Write error messages to stderr.',
   }
   static defaults = CliRxPoller.loadDefaults()
-  static meta = import.meta
 
   constructor({ 
     pollMs = POLL_MS,

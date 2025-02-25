@@ -4,7 +4,6 @@ import {
   CliClassMetadata,
   CliMetadataLoader
 } from '@kingjs/cli-metadata'
-import { NodeName } from '@kingjs/node-name'
 import { trimPojo } from '@kingjs/pojo-trim'
 import { toPojo } from '@kingjs/pojo'
 
@@ -21,13 +20,13 @@ CliMetadata[symbol] = {
 
 CliClassMetadata[symbol] = {
   ...CliMetadata[symbol],
+  [symbol]: 'qualifiedName',
   fullName: 'string',
+  qualifiedName: 'string',
   url: 'url',
   parameters: 'infos',
   commands: 'any',
 }
-
-NodeName[symbol] = 'toString'
 
 CliParameterMetadata[symbol] = {
   ...CliMetadata[symbol],
@@ -46,7 +45,7 @@ CliParameterMetadata[symbol] = {
   // coerce, defaultDescription, normalize
 }
 
-export async function cliMetadataToPojo(metadata) {
-  let pojo = await toPojo(metadata, symbol)
+export async function cliMetadataToPojo(metadata, type) {
+  let pojo = await toPojo(metadata, { symbol, type, depth: 1 })
   return trimPojo(pojo)
 }

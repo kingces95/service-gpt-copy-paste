@@ -14,11 +14,10 @@ class CliEval extends Cli {
     shell: [ 'bash', 'cmd.exe' ]
   }
   static commands = {
-    bash: '@kingjs/cli-eval CliEvalBash',
-    cmd: '@kingjs/cli-eval CliEvalCmd',
+    bash: '@kingjs/cli-eval, CliEvalBash',
+    cmd: '@kingjs/cli-eval, CliEvalCmd',
   }
   static defaults = CliEval.loadDefaults()
-  static meta = import.meta
 
   constructor(exe, args = [], { shell, ...rest } = { }) {
     if (CliEval.loadingDefaults(new.target, exe, args, { shell }))
@@ -68,7 +67,6 @@ class CliEval extends Cli {
 class CliEvalBash extends CliEval {
   static description = 'Evaluate a bash shell command'
   static defaults = CliEvalBash.loadDefaults()
-  static meta = import.meta
   
   constructor(...args) {
     if (CliEvalBash.loadingDefaults(new.target, { }))
@@ -82,7 +80,6 @@ class CliEvalBash extends CliEval {
 class CliEvalCmd extends CliEval {
   static description = 'Evaluate a cmd shell command'
   static defaults = CliEvalCmd.loadDefaults()
-  static meta = import.meta
   
   constructor(...args) {
     if (CliEvalCmd.loadingDefaults(new.target, { }))
@@ -92,6 +89,7 @@ class CliEvalCmd extends CliEval {
   }
 }
 
+export default CliEval
 export { 
   CliEvalBash, 
   CliEvalCmd, 

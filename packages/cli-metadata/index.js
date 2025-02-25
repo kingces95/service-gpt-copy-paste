@@ -1,11 +1,12 @@
 import _ from 'lodash'
-import { Lazy, LazyGenerator } from '@kingjs/lazy'
+import { LazyGenerator } from '@kingjs/lazy'
 import { Cli } from '@kingjs/cli'
-import { TypeName } from '@kingjs/node-name'
+import { NodeName } from '@kingjs/node-name'
+import { assert } from 'vitest'
 
 const PARAMETER_METADATA_NAMES =  [ 
   // arrays
-  'aliases', 'choices', 'commands', 'conflicts', 'implications', 
+  'aliases', 'choices', 'conflicts', 'implications',
   // functions
   'coerce',
   // strings
@@ -16,8 +17,8 @@ const PARAMETER_METADATA_NAMES =  [
 
 class CliMetadata {
   constructor(loader, name) {
-    this.loader$ = loader
-    this.name$ = name
+    this.loader = loader
+    this.name = name
   }
 
   get isParameter() { return false }
@@ -25,30 +26,26 @@ class CliMetadata {
   get isOption() { return false }
   get isClass() { return false }
 
-  get loader() { return this.loader$ }
-  get name() { return this.name$ }
-  get description() { throw new Error('abstract') }
-
   toString() { return `name=${this.name}` }
 }
 
 class CliParameterMetadata extends CliMetadata {
 
-  static getType(dfault) {
-    if (dfault === null) {
+  static getType(default$) {
+    if (default$ === null) {
       return 'string'
-    } else if (Array.isArray(dfault)) { 
+    } else if (Array.isArray(default$)) { 
       return 'array'
-    } else if (dfault == String) {
+    } else if (default$ == String) {
       return 'string'
-    } else if (dfault == Number) {
+    } else if (default$ == Number) {
       return 'number'
-    } else if (dfault == Boolean) {
+    } else if (default$ == Boolean) {
       return 'boolean'
-    } else if (dfault == Array) {
+    } else if (default$ == Array) {
       return 'array'
     } else {
-      const defaultType = typeof dfault
+      const defaultType = typeof default$
       if (defaultType === 'string') {
         return 'string'
       } else if (defaultType == 'number') {
@@ -61,20 +58,19 @@ class CliParameterMetadata extends CliMetadata {
     return 'string'
   }
 
-  constructor(classInfo, name, dfault) {
+  constructor(classInfo, name, default$) {
     super(classInfo.loader, name)
 
+    this.name = name
     this.classInfo$ = classInfo
-    this.default$ = dfault
-    this.hasDefault$ = dfault !== undefined
-    this.type$ = CliParameterMetadata.getType(dfault)
+    this.default$ = default$
+    this.hasDefault$ = default$ !== undefined
+    this.type$ = CliParameterMetadata.getType(default$)
     this.metadata = classInfo.getParameterMetadata$(name)
   }
 
   get classInfo() { return this.classInfo$ }
   get isParameter() { return true }
-  get isOption() { return !this.isPositional }
-  get isPositional() { return this.position != undefined }
 
   // parameter type
   get type() { return this.type$ }
@@ -110,8 +106,8 @@ class CliParameterMetadata extends CliMetadata {
 }
 
 class CliOptionMetadata extends CliParameterMetadata {
-  constructor(classInfo, name, dfault) {
-    super(classInfo, name, dfault)
+  constructor(classInfo, name, default$) {
+    super(classInfo, name, default$)
   }
 
   get isOption() { return true } 
@@ -120,8 +116,8 @@ class CliOptionMetadata extends CliParameterMetadata {
 }
 
 class CliPostionalMetadata extends CliParameterMetadata {
-  constructor(classInfo, name, dfault, position) {
-    super(classInfo, name, dfault)
+  constructor(classInfo, name, default$, position) {
+    super(classInfo, name, default$)
 
     this.position$ = position
   }
@@ -133,52 +129,46 @@ class CliPostionalMetadata extends CliParameterMetadata {
 }
 
 class CliClassMetadata extends CliMetadata {
+
   static commonAncestor(classes) {
     const hierarchies = classes.map(cls => [...cls.hierarchy()].reverse())
     const commonAncestors = _.intersection(...hierarchies)
     const result = commonAncestors[commonAncestors.length - 1]
     return result
   }
+  
+  #baseClass
+  #hierarchy
+  #positionals
+  #options
+  #parameters
+  #commands
 
-  constructor(loader, name, cls) {
+  constructor(loader, class$, { scope, nodeName, name }) {
+    // nodeName or scope + name must be provided, but not both
+    assert(nodeName || (scope && name))
+    assert(!(nodeName && scope && name))
+
     super(loader, name)
-    this.class$ = cls
 
-    const parameters = this.getOwnClassMetadata$('parameters') || { }
-    const defaults = this.getOwnClassMetadata$('defaults') || [{ }]
+    this.class = class$
+    this.scope = scope
+    this.nodeName = nodeName
+    this.description = this.#getOwnClassMetadata('description')
+    this.commandNames = Object.keys(this.#getOwnClassMetadata('commands') ?? { })
+    
+    const parameters = this.#getOwnClassMetadata('parameters') ?? { }
+    const defaults = this.#getOwnClassMetadata('defaults') ?? [{ }]
 
-    this.meta = this.class.meta
-
-    this.fullName$ = new Lazy(() => this.class.fullName())
-    this.url$ = new Lazy(() => this.class.url())
-    this.typeName$ = new Lazy(() => this.class.typeName())
-    this.moduleName$ = new Lazy(() => this.class.moduleName())
-
-    this.description$ = this.getOwnClassMetadata$('description')
-    this.commands$ = new Lazy(() => {
+    this.#commands = new LazyGenerator(async function* () {
       const commands = this.getOwnClassMetadata$('commands') ?? { }
-      const result = { }
-      for (const [name, cls] of Object.entries(commands)) {
-        if (cls instanceof Cli) { result[name] = loader.load(cls) } // early
-        if (typeof cls === 'string') { result[name] = TypeName.from(cls) } // late
-        if (typeof cls === 'object') { result[name] = Cli.extend(cls) } // anonymous
-      }
-      return result
-    })
-
-    this.hierarchy$ = new LazyGenerator(function* () {
-      let current = this
-      while (current) {
-        yield current
-        current = current.baseClass
+      for (const [name, id] of Object.entries(commands)) {
+        const class$ = await this.#loadCommandClass([name, id])
+        yield new CliClassMetadata(this.loader, class$, { name, scope: this })
       }
     }, this)
 
-    this.baseClass$ = new Lazy(
-      () => this.loader.load(Object.getPrototypeOf(cls.prototype)?.constructor)
-    )
-
-    this.positionals$ = new LazyGenerator(function* () {
+    this.#positionals = new LazyGenerator(function* () {
       const names = Object.keys(parameters)
       for (let i = 0; i < defaults.length - 1; i++) {
         const name = names[i]
@@ -186,31 +176,73 @@ class CliClassMetadata extends CliMetadata {
       }
     }, this)
 
-    this.options$ = new LazyGenerator(function* () {
+    this.#options = new LazyGenerator(function* () {
       const options = defaults[defaults.length - 1]
-      for (const [name, dfault] of Object.entries(options)) {
-        yield new CliOptionMetadata(this, name, dfault)
+      for (const [name, default$] of Object.entries(options)) {
+        yield new CliOptionMetadata(this, name, default$)
       }
     }, this)
 
-    this.parameters$ = new LazyGenerator(function* () {
+    this.#parameters = new LazyGenerator(function* () {
       yield* this.positionals()
       yield* this.options()
     }, this)
+    
+    this.#baseClass = new Lazy(() => {
+      return loader.load(class$.prototype)
+    })
+
+    this.#hierarchy = new LazyGenerator(function* () {
+      let current = this
+      while (current) {
+        yield current
+        current = current.baseClass
+      }
+    }, this)
   }
 
-  async fullName() { return await this.fullName$.value }
-  async url() { return await this.url$.value }
-  async typeName() { return await this.typeName$.value }
-  async moduleName() { return await this.moduleName$.value }
+  async #loadCommandClass(entry) {
+    const [name, value] = entry
 
-  getOwnClassMetadata$(metadataName) {
-    return Object.hasOwn(this.class, metadataName) ? this.class[metadataName] : null
+    // 1) if entry is a Cli class, then return it
+    // e.g. CliEcho
+    if (typeof value == 'function') {
+      if (value.prototype instanceof Cli) {
+        return value
+      }
+    }
+
+    // 2) if entry is a reference to a type, then lazily load it
+    // e.g '@kingjs/echo, CliEcho'; fully qualified name
+    // e.g 'CliEcho'; short name
+    if (typeof value == 'string') {
+      const scope = this.nodeName.moduleName
+      const typeName = await NodeName.from(value, scope)
+      return await typeName.getType()
+    }
+
+    // 3) if the entry is a pojo, then dynamically create a command class
+    // e.g. { description: '...', ... }
+    if (typeof value == 'object') {
+      if (Object.getPrototypeOf(value) == Object.prototype) {
+        return Cli.extend({ 
+          name: TypeName.scopeToTypeCase(name), 
+          ...value 
+        })
+      }
+    }
+
+    new Error(`Could not load command ${name} found on ${className}`)  
   }
 
-  getParameterMetadata$(parameterName) {
+  #getOwnClassMetadata(metadataName) {
+    return Object.hasOwn(this.class, metadataName) 
+      ? this.class[metadataName] : null
+  }
+
+  #getParameterMetadata(parameterName) {
     return PARAMETER_METADATA_NAMES.reduce((acc, metadataName) => {
-      const metadata = this.getOwnClassMetadata$(metadataName)
+      const metadata = this.#getOwnClassMetadata(metadataName)
       const metadatum = metadata?.[parameterName]
       acc[metadataName] = metadatum
       return acc  
@@ -218,17 +250,25 @@ class CliClassMetadata extends CliMetadata {
   }
 
   get isClass() { return true }
+
+  get nodeName() {
+    if (this.nodeName)
+      return this.nodeName
+
+    if (this.scope)
+      return this.scope.nodeName.addNesting(this.name)
+
+    return null
+  }
+  get baseClass() { return this.#baseClass.value }
   
-  get class() { return this.class$ }
-  get baseClass() { return this.baseClass$.value }
-  get description() { return this.description$.value }
-  get commands() { return this.commands$.value }
+  async commands() { return await this.#commands.load() }
 
-  *parameters() { yield* this.parameters$.value }
-  *positionals() { yield* this.positionals$.value }
-  *options() { yield* this.options$.value }
-  *hierarchy() { yield* this.hierarchy$.value }
-
+  *hierarchy() { yield* this.#hierarchy.value }
+  *positionals() { yield* this.#positionals.value }
+  *options() { yield* this.#options.value }
+  *parameters() { yield* this.#parameters.value }
+  
   isSubClassOf(classMetadata) {
     if (!classMetadata)
       return false
@@ -239,33 +279,38 @@ class CliClassMetadata extends CliMetadata {
 }
 
 class CliMetadataLoader {
-  constructor() {
-    this.cache$ = new Map()
+  
+  constructor(cli) {
+    const cliName = NodeName.from('@kingjs/cli, Cli')
+    this.cli = new CliClassMetadata(this, cli, { nodeName: cliName })
+    this.#metadataByName = new Map()
   }
 
-  get Cli() { return this.load(Cli) }
-  *classes() { yield *this.cache$.values() }
+  #metadataByName
 
-  load(cls) {
-    if (!cls)
-      return null
-
-    if (cls !== Cli && !(cls.prototype instanceof Cli))
-      return null
-
-    if (!this.cache$.has(cls))
-      this.cache$.set(cls, new CliClassMetadata(this, cls.name, cls))
-
-    return this.cache$.get(cls)
+  async getType(name) {
+    const nodeName = NodeName.from(name)
+    const key = nodeName.qualifiedName
+    if (!this.#metadataByName.has(key)) {
+      const class$ = await nodeName.getType()
+      const metadata = new CliClassMetadata(this, class$, { nodeName })
+      this.#metadataByName.set(key, metadata)
+    }
+    return this.#metadataByName.get(key)
   }
 }
 
-const loader = new CliMetadataLoader()
+const cliMetadataLoader = new CliMetadataLoader()
 
 export {
-  loader,
+  cliMetadataLoader,
+  CliMetadataLoader,
+
   CliMetadata,
-  CliParameterMetadata,
+
   CliClassMetadata,
-  CliMetadataLoader
+
+  CliParameterMetadata,
+  CliOptionMetadata,
+  CliPostionalMetadata,
 }

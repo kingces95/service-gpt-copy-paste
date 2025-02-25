@@ -5,17 +5,19 @@ import { write, joinFields } from '@kingjs/cli-echo'
 import { Console } from 'console'
 import { CliFdReadable } from '@kingjs/cli-fd-readable'
 import { CliFdWritable } from '@kingjs/cli-fd-writable'
-import { moduleNameFromMetaUrl } from '@kingjs/node-name-from-meta-url'
 import assert from 'assert'
+
+import { cliMetadataLoader } from '@kingjs/cli-metadata'
+import { cliMetadataToPojo } from '@kingjs/cli-metadata-to-pojo'
+import { dumpPojo } from '@kingjs/pojo-dump'
 async function __import() {
-  const { loader } = await import('@kingjs/cli-metadata')
-  const { cliMetadataToPojo } = await import('@kingjs/cli-metadata-to-pojo')
-  const { dumpPojo } = await import('@kingjs/pojo-dump')
-  return { loader, toPojo: cliMetadataToPojo, dumpPojo }
+  // const { cliMetadataLoader } = await import('@kingjs/cli-metadata')
+  // const { cliMetadataToPojo } = await import('@kingjs/cli-metadata-to-pojo')
+  // const { dumpPojo } = await import('@kingjs/pojo-dump')
+  return { cliMetadataLoader, toPojo: cliMetadataToPojo, dumpPojo }
 }
 
 const DEFAULTS = Symbol('defaults loading')
-const TYPE_NAME = Symbol('typeName')
 
 const DEFAULT_IFS = ' '
 const STDIN_FD = 0
@@ -30,9 +32,20 @@ const EXIT_SIGINT = EXIT_ABORT + 2
 const IFS = DEFAULT_IFS
 
 export class Cli {
+  static async metadata() {
+    const { cliMetadataLoader } = await __import()
+    return await cliMetadataLoader.load(this)
+  }
   static async __dumpMetadata() { 
-    const { loader, toPojo, dumpPojo } = await __import()
-    toPojo(loader.load(this)).then(dumpPojo) 
+    const { toPojo, dumpPojo } = await __import()
+    const metadata = await this.metadata()
+    const pojo = await toPojo(metadata)
+    await dumpPojo(pojo)
+  }
+  static async __dumpLoader() { 
+    const { cliMetadataLoader, toPojo, dumpPojo } = await __import()
+    const pojo = await toPojo(cliMetadataLoader.classes(), 'infos')
+    await dumpPojo(pojo)
   }
 
   static parameters = {
@@ -45,25 +58,11 @@ export class Cli {
     verbose: ['v'],
   }
   static defaults = Cli.loadDefaults()
-  static meta = import.meta
-
-  static async typeName() { 
-    if (!Object.hasOwn(this, TYPE_NAME)) {
-      if (!this.name || !Object.hasOwn(this, 'meta')) 
-        return null
-      const moduleName = await moduleNameFromMetaUrl(this.meta?.url) 
-      this[TYPE_NAME] = moduleName.type(this.name)
-    }
-    return this[TYPE_NAME]
-  }
-  static async moduleName() { return (await this.typeName())?.moduleName }
-  static async url() { return (await this.typeName())?.url }
-  static async fullName() { return (await this.typeName())?.fullName }
 
   static extend({ name, ctor, ...metadata }) {
     const cls = class cls extends this {
       constructor(...args) {
-        var defaults = ctor?.call() ?? []
+        var defaults = ctor?.call() ?? [{}]
   
         if (cls.loadingDefaults(new.target, ...defaults))
           return super()
@@ -81,7 +80,6 @@ export class Cli {
     }
   
     cls.defaults = cls.loadDefaults()
-  
     return cls
   }
 
@@ -149,45 +147,18 @@ export class Cli {
     })
   }
 
-  async write(line) {
-    return write(this.stdout, this.signal, line)
-  }
+  async write(line) { return write(this.stdout, this.signal, line) }
+  async writeRecord(fields) { return write(Cli.joinFields(fields)) }
+  
+  async readChar() { return readChar(this.stdin, this.signal) }
+  async readString(count) { return readString(this.stdin, this.signal, count) }
+  async read() { return read(this.stdin, this.signal) }
+  async readArray() { return readArray(this.stdin, this.signal, IFS) }
+  async readRecord(fields) { return readRecord(this.stdin, this.signal, IFS, fields) }
 
-  async writeRecord(fields) {
-    return write(Cli.joinFields(fields))
-  }
-
-  async readChar() {
-    return readChar(this.stdin, this.signal)
-  }
-
-  async readString(charCount) {
-    return readString(this.stdin, this.signal, charCount)
-  }
-
-  async read() {
-    return read(this.stdin, this.signal)
-  }
-
-  async readArray() {
-    return readArray(this.stdin, this.signal, IFS)
-  }
-
-  async readRecord(fields) {
-    return readRecord(this.stdin, this.signal, IFS, fields)
-  }
-
-  async success$() {
-    this.exitCode = EXIT_SUCCESS
-  }
-
-  async abort$() {
-    this.exitCode = EXIT_SIGINT
-  }
-
-  async fail$(code = EXIT_FAILURE) {
-    this.exitCode = code
-  }
+  async success$() { this.exitCode = EXIT_SUCCESS }
+  async abort$() { this.exitCode = EXIT_SIGINT }
+  async fail$(code = EXIT_FAILURE) { this.exitCode = code }
 
   async error$(error) {
     this.exitError = error
@@ -222,4 +193,4 @@ export class Cli {
   }
 }
 
-// Cli.__dumpMetadata()
+Cli.__dumpMetadata()

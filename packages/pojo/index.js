@@ -5,137 +5,146 @@ async function getOrCall(target, name) {
     : functionOrValue)
 }
 
-export async function toPojo(value, symbol) {
+export async function toPojo(value, options) {
+  const { type = null, symbol, depth = 1 } = options
+  const jsType = typeof value
+
+  if (value === null || value === undefined)
+    return
+
+  if (jsType == 'object' && !Array.isArray(value)) {
+    if (value[Symbol.iterator])
+      value = [...value]
   
-  async function _toPojo(value, type) {
-    const jsType = typeof value
+    if (value[Symbol.asyncIterator])
+      value = await Promise.all(value)
+  }
 
-    if (value === null || value === undefined)
-      return
+  if (!type && Array.isArray(value))
+    return await toPojo(value, { symbol, type: 'list', depth })
 
-    if (jsType == 'object' && !Array.isArray(value)) {
-      if (value[Symbol.iterator])
-        value = [...value]
-    
-      if (value[Symbol.asyncIterator])
-        value = await Promise.all(value)
-    }
+  if (!type) {
+    switch (jsType) {
+      case 'symbol':
+      case 'function':
+        return
 
-    if (!type && Array.isArray(value))
-      type = 'list'
+      case 'number':
+      case 'bigint':
+      case 'boolean':
+      case 'string':
+        return value
+        
+      case 'object': {
+        const metadata = value.constructor?.[symbol]
+        const isPojo = Object.getPrototypeOf(value) === Object.prototype
 
-    if (!type) {
-      switch (jsType) {
-        case 'symbol':
-        case 'function':
-          return
+        // if there is no metadata, then ignore unless it is a plain object.
+        if (!metadata && !isPojo)
+          throw new Error(`Object must be pojo or have metadata`)
 
-        case 'number':
-        case 'bigint':
-        case 'boolean':
-        case 'string':
-          return value
-          
-        case 'object': {
-          const metadata = value.constructor?.[symbol]
-          const isPojo = Object.getPrototypeOf(value) === Object.prototype
-
-          // if there is no metadata, then ignore unless it is a plain object.
-          if (!metadata && !isPojo)
-            throw new Error(`Object must be pojo or have metadata`)
-
-          // if there is no metadata, then transform all properties to pojos.
-          if (!metadata) {
-            const result = { }
-            for (const key in value) {
-              result[key] = await _toPojo(value[key])
-            }
-            return result
-          } 
-          
-          // if metadata is a string, return the value of the property
-          if (typeof metadata == 'string') {
-            return await _toPojo(await getOrCall(value, metadata))
-          }
-
-          // if metadata is an object, then transform properties with metadata.
+        // if there is no metadata, then transform all properties to pojos.
+        if (!metadata) {
           const result = { }
-          for (const key in metadata) {
-            let type = metadata[key]
-            result[key] = await _toPojo(await getOrCall(value, key), type)
+          for (const key in value) {
+            result[key] = await toPojo(value[key], { symbol, depth })
           }
           return result
+        } 
+
+        // stop recursing if depth is zero and a qualified name is available
+        const qualifiedName = value[metadata[symbol]]
+        if (!depth && qualifiedName)
+          return qualifiedName
+
+        // decrement depth if value could be referenced by a qualified name
+        let newDepth = depth - qualifiedName ? 1 : 0
+        
+        // if metadata is a string, return the value of the property
+        if (typeof metadata == 'string') {
+          return await toPojo(await getOrCall(value, metadata), { 
+            symbol, depth: newDepth
+          })
         }
 
-        case 'array':
-          const array = []
-          for (const item of value) {
-            array.push(await _toPojo(item))
-          }
-          return array
-      
-        default:
-          throw new Error(`unexpected type: ${jsType}`)
+        // if metadata is an object, then transform properties with metadata.
+        const result = { }
+        for (const key in metadata) {
+          let type = metadata[key]
+          const keyValue = await getOrCall(value, key)
+          result[key] = await toPojo(keyValue, { 
+            type, symbol, depth: newDepth
+          })
+        }
+        return result
       }
-    }
 
-    switch (type) {
-      case 'number':
-        if (jsType != type && jsType != 'bigint')
-          throw new Error(`Pojo number type must be typeof number or bigint; got ${jsType}`)
-        return _toPojo(value)
-
-      case 'string':
-        if (jsType != type)
-          throw new Error(`Pojo string type must be typeof string; got ${jsType}`)
-        return _toPojo(value)
-        
-      case 'boolean':
-        if (jsType != type)
-          throw new Error(`Pojo boolean type must be typeof boolean; got ${jsType}`)
-        return _toPojo(value)
-
-      case 'url':
-        if (value && !(value instanceof URL))
-          throw new Error(`Pojo url type must be instanceof URL`)
-        return _toPojo(value?.toString())
-
-      case 'any':
-        if (jsType == 'function')
-          throw new Error(`Pojo any type must not be typeof function`)
-        return _toPojo(value)
-
-      case 'list': {
-        if (jsType != 'object')
-          throw new Error(`Pojo list type must be typeof object; got ${jsType}`)
-        if (!Array.isArray(value))
-          throw new Error(`Pojo list type must be Array.isArray`)
-        const list = []
+      case 'array':
+        const array = []
         for (const item of value) {
-          list.push(await _toPojo(item))
+          array.push(await toPojo(item), { symbol, depth })
         }
-        return list
-      }
-      
-      case 'infos': {
-        const infos = await _toPojo(value, 'list')
-        const entries = []
-        for (const info of infos) {
-          if (!Object.hasOwn(info, 'name')) 
-            throw new Error(`Pojo info object must have a name property`)
-        
-          const name = info.name
-          delete info.name
-          
-          entries.push([name, info])
-        }
-        return Object.fromEntries(entries)
-      }
-
+        return array
+    
       default:
-        throw new Error(`Unexpected pojo type: ${type}`)
+        throw new Error(`unexpected type: ${jsType}`)
     }
   }
 
-  return _toPojo(value)
+  switch (type) {
+    case 'number':
+      if (jsType != type && jsType != 'bigint')
+        throw new Error(`Pojo number type must be typeof number or bigint; got ${jsType}`)
+      return await toPojo(value, { symbol, depth })
+
+    case 'string':
+      if (jsType != type)
+        throw new Error(`Pojo string type must be typeof string; got ${jsType}`)
+      return await toPojo(value, { symbol, depth })
+      
+    case 'boolean':
+      if (jsType != type)
+        throw new Error(`Pojo boolean type must be typeof boolean; got ${jsType}`)
+      return await toPojo(value, { symbol, depth })
+
+    case 'url':
+      if (value && !(value instanceof URL))
+        throw new Error(`Pojo url type must be instanceof URL`)
+      return await toPojo(value?.toString(), { symbol, depth })
+
+    case 'any':
+      if (jsType == 'function')
+        throw new Error(`Pojo any type must not be typeof function`)
+      return await toPojo(value, { symbol, depth })
+
+    case 'list': {
+      if (jsType != 'object')
+        throw new Error(`Pojo list type must be typeof object; got ${jsType}`)
+      if (!Array.isArray(value))
+        throw new Error(`Pojo list type must be Array.isArray`)
+      const list = []
+      for (const item of value) {
+        list.push(await toPojo(item, { symbol, depth }))
+      }
+      return list
+    }
+    
+    case 'infos': {
+      const infos = await toPojo(value, { symbol, type: 'list', depth })
+      const entries = []
+      for (const info of infos) {
+        if (!Object.hasOwn(info, 'name')) 
+          throw new Error(`Pojo info object must have a name property`)
+      
+        const name = info.name
+        delete info.name
+        
+        entries.push([name, info])
+      }
+      return Object.fromEntries(entries)
+    }
+
+    default:
+      throw new Error(`Unexpected pojo type: ${type}`)
+  }
 }

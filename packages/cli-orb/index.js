@@ -24,7 +24,6 @@ export default class CliOrb extends Cli {
     memHot: 'Threshold for high memory usage',
   }
   static defaults = CliOrb.loadDefaults()
-  static meta = import.meta
   
   constructor({ cpuHot = CPU_HOT, memHot = MEM_HOT, ...rest } = { }) {
     if (CliOrb.loadingDefaults(new.target, { cpuHot, memHot }))

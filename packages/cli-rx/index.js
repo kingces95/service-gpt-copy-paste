@@ -10,7 +10,6 @@ import concatWrite from '@kingjs/rx-concat-write'
 
 export class CliRx extends CliService {
   static defaults = CliRx.loadDefaults()
-  static meta = import.meta
 
   constructor(options = { }, workflow) {
     if (CliRx.loadingDefaults(new.target, options))

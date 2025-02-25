@@ -15,7 +15,6 @@ export class CliService extends Cli {
     stdisFd: 'Fd to report status if stdis is set',
   }
   static defaults = CliService.loadDefaults()
-  static meta = import.meta
 
   constructor({ 
     stdis = false, 
