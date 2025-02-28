@@ -7,14 +7,17 @@ import { CliFdReadable } from '@kingjs/cli-fd-readable'
 import { CliFdWritable } from '@kingjs/cli-fd-writable'
 import assert from 'assert'
 
-import { cliMetadataLoader } from '@kingjs/cli-metadata'
-import { cliMetadataToPojo } from '@kingjs/cli-metadata-to-pojo'
-import { dumpPojo } from '@kingjs/pojo-dump'
 async function __import() {
-  // const { cliMetadataLoader } = await import('@kingjs/cli-metadata')
-  // const { cliMetadataToPojo } = await import('@kingjs/cli-metadata-to-pojo')
-  // const { dumpPojo } = await import('@kingjs/pojo-dump')
-  return { cliMetadataLoader, toPojo: cliMetadataToPojo, dumpPojo }
+  const { CliMetadataLoader } = await import('@kingjs/cli-metadata')
+  const { cliMetadataToPojo } = await import('@kingjs/cli-metadata-to-pojo')
+  const { dumpPojo } = await import('@kingjs/pojo-dump')
+  const { moduleNameFromMetaUrl } = await import('@kingjs/node-name-from-meta-url')
+  return { 
+    CliMetadataLoader, 
+    toPojo: cliMetadataToPojo, 
+    dumpPojo,
+    moduleNameFromMetaUrl
+  }
 }
 
 const DEFAULTS = Symbol('defaults loading')
@@ -32,19 +35,16 @@ const EXIT_SIGINT = EXIT_ABORT + 2
 const IFS = DEFAULT_IFS
 
 export class Cli {
-  static async metadata() {
-    const { cliMetadataLoader } = await __import()
-    return await cliMetadataLoader.load(this)
+  static async metadata(meta) {
+    const { CliMetadataLoader, moduleNameFromMetaUrl } = await __import()
+    const nodeName = await moduleNameFromMetaUrl(meta.url)
+    const loader = new CliMetadataLoader(nodeName.toString())
+    return await loader.load()
   }
-  static async __dumpMetadata() { 
+  static async __dumpMetadata(meta) { 
     const { toPojo, dumpPojo } = await __import()
-    const metadata = await this.metadata()
+    const metadata = await this.metadata(meta)
     const pojo = await toPojo(metadata)
-    await dumpPojo(pojo)
-  }
-  static async __dumpLoader() { 
-    const { cliMetadataLoader, toPojo, dumpPojo } = await __import()
-    const pojo = await toPojo(cliMetadataLoader.classes(), 'infos')
     await dumpPojo(pojo)
   }
 
@@ -60,7 +60,7 @@ export class Cli {
   static defaults = Cli.loadDefaults()
 
   static extend({ name, ctor, ...metadata }) {
-    const cls = class cls extends this {
+    const cls = class CliCommand extends this {
       constructor(...args) {
         var defaults = ctor?.call() ?? [{}]
   
@@ -193,4 +193,4 @@ export class Cli {
   }
 }
 
-Cli.__dumpMetadata()
+// Cli.__dumpMetadata(import.meta)

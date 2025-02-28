@@ -10,7 +10,7 @@ import { toPojo } from '@kingjs/pojo'
 const symbol = Symbol('cli-metadata-to-pojo')
 
 CliMetadataLoader[symbol] = {
-  classes: 'infos',
+  classes: 'list',
 }
 
 CliMetadata[symbol] = {
@@ -19,13 +19,14 @@ CliMetadata[symbol] = {
 }
 
 CliClassMetadata[symbol] = {
-  ...CliMetadata[symbol],
-  [symbol]: 'qualifiedName',
-  fullName: 'string',
-  qualifiedName: 'string',
-  url: 'url',
+  // ...CliMetadata[symbol],
+  [symbol]: 'ref',
+  id: 'number',
+  name: 'string',
+  baseClass: 'any',
+  description: 'string',
   parameters: 'infos',
-  commands: 'any',
+  commands: 'entries',
 }
 
 CliParameterMetadata[symbol] = {

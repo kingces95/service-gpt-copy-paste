@@ -2,7 +2,7 @@ import _ from 'lodash'
 import { Cli } from '@kingjs/cli'
 // import CliYargs from '@kingjs/cli-yargs'
 // import { cliInfoToPojo, toPojoSymbol } from '@kingjs/cli-info-to-pojo'
-// import { CliMetadataLoader } from '@kingjs/cli-metadata'
+import { CliMetadataLoader } from '@kingjs/cli-metadata'
 
 class Clippy extends Cli {
   static description = 'My funky cli'
@@ -56,8 +56,11 @@ export default {
   }
 }
 
-Clippy.__dumpMetadata()
-// .then(() => Clippy.__dumpLoader())
+const loader = new CliMetadataLoader('clippy')
+loader.load().then(() => loader.__dump())
+
+// Clippy.__dumpMetadata(import.meta)
+//  .then(() => Clippy.__dumpLoader())
 // Clippy.__dumpLoader()
 
 // const loader = new CliMetadataLoader()

@@ -1,6 +1,6 @@
 import { readPackageUp } from 'read-pkg-up'
 import { fileURLToPath } from 'url'
-import { ModuleName } from '@kingjs/node-name'
+import { NodeName } from '@kingjs/node-name'
 
 export async function moduleNameFromMetaUrl(url) {
   if (!url)
@@ -18,5 +18,5 @@ export async function moduleNameFromMetaUrl(url) {
   const { packageJson } = packageInfo
   
   // Use the package name directly
-  return ModuleName.fromImport(packageJson.name)
+  return NodeName.from(packageJson.name)
 }

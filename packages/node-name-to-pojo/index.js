@@ -6,28 +6,15 @@ const symbol = Symbol('node-name-to-pojo')
 
 NodeName[symbol] = {
   type: 'string',
-  isExportName: 'boolean',
+  isModuleName: 'boolean',
   isTypeName: 'boolean',
   isNamespace: 'boolean',
 
-  isScoped: 'boolean',
-  isGlobal: 'boolean',
-
+  name: 'string',
+  defaultTypeName: 'string',
   url: 'url',
   parentUrl: 'url',
-  importString: 'string',
-  qualifiedName: 'string',
-  scope: 'string',
-  packageName: 'string',
-  fullName: 'string',
-  namespace: 'string',
-  nesting: 'string',
-  name: 'string',
 
-  exports: 'list',
-  namespaces: 'list',
-  nestings: 'list',
-  
   toString: 'string',
 }
 

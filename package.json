@@ -15,10 +15,7 @@
   },
   "type": "module",
   "devDependencies": {
-    "@vitest/coverage-c8": "^0.33.0",
-    "@vitest/coverage-v8": "^2.1.8",
-    "jest": "^29.7.0",
-    "vitest": "^2.1.8"
+    "jest": "^29.7.0"
   },
   "dependencies": {
     "@napi-rs/clipboard": "^1.1.2",

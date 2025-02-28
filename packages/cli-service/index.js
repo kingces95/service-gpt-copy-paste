@@ -111,4 +111,4 @@ export class CliService extends Cli {
   }
 }
 
-// CliService.__dumpMetadata()
+// CliService.__dumpMetadata(import.meta)

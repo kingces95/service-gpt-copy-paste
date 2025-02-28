@@ -11,19 +11,11 @@ export async function toPojo(value, options) {
 
   if (value === null || value === undefined)
     return
-
-  if (jsType == 'object' && !Array.isArray(value)) {
-    if (value[Symbol.iterator])
-      value = [...value]
   
-    if (value[Symbol.asyncIterator])
-      value = await Promise.all(value)
-  }
-
-  if (!type && Array.isArray(value))
-    return await toPojo(value, { symbol, type: 'list', depth })
-
   if (!type) {
+    if (Array.isArray(value))
+      return await toPojo(value, { symbol, type: 'list', depth })
+  
     switch (jsType) {
       case 'symbol':
       case 'function':
@@ -52,13 +44,13 @@ export async function toPojo(value, options) {
           return result
         } 
 
-        // stop recursing if depth is zero and a qualified name is available
-        const qualifiedName = value[metadata[symbol]]
-        if (!depth && qualifiedName)
-          return qualifiedName
+        // stop recursing if depth is zero and object can be referenced
+        const ref = value[metadata[symbol]]
+        if (!depth && ref)
+          return ref
 
-        // decrement depth if value could be referenced by a qualified name
-        let newDepth = depth - qualifiedName ? 1 : 0
+        // decrement depth if value could be referenced
+        let newDepth = depth - ref ? 1 : 0
         
         // if metadata is a string, return the value of the property
         if (typeof metadata == 'string') {
@@ -120,15 +112,19 @@ export async function toPojo(value, options) {
     case 'list': {
       if (jsType != 'object')
         throw new Error(`Pojo list type must be typeof object; got ${jsType}`)
-      if (!Array.isArray(value))
-        throw new Error(`Pojo list type must be Array.isArray`)
+
       const list = []
-      for (const item of value) {
+      for await (const item of value) {
         list.push(await toPojo(item, { symbol, depth }))
       }
-      return list
+      return await Promise.all(list)
     }
-    
+
+    case 'entries': {
+      const entries = await toPojo(value, { symbol, type: 'list', depth })
+      return Object.fromEntries(entries)
+    }
+
     case 'infos': {
       const infos = await toPojo(value, { symbol, type: 'list', depth })
       const entries = []
