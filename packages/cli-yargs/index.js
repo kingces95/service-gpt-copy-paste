@@ -1,117 +1,222 @@
 import _ from 'lodash'
 import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
+import { Lazy } from '@kingjs/lazy'
+async function __import() {
+  const { cliYargsToPojo } = await import('@kingjs/cli-yargs-to-pojo')
+  const { dumpPojo } = await import('@kingjs/pojo-dump')
+  return { toPojo: cliYargsToPojo, dumpPojo }
+}
 
-export default class CliYargs {
-  static symbol = Symbol('CliYargs.MemberInfo')
+export class CliYargs {
+  #name
+  #description
 
-  static buildCommand(name, positionals = []) {
-    const parts = [name]
-
-    for (const positional of positionals) {
-      const isOptional = positional.type === 'array' || positional.default !== undefined
-      const part = isOptional ? `[${positional.name}...]` : `<${positional.name}>`
-      parts.push(part)
-    }
-
-    return parts.join(' ')
+  constructor(name, description) {
+    this.#name = name
+    this.#description = description
   }
 
-  static buildPositional(positional) {
-    return {
-      alias: positional?.aliases,
-      choices: positional?.choices,
-      coerce: positional?.coerce,
-      conflicts: positional?.conflicts,
-      default: positional?.default,
-      defaultDescription: positional?.defaultDescription,
-      description: positional?.description,
-      implies: positional?.implies,
-      normalize: positional?.normalize,
-      type: positional?.type,
-    }
+  get name() { return this.#name }
+  get description() { return this.#description }
+}
+
+export class CliYargsParameter extends CliYargs {
+  static create(command, name, parameter) {
+    if (parameter.position !== undefined)
+      return new CliYargsPositional(command, name, parameter)
+    return new CliYargsOption(command, name, parameter)
   }
 
-  static buildOption(option) {
-    return {
-      alias: option?.aliases,
-      choices: option?.choices,
-      coerce: option?.coerce,
-      conflicts: option?.conflicts,
-      default: option?.default,
-      defaultDescription: option?.defaultDescription,
-      describe: option?.description,
-      implies: option?.implies,
-      normalize: option?.normalize,
-      type: option?.type,
+  #command
+  #name
+  #parameter
 
-      boolean: option?.type === 'boolean',
-      count: option?.type === 'count',
-      demandOption: option?.demandOption,
-      global: option?.global,
-      hidden: option?.hidden,
-      number: option?.type === 'number',
-      string: option?.type === 'string',
-    }
+  constructor(command, name, parameter) {
+    super(name, parameter.description)
+    this.#command = command
+    this.#name = name
+    this.#parameter = parameter
   }
 
-  static loadPositionals(yargs$, context) {
-    for (const [_, pojo] of context) {
-      for (const positional of pojo.positionals ?? []) {
-        yargs$.positional(positional.name, CliYargs.buildPositional(positional))
+  get isPositional() { return this.#parameter.position !== undefined }
+  get isOption() { return this.#parameter.position === undefined }
+
+  get command() { return this.#command }
+  get name() { return this.#name }
+  get parameter() { return this.#parameter }
+
+  // abstract properties
+  get position() { return undefined }
+  get demandOption() { return undefined }
+  get global() { return undefined }
+  get hidden() { return undefined }
+
+  // https://github.com/yargs/yargs/blob/main/docs/api.md#positionalkey-opt
+  // https://github.com/yargs/yargs/blob/main/docs/api.md#optionskey-opt
+  get alias() { return this.#parameter?.aliases }
+  get choices() { return this.#parameter?.choices }
+  get coerce() { return this.#parameter?.coerce }
+  get conflicts() { return this.#parameter?.conflicts }
+  get default() { return this.#parameter?.default }
+  get defaultDescription() { return this.#parameter?.defaultDescription }
+  get implies() { return this.#parameter?.implies }
+  get normalize() { return this.#parameter?.normalize }
+  get type() { return this.#parameter?.type }
+}
+
+export class CliYargsPositional extends CliYargsParameter {
+  #positional
+
+  constructor(command, name, positional) {
+    super(command, name, positional)
+
+    this.#positional = positional
+  }
+
+  get position() { return this.#positional.position }
+  get isOptional() {
+    return this.#positional.default !== undefined
+      || this.#positional.type === 'array'
+  }
+}
+
+export class CliYargsOption extends CliYargsParameter {
+  #option
+
+  constructor(command, name, option) {
+    super(command, name, option)
+
+    this.#option = option
+  } 
+
+  get local() { return this.#option?.isLocal }
+
+  get demandOption() { return this.#option?.demandOption }
+  get global() { return !this.#option?.isLocal }
+  get hidden() { return this.#option?.isHidden }
+}
+
+export class CliYargsCommand extends CliYargs {
+  #parameters     // array of CliYargsParameter
+  #scope          // CliYargsCommand
+  #commands       // array of CliYargsCommand
+  #template       // yargs command string
+  #path           // path to command
+
+  constructor(name, commandInfo, scope) {
+    super(name, commandInfo.description)
+    
+    this.#scope = scope
+
+    this.#parameters = new Lazy(() => {
+      const parameters = [ ]
+      for (const [name, parameter] of Object.entries(commandInfo.parameters ?? { })) {
+        parameters.push(CliYargsParameter.create(this, name, parameter))
       }
+      return parameters
+    })
+
+    this.#commands = new Lazy(() => {
+      const commands = [ ]
+      for (const [name, command] of Object.entries(commandInfo.commands ?? { })) {
+        commands.push(new CliYargsCommand(name, command, this))
+      }
+      return commands
+    })
+
+    this.#template = new Lazy(() => {
+      // todo: handle groups
+      // `${name} <command>`,
+
+      const parts = [name]
+      for (const positional of this.positionals()) {
+        const part = positional.isOptional 
+          ? `[${positional.name}...]` : `<${positional.name}>`
+        parts.push(part)
+      }
+      return parts.join(' ')
+    })
+
+    this.#path = new Lazy(() => {
+      return [...this.hierarchy()].reverse().map(o => o.name).join(' ')
+    })
+  }
+
+  *hierarchy() { 
+    var scope = this
+    while (scope) {
+      yield scope
+      scope = scope.scope
     }
   }
 
-  static loadOptions(yargs$, group, pojo) {
-    for (const [name, option] of Object.entries(pojo.options ?? {})) {
-      yargs$.option(name, CliYargs.buildOption(option))
-      yargs$.group(name, `Options (${group}):`)
+  get scope() { return this.#scope }
+  get template() { return this.#template.value }
+  get path() { return this.#path.value }
+
+  parse(yargs, handler) {
+    for (const positional of this.positionals()) {
+      yargs.positional(positional.name, positional)
     }
-  }
 
-  static load(yargs$, pojo, name = 'global', parentContext = []) {
-    const context = [[name, pojo], ...parentContext]
+    for (const option of this.options()) {
+      yargs.option(option.name, option)
+      // yargs.group(name, `Options (${group}):`)
+    }
 
-    // load positionals
-    CliYargs.loadPositionals(yargs$, context)
-
-    // load options
-    CliYargs.loadOptions(yargs$, name, pojo)
-
-    // load groups
-    for (const [name, group] of Object.entries(pojo.groups ?? {})) {
-      yargs$.command(
-        `${name} <command>`,
-        group.description || '<missing group description>',
-        (subYargs) => CliYargs.load(subYargs, group, name, context),
-        (argv) => argv[CliYargs.memberInfoSymbol] = group
+    for (const child of this.commands()) {
+      yargs.command(
+        child.template, 
+        child.description, 
+        (subYargs) => child.build(subYargs, handler),
+        (argv) => handler(child.path, argv)
       )
     }
 
-    // load commands
-    for (const [name, command] of Object.entries(pojo.commands ?? {})) {
-      yargs$.command(
-        CliYargs.buildCommand(name, pojo.positionals),
-        command.description || '<missing command description>',
-        (subYargs) => CliYargs.load(subYargs, command, name, context),
-        (argv) => argv[CliYargs.memberInfoSymbol] = command
-      )
-    }
+    return yargs
   }
 
-  constructor(pojo) {
-    this.yargs$ = yargs()
-      .demandCommand(1, `You need to specify a command`)
+  *commands() { yield* this.#commands.value }
+  *parameters() { yield* this.#parameters.value }
+  *positionals() {
+    // inherited and declared positionals sorted by position
+    yield* this.scope?.positionals() ?? []
+    yield* this.#parameters.value
+      .filter(o => o instanceof CliYargsPositional)
+      .sort((a, b) => a.parameter.position - b.parameter.position) 
+  }
+  *options() { 
+    // options sorted by name
+    yield* this.#parameters.value
+      .filter(o => o instanceof CliYargsOption)
+      .sort((a, b) => a.name.localeCompare(b.name))
+  }
+}
 
-    CliYargs.load(this.yargs$, pojo)
+export class CliYargsLoader {
+  #command
+
+  constructor(name = 'acme', info) {
+    this.#command = new CliYargsCommand(name, info)
   }
 
-  parse(argv = hideBin(process.argv)) {
-    var args = this.yargs$.parse(argv)
-    var command = args[CliYargs.memberInfoSymbol]
-    delete args[CliYargs.memberInfoSymbol]
-    return { command, args }
+  get command() { return this.#command }
+
+  parse(argv = hideBin(process.argv), handler = (path, argv) => { 
+    console.error({ path, argv })
+  }) {
+    this.#command.parse(yargs(argv), handler)
+  }
+
+  async toPojo() {
+    const { toPojo } = await __import()
+    return await toPojo(this.#command)
+  }
+  
+  async __dump() {
+    const { dumpPojo } = await __import()
+    await dumpPojo(await this.toPojo())
   }
 }
 

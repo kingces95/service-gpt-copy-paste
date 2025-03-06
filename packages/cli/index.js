@@ -5,6 +5,7 @@ import { write, joinFields } from '@kingjs/cli-echo'
 import { Console } from 'console'
 import { CliFdReadable } from '@kingjs/cli-fd-readable'
 import { CliFdWritable } from '@kingjs/cli-fd-writable'
+import { NodeName } from '@kingjs/node-name'
 import assert from 'assert'
 
 async function __import() {
@@ -59,7 +60,52 @@ export class Cli {
   }
   static defaults = Cli.loadDefaults()
 
-  static extend({ name, ctor, ...metadata }) {
+  static async loadCommands(metadata = { }) {
+    // usage: static commands = MyCli.commands$({ ...metadata })
+
+    // metadata is an object whose every key is a command name
+    // and whose value is one of:
+    //  - a class
+    //  - a NodeName pointing to a class
+    //  - a POJO which can be expanded into a class
+
+    // The result is a promise that resolves to an object whose 
+    // keys are promises that resolve to the class of the command
+    // In this way, the command classes are lazily loaded.
+    return Promise.resolve().then(async () => {
+      if (typeof metadata == 'function')
+        metadata = await metadata()
+
+      const result = { }
+      for (const [key, value] of Object.entries(metadata)) {
+        const class$ = this.loadCommand(value)
+  
+        // each class must be a derivation of the enclosing class
+        if (!class$.prototype instanceof this)
+          throw new Error(`Class ${class$.name} must extend ${this.name}`)
+  
+        result[key] = class$
+      }
+      return result
+    })
+  }
+
+  static async loadCommand(value) {
+    const type = typeof value
+    switch (type) {
+      case 'function':
+        return value
+      case 'string':
+        const class$ = await NodeName.from(value).getType()
+        if (!class$) throw new Error(`Could not load command ${value}`)
+        return class$
+      case 'object':
+        return this.extend({ ...value })
+    }
+    throw new Error(`Could not load command`)
+  }
+
+  static extend({ name, commands, ctor, ...metadata }) {
     const cls = class CliCommand extends this {
       constructor(...args) {
         var defaults = ctor?.call() ?? [{}]
@@ -72,13 +118,14 @@ export class Cli {
     }
     Object.defineProperty(cls, "name", { value: name });
 
-    const knownKeys = ['name', 'ctor']
+    const knownKeys = ['name', 'ctor', 'commands']
     for (const [key, value] of Object.entries(metadata)) {
       if (knownKeys.includes(key))
         continue
       cls[key] = value
     }
   
+    cls.commands = cls.loadCommands(commands)
     cls.defaults = cls.loadDefaults()
     return cls
   }

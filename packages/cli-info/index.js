@@ -1,172 +1,189 @@
-import assert from 'assert'
-import { CliClassMetadata } from '@kingjs/cli-metadata'
-import { LoadAsync, LoadAsyncGenerator } from '@kingjs/load'
-import { TypeName } from '@kingjs/node-name'
+import { Lazy } from '@kingjs/lazy'
+async function __import() {
+  const { cliInfoToPojo } = await import('@kingjs/cli-info-to-pojo')
+  const { dumpPojo } = await import('@kingjs/pojo-dump')
+  return { toPojo: cliInfoToPojo, dumpPojo }
+}
 
-class CliInfo {
-  constructor(name, parent) {
-    this.name$ = name
-    this.parent$ = parent
+export class CliInfo {
+  #id
+  #name
 
-    this.hierarchy$ = new LoadAsyncGenerator(async function* () {
-      let current = this
-      while (current) {
-        yield current
-        current = current.parent
-      }
-    }, this)
+  constructor(id, name) {
+    this.#id = id
+    this.#name = name
   }
 
-  get isDefaultCommand() { return false }
-  get isMember() { return false }
+  get id() { return this.#id }
+  get name() { return this.#name }
+
   get isParameter() { return false }
   get isPositional() { return false }
   get isOption() { return false }
+  get isClass() { return false }
+}
 
-  get name() { return this.name$ }
-  get parent() { return this.parent$ }
-  async hierarchy() { return await this.hierarchy$.load() }
+export class CliParameterInfo extends CliInfo {
+  #command
+  #mdParameter
 
-  async description() { throw new Error('Description is not implemented.') }
+  constructor(command, name, mdParameter) {
+    super(mdParameter.id, name)
+
+    this.#command = command
+    this.#mdParameter = mdParameter
+  }
+
+  get isOption() { return this.position === undefined }
+  get isPositional() { return this.position !== undefined }
+
+  get position() { return this.#mdParameter.position }
+  get description() { return this.#mdParameter.description }
+  get normalize() { return this.#mdParameter.normalize }
+  get aliases() { return this.#mdParameter.aliases }
+  get choices() { return this.#mdParameter.choices }
+  get conflicts() { return this.#mdParameter.conflicts }
+  get implies() { return this.#mdParameter.implies }
+  get isLocal() { return this.#mdParameter.local }
+  get isHidden() { return this.#mdParameter.hidden }
+
+  get default() { return this.#mdParameter.default }
+  get defaultDescription() { return this.#mdParameter.defaultDescription }
+  get hasDefault() { return this.default !== undefined }
+  get required() { return !this.hasDefault }
+
+  get type() { return this.#mdParameter.type }
+  get isString() { return this.type === 'string' }
+  get isBoolean() { return this.type === 'boolean' }
+  get isNumber() { return this.type === 'number' }
+  get isArray() { return this.type === 'array' }
+  get isCount() { return this.type === 'count' }
+
+  get command() { return this.#command }
+}
+
+export class CliCommandInfo extends CliInfo {
+  #loader
+  #metadata
+  #commands
+  #scope
+  #parameters
+  
+  constructor(loader, mdClass, name, scope) {
+    super(mdClass.id, name)
+
+    this.#loader = loader
+    this.#metadata = mdClass
+    this.#scope = scope
+
+    this.#parameters = new Lazy(() => {
+      // Gather parameter metadata and select many parameters
+      const parameterMd = [...this.#hierarchyMd()]
+        .reverse()
+        .map(o => o.parameters ?? { })
+        .map(o => Object.entries(o))
+        .flat()
+  
+      // Assert inherited parameters are declared
+      const parameterIds = parameterMd.map(o => o[1].id)
+      const inhertiedParameterIds = [...this.#scopes()]
+        .map(o => [...o.parameters()].map(o => o.id))
+        .flat()
+      for (const id of inhertiedParameterIds) {
+        if (!parameterIds.includes(id))
+          throw new Error(`Parameter ${id} is not declared in ${this.fullName}`)
+      } 
+  
+      // Load declared-only parameters
+      const result = new Map()
+      const declaredParameterMd = parameterMd.slice(inhertiedParameterIds.length)
+      for (const [name, md] of declaredParameterMd) {
+        result.set(name, new CliParameterInfo(this, name, md))
+      }
+      return result
+    })
+
+    // Load neested commands
+    this.#commands = new Lazy(() => {
+      const result = new Map()
+      for (const [name, md] of Object.entries(mdClass.commands ?? { })) {
+        const command = loader.getCommand$(md, name, this)
+        result.set(name, command)
+      }
+      return result
+    })
+  }
+  
+  *#hierarchyMd() {
+    let md = this.#metadata
+    while (md) {
+      yield md
+      md = md.baseClass
+    }
+  }
+
+  *#scopes() {
+    for (let scope = this.#scope; scope; scope = scope.scope)
+      yield scope
+  }
+
+  get scope() { return this.#scope }
+  get fullName() { 
+    return [this, ...this.#scopes()].reverse().map(o => o.name).join('.') 
+  }
+  get isGroup() { return this.#parameters.size == 0}
+
+  get loader() { return this.#loader }
+  get description() { return this.#metadata.description }
+  *commands() { yield* this.#commands.value.values() }
+  getCommand(name) { return this.#commands.value.get(name) }
+
+  *parameters() { yield* this.#parameters.value.values() }
 
   toString() { return this.name }
 }
 
-class CliParameterInfo extends CliInfo {
-  constructor(mdParameter, parent) {
-    super(mdParameter.name, parent)
-    this.mdParameter = mdParameter
+export class CliInfoLoader {
+  #commands
+  #root
 
-    // List of properties to define as getters
-    const properties = [
-      'position', 'isParameter', 'isPositional', 'isOption',
-      'description', 'normalize',
-      'default', 'hasDefault', 'required', 'defaultDescription',
-      'aliases', 'choices', 'conflicts', 'implies',
-      'type', 'isString', 'isBoolean', 'isNumber', 'isArray',
-      'isCount', 'global', 'hidden'
-    ]
-
-    // Dynamically define getters
-    for (const prop of properties) {
-      Object.defineProperty(this, prop, {
-        get: () => this.mdParameter[prop],
-        enumerable: true
-      })
-    }
-  }
-}
-
-class CliMemberInfo extends CliInfo {
-  static async create(groupOrClsOrModuleName, name, parent) {
-    const group = groupOrClsOrModuleName
-    if (typeof group == 'object') {
-      return new CliGroupInfo(group, name, parent)
-    }
-
-    const clsOrModuleName = groupOrClsOrModuleName
-    if (typeof clsOrModuleName == 'function' || typeof clsOrModuleName == 'string') {
-      return new CliCommandInfo(clsOrModuleName, name, parent)
-    }
-
-    assert('Bad CliMemberInfo activation arguments')
-  }
-
-  static async commonAncestor(members) {
-    const classes = await Promise.all(members.map(async member => await member.mdClass$.load()))
-    return await CliClassMetadata.commonAncestor(classes)
-  }
-  
-  constructor(name, parent) {
-    super(name, parent)
-
-    this.mdClassHierarchy$ = new LoadAsyncGenerator(async function* () {
-      const parentMetaClass = await this.parent?.mdClass$.load()
-      for (const mdClass of await this.mdClass$.load(async o => await o.hierarchy())) {
-        if (parentMetaClass && mdClass === parentMetaClass) 
-          break
-        yield mdClass
-      }
-    }, this)
-
-    this.parameters$ = new LoadAsyncGenerator(async function* () {
-      for (const mdClass of (await this.mdClassHierarchy$.load()).reverse()) {
-        for (const mdParameter of mdClass.parameters()) {
-          yield new CliParameterInfo(mdParameter, this)
-        }
-      }
-    }, this)
-  }
-
-  get isMember() { return true }
-
-  async parameters() { return await this.parameters$.load() }
-  async options() { return (await this.parameters()).filter(param => param.isOption) }
-  async positionals() { return (await this.parameters()).filter(param => param.isPositional) }
-}
-
-class CliCommandInfo extends CliMemberInfo {
-  static DefaultCommandName = '$'
-
-  constructor(clsOrModuleName, name, parent) {
-    super(name, parent)
-    this.mdClass$ = new LoadAsync(async () => {
-      const typeName = clsOrModuleName
-      if (typeof typeName == 'string') {
-        clsOrModuleName = await TypeName.load(typeName, { typeMissingIsError: true })
-      }
-
-      const cls = clsOrModuleName
-      assert(typeof cls == 'function', `Expected function but got ${typeof cls}: ${cls}`)
-      return cls.metadata
-    })
-  }
-
-  get isDefaultCommand() { return this.name === CliCommandInfo.DefaultCommandName }
-  
-  async description() { return await this.mdClass$.load(o => o.description) }
-  async run(args) { return await this.mdClass$.load(o => o.activate(args)) }
-}
-
-class CliGroupInfo extends CliMemberInfo {
-  
-  constructor(groupData, name, parent) {
-    super(name, parent)
-    this.groupData = groupData
-
-    this.commands$ = new LoadAsyncGenerator(async function* () {
-      for (const [name, clsOrGroupOrModuleName] of Object.entries(groupData)) {
-        if (name.endsWith('$'))
-          continue
-        yield CliMemberInfo.create(clsOrGroupOrModuleName, name, this)
-      }
-    }, this)
+  constructor(metadata) {
     
-    this.mdClass$ = new LoadAsync(async () => {
-      return await CliMemberInfo.commonAncestor(await this.commands())
-    })
-  }
+    // link references
+    for (const md of metadata) {
 
-  async commands() { return this.commands$.load() }
- 
-  async defaultCommand() {
-    for (const command of await this.commands()) {
-      if (command.isDefaultCommand) 
-        return command
+      // link baseClass
+      if (md.baseClass)
+        md.baseClass = metadata[md.baseClass[0]]
+
+      // link commands
+      if (md.commands)
+        md.commands = Object.fromEntries(
+          Object.entries(md.commands)
+            .map(([name, [id]]) => [name, metadata[id]])
+        )
     }
-    return null
-  }
-  async description() { 
-    return this.groupData.description$ 
-      || await (await this.defaultCommand())?.description() 
-      || '<missing group description>'
-  }
-}
 
-export {
-  CliInfo,
-  CliParameterInfo,
-  CliMemberInfo,
-  CliCommandInfo,
-  CliGroupInfo
+    this.#commands = []
+    this.#root = this.getCommand$(metadata[0], '<root>')
+  }
+
+  getCommand$(md, name, scope) {
+    const { id } = md
+    if (!this.#commands[id])
+      this.#commands[id] = new CliCommandInfo(this, md, name, scope)
+    return this.#commands[id] 
+  }
+
+  get root() { return this.#root }
+
+  async toPojo() {
+    const { toPojo } = await __import()
+    return await toPojo(this.root)
+  }
+  
+  async __dump() {
+    const { dumpPojo } = await __import()
+    await dumpPojo(await this.toPojo())
+  }
 }

@@ -1,56 +1,43 @@
 import {
   CliParameterInfo,
-  CliOptionInfo,
-  CliPositionalInfo,
-  CliMemberInfo,
   CliCommandInfo,
-  CliGroupInfo
 } from '@kingjs/cli-info'
 import { trimPojo } from '@kingjs/pojo-trim'
-import { toPojoSymbol, toPojo } from '@kingjs/pojo'
+import { toPojo } from '@kingjs/pojo'
 
-CliParameterInfo[toPojoSymbol] = {
+const symbol = Symbol('cli-metadata-to-pojo')
+
+CliParameterInfo[symbol] = {
+  // isPositional: 'boolean',
+  // isOption: 'boolean',
   name: 'string',
   description: 'string',
-  aliases: 'array',
-  choices: 'array',
-  conflicts: 'array',
+  type: 'string',
+  aliases: 'list',
+  choices: 'list',
+  conflicts: 'list',
   default: 'any',
   defaultDescription: 'string',
-  implies: 'array',
+  implies: 'list',
   normalized: 'boolean',
-  type: 'string',
   require: 'boolean',
-}
 
-CliOptionInfo[toPojoSymbol] = {
-  ...CliParameterInfo[toPojoSymbol],
-  isGlobal: 'boolean',
+  // options
   isHidden: 'boolean',
+  isLocal: 'boolean',
+
+  // positionals
+  position: 'number',
 }
 
-CliPositionalInfo[toPojoSymbol] = {
-  ...CliParameterInfo[toPojoSymbol]
-}
-
-CliMemberInfo[toPojoSymbol] = {
+CliCommandInfo[symbol] = {
   name: 'string',
   description: 'string',
-  options: 'infos',
-  positionals: 'list'
+  parameters: 'infos',
+  commands: 'infos',
 }
 
-CliCommandInfo[toPojoSymbol] = {
-  ...CliMemberInfo[toPojoSymbol]
-}
-
-CliGroupInfo[toPojoSymbol] = {
-  ...CliMemberInfo[toPojoSymbol],
-  groups: 'infos',
-  commands: 'infos'
-}
-
-export async function cliInfoToPojo(info) {
-  const pojo = await toPojo.call(info)
+export async function cliInfoToPojo(info, type) {
+  let pojo = await toPojo(info, { symbol, type, depth: 1 })
   return trimPojo(pojo)
 }

@@ -95,7 +95,7 @@ export async function toPojo(value, options) {
       return await toPojo(value, { symbol, depth })
       
     case 'boolean':
-      if (jsType != type)
+      if ('boolean' != type)
         throw new Error(`Pojo boolean type must be typeof boolean; got ${jsType}`)
       return await toPojo(value, { symbol, depth })
 

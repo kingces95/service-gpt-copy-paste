@@ -13,10 +13,10 @@ class CliEval extends Cli {
   static choices = {
     shell: [ 'bash', 'cmd.exe' ]
   }
-  static commands = {
+  static commands = CliEval.loadCommands({
     bash: '@kingjs/cli-eval, CliEvalBash',
     cmd: '@kingjs/cli-eval, CliEvalCmd',
-  }
+  })
   static defaults = CliEval.loadDefaults()
 
   constructor(exe, args = [], { shell, ...rest } = { }) {

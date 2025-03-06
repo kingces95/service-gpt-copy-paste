@@ -22,12 +22,12 @@ export class CliHttp extends Cli {
     method: true
   }
   static commands = () => ({
-    get: CliHttpGet,
-    post: CliHttpPost,
-    put: CliHttpPut,
-    delete: CliHttpDelete,
-    patch: CliHttpPatch,
-    head: CliHttpHead,
+    get: declareHttpMethod('GET', 'Perform an http GET request'),
+    post: declareHttpMethod('POST', 'Perform an http POST request'),
+    put: declareHttpMethod('PUT', 'Perform an http PUT request'),
+    delete: declareHttpMethod('DELETE', 'Perform an http DELETE request'),
+    patch: declareHttpMethod('PATCH', 'Perform an http PATCH request'),
+    head: declareHttpMethod('HEAD', 'Perform an http HEAD request'),
   })
   static defaults = CliHttp.loadDefaults()
 
@@ -110,34 +110,25 @@ export class CliHttp extends Cli {
   }
 }
 
-const exports = Object.fromEntries(
-  Object.entries({
-    CliHttpGet: { method: 'GET', description: 'Perform an http GET request' },
-    CliHttpPost: { method: 'POST', description: 'Perform an http POST request' },
-    CliHttpPut: { method: 'PUT', description: 'Perform an http PUT request' },
-    CliHttpDelete: { method: 'DELETE', description: 'Perform an http DELETE request' },
-    CliHttpPatch: { method: 'PATCH', description: 'Perform an http PATCH request' },
-    CliHttpHead: { method: 'HEAD', description: 'Perform an http HEAD request' }
-  }).map(([name, { method, description }]) => [
-    name,
-    CliHttp.extend({
-      name,
-      description,
-      ctor: function (url, headers, options = {}) {
-        return !this ? [{ }] : [url, headers, { method, ...options }]
-      }
-    })
-  ])
-)
+function declareHttpMethod(method, description) {
+  const CliHttpMethod = class extends CliHttp {
+    static description = description
 
-export const { 
-  CliHttpGet,
-  CliHttpPost,
-  CliHttpPut,
-  CliHttpDelete,
-  CliHttpPatch,
-  CliHttpHead,
-} = exports
+    constructor(url, headers, options = { }) {
+      if (CliHttpMethod.loadingDefaults(new.target, options))
+        return super()
+
+      super(url, headers, { method, ...options })
+    }
+  }
+
+  CliHttpMethod.defaults = CliHttpMethod.loadDefaults()
+
+  // Set the name of the class to be CliHttp{Method} via property descriptor
+  const name = `CliHttp${method.charAt(0)}${method.slice(1).toLowerCase()}`
+  Object.defineProperty(CliHttpMethod, 'name', { value: name })
+  return CliHttpMethod
+}
   
 // CliHttp.__dumpMetadata(import.meta)
 // CliHttpGet.__dumpMetadata(import.meta)

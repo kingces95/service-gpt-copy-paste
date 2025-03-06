@@ -14,17 +14,15 @@ CliMetadataLoader[symbol] = {
 }
 
 CliMetadata[symbol] = {
+  id: 'number',
   name: 'string',
   description: 'string',
 }
 
 CliClassMetadata[symbol] = {
-  // ...CliMetadata[symbol],
+  ...CliMetadata[symbol],
   [symbol]: 'ref',
-  id: 'number',
-  name: 'string',
   baseClass: 'any',
-  description: 'string',
   parameters: 'infos',
   commands: 'entries',
 }
