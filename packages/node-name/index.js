@@ -17,19 +17,21 @@ const JSON_IMPORT_OPTIONS = { with: { type: 'json' } }
 function assert(value, message) { 
   if (!value) throw new Error(message || 'Assertion failed.') 
 }
-function isAlphanumeric(value) { return /^[a-zA-Z0-9-_.]+$/.test(value) }
-function isCapitalized(value) { return value[0] === value[0].toUpperCase() }
-function isNotCapitalized(value) { return value[0] !== value[0].toUpperCase() }
-function isTypeName(value) { return value && isAlphanumeric(value) && isCapitalized(value) }
-function isScopeName(value) { return value && isAlphanumeric(value) && isNotCapitalized(value) }
-function assertAreTypeNames(...values) {
-  if (values.some(v => !isTypeName(v))) {
-    throw new Error(`Expected TypeName, got "${values.join(', ')}".`)
+function isPackageName(value) { return value && /^[a-z0-9]([a-z0-9._-]*[a-z0-9])?$/.test(value) }
+function isScopeName(value) { return value && /^[a-z0-9]+$/.test(value) }
+function isExportName(value) { return value && /^[a-zA-Z0-9-_]+$/.test(value) }
+function isObjectName(value) { return value && /^[a-zA-Z0-9]+$/.test(value) }
+function assertIsPackageName(value) { assert(isPackageName(value), `Expected package name, got "${value}".`) }
+function assertIsScopeName(value) { assert(isScopeName(value), `Expected scope name, got "${value}".`) }
+function assertIsObjectName(value) { assert(isObjectName(value), `Expected object name, got "${value}".`) }
+function assertAreExportNames(...values) { 
+  if (values.some(v => !isExportName(v))) {
+    throw new Error(`Expected export name, got "${values.join(', ')}".`)
   }
 }
-function assertAreScopeNames(...values) {
-  if (values.some(v => !isScopeName(v))) {
-    throw new Error(`Expected ScopeName, got: ${values.join(', ')}`)
+function assertAreObjectNames(...values) {
+  if (values.some(v => !isObjectName(v))) {
+    throw new Error(`Expected node name, got "${values.join(', ')}".`)
   }
 }
 function snakeToCamelCase(value) {
@@ -49,7 +51,7 @@ export class NodeName {
     await dumpPojo(pojo) 
   }
 
-  static scopeToTypeCase(value) {
+  static snakeOrPerlToCamelCase(value) {
     if (!value)
       return null
     return capitalize(snakeToCamelCase(perlToCamelCase(value)))
@@ -63,58 +65,37 @@ export class NodeName {
     return ModuleName.fromScope(GLOBAL, name, ...exports)
   }
 
-  static from(value, moduleName) {
+  static from(value) {
     const parts = NodeName.parse(value)
-    if (parts.packageName) return new NodeName(parts)
-
-    if (!moduleName)
-      throw new Error(`Cannot resolve ${value} without a module name.`)
-    const scopedParts = { ...moduleName.#parts, ...parts }
-    return new NodeName(scopedParts)
+    return new NodeName(parts)
   }
 
   static parse(value) {
-    // e.g. node://nodejs.org/myModule#myNs.MyType
+    // e.g. node://nodejs.org/my-module#myNs.MyType
     if (value.includes(SCHEME)) {
       return NodeName.parseUrl(value)
     }
 
-    // e.g @myScope/myModule, MyType
-    // e.g @myScope/myModule, myNs.MyType
-    // e.g myModule, MyType
+    // e.g @myscope/my-module, MyType
+    // e.g @myscope/my-module, myNs.MyType
+    // e.g my-module, MyType
     if (value.includes(',')) {
-      const [moduleName, typeName] = value.split(/,\s*/) 
-      const typeNameParts = NodeName.parseTypeName(typeName)
+      const [moduleName, objectName] = value.split(/,\s*/) 
+      const typeNameParts = NodeName.parseObjectName(objectName)
       const moduleNameParts = NodeName.parseModuleName(moduleName)
       return { ...moduleNameParts, ...typeNameParts }
     }
     
-    // e.g myNs.MyType
-    if (value.includes('.') || value.includes('+')) { 
-      return NodeName.parseTypeName(value) 
-    }
-    
-    // e.g @myScope/myModule
-    if (value.includes('/')) { 
-      return { ...NodeName.parseModuleName(value) } 
-    }
-    
-    // e.g MyType
-    if (value[0] === value[0].toUpperCase()) { 
-      return NodeName.parseTypeName(value)
-    }
-    
-    // e.g myModule
-    // Could be a namespace, but we choose to treat it as an import
+    // e.g @myscope/my-module
     return { ...NodeName.parseModuleName(value) }
   }
 
   static parseUrl(value) {
     const [ moduleImport, hash ] = value.split('#')
 
-    // e.g. node://nodejs.org/myScope/myModule/myExport/mySubExport
-    // e.g. node://nodejs.org/global/myModule/myExport
-    // e.g. node://nodejs.org/global/myModule
+    // e.g. node://nodejs.org/myscope/my-module/myExport/mySubExport
+    // e.g. node://nodejs.org/global/my-module/myExport
+    // e.g. node://nodejs.org/global/my-module
     const url = new URL(moduleImport)
     
     if (url.protocol !== SCHEME) {
@@ -125,59 +106,57 @@ export class NodeName {
       throw new Error(`Expected host "${HOST}", got "${url.host}".`)
     }
 
-    // e.g. myScope
+    // e.g. myscope
     const scope = url.pathname.split('/')[1]
 
-    // e.g. myModule
+    // e.g. my-module
     const packageName = url.pathname.split('/')[2]
     
     // e.g. myExport, mySubExport
     const exports = url.pathname.split('/').slice(3) 
     
-    assertAreScopeNames(scope, packageName, ...exports)
+    assertIsScopeName(scope)
+    assertIsPackageName(packageName)
+    assertAreExportNames(...exports)
     const moduleNameParts = { scope, packageName, exports }
-    const typeNameParts = hash ? NodeName.parseTypeName(hash) : { }
+    const typeNameParts = hash ? NodeName.parseObjectName(hash) : { }
     
     return { ...moduleNameParts, ...typeNameParts }
   }
 
-  static parseTypeName(value) {
+  static parseObjectName(value) {
     // e.g. myNs.MyType
     // e.g. myNs.mySubNs.MyType
     // e.g. MyType
-    // e.g. MyType+MyNestedType
-    // e.g. MyType+MyNestedType+MyNestedNestedType
-    // e.g. myNs.mySubNs.MyType+MyNestedType
     const dotSplit = value.split('.')
     const namespaces = dotSplit.slice(0, -1)
-    const pluses = dotSplit[dotSplit.length - 1]
-    const plusSplit = pluses.split('+')
-    const name = plusSplit.pop()
-    const nestings = plusSplit
+    const name = dotSplit.pop()
 
-    assertAreScopeNames(...namespaces)
-    assertAreTypeNames(...nestings)
-    assert(isTypeName(name) || isScopeName(name))
-    return { namespaces, nestings, name }
+    assertAreObjectNames(...namespaces)
+    if (name)
+      assertIsObjectName(name)
+    return { namespaces, name }
   }
   
   static parseModuleName(value) {
-    // e.g. @myScope/myModule
-    // e.g. @myScope/myModule/myExport
-    // e.g. myModule
-    // e.g. myModule/myExport
-    // e.g. myModule/myExport/mySubExport
+    // e.g. @myscope/my-module
+    // e.g. @myscope/my-module/myExport
+    // e.g. my-module
+    // e.g. my-module/myExport
+    // e.g. my-module/myExport/mySubExport
 
     const parts = value.split('/')
     const isScoped = parts[0].startsWith('@')
-    // e.g. myScope
+    // e.g. myscope
     const scope = isScoped ? parts.shift().slice(1) : GLOBAL
-    // e.g. myModule
+    // e.g. my-module
     const packageName = parts.shift()
     // e.g. myExport, mySubExport
     const exports = parts
 
-    assertAreScopeNames(scope, packageName, ...exports)
+    assertIsScopeName(scope)
+    assertIsPackageName(packageName)
+    assertAreExportNames(...exports)
     return { scope, packageName, exports }
   }
 
@@ -185,30 +164,26 @@ export class NodeName {
   #packageName
   #exports
   #namespaces
-  #nestings
   #name
 
   constructor(parts) {
 
     // module parts
     const { scope = GLOBAL, packageName, exports = [] } = parts
-    assertAreScopeNames(scope, packageName, ...exports)
-    this.#scope = scope // e.g. myScope
-    this.#packageName = packageName // e.g. myModule
+    assertIsScopeName(scope)
+    assertIsPackageName(packageName)
+    assertAreExportNames(...exports)
+    this.#scope = scope // e.g. myscope
+    this.#packageName = packageName // e.g. my-module
     this.#exports = exports.length ? exports : undefined // e.g. myExport, mySubExport
 
     // full name parts
-    const { namespaces = [], nestings = [], name } = parts
-    assertAreScopeNames(...namespaces)
-    assertAreTypeNames(...nestings)
+    const { namespaces = [], name } = parts
+    assertAreObjectNames(...namespaces)
     if (name)
-      assert(isTypeName(name) || isScopeName(name))
+      assertIsObjectName(name)
     this.#namespaces = namespaces.length ? namespaces : undefined
-    this.#nestings = nestings.length ? nestings : undefined
     this.#name = name
-
-    if (this.#nestings && !isTypeName(name))
-      throw new Error(`Expected TypeName, got "${name}".`)
   }
 
   get #isGlobal() { return this.#scope === GLOBAL }
@@ -220,7 +195,6 @@ export class NodeName {
       packageName: this.#packageName, 
       exports: this.#exports,
       namespaces: this.#namespaces, 
-      nestings: this.#nestings, 
       name: this.#name 
     }
   }
@@ -228,22 +202,17 @@ export class NodeName {
   get #fullName() {
     return [
       this.#namespaces?.join('.') || null,
-      [
-        this.#nestings?.join('+') || null, 
-        this.#name
-      ].filter(Boolean).join('+')
+      this.#name
     ].filter(Boolean).join('.') || null
   }
 
   get type() {
     if (this.isModuleName) return 'export'
-    if (this.isNamespace) return 'namespace'
-    if (this.isTypeName) return 'type'
+    if (this.isObjectName) return 'type'
     throw new Error('Unknown type.')
   }
   get isModuleName() { return !this.#name }
-  get isNamespace() { return isScopeName(this.#name) }
-  get isTypeName() { return isTypeName(this.#name) }
+  get isObjectName() { return isObjectName(this.#name) }
 
   get name() { 
     return this.#name ? this.#name
@@ -252,17 +221,6 @@ export class NodeName {
   }
   get parentUrl() { return this.parent?.url }
   get parent() {
-    if (this.#nestings) {
-      const nestings = [...this.#nestings]
-      const name = nestings.pop()
-      return new NodeName({
-        ...this.moduleName.#parts,
-        namespaces: this.#namespaces,
-        nestings: nestings.length ? nestings : undefined,
-        name,
-      })
-    }
-
     if (this.#namespaces) {
       const namespaces = [...this.#namespaces]
       const name = namespaces.pop()
@@ -312,16 +270,6 @@ export class NodeName {
     })
   }
 
-  get typeName() {
-    if (this.isTypeName)
-      return this
-
-    return new NodeName({ 
-      ...this.#parts,
-      name: NodeName.scopeToTypeCase(this.name)
-    })
-  }
-
   addExport(...exports) {
     return new ModuleName({ 
       scope: this.#scope, 
@@ -330,42 +278,23 @@ export class NodeName {
     })
   }
 
-  addType(...names) {
-    return new TypeName({ 
-      ...this.moduleName.#parts, 
-      name: names.pop(), 
-      namespaces: [...names],
-    })
-  }
-
-  addNamespace(...names) {
-    const namespaces = [...this.#namespaces, ...[this.#name], ...names]
+  addName(...names) {
+    const namespaces = [...(this.#namespaces ?? []), ...[this.#name], ...names]
     const name = namespaces.pop()
-    return new TypeName({ 
+    return new NodeName({ 
       ...this.moduleName.#parts, 
       namespaces: namespaces.length ? namespaces : undefined,
       name
     })
   }
 
-  addName(...names) {
-    const nestings = [...this.#nestings, ...[this.#name], ...names]
-    const name = namespaces.pop()
-    return new TypeName({ 
-      ...this.moduleName.#parts, 
-      namespaces: this.#namespaces,
-      nestings: nestings.length ? nestings : undefined,
-      name,
-    })
-  }
-
   get url() {
-    // e.g. node://nodejs.org/myScope/myModule/myExport/mySubExport
-    // e.g. node://nodejs.org/global/myModule/myExport
-    // e.g. node://nodejs.org/global/myModule
-    // e.g. node://nodejs.org/global/myModule#myNs.MyType
-    // e.g. node://nodejs.org/global/myModule#myNs.MyType+MyNestedType
-    // e.g. node://nodejs.org/global/myModule#myNs.MyType+MyNestedType+MyNested
+    // e.g. node://nodejs.org/myscope/my-module/myExport/mySubExport
+    // e.g. node://nodejs.org/global/my-module/myExport
+    // e.g. node://nodejs.org/global/my-module
+    // e.g. node://nodejs.org/global/my-module#myNs.MyType
+    // e.g. node://nodejs.org/global/my-module#myNs.MyType+MyNestedType
+    // e.g. node://nodejs.org/global/my-module#myNs.MyType+MyNestedType+MyNested
     return new URL([
       [
         `${SCHEME}//${HOST}`, 
@@ -390,31 +319,15 @@ export class NodeName {
     return module?.default 
   }
 
-  async getType() {
+  async importObject() {
     if (this.isModuleName) {
       const import$ = await this.import()
-      return import$?.default ?? this.typeName.getType()
+      return import$.default 
+        ?? import$[NodeName.snakeOrPerlToCamelCase(this.name)]
     }
 
-    if (this.isNamespace)
-      throw new Error('Cannot load a namespace as a type.')
-
     const parent = this.parent
-    const scope = parent.isTypeName ? 
-      await parent.getType() :
-      await parent.getNamespace()
-
-    return await scope[this.#name]
-  }
-
-  async getNamespace() {
-    if (this.isModuleName)
-      return await this.import()
-
-    if (this.isTypeName)
-      throw new Error('Cannot load a type as a namespace.')
-
-    const scope = this.parent.loadNamespace()
+    const scope = await parent.importObject()
     return await scope[this.#name]
   }
 
@@ -425,8 +338,7 @@ export class NodeName {
       ...(this.#exports || [])
     ].filter(Boolean).join('/')
 
-
-    // e.g. @myScope/myModule/myExport/mySubExport
+    // e.g. @myscope/my-module/myExport/mySubExport
     const moduleName = this.#isScoped 
       ? `@${this.#scope}/${exportPath}` 
       : exportPath
@@ -440,24 +352,22 @@ export class NodeName {
 
 // async function test() {
 //   const ids = [
-//     'nodejs://nodejs.org/myScope/myModule/myExport',
-//     'nodejs://nodejs.org/myScope/myModule/myExport#myNs.mySubNs.MyType+MyNestedType+MyNestedNestedType',
-//     'nodejs://nodejs.org/myScope/myModule#myNs.mySubNs.MyType+MyNestedType',
-//     'nodejs://nodejs.org/myScope/myModule#myNs.mySubNs.MyType',
-//     'nodejs://nodejs.org/myScope/myModule#myNs.MyType',
-//     'nodejs://nodejs.org/myScope/myModule#MyType',
-//     'nodejs://nodejs.org/myScope/myModule',
-//     'nodejs://nodejs.org/global/myModule',
+//     'nodejs://nodejs.org/myscope/my-module/myExport',
+//     'nodejs://nodejs.org/myscope/my-module#myNs.mySubNs.MyType',
+//     'nodejs://nodejs.org/myscope/my-module#myNs.MyType',
+//     'nodejs://nodejs.org/myscope/my-module#MyType',
+//     'nodejs://nodejs.org/myscope/my-module',
+//     'nodejs://nodejs.org/global/my-module',
 //     'nodejs://nodejs.org/global/my-module',
 //     'nodejs://nodejs.org/global/my_module',
-//     '@myScope/myModule, myNs.MyType',
-//     '@myScope/myModule, MyType',
-//     '@myScope/myModule',
-//     'myModule, myNs.MyType',
-//     'myModule, myNs.mySubNs',
-//     'myModule, myNs',
-//     'myModule, MyType',
-//     'myModule',
+//     '@myscope/my-module, myNs.MyType',
+//     '@myscope/my-module, MyType',
+//     '@myscope/my-module',
+//     'my-module, myNs.MyType',
+//     'my-module, myNs.mySubNs',
+//     'my-module, myNs',
+//     'my-module, MyType',
+//     'my-module',
 //   ]
 //   for (var id of ids) {
 //     console.error(`-- ${id}`)

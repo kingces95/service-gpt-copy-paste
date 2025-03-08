@@ -1,12 +1,20 @@
 import _ from 'lodash'
 import yargs from 'yargs'
-import { hideBin } from 'yargs/helpers'
 import { Lazy } from '@kingjs/lazy'
+import { Cli } from '@kingjs/cli'
+import { CliMetadataLoader } from '@kingjs/cli-metadata'
+import { CliInfoLoader } from '@kingjs/cli-info'
+import { dumpPojo } from '@kingjs/pojo-dump'
+import { toPojo } from '@kingjs/pojo'
+
 async function __import() {
   const { cliYargsToPojo } = await import('@kingjs/cli-yargs-to-pojo')
-  const { dumpPojo } = await import('@kingjs/pojo-dump')
-  return { toPojo: cliYargsToPojo, dumpPojo }
+  return { toPojo: cliYargsToPojo }
 }
+
+const KNONWN_OPTIONS = [
+  'help', 'version'
+]
 
 export class CliYargs {
   #name
@@ -19,6 +27,15 @@ export class CliYargs {
 
   get name() { return this.#name }
   get description() { return this.#description }
+
+  async toPojo() {
+    const { toPojo } = await __import()
+    return await toPojo(this)
+  }
+  
+  async __dump() {
+    return dumpPojo(await this.toPojo())
+  }
 }
 
 export class CliYargsParameter extends CliYargs {
@@ -104,7 +121,7 @@ export class CliYargsCommand extends CliYargs {
   #template       // yargs command string
   #path           // path to command
 
-  constructor(name, commandInfo, scope) {
+  constructor(commandInfo, scope, name = '.') {
     super(name, commandInfo.description)
     
     this.#scope = scope
@@ -112,6 +129,8 @@ export class CliYargsCommand extends CliYargs {
     this.#parameters = new Lazy(() => {
       const parameters = [ ]
       for (const [name, parameter] of Object.entries(commandInfo.parameters ?? { })) {
+        if (KNONWN_OPTIONS.includes(name))
+          continue
         parameters.push(CliYargsParameter.create(this, name, parameter))
       }
       return parameters
@@ -120,7 +139,7 @@ export class CliYargsCommand extends CliYargs {
     this.#commands = new Lazy(() => {
       const commands = [ ]
       for (const [name, command] of Object.entries(commandInfo.commands ?? { })) {
-        commands.push(new CliYargsCommand(name, command, this))
+        commands.push(new CliYargsCommand(command, this, name))
       }
       return commands
     })
@@ -155,13 +174,13 @@ export class CliYargsCommand extends CliYargs {
   get template() { return this.#template.value }
   get path() { return this.#path.value }
 
-  parse(yargs, handler) {
+  async apply(yargs) {
     for (const positional of this.positionals()) {
-      yargs.positional(positional.name, positional)
+      yargs.positional(positional.name, await positional.toPojo())
     }
 
     for (const option of this.options()) {
-      yargs.option(option.name, option)
+      yargs.option(option.name, await option.toPojo())
       // yargs.group(name, `Options (${group}):`)
     }
 
@@ -169,8 +188,7 @@ export class CliYargsCommand extends CliYargs {
       yargs.command(
         child.template, 
         child.description, 
-        (subYargs) => child.build(subYargs, handler),
-        (argv) => handler(child.path, argv)
+        child.apply.bind(child),
       )
     }
 
@@ -194,29 +212,44 @@ export class CliYargsCommand extends CliYargs {
   }
 }
 
-export class CliYargsLoader {
-  #command
+export async function cliYargs(classOrPojo) {
+  const class$ = typeof classOrPojo == 'function' 
+    ? classOrPojo : Cli.extend(classOrPojo)
 
-  constructor(name = 'acme', info) {
-    this.#command = new CliYargsCommand(name, info)
-  }
+  const yargs$ = yargs()
+    .middleware(async ({ _: path }) => ({ 
+      _class: await class$.getCommand(path) 
+    }))
+    .middleware(async (argv) => {
+      if (argv['metadata$']) {
+        const hierarchyFn = (cli) => cli ? [cli, ...hierarchyFn(cli.baseCli)] : []
+        const hierarchy = hierarchyFn(argv._class).map(o => o.metadata)
+        dumpPojo(await toPojo(hierarchy, { type: 'infos' }))
+        process.exit(0)
+      }
+    })
+    .middleware(async (argv) => {
+      if (argv['info-metadata$']) {
+        const metadataLoader = new CliMetadataLoader(argv._class)
+        await metadataLoader.__dump()
+        process.exit(0)
+      }
+    })
+    .middleware(async (argv) => {
+      if (argv['info$']) {
+        const metadataLoader = new CliMetadataLoader(argv._class)
+        const metadata = await metadataLoader.toPojo()
+        const infoLoader = new CliInfoLoader(metadata)
+        await infoLoader.__dump()
+        process.exit(0)
+      }
+    })
 
-  get command() { return this.#command }
-
-  parse(argv = hideBin(process.argv), handler = (path, argv) => { 
-    console.error({ path, argv })
-  }) {
-    this.#command.parse(yargs(argv), handler)
-  }
-
-  async toPojo() {
-    const { toPojo } = await __import()
-    return await toPojo(this.#command)
-  }
-  
-  async __dump() {
-    const { dumpPojo } = await __import()
-    await dumpPojo(await this.toPojo())
-  }
+  const metadataLoader = new CliMetadataLoader(class$)
+  const metadata = await metadataLoader.toPojo()
+  const infoLoader = new CliInfoLoader(metadata)
+  const infos = await infoLoader.toPojo()
+  const yargsCommand = new CliYargsCommand(infos)
+  return yargsCommand.apply(yargs$)
 }
 

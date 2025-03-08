@@ -145,27 +145,30 @@ export class CliCommandInfo extends CliInfo {
 
 export class CliInfoLoader {
   #commands
-  #root
+  #rootCommand
 
   constructor(metadata) {
-    
-    // link references
-    for (const md of metadata) {
-
-      // link baseClass
-      if (md.baseClass)
-        md.baseClass = metadata[md.baseClass[0]]
-
-      // link commands
-      if (md.commands)
-        md.commands = Object.fromEntries(
-          Object.entries(md.commands)
-            .map(([name, [id]]) => [name, metadata[id]])
-        )
-    }
-
     this.#commands = []
-    this.#root = this.getCommand$(metadata[0], '<root>')
+    
+    this.#rootCommand = new Lazy(() => {
+
+      // link references
+      for (const md of metadata) {
+  
+        // link baseClass
+        if (md.baseClass)
+          md.baseClass = metadata[md.baseClass[0]]
+  
+        // link commands
+        if (md.commands)
+          md.commands = Object.fromEntries(
+            Object.entries(md.commands)
+              .map(([name, [id]]) => [name, metadata[id]])
+          )
+      }
+
+      return this.getCommand$(metadata[0], '<root>')
+    })  
   }
 
   getCommand$(md, name, scope) {
@@ -175,11 +178,11 @@ export class CliInfoLoader {
     return this.#commands[id] 
   }
 
-  get root() { return this.#root }
+  get rootCommand() { return this.#rootCommand.value }
 
   async toPojo() {
     const { toPojo } = await __import()
-    return await toPojo(this.root)
+    return await toPojo(this.rootCommand)
   }
   
   async __dump() {

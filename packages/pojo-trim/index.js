@@ -1,34 +1,25 @@
-import _ from 'lodash'
+export function trimPojo(object, options = { }) {
+  const { values = [undefined, false, null] } = options
 
-export function trimPojo(object) {
-  if (_.isArray(object)) {
-    if (!object.length)
-      return
+  if (Array.isArray(object)) {
+    if (object.length === 0) return
 
     return object
       .map(trimPojo)
-      .filter(
-        value => value !== null && 
-                 value !== undefined && 
-                 value !== false
-      )
+      .filter(value => !values.includes(value))
   }
-  
-  if (_.isObject(object)) {
-    if (!Object.getOwnPropertyNames(object).length)
-      return
-    
-    return _.transform(object, (result, value, key) => {
-      const trimmedValue = trimPojo(value)
-      if (
-        trimmedValue !== null && 
-        trimmedValue !== undefined && 
-        trimmedValue !== false
-      ) {
+
+  if (object !== null && typeof object === "object") {
+    if (Object.keys(object).length === 0) return
+
+    return Object.keys(object).reduce((result, key) => {
+      const trimmedValue = trimPojo(object[key], options)
+      if (!values.includes(trimmedValue)) {
         result[key] = trimmedValue
       }
-    }, {})
+      return result
+    }, { })
   }
-  
+
   return object
 }

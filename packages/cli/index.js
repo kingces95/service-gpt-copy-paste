@@ -1,11 +1,12 @@
 #!/usr/bin/env node
+import { Console } from 'console'
 import { readChar, readString, read, readArray, readRecord } from '@kingjs/cli-read'
 import { splitRecord, splitArray } from '@kingjs/cli-read'
 import { write, joinFields } from '@kingjs/cli-echo'
-import { Console } from 'console'
 import { CliFdReadable } from '@kingjs/cli-fd-readable'
 import { CliFdWritable } from '@kingjs/cli-fd-writable'
 import { NodeName } from '@kingjs/node-name'
+import { trimPojo } from '@kingjs/pojo-trim'
 import assert from 'assert'
 
 async function __import() {
@@ -22,6 +23,16 @@ async function __import() {
 }
 
 const DEFAULTS = Symbol('defaults loading')
+const PARAMETER_METADATA_NAMES =  [
+  // arrays
+  'aliases', 'choices', 'conflicts', 'implications',
+  // functions
+  'coerce',
+  // strings
+  'defaultDescription',
+  // booleans
+  'hidden', 'local', 'normalize'
+]
 
 const DEFAULT_IFS = ' '
 const STDIN_FD = 0
@@ -34,14 +45,17 @@ const EXIT_ABORT = 128
 const EXIT_SIGINT = EXIT_ABORT + 2
 
 const IFS = DEFAULT_IFS
+const Metadata = Symbol('metadata')
+const Commands = Symbol('commands')
 
 export class Cli {
-  static async metadata(meta) {
-    const { CliMetadataLoader, moduleNameFromMetaUrl } = await __import()
-    const nodeName = await moduleNameFromMetaUrl(meta.url)
-    const loader = new CliMetadataLoader(nodeName.toString())
-    return await loader.load()
-  }
+
+  // static async metadata(meta) {
+  //   const { CliMetadataLoader, moduleNameFromMetaUrl } = await __import()
+  //   const nodeName = await moduleNameFromMetaUrl(meta.url)
+  //   const loader = new CliMetadataLoader(nodeName.toString())
+  //   return await loader.rootClass()
+  // }
   static async __dumpMetadata(meta) { 
     const { toPojo, dumpPojo } = await __import()
     const metadata = await this.metadata(meta)
@@ -60,49 +74,149 @@ export class Cli {
   }
   static defaults = Cli.loadDefaults()
 
-  static async loadCommands(metadata = { }) {
-    // usage: static commands = MyCli.commands$({ ...metadata })
-
-    // metadata is an object whose every key is a command name
-    // and whose value is one of:
-    //  - a class
-    //  - a NodeName pointing to a class
-    //  - a POJO which can be expanded into a class
-
-    // The result is a promise that resolves to an object whose 
-    // keys are promises that resolve to the class of the command
-    // In this way, the command classes are lazily loaded.
-    return Promise.resolve().then(async () => {
-      if (typeof metadata == 'function')
-        metadata = await metadata()
-
-      const result = { }
-      for (const [key, value] of Object.entries(metadata)) {
-        const class$ = this.loadCommand(value)
-  
-        // each class must be a derivation of the enclosing class
-        if (!class$.prototype instanceof this)
-          throw new Error(`Class ${class$.name} must extend ${this.name}`)
-  
-        result[key] = class$
-      }
-      return result
-    })
+  static getOwnPropertyValue$(name) {
+    return Object.hasOwn(this, name)
+      ? this[name] : null
   }
 
-  static async loadCommand(value) {
+  static getParameterMetadata$(name, accumulator) {
+    return PARAMETER_METADATA_NAMES.reduce((acc, metadataName) => {
+      const metadata = this.getOwnPropertyValue$(metadataName)
+      const metadatum = metadata?.[name]
+      if (metadatum !== undefined)
+        acc[metadataName] = metadatum
+      return acc
+    }, accumulator)
+  }
+
+  static async loadCommand$(value) {
+
     const type = typeof value
     switch (type) {
       case 'function':
         return value
       case 'string':
-        const class$ = await NodeName.from(value).getType()
-        if (!class$) throw new Error(`Could not load command ${value}`)
-        return class$
+        const object = await NodeName.from(value).importObject()
+        if (!object) throw new Error(`Could not load command ${value}`)
+        return await this.loadCommand$(object)
       case 'object':
         return this.extend({ ...value })
     }
     throw new Error(`Could not load command`)
+  }
+
+  static async loadCommands() {
+    if (this.getOwnPropertyValue$(Commands))
+      return this[Commands]
+
+    // a (1) class, (2) import string of a class, (3) directory path, 
+    // or (4) POJO representing a class or (5) a possibly async function 
+    // that returns any of the above. A function allows for fowrad references.
+    const commandsOrFn = this.getOwnPropertyValue$('commands') ?? { }
+
+    const commands = typeof commandsOrFn == 'function' 
+      ? await commandsOrFn() : await commandsOrFn
+
+    const map = { }
+    for (const [name, value] of Object.entries(commands)) {
+      const class$ = this.loadCommand$(value)
+
+      // each class must be a derivation of the enclosing class
+      if (!class$.prototype instanceof this)
+        throw new Error(`Class ${class$.name} must extend ${this.name}`)
+
+      map[name] = class$
+    }
+
+    return this[Commands] = map
+  }
+
+  static get metadata() {
+    if (this.getOwnPropertyValue$(Metadata))
+      return this[Metadata]
+
+    const parameters = this.getOwnPropertyValue$('parameters') ?? []
+    const description = this.getOwnPropertyValue$('description')
+    const positionals = Object.entries(parameters)
+      .slice(0, this.defaults.length - 1)
+      .map(([name, description], i) => this.getParameterMetadata$(name, {
+        position: i,
+        name,
+        description,
+        default: this.defaults[i],
+      }))
+    const options = Object.fromEntries(
+      Object.entries(this.defaults[this.defaults.length - 1] ?? {})
+        .map(([name, default$]) => [name, this.getParameterMetadata$(name, {
+          description: parameters[name],
+          default: default$,
+        })])
+    )
+    const metadata = trimPojo({ 
+      name: this.name,
+      description,  // string
+      positionals,  // an array of entries of positional options
+      options,      // an object map of options
+    }, { values: [undefined, null] })
+
+    return this[Metadata] = metadata
+  }
+
+  static get baseCli() {
+    const baseClass = Object.getPrototypeOf(this.prototype).constructor
+    if (baseClass == Object)
+      return null
+    return baseClass
+  } 
+
+  static async getCommand(path = []) {
+    if (path.length == 0) 
+      return this
+
+    const [commandName, ...rest] = path
+    const commands = await this.loadCommands()
+    const command = await commands[commandName]
+    return command.getCommand(rest)
+  }
+
+  static async run(argv) {
+
+    // gather metadata from class hierarchy
+    const metadata = this.metadata
+    const inherited = []
+    let current = this.baseCli
+    while (true) {
+      inherited.push(current.metadata)
+      if (current == Cli)
+        break
+      current = this.baseCli
+    }
+
+    const positionals = metadata.positionals ?? []
+    const options = inherited
+      .map(o => o.options ?? { })
+      .reverse()
+      .map(o => Object.fromEntries(
+        // filter out inherited local options
+        Object.entries(o).filter(([_, { local }]) => !local)
+      ))
+      .reduce((acc, o) => Object.assign(acc, o), { })
+    Object.assign(options, metadata.options ?? { })
+    
+    // harvest positional arguments from argv
+    const args = positionals.reduce((acc, [name, _], i) => {
+      // defaults were harvested from the signature so do not need to be reapplied
+      acc.push[argv[name]] 
+      return acc
+    }, [ ])
+
+    // harvest option arguments from argv
+    args.push(Object.fromEntries(
+      Object.entries(options).map(([name, _]) => [name, argv[name]])
+    ))
+
+    // run the command!
+    return new this(...args)
   }
 
   static extend({ name, commands, ctor, ...metadata }) {
@@ -113,7 +227,7 @@ export class Cli {
         if (cls.loadingDefaults(new.target, ...defaults))
           return super()
     
-        super(...ctor?.call(this, ...args))
+        super(...(ctor?.call(this, ...args) ?? args))
       }
     }
     Object.defineProperty(cls, "name", { value: name });
@@ -125,7 +239,7 @@ export class Cli {
       cls[key] = value
     }
   
-    cls.commands = cls.loadCommands(commands)
+    cls.commands = commands
     cls.defaults = cls.loadDefaults()
     return cls
   }

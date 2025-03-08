@@ -7,8 +7,7 @@ const symbol = Symbol('node-name-to-pojo')
 NodeName[symbol] = {
   type: 'string',
   isModuleName: 'boolean',
-  isTypeName: 'boolean',
-  isNamespace: 'boolean',
+  isObjectName: 'boolean',
 
   name: 'string',
   defaultTypeName: 'string',
