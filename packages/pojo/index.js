@@ -5,7 +5,7 @@ async function getOrCall(target, name) {
     : functionOrValue)
 }
 
-export async function toPojo(value, options) {
+export async function toPojo(value, options = { }) {
   const { type = null, symbol, depth = 1 } = options
   const jsType = typeof value
 

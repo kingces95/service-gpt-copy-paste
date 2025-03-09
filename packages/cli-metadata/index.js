@@ -160,7 +160,7 @@ export class CliClassMetadata extends CliMetadata {
       description,
       positionals = [],
       options = {},
-    } = class$.metadata
+    } = class$.getMetadata()
 
     this.#description = description
 

@@ -50,15 +50,9 @@ const Commands = Symbol('commands')
 
 export class Cli {
 
-  // static async metadata(meta) {
-  //   const { CliMetadataLoader, moduleNameFromMetaUrl } = await __import()
-  //   const nodeName = await moduleNameFromMetaUrl(meta.url)
-  //   const loader = new CliMetadataLoader(nodeName.toString())
-  //   return await loader.rootClass()
-  // }
-  static async __dumpMetadata(meta) { 
+  static async __dumpMetadata() { 
     const { toPojo, dumpPojo } = await __import()
-    const metadata = await this.metadata(meta)
+    const metadata = await this.getMetadata()
     const pojo = await toPojo(metadata)
     await dumpPojo(pojo)
   }
@@ -131,12 +125,44 @@ export class Cli {
     return this[Commands] = map
   }
 
-  static get metadata() {
+  static getMetadata({ inherited } = { }) {
+    const description = this.getOwnPropertyValue$('description')
+
+    if (inherited) {
+      // gather metadata from class hierarchy
+      const metadata = this.getMetadata()
+      const inherited = []
+      let current = this.baseCli
+      while (true) {
+        inherited.push(current.getMetadata())
+        if (current == Cli)
+          break
+        current = current.baseCli
+      }
+
+      const positionals = metadata.positionals ?? []
+      let options = inherited
+        .map(o => o.options ?? { })
+        .reverse()
+        .map(o => Object.fromEntries(
+          // filter out inherited local options
+          Object.entries(o).filter(([_, { local }]) => !local)
+        ))
+        .reduce((acc, o) => Object.assign(acc, o), { })
+      Object.assign(options, metadata.options ?? { })
+
+      return trimPojo({
+        name: this.name,
+        description,  // string
+        positionals,  // an array of entries of positional options
+        options,      // an object map of options
+      }, { values: [undefined, null] })
+    }
+
     if (this.getOwnPropertyValue$(Metadata))
       return this[Metadata]
 
     const parameters = this.getOwnPropertyValue$('parameters') ?? []
-    const description = this.getOwnPropertyValue$('description')
     const positionals = Object.entries(parameters)
       .slice(0, this.defaults.length - 1)
       .map(([name, description], i) => this.getParameterMetadata$(name, {
@@ -176,47 +202,9 @@ export class Cli {
     const [commandName, ...rest] = path
     const commands = await this.loadCommands()
     const command = await commands[commandName]
+    if (!command)
+      throw new Error(`Command ${commandName} not found`)
     return command.getCommand(rest)
-  }
-
-  static async run(argv) {
-
-    // gather metadata from class hierarchy
-    const metadata = this.metadata
-    const inherited = []
-    let current = this.baseCli
-    while (true) {
-      inherited.push(current.metadata)
-      if (current == Cli)
-        break
-      current = this.baseCli
-    }
-
-    const positionals = metadata.positionals ?? []
-    const options = inherited
-      .map(o => o.options ?? { })
-      .reverse()
-      .map(o => Object.fromEntries(
-        // filter out inherited local options
-        Object.entries(o).filter(([_, { local }]) => !local)
-      ))
-      .reduce((acc, o) => Object.assign(acc, o), { })
-    Object.assign(options, metadata.options ?? { })
-    
-    // harvest positional arguments from argv
-    const args = positionals.reduce((acc, [name, _], i) => {
-      // defaults were harvested from the signature so do not need to be reapplied
-      acc.push[argv[name]] 
-      return acc
-    }, [ ])
-
-    // harvest option arguments from argv
-    args.push(Object.fromEntries(
-      Object.entries(options).map(([name, _]) => [name, argv[name]])
-    ))
-
-    // run the command!
-    return new this(...args)
   }
 
   static extend({ name, commands, ctor, ...metadata }) {

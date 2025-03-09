@@ -1,8 +1,5 @@
-import { CliMetadataLoader } from '@kingjs/cli-metadata'
-import { CliInfoLoader } from '@kingjs/cli-info'
 import { cliYargs } from '@kingjs/cli-yargs'
 import { hideBin } from 'yargs/helpers'
-import yargs from 'yargs'
 
 cliYargs({
   name: 'Clippy',
@@ -14,12 +11,9 @@ cliYargs({
     eval: '@kingjs/cli-eval',
   }
 }).then(async (yargs) => {
-  yargs = await yargs.parserConfiguration({ "strip-dashed": true })
-  
-  const argv = await yargs.parse('poll --metadata$'.split(' '))
-  // const argv = await yargs.parse(hideBin(process.argv))
-
-  argv._class.run(argv)
+  // const argv = await yargs.parse('http http:// 2 --stdis'.split(' '))
+  const { _class, _positionals, _options } = await yargs.parse(hideBin(process.argv))
+  new _class(..._positionals, _options)
 })
 
 // node.exe src\clippy\index.js poll --error-rate .5 --poll-ms 1000 --stdis | node.exe src\clippy\index.js orb
