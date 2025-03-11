@@ -1,5 +1,5 @@
 {
-  "name": "@kingjs/cli-loader-old",
+  "name": "@kingjs/cli-info-class",
   "version": "1.0.0",
   "description": "Framework for loading and executing command line tools.",
   "main": "index.js",

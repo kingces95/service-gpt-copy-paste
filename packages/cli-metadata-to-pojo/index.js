@@ -32,7 +32,8 @@ CliParameterMetadata[symbol] = {
   default: 'any',
 
   type: 'string',
-  require: 'boolean',
+  isRequired: 'boolean',
+  isOptional: 'boolean',
   local: 'boolean',
   hide: 'boolean',
   position: 'number',

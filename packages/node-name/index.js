@@ -320,15 +320,9 @@ export class NodeName {
   }
 
   async importObject() {
-    if (this.isModuleName) {
-      const import$ = await this.import()
-      return import$.default 
-        ?? import$[NodeName.snakeOrPerlToCamelCase(this.name)]
-    }
-
-    const parent = this.parent
-    const scope = await parent.importObject()
-    return await scope[this.#name]
+    const module = await this.moduleName.import()
+    return module.default 
+      ?? module[NodeName.snakeOrPerlToCamelCase(this.name)]
   }
 
   toString() {

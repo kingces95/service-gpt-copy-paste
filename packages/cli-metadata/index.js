@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import { LazyGenerator, Lazy } from '@kingjs/lazy'
-import { LoadAsync, LoadAsyncGenerator } from '@kingjs/load'
+import { LoadAsyncGenerator } from '@kingjs/load'
 import { Cli } from '@kingjs/cli'
 import assert from 'assert'
 async function __import() {
@@ -87,13 +87,12 @@ export class CliParameterMetadata extends CliMetadata {
 
   // default/require/optional
   get default() { return this.#metadata.default }
-  get hasDefault() { return this.default !== undefined }
-  get require() { return !this.hasDefault }
   get defaultDescription() { return this.#metadata.defaultDescription }
 
   // CliClassOptionInfo
   get local() { return this.#metadata.local }
   get hidden() { return this.#metadata.hidden }
+  get isRequired() { return this.#metadata.required }
 
   *aliases() { yield* this.#metadata.aliases ?? [] }
   *choices() { yield* this.#metadata.choices ?? [] }
@@ -102,6 +101,7 @@ export class CliParameterMetadata extends CliMetadata {
 
   // CliClassPositionalInfo
   get position() { return undefined }
+  get isOptional() { return this.#metadata.optional }
 
   toString() { return `${super.toString()}, class={ ${this.classInfo.toString() }}` }
 }
@@ -160,7 +160,7 @@ export class CliClassMetadata extends CliMetadata {
       description,
       positionals = [],
       options = {},
-    } = class$.getMetadata()
+    } = class$.getOwnMetadata()
 
     this.#description = description
 
@@ -221,12 +221,6 @@ export class CliClassMetadata extends CliMetadata {
   *positionals() { yield* this.#positionals.value }
   *options() { yield* this.#options.value }
   *parameters() { yield* this.#parameters.value }
-
-  isSubClassOf(classMetadata) {
-    if (!classMetadata)
-      return false
-    return this.class.prototype instanceof classMetadata.class
-  }
 
   activate(args) { new this.class(args) }
 }

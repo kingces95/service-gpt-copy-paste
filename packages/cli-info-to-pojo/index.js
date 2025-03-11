@@ -8,9 +8,8 @@ import { toPojo } from '@kingjs/pojo'
 const symbol = Symbol('cli-metadata-to-pojo')
 
 CliParameterInfo[symbol] = {
-  // isPositional: 'boolean',
-  // isOption: 'boolean',
   name: 'string',
+  position: 'number',
   description: 'string',
   type: 'string',
   aliases: 'list',
@@ -21,13 +20,14 @@ CliParameterInfo[symbol] = {
   implies: 'list',
   normalized: 'boolean',
   require: 'boolean',
-
+  
   // options
+  isRequired: 'boolean',
   isHidden: 'boolean',
   isLocal: 'boolean',
-
+  
   // positionals
-  position: 'number',
+  isOptional: 'boolean',
 }
 
 CliCommandInfo[symbol] = {

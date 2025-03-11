@@ -1,24 +1,45 @@
-export function trimPojo(object, options = { }) {
-  const { values = [undefined, false, null] } = options
+// return false if value is empty array, empty object, null, or undefined
+export function isTrimable(value) {
+  if (value === null || value === undefined) return true
 
-  if (Array.isArray(object)) {
-    if (object.length === 0) return
-
-    return object
-      .map(trimPojo)
-      .filter(value => !values.includes(value))
+  if (Array.isArray(value)) {
+    if (value.length === 0) return true
   }
 
-  if (object !== null && typeof object === "object") {
-    if (Object.keys(object).length === 0) return
+  if (typeof value === "object") {
+    if (Object.keys(value).length === 0) return true
+  }
 
-    return Object.keys(object).reduce((result, key) => {
-      const trimmedValue = trimPojo(object[key], options)
-      if (!values.includes(trimmedValue)) {
-        result[key] = trimmedValue
-      }
-      return result
-    }, { })
+  return false
+}
+
+export function trimPojo(object) {
+  if (isTrimable(object)) 
+    return
+
+  if (Array.isArray(object)) {
+    let result = undefined
+    for (const value of object) {
+      const trimmed = trimPojo(value)
+      if (trimmed === undefined) 
+        continue
+      if (!result) result = [ ]
+      result.push(trimmed)
+    }
+    return result
+  }
+
+  if (typeof object === "object") {
+    let result = undefined
+    for (const key in object) {
+      const value = object[key]
+      const trimmed = trimPojo(value)
+      if (trimmed === undefined) 
+        continue
+      if (!result) result = { }
+      result[key] = trimmed
+    }
+    return result
   }
 
   return object

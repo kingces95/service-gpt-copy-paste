@@ -11,9 +11,10 @@ cliYargs({
     eval: '@kingjs/cli-eval',
   }
 }).then(async (yargs) => {
-  // const argv = await yargs.parse('http http:// 2 --stdis'.split(' '))
-  const { _class, _positionals, _options } = await yargs.parse(hideBin(process.argv))
-  new _class(..._positionals, _options)
+  // const argv = await yargs.parse('http http:// 2 --stdis --info$'.split(' '))
+  const argv = await yargs.parse(hideBin(process.argv))
+
+  new argv._class(...argv._positionals, argv._options)
 })
 
 // node.exe src\clippy\index.js poll --error-rate .5 --poll-ms 1000 --stdis | node.exe src\clippy\index.js orb

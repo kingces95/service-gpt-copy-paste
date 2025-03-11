@@ -52,7 +52,7 @@ export class Cli {
 
   static async __dumpMetadata() { 
     const { toPojo, dumpPojo } = await __import()
-    const metadata = await this.getMetadata()
+    const metadata = await this.getOwnMetadata()
     const pojo = await toPojo(metadata)
     await dumpPojo(pojo)
   }
@@ -73,14 +73,26 @@ export class Cli {
       ? this[name] : null
   }
 
-  static getParameterMetadata$(name, accumulator) {
-    return PARAMETER_METADATA_NAMES.reduce((acc, metadataName) => {
+  static getOwnParameterMetadata$(name, accumulator) {
+    const result = PARAMETER_METADATA_NAMES.reduce((acc, metadataName) => {
       const metadata = this.getOwnPropertyValue$(metadataName)
       const metadatum = metadata?.[name]
       if (metadatum !== undefined)
         acc[metadataName] = metadatum
       return acc
     }, accumulator)
+
+    // determine if a positional is optional or an option is required
+    // presence of a default is insufficient since a string can be null
+    // and null defaults are difficult to deal with (e.g. they are trimmed)
+    const isPositional = result.position !== undefined
+    const hasDefault = result.default !== undefined
+    if (isPositional && hasDefault)
+      accumulator.optional = true
+    if (!isPositional && !hasDefault)
+      accumulator.required = true
+
+    return result
   }
 
   static async loadCommand$(value) {
@@ -125,39 +137,39 @@ export class Cli {
     return this[Commands] = map
   }
 
-  static getMetadata({ inherited } = { }) {
-    const description = this.getOwnPropertyValue$('description')
+  static getMetadata() {
 
-    if (inherited) {
-      // gather metadata from class hierarchy
-      const metadata = this.getMetadata()
-      const inherited = []
-      let current = this.baseCli
-      while (true) {
-        inherited.push(current.getMetadata())
-        if (current == Cli)
-          break
-        current = current.baseCli
-      }
-
-      const positionals = metadata.positionals ?? []
-      let options = inherited
-        .map(o => o.options ?? { })
-        .reverse()
-        .map(o => Object.fromEntries(
-          // filter out inherited local options
-          Object.entries(o).filter(([_, { local }]) => !local)
-        ))
-        .reduce((acc, o) => Object.assign(acc, o), { })
-      Object.assign(options, metadata.options ?? { })
-
-      return trimPojo({
-        name: this.name,
-        description,  // string
-        positionals,  // an array of entries of positional options
-        options,      // an object map of options
-      }, { values: [undefined, null] })
+    // gather metadata from class hierarchy
+    const metadata = this.getOwnMetadata()
+    const inherited = []
+    let current = this.baseCli
+    while (true) {
+      inherited.push(current.getOwnMetadata())
+      if (current == Cli)
+        break
+      current = current.baseCli
     }
+
+    const positionals = metadata.positionals ?? []
+    let options = inherited
+      .map(o => o.options ?? { })
+      .reverse()
+      .map(o => Object.fromEntries(
+        // filter out inherited local options
+        Object.entries(o).filter(([_, { local }]) => !local)
+      ))
+      .reduce((acc, o) => Object.assign(acc, o), { })
+    Object.assign(options, metadata.options ?? { })
+
+    return trimPojo({
+      ...this.getOwnMetadata(),
+      positionals,  // an array of entries of positional options
+      options,      // an object map of options
+    })
+  }
+
+  static getOwnMetadata() {
+    const description = this.getOwnPropertyValue$('description')
 
     if (this.getOwnPropertyValue$(Metadata))
       return this[Metadata]
@@ -165,7 +177,7 @@ export class Cli {
     const parameters = this.getOwnPropertyValue$('parameters') ?? []
     const positionals = Object.entries(parameters)
       .slice(0, this.defaults.length - 1)
-      .map(([name, description], i) => this.getParameterMetadata$(name, {
+      .map(([name, description], i) => this.getOwnParameterMetadata$(name, {
         position: i,
         name,
         description,
@@ -173,7 +185,7 @@ export class Cli {
       }))
     const options = Object.fromEntries(
       Object.entries(this.defaults[this.defaults.length - 1] ?? {})
-        .map(([name, default$]) => [name, this.getParameterMetadata$(name, {
+        .map(([name, default$]) => [name, this.getOwnParameterMetadata$(name, {
           description: parameters[name],
           default: default$,
         })])
@@ -183,7 +195,7 @@ export class Cli {
       description,  // string
       positionals,  // an array of entries of positional options
       options,      // an object map of options
-    }, { values: [undefined, null] })
+    })
 
     return this[Metadata] = metadata
   }
@@ -207,28 +219,37 @@ export class Cli {
     return command.getCommand(rest)
   }
 
-  static extend({ name, commands, ctor, ...metadata }) {
-    const cls = class CliCommand extends this {
+  static extend({ name = 'annon', commands, ctor, handler, ...metadata }) {
+    if (!name)
+      throw new Error(`Class must have a name`)
+
+    const cls = class extends this {
       constructor(...args) {
-        var defaults = ctor?.call() ?? [{}]
-  
-        if (cls.loadingDefaults(new.target, ...defaults))
+        if (cls.loadingDefaults(new.target, ...args))
           return super()
-    
-        super(...(ctor?.call(this, ...args) ?? args))
+
+        super(...(ctor?.call(new Proxy(() => this, {
+          get(self, prop) { return Reflect.get(self(), prop) },
+          set(self, prop, value) { return Reflect.set(self(), prop, value) },
+          has(self, prop) { return Reflect.has(self(), prop) },
+          deleteProperty(self, prop) { return Reflect.deleteProperty(self(), prop) },
+          apply(self, thisArg, args) { return Reflect.apply(self(), thisArg, args) }
+        }), ...args) || [{ }]))
+
+        handler?.call(this, ...args)
       }
     }
     Object.defineProperty(cls, "name", { value: name });
+    cls.commands = commands
+    cls.defaults = []
 
-    const knownKeys = ['name', 'ctor', 'commands']
+    const knownKeys = ['name', 'ctor', 'commands', 'handler']
     for (const [key, value] of Object.entries(metadata)) {
       if (knownKeys.includes(key))
         continue
       cls[key] = value
     }
   
-    cls.commands = commands
-    cls.defaults = cls.loadDefaults()
     return cls
   }
 

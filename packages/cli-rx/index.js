@@ -15,7 +15,6 @@ export class CliRx extends CliService {
     if (CliRx.loadingDefaults(new.target, options))
       return super()
 
-
     super(options)
 
     this.errorSubject = new Subject()
