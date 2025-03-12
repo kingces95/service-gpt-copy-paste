@@ -1,5 +1,5 @@
 import { Lazy } from '@kingjs/lazy'
-import { CliClassInfoLoader } from '@kingjs/cli-info-class'
+import { LoadAsync } from '@kingjs/load'
 async function __import() {
   const { cliInfoToPojo } = await import('@kingjs/cli-info-to-pojo')
   const { dumpPojo } = await import('@kingjs/pojo-dump')
@@ -86,10 +86,10 @@ export class CliParameterInfo extends CliInfoId {
   get description() { return this.#classParameter.description }
   get position() { return this.#classParameter.position }
   get normalize() { return this.#classParameter.normalize }
-  get isRequired() { return this.#classParameter.isRequired }
-  get isOptional() { return this.#classParameter.isOptional }
-  get isLocal() { return this.#classParameter.isLocal }
-  get isHidden() { return this.#classParameter.isHidden }
+  get isRequired() { return this.#classParameter.required }
+  get isOptional() { return this.#classParameter.optional }
+  get isLocal() { return this.#classParameter.local }
+  get isHidden() { return this.#classParameter.hidden }
 
   *aliases() { yield* this.#classParameter.aliases() }
   *choices() { yield* this.#classParameter.choices() }
@@ -141,23 +141,23 @@ export class CliCommandInfo extends CliInfoId {
 
   #parent
   #loader
-  #classInfo
+  #metadata
   #commands
   #parameters
 
-  constructor(loaderOrParent, classInfo, name) {
+  constructor(loaderOrParent, metadata, name) {
     super(name)
 
     const isRoot = loaderOrParent instanceof CliInfoLoader
     this.#loader = isRoot ? loaderOrParent : loaderOrParent.loader
     this.#parent = isRoot ? null : loaderOrParent
-    this.#classInfo = classInfo
+    this.#metadata = metadata
 
     // Load nested commands
-    this.#commands = new Lazy(() => {
+    this.#commands = new LoadAsync(async () => {
       const result = new Map()
-      for (const [name, entryClassInfo] of this.#classInfo.entries()) {
-        const scope = new CliCommandInfo(this, entryClassInfo, name)
+      for await (const [name, commandMd] of this.#metadata.commands()) {
+        const scope = new CliCommandInfo(this, commandMd, name)
         result.set(name, scope)
       }
       return result
@@ -168,8 +168,8 @@ export class CliCommandInfo extends CliInfoId {
     this.#parameters = new Lazy(() => {
       const result = new Map()
       for (const classInfo of CliCommandInfo.#getClassHierarchy(
-        this.#classInfo, 
-        this.parent?.$classInfo)) {
+        this.#metadata, 
+        this.parent?.metadata$)) {
 
         for (const parameter of classInfo.parameters()) {
           const name = parameter.name
@@ -186,7 +186,7 @@ export class CliCommandInfo extends CliInfoId {
 
   get loader() { return this.#loader }
   get parent() { return this.#parent }
-  get $classInfo() { return this.#classInfo }
+  get metadata$() { return this.#metadata }
 
   *hierarchy() {
     yield this
@@ -202,10 +202,16 @@ export class CliCommandInfo extends CliInfoId {
       .join(' ') 
   }
 
-  *commands() { yield* this.#commands.value.values() }
-  getCommand(name) { return this.#commands.value.get(name) }
+  async *commands() { 
+    const map = await this.#commands.load()
+    yield* map.values()
+  }
+  async getCommand(name) { 
+    const map = await this.#commands.load()
+    return map.get(name) 
+  }
 
-  get description() { return this.#classInfo.description }
+  get description() { return this.#metadata.description }
   *parameters() { yield* this.#parameters.value.values() }
   getParameter(name) { return this.#parameters.value.get(name) }
   *positionals() { yield* this.parameters().filter(o => o.isPositional) }
@@ -217,20 +223,20 @@ export class CliCommandInfo extends CliInfoId {
 export class CliInfoLoader {
   #root
 
-  constructor(metadata) {
+  constructor(metadataLoader) {
     this.#root = new Lazy(() => {
-      const classInfo = CliClassInfoLoader.load(metadata)
+      const classInfo = metadataLoader.getClass()
       return new CliCommandInfo(this, classInfo)
     })  
   }
 
-  getCommand(nameOrNames = []) {
+  async getCommand(nameOrNames = []) {
     const names = Array.isArray(nameOrNames) 
       ? nameOrNames : [nameOrNames]
     
     let command = this.#root.value
     for (const name of names) {
-      command = command.getCommand(name)
+      command = await command.getCommand(name)
       if (!command)
         throw new Error(`Command not found: ${names.join(' ')}`)
     }
@@ -240,7 +246,7 @@ export class CliInfoLoader {
 
   async toPojo() {
     const { toPojo } = await __import()
-    return await toPojo(this.getCommand())
+    return await toPojo(await this.getCommand())
   }
   
   async __dump() {

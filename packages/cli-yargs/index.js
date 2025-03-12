@@ -216,16 +216,28 @@ export async function cliYargs(classOrPojo) {
   const class$ = typeof classOrPojo == 'function' 
     ? classOrPojo : Cli.extend(classOrPojo)
 
-  const metadataLoader = new CliMetadataLoader(class$)
-  const metadata = await metadataLoader.toPojo()
+  const metadataClassLoader = CliMetadataLoader.load(class$)
+  const classMetadata = await metadataClassLoader.toPojo()
 
-  const infoLoader = new CliInfoLoader(metadata)
+  const metadataLoader = CliMetadataLoader.load(classMetadata)
+  const infoLoader = new CliInfoLoader(metadataLoader)
   const infos = await infoLoader.toPojo()
   
   const yargs$ = yargs()
+    .middleware(async (argv) => {
+      if (argv['metadata$']) {
+        dumpPojo(await metadataLoader.toPojo())
+        process.exit(0)
+      }
+    })
+    .middleware(async (argv) => {
+      if (argv['infos$']) {
+        dumpPojo(await infoLoader.toPojo())
+        process.exit(0)
+      }
+    })
     .middleware(async (argv) => ({ 
-      _class: await class$.getCommand(argv._),
-      _info: infoLoader.getCommand(argv._),
+      _info: await infoLoader.getCommand(argv._),
     }))
     .middleware(async (argv) => ({ 
       _parameters: [...CliCommandInfo.runtimeParameters(argv._info)],
@@ -249,12 +261,9 @@ export async function cliYargs(classOrPojo) {
         process.exit(0)
       }
     })
-    .middleware(async (argv) => {
-      if (argv['metadata$']) {
-        dumpPojo(await toPojo(metadata))
-        process.exit(0)
-      }
-    })
+    .middleware(async (argv) => ({ 
+      _class: await class$.getCommand(argv._),
+    }))
     .middleware(async (argv) => {
       if (argv['metadata-declared$']) {
         const hierarchyFn = (cli) => cli ? [cli, ...hierarchyFn(cli.baseCli)] : []
@@ -266,14 +275,14 @@ export async function cliYargs(classOrPojo) {
     })
     .middleware(async (argv) => {
       if (argv['info-metadata$']) {
-        const metadataLoader = new CliMetadataLoader(argv._class)
+        const metadataLoader = CliMetadataLoader.load(argv._class)
         await metadataLoader.__dump()
         process.exit(0)
       }
     })
     .middleware(async (argv) => {
       if (argv['info$']) {
-        const metadataLoader = new CliMetadataLoader(argv._class)
+        const metadataLoader = CliMetadataLoader.load(argv._class)
         const metadata = await metadataLoader.toPojo()
         const infoLoader = new CliInfoLoader(metadata)
         await infoLoader.__dump()
@@ -282,7 +291,7 @@ export async function cliYargs(classOrPojo) {
     })
     .middleware(async (argv) => {
       if (argv['info-yargs$']) {
-        const metadataLoader = new CliMetadataLoader(argv._class)
+        const metadataLoader = CliMetadataLoader.load(argv._class)
         const metadata = await metadataLoader.toPojo()
         const infoLoader = new CliInfoLoader(metadata)
         const infos = await infoLoader.toPojo()

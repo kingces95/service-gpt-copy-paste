@@ -95,7 +95,7 @@ export class Cli {
     return result
   }
 
-  static async loadCommand$(value) {
+  static async loadOwnCommand$(value) {
 
     const type = typeof value
     switch (type) {
@@ -104,14 +104,14 @@ export class Cli {
       case 'string':
         const object = await NodeName.from(value).importObject()
         if (!object) throw new Error(`Could not load command ${value}`)
-        return await this.loadCommand$(object)
+        return await this.loadOwnCommand$(object)
       case 'object':
         return this.extend({ ...value })
     }
     throw new Error(`Could not load command`)
   }
 
-  static async loadCommands() {
+  static async getOwnCommand() {
     if (this.getOwnPropertyValue$(Commands))
       return this[Commands]
 
@@ -125,7 +125,7 @@ export class Cli {
 
     const map = { }
     for (const [name, value] of Object.entries(commands)) {
-      const class$ = this.loadCommand$(value)
+      const class$ = this.loadOwnCommand$(value)
 
       // each class must be a derivation of the enclosing class
       if (!class$.prototype instanceof this)
@@ -137,37 +137,6 @@ export class Cli {
     return this[Commands] = map
   }
 
-  static getMetadata() {
-
-    // gather metadata from class hierarchy
-    const metadata = this.getOwnMetadata()
-    const inherited = []
-    let current = this.baseCli
-    while (true) {
-      inherited.push(current.getOwnMetadata())
-      if (current == Cli)
-        break
-      current = current.baseCli
-    }
-
-    const positionals = metadata.positionals ?? []
-    let options = inherited
-      .map(o => o.options ?? { })
-      .reverse()
-      .map(o => Object.fromEntries(
-        // filter out inherited local options
-        Object.entries(o).filter(([_, { local }]) => !local)
-      ))
-      .reduce((acc, o) => Object.assign(acc, o), { })
-    Object.assign(options, metadata.options ?? { })
-
-    return trimPojo({
-      ...this.getOwnMetadata(),
-      positionals,  // an array of entries of positional options
-      options,      // an object map of options
-    })
-  }
-
   static getOwnMetadata() {
     const description = this.getOwnPropertyValue$('description')
 
@@ -175,26 +144,28 @@ export class Cli {
       return this[Metadata]
 
     const parameters = this.getOwnPropertyValue$('parameters') ?? []
-    const positionals = Object.entries(parameters)
-      .slice(0, this.defaults.length - 1)
-      .map(([name, description], i) => this.getOwnParameterMetadata$(name, {
-        position: i,
-        name,
-        description,
-        default: this.defaults[i],
-      }))
+    const positionals = Object.fromEntries(
+      Object.entries(parameters)
+        .slice(0, this.defaults.length - 1)
+        .map(([name, description], i) => [name, this.getOwnParameterMetadata$(name, {
+          position: i,
+          description,
+          default: this.defaults[i],
+        })])
+      )
+
     const options = Object.fromEntries(
       Object.entries(this.defaults[this.defaults.length - 1] ?? {})
         .map(([name, default$]) => [name, this.getOwnParameterMetadata$(name, {
           description: parameters[name],
           default: default$,
         })])
-    )
+      )
+
     const metadata = trimPojo({ 
       name: this.name,
-      description,  // string
-      positionals,  // an array of entries of positional options
-      options,      // an object map of options
+      description,
+      parameters: { ...positionals, ...options },
     })
 
     return this[Metadata] = metadata
@@ -212,7 +183,7 @@ export class Cli {
       return this
 
     const [commandName, ...rest] = path
-    const commands = await this.loadCommands()
+    const commands = await this.getOwnCommand()
     const command = await commands[commandName]
     if (!command)
       throw new Error(`Command ${commandName} not found`)

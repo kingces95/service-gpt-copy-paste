@@ -1,6 +1,5 @@
 import _ from 'lodash'
-import { LazyGenerator, Lazy } from '@kingjs/lazy'
-import { LoadAsyncGenerator } from '@kingjs/load'
+import { LazyGenerator } from '@kingjs/lazy'
 import { Cli } from '@kingjs/cli'
 import assert from 'assert'
 async function __import() {
@@ -10,15 +9,12 @@ async function __import() {
 }
 
 export class CliMetadata {
-  #id
   #name
   
-  constructor(id, name) {
-    this.#id = id
+  constructor(name) {
     this.#name = name
   }
 
-  get id() { return this.#id }
   get name() { return this.#name }
 
   get isParameter() { return false }
@@ -30,6 +26,11 @@ export class CliMetadata {
 }
 
 export class CliParameterMetadata extends CliMetadata {
+  static create(scope, name, pojo) {
+    return pojo.position !== undefined
+      ? new CliPostionalMetadata(scope, name, pojo)
+      : new CliOptionMetadata(scope, name, pojo)
+  }
 
   static getType(default$) {
     if (default$ === null) {
@@ -59,18 +60,18 @@ export class CliParameterMetadata extends CliMetadata {
   }
 
   #type
-  #classInfo
-  #metadata
+  #scope
+  #pojo
 
-  constructor(classInfo, id, name, metadata) {
-    super(id, name)
+  constructor(scope, name, pojo) {
+    super(name)
 
-    this.#classInfo = classInfo
-    this.#metadata = metadata
+    this.#scope = scope
+    this.#pojo = pojo
     this.#type = CliParameterMetadata.getType(this.default)
   }
 
-  get classInfo() { return this.#classInfo }
+  get scope() { return this.#scope }
   get isParameter() { return true }
 
   // parameter type
@@ -80,35 +81,35 @@ export class CliParameterMetadata extends CliMetadata {
   get isBoolean() { return this.type === 'boolean' }
   get isNumber() { return this.type === 'number' }
   get isCount() { return this.type === 'count' }
-  get normalize() { return this.#metadata.normalize } // TODO: make path 1st class
-  get coerce() { return this.#metadata.coerce }
+  get normalize() { return this.#pojo.normalize } // TODO: make path 1st class
+  get coerce() { return this.#pojo.coerce }
 
-  get description() { return this.#metadata.description }
-
-  // default/require/optional
-  get default() { return this.#metadata.default }
-  get defaultDescription() { return this.#metadata.defaultDescription }
+  get description() { return this.#pojo.description }
+  get default() { return this.#pojo.default }
+  get defaultDescription() { return this.#pojo.defaultDescription }
+  get normalize() { return this.#pojo.normalize }
 
   // CliClassOptionInfo
-  get local() { return this.#metadata.local }
-  get hidden() { return this.#metadata.hidden }
-  get isRequired() { return this.#metadata.required }
+  get local() { return this.#pojo.local }
+  get hidden() { return this.#pojo.hidden }
+  get required() { return this.#pojo.required }
 
-  *aliases() { yield* this.#metadata.aliases ?? [] }
-  *choices() { yield* this.#metadata.choices ?? [] }
-  *conflicts() { yield* this.#metadata.conflicts ?? [] }
-  *implications() { yield* this.#metadata.implications ?? [] }
+  *aliases() { yield* this.#pojo.aliases ?? [] }
+  *choices() { yield* this.#pojo.choices ?? [] }
+  *conflicts() { yield* this.#pojo.conflicts ?? [] }
+  *implications() { yield* this.#pojo.implications ?? [] }
 
   // CliClassPositionalInfo
   get position() { return undefined }
-  get isOptional() { return this.#metadata.optional }
+  get optional() { return undefined }
 
-  toString() { return `${super.toString()}, class={ ${this.classInfo.toString() }}` }
+  toString() { return `${super.toString()}, class={ ${this.scope.toString() }}` }
 }
 
 class CliOptionMetadata extends CliParameterMetadata {
-  constructor(classInfo, id, name, metadata) {
-    super(classInfo, id, name, metadata)
+  constructor(scope, name, pojo) {
+    const { position, optional, ...rest } = pojo
+    super(scope, name, pojo)
   }
 
   get isOption() { return true }
@@ -117,168 +118,195 @@ class CliOptionMetadata extends CliParameterMetadata {
 }
 
 class CliPostionalMetadata extends CliParameterMetadata {
-  constructor(classInfo, id, metadata) {
-    const { name, position, ...rest } = metadata
-    super(classInfo, id, name, rest)
+  #position
+  #optional
 
-    this.position$ = position
+  constructor(scope, name, pojo) {
+    const { position, optional, ...rest } = pojo
+    super(scope, name, rest)
+
+    this.#position = position
+    this.#optional = optional
   }
 
   get isPositional() { return true }
-  get position() { return this.position$ }
+  get position() { return this.#position }
+  get optional() { return this.#optional }
 
   toString() { return `${super.toString()}, positional` }
 }
 
 export class CliClassMetadata extends CliMetadata {
 
-  static commonAncestor(classes) {
-    const hierarchies = classes.map(cls => [...cls.hierarchy()].reverse())
-    const commonAncestors = _.intersection(...hierarchies)
-    const result = commonAncestors[commonAncestors.length - 1]
-    return result
-  }
-
   #loader
-  #baseClass
-  #class
-  #description
-  #hierarchy
-  #positionals
-  #options
+  #pojo
   #parameters
-  #commands
+  #baseClassFn
+  #commandsFn
 
-  constructor(loader, id, class$) {
-    super(id, class$.name)
+  constructor(loader, id, name, {
+    baseClassFn,
+    commandsFn,
+    ...pojo
+  }) {
+    super(name)
+    
+    this.#loader = loader
+    this.#pojo = pojo
+    this.#baseClassFn = baseClassFn
+    this.#commandsFn = commandsFn
+    
+    this.id = id
     this.ref = [this.id, this.name]
 
-    this.#loader = loader
-    this.#class = class$
-
-    const {
-      description,
-      positionals = [],
-      options = {},
-    } = class$.getOwnMetadata()
-
-    this.#description = description
-
-    this.#commands = new LoadAsyncGenerator(async function* () {
-      const commands = await this.class.loadCommands()
-      for (const [name, value] of Object.entries(commands)) {
-        const class$ = await value
-        const { ref } = this.#loader.allocateClass$(class$)
-        yield [name, ref]
-      }
-    }, this)
-
-    this.#positionals = new LazyGenerator(function* () {
-      for (let i = 0; i < positionals.length; i++) {
-        const metadata = positionals[i]
-        const id = this.#loader.allocateParameter$()
-        yield new CliPostionalMetadata(this, id, metadata)
-      }
-    }, this)
-
-    this.#options = new LazyGenerator(function* () {
-      for (const [name, metadata] of Object.entries(options)) {
-        const id = this.#loader.allocateParameter$()
-        yield new CliOptionMetadata(this, id, name, metadata)
-      }
-    }, this)
-
     this.#parameters = new LazyGenerator(function* () {
-      yield* this.positionals()
-      yield* this.options()
-    }, this)
-
-    this.#baseClass = new Lazy(() => {
-      const baseClass = Object.getPrototypeOf(class$.prototype).constructor
-      if (baseClass == Object)
-        return null
-      return this.#loader.allocateClass$(baseClass)
-    })
-
-    this.#hierarchy = new LazyGenerator(function* () {
-      let current = this
-      while (current) {
-        yield current
-        current = current.baseClass
+      const parameters = this.#pojo.parameters ?? { }
+      for (const [name, pojo] of Object.entries(parameters)) {
+        yield CliParameterMetadata.create(this, name, pojo)
       }
     }, this)
   }
 
   get isClass() { return true }
-
   get loader() { return this.#loader }
-  get class() { return this.#class }
-  get description() { return this.#description }
-  get baseClass() { return this.#baseClass.value }
+  get description() { return this.#pojo.description }
+  get baseClass() { return this.#baseClassFn() }
 
-  async *commands() { yield* await this.#commands.load() }
-  *hierarchy() { yield* this.#hierarchy.value }
-  *positionals() { yield* this.#positionals.value }
-  *options() { yield* this.#options.value }
+  *hierarchy() {
+    yield this
+    if (this.baseClass)
+      yield* this.baseClass.hierarchy()
+  }
+
+  async *commands() { yield* await this.#commandsFn() }
   *parameters() { yield* this.#parameters.value }
-
-  activate(args) { new this.class(args) }
 }
 
 export class CliMetadataLoader {
-  static async load(name) {
-    const loader = new CliMetadataLoader(name)
-    return await loader.rootClass()
+  static load(classOrPojo) {
+    return classOrPojo instanceof Function
+      ? new CliMetadataClassLoader(classOrPojo)
+      : new CliMetadataPojoLoader(classOrPojo)
   }
 
-  #cache
-  #rootClass
-  #metadata
-  #parameterId
+  #map
+  #stack
+  #lookup
 
-  constructor(class$) {
-    this.#cache = new Map()
-    this.#metadata = []
-    this.#rootClass = this.allocateClass$(class$)
-    this.#parameterId = 0
+  constructor(classOrPojo) {
+    this.#map = new Map()
+    this.#stack = []
+    this.#lookup = []
+    this.load$(classOrPojo)
   }
 
-  allocateParameter$() { 
-    return this.#parameterId++ 
-  }
+  activate$(classOrPojo, id) { throw 'abstract' }
 
-  allocateClass$(class$) {
-    assert(typeof class$ == 'function', `Class ${class$} must be a function.`)
-    assert(class$ == Cli || class$.prototype instanceof Cli, 
-      `Class ${class$.name} must extend Cli.`)
-
-    if (!this.#cache.has(class$)) {
-      const metadata = new CliClassMetadata(this, this.#metadata.length, class$)
-      this.#metadata.push(metadata)
-      this.#cache.set(class$, metadata)
+  load$(classOrPojo) {
+    if (!this.#map.has(classOrPojo)) {
+      const metadata = this.activate$(classOrPojo, this.#stack.length)
+      this.#stack.push(metadata)
+      this.#map.set(classOrPojo, metadata)
+      this.#lookup[metadata.id] = metadata
     }
-    return this.#cache.get(class$)
+
+    return this.#map.get(classOrPojo)
   }
 
-  async rootClass() {
-    return await this.#rootClass
+  getClass(id = 0) {
+    const class$ = this.#lookup[id]
+    if (!class$)
+      throw new Error(`Class not found or not yet loaded: ${id}`)
+    return class$
   }
 
-  *loadedMetadata() {
-    for(let i = 0; i < this.#metadata.length; i++) { 
-      yield this.#metadata[i]
+  async *classes() {
+    for(let i = 0; i < this.#stack.length; i++) { 
+      const class$ = this.#stack[i]
+
+      yield class$
+
+      // eagerly load base class
+      const _ = class$.baseClass
+
+      // eagerly load commands by awaiting async commands generator
+      for await (let _ of class$.commands()) { /* noop */ }
     }
   }
 
   async toPojo() {
     const { toPojo } = await __import()
-    await this.rootClass()
-    return toPojo(this.loadedMetadata(), 'list')
+    return toPojo(this.classes(), 'list')
   }
 
   async __dump() {
     const { dumpPojo } = await __import()
     const pojo = await this.toPojo()
     await dumpPojo(pojo)
+  }
+}
+
+export class CliMetadataClassLoader extends CliMetadataLoader {
+
+  constructor(class$) {
+    super(class$)
+  }
+
+  activate$(class$, id) {
+    assert(typeof class$ == 'function', `Class ${class$} must be a function.`)
+    assert(class$ == Cli || class$.prototype instanceof Cli, 
+      `Class ${class$.name} must extend Cli.`)
+
+    // inject base class resolution
+    const baseClassFn = () => {
+      const baseClass = Object.getPrototypeOf(class$.prototype).constructor
+      return baseClass == Object ? null : this.load$(baseClass)
+    }
+
+    // inject command resolution
+    const loader = this
+    const commandsFn = async function*() {
+      const commands = await class$.getOwnCommand()
+      for (const [name, value] of Object.entries(commands)) {
+        const class$ = await value
+        yield [name, loader.load$(class$)]
+      }
+    }
+
+    return new CliClassMetadata(this, id, class$.name, {
+      ...class$.getOwnMetadata(),
+      baseClassFn,
+      commandsFn
+    })
+  }
+}
+
+export class CliMetadataPojoLoader extends CliMetadataLoader {
+  #poja
+
+  constructor(poja) {
+    super(poja[0])
+    this.#poja = poja
+  }
+
+  activate$(pojo) {
+    assert(typeof pojo != 'function', `Expected a pojo.`)
+
+    const { id, name, baseClass, commands, ...rest } = pojo
+    const baseClassFn = () => baseClass ? this.load$(this.#poja[baseClass[0]]) : null
+
+    const loader = this
+    const commandsFn = async function*() {
+      for (const [name, ref] of Object.entries(commands ?? { })) {
+        const commandPojo = loader.#poja[ref[0]]
+        yield [name, loader.load$(commandPojo)]
+      }
+    }
+
+    return new CliClassMetadata(this, id, name, {
+      ...rest,
+      baseClassFn,
+      commandsFn
+    })
   }
 }

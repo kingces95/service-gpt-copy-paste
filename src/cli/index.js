@@ -1,9 +1,9 @@
 import { cliYargs } from '@kingjs/cli-yargs'
-import { hideBin } from 'yargs/helpers'
 import { NodeName } from '@kingjs/node-name'
 import { CliMetadataLoader } from '@kingjs/cli-metadata'
 import { CliInfoLoader } from '@kingjs/cli-info'
 import { dumpPojo } from '@kingjs/pojo-dump'
+import { hideBin } from 'yargs/helpers'
 
 const REQUIRED = undefined
 
@@ -12,7 +12,7 @@ const metadata = {
   handler: function(module) {
     const className = NodeName.from(module)
     className.importObject()
-      .then(type => new CliMetadataLoader(type).toPojo())
+      .then(type => CliMetadataLoader.load(type).toPojo())
       .then(metadata => dumpPojo(metadata))
   }
 }
@@ -22,7 +22,7 @@ const info = {
   handler: function(module) {
     const className = NodeName.from(module)
     className.importObject()
-      .then(type => new CliMetadataLoader(type).toPojo())
+      .then(type => CliMetadataLoader.load(type).toPojo())
       .then(metadata => new CliInfoLoader(metadata).toPojo())
       .then(info => dumpPojo(info))
   }
@@ -54,9 +54,10 @@ cliYargs({
 
   // const argv = await yargs.parse('--metadata$'.split(' '))
   // const argv = await yargs.parse('--info$'.split(' '))
-  // const argv = await yargs.parse('reflect metadata @kingjs/cli'.split(' '))
-  const argv = await yargs.parse('reflect info @kingjs/cli'.split(' '))
-  // const argv = await yargs.parse(hideBin(process.argv))
+  // const argv = await yargs.parse('reflect metadata @kingjs/cli-http --metadata$'.split(' '))
+  // const argv = await yargs.parse('reflect metadata @kingjs/cli-http --infos$'.split(' '))
+  // const argv = await yargs.parse('reflect metadata @kingjs/cli-http'.split(' '))
+  const argv = await yargs.parse(hideBin(process.argv))
 
   new argv._class(...argv._positionals, argv._options)
 })

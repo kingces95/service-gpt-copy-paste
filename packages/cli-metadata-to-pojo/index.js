@@ -13,27 +13,24 @@ CliMetadataLoader[symbol] = {
   classes: 'list',
 }
 
-CliMetadata[symbol] = {
+CliClassMetadata[symbol] = {
+  [symbol]: 'ref',
   id: 'number',
   name: 'string',
   description: 'string',
-}
-
-CliClassMetadata[symbol] = {
-  ...CliMetadata[symbol],
-  [symbol]: 'ref',
   baseClass: 'any',
   parameters: 'infos',
   commands: 'entries',
 }
 
 CliParameterMetadata[symbol] = {
-  ...CliMetadata[symbol],
+  name: 'string',
+  description: 'string',
   default: 'any',
 
   type: 'string',
-  isRequired: 'boolean',
-  isOptional: 'boolean',
+  required: 'boolean',
+  optional: 'boolean',
   local: 'boolean',
   hide: 'boolean',
   position: 'number',
