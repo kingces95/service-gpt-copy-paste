@@ -279,7 +279,10 @@ export class NodeName {
   }
 
   addName(...names) {
-    const namespaces = [...(this.#namespaces ?? []), ...[this.#name], ...names]
+    const namespaces = []
+    if (this.#namespaces) namespaces.push(...this.#namespaces)
+    if (this.#name) namespaces.push(this.#name)
+    namespaces.push(...names)
     const name = namespaces.pop()
     return new NodeName({ 
       ...this.moduleName.#parts, 
@@ -321,8 +324,8 @@ export class NodeName {
 
   async importObject() {
     const module = await this.moduleName.import()
-    return module.default 
-      ?? module[NodeName.snakeOrPerlToCamelCase(this.name)]
+    const defaultName = NodeName.snakeOrPerlToCamelCase(this.name)
+    return module.default ?? module[defaultName] 
   }
 
   toString() {

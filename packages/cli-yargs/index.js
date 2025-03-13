@@ -92,10 +92,8 @@ export class CliYargsPositional extends CliYargsParameter {
   }
 
   get position() { return this.#positional.position }
-  get isOptional() {
-    return this.#positional.isOptional
-      || this.#positional.type === 'array'
-  }
+  get isOptional() { return this.#positional.isOptional }
+  get isVariadic() { return this.#positional.isVariadic }
 }
 
 export class CliYargsOption extends CliYargsParameter {
@@ -148,13 +146,15 @@ export class CliYargsCommand extends CliYargs {
       // todo: handle groups
       // `${name} <command>`,
 
-      const parts = [name]
+      const positionals = [name]
       for (const positional of this.positionals()) {
+        const variadic = positional.isVariadic ? '...' : ''
         const part = positional.isOptional 
-          ? `[${positional.name}]` : `<${positional.name}>`
-        parts.push(part)
+          ? `[${positional.name}${variadic}]` 
+          : `<${positional.name}${variadic}>`
+        positionals.push(part)
       }
-      return parts.join(' ')
+      return positionals.join(' ')
     })
 
     this.#path = new Lazy(() => {
@@ -217,50 +217,15 @@ export async function cliYargs(classOrPojo) {
     ? classOrPojo : Cli.extend(classOrPojo)
 
   const metadataClassLoader = CliMetadataLoader.load(class$)
-  const classMetadata = await metadataClassLoader.toPojo()
+  const metadata = await metadataClassLoader.toPojo()
 
-  const metadataLoader = CliMetadataLoader.load(classMetadata)
+  const metadataLoader = CliMetadataLoader.load(metadata)
   const infoLoader = new CliInfoLoader(metadataLoader)
+
   const infos = await infoLoader.toPojo()
+  const yargsCommand = new CliYargsCommand(infos)
   
   const yargs$ = yargs()
-    .middleware(async (argv) => {
-      if (argv['metadata$']) {
-        dumpPojo(await metadataLoader.toPojo())
-        process.exit(0)
-      }
-    })
-    .middleware(async (argv) => {
-      if (argv['infos$']) {
-        dumpPojo(await infoLoader.toPojo())
-        process.exit(0)
-      }
-    })
-    .middleware(async (argv) => ({ 
-      _info: await infoLoader.getCommand(argv._),
-    }))
-    .middleware(async (argv) => ({ 
-      _parameters: [...CliCommandInfo.runtimeParameters(argv._info)],
-    }))
-    .middleware(async (argv) => ({ 
-      _positionals: [...argv._parameters.filter(o => o.isPositional)]
-        .sort((a, b) => a.position - b.position)
-        .reduce((acc, { name }) => {
-          acc.push(argv[name])
-          return acc
-        }, [ ]),
-      _options: [...argv._parameters.filter(o => o.isOption)]
-        .reduce((acc, { name }) => {
-          if (Object.hasOwn(argv, name))
-            acc[name] = argv[name]
-        }, { })
-    }))
-    .middleware(async (argv) => {
-      if (argv['argv$']) {
-        dumpPojo(await toPojo(argv))
-        process.exit(0)
-      }
-    })
     .middleware(async (argv) => ({ 
       _class: await class$.getCommand(argv._),
     }))
@@ -274,7 +239,7 @@ export async function cliYargs(classOrPojo) {
       }
     })
     .middleware(async (argv) => {
-      if (argv['info-metadata$']) {
+      if (argv['metadata$']) {
         const metadataLoader = CliMetadataLoader.load(argv._class)
         await metadataLoader.__dump()
         process.exit(0)
@@ -283,25 +248,49 @@ export async function cliYargs(classOrPojo) {
     .middleware(async (argv) => {
       if (argv['info$']) {
         const metadataLoader = CliMetadataLoader.load(argv._class)
-        const metadata = await metadataLoader.toPojo()
-        const infoLoader = new CliInfoLoader(metadata)
+        const infoLoader = new CliInfoLoader(metadataLoader)
         await infoLoader.__dump()
         process.exit(0)
       }
     })
     .middleware(async (argv) => {
-      if (argv['info-yargs$']) {
+      if (argv['yargs$']) {
         const metadataLoader = CliMetadataLoader.load(argv._class)
-        const metadata = await metadataLoader.toPojo()
-        const infoLoader = new CliInfoLoader(metadata)
+        const infoLoader = new CliInfoLoader(metadataLoader)
         const infos = await infoLoader.toPojo()
         const yargsCommand = new CliYargsCommand(infos)
         await yargsCommand.__dump()
         process.exit(0)
       }
     })
+    .middleware(async (argv) => { 
+      const command = await infoLoader.getCommand(argv._)
+      const parameters = [...CliCommandInfo.runtimeParameters(command)]
+      const positionals = parameters.filter(o => o.isPositional)
+        .sort((a, b) => a.position - b.position)
+        .reduce((acc, { name }) => {
+          acc.push(argv[name])
+          return acc
+        }, [ ])
+      const options = parameters.filter(o => o.isOption)
+        .reduce((acc, { name }) => {
+          if (Object.hasOwn(argv, name))
+            acc[name] = argv[name]
+          return acc
+        }, { })
 
-  const yargsCommand = new CliYargsCommand(infos)
+      return {
+        _command: command,
+        _args: [ ...positionals, options ]
+      }
+    })
+    .middleware(async (argv) => {
+      if (argv['argv$']) {
+        await dumpPojo(argv)
+        process.exit(0)
+      }
+    })
+
   return yargsCommand.apply(yargs$)
 }
 

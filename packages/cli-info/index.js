@@ -90,6 +90,7 @@ export class CliParameterInfo extends CliInfoId {
   get isOptional() { return this.#classParameter.optional }
   get isLocal() { return this.#classParameter.local }
   get isHidden() { return this.#classParameter.hidden }
+  get isVariadic() { return this.#classParameter.variadic }
 
   *aliases() { yield* this.#classParameter.aliases() }
   *choices() { yield* this.#classParameter.choices() }

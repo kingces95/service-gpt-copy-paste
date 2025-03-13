@@ -28,6 +28,7 @@ CliParameterInfo[symbol] = {
   
   // positionals
   isOptional: 'boolean',
+  isVariadic: 'boolean',
 }
 
 CliCommandInfo[symbol] = {

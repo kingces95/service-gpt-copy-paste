@@ -2,29 +2,43 @@ import { cliYargs } from '@kingjs/cli-yargs'
 import { NodeName } from '@kingjs/node-name'
 import { CliMetadataLoader } from '@kingjs/cli-metadata'
 import { CliInfoLoader } from '@kingjs/cli-info'
-import { dumpPojo } from '@kingjs/pojo-dump'
-import { hideBin } from 'yargs/helpers'
+import { CliYargsCommand } from '@kingjs/cli-yargs'
 
 const REQUIRED = undefined
 
 const metadata = {
-  description: 'Dump metadata tables',
-  handler: function(module) {
-    const className = NodeName.from(module)
-    className.importObject()
-      .then(type => CliMetadataLoader.load(type).toPojo())
-      .then(metadata => dumpPojo(metadata))
+  description: 'Dump command implementation metadata',
+  handler: async function(module, path) {
+    const nodeName = NodeName.from(module)
+    const class$ = await nodeName.importObject()
+    const command = await class$.getCommand(path)
+    const metadataLoader = await CliMetadataLoader.load(command)
+    await metadataLoader.__dump()
   }
 }
 
 const info = {
-  description: 'Dump metadata info',
-  handler: function(module) {
-    const className = NodeName.from(module)
-    className.importObject()
-      .then(type => CliMetadataLoader.load(type).toPojo())
-      .then(metadata => new CliInfoLoader(metadata).toPojo())
-      .then(info => dumpPojo(info))
+  description: 'Dump command metadata',
+  handler: async function(module, path) {
+    const nodeName = NodeName.from(module)
+    const class$ = await nodeName.importObject()
+    const command = await class$.getCommand(path)
+    const metadataLoader = await CliMetadataLoader.load(command)
+    const infoLoader = new CliInfoLoader(metadataLoader)
+    await infoLoader.__dump()
+  }
+}
+
+const yargs = {
+  description: 'Dump yargs metadata',
+  handler: async function(module, path) {
+    const nodeName = NodeName.from(module)
+    const class$ = await nodeName.importObject()
+    const command = await class$.getCommand(path)
+    const metadataLoader = await CliMetadataLoader.load(command)
+    const infoLoader = new CliInfoLoader(metadataLoader)
+    const yargsCommand = new CliYargsCommand(await infoLoader.toPojo())
+    await yargsCommand.__dump()
   }
 }
 
@@ -35,13 +49,14 @@ cliYargs({
     reflect: {
       parameters: {
         module: 'Name of module',
-        name: 'Name of command',
+        path: 'Path of command',
       },
-      defaults: [REQUIRED, null, { }],
+      defaults: [REQUIRED, []],
       description: 'Reflect on command metadata',
       commands: {
         metadata,
-        info
+        info,
+        yargs
       }
     }
   }
@@ -54,10 +69,11 @@ cliYargs({
 
   // const argv = await yargs.parse('--metadata$'.split(' '))
   // const argv = await yargs.parse('--info$'.split(' '))
+  // const argv = await yargs.parse('--yargs$'.split(' '))
   // const argv = await yargs.parse('reflect metadata @kingjs/cli-http --metadata$'.split(' '))
   // const argv = await yargs.parse('reflect metadata @kingjs/cli-http --infos$'.split(' '))
-  // const argv = await yargs.parse('reflect metadata @kingjs/cli-http'.split(' '))
-  const argv = await yargs.parse(hideBin(process.argv))
+  const argv = await yargs.parse('reflect info @kingjs/cli-http get'.split(' '))
+  // const argv = await yargs.parse(hideBin(process.argv))
 
-  new argv._class(...argv._positionals, argv._options)
+  new argv._class(...argv._args)
 })

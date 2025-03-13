@@ -59,7 +59,6 @@ export class CliParameterMetadata extends CliMetadata {
     return 'string'
   }
 
-  #type
   #scope
   #pojo
 
@@ -68,14 +67,18 @@ export class CliParameterMetadata extends CliMetadata {
 
     this.#scope = scope
     this.#pojo = pojo
-    this.#type = CliParameterMetadata.getType(this.default)
   }
 
   get scope() { return this.#scope }
   get isParameter() { return true }
 
   // parameter type
-  get type() { return this.#type }
+  get type() { return this.#pojo.default !== undefined
+    ? CliParameterMetadata.getType(this.#pojo.default)
+    : this.variadic ? 'array'
+    : this.isPositional && this.optional ? 'string'
+    : 'string'
+  }
   get isArray() { return this.type === 'array' }
   get isString() { return this.type === 'string' }
   get isBoolean() { return this.type === 'boolean' }
@@ -88,50 +91,56 @@ export class CliParameterMetadata extends CliMetadata {
   get default() { return this.#pojo.default }
   get defaultDescription() { return this.#pojo.defaultDescription }
   get normalize() { return this.#pojo.normalize }
-
-  // CliClassOptionInfo
-  get local() { return this.#pojo.local }
-  get hidden() { return this.#pojo.hidden }
-  get required() { return this.#pojo.required }
-
+  
   *aliases() { yield* this.#pojo.aliases ?? [] }
   *choices() { yield* this.#pojo.choices ?? [] }
   *conflicts() { yield* this.#pojo.conflicts ?? [] }
   *implications() { yield* this.#pojo.implications ?? [] }
 
+  // CliClassOptionInfo
+  get local() { return undefined }
+  get hidden() { return undefined }
+  get required() { return undefined }
+
   // CliClassPositionalInfo
   get position() { return undefined }
   get optional() { return undefined }
+  get variadic() { return undefined }
 
   toString() { return `${super.toString()}, class={ ${this.scope.toString() }}` }
 }
 
 class CliOptionMetadata extends CliParameterMetadata {
+  #pojo
+
   constructor(scope, name, pojo) {
-    const { position, optional, ...rest } = pojo
     super(scope, name, pojo)
+
+    this.#pojo = pojo
   }
 
   get isOption() { return true }
+
+  get local() { return this.#pojo.local }
+  get hidden() { return this.#pojo.hidden }
+  get required() { return this.#pojo.required }
 
   toString() { return `${super.toString()}, option, type=${this.type}` }
 }
 
 class CliPostionalMetadata extends CliParameterMetadata {
-  #position
-  #optional
+  #pojo
 
   constructor(scope, name, pojo) {
-    const { position, optional, ...rest } = pojo
-    super(scope, name, rest)
+    super(scope, name, pojo)
 
-    this.#position = position
-    this.#optional = optional
+    this.#pojo = pojo
   }
 
   get isPositional() { return true }
-  get position() { return this.#position }
-  get optional() { return this.#optional }
+  get position() { return this.#pojo.position }
+  get optional() { return this.#pojo.optional }
+  get variadic() { return this.#pojo.variadic }
 
   toString() { return `${super.toString()}, positional` }
 }
@@ -155,7 +164,7 @@ export class CliClassMetadata extends CliMetadata {
     this.#pojo = pojo
     this.#baseClassFn = baseClassFn
     this.#commandsFn = commandsFn
-    
+
     this.id = id
     this.ref = [this.id, this.name]
 

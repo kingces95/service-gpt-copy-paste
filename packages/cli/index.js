@@ -31,7 +31,7 @@ const PARAMETER_METADATA_NAMES =  [
   // strings
   'defaultDescription',
   // booleans
-  'hidden', 'local', 'normalize'
+  'hidden', 'local', 'normalize',
 ]
 
 const DEFAULT_IFS = ' '
@@ -73,26 +73,32 @@ export class Cli {
       ? this[name] : null
   }
 
-  static getOwnParameterMetadata$(name, accumulator) {
-    const result = PARAMETER_METADATA_NAMES.reduce((acc, metadataName) => {
-      const metadata = this.getOwnPropertyValue$(metadataName)
-      const metadatum = metadata?.[name]
+  static getOwnParameterMetadata$(name, metadata) {
+    PARAMETER_METADATA_NAMES.reduce((acc, metadataName) => {
+      const metadatum = this.getOwnPropertyValue$(metadataName)?.[name]
       if (metadatum !== undefined)
         acc[metadataName] = metadatum
       return acc
-    }, accumulator)
+    }, metadata)
 
-    // determine if a positional is optional or an option is required
+    // Determine if a positional is optional or an option is required. The
     // presence of a default is insufficient since a string can be null
-    // and null defaults are difficult to deal with (e.g. they are trimmed)
-    const isPositional = result.position !== undefined
-    const hasDefault = result.default !== undefined
-    if (isPositional && hasDefault)
-      accumulator.optional = true
-    if (!isPositional && !hasDefault)
-      accumulator.required = true
+    // and null defaults are difficult to deal with (e.g. they are trimmed).
+    const isArray = Array.isArray(metadata.default)
+    const isPositional = metadata.position !== undefined
+    if (isPositional && isArray)
+      metadata.variadic = true
 
-    return result
+    const default$ = !isArray ? metadata.default
+      : metadata.default.length == 0 ? null
+      : metadata.default[0]
+    const hasDefault = default$ !== undefined
+    if (isPositional && hasDefault)
+      metadata.optional = true
+    if (!isPositional && !hasDefault)
+      metadata.required = true
+
+    return metadata
   }
 
   static async loadOwnCommand$(value) {
@@ -143,10 +149,16 @@ export class Cli {
     if (this.getOwnPropertyValue$(Metadata))
       return this[Metadata]
 
+    const lastDefault = this.defaults[this.defaults.length - 1]
+    const hasOptionDefaults = 
+      typeof lastDefault == 'object' && !Array.isArray(lastDefault)
+    const optionDefaults = hasOptionDefaults ? lastDefault : { }
+    const positionalCount = this.defaults.length - (hasOptionDefaults ? 1 : 0)
+
     const parameters = this.getOwnPropertyValue$('parameters') ?? []
     const positionals = Object.fromEntries(
       Object.entries(parameters)
-        .slice(0, this.defaults.length - 1)
+        .slice(0, positionalCount)
         .map(([name, description], i) => [name, this.getOwnParameterMetadata$(name, {
           position: i,
           description,
@@ -155,7 +167,7 @@ export class Cli {
       )
 
     const options = Object.fromEntries(
-      Object.entries(this.defaults[this.defaults.length - 1] ?? {})
+      Object.entries(optionDefaults)
         .map(([name, default$]) => [name, this.getOwnParameterMetadata$(name, {
           description: parameters[name],
           default: default$,
