@@ -8,7 +8,7 @@ async function getOrCall(target, name) {
 }
 
 export async function toPojo(value, options = { }) {
-  const { type = null, symbol, depth = 1, path = [] } = options
+  const { type = null, symbol, depth, path = [] } = options
   const jsType = typeof value
 
   if (value === null || value === undefined)
@@ -36,11 +36,16 @@ export async function toPojo(value, options = { }) {
         const isPojo = Object.getPrototypeOf(value) === Object.prototype
 
         // if there is no metadata, then ignore unless it is a plain object.
-        if (!metadata && !isPojo)
-          throw new Error(`Object must be pojo or have metadata`)
+        // if (!metadata && !isPojo)
+        //   throw new Error(`Object must be pojo or have metadata`)
 
         // if there is no metadata, then transform all properties to pojos.
         if (!metadata) {
+          if (!isPojo) {
+            const className = value.constructor?.name
+            return `[type: ${className}, toString: ${value.toString()}]`
+          }
+
           const result = { }
           for (const key in value) {
             const pojo = await toPojo(value[key], { symbol, depth, path: [...path, key] })
@@ -58,7 +63,7 @@ export async function toPojo(value, options = { }) {
           return ref
 
         // decrement depth if value could be referenced
-        let newDepth = depth - ref ? 1 : 0
+        let newDepth = depth - (ref ? 1 : 0)
         
         // if metadata is a string, return the value of the property
         if (typeof metadata == 'string') {

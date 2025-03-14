@@ -57,12 +57,12 @@ export class NodeName {
     return capitalize(snakeToCamelCase(perlToCamelCase(value)))
   }
   
-  static fromScope(scope, name, ...exports) {
-    return new ModuleName({ scope, name, exports })
+  static fromScope(scope, packageName, ...exports) {
+    return new NodeName({ scope, packageName, exports })
   }
 
   static fromName(name, ...exports) {
-    return ModuleName.fromScope(GLOBAL, name, ...exports)
+    return NodeName.fromScope(GLOBAL, name, ...exports)
   }
 
   static from(value) {
@@ -130,12 +130,12 @@ export class NodeName {
     // e.g. MyType
     const dotSplit = value.split('.')
     const namespaces = dotSplit.slice(0, -1)
-    const name = dotSplit.pop()
+    const objectName = dotSplit.pop()
 
     assertAreObjectNames(...namespaces)
-    if (name)
-      assertIsObjectName(name)
-    return { namespaces, name }
+    if (objectName)
+      assertIsObjectName(objectName)
+    return { namespaces, objectName }
   }
   
   static parseModuleName(value) {
@@ -164,7 +164,7 @@ export class NodeName {
   #packageName
   #exports
   #namespaces
-  #name
+  #objectName
 
   constructor(parts) {
 
@@ -178,12 +178,12 @@ export class NodeName {
     this.#exports = exports.length ? exports : undefined // e.g. myExport, mySubExport
 
     // full name parts
-    const { namespaces = [], name } = parts
+    const { namespaces = [], objectName } = parts
     assertAreObjectNames(...namespaces)
-    if (name)
-      assertIsObjectName(name)
+    if (objectName)
+      assertIsObjectName(objectName)
     this.#namespaces = namespaces.length ? namespaces : undefined
-    this.#name = name
+    this.#objectName = objectName
   }
 
   get #isGlobal() { return this.#scope === GLOBAL }
@@ -195,14 +195,14 @@ export class NodeName {
       packageName: this.#packageName, 
       exports: this.#exports,
       namespaces: this.#namespaces, 
-      name: this.#name 
+      objectName: this.#objectName 
     }
   }
 
   get #fullName() {
     return [
       this.#namespaces?.join('.') || null,
-      this.#name
+      this.#objectName
     ].filter(Boolean).join('.') || null
   }
 
@@ -211,11 +211,11 @@ export class NodeName {
     if (this.isObjectName) return 'type'
     throw new Error('Unknown type.')
   }
-  get isModuleName() { return !this.#name }
-  get isObjectName() { return isObjectName(this.#name) }
+  get isModuleName() { return !this.#objectName }
+  get isObjectName() { return isObjectName(this.#objectName) }
 
   get name() { 
-    return this.#name ? this.#name
+    return this.#objectName ? this.#objectName
       : this.#exports ? this.#exports[this.#exports.length - 1]
       : this.#packageName
   }
@@ -223,15 +223,15 @@ export class NodeName {
   get parent() {
     if (this.#namespaces) {
       const namespaces = [...this.#namespaces]
-      const name = namespaces.pop()
+      const objectName = namespaces.pop()
       return new NodeName({
         ...this.moduleName.#parts,
         namespaces: namespaces.length ? namespaces : undefined,
-        name,
+        objectName,
       })
     }
 
-    if (this.#name) {
+    if (this.#objectName) {
       return new NodeName({
         ...this.moduleName.#parts
       })
@@ -271,9 +271,11 @@ export class NodeName {
   }
 
   addExport(...exports) {
-    return new ModuleName({ 
-      scope: this.#scope, 
-      packageName: this.#packageName,
+    if (!this.isModuleName)
+      throw new Error('Cannot add export.')
+
+    return new NodeName({ 
+      ...this.#parts, 
       exports: [...(this.#exports || []), ...exports] 
     })
   }
@@ -281,13 +283,13 @@ export class NodeName {
   addName(...names) {
     const namespaces = []
     if (this.#namespaces) namespaces.push(...this.#namespaces)
-    if (this.#name) namespaces.push(this.#name)
+    if (this.#objectName) namespaces.push(this.#objectName)
     namespaces.push(...names)
-    const name = namespaces.pop()
+    const objectName = namespaces.pop()
     return new NodeName({ 
       ...this.moduleName.#parts, 
       namespaces: namespaces.length ? namespaces : undefined,
-      name
+      objectName
     })
   }
 
@@ -323,9 +325,16 @@ export class NodeName {
   }
 
   async importObject() {
-    const module = await this.moduleName.import()
-    const defaultName = NodeName.snakeOrPerlToCamelCase(this.name)
-    return module.default ?? module[defaultName] 
+    const module = this.isModuleName 
+      ? await this.import() 
+      : await this.parent.import()
+
+    if (this.isModuleName) {
+      const defaultName = NodeName.snakeOrPerlToCamelCase(this.name)
+      return module.default ?? module[defaultName] 
+    }
+
+    return module[this.name]
   }
 
   toString() {

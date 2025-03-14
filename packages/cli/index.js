@@ -48,6 +48,8 @@ const IFS = DEFAULT_IFS
 const Metadata = Symbol('metadata')
 const Commands = Symbol('commands')
 
+export const REQUIRED = undefined
+
 export class Cli {
 
   static async __dumpMetadata() { 
@@ -89,9 +91,9 @@ export class Cli {
     if (isPositional && isArray)
       metadata.variadic = true
 
-    const default$ = !isArray ? metadata.default
-      : metadata.default.length == 0 ? null
-      : metadata.default[0]
+    const default$ = 
+      !isArray ? metadata.default : 
+      metadata.default.length == 0 ? null : metadata.default[0]
     const hasDefault = default$ !== undefined
     if (isPositional && hasDefault)
       metadata.optional = true
@@ -117,7 +119,7 @@ export class Cli {
     throw new Error(`Could not load command`)
   }
 
-  static async getOwnCommand() {
+  static async getOwnCommands() {
     if (this.getOwnPropertyValue$(Commands))
       return this[Commands]
 
@@ -195,7 +197,7 @@ export class Cli {
       return this
 
     const [commandName, ...rest] = path
-    const commands = await this.getOwnCommand()
+    const commands = await this.getOwnCommands()
     const command = await commands[commandName]
     if (!command)
       throw new Error(`Command ${commandName} not found`)

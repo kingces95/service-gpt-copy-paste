@@ -9,10 +9,6 @@ import { toPojo } from '@kingjs/pojo'
 
 const symbol = Symbol('cli-metadata-to-pojo')
 
-CliMetadataLoader[symbol] = {
-  classes: 'list',
-}
-
 CliClassMetadata[symbol] = {
   [symbol]: 'ref',
   id: 'number',
@@ -43,7 +39,7 @@ CliParameterMetadata[symbol] = {
   // coerce, defaultDescription, normalize
 }
 
-export async function cliMetadataToPojo(metadata, type) {
-  let pojo = await toPojo(metadata, { symbol, type, depth: 1 })
+export async function cliMetadataToPojo(metadata, { type, depth = 1 }) {
+  let pojo = await toPojo(metadata, { symbol, type, depth })
   return trimPojo(pojo)
 }

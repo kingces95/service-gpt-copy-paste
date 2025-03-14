@@ -146,6 +146,47 @@ class CliPostionalMetadata extends CliParameterMetadata {
 }
 
 export class CliClassMetadata extends CliMetadata {
+  static fromPojo(pojo) { return new CliMetadataPojoLoader(pojo) }
+  static async fromClass(class$) {
+    const rootMd = new CliMetadataClassLoader(class$)
+
+    // Classes loaded in response to enumerating 'commands' are marked as named.
+    // Classes loaded in response to accessing 'baseClass' are not so marked.
+    
+    // Classes not marked as named are considered un-addressable so cannot
+    // have any sub-commands. For this reason, classes not marked as named
+    // ignore any sub-command metadata and return no sub-commands.
+
+    // A class could be both a sub-command and a baseClass. In this case, the
+    // class should be marked as named abd return its sub-commands. To ensure 
+    // this class is named it must load as a sub-command before it is loaded 
+    // as a baseClass. This is done by walking the command hiearchy which has 
+    // the effect of loading all named classes before loading any unnamed classes.
+
+    // Before publishing a CLI, the metadata discovered by this eager walk will
+    // be serialized to a file. This file will be used to load the metadata
+    // when the CLI is executed without requiring loading any node packages.
+
+    const classes = []
+
+    // load named classes; commands
+    const stack = [rootMd]
+    while (stack.length) {
+      const classMd = stack.pop()
+      for await (const [_, commandMd] of classMd.commands()) {
+        stack.push(commandMd)
+        classes.push(commandMd)
+      }
+    }
+
+    // load unnamed classes; baseClasses
+    for (let classMd of classes) {
+      while (classMd)
+        classMd = await classMd.baseClass
+    }
+
+    return rootMd
+  }
 
   #loader
   #pojo
@@ -160,7 +201,7 @@ export class CliClassMetadata extends CliMetadata {
   }) {
     super(name)
     
-    this.#loader = loader
+    this.#loader = loader ?? this
     this.#pojo = pojo
     this.#baseClassFn = baseClassFn
     this.#commandsFn = commandsFn
@@ -187,65 +228,46 @@ export class CliClassMetadata extends CliMetadata {
       yield* this.baseClass.hierarchy()
   }
 
-  async *commands() { yield* await this.#commandsFn() }
+  async *commands() { yield* this.#commandsFn() }
   *parameters() { yield* this.#parameters.value }
 }
 
-export class CliMetadataLoader {
-  static load(classOrPojo) {
-    return classOrPojo instanceof Function
-      ? new CliMetadataClassLoader(classOrPojo)
-      : new CliMetadataPojoLoader(classOrPojo)
-  }
+export class CliMetadataLoader extends CliClassMetadata {
+  #cache
+  #loaded
 
-  #map
-  #stack
-  #lookup
+  constructor(classOrPojo, id, name, {
+    baseClassFn,
+    commandsFn,
+    ...pojo
+  }) {
+    super(null, id, name, { baseClassFn, commandsFn, ...pojo })
 
-  constructor(classOrPojo) {
-    this.#map = new Map()
-    this.#stack = []
-    this.#lookup = []
-    this.load$(classOrPojo)
+    this.#cache = new Map()
+    this.#cache.set(classOrPojo, this)
+    this.#loaded = [this]
   }
 
   activate$(classOrPojo, id) { throw 'abstract' }
 
-  load$(classOrPojo) {
-    if (!this.#map.has(classOrPojo)) {
-      const metadata = this.activate$(classOrPojo, this.#stack.length)
-      this.#stack.push(metadata)
-      this.#map.set(classOrPojo, metadata)
-      this.#lookup[metadata.id] = metadata
+  load$(classOrPojo, options) {
+    if (!this.#cache.has(classOrPojo)) {
+      const metadata = this.activate$(classOrPojo, this.#loaded.length, options)
+      this.#loaded.push(metadata)
+      this.#cache.set(classOrPojo, metadata)
     }
 
-    return this.#map.get(classOrPojo)
-  }
-
-  getClass(id = 0) {
-    const class$ = this.#lookup[id]
-    if (!class$)
-      throw new Error(`Class not found or not yet loaded: ${id}`)
-    return class$
+    return this.#cache.get(classOrPojo)
   }
 
   async *classes() {
-    for(let i = 0; i < this.#stack.length; i++) { 
-      const class$ = this.#stack[i]
-
-      yield class$
-
-      // eagerly load base class
-      const _ = class$.baseClass
-
-      // eagerly load commands by awaiting async commands generator
-      for await (let _ of class$.commands()) { /* noop */ }
-    }
+    for(let id = 0; id < this.#loaded.length; id++)
+      yield this.#loaded[id]
   }
 
   async toPojo() {
     const { toPojo } = await __import()
-    return toPojo(this.classes(), 'list')
+    return toPojo(this.classes(), { depth: 1, type: 'list' })
   }
 
   async __dump() {
@@ -253,69 +275,101 @@ export class CliMetadataLoader {
     const pojo = await this.toPojo()
     await dumpPojo(pojo)
   }
+
+  toString() { return `<root>, type=metadata` }
 }
 
 export class CliMetadataClassLoader extends CliMetadataLoader {
+  static getInjections(class$, loadedAsBaseClass = false) {
+    return { 
+      baseClassFn: function() { 
+        assert(this instanceof CliClassMetadata)
 
-  constructor(class$) {
-    super(class$)
+        const baseClass = Object.getPrototypeOf(class$.prototype).constructor
+        return baseClass == Object ? null 
+          : this.loader.load$(baseClass, { loadedAsBaseClass: true })
+      }, 
+      commandsFn: async function*() { 
+        assert(this instanceof CliClassMetadata)
+
+        if (loadedAsBaseClass) 
+          return
+
+        const commands = await class$.getOwnCommands()
+        for (const [name, value] of Object.entries(commands)) {
+          const class$ = await value
+          yield [name, this.loader.load$(class$)]
+        }
+      }, 
+    }
   }
 
-  activate$(class$, id) {
+  constructor(class$) {
+    const { name } = class$
+    super(class$, 0, name, { 
+      ...class$.getOwnMetadata(),
+      ...CliMetadataClassLoader.getInjections(class$), 
+    })
+  }
+
+  activate$(class$, id, { loadedAsBaseClass } = { }) {
     assert(typeof class$ == 'function', `Class ${class$} must be a function.`)
     assert(class$ == Cli || class$.prototype instanceof Cli, 
       `Class ${class$.name} must extend Cli.`)
 
-    // inject base class resolution
-    const baseClassFn = () => {
-      const baseClass = Object.getPrototypeOf(class$.prototype).constructor
-      return baseClass == Object ? null : this.load$(baseClass)
-    }
-
-    // inject command resolution
-    const loader = this
-    const commandsFn = async function*() {
-      const commands = await class$.getOwnCommand()
-      for (const [name, value] of Object.entries(commands)) {
-        const class$ = await value
-        yield [name, loader.load$(class$)]
-      }
-    }
-
-    return new CliClassMetadata(this, id, class$.name, {
+    const { name } = class$
+    return new CliClassMetadata(this, id, name, {
       ...class$.getOwnMetadata(),
-      baseClassFn,
-      commandsFn
+      ...CliMetadataClassLoader.getInjections(class$, loadedAsBaseClass), 
     })
   }
 }
 
 export class CliMetadataPojoLoader extends CliMetadataLoader {
+  static getInjections(poja, pojo) {
+
+    const { 
+      baseClass, // [ 42, 'MyBaseClass' ]
+      commands   // { 'my-command': [43, 'MyCommandClass'], ... }
+    } = pojo
+
+    return { 
+      baseClassFn: function() { 
+        assert(this instanceof CliClassMetadata)
+
+        return baseClass ? this.loader.load$(poja[baseClass[0]]) : null
+      }, 
+      commandsFn: async function*() { 
+        assert(this instanceof CliClassMetadata)
+        
+        for (const [name, ref] of Object.entries(commands ?? { })) {
+          yield [name, this.loader.load$(poja[ref[0]])]
+        }
+      }, 
+    }
+  }
+  
   #poja
 
   constructor(poja) {
-    super(poja[0])
+    const pojo = poja[0]
+    const { id, name } = pojo
+
+    super(pojo, id, name, {
+      ...pojo,
+      ...CliMetadataPojoLoader.getInjections(poja, pojo),
+    })
+
     this.#poja = poja
   }
 
   activate$(pojo) {
     assert(typeof pojo != 'function', `Expected a pojo.`)
 
-    const { id, name, baseClass, commands, ...rest } = pojo
-    const baseClassFn = () => baseClass ? this.load$(this.#poja[baseClass[0]]) : null
-
-    const loader = this
-    const commandsFn = async function*() {
-      for (const [name, ref] of Object.entries(commands ?? { })) {
-        const commandPojo = loader.#poja[ref[0]]
-        yield [name, loader.load$(commandPojo)]
-      }
-    }
-
+    const { id, name } = pojo
     return new CliClassMetadata(this, id, name, {
-      ...rest,
-      baseClassFn,
-      commandsFn
+      ...pojo,
+      ...CliMetadataPojoLoader.getInjections(this.#poja, pojo),
     })
   }
 }

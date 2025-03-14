@@ -1,44 +1,56 @@
 import { cliYargs } from '@kingjs/cli-yargs'
 import { NodeName } from '@kingjs/node-name'
-import { CliMetadataLoader } from '@kingjs/cli-metadata'
-import { CliInfoLoader } from '@kingjs/cli-info'
+import { CliClassMetadata } from '@kingjs/cli-metadata'
+import { CliCommandInfo } from '@kingjs/cli-info'
 import { CliYargsCommand } from '@kingjs/cli-yargs'
+import { dumpPojo } from '@kingjs/pojo-dump'
+import { hideBin } from 'yargs/helpers'
 
 const REQUIRED = undefined
 
-const metadata = {
-  description: 'Dump command implementation metadata',
+const raw = {
+  description: 'Dump Cli.getOwnMetadata()',
   handler: async function(module, path) {
-    const nodeName = NodeName.from(module)
-    const class$ = await nodeName.importObject()
-    const command = await class$.getCommand(path)
-    const metadataLoader = await CliMetadataLoader.load(command)
-    await metadataLoader.__dump()
+    const name = NodeName.from(module)
+    const scope = await name.importObject()
+    const class$ = await scope.getCommand(path)
+    dumpPojo(class$.getOwnMetadata())
+  }
+}
+
+const md = {
+  description: `Dump ${CliClassMetadata.name}`,
+  handler: async function(module, path) {
+    const name = NodeName.from(module)
+    const scope = await name.importObject()
+    const class$ = await scope.getCommand(path)
+    const metadata = await CliClassMetadata.fromClass(class$)
+    await metadata.__dump()
   }
 }
 
 const info = {
-  description: 'Dump command metadata',
+  description: `Dump ${CliCommandInfo.name}`,
   handler: async function(module, path) {
-    const nodeName = NodeName.from(module)
-    const class$ = await nodeName.importObject()
-    const command = await class$.getCommand(path)
-    const metadataLoader = await CliMetadataLoader.load(command)
-    const infoLoader = new CliInfoLoader(metadataLoader)
-    await infoLoader.__dump()
+    const name = NodeName.from(module)
+    const scope = await name.importObject()
+    const class$ = await scope.getCommand(path)
+    const metadata = await CliClassMetadata.fromClass(class$)
+    const info = CliCommandInfo.from(metadata)
+    await info.__dump()
   }
 }
 
 const yargs = {
-  description: 'Dump yargs metadata',
+  description: `Dump ${CliYargsCommand.name}`,
   handler: async function(module, path) {
-    const nodeName = NodeName.from(module)
-    const class$ = await nodeName.importObject()
-    const command = await class$.getCommand(path)
-    const metadataLoader = await CliMetadataLoader.load(command)
-    const infoLoader = new CliInfoLoader(metadataLoader)
-    const yargsCommand = new CliYargsCommand(await infoLoader.toPojo())
-    await yargsCommand.__dump()
+    const name = NodeName.from(module)
+    const scope = await name.importObject()
+    const class$ = await scope.getCommand(path)
+    const metadata = await CliClassMetadata.fromClass(class$)
+    const info = CliCommandInfo.from(metadata)
+    const yargs = new CliYargsCommand(await info.toPojo())
+    await yargs.__dump()
   }
 }
 
@@ -53,10 +65,11 @@ cliYargs({
       },
       defaults: [REQUIRED, []],
       description: 'Reflect on command metadata',
-      commands: {
-        metadata,
-        info,
-        yargs
+      commands: { 
+        raw, 
+        md, 
+        info, 
+        yargs, 
       }
     }
   }
@@ -65,15 +78,19 @@ cliYargs({
   yargs = yargs
     .scriptName(toolName)
     .usage(`${toolName} <command> [options]`)
-    .wrap(90)
+    .wrap(85)
 
   // const argv = await yargs.parse('--metadata$'.split(' '))
   // const argv = await yargs.parse('--info$'.split(' '))
   // const argv = await yargs.parse('--yargs$'.split(' '))
-  // const argv = await yargs.parse('reflect metadata @kingjs/cli-http --metadata$'.split(' '))
-  // const argv = await yargs.parse('reflect metadata @kingjs/cli-http --infos$'.split(' '))
-  const argv = await yargs.parse('reflect info @kingjs/cli-http get'.split(' '))
+  // const argv = await yargs.parse('reflect md @kingjs/cli-http --metadata$'.split(' '))
+  // const argv = await yargs.parse('reflect md @kingjs/cli-http --infos$'.split(' '))
+  // const argv = await yargs.parse('reflect md @kingjs/cli-http get'.split(' '))
+  const argv = await yargs.parse('reflect md @kingjs/cli-http get'.split(' '))
+  // const argv = await yargs.parse('reflect info @kingjs/cli-http get'.split(' '))
+  // const argv = await yargs.parse('reflect yargs @kingjs/cli-http get'.split(' '))
+  // const argv = await yargs.parse('reflect info @kingjs/cli-eval'.split(' '))
+  // const argv = await yargs.parse('reflect info --metadata$'.split(' '))
   // const argv = await yargs.parse(hideBin(process.argv))
-
   new argv._class(...argv._args)
 })
