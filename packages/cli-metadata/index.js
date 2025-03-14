@@ -71,13 +71,16 @@ export class CliParameterMetadata extends CliMetadata {
 
   get scope() { return this.#scope }
   get isParameter() { return true }
+  get isOption() { }
+  get isPositional() { }
 
   // parameter type
-  get type() { return this.#pojo.default !== undefined
-    ? CliParameterMetadata.getType(this.#pojo.default)
-    : this.variadic ? 'array'
-    : this.isPositional && this.optional ? 'string'
-    : 'string'
+  get type() { 
+    if (this.#pojo.default !== undefined)
+      return CliParameterMetadata.getType(this.#pojo.default)
+    if (this.variadic) return 'array'
+    if (this.isOption) return 'boolean'
+    return 'string'
   }
   get isArray() { return this.type === 'array' }
   get isString() { return this.type === 'string' }

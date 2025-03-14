@@ -83,22 +83,25 @@ export class Cli {
       return acc
     }, metadata)
 
-    // Determine if a positional is optional or an option is required. The
-    // presence of a default is insufficient since a string can be null
-    // and null defaults are difficult to deal with (e.g. they are trimmed).
-    const isArray = Array.isArray(metadata.default)
+    // e.g. [[], { myOption: 42 }] is one variadic positional parameter
+    // and one optional option parameter with a default value of 42.
+    // Assume the variadic is the parameter whose metadata we are building.
     const isPositional = metadata.position !== undefined
+    const isArray = Array.isArray(metadata.default)
     if (isPositional && isArray)
       metadata.variadic = true
 
+    // e.g. [[], { myOption: 42 }] vs [[REQUIRED], { myOption: 42 }]
+    // The former is an optional variadic positional parameter.
+    // The latter is a required variadic positional parameter.
+    // We extract a default of null from [] and REQUIRED from [REQUIRED].
     const default$ = 
-      !isArray ? metadata.default : 
-      metadata.default.length == 0 ? null : metadata.default[0]
-    const hasDefault = default$ !== undefined
-    if (isPositional && hasDefault)
-      metadata.optional = true
-    if (!isPositional && !hasDefault)
-      metadata.required = true
+      isArray ? (metadata.default.length == 0 ? null : metadata.default[0]) :
+      metadata.default 
+
+    const hasDefault = default$ !== REQUIRED
+    if (isPositional && hasDefault) metadata.optional = true
+    if (!isPositional && !hasDefault) metadata.required = true
 
     return metadata
   }
@@ -151,11 +154,12 @@ export class Cli {
     if (this.getOwnPropertyValue$(Metadata))
       return this[Metadata]
 
-    const lastDefault = this.defaults[this.defaults.length - 1]
+    const defaults = Array.isArray(this.defaults) ? this.defaults : [this.defaults]
+    const lastDefault = defaults[defaults.length - 1]
     const hasOptionDefaults = 
       typeof lastDefault == 'object' && !Array.isArray(lastDefault)
     const optionDefaults = hasOptionDefaults ? lastDefault : { }
-    const positionalCount = this.defaults.length - (hasOptionDefaults ? 1 : 0)
+    const positionalCount = defaults.length - (hasOptionDefaults ? 1 : 0)
 
     const parameters = this.getOwnPropertyValue$('parameters') ?? []
     const positionals = Object.fromEntries(
@@ -164,7 +168,7 @@ export class Cli {
         .map(([name, description], i) => [name, this.getOwnParameterMetadata$(name, {
           position: i,
           description,
-          default: this.defaults[i],
+          default: defaults[i],
         })])
       )
 
@@ -191,6 +195,13 @@ export class Cli {
       return null
     return baseClass
   } 
+
+  static *hierarchy() {
+    yield this
+    const baseCli = this.baseCli
+    if (baseCli)
+      yield* baseCli.hierarchy()
+  }
 
   static async getCommand(path = []) {
     if (path.length == 0) 

@@ -176,11 +176,13 @@ export class CliYargsCommand extends CliYargs {
 
   async apply(yargs) {
     for (const positional of this.positionals()) {
-      yargs.positional(positional.name, await positional.toPojo())
+      const options = await positional.toPojo()
+      yargs.positional(positional.name, options)
     }
 
     for (const option of this.options()) {
-      yargs.option(option.name, await option.toPojo())
+      const options = await option.toPojo()
+      yargs.option(option.name, options)
       // yargs.group(name, `Options (${group}):`)
     }
 
@@ -235,10 +237,19 @@ export async function cliYargs(classOrPojo) {
       }
     })
     .middleware(async (argv) => {
+      if (argv['metadata$']) {
+        await metadata.__dump()
+        process.exit(0)
+      }
+    })
+    .middleware(async (argv) => {
+      if (argv['info$']) {
+        await info.__dump()
+        process.exit(0)
+      }
+    })
+    .middleware(async (argv) => {
       if (argv['yargs$']) {
-        const metadata = await CliClassMetadata.fromClass(argv._class)
-        const info = CliCommandInfo.from(metadata)
-        const yargsCommand = new CliYargsCommand(await info.toPojo())
         await yargsCommand.__dump()
         process.exit(0)
       }

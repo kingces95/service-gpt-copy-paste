@@ -10,11 +10,15 @@ const REQUIRED = undefined
 
 const raw = {
   description: 'Dump Cli.getOwnMetadata()',
-  handler: async function(module, path) {
+  parameters: { hierarchy: 'Walk and dump base classes, too.' },
+  defaults: { hierarchy: false },
+  handler: async function(module, path, { hierarchy } = { }) {
     const name = NodeName.from(module)
     const scope = await name.importObject()
     const class$ = await scope.getCommand(path)
-    dumpPojo(class$.getOwnMetadata())
+    const pojo = !hierarchy ? class$.getOwnMetadata() 
+      : [...class$.hierarchy()].map(o => o.getOwnMetadata())
+    dumpPojo(pojo)
   }
 }
 
@@ -58,6 +62,7 @@ cliYargs({
   name: 'CliTool',
   description: 'My funky cli packaging tool',
   commands: {
+    http: '@kingjs/cli-http',
     reflect: {
       parameters: {
         module: 'Name of module',
@@ -69,7 +74,7 @@ cliYargs({
         raw, 
         md, 
         info, 
-        yargs, 
+        yargs,
       }
     }
   }
@@ -80,17 +85,19 @@ cliYargs({
     .usage(`${toolName} <command> [options]`)
     .wrap(85)
 
+  // const argv = await yargs.parse('http get --help'.split(' '))
   // const argv = await yargs.parse('--metadata$'.split(' '))
   // const argv = await yargs.parse('--info$'.split(' '))
   // const argv = await yargs.parse('--yargs$'.split(' '))
   // const argv = await yargs.parse('reflect md @kingjs/cli-http --metadata$'.split(' '))
   // const argv = await yargs.parse('reflect md @kingjs/cli-http --infos$'.split(' '))
+  // const argv = await yargs.parse('reflect raw @kingjs/cli-http get'.split(' '))
+  // const argv = await yargs.parse('reflect raw @kingjs/cli-http get --hierarchy'.split(' '))
   // const argv = await yargs.parse('reflect md @kingjs/cli-http get'.split(' '))
-  const argv = await yargs.parse('reflect md @kingjs/cli-http get'.split(' '))
-  // const argv = await yargs.parse('reflect info @kingjs/cli-http get'.split(' '))
   // const argv = await yargs.parse('reflect yargs @kingjs/cli-http get'.split(' '))
   // const argv = await yargs.parse('reflect info @kingjs/cli-eval'.split(' '))
   // const argv = await yargs.parse('reflect info --metadata$'.split(' '))
-  // const argv = await yargs.parse(hideBin(process.argv))
+  // const argv = await yargs.parse('reflect info cli'.split(' '))
+  const argv = await yargs.parse(hideBin(process.argv))
   new argv._class(...argv._args)
 })

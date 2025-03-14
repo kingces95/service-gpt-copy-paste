@@ -31,8 +31,8 @@ export class CliHttp extends Cli {
   })
   static defaults = CliHttp.loadDefaults()
 
-  constructor(url, headers = 0, { method = 'GET', ...rest } = { }) {
-    if (CliHttp.loadingDefaults(new.target, url, headers, { method }))
+  constructor(url, { headers = 0, method = 'GET', ...rest } = { }) {
+    if (CliHttp.loadingDefaults(new.target, url, { headers, method }))
       return super()
 
     super(rest)

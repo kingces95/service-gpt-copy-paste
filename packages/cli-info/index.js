@@ -136,8 +136,8 @@ export class CliCommandInfo extends CliInfo {
 
     if (!classMdEndExclusive) return
     throw new Error([
-      `Class ${classMdEndExclusive.name} not found`,
-      `as base class of ${originalClassInfo.name}.`
+      `Class "${classMdEndExclusive.name}" not found`,
+      `as base class of "${classMdStart.name}".`
     ].join(' '))
   }
 
@@ -162,18 +162,44 @@ export class CliCommandInfo extends CliInfo {
       return result
     })
 
-    // Load parameters; walk class hierarchy ending with parent's class (exclusive)
-    // Allow more derived classes to override parameters of base classes.
+    // Load parameters; The parameter set gathered by walking the class hierarchy
+    // should match the parameter set gathered by walking the command scope hierarchy.
+    // The sets match because by construction the class hierarchy is partitioned by 
+    // the scope hierarchy and each command in the scope hierarchy contains the 
+    // parameters of the classes in its partition.
+
+    // For example, take the command 'mytool post'. Assume 'mytool' has no parameters
+    // while 'post' has parameters necessary to perform a POST request. Assume a class
+    // hierarchy like this:
+    //    mytool: Cli -> MyTool
+    //    post: Cli -> Web -> Http -> HttpPost
+    // Filtering out those classes without parameters (assume MyTool and Web have none) 
+    // and then partitioning by scope yields two sets, one for each scope:
+    //    mytool: { Cli }
+    //    post: { Http, HttpPost }
+    // Hence the 'mytool' command would own all parameters on Cli (help, version, etc),
+    // while the 'post' command would own all parameters on CliHttp (url, headers, etc)
+    // and on Http (body, etc). Note that if we order the classes in the scope partitions
+    // in the obvious way, then we get a set of classes: 
+    //    Cli -> CliHttp -> HttpPost
+    // which is a subset of target command's class hierarchy:
+    //    Cli -> Web -> Http -> HttpPost
+    // In this way the scope hierarchy is a partition of the subset of the class hierarchy
+    // which have parameters. Hence, both hierarchies share the same parameter set.
     this.#parameters = new Lazy(() => {
       const result = new Map()
       for (const parameter of this.#classMd.parameters()) {
         const name = parameter.name
         result.set(name, new CliParameterInfo(this, name, parameter))
       }
-      
+
+      const baseClassMd = this.#classMd.baseClass
+      const firstParentClassMdWithParameters = [
+        ...this.parent?.classMd$.hierarchy() ?? [],
+      ].find(o => [...o.parameters()].length > 0)
+        
       for (const classInfo of CliCommandInfo.#getClassHierarchy(
-        this.#classMd.baseClass, 
-        this.parent?.classMd$)) {
+        baseClassMd, firstParentClassMdWithParameters)) {
 
         for (const parameter of classInfo.parameters()) {
           const name = parameter.name

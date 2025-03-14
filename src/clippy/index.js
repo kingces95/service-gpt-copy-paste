@@ -6,9 +6,9 @@ cliYargs({
   description: 'My funky cli',
   commands: {
     http: '@kingjs/cli-http',
-    // orb: '@kingjs/cli-orb',
-    // poll: '@kingjs/cli-poll-clipboard',
-    // eval: '@kingjs/cli-eval',
+    orb: '@kingjs/cli-orb',
+    poll: '@kingjs/cli-poll-clipboard',
+    eval: '@kingjs/cli-eval',
   }
 }).then(async (yargs) => {
   // const argv = await yargs.parse('http http:// 2 --stdis --info$'.split(' '))
@@ -18,8 +18,8 @@ cliYargs({
     .usage(`${toolName} <command> [options]`)
     .wrap(85)
 
-  const argv = await yargs.parse('clippy'.split(' '))
-  // const argv = await yargs.parse(hideBin(process.argv))
+  // const argv = await yargs.parse('clippy'.split(' '))
+  const argv = await yargs.parse(hideBin(process.argv))
   new argv._class(...argv._args)
 })
 
