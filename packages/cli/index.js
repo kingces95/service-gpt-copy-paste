@@ -274,12 +274,15 @@ export class Cli {
     return joinFields(IFS, fields)
   }
 
-  constructor({ help = false, version = '0.0', verbose = false } = {}) {
+  constructor({ help = false, version = '0.0', verbose = false, _info } = {}) {
     if (Cli.loadingDefaults(new.target, { help, version, verbose })) {
       const defaults = new.target[DEFAULTS]
       delete new.target[DEFAULTS]
       return defaults
     }
+
+    // enable reflection
+    this.info = _info
 
     // handle graceful shutdown
     this.exitCode = undefined

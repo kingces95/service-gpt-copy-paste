@@ -36,17 +36,17 @@ export class CliYargs {
 }
 
 export class CliYargsParameter extends CliYargs {
-  static create(parameter, command, name) {
-    if (parameter.position !== undefined)
-      return new CliYargsPositional(parameter, command, name)
-    return new CliYargsOption(parameter, command, name)
+  static create(scope, name, pojo) {
+    if (pojo.position !== undefined)
+      return new CliYargsPositional(scope, name, pojo)
+    return new CliYargsOption(scope, name, pojo)
   }
 
   #pojo
   #scope
   #name
 
-  constructor(pojo, scope, name) {
+  constructor(scope, name, pojo) {
     super(name)
     this.#scope = scope
     this.#name = name
@@ -82,8 +82,8 @@ export class CliYargsParameter extends CliYargs {
 export class CliYargsPositional extends CliYargsParameter {
   #pojo
 
-  constructor(pojo, command, name) {
-    super(pojo, command, name)
+  constructor(scope, name, pojo) {
+    super(scope, name, pojo)
 
     this.#pojo = pojo
   }
@@ -96,8 +96,8 @@ export class CliYargsPositional extends CliYargsParameter {
 export class CliYargsOption extends CliYargsParameter {
   #pojo
 
-  constructor(pojo, command, name) {
-    super(pojo, command, name)
+  constructor(scope, name, pojo) {
+    super(scope, name, pojo)
 
     this.#pojo = pojo
   } 
@@ -108,14 +108,18 @@ export class CliYargsOption extends CliYargsParameter {
 }
 
 export class CliYargsCommand extends CliYargs {
+  static fromInfoPojo(pojo) {
+    return new CliYargsCommand(null, null, pojo)
+  }
+
   #scope          // CliYargsCommand
-  #pojo            // CliCommandInfo pojo
+  #pojo           // CliCommandInfo pojo
   #parameters     // array of CliYargsParameter
   #commands       // array of CliYargsCommand
   #template       // yargs command string
   #path           // path to command
 
-  constructor(pojo, scope, name = '.') {
+  constructor(scope, name = '.', pojo) {
     super(name, pojo.description)
     
     this.#pojo = pojo
@@ -126,7 +130,7 @@ export class CliYargsCommand extends CliYargs {
       for (const [name, parameter] of Object.entries(pojo.parameters ?? { })) {
         if (KNONWN_OPTIONS.includes(name))
           continue
-        parameters.push(CliYargsParameter.create(parameter, this, name))
+        parameters.push(CliYargsParameter.create(this, name, parameter))
       }
       return parameters
     })
@@ -134,7 +138,7 @@ export class CliYargsCommand extends CliYargs {
     this.#commands = new Lazy(() => {
       const commands = [ ]
       for (const [name, command] of Object.entries(pojo.commands ?? { })) {
-        commands.push(new CliYargsCommand(command, this, name))
+        commands.push(new CliYargsCommand(this, name, command))
       }
       return commands
     })
@@ -216,20 +220,21 @@ export class CliYargsCommand extends CliYargs {
   }
 }
 
-export async function cliYargs(classOrPojo) {
-  const class$ = typeof classOrPojo == 'function' 
-    ? classOrPojo : Cli.extend(classOrPojo)
-
-  const metadata = await CliClassMetadata.fromClass(class$)
-  const cachedMetadata = CliClassMetadata.fromPojo(await metadata.toPojo())
-  const info = CliCommandInfo.from(cachedMetadata)
-  const yargsCommand = new CliYargsCommand(await info.toPojo())
+export async function cliYargs(classOrPojo, options = { }) {
+  const { metadata } = options
+  const isClass = typeof classOrPojo == 'function'
+  const class$ = isClass ? classOrPojo : Cli.extend(classOrPojo)
+  const cachedMetadata = CliClassMetadata.fromMetadataPojo(
+    metadata ?? await (await CliClassMetadata.fromClass(class$)).toPojo()
+  )
+  const info = CliCommandInfo.fromMetadata(cachedMetadata)
+  const yargsCommand = CliYargsCommand.fromInfoPojo(await info.toPojo())
   
   const yargs$ = yargs()
     .alias('help', 'h')
     .alias('version', 'v')
-    .showHelpOnFail(false, "Run --help for details.")
     .demandCommand(1, 'You must specify a command.')
+    .showHelpOnFail(false, "Run --help for details.")
     .option('argv$', { hidden: true })
     .middleware(async (argv) => {
       if (argv['argv$']) {
@@ -239,7 +244,9 @@ export async function cliYargs(classOrPojo) {
       }
     })
     .middleware(async (argv) => ({ 
+      _root: class$,
       _class: await class$.getCommand(argv._),
+      _info: await info.getCommand(argv._),
     }))
     .middleware(async (argv) => { 
       const _args = []
@@ -255,14 +262,18 @@ export async function cliYargs(classOrPojo) {
           return acc
         }, _args)
 
-      const options = parameters.filter(o => o.isOption)
+      _args.push({ 
+        _root: argv._root,
+        _class: argv._class,
+        _info: argv._info,
+      })
+
+      parameters.filter(o => o.isOption)
         .reduce((acc, { name }) => {
           if (Object.hasOwn(argv, name))
             acc[name] = argv[name]
           return acc
-        }, { })
-      if (Object.keys(options).length) 
-        _args.push(options)
+        }, _args.at(-1))
 
       return { _args }
     })

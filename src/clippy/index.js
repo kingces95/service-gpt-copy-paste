@@ -9,6 +9,7 @@ export const Clippy = Cli.extend({
     orb: '@kingjs/cli-orb',
     poll: '@kingjs/cli-poll-clipboard',
     eval: '@kingjs/cli-eval',
+    spy: '@kingjs/cli-spy',
   }
 })
 

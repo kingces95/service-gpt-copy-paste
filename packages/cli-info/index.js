@@ -101,7 +101,7 @@ export class CliParameterInfo extends CliInfo {
 }
 
 export class CliCommandInfo extends CliInfo {
-  static from(metadata) {
+  static fromMetadata(metadata) {
     return new CliCommandInfo(null, null, metadata)
   }
 
@@ -236,7 +236,7 @@ export class CliCommandInfo extends CliInfo {
     const map = await this.#commands.load()
     yield* map.values()
   }
-  async getCommand(nameOrNames = [], recursing$) {
+  async getCommand(nameOrNames = []) {
     const names = Array.isArray(nameOrNames) ? [...nameOrNames] : [nameOrNames]
       
     let current = this
@@ -249,7 +249,7 @@ export class CliCommandInfo extends CliInfo {
   }
 
   get description() { return this.#classMd.description }
-  get isDefaultCommand() { return this.#classMd.defaultCommand }
+  get isDefaultCommand() { return !!this.#classMd.defaultCommand }
   *parameters() { yield* this.#parameters.value.values() }
   getParameter(name) { return this.#parameters.value.get(name) }
   *positionals() { yield* this.parameters().filter(o => o.isPositional) }

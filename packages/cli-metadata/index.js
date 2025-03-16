@@ -149,7 +149,7 @@ class CliPostionalMetadata extends CliParameterMetadata {
 }
 
 export class CliClassMetadata extends CliMetadata {
-  static fromPojo(pojo) { return new CliMetadataPojoLoader(pojo) }
+  static fromMetadataPojo(pojo) { return new CliMetadataPojoLoader(pojo) }
   static async fromClass(class$) {
     const rootMd = new CliMetadataClassLoader(class$)
 

@@ -1,0 +1,450 @@
+[
+  {
+    "id": 0,
+    "name": "Clippy",
+    "description": "My funky cli",
+    "baseClass": [
+      21,
+      "Cli"
+    ],
+    "commands": {
+      "http": [
+        1,
+        "CliHttp"
+      ],
+      "orb": [
+        2,
+        "CliOrb"
+      ],
+      "poll": [
+        3,
+        "CliPollClipboard"
+      ],
+      "eval": [
+        4,
+        "CliEval"
+      ],
+      "spy": [
+        5,
+        "CliSpy"
+      ]
+    }
+  },
+  {
+    "id": 1,
+    "name": "CliHttp",
+    "description": "Send a HTTP request",
+    "baseClass": [
+      21,
+      "Cli"
+    ],
+    "defaultCommand": true,
+    "parameters": {
+      "url": {
+        "description": "The url to request",
+        "type": "string",
+        "position": 0
+      },
+      "headers": {
+        "description": "The number of lines to read as the HTTP header",
+        "default": 0,
+        "type": "number"
+      },
+      "method": {
+        "description": "The HTTP method to use",
+        "default": "GET",
+        "type": "string",
+        "local": true,
+        "choices": [
+          "GET",
+          "PUT",
+          "POST",
+          "DELETE",
+          "PATCH",
+          "HEAD"
+        ]
+      }
+    },
+    "commands": {
+      "get": [
+        15,
+        "CliHttpGet"
+      ],
+      "post": [
+        16,
+        "CliHttpPost"
+      ],
+      "put": [
+        17,
+        "CliHttpPut"
+      ],
+      "delete": [
+        18,
+        "CliHttpDelete"
+      ],
+      "patch": [
+        19,
+        "CliHttpPatch"
+      ],
+      "head": [
+        20,
+        "CliHttpHead"
+      ]
+    }
+  },
+  {
+    "id": 2,
+    "name": "CliOrb",
+    "description": "Tool for rendering status to tty",
+    "baseClass": [
+      21,
+      "Cli"
+    ],
+    "parameters": {
+      "cpuHot": {
+        "description": "Threshold for high CPU usage",
+        "default": 80,
+        "type": "number"
+      },
+      "memHot": {
+        "description": "Threshold for high memory usage",
+        "default": 90,
+        "type": "number"
+      }
+    }
+  },
+  {
+    "id": 3,
+    "name": "CliPollClipboard",
+    "description": "Poll clipboard content",
+    "baseClass": [
+      22,
+      "CliRxPoller"
+    ],
+    "parameters": {
+      "prefix": {
+        "description": "Prefix to match in clipboard content.",
+        "default": "!#/clipboard/",
+        "type": "string"
+      }
+    }
+  },
+  {
+    "id": 4,
+    "name": "CliEval",
+    "description": "Evaluate a shell command",
+    "baseClass": [
+      21,
+      "Cli"
+    ],
+    "parameters": {
+      "exe": {
+        "description": "The command to execute",
+        "type": "string",
+        "position": 0
+      },
+      "args": {
+        "description": "Arguments for the command",
+        "type": "array",
+        "optional": true,
+        "variadic": true,
+        "position": 1
+      },
+      "shell": {
+        "description": "The shell to use",
+        "type": "boolean",
+        "required": true,
+        "choices": [
+          "bash",
+          "cmd.exe"
+        ]
+      }
+    },
+    "commands": {
+      "bash": [
+        13,
+        "CliEvalBash"
+      ],
+      "cmd": [
+        14,
+        "CliEvalCmd"
+      ]
+    }
+  },
+  {
+    "id": 5,
+    "name": "CliSpy",
+    "description": "Reflect on command metadata",
+    "baseClass": [
+      21,
+      "Cli"
+    ],
+    "parameters": {
+      "path": {
+        "description": "Path of command",
+        "type": "array",
+        "optional": true,
+        "variadic": true,
+        "position": 0
+      }
+    },
+    "commands": {
+      "ls": [
+        6,
+        "annon"
+      ],
+      "find": [
+        7,
+        "annon"
+      ],
+      "raw": [
+        8,
+        "annon"
+      ],
+      "md": [
+        9,
+        "annon"
+      ],
+      "info": [
+        10,
+        "annon"
+      ],
+      "yargs": [
+        11,
+        "annon"
+      ],
+      "toJson": [
+        12,
+        "annon"
+      ]
+    }
+  },
+  {
+    "id": 6,
+    "name": "annon",
+    "description": "List commands",
+    "baseClass": [
+      5,
+      "CliSpy"
+    ]
+  },
+  {
+    "id": 7,
+    "name": "annon",
+    "description": "Find commands",
+    "baseClass": [
+      5,
+      "CliSpy"
+    ]
+  },
+  {
+    "id": 8,
+    "name": "annon",
+    "description": "Dump Cli.getOwnMetadata()",
+    "baseClass": [
+      5,
+      "CliSpy"
+    ],
+    "parameters": {
+      "hierarchy": {
+        "description": "Walk and dump base classes, too.",
+        "type": "boolean"
+      }
+    }
+  },
+  {
+    "id": 9,
+    "name": "annon",
+    "description": "Dump CliClassMetadata",
+    "baseClass": [
+      5,
+      "CliSpy"
+    ],
+    "parameters": {
+      "cached": {
+        "description": "Save and load metadata.",
+        "type": "boolean"
+      }
+    }
+  },
+  {
+    "id": 10,
+    "name": "annon",
+    "description": "Dump CliCommandInfo",
+    "baseClass": [
+      5,
+      "CliSpy"
+    ]
+  },
+  {
+    "id": 11,
+    "name": "annon",
+    "description": "Dump CliYargsCommand",
+    "baseClass": [
+      5,
+      "CliSpy"
+    ]
+  },
+  {
+    "id": 12,
+    "name": "annon",
+    "description": "Convert UTIL to JSON",
+    "baseClass": [
+      5,
+      "CliSpy"
+    ]
+  },
+  {
+    "id": 13,
+    "name": "CliEvalBash",
+    "description": "Evaluate a bash shell command",
+    "baseClass": [
+      4,
+      "CliEval"
+    ]
+  },
+  {
+    "id": 14,
+    "name": "CliEvalCmd",
+    "description": "Evaluate a cmd shell command",
+    "baseClass": [
+      4,
+      "CliEval"
+    ]
+  },
+  {
+    "id": 15,
+    "name": "CliHttpGet",
+    "description": "Perform an http GET request",
+    "baseClass": [
+      1,
+      "CliHttp"
+    ]
+  },
+  {
+    "id": 16,
+    "name": "CliHttpPost",
+    "description": "Perform an http POST request",
+    "baseClass": [
+      1,
+      "CliHttp"
+    ]
+  },
+  {
+    "id": 17,
+    "name": "CliHttpPut",
+    "description": "Perform an http PUT request",
+    "baseClass": [
+      1,
+      "CliHttp"
+    ]
+  },
+  {
+    "id": 18,
+    "name": "CliHttpDelete",
+    "description": "Perform an http DELETE request",
+    "baseClass": [
+      1,
+      "CliHttp"
+    ]
+  },
+  {
+    "id": 19,
+    "name": "CliHttpPatch",
+    "description": "Perform an http PATCH request",
+    "baseClass": [
+      1,
+      "CliHttp"
+    ]
+  },
+  {
+    "id": 20,
+    "name": "CliHttpHead",
+    "description": "Perform an http HEAD request",
+    "baseClass": [
+      1,
+      "CliHttp"
+    ]
+  },
+  {
+    "id": 21,
+    "name": "Cli",
+    "parameters": {
+      "help": {
+        "description": "Show help",
+        "type": "boolean",
+        "aliases": [
+          "h"
+        ]
+      },
+      "version": {
+        "description": "Show version number",
+        "default": "0.0",
+        "type": "string",
+        "aliases": [
+          "v"
+        ]
+      },
+      "verbose": {
+        "description": "Provide verbose output",
+        "type": "boolean"
+      }
+    }
+  },
+  {
+    "id": 22,
+    "name": "CliRxPoller",
+    "baseClass": [
+      23,
+      "CliRx"
+    ],
+    "parameters": {
+      "pollMs": {
+        "description": "Polling interval in milliseconds.",
+        "default": 200,
+        "type": "number"
+      },
+      "errorRate": {
+        "description": "Simulated polling error rate.",
+        "default": 0.01,
+        "type": "number"
+      },
+      "errorMs": {
+        "description": "Milliseconds to delay after error.",
+        "default": 1000,
+        "type": "number"
+      },
+      "writeError": {
+        "description": "Write error messages to stderr.",
+        "type": "boolean"
+      }
+    }
+  },
+  {
+    "id": 23,
+    "name": "CliRx",
+    "baseClass": [
+      24,
+      "CliService"
+    ]
+  },
+  {
+    "id": 24,
+    "name": "CliService",
+    "baseClass": [
+      21,
+      "Cli"
+    ],
+    "parameters": {
+      "stdis": {
+        "description": "Provide status updates",
+        "type": "boolean"
+      },
+      "stdisFd": {
+        "description": "Fd to report status if stdis is set",
+        "default": 1,
+        "type": "number"
+      }
+    }
+  }
+]

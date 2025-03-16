@@ -5,6 +5,29 @@ import { CliCommandInfo } from '@kingjs/cli-info'
 import { CliYargsCommand } from '@kingjs/cli-yargs'
 import { dumpPojo } from '@kingjs/pojo-dump'
 
+class CliOutput {
+  static description = 'Output format'
+  static parameters = {
+    output: 'Output format',
+    query: 'JMESPath query string',
+  }
+  static defaults = { 
+    output: 'json'
+  }
+  static choices = {
+    output: ['util', 'json', 'table', 'yaml', 'xml', 'csv', 'tsv', 'none' ]
+  }
+}
+
+const toJson = {
+  description: 'Convert UTIL to JSON',
+  handler: async function() {
+    const pojoJs = await new Response(process.stdin).text()
+    const pojo = eval(`(${pojoJs})`)
+    const json = JSON.stringify(pojo, null, 2)
+    this.write(json)
+  }
+}
 const raw = {
   description: 'Dump Cli.getOwnMetadata()',
   parameters: { hierarchy: 'Walk and dump base classes, too.' },
@@ -68,10 +91,9 @@ const find = {
   }
 }
 
-class CliReflect extends Cli {
+export class CliSpy extends Cli {
   static description = 'Reflect on command metadata'
   static parameters = {
-    module: 'Name of module',
     path: 'Path of command',
   }
   static commands = { 
@@ -79,34 +101,31 @@ class CliReflect extends Cli {
     raw,
     md,
     info,
-    yargs
+    yargs,
+    toJson
   }
-  static defaults = CliReflect.loadDefaults()
+  static defaults = CliSpy.loadDefaults()
 
-  #module
   #path
   #nodeName
   #options
 
-  constructor(module, path = [], options = {}) {
-    if (CliReflect.loadingDefaults(new.target, module, path, options))
+  constructor(path = [], options = {}) {
+    if (CliSpy.loadingDefaults(new.target, path, options))
       return super()
 
     super(options)
 
-    this.#module = module
     this.#path = path
     this.#options = options
-    this.#nodeName = NodeName.from(module)
   }
 
-  get module() { return this.#module }
   get path() { return this.#path }
   get nodeName() { return this.#nodeName }
   get options() { return this.#options }
 
   async getScope() { 
-    return await this.nodeName.importObject() 
+    return await this.#options._root
   }
   async getClass() { 
     const scope = await this.getScope()
@@ -130,13 +149,3 @@ class CliReflect extends Cli {
   }
 }
 
-export const CliTool = Cli.extend({
-  name: 'Cli',
-  description: 'My funky cli packaging tool',
-  commands: {
-    curl: '@kingjs/cli-http',
-    spy: CliReflect,
-  }
-})
-
-export default CliTool
