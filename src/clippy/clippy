@@ -1,0 +1,13 @@
+#!/usr/bin/env node
+import { Clippy } from './index.js'
+import { cliYargs } from '@kingjs/cli-yargs'
+import { hideBin } from 'yargs/helpers'
+
+cliYargs(Clippy).then(async (yargs) => {
+  // const argv = await yargs.parse('--argv$'.split(' '))
+  // const argv = await yargs.parse('--help'.split(' '))
+  const argv = await yargs.parse(hideBin(process.argv))
+  new argv._class(...argv._args)
+})
+
+// node.exe src\clippy\index.js poll --error-rate .5 --poll-ms 1000 --stdis | node.exe src\clippy\index.js orb

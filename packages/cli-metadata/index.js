@@ -203,7 +203,7 @@ export class CliClassMetadata extends CliMetadata {
     ...pojo
   }) {
     super(name)
-    
+
     this.#loader = loader ?? this
     this.#pojo = pojo
     this.#baseClassFn = baseClassFn
@@ -223,6 +223,7 @@ export class CliClassMetadata extends CliMetadata {
   get isClass() { return true }
   get loader() { return this.#loader }
   get description() { return this.#pojo.description }
+  get defaultCommand() { return this.#pojo.defaultCommand }
   get baseClass() { return this.#baseClassFn() }
 
   *hierarchy() {

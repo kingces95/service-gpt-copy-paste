@@ -29,6 +29,7 @@ export class CliHttp extends Cli {
     patch: declareHttpMethod('PATCH', 'Perform an http PATCH request'),
     head: declareHttpMethod('HEAD', 'Perform an http HEAD request'),
   })
+  static defaultCommand = true
   static defaults = CliHttp.loadDefaults()
 
   constructor(url, { headers = 0, method = 'GET', ...rest } = { }) {

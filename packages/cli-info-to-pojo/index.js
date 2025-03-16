@@ -34,6 +34,7 @@ CliParameterInfo[symbol] = {
 CliCommandInfo[symbol] = {
   name: 'string',
   description: 'string',
+  isDefaultCommand: 'boolean',
   parameters: 'infos',
   commands: 'infos',
 }

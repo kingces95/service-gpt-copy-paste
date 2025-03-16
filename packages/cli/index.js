@@ -66,7 +66,7 @@ export class Cli {
   }
   static aliases = {
     help: ['h'],
-    verbose: ['v'],
+    version: ['v'],
   }
   static defaults = Cli.loadDefaults()
 
@@ -150,6 +150,7 @@ export class Cli {
 
   static getOwnMetadata() {
     const description = this.getOwnPropertyValue$('description')
+    const defaultCommand = this.getOwnPropertyValue$('defaultCommand')
 
     if (this.getOwnPropertyValue$(Metadata))
       return this[Metadata]
@@ -183,6 +184,7 @@ export class Cli {
     const metadata = trimPojo({ 
       name: this.name,
       description,
+      defaultCommand,
       parameters: { ...positionals, ...options },
     })
 
@@ -203,34 +205,27 @@ export class Cli {
       yield* baseCli.hierarchy()
   }
 
-  static async getCommand(path = []) {
-    if (path.length == 0) 
-      return this
+  static async getCommand(nameOrNames = []) {
+    const names = Array.isArray(nameOrNames) ? [...nameOrNames] : [nameOrNames]
 
-    const [commandName, ...rest] = path
-    const commands = await this.getOwnCommands()
-    const command = await commands[commandName]
-    if (!command)
-      throw new Error(`Command ${commandName} not found`)
-    return command.getCommand(rest)
+    let current = this
+    for (const name of names) {
+      const commands = await current.getOwnCommands()
+      current = await commands[name]
+      if (!current) throw new Error(`Command '${name}' not found`)
+    }
+    return current
   }
 
-  static extend({ name = 'annon', commands, ctor, handler, ...metadata }) {
-    if (!name)
-      throw new Error(`Class must have a name`)
+  static extend({ name = 'annon', commands, ctor, handler, ...metadata } = { }) {
+    if (!name) throw new Error(`Class must have a name`)
 
     const cls = class extends this {
       constructor(...args) {
         if (cls.loadingDefaults(new.target, ...args))
           return super()
 
-        super(...(ctor?.call(new Proxy(() => this, {
-          get(self, prop) { return Reflect.get(self(), prop) },
-          set(self, prop, value) { return Reflect.set(self(), prop, value) },
-          has(self, prop) { return Reflect.has(self(), prop) },
-          deleteProperty(self, prop) { return Reflect.deleteProperty(self(), prop) },
-          apply(self, thisArg, args) { return Reflect.apply(self(), thisArg, args) }
-        }), ...args) || [{ }]))
+        super(...args)
 
         handler?.call(this, ...args)
       }

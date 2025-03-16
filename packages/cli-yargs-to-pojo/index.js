@@ -12,12 +12,12 @@ const symbol = Symbol('cli-yargs-to-pojo')
 
 CliYargs[symbol] = {
   name: 'string',
-  description: 'string',
 }
 
 CliYargsParameter[symbol] = {
   ...CliYargs[symbol],
   type: 'string',
+  description: 'string',
   alias: 'list',
   choices: 'list',
   conflicts: 'list',
@@ -34,13 +34,15 @@ CliYargsPositional[symbol] = {
 
 CliYargsOption[symbol] = {
   ...CliYargsParameter[symbol],
-  local: 'boolean',
+  global: 'naeloob',
   hidden: 'boolean',
   demandOption: 'boolean',
 }
 
 CliYargsCommand[symbol] = {
   name: 'string',
+  description: 'string',
+  demandCommand: 'boolean',
   path: 'string',
   template: 'string',
   description: 'string',

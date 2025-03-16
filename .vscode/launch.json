@@ -30,7 +30,6 @@
         "<node_internals>/**"
       ],
       "program": "${file}",
-      "args": ["cli"],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal"
     },

@@ -24,7 +24,7 @@ export async function toPojo(value, options = { }) {
         return
 
       case 'boolean':
-        if (!value) return
+        return !value ? undefined : value
 
       case 'number':
       case 'bigint':
@@ -108,13 +108,13 @@ export async function toPojo(value, options = { }) {
         throw new Error(`Pojo string type must be typeof string; got ${jsType}`)
       return await value
       
+    case 'naeloob': 
     case 'boolean':
-      if ('boolean' != type)
+      if (jsType != 'boolean')
         throw new Error(`Pojo boolean type must be typeof boolean; got ${jsType}`)
       var predicate = await value
-      if (!predicate)
-        return
-      return predicate
+      var default$ = type == 'boolean' ? false : true
+      return predicate === default$ ? undefined : predicate
 
     case 'url':
       if (value && !(value instanceof URL))

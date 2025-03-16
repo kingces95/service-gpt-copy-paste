@@ -18,15 +18,12 @@ const KNONWN_OPTIONS = [
 
 export class CliYargs {
   #name
-  #description
 
-  constructor(name, description) {
+  constructor(name) {
     this.#name = name
-    this.#description = description ?? '<not yet described>'
   }
 
   get name() { return this.#name }
-  get description() { return this.#description }
 
   async toPojo() {
     const { toPojo } = await __import()
@@ -39,29 +36,29 @@ export class CliYargs {
 }
 
 export class CliYargsParameter extends CliYargs {
-  static create(command, name, parameter) {
+  static create(parameter, command, name) {
     if (parameter.position !== undefined)
-      return new CliYargsPositional(command, name, parameter)
-    return new CliYargsOption(command, name, parameter)
+      return new CliYargsPositional(parameter, command, name)
+    return new CliYargsOption(parameter, command, name)
   }
 
-  #command
+  #pojo
+  #scope
   #name
-  #parameter
 
-  constructor(command, name, parameter) {
-    super(name, parameter.description)
-    this.#command = command
+  constructor(pojo, scope, name) {
+    super(name)
+    this.#scope = scope
     this.#name = name
-    this.#parameter = parameter
+    this.#pojo = pojo
   }
 
-  get isPositional() { return this.#parameter.position !== undefined }
-  get isOption() { return this.#parameter.position === undefined }
+  get isPositional() { return this.#pojo.position !== undefined }
+  get isOption() { return this.#pojo.position === undefined }
 
-  get command() { return this.#command }
+  get command() { return this.#scope }
   get name() { return this.#name }
-  get parameter() { return this.#parameter }
+  get description() { return this.#pojo.description }
 
   // abstract properties
   get position() { return undefined }
@@ -71,81 +68,78 @@ export class CliYargsParameter extends CliYargs {
 
   // https://github.com/yargs/yargs/blob/main/docs/api.md#positionalkey-opt
   // https://github.com/yargs/yargs/blob/main/docs/api.md#optionskey-opt
-  get alias() { return this.#parameter?.aliases }
-  get choices() { return this.#parameter?.choices }
-  get coerce() { return this.#parameter?.coerce }
-  get conflicts() { return this.#parameter?.conflicts }
-  get default() { return this.#parameter?.default }
-  get defaultDescription() { return this.#parameter?.defaultDescription }
-  get implies() { return this.#parameter?.implies }
-  get normalize() { return this.#parameter?.normalize }
-  get type() { return this.#parameter?.type }
+  get alias() { return this.#pojo?.aliases }
+  get choices() { return this.#pojo?.choices }
+  get coerce() { return this.#pojo?.coerce }
+  get conflicts() { return this.#pojo?.conflicts }
+  get default() { return this.#pojo?.default }
+  get defaultDescription() { return this.#pojo?.defaultDescription }
+  get implies() { return this.#pojo?.implies }
+  get normalize() { return this.#pojo?.normalize }
+  get type() { return this.#pojo?.type }
 }
 
 export class CliYargsPositional extends CliYargsParameter {
-  #positional
+  #pojo
 
-  constructor(command, name, positional) {
-    super(command, name, positional)
+  constructor(pojo, command, name) {
+    super(pojo, command, name)
 
-    this.#positional = positional
+    this.#pojo = pojo
   }
 
-  get position() { return this.#positional.position }
-  get isOptional() { return this.#positional.isOptional }
-  get isVariadic() { return this.#positional.isVariadic }
+  get position() { return this.#pojo.position }
+  get isOptional() { return this.#pojo.isOptional }
+  get isVariadic() { return this.#pojo.isVariadic }
 }
 
 export class CliYargsOption extends CliYargsParameter {
-  #option
+  #pojo
 
-  constructor(command, name, option) {
-    super(command, name, option)
+  constructor(pojo, command, name) {
+    super(pojo, command, name)
 
-    this.#option = option
+    this.#pojo = pojo
   } 
 
-  get local() { return this.#option.isLocal }
-
-  get demandOption() { return this.#option.isRequired }
-  get global() { return !this.#option.isLocal }
-  get hidden() { return this.#option.isHidden }
+  get demandOption() { return this.#pojo.isRequired }
+  get global() { return !this.#pojo.isLocal }
+  get hidden() { return this.#pojo.isHidden }
 }
 
 export class CliYargsCommand extends CliYargs {
-  #parameters     // array of CliYargsParameter
   #scope          // CliYargsCommand
+  #pojo            // CliCommandInfo pojo
+  #parameters     // array of CliYargsParameter
   #commands       // array of CliYargsCommand
   #template       // yargs command string
   #path           // path to command
 
-  constructor(commandInfo, scope, name = '.') {
-    super(name, commandInfo.description)
+  constructor(pojo, scope, name = '.') {
+    super(name, pojo.description)
     
+    this.#pojo = pojo
     this.#scope = scope
 
     this.#parameters = new Lazy(() => {
       const parameters = [ ]
-      for (const [name, parameter] of Object.entries(commandInfo.parameters ?? { })) {
+      for (const [name, parameter] of Object.entries(pojo.parameters ?? { })) {
         if (KNONWN_OPTIONS.includes(name))
           continue
-        parameters.push(CliYargsParameter.create(this, name, parameter))
+        parameters.push(CliYargsParameter.create(parameter, this, name))
       }
       return parameters
     })
 
     this.#commands = new Lazy(() => {
       const commands = [ ]
-      for (const [name, command] of Object.entries(commandInfo.commands ?? { })) {
+      for (const [name, command] of Object.entries(pojo.commands ?? { })) {
         commands.push(new CliYargsCommand(command, this, name))
       }
       return commands
     })
 
     this.#template = new Lazy(() => {
-      // todo: handle groups
-      // `${name} <command>`,
-
       const positionals = [name]
       for (const positional of this.positionals()) {
         const variadic = positional.isVariadic ? '...' : ''
@@ -154,6 +148,7 @@ export class CliYargsCommand extends CliYargs {
           : `<${positional.name}${variadic}>`
         positionals.push(part)
       }
+
       return positionals.join(' ')
     })
 
@@ -173,8 +168,17 @@ export class CliYargsCommand extends CliYargs {
   get scope() { return this.#scope }
   get template() { return this.#template.value }
   get path() { return this.#path.value }
+  get description() { return this.#pojo.description }
+  get demandCommand() { 
+    return this.#commands.value.length > 0 && !this.#pojo.isDefaultCommand
+  }
 
   async apply(yargs) {
+    yargs.strict()
+
+    if (this.demandCommand)
+      yargs.demandCommand(1, 'You must specify a command.')
+
     for (const positional of this.positionals()) {
       yargs.positional(positional.name, await positional.toPojo())
     }
@@ -202,7 +206,7 @@ export class CliYargsCommand extends CliYargs {
     yield* this.scope?.positionals() ?? []
     yield* this.#parameters.value
       .filter(o => o instanceof CliYargsPositional)
-      .sort((a, b) => a.parameter.position - b.parameter.position) 
+      .sort((a, b) => a.position - b.position) 
   }
   *options() { 
     // options sorted by name
@@ -222,11 +226,21 @@ export async function cliYargs(classOrPojo) {
   const yargsCommand = new CliYargsCommand(await info.toPojo())
   
   const yargs$ = yargs()
-    // resolve cli path to command class
+    .alias('help', 'h')
+    .alias('version', 'v')
+    .showHelpOnFail(false, "Run --help for details.")
+    .demandCommand(1, 'You must specify a command.')
+    .option('argv$', { hidden: true })
+    .middleware(async (argv) => {
+      if (argv['argv$']) {
+        const pojo = await toPojo(argv)
+        await dumpPojo(pojo)
+        process.exit(0)
+      }
+    })
     .middleware(async (argv) => ({ 
       _class: await class$.getCommand(argv._),
     }))
-    // prepare arguments for command class constructor
     .middleware(async (argv) => { 
       const _args = []
 
@@ -252,14 +266,7 @@ export async function cliYargs(classOrPojo) {
 
       return { _args }
     })
-    // hidden command to dump deserialized args
-    .middleware(async (argv) => {
-      if (argv['argv$']) {
-        const pojo = await toPojo(argv)
-        await dumpPojo(pojo)
-        process.exit(0)
-      }
-    })
+
 
   return yargsCommand.apply(yargs$)
 }

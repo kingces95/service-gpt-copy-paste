@@ -224,11 +224,12 @@ export class CliCommandInfo extends CliInfo {
   }
 
   get path() { 
-    return [...this.hierarchy()]
+    const result = [...this.hierarchy()]
       .reverse()
       .map(o => o.name)
-      .filter(Boolean)
-      .join(' ') 
+      .join('/')
+
+    return result ? result : '/'
   }
 
   async *commands() { 
@@ -236,21 +237,19 @@ export class CliCommandInfo extends CliInfo {
     yield* map.values()
   }
   async getCommand(nameOrNames = [], recursing$) {
-    const names = Array.isArray(nameOrNames) 
-      ? [...nameOrNames] : [nameOrNames]
+    const names = Array.isArray(nameOrNames) ? [...nameOrNames] : [nameOrNames]
       
-    if (names.length == 0)
-      return this
-
-    const name = names.shift()
-    const map = await this.#commands.load()
-    const command = map.get(name)?.getCommand(names, recursing$ ?? true)
-    if (recursing$) return command
-    if (!command) throw new Error(`Command not found: ${names.join(' ')}`)
-    return command
+    let current = this
+    for (const name of names) {
+      const commands = await current.#commands.load()
+      current = commands.get(name)
+      if (!current) throw new Error(`Command ${name} not found.`)
+    }
+    return current
   }
 
   get description() { return this.#classMd.description }
+  get isDefaultCommand() { return this.#classMd.defaultCommand }
   *parameters() { yield* this.#parameters.value.values() }
   getParameter(name) { return this.#parameters.value.get(name) }
   *positionals() { yield* this.parameters().filter(o => o.isPositional) }

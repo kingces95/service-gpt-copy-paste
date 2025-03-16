@@ -11,6 +11,8 @@ cliYargs(tool).then(async (yargs) => {
     .scriptName(toolName)
     .usage(`${toolName} <command> [options]`)
     .wrap(85)
-  const argv = await yargs.parse(args)
+
+  // const argv = await yargs.parse(args)
+  const argv = await yargs.parse('clippy'.split(' '))
   new argv._class(...argv._args)
 })
