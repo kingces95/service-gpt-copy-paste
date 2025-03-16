@@ -24,28 +24,15 @@
     },
     {
       "type": "node",
-      "request": "attach",
-      "name": "Attach to Node.js Process",
-      "port": 9230,
-      "skipFiles": ["<node_internals>/**"]
-    },
-    {
-      "type": "node",
       "request": "launch",
       "name": "Debug Current File",
       "skipFiles": [
         "<node_internals>/**"
       ],
       "program": "${file}",
+      "args": ["cli"],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal"
     },
-    {
-      "type": "node",
-      "request": "attach",
-      "name": "Attach to Node.js Process",
-      "port": 9229, // Default debugging port
-      "restart": false
-    }
   ]
 }

@@ -34,18 +34,13 @@ export async function toPojo(value, options = { }) {
       case 'object': {
         const metadata = value.constructor?.[symbol]
         const isPojo = Object.getPrototypeOf(value) === Object.prototype
-
+        
         // if there is no metadata, then ignore unless it is a plain object.
-        // if (!metadata && !isPojo)
-        //   throw new Error(`Object must be pojo or have metadata`)
-
+        if (!metadata && !isPojo)
+          return
+        
         // if there is no metadata, then transform all properties to pojos.
         if (!metadata) {
-          if (!isPojo) {
-            const className = value.constructor?.name
-            return `[type: ${className}, toString: ${value.toString()}]`
-          }
-
           const result = { }
           for (const key in value) {
             const pojo = await toPojo(value[key], { symbol, depth, path: [...path, key] })

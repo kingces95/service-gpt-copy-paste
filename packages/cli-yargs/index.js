@@ -176,13 +176,11 @@ export class CliYargsCommand extends CliYargs {
 
   async apply(yargs) {
     for (const positional of this.positionals()) {
-      const options = await positional.toPojo()
-      yargs.positional(positional.name, options)
+      yargs.positional(positional.name, await positional.toPojo())
     }
 
     for (const option of this.options()) {
-      const options = await option.toPojo()
-      yargs.option(option.name, options)
+      yargs.option(option.name, await option.toPojo())
       // yargs.group(name, `Options (${group}):`)
     }
 
@@ -224,36 +222,11 @@ export async function cliYargs(classOrPojo) {
   const yargsCommand = new CliYargsCommand(await info.toPojo())
   
   const yargs$ = yargs()
+    // resolve cli path to command class
     .middleware(async (argv) => ({ 
       _class: await class$.getCommand(argv._),
     }))
-    .middleware(async (argv) => {
-      if (argv['metadata-declared$']) {
-        const hierarchyFn = (cli) => cli ? [cli, ...hierarchyFn(cli.baseCli)] : []
-        const hierarchy = hierarchyFn(argv._class).reverse().map(o => o.getOwnMetadata())
-        const pojo = await toPojo(hierarchy, { type: 'infos' })
-        dumpPojo(pojo)
-        process.exit(0)
-      }
-    })
-    .middleware(async (argv) => {
-      if (argv['metadata$']) {
-        await metadata.__dump()
-        process.exit(0)
-      }
-    })
-    .middleware(async (argv) => {
-      if (argv['info$']) {
-        await info.__dump()
-        process.exit(0)
-      }
-    })
-    .middleware(async (argv) => {
-      if (argv['yargs$']) {
-        await yargsCommand.__dump()
-        process.exit(0)
-      }
-    })
+    // prepare arguments for command class constructor
     .middleware(async (argv) => { 
       const _args = []
 
@@ -279,6 +252,7 @@ export async function cliYargs(classOrPojo) {
 
       return { _args }
     })
+    // hidden command to dump deserialized args
     .middleware(async (argv) => {
       if (argv['argv$']) {
         const pojo = await toPojo(argv)

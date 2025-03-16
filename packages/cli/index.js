@@ -293,9 +293,9 @@ export class Cli {
     })
 
     // wrap standard streams
-    this.stdin = new CliFdReadable({ fd: STDIN_FD }) // Use stdin file descriptor
-    this.stdout = new CliFdWritable({ fd: STDOUT_FD }) // Use stdout file descriptor
-    this.stderr = new CliFdWritable({ fd: STDERR_FD }) // Use stdout file descriptor
+    this.stdin = new CliFdReadable({ fd: STDIN_FD })
+    this.stdout = new CliFdWritable({ fd: STDOUT_FD })
+    this.stderr = new CliFdWritable({ fd: STDERR_FD })
     this.console = new Console({
       stdout: this.stdout,
       stderr: this.stderr,

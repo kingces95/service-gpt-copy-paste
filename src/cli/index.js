@@ -1,12 +1,11 @@
-import { cliYargs } from '@kingjs/cli-yargs'
+import { Cli, REQUIRED } from '@kingjs/cli'
 import { NodeName } from '@kingjs/node-name'
 import { CliClassMetadata } from '@kingjs/cli-metadata'
 import { CliCommandInfo } from '@kingjs/cli-info'
 import { CliYargsCommand } from '@kingjs/cli-yargs'
 import { dumpPojo } from '@kingjs/pojo-dump'
+import { cliYargs } from '@kingjs/cli-yargs'
 import { hideBin } from 'yargs/helpers'
-
-const REQUIRED = undefined
 
 const raw = {
   description: 'Dump Cli.getOwnMetadata()',
@@ -58,7 +57,29 @@ const yargs = {
   }
 }
 
-cliYargs({
+class CliReflect extends Cli {
+  description = 'Reflect on command metadata'
+  parameters = {
+    module: 'Name of module',
+    path: 'Path of command',
+  }
+  defaults = Cli.loadDefaults()
+  commands = { 
+    raw, 
+    md, 
+    info, 
+    yargs,
+  }
+
+  constructor(module, path, options) {
+    if (CliReflect.loadingDefaults(module, path, options))
+      return super()
+
+    super(options)
+  }
+}
+
+export const CliTool = Cli.extend({
   name: 'CliTool',
   description: 'My funky cli packaging tool',
   commands: {
@@ -78,7 +99,11 @@ cliYargs({
       }
     }
   }
-}).then(async (yargs) => {
+})
+
+export default CliTool
+
+cliYargs(CliTool).then(async (yargs) => {
   const toolName = 'cli-tool'
   yargs = yargs
     .scriptName(toolName)
