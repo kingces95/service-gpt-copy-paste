@@ -30,10 +30,10 @@ export class CliHttp extends Cli {
     head: declareHttpMethod('HEAD', 'Perform an http HEAD request'),
   })
   static defaultCommand = true
-  static defaults = CliHttp.loadDefaults()
+  static { this.initialize() }
 
   constructor(url, { headers = 0, method = 'GET', ...rest } = { }) {
-    if (CliHttp.loadingDefaults(new.target, url, { headers, method }))
+    if (CliHttp.initializing(new.target, url, { headers, method }))
       return super()
 
     super(rest)
@@ -116,14 +116,14 @@ function declareHttpMethod(method, description) {
     static description = description
 
     constructor(url, headers, options = { }) {
-      if (CliHttpMethod.loadingDefaults(new.target, options))
+      if (CliHttpMethod.initializing(new.target, options))
         return super()
 
       super(url, headers, { method, ...options })
     }
   }
 
-  CliHttpMethod.defaults = CliHttpMethod.loadDefaults()
+  CliHttpMethod.initialize()
 
   // Set the name of the class to be CliHttp{Method} via property descriptor
   const name = `CliHttp${method.charAt(0)}${method.slice(1).toLowerCase()}`

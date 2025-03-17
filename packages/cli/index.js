@@ -95,7 +95,7 @@ export class Cli extends CliGroup {
 
     const cls = class extends this {
       constructor(...args) {
-        if (cls.loadingDefaults(new.target, ...args))
+        if (cls.initializing(new.target, ...args))
           return super()
 
         super(...args)
@@ -103,9 +103,9 @@ export class Cli extends CliGroup {
         handler?.call(this, ...args)
       }
     }
+    cls.initialize()
     Object.defineProperty(cls, "name", { value: name });
     cls.commands = commands
-    cls.defaults = []
 
     const knownKeys = ['name', 'ctor', 'commands', 'handler']
     for (const [key, value] of Object.entries(metadata)) {
@@ -130,7 +130,7 @@ export class Cli extends CliGroup {
   }
 
   constructor({ help = false, version = '0.0', verbose = false, ...rest } = { }) {
-    if (Cli.loadingDefaults(new.target, { help, version, verbose }))
+    if (Cli.initializing(new.target, { help, version, verbose }))
       return super()
     
     super(rest)

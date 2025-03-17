@@ -17,10 +17,10 @@ class CliEval extends Cli {
     bash: '@kingjs/cli-eval, CliEvalBash',
     cmd: '@kingjs/cli-eval, CliEvalCmd',
   }
-  static defaults = CliEval.loadDefaults()
+  static { this.initialize() }
 
   constructor(exe, args = [], { shell, ...rest } = { }) {
-    if (CliEval.loadingDefaults(new.target, exe, args, { shell }))
+    if (CliEval.initializing(new.target, exe, args, { shell }))
       return super()
 
     super(rest)
@@ -66,10 +66,10 @@ class CliEval extends Cli {
 
 class CliEvalBash extends CliEval {
   static description = 'Evaluate a bash shell command'
-  static defaults = CliEvalBash.loadDefaults()
+  static { this.initialize() }
   
   constructor(...args) {
-    if (CliEvalBash.loadingDefaults(new.target, { }))
+    if (CliEvalBash.initializing(new.target, { }))
       return super()
 
     this.verify(CliEvalBash, ...args)
@@ -79,10 +79,10 @@ class CliEvalBash extends CliEval {
 
 class CliEvalCmd extends CliEval {
   static description = 'Evaluate a cmd shell command'
-  static defaults = CliEvalCmd.loadDefaults()
+  static { this.initialize() }
   
   constructor(...args) {
-    if (CliEvalCmd.loadingDefaults(new.target, { }))
+    if (CliEvalCmd.initializing(new.target, { }))
       return super()
 
     super(...args, { shell: 'cmd.exe' })

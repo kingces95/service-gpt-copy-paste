@@ -24,15 +24,14 @@ export class CliGroupOutput extends CliGroup {
     format: Symbol('CliGroupOutput.format'),
     write: Symbol('CliGroupOutput.write'),
   }
-  static defaults = CliGroupOutput.loadDefaults()
-  // static { CliGroupOutput.initialize() }
+  static { this.initialize() }
 
   constructor({ 
     output = 'util', 
     query = null, 
     color = true, 
   } = { }) {
-    if (CliGroupOutput.loadingDefaults(new.target, { output, query, color }))
+    if (CliGroupOutput.initializing(new.target, { output, query, color }))
       return super()
 
     this.color = color && process.stdout.isTTY

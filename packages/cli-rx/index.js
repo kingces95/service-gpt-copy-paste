@@ -9,10 +9,10 @@ import { AbortError } from '@kingjs/abort-error'
 import concatWrite from '@kingjs/rx-concat-write'
 
 export class CliRx extends CliService {
-  static defaults = CliRx.loadDefaults()
+  static { this.initialize() }
 
   constructor(options = { }, workflow) {
-    if (CliRx.loadingDefaults(new.target, options))
+    if (CliRx.initializing(new.target, options))
       return super()
 
     super(options)

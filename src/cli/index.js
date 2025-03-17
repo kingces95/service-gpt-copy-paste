@@ -81,7 +81,7 @@ class CliReflect extends Cli {
     info,
     yargs
   }
-  static defaults = CliReflect.loadDefaults()
+  static { this.initialize() }
 
   #module
   #path
@@ -89,7 +89,7 @@ class CliReflect extends Cli {
   #options
 
   constructor(module, path = [], options = {}) {
-    if (CliReflect.loadingDefaults(new.target, module, path, options))
+    if (CliReflect.initializing(new.target, module, path, options))
       return super()
 
     super(options)

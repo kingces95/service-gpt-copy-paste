@@ -23,10 +23,10 @@ export default class CliOrb extends Cli {
     cpuHot: 'Threshold for high CPU usage',
     memHot: 'Threshold for high memory usage',
   }
-  static defaults = CliOrb.loadDefaults()
+  static { this.initialize() }
   
   constructor({ cpuHot = CPU_HOT, memHot = MEM_HOT, ...rest } = { }) {
-    if (CliOrb.loadingDefaults(new.target, { cpuHot, memHot }))
+    if (CliOrb.initializing(new.target, { cpuHot, memHot }))
       return super()
 
     super(rest)
@@ -98,7 +98,7 @@ export default class CliOrb extends Cli {
           break
         } 
 
-        if (type == 'initializing') {
+        if (type == 'starting') {
           this.message = rest
           this.spinner.color = INIT_COLOR
 

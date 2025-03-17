@@ -10,10 +10,10 @@ export default class CliPollClipboard extends CliRxPoller {
   static parameters = {
     prefix: 'Prefix to match in clipboard content.'
   }
-  static defaults = CliPollClipboard.loadDefaults()
+  static { this.initialize() }
 
   constructor({ prefix = PREFIX, ...rest } = { }) {
-    if (CliPollClipboard.loadingDefaults(new.target, { prefix }))
+    if (CliPollClipboard.initializing(new.target, { prefix }))
       return super()
 
     const clipboard = new Clipboard()

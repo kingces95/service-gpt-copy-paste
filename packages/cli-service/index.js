@@ -14,14 +14,14 @@ export class CliService extends Cli {
     stdis: 'Provide status updates',
     stdisFd: 'Fd to report status if stdis is set',
   }
-  static defaults = CliService.loadDefaults()
+  static { this.initialize() }
 
   constructor({ 
     stdis = false, 
     stdisFd = STDOUT_FD, 
     ...rest 
   } = { }) {
-    if (CliService.loadingDefaults(new.target, { stdis, stdisFd })) 
+    if (CliService.initializing(new.target, { stdis, stdisFd })) 
       return super()
 
     super(rest)
@@ -54,7 +54,7 @@ export class CliService extends Cli {
         this.stdin.count, this.stdout.count, this.stderr.count, 
         cpu, memory)
     })
-    this.is$('initializing')
+    this.is$('starting')
   }
 
   async update$(...fields) {
@@ -100,7 +100,7 @@ export class CliService extends Cli {
     await this.stop$()
   }
 
-  get initializing() { return this.state$ == 'initializing' }
+  get starting() { return this.state$ == 'starting' }
   get aborting() { return this.state$ == 'aborting' }
   get stopping() { return this.state$ == 'stopping' }
 

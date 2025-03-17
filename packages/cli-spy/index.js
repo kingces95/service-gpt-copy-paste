@@ -87,25 +87,21 @@ export class CliSpy extends Cli {
   static parameters = {
     path: 'Path of command',
   }
-  static groups = {
-    output: CliGroupOutput,
-  }
+  static groups = [ CliGroupOutput ]
   static commands = { 
     ls, find,
-    raw,
-    md,
-    info,
-    yargs,
+    raw, md,
+    info, yargs,
     toJson
   }
-  static defaults = CliSpy.loadDefaults()
+  static { this.initialize() }
 
   #path
   #nodeName
   #options
 
   constructor(path = [], options = {}) {
-    if (CliSpy.loadingDefaults(new.target, path, options))
+    if (CliSpy.initializing(new.target, path, options))
       return super()
 
     super(options)

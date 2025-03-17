@@ -132,24 +132,6 @@ export class CliGroup {
       yield* baseCli.hierarchy()
   }
 
-  static loadDefaults() {
-    assert(!Object.hasOwn(this, 'defaults'))
-    const defaults = new this()
-    return defaults
-  }
-
-  static loadingDefaults(newTarget, ...defaults) {
-    if (Object.hasOwn(newTarget, 'defaults'))
-      return false
-
-    if (this != newTarget)
-      return true
-    
-    assert(!Object.hasOwn(newTarget, 'defaults'))
-    newTarget[DEFAULTS] = defaults
-    return true
-  }
-
   static async getOwnCommands() { 
     // groups have no commands; commands are, or are composed of, groups
     // to simplify reflection, we return an empty map
@@ -164,13 +146,28 @@ export class CliGroup {
   }
 
   static initialize() {
-    this.defaults = this.loadDefaults()
+    assert(!Object.hasOwn(this, 'defaults'))
+
+    // By construction, when any CliGroup is *first* activated, it will
+    // return an array of default positional arguments with an additional 
+    // last element which is an object of default option arguments.
+    this.defaults = new this()
+  }
+
+  static initializing(newTarget, ...defaults) {
+    if (Object.hasOwn(newTarget, 'defaults'))
+      return false
+
+    if (this == newTarget)
+      newTarget[DEFAULTS] = defaults
+
+    return true
   }
  
   static { this.initialize() }
  
   constructor({ _info } = {}) {
-    if (CliGroup.loadingDefaults(new.target, { })) {
+    if (CliGroup.initializing(new.target, { })) {
       const defaults = new.target[DEFAULTS]
       delete new.target[DEFAULTS]
       return defaults

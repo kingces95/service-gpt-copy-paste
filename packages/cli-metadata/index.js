@@ -153,17 +153,21 @@ export class CliClassMetadata extends CliMetadata {
   static async fromClass(class$) {
     const rootMd = new CliMetadataClassLoader(class$)
 
+    // Classes which are sub-classes of commands but are not themselves 
+    // addressable should not return their sub-commands. This is achieved by:
+
     // Classes loaded in response to enumerating 'commands' are marked as named.
     // Classes loaded in response to accessing 'baseClass' are not so marked.
+    // Search for 'loadedAsBaseClass'.
     
     // Classes not marked as named are considered un-addressable so cannot
     // have any sub-commands. For this reason, classes not marked as named
     // ignore any sub-command metadata and return no sub-commands.
 
     // A class could be both a sub-command and a baseClass. In this case, the
-    // class should be marked as named abd return its sub-commands. To ensure 
-    // this class is named it must load as a sub-command before it is loaded 
-    // as a baseClass. This is done by walking the command hiearchy which has 
+    // class should be marked as named and return its sub-commands. To ensure 
+    // this class is named it must load as a sub-command *before* it is loaded 
+    // as a baseClass. This is done by walking the command hiearchy *first* which has 
     // the effect of loading all named classes before loading any unnamed classes.
 
     // Before publishing a CLI, the metadata discovered by this eager walk will

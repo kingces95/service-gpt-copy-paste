@@ -16,7 +16,7 @@ export class CliRxPoller extends CliRx {
     errorMs: 'Milliseconds to delay after error.',
     writeError: 'Write error messages to stderr.',
   }
-  static defaults = CliRxPoller.loadDefaults()
+  static { this.initialize() }
 
   constructor({ 
     pollMs = POLL_MS,
@@ -25,7 +25,7 @@ export class CliRxPoller extends CliRx {
     writeError = false,
     ...rest
   } = { }, ...workflow) {
-    if (CliRxPoller.loadingDefaults(new.target, { pollMs, errorRate, errorMs, writeError }))
+    if (CliRxPoller.initializing(new.target, { pollMs, errorRate, errorMs, writeError }))
       return super()
 
     super(rest, interval(pollMs).pipe(
