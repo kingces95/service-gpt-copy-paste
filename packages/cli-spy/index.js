@@ -1,31 +1,22 @@
 import { Cli } from '@kingjs/cli'
-import { NodeName } from '@kingjs/node-name'
+import { CliGroupOutput } from '@kingjs/cli-group-output'
 import { CliClassMetadata } from '@kingjs/cli-metadata'
 import { CliCommandInfo } from '@kingjs/cli-info'
 import { CliYargsCommand } from '@kingjs/cli-yargs'
 import { dumpPojo } from '@kingjs/pojo-dump'
 
-class CliOutput {
-  static description = 'Output format'
-  static parameters = {
-    output: 'Output format',
-    query: 'JMESPath query string',
-  }
-  static defaults = { 
-    output: 'json'
-  }
-  static choices = {
-    output: ['util', 'json', 'table', 'yaml', 'xml', 'csv', 'tsv', 'none' ]
-  }
-}
+const { methods: { format, write } } = CliGroupOutput
 
 const toJson = {
   description: 'Convert UTIL to JSON',
   handler: async function() {
     const pojoJs = await new Response(process.stdin).text()
     const pojo = eval(`(${pojoJs})`)
-    const json = JSON.stringify(pojo, null, 2)
-    this.write(json)
+    // const json = JSON.stringify(pojo, null, 2)
+    // const formatter = new CliGroupOutput(this.options)
+    // formatter.write(pojo)
+    // this.write(json)
+    this[write](pojo)
   }
 }
 const raw = {
@@ -95,6 +86,9 @@ export class CliSpy extends Cli {
   static description = 'Reflect on command metadata'
   static parameters = {
     path: 'Path of command',
+  }
+  static groups = {
+    output: CliGroupOutput,
   }
   static commands = { 
     ls, find,

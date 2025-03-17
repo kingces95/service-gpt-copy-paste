@@ -8,9 +8,7 @@ class StreamNull extends Writable {
   }
 }
 
-const devNullPath = os.platform() === 'win32' 
-  ? 'NUL' 
-  : '/dev/null';
+const devNullPath = os.platform() === 'win32' ? 'NUL' : '/dev/null';
 
 export const streamNull = fs.createWriteStream(devNullPath);
 export default StreamNull;

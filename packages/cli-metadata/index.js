@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import { LazyGenerator } from '@kingjs/lazy'
-import { Cli } from '@kingjs/cli'
+import { CliGroup } from '@kingjs/cli-group'
 import assert from 'assert'
 async function __import() {
   const { cliMetadataToPojo } = await import('@kingjs/cli-metadata-to-pojo')
@@ -318,8 +318,8 @@ export class CliMetadataClassLoader extends CliMetadataLoader {
 
   activate$(class$, id, { loadedAsBaseClass } = { }) {
     assert(typeof class$ == 'function', `Class ${class$} must be a function.`)
-    assert(class$ == Cli || class$.prototype instanceof Cli, 
-      `Class ${class$.name} must extend Cli.`)
+    assert(class$ == CliGroup || class$.prototype instanceof CliGroup, 
+      `Class ${class$.name} must extend CliGroup.`)
 
     const { name } = class$
     return new CliClassMetadata(this, id, name, {

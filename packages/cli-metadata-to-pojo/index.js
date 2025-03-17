@@ -40,7 +40,7 @@ CliParameterMetadata[symbol] = {
   // coerce, defaultDescription, normalize
 }
 
-export async function cliMetadataToPojo(metadata, { type, depth = 1 }) {
+export async function cliMetadataToPojo(metadata, { type, depth = 1 } = { }) {
   let pojo = await toPojo(metadata, { symbol, type, depth })
   return trimPojo(pojo)
 }
