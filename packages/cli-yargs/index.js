@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import yargs from 'yargs'
 import { Lazy } from '@kingjs/lazy'
-import { Cli } from '@kingjs/cli'
+import { CliCommand } from '@kingjs/cli-command'
 import { CliClassMetadata } from '@kingjs/cli-metadata'
 import { CliCommandInfo } from '@kingjs/cli-info'
 import { dumpPojo } from '@kingjs/pojo-dump'
@@ -223,7 +223,7 @@ export class CliYargsCommand extends CliYargs {
 export async function cliYargs(classOrPojo, options = { }) {
   const { metadata } = options
   const isClass = typeof classOrPojo == 'function'
-  const class$ = isClass ? classOrPojo : Cli.extend(classOrPojo)
+  const class$ = isClass ? classOrPojo : CliCommand.extend(classOrPojo)
   const cachedMetadata = CliClassMetadata.fromMetadataPojo(
     metadata ?? await (await CliClassMetadata.fromClass(class$)).toPojo()
   )

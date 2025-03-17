@@ -1,4 +1,4 @@
-import { Cli } from '@kingjs/cli'
+import { CliCommand } from '@kingjs/cli-command'
 import { NodeName } from '@kingjs/node-name'
 import { CliClassMetadata } from '@kingjs/cli-metadata'
 import { CliCommandInfo } from '@kingjs/cli-info'
@@ -68,7 +68,7 @@ const find = {
   }
 }
 
-class CliReflect extends Cli {
+class CliReflect extends CliCommand {
   static description = 'Reflect on command metadata'
   static parameters = {
     module: 'Name of module',
@@ -130,7 +130,7 @@ class CliReflect extends Cli {
   }
 }
 
-export const CliTool = Cli.extend({
+export const CliTool = CliCommand.extend({
   name: 'Cli',
   description: 'My funky cli packaging tool',
   commands: {

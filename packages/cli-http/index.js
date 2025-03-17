@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { Cli } from '@kingjs/cli'
+import { CliCommand } from '@kingjs/cli-command'
 import axios from 'axios'
 import { fromReadline } from '@kingjs/rx-from-readline'
 import readline from 'readline/promises'
@@ -8,7 +8,7 @@ import { reduce } from 'rxjs/operators'
 
 const HTTP_UPDATE_METHODS = ['POST', 'PUT', 'PATCH']
 
-export class CliHttp extends Cli {
+export class CliHttp extends CliCommand {
   static description = 'Send a HTTP request'
   static parameters = {
     url: 'The url to request',

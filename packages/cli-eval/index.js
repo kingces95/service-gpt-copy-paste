@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
-import { Cli } from '@kingjs/cli'
+import { CliCommand } from '@kingjs/cli-command'
 import { spawn } from 'child_process'
 
-class CliEval extends Cli {
+class CliEval extends CliCommand {
   static description = 'Evaluate a shell command'
   static parameters = {
     exe: 'The command to execute',

@@ -1,7 +1,7 @@
 {
-  "name": "@kingjs/cli-group",
+  "name": "@kingjs/cli-command",
   "version": "1.0.0",
-  "description": "Group of cli options.",
+  "description": "Framework for developing command line tools.",
   "main": "index.js",
   "type": "module",
   "exports": {

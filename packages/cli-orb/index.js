@@ -1,4 +1,4 @@
-import { Cli } from '@kingjs/cli'
+import { CliCommand } from '@kingjs/cli-command'
 import { AbortError } from '@kingjs/abort-error'
 import ora from 'ora'
 import os from 'os'
@@ -17,7 +17,7 @@ const INIT_COLOR = 'gray'
 const NORMAL_COLOR = 'cyan'
 const WARN_COLOR = 'yellow'
 
-export default class CliOrb extends Cli {
+export default class CliOrb extends CliCommand {
   static description = 'Tool for rendering status to tty'
   static parameters = {
     cpuHot: 'Threshold for high CPU usage',
@@ -66,7 +66,7 @@ export default class CliOrb extends Cli {
         const { type, rest } = record
 
         if (type == 'data') {
-          this.stats = await Cli.splitRecord(
+          this.stats = await CliCommand.splitRecord(
             rest, { inCount: '#', outCount: '#', errorCount: '#', cpu: '#', memory: '#' }) 
 
           this.adjustSpinner(this.stats.cpu, this.stats.memory)
@@ -75,7 +75,7 @@ export default class CliOrb extends Cli {
         }
 
         if (type == 'exiting') {
-          const { code } = await Cli.splitRecord(rest, { code: '#' })
+          const { code } = await CliCommand.splitRecord(rest, { code: '#' })
           process.exitCode = code
           continue
         }
@@ -103,7 +103,7 @@ export default class CliOrb extends Cli {
           this.spinner.color = INIT_COLOR
 
         } else if (type == 'warning') {
-          const { warnType, warnMessage } = await Cli.splitRecord(rest, ['warnType', 'warnMessage'])
+          const { warnType, warnMessage } = await CliCommand.splitRecord(rest, ['warnType', 'warnMessage'])
           this.message = warnMessage
           this.spinner.color = WARN_COLOR
 

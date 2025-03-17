@@ -171,19 +171,19 @@ export class CliCommandInfo extends CliInfo {
     // For example, take the command 'mytool post'. Assume 'mytool' has no parameters
     // while 'post' has parameters necessary to perform a POST request. Assume a class
     // hierarchy like this:
-    //    mytool: Cli -> MyTool
-    //    post: Cli -> Web -> Http -> HttpPost
+    //    mytool: CliCommand -> MyTool
+    //    post: CliCommand -> Web -> Http -> HttpPost
     // Filtering out those classes without parameters (assume MyTool and Web have none) 
     // and then partitioning by scope yields two sets, one for each scope:
-    //    mytool: { Cli }
+    //    mytool: { CliCommand }
     //    post: { Http, HttpPost }
-    // Hence the 'mytool' command would own all parameters on Cli (help, version, etc),
+    // Hence the 'mytool' command would own all parameters on CliCommand (help, version, etc),
     // while the 'post' command would own all parameters on CliHttp (url, headers, etc)
     // and on Http (body, etc). Note that if we order the classes in the scope partitions
     // in the obvious way, then we get a set of classes: 
-    //    Cli -> CliHttp -> HttpPost
+    //    CliCommand -> CliHttp -> HttpPost
     // which is a subset of target command's class hierarchy:
-    //    Cli -> Web -> Http -> HttpPost
+    //    CliCommand -> Web -> Http -> HttpPost
     // In this way the scope hierarchy is a partition of the subset of the class hierarchy
     // which have parameters. Hence, both hierarchies share the same parameter set.
     this.#parameters = new Lazy(() => {

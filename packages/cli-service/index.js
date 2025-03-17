@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { Cli } from '@kingjs/cli'
+import { CliCommand } from '@kingjs/cli-command'
 import { writeRecord } from '@kingjs/cli-echo'
 import { streamNull } from '@kingjs/stream-null'
 import { CliServiceHeartbeat } from '@kingjs/cli-service-heartbeat'
@@ -9,7 +9,7 @@ import assert from 'assert'
 const STDOUT_FD = 1
 const IFS = ' '
 
-export class CliService extends Cli {
+export class CliService extends CliCommand {
   static parameters = {
     stdis: 'Provide status updates',
     stdisFd: 'Fd to report status if stdis is set',

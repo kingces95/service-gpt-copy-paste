@@ -1,4 +1,4 @@
-import { Cli } from '@kingjs/cli'
+import { CliCommand } from '@kingjs/cli-command'
 import { CliGroupOutput } from '@kingjs/cli-group-output'
 import { CliClassMetadata } from '@kingjs/cli-metadata'
 import { CliCommandInfo } from '@kingjs/cli-info'
@@ -82,7 +82,7 @@ const find = {
   }
 }
 
-export class CliSpy extends Cli {
+export class CliSpy extends CliCommand {
   static description = 'Reflect on command metadata'
   static parameters = {
     path: 'Path of command',

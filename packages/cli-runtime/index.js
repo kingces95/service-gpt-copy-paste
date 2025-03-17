@@ -1,4 +1,4 @@
-import { Cli } from '@kingjs/cli'
+import { CliCommand } from '@kingjs/cli-command'
 import { interval } from 'rxjs'
 import { tap } from 'rxjs/operators'
 import ora from 'ora'
@@ -39,7 +39,7 @@ export default class CliRuntime {
 
     cli.on('status', (state, ...result) => {
       if (this.cli.verbose 
-        && !Cli.isFinished(this.status.state) 
+        && !CliCommand.isFinished(this.status.state) 
         && state != this.status.state) {
         this.spinner.info(this.toHeadline())
         this.spinner.start()
@@ -84,7 +84,7 @@ export default class CliRuntime {
 
   isSuccess() {
     const { state, result } = this.status
-    return Cli.isSuccess(state, ...result)
+    return CliCommand.isSuccess(state, ...result)
   }
 
   toHeadline() {

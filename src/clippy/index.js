@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-import { Cli } from '@kingjs/cli'
+import { CliCommand } from '@kingjs/cli-command'
 
-export const Clippy = Cli.extend({
+export const Clippy = CliCommand.extend({
   name: 'Clippy',
   description: 'My funky cli',
   commands: {

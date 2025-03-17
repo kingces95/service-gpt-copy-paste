@@ -240,7 +240,7 @@
   {
     "id": 8,
     "name": "annon",
-    "description": "Dump Cli.getOwnMetadata()",
+    "description": "Dump CliCommand.getOwnMetadata()",
     "baseClass": [
       5,
       "CliSpy"

@@ -17,7 +17,7 @@ project-root:
       - index.js                  # Barrel file to export Command-related classes
     frontend:
       - Frontend.js               # Base UI class for rendering
-      - Cli.js                    # CLI implementation
+      - CliCommand.js                    # CLI implementation
       - WebTrayUI.js              # Web tray implementation
       - copy.js                   # Contains static or injected copy text
       - index.js                  # Barrel file for UI components
