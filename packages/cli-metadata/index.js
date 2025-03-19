@@ -1,6 +1,7 @@
 import _ from 'lodash'
 import { LazyGenerator } from '@kingjs/lazy'
 import { Cli } from '@kingjs/cli'
+import { CliGroup } from '@kingjs/cli-group'
 import assert from 'assert'
 async function __import() {
   const { cliMetadataToPojo } = await import('@kingjs/cli-metadata-to-pojo')
@@ -154,7 +155,7 @@ export class CliClassMetadata extends CliMetadata {
     const rootMd = new CliMetadataClassLoader(class$)
 
     // Classes which are sub-classes of commands but are not themselves 
-    // addressable should not return their sub-commands. This is achieved by:
+    // addressable should not return their sub-commands.
 
     // Classes loaded in response to enumerating 'commands' are marked as named.
     // Classes loaded in response to accessing 'baseClass' are not so marked.
@@ -200,10 +201,12 @@ export class CliClassMetadata extends CliMetadata {
   #parameters
   #baseClassFn
   #commandsFn
+  #groupsFn
 
   constructor(loader, id, name, {
     baseClassFn,
     commandsFn,
+    groupsFn,
     ...pojo
   }) {
     super(name)
@@ -212,6 +215,7 @@ export class CliClassMetadata extends CliMetadata {
     this.#pojo = pojo
     this.#baseClassFn = baseClassFn
     this.#commandsFn = commandsFn
+    this.#groupsFn = groupsFn
 
     this.id = id
     this.ref = [this.id, this.name]
@@ -237,6 +241,7 @@ export class CliClassMetadata extends CliMetadata {
   }
 
   async *commands() { yield* this.#commandsFn() }
+  async *groups() { yield* this.#groupsFn() }
   *parameters() { yield* this.#parameters.value }
 }
 
@@ -303,10 +308,22 @@ export class CliMetadataClassLoader extends CliMetadataLoader {
         if (loadedAsBaseClass) 
           return
 
+        if (this instanceof CliGroup)
+          return
+
         const commands = await class$.getOwnCommands()
         for (const [name, value] of Object.entries(commands)) {
           const class$ = await value
           yield [name, this.loader.load$(class$)]
+        }
+      }, 
+      groupsFn: async function*() { 
+        assert(this instanceof CliClassMetadata)
+
+        const groups = await class$.getOwnGroups()
+        for (const value of groups) {
+          const class$ = await value
+          yield this.loader.load$(class$)
         }
       }, 
     }
@@ -338,21 +355,24 @@ export class CliMetadataPojoLoader extends CliMetadataLoader {
 
     const { 
       baseClass, // [ 42, 'MyBaseClass' ]
-      commands   // { 'my-command': [43, 'MyCommandClass'], ... }
+      commands,  // { 'my-command': [43, 'MyCommandClass'], ... }
+      groups,    // [ [44, 'MyGroupClass'], ... ]
     } = pojo
 
     return { 
       baseClassFn: function() { 
         assert(this instanceof CliClassMetadata)
-
-        return baseClass ? this.loader.load$(poja[baseClass[0]]) : null
+        return !baseClass ? null : this.loader.load$(poja[baseClass[0]])
       }, 
       commandsFn: async function*() { 
         assert(this instanceof CliClassMetadata)
-        
-        for (const [name, ref] of Object.entries(commands ?? { })) {
+        for (const [name, ref] of Object.entries(commands ?? { }))
           yield [name, this.loader.load$(poja[ref[0]])]
-        }
+      }, 
+      groupsFn: async function*() { 
+        assert(this instanceof CliClassMetadata)
+        for (const ref of groups ?? [])
+          yield this.loader.load$(poja[ref[0]])
       }, 
     }
   }

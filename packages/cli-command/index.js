@@ -6,7 +6,6 @@ import { splitRecord, splitArray } from '@kingjs/cli-read'
 import { write, joinFields } from '@kingjs/cli-echo'
 import { CliFdReadable } from '@kingjs/cli-fd-readable'
 import { CliFdWritable } from '@kingjs/cli-fd-writable'
-import { NodeName } from '@kingjs/node-name'
 import assert from 'assert'
 
 const DEFAULT_IFS = ' '
@@ -41,11 +40,8 @@ export class CliCommand extends Cli {
     const type = typeof value
     switch (type) {
       case 'function':
-        return value
       case 'string':
-        const object = await NodeName.from(value).importObject()
-        if (!object) throw new Error(`Could not load command ${value}`)
-        return await this.loadOwnCommand$(object)
+        return await this.loadClass$(value)
       case 'object':
         return this.extend({ ...value })
     }
@@ -58,7 +54,7 @@ export class CliCommand extends Cli {
 
     // a (1) class, (2) import string of a class, (3) directory path, 
     // or (4) POJO representing a class or (5) a possibly async function 
-    // that returns any of the above. A function allows for fowrad references.
+    // that returns any of the above. A function allows for forward references.
     const commandsOrFn = this.getOwnPropertyValue$('commands') ?? { }
 
     const commands = typeof commandsOrFn == 'function' 

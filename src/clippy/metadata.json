@@ -5,7 +5,7 @@
     "description": "My funky cli",
     "baseClass": [
       21,
-      "Cli"
+      "CliCommand"
     ],
     "commands": {
       "http": [
@@ -36,7 +36,7 @@
     "description": "Send a HTTP request",
     "baseClass": [
       21,
-      "Cli"
+      "CliCommand"
     ],
     "defaultCommand": true,
     "parameters": {
@@ -98,7 +98,7 @@
     "description": "Tool for rendering status to tty",
     "baseClass": [
       21,
-      "Cli"
+      "CliCommand"
     ],
     "parameters": {
       "cpuHot": {
@@ -118,7 +118,7 @@
     "name": "CliPollClipboard",
     "description": "Poll clipboard content",
     "baseClass": [
-      22,
+      23,
       "CliRxPoller"
     ],
     "parameters": {
@@ -135,7 +135,7 @@
     "description": "Evaluate a shell command",
     "baseClass": [
       21,
-      "Cli"
+      "CliCommand"
     ],
     "parameters": {
       "exe": {
@@ -177,7 +177,7 @@
     "description": "Reflect on command metadata",
     "baseClass": [
       21,
-      "Cli"
+      "CliCommand"
     ],
     "parameters": {
       "path": {
@@ -240,7 +240,7 @@
   {
     "id": 8,
     "name": "annon",
-    "description": "Dump CliCommand.getOwnMetadata()",
+    "description": "Dump Cli.getOwnMetadata()",
     "baseClass": [
       5,
       "CliSpy"
@@ -368,7 +368,11 @@
   },
   {
     "id": 21,
-    "name": "Cli",
+    "name": "CliCommand",
+    "baseClass": [
+      22,
+      "Cli"
+    ],
     "parameters": {
       "help": {
         "description": "Show help",
@@ -393,9 +397,13 @@
   },
   {
     "id": 22,
+    "name": "Cli"
+  },
+  {
+    "id": 23,
     "name": "CliRxPoller",
     "baseClass": [
-      23,
+      24,
       "CliRx"
     ],
     "parameters": {
@@ -421,19 +429,19 @@
     }
   },
   {
-    "id": 23,
+    "id": 24,
     "name": "CliRx",
     "baseClass": [
-      24,
+      25,
       "CliService"
     ]
   },
   {
-    "id": 24,
+    "id": 25,
     "name": "CliService",
     "baseClass": [
       21,
-      "Cli"
+      "CliCommand"
     ],
     "parameters": {
       "stdis": {

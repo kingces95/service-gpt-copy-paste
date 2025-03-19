@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { trimPojo } from '@kingjs/pojo-trim'
+import { NodeName } from '@kingjs/node-name'
 import assert from 'assert'
 
 async function __import() {
@@ -28,7 +29,8 @@ const PARAMETER_METADATA_NAMES =  [
   'hidden', 'local', 'normalize',
 ]
 
-const Metadata = Symbol('metadata')
+const Metadata = Symbol('Cli.metadata')
+const Groups = Symbol('Cli.groups')
 
 export class Cli {
 
@@ -37,6 +39,19 @@ export class Cli {
     const metadata = await this.getOwnMetadata()
     const pojo = await toPojo(metadata)
     await dumpPojo(pojo)
+  }
+
+  static async loadClass$(value) {
+    const type = typeof value
+    switch (type) {
+      case 'function':
+        return value
+      case 'string':
+        const object = await NodeName.from(value).importObject()
+        if (!object) throw new Error(`Could not load class ${value}`)
+        return await this.loadOwnCommand$(object)
+    }
+    throw new Error(`Could not load class`)
   }
 
   static getOwnPropertyValue$(name) {
@@ -118,18 +133,18 @@ export class Cli {
     return this[Metadata] = metadata
   }
 
-  static get baseCli() {
-    const baseClass = Object.getPrototypeOf(this.prototype).constructor
-    if (baseClass == Object)
-      return null
-    return baseClass
-  } 
+  static async getOwnGroups() {
+    if (this.getOwnPropertyValue$(Groups))
+      return this[Groups]
 
-  static *hierarchy() {
-    yield this
-    const baseCli = this.baseCli
-    if (baseCli)
-      yield* baseCli.hierarchy()
+    // a (1) class, (2) import string of a class
+    const groups = this.getOwnPropertyValue$('groups') ?? []
+
+    const list = []
+    for (const value of groups)
+      list.push(this.loadClass$(value))
+
+    return this[Groups] = list    
   }
 
   static async getOwnCommands() { 
@@ -143,6 +158,20 @@ export class Cli {
     for (const name of names)
       throw new Error(`Command '${name}' not found`)
     return this
+  }
+
+  static get baseCli() {
+    const baseClass = Object.getPrototypeOf(this.prototype).constructor
+    if (baseClass == Object)
+      return null
+    return baseClass
+  } 
+
+  static *hierarchy() {
+    yield this
+    const baseCli = this.baseCli
+    if (baseCli)
+      yield* baseCli.hierarchy()
   }
 
   static initialize() {

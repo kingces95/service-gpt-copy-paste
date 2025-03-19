@@ -1,8 +1,6 @@
 import {
-  CliMetadata,
   CliParameterMetadata,
   CliClassMetadata,
-  CliMetadataLoader
 } from '@kingjs/cli-metadata'
 import { trimPojo } from '@kingjs/pojo-trim'
 import { toPojo } from '@kingjs/pojo'
@@ -18,6 +16,7 @@ CliClassMetadata[symbol] = {
   defaultCommand: 'boolean',
   parameters: 'infos',
   commands: 'entries',
+  groups: 'list',
 }
 
 CliParameterMetadata[symbol] = {

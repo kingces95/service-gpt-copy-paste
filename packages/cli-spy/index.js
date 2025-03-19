@@ -12,11 +12,11 @@ const toJson = {
   handler: async function() {
     const pojoJs = await new Response(process.stdin).text()
     const pojo = eval(`(${pojoJs})`)
-    // const json = JSON.stringify(pojo, null, 2)
+    const json = JSON.stringify(pojo, null, 2)
+    this.write(json)
     // const formatter = new CliGroupOutput(this.options)
     // formatter.write(pojo)
-    // this.write(json)
-    this[write](pojo)
+    // this[write](pojo)
   }
 }
 const raw = {
@@ -127,7 +127,7 @@ export class CliSpy extends CliCommand {
   }
   async getCachedMetadata() { 
     const metadata = await this.getMetadata()
-    return await CliClassMetadata.fromPojo(await metadata.toPojo())
+    return await CliClassMetadata.fromMetadataPojo(await metadata.toPojo())
   }
   async getInfo() {
     const metadata = await this.getMetadata()
