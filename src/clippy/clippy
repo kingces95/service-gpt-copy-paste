@@ -6,7 +6,7 @@ import { hideBin } from 'yargs/helpers'
 
 // cliYargs(Clippy, { metadata }).then(async (yargs) => {
 cliYargs(Clippy).then(async (yargs) => {
-  // const argv = await yargs.parse('spy md spy --cached'.split(' '))
+  // const argv = await yargs.parse('spy yargs spy --output json'.split(' '))
   const argv = await yargs.parse(hideBin(process.argv))
   new argv._class(...argv._args)
 })

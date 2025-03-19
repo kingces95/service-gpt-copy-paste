@@ -3,22 +3,7 @@ import { CliGroupOutput } from '@kingjs/cli-group-output'
 import { CliClassMetadata } from '@kingjs/cli-metadata'
 import { CliCommandInfo } from '@kingjs/cli-info'
 import { CliYargsCommand } from '@kingjs/cli-yargs'
-import { dumpPojo } from '@kingjs/pojo-dump'
 
-const { methods: { format, write } } = CliGroupOutput
-
-const toJson = {
-  description: 'Convert UTIL to JSON',
-  handler: async function() {
-    const pojoJs = await new Response(process.stdin).text()
-    const pojo = eval(`(${pojoJs})`)
-    const json = JSON.stringify(pojo, null, 2)
-    this.write(json)
-    // const formatter = new CliGroupOutput(this.options)
-    // formatter.write(pojo)
-    // this[write](pojo)
-  }
-}
 const raw = {
   description: 'Dump Cli.getOwnMetadata()',
   parameters: { hierarchy: 'Walk and dump base classes, too.' },
@@ -28,7 +13,7 @@ const raw = {
     const class$ = await this.getClass()
     const pojo = !hierarchy ? class$.getOwnMetadata() 
       : [...class$.hierarchy()].map(o => o.getOwnMetadata())
-    dumpPojo(pojo)
+    this.log(pojo)
   }
 }
 const md = {
@@ -39,26 +24,26 @@ const md = {
     const { cached } = this.options
     if (cached) {
       const metadata = await this.getCachedMetadata()
-      await metadata.__dump()
+      this.log(await metadata.toPojo())
       return
     }
 
     const metadata = await this.getMetadata()
-    await metadata.__dump()
+    this.log(await metadata.toPojo())
   }
 }
 const info = {
   description: `Dump ${CliCommandInfo.name}`,
   handler: async function() {
     const info = await this.getInfo()
-    await info.__dump()
+    this.log(await info.toPojo())
   }
 }
 const yargs = {
   description: `Dump ${CliYargsCommand.name}`,
-  handler: async function(module, path) {
+  handler: async function() {
     const yargs = await this.getYargs()
-    await yargs.__dump()
+    this.log(await yargs.toPojo())
   }
 }
 const ls = {
@@ -87,12 +72,11 @@ export class CliSpy extends CliCommand {
   static parameters = {
     path: 'Path of command',
   }
-  static groups = [ CliGroupOutput ]
+  static services = [ CliGroupOutput ]
   static commands = { 
     ls, find,
     raw, md,
     info, yargs,
-    toJson
   }
   static { this.initialize() }
 
@@ -135,7 +119,10 @@ export class CliSpy extends CliCommand {
   }
   async getYargs() {
     const info = await this.getInfo()
-    return new CliYargsCommand(await info.toPojo())
+    return CliYargsCommand.fromInfoPojo(await info.toPojo())
+  }
+  log(pojo) {
+    this.getService(CliGroupOutput).write(pojo)
   }
 }
 

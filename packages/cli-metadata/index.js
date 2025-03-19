@@ -2,6 +2,7 @@ import _ from 'lodash'
 import { LazyGenerator } from '@kingjs/lazy'
 import { Cli } from '@kingjs/cli'
 import { CliGroup } from '@kingjs/cli-group'
+import { CliCommand } from '@kingjs/cli-command'
 import assert from 'assert'
 async function __import() {
   const { cliMetadataToPojo } = await import('@kingjs/cli-metadata-to-pojo')
@@ -92,6 +93,7 @@ export class CliParameterMetadata extends CliMetadata {
   get coerce() { return this.#pojo.coerce }
 
   get description() { return this.#pojo.description }
+  get group() { return this.#pojo.group }
   get default() { return this.#pojo.default }
   get defaultDescription() { return this.#pojo.defaultDescription }
   get normalize() { return this.#pojo.normalize }
@@ -201,12 +203,12 @@ export class CliClassMetadata extends CliMetadata {
   #parameters
   #baseClassFn
   #commandsFn
-  #groupsFn
+  #servicesFn
 
   constructor(loader, id, name, {
     baseClassFn,
     commandsFn,
-    groupsFn,
+    servicesFn,
     ...pojo
   }) {
     super(name)
@@ -215,7 +217,7 @@ export class CliClassMetadata extends CliMetadata {
     this.#pojo = pojo
     this.#baseClassFn = baseClassFn
     this.#commandsFn = commandsFn
-    this.#groupsFn = groupsFn
+    this.#servicesFn = servicesFn
 
     this.id = id
     this.ref = [this.id, this.name]
@@ -228,11 +230,22 @@ export class CliClassMetadata extends CliMetadata {
     }, this)
   }
 
-  get isClass() { return true }
+  isWellKnownClass$(class$) {
+    if (this.wellKnown && this.name == class$.name) 
+      return true 
+    return this.baseClass?.isWellKnownClass$(class$) 
+  }
+
   get loader() { return this.#loader }
+  get isClass() { return true }
+  get isCommand() { return this.isWellKnownClass$(CliCommand) }
+  get isGroup() { return this.isWellKnownClass$(CliGroup) }
+  get isCli() { return this.isWellKnownClass$(Cli) }
+  get baseClass() { return this.#baseClassFn() }
+
   get description() { return this.#pojo.description }
   get defaultCommand() { return this.#pojo.defaultCommand }
-  get baseClass() { return this.#baseClassFn() }
+  get wellKnown() { return this.#pojo.wellKnown }
 
   *hierarchy() {
     yield this
@@ -241,7 +254,7 @@ export class CliClassMetadata extends CliMetadata {
   }
 
   async *commands() { yield* this.#commandsFn() }
-  async *groups() { yield* this.#groupsFn() }
+  async *services() { yield* this.#servicesFn() }
   *parameters() { yield* this.#parameters.value }
 }
 
@@ -252,9 +265,10 @@ export class CliMetadataLoader extends CliClassMetadata {
   constructor(classOrPojo, id, name, {
     baseClassFn,
     commandsFn,
+    servicesFn,
     ...pojo
   }) {
-    super(null, id, name, { baseClassFn, commandsFn, ...pojo })
+    super(null, id, name, { baseClassFn, commandsFn, servicesFn, ...pojo })
 
     this.#cache = new Map()
     this.#cache.set(classOrPojo, this)
@@ -295,6 +309,9 @@ export class CliMetadataLoader extends CliClassMetadata {
 export class CliMetadataClassLoader extends CliMetadataLoader {
   static getInjections(class$, loadedAsBaseClass = false) {
     return { 
+      wellKnown: class$ == Cli ||
+          class$ == CliGroup ||
+          class$ == CliCommand,
       baseClassFn: function() { 
         assert(this instanceof CliClassMetadata)
 
@@ -317,11 +334,11 @@ export class CliMetadataClassLoader extends CliMetadataLoader {
           yield [name, this.loader.load$(class$)]
         }
       }, 
-      groupsFn: async function*() { 
+      servicesFn: async function*() { 
         assert(this instanceof CliClassMetadata)
 
-        const groups = await class$.getOwnGroups()
-        for (const value of groups) {
+        const services = await class$.getOwnServices()
+        for (const value of services) {
           const class$ = await value
           yield this.loader.load$(class$)
         }
@@ -356,7 +373,7 @@ export class CliMetadataPojoLoader extends CliMetadataLoader {
     const { 
       baseClass, // [ 42, 'MyBaseClass' ]
       commands,  // { 'my-command': [43, 'MyCommandClass'], ... }
-      groups,    // [ [44, 'MyGroupClass'], ... ]
+      services,  // [ [44, 'MyGroupClass'], ... ]
     } = pojo
 
     return { 
@@ -369,9 +386,9 @@ export class CliMetadataPojoLoader extends CliMetadataLoader {
         for (const [name, ref] of Object.entries(commands ?? { }))
           yield [name, this.loader.load$(poja[ref[0]])]
       }, 
-      groupsFn: async function*() { 
+      servicesFn: async function*() { 
         assert(this instanceof CliClassMetadata)
-        for (const ref of groups ?? [])
+        for (const ref of services ?? [])
           yield this.loader.load$(poja[ref[0]])
       }, 
     }

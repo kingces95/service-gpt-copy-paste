@@ -1,4 +1,5 @@
 import { CliGroup } from '@kingjs/cli-group'
+import { CliCommand } from '@kingjs/cli-command'
 import YAML from 'yaml'
 import util from 'util'
 
@@ -12,6 +13,7 @@ export class CliGroupOutput extends CliGroup {
     query: 'JMESPath query string',
     color: 'Colorize output; Always false if not a TTY',
   }
+  // static group = 'output format'
   static choices = {
     output: [ 
       'util', 'json', 
@@ -30,10 +32,12 @@ export class CliGroupOutput extends CliGroup {
     output = 'util', 
     query = null, 
     color = true, 
+    ...rest
   } = { }) {
     if (CliGroupOutput.initializing(new.target, { output, query, color }))
       return super()
 
+    super(rest)
     this.color = color && process.stdout.isTTY
     this.output = output
     this.query = query
@@ -50,8 +54,12 @@ export class CliGroupOutput extends CliGroup {
     }
   }
 
-  write(pojo) {
+  async write(pojo) {
     const formatted = this.format(pojo)
-    console.log(formatted)
+    const { stdout } = this.getService(CliCommand)
+    await stdout.write(formatted)
+    await stdout.write('\n')
   }
 }
+
+// CliGroupOutput.__dumpMetadata()

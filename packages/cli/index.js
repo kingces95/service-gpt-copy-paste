@@ -24,13 +24,13 @@ const PARAMETER_METADATA_NAMES =  [
   // functions
   'coerce',
   // strings
-  'defaultDescription',
+  'defaultDescription', 'services',
   // booleans
   'hidden', 'local', 'normalize',
 ]
 
 const Metadata = Symbol('Cli.metadata')
-const Groups = Symbol('Cli.groups')
+const Services = Symbol('Cli.services')
 
 export class Cli {
 
@@ -61,7 +61,9 @@ export class Cli {
 
   static getOwnParameterMetadata$(name, metadata) {
     PARAMETER_METADATA_NAMES.reduce((acc, metadataName) => {
-      const metadatum = this.getOwnPropertyValue$(metadataName)?.[name]
+      const value = this.getOwnPropertyValue$(metadataName)
+      if (value === undefined || value === null) return acc
+      const metadatum = value[name]
       if (metadatum !== undefined)
         acc[metadataName] = metadatum
       return acc
@@ -133,22 +135,22 @@ export class Cli {
     return this[Metadata] = metadata
   }
 
-  static async getOwnGroups() {
-    if (this.getOwnPropertyValue$(Groups))
-      return this[Groups]
+  static async getOwnServices() {
+    if (this.getOwnPropertyValue$(Services))
+      return this[Services]
 
     // a (1) class, (2) import string of a class
-    const groups = this.getOwnPropertyValue$('groups') ?? []
+    const services = this.getOwnPropertyValue$('services') ?? []
 
     const list = []
-    for (const value of groups)
+    for (const value of services)
       list.push(this.loadClass$(value))
 
-    return this[Groups] = list    
+    return this[Services] = list    
   }
 
   static async getOwnCommands() { 
-    // groups have no commands; commands are, or are composed of, groups
+    // services have no commands; commands are, or are composed of, services
     // to simplify reflection, we return an empty map
     return { }
   }
@@ -195,17 +197,30 @@ export class Cli {
  
   static { this.initialize() }
  
-  constructor({ _info } = {}) {
+  #services
+  #info
+
+  constructor({ _services = [], _info, ...rest } = {}) {
     if (Cli.initializing(new.target, { })) {
       const defaults = new.target[DEFAULTS]
       delete new.target[DEFAULTS]
       return defaults
     }
+    this.#services = _services
+    this.#info = _info
 
-    // enable reflection
-    this.info = _info
+    // register as a service
+    this.#services.push(this)
+
+    // activate services
+    for (const service of this.constructor.services ?? []) {
+      if (this.getService(service)) continue
+      new service({ _services, ...rest })
+    }
   }
 
+  getService(type) { return this.#services.find(o => o instanceof type) }
+  get info() { return this.#info }
 }
 
 // Cli.__dumpMetadata()

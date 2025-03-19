@@ -187,7 +187,10 @@ export class CliYargsCommand extends CliYargs {
       yargs.positional(positional.name, await positional.toPojo())
     }
 
-    for (const option of this.options()) {
+    const sortedOptions = [...this.options()]
+      .sort((a, b) => a.name.localeCompare(b.name))
+      
+    for (const option of sortedOptions) {
       yargs.option(option.name, await option.toPojo())
       // yargs.group(name, `Options (${group}):`)
     }
@@ -250,11 +253,9 @@ export async function cliYargs(classOrPojo, options = { }) {
     }))
     .middleware(async (argv) => { 
       const _args = []
+      const { _root, _class, _info } = argv
+      const parameters = await Array.fromAsync(CliCommandInfo.runtimeParameters(_info))
 
-      const command = await info.getCommand(argv._)
-      Object.defineProperty(argv, '_command', { value: command, enumerable: false })
-
-      const parameters = [...CliCommandInfo.runtimeParameters(command)]
       parameters.filter(o => o.isPositional)
         .sort((a, b) => a.position - b.position)
         .reduce((acc, { name }) => {
@@ -262,13 +263,10 @@ export async function cliYargs(classOrPojo, options = { }) {
           return acc
         }, _args)
 
-      _args.push({ 
-        _root: argv._root,
-        _class: argv._class,
-        _info: argv._info,
-      })
+      _args.push({ _root, _info })
 
       parameters.filter(o => o.isOption)
+        // sort by name
         .reduce((acc, { name }) => {
           if (Object.hasOwn(argv, name))
             acc[name] = argv[name]
@@ -281,4 +279,3 @@ export async function cliYargs(classOrPojo, options = { }) {
 
   return yargsCommand.apply(yargs$)
 }
-

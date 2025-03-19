@@ -11,17 +11,19 @@ CliClassMetadata[symbol] = {
   [symbol]: 'ref',
   id: 'number',
   name: 'string',
+  wellKnown: 'boolean',
   description: 'string',
   baseClass: 'any',
   defaultCommand: 'boolean',
   parameters: 'infos',
   commands: 'entries',
-  groups: 'list',
+  services: 'list',
 }
 
 CliParameterMetadata[symbol] = {
   name: 'string',
   description: 'string',
+  group: 'string',
   default: 'any',
 
   type: 'string',

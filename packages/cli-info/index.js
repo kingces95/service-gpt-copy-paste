@@ -1,5 +1,7 @@
 import { Lazy } from '@kingjs/lazy'
 import { LoadAsync } from '@kingjs/load'
+import assert from 'assert'
+
 async function __import() {
   const { cliInfoToPojo } = await import('@kingjs/cli-info-to-pojo')
   const { dumpPojo } = await import('@kingjs/pojo-dump')
@@ -105,17 +107,17 @@ export class CliCommandInfo extends CliInfo {
     return new CliCommandInfo(null, null, metadata)
   }
 
-  static *runtimeParameters(command) {
+  static async *runtimeParameters(command) {
     // walk command hierarchy yielding parameters; allow derived classes to 
     // override base class parameters; skip local inherited parameters
     const result = new Map()
-    for (const parameter of command.parameters()) {
+    for await (const parameter of command.parameters()) {
       yield parameter
       result.set(parameter.name, parameter)
     }
 
     for (const current of command.parent?.hierarchy() ?? []) {
-      for (const parameter of current.parameters() ) {
+      for await (const parameter of current.parameters() ) {
         if (result.has(parameter.name)) continue
         if (parameter.isLocal) continue
         yield parameter
@@ -124,7 +126,7 @@ export class CliCommandInfo extends CliInfo {
     }
   }
 
-  static *#getClassHierarchy(
+  static *#classHierarchy(
     classMdStart, 
     classMdEndExclusive) {
 
@@ -139,6 +141,27 @@ export class CliCommandInfo extends CliInfo {
       `Class "${classMdEndExclusive.name}" not found`,
       `as base class of "${classMdStart.name}".`
     ].join(' '))
+  }
+
+  static async *#servicePoset(classMd, visited = new Set()) {
+    // yield all services in the poset of services
+
+    if (visited.has(classMd)) return
+    visited.add(classMd)
+
+    for await (const groupMd of classMd.services()) {
+      if (!groupMd.isGroup) 
+        throw new Error(`Class "${groupMd.name}" is not a group.`)
+      yield* CliCommandInfo.#servicePoset(groupMd, visited)
+      yield groupMd
+    }
+  }
+
+  static async *#servicePosetParametersMd(classMd) {
+    for await (const groupMd of CliCommandInfo.#servicePoset(classMd)) {
+      for (const parameterMd of groupMd.parameters())
+        yield [groupMd, parameterMd]
+    }
   }
 
   #parent
@@ -186,11 +209,12 @@ export class CliCommandInfo extends CliInfo {
     //    CliCommand -> Web -> Http -> HttpPost
     // In this way the scope hierarchy is a partition of the subset of the class hierarchy
     // which have parameters. Hence, both hierarchies share the same parameter set.
-    this.#parameters = new Lazy(() => {
+    this.#parameters = new LoadAsync(async () => {
       const result = new Map()
-      for (const parameter of this.#classMd.parameters()) {
-        const name = parameter.name
-        result.set(name, new CliParameterInfo(this, name, parameter))
+
+      for (const parameterMd of this.#classMd.parameters()) {
+        const name = parameterMd.name
+        result.set(name, new CliParameterInfo(this, name, parameterMd))
       }
 
       const baseClassMd = this.#classMd.baseClass
@@ -198,16 +222,32 @@ export class CliCommandInfo extends CliInfo {
         ...this.parent?.classMd$.hierarchy() ?? [],
       ].find(o => [...o.parameters()].length > 0)
         
-      for (const classInfo of CliCommandInfo.#getClassHierarchy(
+      for (const classMd of CliCommandInfo.#classHierarchy(
         baseClassMd, firstParentClassMdWithParameters)) {
 
-        for (const parameter of classInfo.parameters()) {
-          const name = parameter.name
+        for (const parameterMd of classMd.parameters()) {
+          const name = parameterMd.name
           if (result.has(name)) continue
-          if (parameter.local) continue
-          result.set(name, new CliParameterInfo(this, name, parameter))
+          if (parameterMd.local) continue
+          result.set(name, new CliParameterInfo(this, name, parameterMd))
         }
       }
+
+      for (const classMd of CliCommandInfo.#classHierarchy(
+        this.#classMd, firstParentClassMdWithParameters)) {
+
+        for await (const [groupMd, parameterMd] of 
+          CliCommandInfo.#servicePosetParametersMd(classMd)) {
+          const name = parameterMd.name
+          if (result.has(name))
+            throw new Error([
+              `Parameter "${name}" in group "${groupMd.name}"`,
+              `conflicts with parameter in class "${this.#classMd.name}".`
+            ].join(' '))
+          result.set(name, new CliParameterInfo(this, name, parameterMd))
+        }
+      }
+
       return result
     })
   }
@@ -250,8 +290,8 @@ export class CliCommandInfo extends CliInfo {
 
   get description() { return this.#classMd.description }
   get isDefaultCommand() { return !!this.#classMd.defaultCommand }
-  *parameters() { yield* this.#parameters.value.values() }
-  getParameter(name) { return this.#parameters.value.get(name) }
+  async *parameters() { yield* (await this.#parameters.load()).values() }
+  async getParameter(name) { return (await this.#parameters.load()).get(name) }
   *positionals() { yield* this.parameters().filter(o => o.isPositional) }
   *options() { yield* this.parameters().filter(o => o.isOption) }
 

@@ -125,7 +125,12 @@ export class CliCommand extends Cli {
     return joinFields(IFS, fields)
   }
 
-  constructor({ help = false, version = '0.0', verbose = false, ...rest } = { }) {
+  constructor({ 
+    help = false, 
+    version = '0.0', 
+    verbose = false, 
+    ...rest 
+  } = { }) {
     if (CliCommand.initializing(new.target, { help, version, verbose }))
       return super()
     
