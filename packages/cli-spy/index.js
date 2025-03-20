@@ -1,5 +1,5 @@
 import { CliCommand } from '@kingjs/cli-command'
-import { CliGroupOutput } from '@kingjs/cli-group-output'
+import { CliOutputService } from '@kingjs/cli-output-service'
 import { CliClassMetadata } from '@kingjs/cli-metadata'
 import { CliCommandInfo } from '@kingjs/cli-info'
 import { CliYargsCommand } from '@kingjs/cli-yargs'
@@ -72,7 +72,7 @@ export class CliSpy extends CliCommand {
   static parameters = {
     path: 'Path of command',
   }
-  static services = [ CliGroupOutput ]
+  static services = [ CliOutputService ]
   static commands = { 
     ls, find,
     raw, md,
@@ -122,7 +122,8 @@ export class CliSpy extends CliCommand {
     return CliYargsCommand.fromInfoPojo(await info.toPojo())
   }
   log(pojo) {
-    this.getService(CliGroupOutput).write(pojo)
+    const service = this.getService(CliOutputService)
+    service.write(pojo)
   }
 }
 

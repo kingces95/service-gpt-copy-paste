@@ -69,6 +69,15 @@ export class Cli {
       return acc
     }, metadata)
 
+    // choices is an array that usually contains a list of strings but can
+    // also contain an object. If it contains an object, then the object is
+    // a discriminator that selects a class to activate. The discriminator
+    // is only used at activation time so we project only its keys into the
+    // metadata.
+    const choices = metadata.choices
+    if (choices && typeof choices == 'object')
+      metadata.choices = Object.keys(choices)
+
     // e.g. [[], { myOption: 42 }] is one variadic positional parameter
     // and one optional option parameter with a default value of 42.
     // Assume the variadic is the parameter whose metadata we are building.
@@ -77,17 +86,18 @@ export class Cli {
     if (isPositional && isArray)
       metadata.variadic = true
 
-    // e.g. [[], { myOption: 42 }] vs [[REQUIRED], { myOption: 42 }]
-    // The former is an optional variadic positional parameter.
-    // The latter is a required variadic positional parameter.
-    // We extract a default of null from [] and REQUIRED from [REQUIRED].
     const default$ = 
+      // e.g. [[], { myOption: 42 }] vs [[REQUIRED], { myOption: 42 }]
+      // The former is an optional variadic positional parameter.
+      // The latter is a required variadic positional parameter.
+      // We extract a default of null from [] and REQUIRED from [REQUIRED].
       isArray ? (metadata.default.length == 0 ? null : metadata.default[0]) :
-      metadata.default 
+      metadata.default
 
     const hasDefault = default$ !== REQUIRED
     if (isPositional && hasDefault) metadata.optional = true
     if (!isPositional && !hasDefault) metadata.required = true
+    if (!isArray && typeof default$ == 'boolean') metadata.flag = true
 
     return metadata
   }
@@ -162,6 +172,41 @@ export class Cli {
     return this
   }
 
+  static async activate(...args) {
+    
+    // If this command (or group) has an option with a constrained set of choices, 
+    // then that option can be used as a discriminator to select an alternative
+    // command to activate which is typically a deriviation of this command.
+
+    // a choice which is an object (instead of array) is a discriminator. 
+    const choices = this.getOwnPropertyValue$('choices') ?? { 
+      // myOption: [ 'left', 'right' ],
+      // myDiscriminator: { foo: @kingjs/mycmd/foo, bar: @kingjs/mycmd/bar }
+    }
+    const [name, discriminations = { }] = Object.entries(choices)
+      .find(([_, value]) => typeof value == 'object') ?? [ ]
+    
+    const options = args.at(-1)
+    const discriminator = options[name]
+    const className = discriminations[discriminator]
+    const class$ = !className ? this : 
+      className instanceof NodeName ? await className.importObject() :
+      await NodeName.import(className)
+    if (!class$) throw new Error(`Faile to load node module ${className}.`)
+    
+    // allocate shared service array; services is a shared array of cli instances
+    if (!options._services) options._services = [ ]
+
+    // activate and register services (services self-register)
+    const { _services, ...rest } = options
+    for (const service of this.services ?? []) {
+      if (_services.find(o => o instanceof this)) continue
+      await service.activate({ _services, ...rest })
+    }
+
+    return new class$(...args)
+  }
+
   static get baseCli() {
     const baseClass = Object.getPrototypeOf(this.prototype).constructor
     if (baseClass == Object)
@@ -211,12 +256,6 @@ export class Cli {
 
     // register as a service
     this.#services.push(this)
-
-    // activate services
-    for (const service of this.constructor.services ?? []) {
-      if (this.getService(service)) continue
-      new service({ _services, ...rest })
-    }
   }
 
   getService(type) { return this.#services.find(o => o instanceof type) }

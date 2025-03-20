@@ -1,6 +1,3 @@
-#!/usr/bin/env node
-
-import { CliCommand } from '@kingjs/cli-command'
 import { CliService } from '@kingjs/cli-service'
 import { Subject, merge } from 'rxjs'
 import { tap, share, takeUntil } from 'rxjs/operators'

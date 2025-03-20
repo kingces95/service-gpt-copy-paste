@@ -19,7 +19,11 @@
   },
   "dependencies": {
     "@napi-rs/clipboard": "^1.1.2",
+    "@tanstack/table-core": "^8.21.2",
     "chalk": "^5.4.1",
+    "cli-table3": "^0.6.5",
+    "fast-csv": "^5.0.2",
+    "jmespath": "^0.16.0",
     "lodash": "^4.17.21",
     "lodash.merge": "^4.6.2",
     "node-clipboardy": "^1.0.3",

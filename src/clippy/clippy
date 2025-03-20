@@ -2,13 +2,11 @@
 import { Clippy } from './index.js'
 import { cliYargs } from '@kingjs/cli-yargs'
 import { hideBin } from 'yargs/helpers'
-// import metadata from "./metadata.json" with { type: "json" }
 
-// cliYargs(Clippy, { metadata }).then(async (yargs) => {
 cliYargs(Clippy).then(async (yargs) => {
-  // const argv = await yargs.parse('spy yargs spy --output json'.split(' '))
+  // const argv = await yargs.parse('spy md --query [].{name:name} --output tsv'.split(' '))
   const argv = await yargs.parse(hideBin(process.argv))
-  new argv._class(...argv._args)
+  argv._class.activate(...argv._args)
 })
 
 // node.exe src\clippy\index.js poll --error-rate .5 --poll-ms 1000 --stdis | node.exe src\clippy\index.js orb

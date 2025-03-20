@@ -81,7 +81,7 @@ export class CliParameterMetadata extends CliMetadata {
     if (this.#pojo.default !== undefined)
       return CliParameterMetadata.getType(this.#pojo.default)
     if (this.variadic) return 'array'
-    if (this.isOption) return 'boolean'
+    if (this.flag) return 'boolean'
     return 'string'
   }
   get isArray() { return this.type === 'array' }
@@ -98,8 +98,8 @@ export class CliParameterMetadata extends CliMetadata {
   get defaultDescription() { return this.#pojo.defaultDescription }
   get normalize() { return this.#pojo.normalize }
   
+  *choices() { yield * this.#pojo.choices ?? [] }
   *aliases() { yield* this.#pojo.aliases ?? [] }
-  *choices() { yield* this.#pojo.choices ?? [] }
   *conflicts() { yield* this.#pojo.conflicts ?? [] }
   *implications() { yield* this.#pojo.implications ?? [] }
 

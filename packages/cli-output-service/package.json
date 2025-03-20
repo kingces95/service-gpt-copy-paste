@@ -1,10 +1,15 @@
 {
-  "name": "@kingjs/cli-group-output",
+  "name": "@kingjs/cli-output-service",
   "version": "1.0.0",
   "description": "Group for formatting output.",
   "type": "module",
   "exports": {
     ".": "./index.js",
+    "./yaml": "./yaml.js",
+    "./json": "./json.js",
+    "./util": "./util.js",
+    "./tsv": "./tsv.js",
+    "./table": "./table.js",
     "./package.json": "./package.json"
   },
   "dependencies": {},

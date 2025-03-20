@@ -56,6 +56,11 @@ export class NodeName {
       return null
     return capitalize(snakeToCamelCase(perlToCamelCase(value)))
   }
+
+  static async import(value) {
+    const nodeName = NodeName.from(value)
+    return await nodeName.importObject()
+  }
   
   static fromScope(scope, packageName, ...exports) {
     return new NodeName({ scope, packageName, exports })
@@ -314,7 +319,8 @@ export class NodeName {
   async import() { 
     if (!this.isModuleName)
       throw new Error('Cannot import a non-export name.')
-    return import(this.toString()) 
+    const importString = this.toString()
+    return import(importString) 
   }
 
   async importJson() { 
