@@ -6,29 +6,23 @@ import { CliYargsCommand } from '@kingjs/cli-yargs'
 
 const raw = {
   description: 'Dump Cli.getOwnMetadata()',
-  parameters: { hierarchy: 'Walk and dump base classes, too.' },
-  defaults: { hierarchy: false },
   handler: async function() {
-    const { hierarchy } = this.options
     const class$ = await this.getClass()
-    const pojo = !hierarchy ? class$.getOwnMetadata() 
-      : [...class$.hierarchy()].map(o => o.getOwnMetadata())
+    const pojo = [...class$.hierarchy()].map(o => o.getOwnMetadata())
     this.log(pojo)
   }
 }
 const md = {
   description: `Dump ${CliClassMetadata.name}`,
-  parameters: { cached: 'Save and load metadata.' },
-  defaults: { cached: false },
   handler: async function() {
-    const { cached } = this.options
-    if (cached) {
-      const metadata = await this.getCachedMetadata()
-      this.log(await metadata.toPojo())
-      return
-    }
-
     const metadata = await this.getMetadata()
+    this.log(await metadata.toPojo())
+  }
+}
+const json = {
+  description: `Dump ${CliClassMetadata.name}.toPojo()`,
+  handler: async function() {
+    const metadata = await this.getCachedMetadata()
     this.log(await metadata.toPojo())
   }
 }
@@ -75,7 +69,7 @@ export class CliSpy extends CliCommand {
   static services = [ CliOutputService ]
   static commands = { 
     ls, find,
-    raw, md,
+    raw, md, json,
     info, yargs,
   }
   static { this.initialize() }
@@ -114,7 +108,7 @@ export class CliSpy extends CliCommand {
     return await CliClassMetadata.fromMetadataPojo(await metadata.toPojo())
   }
   async getInfo() {
-    const metadata = await this.getMetadata()
+    const metadata = await this.getCachedMetadata()
     return CliCommandInfo.fromMetadata(metadata)
   }
   async getYargs() {

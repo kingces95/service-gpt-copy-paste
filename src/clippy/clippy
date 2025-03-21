@@ -4,7 +4,7 @@ import { cliYargs } from '@kingjs/cli-yargs'
 import { hideBin } from 'yargs/helpers'
 
 cliYargs(Clippy).then(async (yargs) => {
-  // const argv = await yargs.parse('spy md --query [].{name:name} --output tsv'.split(' '))
+  // const argv = await yargs.parse('poll --stdis'.split(' '))
   const argv = await yargs.parse(hideBin(process.argv))
   argv._class.activate(...argv._args)
 })

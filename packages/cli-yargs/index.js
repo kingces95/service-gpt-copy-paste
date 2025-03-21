@@ -184,14 +184,16 @@ export class CliYargsCommand extends CliYargs {
       yargs.demandCommand(1, 'You must specify a command.')
 
     for (const positional of this.positionals()) {
-      yargs.positional(positional.name, await positional.toPojo())
+      const pojo = await positional.toPojo()
+      yargs.positional(positional.name, pojo)
     }
 
     const sortedOptions = [...this.options()]
       .sort((a, b) => a.name.localeCompare(b.name))
       
     for (const option of sortedOptions) {
-      yargs.option(option.name, await option.toPojo())
+      const pojo = await option.toPojo()
+      yargs.option(option.name, pojo)
       // yargs.group(name, `Options (${group}):`)
     }
 

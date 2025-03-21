@@ -5,9 +5,9 @@ export const Clippy = CliCommand.extend({
   name: 'Clippy',
   description: 'My funky cli',
   commands: {
+    poll: '@kingjs/cli-poll-clipboard',
     http: '@kingjs/cli-http',
     orb: '@kingjs/cli-orb',
-    poll: '@kingjs/cli-poll-clipboard',
     eval: '@kingjs/cli-eval',
     spy: '@kingjs/cli-spy',
   }

@@ -34,33 +34,6 @@ export class CliParameterMetadata extends CliMetadata {
       : new CliOptionMetadata(scope, name, pojo)
   }
 
-  static getType(default$) {
-    if (default$ === null) {
-      return 'string'
-    } else if (Array.isArray(default$)) {
-      return 'array'
-    } else if (default$ == String) {
-      return 'string'
-    } else if (default$ == Number) {
-      return 'number'
-    } else if (default$ == Boolean) {
-      return 'boolean'
-    } else if (default$ == Array) {
-      return 'array'
-    } else {
-      const defaultType = typeof default$
-      if (defaultType === 'string') {
-        return 'string'
-      } else if (defaultType == 'number') {
-        return 'number'
-      } else if (defaultType == 'boolean') {
-        return 'boolean'
-      }
-    }
-
-    return 'string'
-  }
-
   #scope
   #pojo
 
@@ -77,13 +50,7 @@ export class CliParameterMetadata extends CliMetadata {
   get isPositional() { }
 
   // parameter type
-  get type() { 
-    if (this.#pojo.default !== undefined)
-      return CliParameterMetadata.getType(this.#pojo.default)
-    if (this.variadic) return 'array'
-    if (this.flag) return 'boolean'
-    return 'string'
-  }
+  get type() { return this.#pojo.type }
   get isArray() { return this.type === 'array' }
   get isString() { return this.type === 'string' }
   get isBoolean() { return this.type === 'boolean' }

@@ -41,6 +41,36 @@ export class Cli {
     await dumpPojo(pojo)
   }
 
+  
+  static #getType(default$) {
+    if (default$ === undefined) {
+      return undefined
+    } else if (default$ === null) {
+      return 'string'
+    } else if (Array.isArray(default$)) {
+      return 'array'
+    } else if (default$ == String) {
+      return 'string'
+    } else if (default$ == Number) {
+      return 'number'
+    } else if (default$ == Boolean) {
+      return 'boolean'
+    } else if (default$ == Array) {
+      return 'array'
+    } else {
+      const defaultType = typeof default$
+      if (defaultType === 'string') {
+        return 'string'
+      } else if (defaultType == 'number') {
+        return 'number'
+      } else if (defaultType == 'boolean') {
+        return 'boolean'
+      }
+    }
+
+    return 'string'
+  }
+
   static async loadClass$(value) {
     const type = typeof value
     switch (type) {
@@ -86,7 +116,7 @@ export class Cli {
     if (isPositional && isArray)
       metadata.variadic = true
 
-    const default$ = 
+    const defaultOrArrayDefault = 
       // e.g. [[], { myOption: 42 }] vs [[REQUIRED], { myOption: 42 }]
       // The former is an optional variadic positional parameter.
       // The latter is a required variadic positional parameter.
@@ -94,10 +124,12 @@ export class Cli {
       isArray ? (metadata.default.length == 0 ? null : metadata.default[0]) :
       metadata.default
 
-    const hasDefault = default$ !== REQUIRED
+    const hasDefault = defaultOrArrayDefault !== REQUIRED
     if (isPositional && hasDefault) metadata.optional = true
     if (!isPositional && !hasDefault) metadata.required = true
-    if (!isArray && typeof default$ == 'boolean') metadata.flag = true
+
+    // compute the type of the parameter.
+    metadata.type = Cli.#getType(defaultOrArrayDefault)
 
     return metadata
   }
