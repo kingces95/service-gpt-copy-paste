@@ -1,17 +1,16 @@
 #!/usr/bin/env node
 import { Cli } from '@kingjs/cli'
-import { Console } from 'console'
-import { readChar, readString, read, readArray, readRecord } from '@kingjs/cli-read'
-import { splitRecord, splitArray } from '@kingjs/cli-read'
-import { write, joinFields } from '@kingjs/cli-echo'
 import { CliFdReadable } from '@kingjs/cli-fd-readable'
 import { CliFdWritable } from '@kingjs/cli-fd-writable'
 import assert from 'assert'
+import { 
+  readChar, readString, read, readArray, readRecord, splitRecord, splitArray
+} from '@kingjs/cli-read'
+import { 
+  write, joinFields 
+} from '@kingjs/cli-echo'
 
 const DEFAULT_IFS = ' '
-const STDIN_FD = 0
-const STDOUT_FD = 1
-const STDERR_FD = 2
 const EXIT_SUCCESS = 0
 const EXIT_FAILURE = 1
 const EXIT_ERRORED = 2
@@ -22,6 +21,27 @@ const IFS = DEFAULT_IFS
 const Commands = Symbol('commands')
 
 export const REQUIRED = undefined
+
+export class CliIn extends CliFdReadable { 
+  static STDIN_FD = 0
+  constructor() { 
+    super({ fd: CliIn.STDIN_FD }) 
+  }
+}
+export class CliOut extends CliFdWritable { 
+  static STDOUT_FD = 1
+  constructor() { 
+    super({ fd: CliOut.STDOUT_FD }) 
+
+    this.isTTY = process.stdout.isTTY
+  }
+}
+export class CliErr extends CliFdWritable { 
+  static STDERR_FD = 2
+  constructor() { 
+    super({ fd: CliErr.STDERR_FD })
+  }
+}
 
 export class CliCommand extends Cli {
 
@@ -34,6 +54,7 @@ export class CliCommand extends Cli {
     help: ['h'],
     version: ['v'],
   }
+  static services = [ CliIn, CliOut, CliErr ]
   static { this.initialize() }
 
   static async loadOwnCommand$(value) {
@@ -134,23 +155,13 @@ export class CliCommand extends Cli {
     if (CliCommand.initializing(new.target, { help, version, verbose }))
       return super()
     
-    super(rest)
+    super({ ...rest })
 
     // handle graceful shutdown
     this.exitCode = undefined
     process.once('beforeExit', async () => {
       process.exitCode = this.exitCode
     })
-
-    // wrap standard streams
-    this.stdin = new CliFdReadable({ fd: STDIN_FD })
-    this.stdout = new CliFdWritable({ fd: STDOUT_FD })
-    this.stderr = new CliFdWritable({ fd: STDERR_FD })
-    this.console = new Console({
-      stdout: this.stdout,
-      stderr: this.stderr,
-      colorMode: true, // Enable color support
-    });      
     
     // handle ungraceful shutdown
     this.exitError = undefined
@@ -162,6 +173,10 @@ export class CliCommand extends Cli {
       this.error$(reason)
     })
   }
+
+  get stdin() { return this.getService(CliIn) }
+  get stdout() { return this.getService(CliOut) }
+  get stderr() { return this.getService(CliErr) }
 
   async write(line) { return write(this.stdout, this.signal, line) }
   async writeRecord(fields) { return write(CliCommand.joinFields(fields)) }

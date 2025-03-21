@@ -40,7 +40,6 @@ export class Cli {
     const pojo = await toPojo(metadata)
     await dumpPojo(pojo)
   }
-
   
   static #getType(default$) {
     if (default$ === undefined) {
@@ -229,11 +228,18 @@ export class Cli {
     // allocate shared service array; services is a shared array of cli instances
     if (!options._services) options._services = [ ]
 
-    // activate and register services (services self-register)
+    // activate and register services
     const { _services, ...rest } = options
     for (const service of this.services ?? []) {
+
+      // services are singletons
       if (_services.find(o => o instanceof this)) continue
-      await service.activate({ _services, ...rest })
+
+      _services.push(service.activate 
+        // allow activation as a function of options (e.g. choice/discriinator)
+        ? await service.activate({ _services, ...rest }) 
+        : new service({ _services, ...rest })
+      )
     }
 
     return new class$(...args)
@@ -277,7 +283,7 @@ export class Cli {
   #services
   #info
 
-  constructor({ _services = [], _info, ...rest } = {}) {
+  constructor({ _services = [], _info } = {}) {
     if (Cli.initializing(new.target, { })) {
       const defaults = new.target[DEFAULTS]
       delete new.target[DEFAULTS]
@@ -285,9 +291,6 @@ export class Cli {
     }
     this.#services = _services
     this.#info = _info
-
-    // register as a service
-    this.#services.push(this)
   }
 
   getService(type) { return this.#services.find(o => o instanceof type) }

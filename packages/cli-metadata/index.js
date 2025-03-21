@@ -307,7 +307,8 @@ export class CliMetadataClassLoader extends CliMetadataLoader {
         const services = await class$.getOwnServices()
         for (const value of services) {
           const class$ = await value
-          yield this.loader.load$(class$)
+          if (class$ == Cli || class$.prototype instanceof Cli)
+            yield this.loader.load$(class$)
         }
       }, 
     }

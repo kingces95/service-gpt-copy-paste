@@ -1,5 +1,5 @@
 import { CliGroup } from '@kingjs/cli-group'
-import { CliCommand } from '@kingjs/cli-command'
+import { CliOut } from '@kingjs/cli-command'
 import { NodeName } from '@kingjs/node-name'
 import jmespath from 'jmespath'
 
@@ -23,6 +23,7 @@ export class CliOutputService extends CliGroup {
       table: MODULE_NAME.addExport('table'),
     },
   }
+  static services = [ CliOut ]
   static { this.initialize() }
 
   #color
@@ -38,12 +39,12 @@ export class CliOutputService extends CliGroup {
       return super()
 
     super({ ...rest, output })
-    this.#color = color && process.stdout.isTTY
+    this.#color = color
     this.#query = query
   }
 
-  get stdout() { return this.getService(CliCommand).stdout }
-  get color() { return this.#color }
+  get stdout() { return this.getService(CliOut) }
+  get color() { return this.#color && this.stdout.isTTY }
 
   query(pojo) {
     if (!this.#query)
