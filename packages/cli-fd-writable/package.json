@@ -1,0 +1,15 @@
+{
+  "name": "@kingjs/cli-fd-writable",
+  "version": "1.0.0",
+  "description": "Class to precisely write to a file descriptor.",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "peerDependencies": {},
+  "author": "Chris King",
+  "license": "MIT"
+}

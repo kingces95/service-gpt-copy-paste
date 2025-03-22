@@ -5,7 +5,7 @@ export class CliFdReadable extends Readable {
   constructor({ fd }) {
     super()
     this.fd = fd
-    this.count = 0 // Tracks file offset for async reads
+    this.count = 0 // bytes read
     this.reading = false // Indicates if an async read is in progress
     this.exact = true
   }
@@ -29,7 +29,7 @@ export class CliFdReadable extends Readable {
     const buffer$ = Buffer.alloc(size) // Set a conventional buffer size
 
     // Initiate the asynchronous read operation
-    fs.read(this.fd, buffer$, 0, buffer$.length, this.count, (err, bytesRead, buffer) => {
+    fs.read(this.fd, buffer$, 0, buffer$.length, null, (err, bytesRead, buffer) => {
       this.reading = false
       if (err) {
         this.destroy(err)

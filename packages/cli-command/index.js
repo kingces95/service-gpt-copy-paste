@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Cli } from '@kingjs/cli'
-import { CliOut, CliErr, CliIn } from './io.js'
+import { CliFdReadable } from '@kingjs/cli-fd-readable'
+import { CliFdWritable } from '@kingjs/cli-fd-writable'
 import assert from 'assert'
 import { 
   readChar, readString, read, readArray, readRecord, splitRecord, splitArray
@@ -20,7 +21,29 @@ const IFS = DEFAULT_IFS
 const Commands = Symbol('commands')
 
 export const REQUIRED = undefined
-export * from './io.js'
+
+export class CliErr extends CliFdWritable { 
+  static STDERR_FD = 2
+  constructor() { 
+    super({ fd: CliErr.STDERR_FD })
+  }
+}
+
+export class CliOut extends CliFdWritable { 
+  static STDOUT_FD = 1
+  constructor() { 
+    super({ fd: CliOut.STDOUT_FD }) 
+
+    this.isTTY = process.stdout.isTTY
+  }
+}
+
+export class CliIn extends CliFdReadable { 
+  static STDIN_FD = 0
+  constructor() { 
+    super({ fd: CliIn.STDIN_FD }) 
+  }
+}
 
 export class CliCommand extends Cli {
 

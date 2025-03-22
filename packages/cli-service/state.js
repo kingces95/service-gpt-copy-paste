@@ -1,4 +1,4 @@
-import { CliFdWritable } from '@kingjs/cli-fd/writable'
+import { CliFdWritable } from '@kingjs/cli-fd-writable'
 import { CliGroup } from '@kingjs/cli-group'
 import { writeRecord } from '@kingjs/cli-echo'
 
