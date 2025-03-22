@@ -1,32 +1,23 @@
 #!/usr/bin/env node
 import { CliCommand } from '@kingjs/cli-command'
-import { writeRecord } from '@kingjs/cli-echo'
-import { streamNull } from '@kingjs/stream-null'
 import { CliServiceHeartbeat } from '@kingjs/cli-service-heartbeat'
-import { CliFdWritable } from '@kingjs/cli-fd-writable'
+import { CliServiceState } from './state.js'
 import assert from 'assert'
 
-const STDOUT_FD = 1
-const IFS = ' '
-
 export class CliService extends CliCommand {
-  static parameters = {
-    stdis: 'Provide status updates',
-    stdisFd: 'Fd to report status if stdis is set',
-  }
+  static services = [ CliServiceState ]
   static { this.initialize() }
 
-  constructor({ 
-    stdis = false, 
-    stdisFd = STDOUT_FD, 
-    ...rest 
-  } = { }) {
-    if (CliService.initializing(new.target, { stdis, stdisFd })) 
-      return super()
+  get #stateService() { return this.getService(CliServiceState) }
 
-    super(rest)
+  #service
+
+  constructor(options) {
+    if (CliService.initializing(new.target)) 
+      return super()
+    super(options)
+
     this.heartbeatService = new CliServiceHeartbeat()
-    this.stdis = stdis ? new CliFdWritable({ fd: stdisFd }) : streamNull
     
     const abortController = new AbortController()
     this.signal = abortController.signal
@@ -57,19 +48,10 @@ export class CliService extends CliCommand {
     this.is$('starting')
   }
 
-  async update$(...fields) {
-    await writeRecord(this.stdis, this.signal, IFS, [...fields])
-  }
-
-  async warnThat$(name) {
-    this.state$ = name
-    await this.update$('warning', name, this.toString())
-  }
-  
-  async is$(name) {
-    this.state$ = name
-    await this.update$(name, this.toString())
-  }
+  get state$() { return this.#stateService.state }
+  async update$(...fields) { this.#stateService.update(...fields) }
+  async warnThat$(name) { this.#stateService.warnThat(name) } 
+  async is$(name) { this.#stateService.is(name) }
 
   async stop$() {
     await this.heartbeatService.stop$()
@@ -104,11 +86,7 @@ export class CliService extends CliCommand {
   get aborting() { return this.state$ == 'aborting' }
   get stopping() { return this.state$ == 'stopping' }
 
-  toString() {
-    if (!this.running) return super.toString()
-    const state = this.state$
-    return state.charAt(0).toUpperCase() + state.slice(1) + '...'
-  }
+  toString() { return this.#stateService.toString() }
 }
 
 // CliService.__dumpMetadata()

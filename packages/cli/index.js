@@ -185,7 +185,7 @@ export class Cli {
 
     const list = []
     for (const value of services)
-      list.push(this.loadClass$(value))
+      list.push(await this.loadClass$(value))
 
     return this[Services] = list    
   }
@@ -205,9 +205,9 @@ export class Cli {
 
   static async activate(...args) {
     
-    // If this command (or group) has an option with a constrained set of choices, 
+    // If this command (or group) has an option with a choice constraint, 
     // then that option can be used as a discriminator to select an alternative
-    // command to activate which is typically a deriviation of this command.
+    // command to activate -- typically a deriviation of this command.
 
     // a choice which is an object (instead of array) is a discriminator. 
     const choices = this.getOwnPropertyValue$('choices') ?? { 
@@ -225,20 +225,25 @@ export class Cli {
       await NodeName.import(className)
     if (!class$) throw new Error(`Faile to load node module ${className}.`)
     
-    // allocate shared service array; services is a shared array of cli instances
-    if (!options._services) options._services = [ ]
+    // walk the hierarchy of classes and select the many services
+    const serviceClasses = []
+    for (const level of this.hierarchy())
+      serviceClasses.push(...await level.getOwnServices())
+          
+    // allocate shared service array
+    if (!options._services) options._services = []
 
     // activate and register services
-    const { _services, ...rest } = options
-    for (const service of this.services ?? []) {
+    const { _services } = options
+    for (const serviceClass of serviceClasses) {
 
       // services are singletons
       if (_services.find(o => o instanceof this)) continue
 
-      _services.push(service.activate 
+      _services.push(serviceClass.activate 
         // allow activation as a function of options (e.g. choice/discriinator)
-        ? await service.activate({ _services, ...rest }) 
-        : new service({ _services, ...rest })
+        ? await serviceClass.activate(options) 
+        : new serviceClass(options)
       )
     }
 
@@ -283,12 +288,13 @@ export class Cli {
   #services
   #info
 
-  constructor({ _services = [], _info } = {}) {
+  constructor({ _services, _info } = {}) {
     if (Cli.initializing(new.target, { })) {
       const defaults = new.target[DEFAULTS]
       delete new.target[DEFAULTS]
       return defaults
     }
+    assert(_services)
     this.#services = _services
     this.#info = _info
   }

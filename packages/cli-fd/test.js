@@ -1,5 +1,5 @@
 import fs from 'fs';
-import Input from './index.js';
+import Input from './readable.js';
 
 async function testRead() {
   const filePath = './test-file.txt';

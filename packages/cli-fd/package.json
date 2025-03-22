@@ -1,11 +1,13 @@
 {
-  "name": "@kingjs/cli-fd-readable",
+  "name": "@kingjs/cli-fd",
   "version": "1.0.0",
   "description": "Class to precisely read from a file descriptor.",
   "main": "index.js",
   "type": "module",
   "exports": {
-    ".": "./index.js"
+    ".": "./index.js",
+    "./readable": "./readable.js",
+    "./writable": "./writable.js"
   },
   "dependencies": {},
   "devDependencies": {},
