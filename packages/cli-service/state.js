@@ -1,9 +1,17 @@
 import { CliFdWritable } from '@kingjs/cli-fd-writable'
 import { CliGroup } from '@kingjs/cli-group'
-import { writeRecord } from '@kingjs/cli-echo'
+import { writeRecord } from '@kingjs/cli-write'
 
 const IFS = ' '
 const STDOUT_FD = 1
+
+// export class CliIs extends CliFdWritable { 
+//   static STDOUT_FD = 1
+//   constructor({ _stdout } = { }) { 
+//     super({ fd: _stdout?.fd ?? CliOut.STDOUT_FD }) 
+//     this.isTTY = process.stdout.isTTY
+//   }
+// }
 
 export class CliServiceState extends CliGroup { 
   static parameters = {

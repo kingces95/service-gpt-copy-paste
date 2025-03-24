@@ -1,63 +1,28 @@
-function writeBuffer$(stream, signal, buffer, encoding) {
-  if (stream.write(buffer, encoding)) {
-    return
-  } 
-      
-  return new Promise((resolve, reject) => {
-    const onDrain = () => {
-      try {
-        if (!stream.write(buffer, encoding)) {
-          stream.once('drain', onDrain)
-          return
-        } 
-        cleanup()
-        resolve() // Write succeeded
-      } catch (err) {
-        try { cleanup() } 
-        catch(err) { reject(err) }
-        reject(err)
-      }
-    }
+import { CliGroup } from '@kingjs/cli-group'
+import { CliOut } from '@kingjs/cli-command'
+import { write, writeRecord } from '@kingjs/cli-write'
 
-    const onError = (err) => {
-      cleanup()
-      reject(err)
-    }
+export class CliEcho extends CliGroup {
+  static services = [ CliOut ]
 
-    const onEnd = () => {
-      cleanup()
-      reject(new Error('Stream ended before write completed'))
-    }
+  #stream
+  #signal
 
-    const onAbort = () => {
-      cleanup()
-      reject(new Error('Aborted'))
-    }
+  constructor(options) {
+    if (CliEcho.initializing(new.target))
+      return super()
 
-    const cleanup = () => {
-      stream.off('drain', onDrain)
-      stream.off('end', onEnd)
-      stream.off('error', onError)
-      signal?.removeEventListener('abort', onAbort)
-    }
+    super(options)
 
-    stream.once('drain', onDrain)
-    stream.on('end', onEnd)
-    stream.on('error', onError)
-    signal?.addEventListener('abort', onAbort)
-  })
+    this.#stream = this.getService(CliOut)
+    this.#signal = null
+  }
+
+  async write(line) { 
+    return write(this.#stream, this.#signal, line) 
+  }
+  async writeRecord(fields, ifs = ' ') { 
+    return writeRecord(this.#stream, this.#signal, ifs[0], fields) 
+  }
 }
 
-export function write(stream, signal, line, encoding = 'utf8') {
-  const buffer = Buffer.from(line + '\n', encoding) // Convert to buffer with specified encoding
-  return writeBuffer$(stream, signal, buffer, encoding)
-}
-
-export function joinFields(ifs, values) {
-  return values.join(ifs[0])
-}
-
-export function writeRecord(stream, signal, ifs, values, encoding = 'utf8') {
-  const record = joinFields(ifs, values)
-  return write(stream, signal, record, encoding) // Use write to append a newline
-}

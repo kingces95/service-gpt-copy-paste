@@ -257,6 +257,7 @@ export async function cliYargs(classOrPojo, options = { }) {
       const _args = []
       const { _root, _class, _info } = argv
       const parameters = await Array.fromAsync(CliCommandInfo.runtimeParameters(_info))
+      const _options = { _root, _info }
 
       parameters.filter(o => o.isPositional)
         .sort((a, b) => a.position - b.position)
@@ -265,7 +266,7 @@ export async function cliYargs(classOrPojo, options = { }) {
           return acc
         }, _args)
 
-      _args.push({ _root, _info })
+      _args.push(_options)
 
       parameters.filter(o => o.isOption)
         // sort by name
@@ -273,9 +274,9 @@ export async function cliYargs(classOrPojo, options = { }) {
           if (Object.hasOwn(argv, name))
             acc[name] = argv[name]
           return acc
-        }, _args.at(-1))
+        }, _options)
 
-      return { _args }
+      return { _args, _options }
     })
 
 

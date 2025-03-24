@@ -223,13 +223,13 @@ export class Cli {
     const class$ = !className ? this : 
       className instanceof NodeName ? await className.importObject() :
       await NodeName.import(className)
-    if (!class$) throw new Error(`Faile to load node module ${className}.`)
-    
+    if (!class$) throw new Error(`Failed to load node module ${className}.`)
+
     // walk the hierarchy of classes and select the many services
     const serviceClasses = []
     for (const level of this.hierarchy())
       serviceClasses.push(...await level.getOwnServices())
-          
+
     // allocate shared service array
     if (!options._services) options._services = []
 
@@ -238,7 +238,7 @@ export class Cli {
     for (const serviceClass of serviceClasses) {
 
       // services are singletons
-      if (_services.find(o => o instanceof this)) continue
+      if (_services.find(o => o instanceof serviceClass)) continue
 
       _services.push(serviceClass.activate 
         // allow activation as a function of options (e.g. choice/discriinator)

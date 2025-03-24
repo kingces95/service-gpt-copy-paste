@@ -3,50 +3,40 @@ import { Cli } from '@kingjs/cli'
 import { CliFdReadable } from '@kingjs/cli-fd-readable'
 import { CliFdWritable } from '@kingjs/cli-fd-writable'
 import assert from 'assert'
-import { 
-  readChar, readString, read, readArray, readRecord, splitRecord, splitArray
-} from '@kingjs/cli-read'
-import { 
-  write, joinFields 
-} from '@kingjs/cli-echo'
 
-const DEFAULT_IFS = ' '
 const EXIT_SUCCESS = 0
 const EXIT_FAILURE = 1
 const EXIT_ERRORED = 2
 const EXIT_ABORT = 128
 const EXIT_SIGINT = EXIT_ABORT + 2
 
-const IFS = DEFAULT_IFS
 const Commands = Symbol('commands')
 
 export const REQUIRED = undefined
 
-export class CliErr extends CliFdWritable { 
-  static STDERR_FD = 2
-  constructor() { 
-    super({ fd: CliErr.STDERR_FD })
+export class CliIn extends CliFdReadable { 
+  static STDIN_FD = 0
+  constructor({ _stdin } = { }) { 
+    super({ fd: _stdin?.fd ?? CliIn.STDIN_FD }) 
   }
 }
 
 export class CliOut extends CliFdWritable { 
   static STDOUT_FD = 1
-  constructor() { 
-    super({ fd: CliOut.STDOUT_FD }) 
-
+  constructor({ _stdout } = { }) { 
+    super({ fd: _stdout?.fd ?? CliOut.STDOUT_FD }) 
     this.isTTY = process.stdout.isTTY
   }
 }
 
-export class CliIn extends CliFdReadable { 
-  static STDIN_FD = 0
-  constructor() { 
-    super({ fd: CliIn.STDIN_FD }) 
+export class CliErr extends CliFdWritable { 
+  static STDERR_FD = 2
+  constructor({ _stderr } = { }) { 
+    super({ fd: _stderr?.fd ?? CliErr.STDERR_FD })
   }
 }
 
 export class CliCommand extends Cli {
-
   static parameters = {
     help: 'Show help',
     version: 'Show version number',
@@ -56,7 +46,6 @@ export class CliCommand extends Cli {
     help: ['h'],
     version: ['v'],
   }
-  static services = [ CliIn, CliOut, CliErr ]
   static { this.initialize() }
 
   static async loadOwnCommand$(value) {
@@ -136,18 +125,6 @@ export class CliCommand extends Cli {
     return cls
   }
 
-  static async splitArray(line) {
-    return splitArray(line, IFS)
-  }
-
-  static async splitRecord(line, fields) {
-    return splitRecord(line, IFS, fields)
-  }
-
-  static joinFields(fields) {
-    return joinFields(IFS, fields)
-  }
-
   constructor({ 
     help = false, 
     version = '0.0', 
@@ -175,20 +152,7 @@ export class CliCommand extends Cli {
       this.error$(reason)
     })
   }
-
-  get stdin() { return this.getService(CliIn) }
-  get stdout() { return this.getService(CliOut) }
-  get stderr() { return this.getService(CliErr) }
-
-  async write(line) { return write(this.stdout, this.signal, line) }
-  async writeRecord(fields) { return write(CliCommand.joinFields(fields)) }
   
-  async readChar() { return readChar(this.stdin, this.signal) }
-  async readString(count) { return readString(this.stdin, this.signal, count) }
-  async read() { return read(this.stdin, this.signal) }
-  async readArray() { return readArray(this.stdin, this.signal, IFS) }
-  async readRecord(fields) { return readRecord(this.stdin, this.signal, IFS, fields) }
-
   async success$() { this.exitCode = EXIT_SUCCESS }
   async abort$() { this.exitCode = EXIT_SIGINT }
   async fail$(code = EXIT_FAILURE) { this.exitCode = code }

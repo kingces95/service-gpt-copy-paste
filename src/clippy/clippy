@@ -2,10 +2,15 @@
 import { Clippy } from './index.js'
 import { cliYargs } from '@kingjs/cli-yargs'
 import { hideBin } from 'yargs/helpers'
+import { open } from 'node:fs/promises'
 
 cliYargs(Clippy).then(async (yargs) => {
-  // const argv = await yargs.parse('poll --stdis'.split(' '))
   const argv = await yargs.parse(hideBin(process.argv))
+  // const argv = await yargs.parse('spy md'.split(' '))
+  // const argv = await yargs.parse('poll --stdis --errorRate .2'.split(' '))
+  // const argv = await yargs.parse('orb'.split(' '))
+  // const fileHandle = await open('./polling.txt', 'r')
+  // argv._options._stdin = fileHandle
   await argv._class.activate(...argv._args)
 })
 

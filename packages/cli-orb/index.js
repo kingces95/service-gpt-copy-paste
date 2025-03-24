@@ -1,8 +1,8 @@
 import { CliCommand } from '@kingjs/cli-command'
 import { AbortError } from '@kingjs/abort-error'
 import ora from 'ora'
-import os from 'os'
 import process from 'process'
+import { CliParser, CliReader } from '@kingjs/cli-read'
 
 const CPU_HOT = 80
 const MEM_HOT = 90
@@ -23,7 +23,11 @@ export default class CliOrb extends CliCommand {
     cpuHot: 'Threshold for high CPU usage',
     memHot: 'Threshold for high memory usage',
   }
+  static services = [ CliReader, CliParser ]
   static { this.initialize() }
+
+  #reader
+  #parser
   
   constructor({ cpuHot = CPU_HOT, memHot = MEM_HOT, ...rest } = { }) {
     if (CliOrb.initializing(new.target, { cpuHot, memHot }))
@@ -35,6 +39,9 @@ export default class CliOrb extends CliCommand {
     this.memHot = memHot
     this.stats = { in: 0, out: 0, error: 0 }
     this.message = ''
+    
+    this.#reader = this.getService(CliReader)
+    this.#parser = this.getService(CliParser)
     
     // Initialize spinner for TTY
     this.start()
@@ -59,14 +66,14 @@ export default class CliOrb extends CliCommand {
 
     while (true) {
       try {
-        const record = await this.readRecord(['type', 'rest'])
+        const record = await this.#reader.readRecord(['type', 'rest'])
         if (!record) 
           break
 
         const { type, rest } = record
 
         if (type == 'data') {
-          this.stats = await CliCommand.splitRecord(
+          this.stats = await this.#parser.toRecord(
             rest, { inCount: '#', outCount: '#', errorCount: '#', cpu: '#', memory: '#' }) 
 
           this.adjustSpinner(this.stats.cpu, this.stats.memory)
@@ -75,7 +82,7 @@ export default class CliOrb extends CliCommand {
         }
 
         if (type == 'exiting') {
-          const { code } = await CliCommand.splitRecord(rest, { code: '#' })
+          const { code } = await this.#parser.toRecord(rest, { code: '#' })
           process.exitCode = code
           continue
         }
@@ -103,8 +110,9 @@ export default class CliOrb extends CliCommand {
           this.spinner.color = INIT_COLOR
 
         } else if (type == 'warning') {
-          const { warnType, warnMessage } = await CliCommand.splitRecord(rest, ['warnType', 'warnMessage'])
-          this.message = warnMessage
+          const { _, warnMessage } 
+            = await this.#parser.toRecord(rest, ['warnType', 'warnMessage'])
+          this.message = `${warnMessage}`
           this.spinner.color = WARN_COLOR
 
         } else {

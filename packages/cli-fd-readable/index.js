@@ -1,5 +1,6 @@
 import fs from 'fs'
 import { Readable } from 'stream'
+import assert from 'assert'
 
 export class CliFdReadable extends Readable {
   constructor({ fd }) {
@@ -39,7 +40,7 @@ export class CliFdReadable extends Readable {
       if (bytesRead > 0) {
         this.count += bytesRead
         const slice = buffer.slice(0, bytesRead)
-        this.push(slice) // Push only the bytes read
+        assert(this.push(slice)) // Push only the bytes read
       } else {
         this.push(null) // Signal end of stream
       }

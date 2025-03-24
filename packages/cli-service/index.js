@@ -1,22 +1,26 @@
 #!/usr/bin/env node
-import { CliCommand } from '@kingjs/cli-command'
+import { CliCommand, CliIn, CliOut, CliErr } from '@kingjs/cli-command'
 import { CliServiceHeartbeat } from '@kingjs/cli-service-heartbeat'
 import { CliServiceState } from './state.js'
 import assert from 'assert'
 
 export class CliService extends CliCommand {
-  static services = [ CliServiceState ]
+  static services = [ CliServiceState, CliIn, CliOut, CliErr ]
   static { this.initialize() }
 
   get #stateService() { return this.getService(CliServiceState) }
-
-  #service
+  #stdin
+  #stdout
+  #stderr
 
   constructor(options) {
     if (CliService.initializing(new.target)) 
       return super()
     super(options)
 
+    this.#stdin = this.getService(CliIn)
+    this.#stdout = this.getService(CliOut)
+    this.#stderr = this.getService(CliErr)
     this.heartbeatService = new CliServiceHeartbeat()
     
     const abortController = new AbortController()
@@ -30,7 +34,7 @@ export class CliService extends CliCommand {
     process.once('beforeExit', async () => {
       const code = process.exitCode
       assert(code !== undefined)
-      this.update$('exiting', code)
+      await this.update$('exiting', code)
 
       this.is$(
         this.succeeded ? 'succeeded' :
@@ -42,7 +46,7 @@ export class CliService extends CliCommand {
 
     this.heartbeatService.start$((cpu, memory) => {
       this.update$('data', 
-        this.stdin.count, this.stdout.count, this.stderr.count, 
+        this.#stdin.count, this.#stdout.count, this.#stderr.count, 
         cpu, memory)
     })
     this.is$('starting')

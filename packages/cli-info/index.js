@@ -145,11 +145,10 @@ export class CliCommandInfo extends CliInfo {
 
   static async *#servicePoset(classMd, visited = new Set()) {
     // yield all services in the poset of services
-
-    if (visited.has(classMd)) return
-    visited.add(classMd)
-
     for await (const groupMd of classMd.services()) {
+      if (visited.has(groupMd)) return
+      visited.add(groupMd)
+
       if (!groupMd.isGroup) 
         throw new Error(`Class "${groupMd.name}" is not a group.`)
       yield* CliCommandInfo.#servicePoset(groupMd, visited)
@@ -233,6 +232,7 @@ export class CliCommandInfo extends CliInfo {
         }
       }
 
+      var count = 0
       for (const classMd of CliCommandInfo.#classHierarchy(
         this.#classMd, firstParentClassMdWithParameters)) {
 

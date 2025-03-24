@@ -1,33 +1,15 @@
-export default function streamWrite(stream, data) {
-  return new Promise((resolve, reject) => {
-    function attemptWrite() {
-      try {
-        if (!stream.write(data)) {
-          // Wait for the drain event if write returns false
-          stream.once('drain', attemptWrite);
-        } else {
-          // Resolve when the write succeeds
-          resolve();
-        }
-      } catch (err) {
-        // Reject on errors
-        reject(err);
-      }
-    }
 
-    attemptWrite(); // Start the write process
-  });
-}
+export async function streamWrite(
+  stream, stringOrBuffer, { signal, encoding } = { }) {
 
-export function writeBuffer$(stream, signal, buffer, encoding) {
-  if (stream.write(buffer, encoding)) {
+  if (stream.write(stringOrBuffer, encoding)) {
     return
   } 
       
   return new Promise((resolve, reject) => {
     const onDrain = () => {
       try {
-        if (!stream.write(buffer, encoding)) {
+        if (!stream.write(stringOrBuffer, encoding)) {
           stream.once('drain', onDrain)
           return
         } 
