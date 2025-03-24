@@ -1,28 +1,41 @@
-import { CliGroup } from '@kingjs/cli-group'
-import { CliOut } from '@kingjs/cli-command'
-import { write, writeRecord } from '@kingjs/cli-write'
+import { streamWrite } from '@kingjs/stream-write'
+import { CliWritable } from '@kingjs/cli-writable'
 
-export class CliEcho extends CliGroup {
-  static services = [ CliOut ]
+export const ENCODING_UTF8 = 'utf8'
+
+export class CliEcho {
+  static from(path) {
+    return new CliEcho(CliWritable.fromPath(path))
+  }
 
   #stream
   #signal
+  #encoding
+  #options
 
-  constructor(options) {
-    if (CliEcho.initializing(new.target))
-      return super()
-
-    super(options)
-
-    this.#stream = this.getService(CliOut)
+  constructor(stream) {
+    this.#stream = stream
     this.#signal = null
+    this.#encoding = ENCODING_UTF8
+    this.#options = { 
+      signal: this.#signal, 
+      encoding: this.#encoding
+    }
   }
 
   async write(line) { 
-    return write(this.#stream, this.#signal, line) 
+    await this.writeRecord([line])
   }
-  async writeRecord(fields, ifs = ' ') { 
-    return writeRecord(this.#stream, this.#signal, ifs[0], fields) 
+  async writeRecord(fields, separator = ' ') {
+    const stream = this.#stream
+    const encoding = this.#encoding
+
+    for (let i = 0; i < fields.length; i++) {
+      if (i > 0)
+        await streamWrite(stream, Buffer.from(separator, encoding), this.#options)
+      await streamWrite(stream, Buffer.from(String(fields[i]), encoding), this.#options)
+    }
+    await streamWrite(stream, Buffer.from('\n', encoding), this.#options)
   }
 }
 

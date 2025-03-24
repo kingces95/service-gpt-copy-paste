@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import { CliCommand } from '@kingjs/cli-command'
 import { CliRx } from '@kingjs/cli-rx'
 import { interval, timer } from 'rxjs'
 import { switchMap, tap, retry, takeUntil } from 'rxjs/operators'
@@ -11,10 +10,10 @@ const ERROR_MS = 1000
 
 export class CliRxPoller extends CliRx {
   static parameters = {
-    pollMs: 'Polling interval in milliseconds.',
-    errorRate: 'Simulated polling error rate.',
-    errorMs: 'Milliseconds to delay after error.',
-    writeError: 'Write error messages to stderr.',
+    pollMs: 'Polling interval',
+    errorRate: 'Simulated polling error rate',
+    errorMs: 'Retry delay',
+    writeError: 'Log service errors to stderr',
   }
   static { this.initialize() }
 

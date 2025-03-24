@@ -1,5 +1,5 @@
 {
-  "name": "@kingjs/cli-service",
+  "name": "@kingjs/cli-daemon",
   "version": "1.0.0",
   "description": "Framework for developing command line tools the host services.",
   "main": "index.js",

@@ -1,11 +1,11 @@
-import { CliService } from '@kingjs/cli-service'
+import { CliDaemon } from '@kingjs/cli-daemon'
 import { Subject, merge } from 'rxjs'
 import { tap, share, takeUntil } from 'rxjs/operators'
 import { fromAbortSignal } from '@kingjs/rx-from-abort-signal'
 import { AbortError } from '@kingjs/abort-error'
 import concatWrite from '@kingjs/rx-concat-write'
 
-export class CliRx extends CliService {
+export class CliRx extends CliDaemon {
   static { this.initialize() }
 
   constructor(options = { }, workflow) {

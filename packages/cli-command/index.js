@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import { Cli } from '@kingjs/cli'
-import { CliFdReadable } from '@kingjs/cli-fd-readable'
-import { CliFdWritable } from '@kingjs/cli-fd-writable'
+import { CliReadable, DEV_STDIN } from '@kingjs/cli-readable'
+import { CliWritable, DEV_STDOUT, DEV_STDERR } from '@kingjs/cli-writable'
+import { CliProvider } from '@kingjs/cli-provider'
 import assert from 'assert'
 
 const EXIT_SUCCESS = 0
@@ -14,25 +15,62 @@ const Commands = Symbol('commands')
 
 export const REQUIRED = undefined
 
-export class CliIn extends CliFdReadable { 
-  static STDIN_FD = 0
-  constructor({ _stdin } = { }) { 
-    super({ fd: _stdin?.fd ?? CliIn.STDIN_FD }) 
+export class CliIn extends CliProvider { 
+  static parameters = { stdin: 'Input stream'}
+  static { this.initialize() }
+
+  #path
+
+  constructor({ stdin = DEV_STDIN, ...rest } = { }) { 
+    if (CliIn.initializing(new.target, { stdin })) 
+      return super()
+    super(rest)
+
+    this.#path = stdin
+  }
+  
+  async activate() { 
+    return await CliReadable.fromPath(this.#path)
   }
 }
 
-export class CliOut extends CliFdWritable { 
-  static STDOUT_FD = 1
-  constructor({ _stdout } = { }) { 
-    super({ fd: _stdout?.fd ?? CliOut.STDOUT_FD }) 
-    this.isTTY = process.stdout.isTTY
+export class CliOut extends CliProvider {
+  static parameters = { stdout: 'Output stream' }
+  static { this.initialize() }
+
+  #path
+
+  constructor({ stdout = DEV_STDOUT, ...rest } = {}) {
+    if (CliOut.initializing(new.target, { stdout }))
+      return super()
+    super(rest)
+
+    this.#path = stdout
+  }
+
+  async activate() {
+    const stdout = await CliWritable.fromPath(this.#path)
+    stdout.isTTY = process.stdout.isTTY
+    return stdout
   }
 }
 
-export class CliErr extends CliFdWritable { 
-  static STDERR_FD = 2
-  constructor({ _stderr } = { }) { 
-    super({ fd: _stderr?.fd ?? CliErr.STDERR_FD })
+export class CliErr extends CliProvider {
+  static parameters = { stderr: 'Error stream' }
+  static { this.initialize() }
+
+  #path
+
+  constructor({ stderr = DEV_STDERR, ...rest } = {}) {
+    if (CliErr.initializing(new.target, { stderr }))
+      return super()
+    super(rest)
+
+    this.#path = stderr
+  }
+
+  async activate() {
+    return await CliWritable.fromPath(this.#path)
   }
 }
 
@@ -46,6 +84,7 @@ export class CliCommand extends Cli {
     help: ['h'],
     version: ['v'],
   }
+  static services = [ CliIn, CliOut, CliErr ]
   static { this.initialize() }
 
   static async loadOwnCommand$(value) {
@@ -156,7 +195,6 @@ export class CliCommand extends Cli {
   async success$() { this.exitCode = EXIT_SUCCESS }
   async abort$() { this.exitCode = EXIT_SIGINT }
   async fail$(code = EXIT_FAILURE) { this.exitCode = code }
-
   async error$(error) {
     this.exitError = error
     this.exitCode = EXIT_ERRORED
@@ -173,11 +211,13 @@ export class CliCommand extends Cli {
   get failed() { return process.exitCode == EXIT_FAILURE }
 
   toString() {
-    if (this.succeeded)
-      if (this.stderr.count)
+    if (this.succeeded) {
+      const stderr = this.getService(CliErr)
+      if (stderr.count)
         return 'Command succeeded with warnings'
       else
         return 'Command succeeded'
+    }
     if (this.aborted)
       return `Command aborted`
     if (this.failed)

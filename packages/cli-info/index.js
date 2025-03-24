@@ -145,21 +145,21 @@ export class CliCommandInfo extends CliInfo {
 
   static async *#servicePoset(classMd, visited = new Set()) {
     // yield all services in the poset of services
-    for await (const groupMd of classMd.services()) {
-      if (visited.has(groupMd)) return
-      visited.add(groupMd)
+    for await (const serviceMd of classMd.services()) {
+      if (visited.has(serviceMd)) return
+      visited.add(serviceMd)
 
-      if (!groupMd.isGroup) 
-        throw new Error(`Class "${groupMd.name}" is not a group.`)
-      yield* CliCommandInfo.#servicePoset(groupMd, visited)
-      yield groupMd
+      if (!serviceMd.isService) 
+        throw new Error(`Class "${serviceMd.name}" is not a group.`)
+      yield* CliCommandInfo.#servicePoset(serviceMd, visited)
+      yield serviceMd
     }
   }
 
   static async *#servicePosetParametersMd(classMd) {
-    for await (const groupMd of CliCommandInfo.#servicePoset(classMd)) {
-      for (const parameterMd of groupMd.parameters())
-        yield [groupMd, parameterMd]
+    for await (const serviceMd of CliCommandInfo.#servicePoset(classMd)) {
+      for (const parameterMd of serviceMd.parameters())
+        yield [serviceMd, parameterMd]
     }
   }
 
@@ -236,12 +236,12 @@ export class CliCommandInfo extends CliInfo {
       for (const classMd of CliCommandInfo.#classHierarchy(
         this.#classMd, firstParentClassMdWithParameters)) {
 
-        for await (const [groupMd, parameterMd] of 
+        for await (const [serviceMd, parameterMd] of 
           CliCommandInfo.#servicePosetParametersMd(classMd)) {
           const name = parameterMd.name
           if (result.has(name))
             throw new Error([
-              `Parameter "${name}" in group "${groupMd.name}"`,
+              `Parameter "${name}" in group "${serviceMd.name}"`,
               `conflicts with parameter in class "${this.#classMd.name}".`
             ].join(' '))
           result.set(name, new CliParameterInfo(this, name, parameterMd))

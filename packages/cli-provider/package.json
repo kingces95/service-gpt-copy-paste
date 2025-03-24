@@ -1,7 +1,7 @@
 {
-  "name": "@kingjs/cli-group",
+  "name": "@kingjs/cli-provider",
   "version": "1.0.0",
-  "description": "Group of cli options.",
+  "description": "Provides services as part of CLI dependency injection Framework.",
   "main": "index.js",
   "type": "module",
   "exports": {

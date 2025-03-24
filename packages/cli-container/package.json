@@ -1,7 +1,7 @@
 {
-  "name": "@kingjs/cli-fd-writable",
+  "name": "@kingjs/cli-container",
   "version": "1.0.0",
-  "description": "Class to precisely write to a file descriptor.",
+  "description": "Dependency injection container.",
   "main": "index.js",
   "type": "module",
   "exports": {

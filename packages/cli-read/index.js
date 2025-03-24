@@ -1,12 +1,12 @@
 import Utf8CharReader from '@kingjs/utf8-char-reader'
 import { AbortError } from '@kingjs/abort-error'
-import { CliGroup } from '@kingjs/cli-group'
-import { CliIn } from '@kingjs/cli-command'
+import { CliProvider } from '@kingjs/cli-provider'
+import { CliReadable } from '@kingjs/cli-readable'
 
 const NEW_LINE_BYTE = 0x0A
 const DEFAULT_IFS = ' '
 
-export class CliParser extends CliGroup {
+export class CliParser extends CliProvider {
   static parameters = {
     ifs: 'Input field separator',
   }
@@ -87,20 +87,21 @@ export class CliParser extends CliGroup {
   }
 }
 
-export class CliReadline extends CliGroup {
-  static services = [ CliIn ]
-  static { this.initialize() }
+export class CliReader {
+  static fromPath(path, parser) {
+    return new CliReader(CliReadable.fromPath(path), parser)
+  }
+  static from(streamStringOrGenerator, parser) {
+    return new CliReader(CliReadable.from(streamStringOrGenerator), parser)
+  }
 
   #stream
+  #parser
   #signal
 
-  constructor(options) {
-    if (CliReadline.initializing(new.target))
-      return super()
-
-    super(options)
-
-    this.#stream = this.getService(CliIn)
+  constructor(stream, parser) {
+    this.#stream = stream
+    this.#parser = parser
     this.#signal = null
   }
   
@@ -187,28 +188,15 @@ export class CliReadline extends CliGroup {
   
     return charReader.toString() // Convert the buffered bytes to a string
   }
-}
-
-export class CliReader extends CliReadline {
-  static services = [ CliParser ]
-  static { this.initialize() }
-
-  #parser
-
-  constructor(options) {
-    if (CliReader.initializing(new.target))
-      return super()
-    super(options)
-
-    this.#parser = this.getService(CliParser)
-  }
 
   async readArray() {
+    if (!this.#parser) throw new Error('Parser not set')
     const line = await this.read()
     return this.#parser.toArray(line)
   }
   
   async readRecord(fields) {
+    if (!this.#parser) throw new Error('Parser not set')
     const line = await this.read()
     return this.#parser.toRecord(line, fields)
   }

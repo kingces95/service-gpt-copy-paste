@@ -1,4 +1,4 @@
-import { CliCommand } from '@kingjs/cli-command'
+import { CliCommand, CliIn } from '@kingjs/cli-command'
 import { AbortError } from '@kingjs/abort-error'
 import ora from 'ora'
 import process from 'process'
@@ -23,11 +23,12 @@ export default class CliOrb extends CliCommand {
     cpuHot: 'Threshold for high CPU usage',
     memHot: 'Threshold for high memory usage',
   }
-  static services = [ CliReader, CliParser ]
+  static services = [ CliParser, CliIn ]
   static { this.initialize() }
 
   #reader
   #parser
+  #stdin
   
   constructor({ cpuHot = CPU_HOT, memHot = MEM_HOT, ...rest } = { }) {
     if (CliOrb.initializing(new.target, { cpuHot, memHot }))
@@ -40,8 +41,9 @@ export default class CliOrb extends CliCommand {
     this.stats = { in: 0, out: 0, error: 0 }
     this.message = ''
     
-    this.#reader = this.getService(CliReader)
     this.#parser = this.getService(CliParser)
+    this.#stdin = this.getService(CliIn)
+    this.#reader = CliReader.from(this.#stdin, this.#parser)
     
     // Initialize spinner for TTY
     this.start()

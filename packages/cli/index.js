@@ -2,6 +2,7 @@
 import { trimPojo } from '@kingjs/pojo-trim'
 import { NodeName } from '@kingjs/node-name'
 import assert from 'assert'
+import { CliContainer } from '@kingjs/cli-container'
 
 async function __import() {
   const { CliMetadataLoader } = await import('@kingjs/cli-metadata')
@@ -176,18 +177,20 @@ export class Cli {
     return this[Metadata] = metadata
   }
 
-  static async getOwnServices() {
-    if (this.getOwnPropertyValue$(Services))
-      return this[Services]
+  static async *getOwnServices() {
+    if (!this.getOwnPropertyValue$(Services)) {
 
-    // a (1) class, (2) import string of a class
-    const services = this.getOwnPropertyValue$('services') ?? []
+      // a (1) class, (2) import string of a class
+      const services = this.getOwnPropertyValue$('services') ?? []
 
-    const list = []
-    for (const value of services)
-      list.push(await this.loadClass$(value))
+      const list = []
+      for (const value of services)
+        list.push(await this.loadClass$(value))
 
-    return this[Services] = list    
+      this[Services] = list   
+    }
+
+    yield* this[Services] 
   }
 
   static async getOwnCommands() { 
@@ -201,53 +204,6 @@ export class Cli {
     for (const name of names)
       throw new Error(`Command '${name}' not found`)
     return this
-  }
-
-  static async activate(...args) {
-    
-    // If this command (or group) has an option with a choice constraint, 
-    // then that option can be used as a discriminator to select an alternative
-    // command to activate -- typically a deriviation of this command.
-
-    // a choice which is an object (instead of array) is a discriminator. 
-    const choices = this.getOwnPropertyValue$('choices') ?? { 
-      // myOption: [ 'left', 'right' ],
-      // myDiscriminator: { foo: @kingjs/mycmd/foo, bar: @kingjs/mycmd/bar }
-    }
-    const [name, discriminations = { }] = Object.entries(choices)
-      .find(([_, value]) => typeof value == 'object') ?? [ ]
-    
-    const options = args.at(-1)
-    const discriminator = options[name]
-    const className = discriminations[discriminator]
-    const class$ = !className ? this : 
-      className instanceof NodeName ? await className.importObject() :
-      await NodeName.import(className)
-    if (!class$) throw new Error(`Failed to load node module ${className}.`)
-
-    // walk the hierarchy of classes and select the many services
-    const serviceClasses = []
-    for (const level of this.hierarchy())
-      serviceClasses.push(...await level.getOwnServices())
-
-    // allocate shared service array
-    if (!options._services) options._services = []
-
-    // activate and register services
-    const { _services } = options
-    for (const serviceClass of serviceClasses) {
-
-      // services are singletons
-      if (_services.find(o => o instanceof serviceClass)) continue
-
-      _services.push(serviceClass.activate 
-        // allow activation as a function of options (e.g. choice/discriinator)
-        ? await serviceClass.activate(options) 
-        : new serviceClass(options)
-      )
-    }
-
-    return new class$(...args)
   }
 
   static get baseCli() {
@@ -282,24 +238,66 @@ export class Cli {
 
     return true
   }
- 
+
+  static async activate(...args) {
+    const options = args.at(-1)
+    await CliContainer.activate(this, options)
+    const runtimeClass = await this.getRuntimeClass(options)
+    return new runtimeClass(...args)
+  }
+
+  static async getRuntimeClass(options) {
+    // If this command (or group) has an option with a choice constraint, 
+    // then that option can be used as a discriminator to select an alternative
+    // command to activate.
+
+    // a choice which is an object (instead of array) is a discriminator. 
+    const choices = this.getOwnPropertyValue$('choices') ?? { 
+      // myOption: [ 'left', 'right' ],
+      // myDiscriminator: { foo: @kingjs/mycmd/foo, bar: @kingjs/mycmd/bar }
+    }
+    const [name, discriminations = { }] = Object.entries(choices)
+      .find(([_, value]) => typeof value == 'object') ?? [ ]
+    
+    const discriminator = options[name]
+    const className = discriminations[discriminator]
+    if (!className)
+      return this
+
+    const class$ = className instanceof NodeName 
+      ? await className.importObject() 
+      : await NodeName.import(className)
+
+    if (!class$) 
+      throw new Error(`Failed to load node module ${className}.`)
+
+    if (!class$ == this && !class$.prototype instanceof this)
+      throw new Error(`Class ${class$.name} must extend ${this.name}`)
+
+    return class$
+  }
+
   static { this.initialize() }
  
-  #services
+  #container
   #info
 
-  constructor({ _services, _info } = {}) {
+  constructor({ _container, _info } = {}) {
     if (Cli.initializing(new.target, { })) {
       const defaults = new.target[DEFAULTS]
       delete new.target[DEFAULTS]
       return defaults
     }
-    assert(_services)
-    this.#services = _services
+    assert(_container)
+    this.#container = _container
     this.#info = _info
   }
 
-  getService(type) { return this.#services.find(o => o instanceof type) }
+  getService(...classes) {
+    if (classes.length == 1)
+      return this.#container.getService(classes[0]) 
+    return classes.map(o => this.#container.getService(o))
+  }
   get info() { return this.#info }
 }
 

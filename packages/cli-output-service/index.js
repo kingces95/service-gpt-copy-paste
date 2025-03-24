@@ -1,11 +1,11 @@
-import { CliGroup } from '@kingjs/cli-group'
+import { CliProvider } from '@kingjs/cli-provider'
 import { CliOut } from '@kingjs/cli-command'
 import { NodeName } from '@kingjs/node-name'
 import jmespath from 'jmespath'
 
 const MODULE_NAME = NodeName.from('@kingjs/cli-output-service')
 
-export class CliOutputService extends CliGroup {
+export class CliOutputService extends CliProvider {
   static description = 'Output format'
   static parameters = {
     output: 'Output format',
@@ -28,30 +28,27 @@ export class CliOutputService extends CliGroup {
 
   #color
   #query
+  #stdout
   
-  constructor({ 
-    output = 'util', 
-    query = null, 
-    color = true, 
-    ...rest
-  } = { }) {
+  constructor({ output = 'util', query = null, color = true, ...rest } = { }) {
     if (CliOutputService.initializing(new.target, { output, query, color }))
       return super()
 
-    super({ ...rest, output })
+    super({ ...rest })
     this.#color = color
     this.#query = query
+    this.#stdout = this.getService(CliOut)
   }
 
-  get stdout() { return this.getService(CliOut) }
+  get stdout() { return this.#stdout }
   get color() { return this.#color && this.stdout.isTTY }
 
   query(pojo) {
-    if (!this.#query)
-      return pojo
+    if (!this.#query) return pojo
     return jmespath.search(pojo, this.#query) 
   }
 
+  // TODO: forEach not used; update tsv/table to use this
   async forEach(poja, action) {
     poja = this.query(poja)
     poja = Array.isArray(poja) ? poja : [poja]

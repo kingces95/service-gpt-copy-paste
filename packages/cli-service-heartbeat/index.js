@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import os from 'os'
 
-export class CliServiceHeartbeat {
+export class CliDaemonHeartbeat {
   constructor({ intervalMs = 100, reportMs = 1000 } = {}) {
     this.heartbeat = false
     this.intervalMs = intervalMs
