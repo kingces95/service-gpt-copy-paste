@@ -1,12 +1,12 @@
 #!/usr/bin/env node
+import { CliServiceProvider } from '@kingjs/cli'
 import { CliCommand, CliIn, CliOut, CliErr } from '@kingjs/cli-command'
-import { CliProvider } from '@kingjs/cli-provider'
 import { CliWritable, DEV_STDOUT } from '@kingjs/cli-writable'
 import { CliEcho } from '@kingjs/cli-echo'
 import os from 'os'
 import assert from 'assert'
 
-export class CliIs extends CliProvider { 
+export class CliIs extends CliServiceProvider { 
   static parameters = {
     stdis: 'Status stream',
   }
@@ -27,7 +27,7 @@ export class CliIs extends CliProvider {
   }
 }
 
-export class CliDaemonState extends CliProvider { 
+export class CliDaemonState extends CliServiceProvider { 
   static services = [ CliIs ]
   static { this.initialize() }
 
@@ -66,7 +66,7 @@ export class CliDaemonState extends CliProvider {
   }
 }
 
-export class CliPulse extends CliProvider {
+export class CliPulse extends CliServiceProvider {
   static parameters = {
     intervalMs: 'Cancellation polling',
     reportMs: 'Report interval',

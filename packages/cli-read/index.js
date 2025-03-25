@@ -1,12 +1,12 @@
 import Utf8CharReader from '@kingjs/utf8-char-reader'
+import { CliServiceProvider } from '@kingjs/cli'
 import { AbortError } from '@kingjs/abort-error'
-import { CliProvider } from '@kingjs/cli-provider'
 import { CliReadable } from '@kingjs/cli-readable'
 
 const NEW_LINE_BYTE = 0x0A
 const DEFAULT_IFS = ' '
 
-export class CliParser extends CliProvider {
+export class CliParser extends CliServiceProvider {
   static parameters = {
     ifs: 'Input field separator',
   }

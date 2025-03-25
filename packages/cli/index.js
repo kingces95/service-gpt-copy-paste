@@ -3,7 +3,6 @@ import { trimPojo } from '@kingjs/pojo-trim'
 import { NodeName } from '@kingjs/node-name'
 import { Lazy, LazyGenerator } from '@kingjs/lazy'
 import { LoadAsync } from '@kingjs/load'
-import { CliContainer } from '@kingjs/cli-container'
 import { cliTypeof } from '@kingjs/cli-typeof'
 import { getOwn } from '@kingjs/get-own'
 import assert from 'assert'
@@ -38,6 +37,15 @@ export class Cli {
     await dumpPojo(await toPojo(this.ownMetadata))
   }
 
+  static async loadClass(value) {
+    if (value instanceof NodeName) 
+      return Cli.loadClass(await value.importObject()) 
+
+    if (typeof value == 'object')
+      return this.extend({ ...value })
+
+    return await NodeName.loadClass(value)
+  }
   static extend({ name = 'annon', commands, ctor, handler, ...values } = { }) {
     if (!name) throw new Error(`Class must have a name`)
 
@@ -66,12 +74,10 @@ export class Cli {
   }
 
   static get ownMetadata() { return this[OwnMetadata].value }
-  static get ownDiscriminatingOption() { return this[OwnDiscriminatingOption].value }
-  static *getOwnServices() { yield* getOwn(this, 'services') ?? [] }
-  static async *ownCommandNames() { yield* Object.keys(await this[OwnCommands].load()) }
   static get baseClass() { return this[BaseClass].value } 
   static *hierarchy() { yield* this[Hierarchy].value }
   
+  static async *ownCommandNames() { yield* Object.keys(await this[OwnCommands].load()) }
   static async getCommand(...names) {
     if (names.length == 0)
       return this
@@ -83,16 +89,7 @@ export class Cli {
     return command.getCommand(...rest)
   }
   
-  static async loadClass(value) {
-    if (value instanceof NodeName) 
-      return Cli.loadClass(await value.importObject()) 
-
-    if (typeof value == 'object')
-      return this.extend({ ...value })
-
-    return await NodeName.loadClass(value)
-  }
-
+  static get ownDiscriminatingOption() { return this[OwnDiscriminatingOption].value }
   static async getRuntimeClass(options) {
     if (!this.ownDiscriminatingOption) return this
 
@@ -108,9 +105,33 @@ export class Cli {
     return class$
   }
 
+  static *getOwnServiceProviderClasses() { yield* getOwn(this, 'services') ?? [] }
+  static async* getServiceProviderClasses(options, visited = new Set()) {
+    const baseClass = this.baseClass
+    if (baseClass)
+      yield* baseClass.getServiceProviderClasses(options)
+
+    for (const class$ of this.getOwnServiceProviderClasses()) {
+      if (visited.has(class$)) continue
+      visited.add(class$)
+      if (!(class$.prototype instanceof CliServiceProvider))
+        throw new Error(`Service ${class$.name} must extend ${CliServiceProvider.name}`)
+      yield* class$.getServiceProviderClasses(options)
+      yield class$
+    }
+  }
+
   static async activate(...args) {
     const options = args.at(-1)
-    await CliContainer.activate(this, options)
+
+    const services = options._services = new Map()
+    for await (const providerClass of this.getServiceProviderClasses(options)) {
+      const runtimeProviderClass = await providerClass.getRuntimeClass(options)
+      const serviceProvider = new runtimeProviderClass(options)
+      const service = await serviceProvider.activate()
+      services.set(providerClass, service)
+    }
+    
     const runtimeClass = await this.getRuntimeClass(options)
     return new runtimeClass(...args)
   }
@@ -260,27 +281,40 @@ export class Cli {
 
   static { this.initialize() }
  
-  #container
+  #services // map of service type to service instance
   #info
 
-  constructor({ _container, _info } = {}) {
+  constructor({ _services, _info } = {}) {
     if (Cli.initializing(new.target, { })) {
       const defaults = new.target[OwnDefaults]
       delete new.target[OwnDefaults]
       return defaults
     }
-    assert(_container)
-    this.#container = _container
+    assert(_services)
+    this.#services = _services
     this.#info = _info
   }
 
   getService(...classes) {
     if (classes.length == 1)
-      return this.#container.getService(classes[0]) 
-    return classes.map(o => this.#container.getService(o))
+      return this.#services.get(classes[0]) 
+    return classes.map(o => this.getService(o))
   }
 
   get info() { return this.#info }
+}
+
+export class CliServiceProvider extends Cli {
+  static { this.initialize() }
+
+  constructor(options) {
+    if (CliServiceProvider.initializing(new.target, { })) 
+      return super()
+
+    super(options)
+  }
+
+  activate($class) { return this }
 }
 
 // Cli.__dumpMetadata()

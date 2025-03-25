@@ -1,7 +1,6 @@
 import _ from 'lodash'
 import { LazyGenerator } from '@kingjs/lazy'
-import { Cli } from '@kingjs/cli'
-import { CliProvider } from '@kingjs/cli-provider'
+import { Cli, CliServiceProvider } from '@kingjs/cli'
 import { CliCommand } from '@kingjs/cli-command'
 import assert from 'assert'
 async function __import() {
@@ -206,7 +205,7 @@ export class CliClassMetadata extends CliMetadata {
   get loader() { return this.#loader }
   get isClass() { return true }
   get isCommand() { return this.isWellKnownClass$(CliCommand) }
-  get isService() { return this.isWellKnownClass$(CliProvider) }
+  get isService() { return this.isWellKnownClass$(CliServiceProvider) }
   get isCli() { return this.isWellKnownClass$(Cli) }
   get baseClass() { return this.#baseClassFn() }
 
@@ -277,7 +276,7 @@ export class CliMetadataClassLoader extends CliMetadataLoader {
   static getInjections(class$, loadedAsBaseClass = false) {
     return { 
       wellKnown: class$ == Cli ||
-          class$ == CliProvider ||
+          class$ == CliServiceProvider ||
           class$ == CliCommand,
       baseClassFn: function() { 
         assert(this instanceof CliClassMetadata)
@@ -292,7 +291,7 @@ export class CliMetadataClassLoader extends CliMetadataLoader {
         if (loadedAsBaseClass) 
           return
 
-        if (this instanceof CliProvider)
+        if (this instanceof CliServiceProvider)
           return
 
         for await (const name of class$.ownCommandNames()) {
@@ -303,7 +302,7 @@ export class CliMetadataClassLoader extends CliMetadataLoader {
       servicesFn: async function*() { 
         assert(this instanceof CliClassMetadata)
 
-        for (const value of class$.getOwnServices()) {
+        for (const value of class$.getOwnServiceProviderClasses()) {
           const class$ = await value
           if (class$ == Cli || class$.prototype instanceof Cli)
             yield this.loader.load$(class$)

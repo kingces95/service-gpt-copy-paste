@@ -1,11 +1,11 @@
-import { CliProvider } from '@kingjs/cli-provider'
+import { CliServiceProvider } from '@kingjs/cli'
 import { CliOut } from '@kingjs/cli-command'
 import { NodeName } from '@kingjs/node-name'
 import jmespath from 'jmespath'
 
 const MODULE_NAME = NodeName.from('@kingjs/cli-output-service')
 
-export class CliOutputService extends CliProvider {
+export class CliOutputService extends CliServiceProvider {
   static description = 'Output format'
   static parameters = {
     output: 'Output format',

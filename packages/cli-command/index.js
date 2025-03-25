@@ -1,8 +1,7 @@
 #!/usr/bin/env node
-import { Cli } from '@kingjs/cli'
+import { Cli, CliServiceProvider } from '@kingjs/cli'
 import { CliReadable, DEV_STDIN } from '@kingjs/cli-readable'
 import { CliWritable, DEV_STDOUT, DEV_STDERR } from '@kingjs/cli-writable'
-import { CliProvider } from '@kingjs/cli-provider'
 import assert from 'assert'
 
 const EXIT_SUCCESS = 0
@@ -13,7 +12,7 @@ const EXIT_SIGINT = EXIT_ABORT + 2
 
 export const REQUIRED = undefined
 
-export class CliIn extends CliProvider { 
+export class CliIn extends CliServiceProvider { 
   static parameters = { stdin: 'Input stream'}
   static { this.initialize() }
 
@@ -32,7 +31,7 @@ export class CliIn extends CliProvider {
   }
 }
 
-export class CliOut extends CliProvider {
+export class CliOut extends CliServiceProvider {
   static parameters = { stdout: 'Output stream' }
   static { this.initialize() }
 
@@ -53,7 +52,7 @@ export class CliOut extends CliProvider {
   }
 }
 
-export class CliErr extends CliProvider {
+export class CliErr extends CliServiceProvider {
   static parameters = { stderr: 'Error stream' }
   static { this.initialize() }
 
