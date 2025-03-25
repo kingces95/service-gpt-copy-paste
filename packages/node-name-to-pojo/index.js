@@ -10,6 +10,7 @@ NodeName[symbol] = {
   isObjectName: 'boolean',
 
   name: 'string',
+  defaultName: 'string',
   defaultTypeName: 'string',
   url: 'url',
   parentUrl: 'url',

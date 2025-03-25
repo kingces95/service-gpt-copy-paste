@@ -9,6 +9,7 @@ const symbol = Symbol('cli-metadata-to-pojo')
 
 CliParameterInfo[symbol] = {
   name: 'string',
+  kababName: 'string',
   position: 'number',
   description: 'string',
   type: 'string',
@@ -33,6 +34,7 @@ CliParameterInfo[symbol] = {
 
 CliCommandInfo[symbol] = {
   name: 'string',
+  kababName: 'string',
   description: 'string',
   isDefaultCommand: 'boolean',
   parameters: 'infos',

@@ -1,4 +1,5 @@
 import { URL } from 'url'
+import { IdentifierStyle } from '@kingjs/identifier-style'
 
 async function __import() {
   const { nodeNameToPojo } = await import('@kingjs/node-name-to-pojo')
@@ -34,27 +35,12 @@ function assertAreObjectNames(...values) {
     throw new Error(`Expected node name, got "${values.join(', ')}".`)
   }
 }
-function snakeToCamelCase(value) {
-  return value.replace(/_([a-z])/g, (_, c) => c.toUpperCase())
-}
-function perlToCamelCase(value) {
-  return value.replace(/-([a-z])/g, (_, c) => c.toUpperCase())
-}
-function capitalize(value) {
-  return value[0].toUpperCase() + value.slice(1)
-}
 
 export class NodeName {
   async __dump() { 
     const { toPojo, dumpPojo } = await __import()
     const pojo = await toPojo(this)
     await dumpPojo(pojo) 
-  }
-
-  static snakeOrPerlToCamelCase(value) {
-    if (!value)
-      return null
-    return capitalize(snakeToCamelCase(perlToCamelCase(value)))
   }
 
   static async loadClass(value) {
@@ -240,6 +226,10 @@ export class NodeName {
       : this.#exports ? this.#exports[this.#exports.length - 1]
       : this.#packageName
   }
+  get defaultName() {
+    if (!this.isModuleName) return null
+    return IdentifierStyle.from(this.name).toPascal()
+  }
   get parentUrl() { return this.parent?.url }
   get parent() {
     if (this.#namespaces) {
@@ -351,10 +341,8 @@ export class NodeName {
       ? await this.import() 
       : await this.parent.import()
 
-    if (this.isModuleName) {
-      const defaultName = NodeName.snakeOrPerlToCamelCase(this.name)
-      return module.default ?? module[defaultName] 
-    }
+    if (this.isModuleName)
+      return module.default ?? module[this.defaultName] 
 
     return module[this.name]
   }

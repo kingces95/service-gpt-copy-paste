@@ -1,6 +1,5 @@
-import { Lazy } from '@kingjs/lazy'
 import { LoadAsync } from '@kingjs/load'
-import assert from 'assert'
+import { IdentifierStyle } from '@kingjs/identifier-style'
 
 async function __import() {
   const { cliInfoToPojo } = await import('@kingjs/cli-info-to-pojo')
@@ -36,6 +35,12 @@ export class CliInfo {
   }
 
   get name() { return this.#name }
+  get kababName() { 
+    if (!this.name) return null
+    const kababName = IdentifierStyle.from(this.name).toKebab()
+    if (this.name == kababName) return null
+    return kababName
+  }
 
   toString() { 
     return `${this.name}, type=${this.infoType}` 
