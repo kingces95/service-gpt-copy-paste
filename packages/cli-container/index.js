@@ -8,7 +8,7 @@ export class CliContainer {
     // a cli and has its own service dependencies which are yielded first.
     
     for (const level of cli.hierarchy()) {
-      for await (const class$ of level.getOwnServices()) {
+      for (const class$ of level.getOwnServices()) {
         if (visited.has(class$)) continue
         visited.add(class$)
 

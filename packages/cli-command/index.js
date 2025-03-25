@@ -11,8 +11,6 @@ const EXIT_ERRORED = 2
 const EXIT_ABORT = 128
 const EXIT_SIGINT = EXIT_ABORT + 2
 
-const Commands = Symbol('commands')
-
 export const REQUIRED = undefined
 
 export class CliIn extends CliProvider { 
@@ -86,83 +84,6 @@ export class CliCommand extends Cli {
   }
   static services = [ CliIn, CliOut, CliErr ]
   static { this.initialize() }
-
-  static async loadOwnCommand$(value) {
-    const type = typeof value
-    switch (type) {
-      case 'function':
-      case 'string':
-        return await this.loadClass$(value)
-      case 'object':
-        return this.extend({ ...value })
-    }
-    throw new Error(`Could not load command`)
-  }
-
-  static async getOwnCommands() {
-    if (this.getOwnPropertyValue$(Commands))
-      return this[Commands]
-
-    // a (1) class, (2) import string of a class, (3) directory path, 
-    // or (4) POJO representing a class or (5) a possibly async function 
-    // that returns any of the above. A function allows for forward references.
-    const commandsOrFn = this.getOwnPropertyValue$('commands') ?? { }
-
-    const commands = typeof commandsOrFn == 'function' 
-      ? await commandsOrFn() : await commandsOrFn
-
-    const map = { }
-    for (const [name, value] of Object.entries(commands)) {
-      const class$ = this.loadOwnCommand$(value)
-
-      // each class must be a derivation of the enclosing class
-      if (!class$.prototype instanceof this)
-        throw new Error(`Class ${class$.name} must extend ${this.name}`)
-
-      map[name] = class$
-    }
-
-    return this[Commands] = map
-  }
-
-  static async getCommand(nameOrNames = []) {
-    const names = Array.isArray(nameOrNames) ? [...nameOrNames] : [nameOrNames]
-
-    let current = this
-    for (const name of names) {
-      const commands = await current.getOwnCommands()
-      current = await commands[name]
-      if (!current) throw new Error(`Command '${name}' not found`)
-    }
-    return current
-  }
-
-  static extend({ name = 'annon', commands, ctor, handler, ...metadata } = { }) {
-    if (!name) throw new Error(`Class must have a name`)
-
-    const cls = class extends this {
-      constructor(...args) {
-        if (cls.initializing(new.target, ...args))
-          return super()
-
-        super(...args)
-
-        handler?.call(this, ...args)
-      }
-    }
-    cls.initialize()
-    Object.defineProperty(cls, "name", { value: name });
-    cls.commands = commands
-
-    const knownKeys = ['name', 'ctor', 'commands', 'handler']
-    for (const [key, value] of Object.entries(metadata)) {
-      if (knownKeys.includes(key))
-        continue
-      cls[key] = value
-    }
-  
-    return cls
-  }
 
   constructor({ 
     help = false, 

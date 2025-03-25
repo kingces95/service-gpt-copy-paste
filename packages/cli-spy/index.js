@@ -5,10 +5,10 @@ import { CliCommandInfo } from '@kingjs/cli-info'
 import { CliYargsCommand } from '@kingjs/cli-yargs'
 
 const raw = {
-  description: 'Dump Cli.getOwnMetadata()',
+  description: 'Dump Cli.ownMetadata',
   handler: async function() {
     const class$ = await this.getClass()
-    const pojo = [...class$.hierarchy()].map(o => o.getOwnMetadata())
+    const pojo = [...class$.hierarchy()].map(o => o.ownMetadata)
     this.log(pojo)
   }
 }
@@ -97,7 +97,7 @@ export class CliSpy extends CliCommand {
   }
   async getClass() { 
     const scope = await this.getScope()
-    return await scope.getCommand(this.#path)
+    return await scope.getCommand(...this.#path)
   }
   async getMetadata() { 
     const class$ = await this.getClass()

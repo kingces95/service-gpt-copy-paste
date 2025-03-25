@@ -250,8 +250,8 @@ export async function cliYargs(classOrPojo, options = { }) {
     })
     .middleware(async (argv) => ({ 
       _root: class$,
-      _class: await class$.getCommand(argv._),
-      _info: await info.getCommand(argv._),
+      _class: await class$.getCommand(...argv._),
+      _info: await info.getCommand(...argv._),
     }))
     .middleware(async (argv) => { 
       const _args = []

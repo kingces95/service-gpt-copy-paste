@@ -57,6 +57,22 @@ export class NodeName {
     return capitalize(snakeToCamelCase(perlToCamelCase(value)))
   }
 
+  static async loadClass(value) {
+    const type = typeof value
+    switch (type) {
+      case 'function':
+        return value
+      case 'string':
+        const class$ = await NodeName.from(value).importObject()
+        if (!class$) 
+          throw new Error(`Could not load class ${value}`)
+        if (!typeof class$ == 'function') 
+          throw new Error(`Class ${value} must be a function`)
+        return class$
+    }
+    throw new Error(`Could not load class`)
+  }
+
   static async import(value) {
     const nodeName = NodeName.from(value)
     return await nodeName.importObject()

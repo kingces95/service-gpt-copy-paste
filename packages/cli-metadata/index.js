@@ -295,16 +295,15 @@ export class CliMetadataClassLoader extends CliMetadataLoader {
         if (this instanceof CliProvider)
           return
 
-        const commands = await class$.getOwnCommands()
-        for (const [name, value] of Object.entries(commands)) {
-          const class$ = await value
-          yield [name, this.loader.load$(class$)]
+        for await (const name of class$.ownCommandNames()) {
+          const commandClass = await class$.getCommand(name)
+          yield [name, this.loader.load$(commandClass)]
         }
       }, 
       servicesFn: async function*() { 
         assert(this instanceof CliClassMetadata)
 
-        for await (const value of class$.getOwnServices()) {
+        for (const value of class$.getOwnServices()) {
           const class$ = await value
           if (class$ == Cli || class$.prototype instanceof Cli)
             yield this.loader.load$(class$)
@@ -316,7 +315,7 @@ export class CliMetadataClassLoader extends CliMetadataLoader {
   constructor(class$) {
     const { name } = class$
     super(class$, 0, name, { 
-      ...class$.getOwnMetadata(),
+      ...class$.ownMetadata,
       ...CliMetadataClassLoader.getInjections(class$), 
     })
   }
@@ -328,7 +327,7 @@ export class CliMetadataClassLoader extends CliMetadataLoader {
 
     const { name } = class$
     return new CliClassMetadata(this, id, name, {
-      ...class$.getOwnMetadata(),
+      ...class$.ownMetadata,
       ...CliMetadataClassLoader.getInjections(class$, loadedAsBaseClass), 
     })
   }

@@ -6,14 +6,10 @@ import { CliYargsCommand } from '@kingjs/cli-yargs'
 import { dumpPojo } from '@kingjs/pojo-dump'
 
 const raw = {
-  description: 'Dump Cli.getOwnMetadata()',
-  parameters: { hierarchy: 'Walk and dump base classes, too.' },
-  defaults: { hierarchy: false },
+  description: 'Dump Cli.ownMetadata',
   handler: async function() {
-    const { hierarchy } = this.options
     const class$ = await this.getClass()
-    const pojo = !hierarchy ? class$.getOwnMetadata() 
-      : [...class$.hierarchy()].map(o => o.getOwnMetadata())
+    const pojo = [...class$.hierarchy()].map(o => o.ownMetadata)
     dumpPojo(pojo)
   }
 }

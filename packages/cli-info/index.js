@@ -276,16 +276,15 @@ export class CliCommandInfo extends CliInfo {
     const map = await this.#commands.load()
     yield* map.values()
   }
-  async getCommand(nameOrNames = []) {
-    const names = Array.isArray(nameOrNames) ? [...nameOrNames] : [nameOrNames]
-      
-    let current = this
-    for (const name of names) {
-      const commands = await current.#commands.load()
-      current = commands.get(name)
-      if (!current) throw new Error(`Command ${name} not found.`)
-    }
-    return current
+  async getCommand(...names) {
+    if (names.length == 0)
+      return this
+
+    const [name, ...rest] = names
+    const commands = await this.#commands.load()
+    const command = commands.get(name)
+    if (!command) throw new Error(`Command ${name} not found.`)
+    return await command.getCommand(...rest)
   }
 
   get description() { return this.#classMd.description }
