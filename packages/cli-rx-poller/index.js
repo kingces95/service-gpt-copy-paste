@@ -28,18 +28,17 @@ export class CliRxPoller extends CliRx {
       return super()
 
     super(rest, interval(pollMs).pipe(
-      tap(() => this.is$('polling')),
       switchMap(async () => { 
-        if (Math.random() < errorRate) {
+        await this.is$('polling')
+        if (Math.random() < errorRate) 
           throw new Error('Simulated polling error')
-        }
       }),
       ...workflow,
       retry({
         count: Infinity,
-        delay: (error) => {
+        delay: async (error) => {
           this.retryError$ = error
-          this.warnThat$('retrying')
+          await this.warnThat$('retrying')
           if (writeError)
             this.writeError(`${error}`)
           return timer(errorMs).pipe(takeUntil(this.signalRx))

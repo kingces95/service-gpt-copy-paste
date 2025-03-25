@@ -156,7 +156,7 @@ export class Cli {
       // is only used at activation time so we project only its keys into the
       // metadata.
       const choices = metadata.choices
-      if (choices && typeof choices == 'object')
+      if (choices && !Array.isArray(choices))
         metadata.choices = Object.keys(choices)
   
       // e.g. [[], { myOption: 42 }] is one variadic positional parameter
@@ -314,7 +314,7 @@ export class CliServiceProvider extends Cli {
     super(options)
   }
 
-  activate($class) { return this }
+  activate() { return this }
 }
 
 // Cli.__dumpMetadata()
