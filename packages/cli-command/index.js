@@ -81,7 +81,6 @@ export class CliCommand extends Cli {
     help: ['h'],
     version: ['v'],
   }
-  static services = [ CliIn, CliOut, CliErr ]
   static { this.initialize() }
 
   constructor({ 

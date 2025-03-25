@@ -143,7 +143,7 @@ export class CliCommandInfo extends CliInfo {
     ].join(' '))
   }
 
-  static async *#servicePoset(classMd, visited = new Set()) {
+  static async *#servicePoset(classMd, visited) {
     // yield all services in the poset of services
     for await (const serviceMd of classMd.services()) {
       if (visited.has(serviceMd)) return
@@ -168,7 +168,7 @@ export class CliCommandInfo extends CliInfo {
   #commands
   #parameters
 
-  constructor(parent, name, classMd) {
+  constructor(parent, name, classMd, visited = new Set()) {
     super(name)
 
     this.#parent = parent
@@ -178,7 +178,7 @@ export class CliCommandInfo extends CliInfo {
     this.#commands = new LoadAsync(async () => {
       const result = new Map()
       for await (const [name, commandMd] of this.#classMd.commands()) {
-        const scope = new CliCommandInfo(this, name, commandMd)
+        const scope = new CliCommandInfo(this, name, commandMd, visited)
         result.set(name, scope)
       }
       return result
@@ -232,7 +232,6 @@ export class CliCommandInfo extends CliInfo {
         }
       }
 
-      const visited = new Set()
       for (const classMd of CliCommandInfo.#classHierarchy(
         this.#classMd, firstParentClassMdWithParameters)) {
 
