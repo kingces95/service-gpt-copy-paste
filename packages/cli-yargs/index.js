@@ -224,8 +224,8 @@ export class CliYargsCommand extends CliYargs {
   }
 }
 
-export async function cliYargs(info) {
-  const yargsCommand = CliYargsCommand.fromInfoPojo(await info.toPojo())
+export function cliYargs(pojo) {
+  const yargsCommand = CliYargsCommand.fromInfoPojo(pojo)
   
   const yargs$ = yargs()
     .alias('help', 'h')

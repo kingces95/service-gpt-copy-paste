@@ -1,5 +1,7 @@
 import { LoadAsync } from '@kingjs/load'
+import { Lazy } from '@kingjs/lazy'
 import { IdentifierStyle } from '@kingjs/identifier-style'
+import { setDifference } from '@kingjs/set-extensions'
 
 async function __import() {
   const { cliInfoToPojo } = await import('@kingjs/cli-info-to-pojo')
@@ -54,12 +56,14 @@ export class CliParameterInfo extends CliInfo {
   }
 
   #command
+  #classMd
   #parameterMd
   #default
 
-  constructor(command, name, parameterMd) {
+  constructor(command, name, classMd, parameterMd) {
     super(name)
     this.#command = command
+    this.#classMd = classMd
     this.#parameterMd = parameterMd
 
     // A note on type, default, isRequired, and isOptional:
@@ -73,6 +77,12 @@ export class CliParameterInfo extends CliInfo {
     // optional and default is undefined, then a "default default" is selected based on 
     // the type: null for strings/arrays/counts, false for booleans, 0 for numbers.
     this.#default = this.#parameterMd.default ?? DEFAULT_DEFAULTS[this.type]
+  }
+
+  get __comment() {
+    return { 
+      class: this.#classMd.name,
+    }
   }
 
   get isParameter() { return true }
@@ -147,9 +157,9 @@ export class CliCommandInfo extends CliInfo {
     ].join(' '))
   }
 
-  static async *#servicePoset(classMd, visited) {
+  static *#servicePoset(classMd, visited) {
     // yield all services in the poset of services
-    for await (const serviceMd of classMd.services()) {
+    for (const serviceMd of classMd.services()) {
       if (visited.has(serviceMd)) return
       visited.add(serviceMd)
 
@@ -160,29 +170,26 @@ export class CliCommandInfo extends CliInfo {
     }
   }
 
-  static async *#servicePosetParametersMd(classMd, visited) {
-    for await (const serviceMd of CliCommandInfo.#servicePoset(classMd, visited)) {
-      for (const parameterMd of serviceMd.parameters())
-        yield [serviceMd, parameterMd]
-    }
-  }
-
   #parent
   #classMd
   #commands
   #parameters
+  #visited
+  #partitionMd
+  #services
 
-  constructor(parent, name, classMd, visited = new Set()) {
+  constructor(parent, name, classMd) {
     super(name)
 
     this.#parent = parent
     this.#classMd = classMd
+    this.#visited = new Set(parent?.visited$)
 
     // Load nested commands
     this.#commands = new LoadAsync(async () => {
       const result = new Map()
       for await (const [name, commandMd] of this.#classMd.commands()) {
-        const scope = new CliCommandInfo(this, name, commandMd, visited)
+        const scope = new CliCommandInfo(this, name, commandMd)
         result.set(name, scope)
       }
       return result
@@ -212,42 +219,42 @@ export class CliCommandInfo extends CliInfo {
     //    CliCommand -> Web -> Http -> HttpPost
     // In this way the scope hierarchy is a partition of the subset of the class hierarchy
     // which have parameters. Hence, both hierarchies share the same parameter set.
-    this.#parameters = new LoadAsync(async () => {
+    const firstParentClassMdWithParameters = [
+      ...this.parent?.classMd$.hierarchy() ?? [],
+    ].find(o => [...o.parameters()].length > 0)
+
+    this.#partitionMd = [...CliCommandInfo.#classHierarchy(
+      this.#classMd, firstParentClassMdWithParameters)]
+
+    this.#services = this.#partitionMd.map(
+      o => [...CliCommandInfo.#servicePoset(o, this.#visited)]
+    ).flat()
+
+    this.#parameters = new Lazy(() => {
       const result = new Map()
 
-      for (const parameterMd of this.#classMd.parameters()) {
-        const name = parameterMd.name
-        result.set(name, new CliParameterInfo(this, name, parameterMd))
-      }
-
-      const baseClassMd = this.#classMd.baseClass
-      const firstParentClassMdWithParameters = [
-        ...this.parent?.classMd$.hierarchy() ?? [],
-      ].find(o => [...o.parameters()].length > 0)
-        
-      for (const classMd of CliCommandInfo.#classHierarchy(
-        baseClassMd, firstParentClassMdWithParameters)) {
-
+      // Gather parameters from the class hierarchy
+      for (const classMd of this.#partitionMd) {
         for (const parameterMd of classMd.parameters()) {
           const name = parameterMd.name
-          if (result.has(name)) continue
-          if (parameterMd.local) continue
-          result.set(name, new CliParameterInfo(this, name, parameterMd))
+          if (classMd != this.#classMd) {
+            if (result.has(name)) continue
+            if (parameterMd.local) continue
+          }
+          result.set(name, new CliParameterInfo(this, name, classMd, parameterMd))
         }
       }
 
-      for (const classMd of CliCommandInfo.#classHierarchy(
-        this.#classMd, firstParentClassMdWithParameters)) {
-
-        for await (const [serviceMd, parameterMd] of 
-          CliCommandInfo.#servicePosetParametersMd(classMd, visited)) {
+      // Gather parameters from the service poset
+      for (const serviceMd of this.#services) {
+        for (const parameterMd of serviceMd.parameters()) {
           const name = parameterMd.name
           if (result.has(name))
             throw new Error([
               `Parameter "${name}" in service "${serviceMd.name}"`,
               `conflicts with parameter in class "${this.#classMd.name}".`
             ].join(' '))
-          result.set(name, new CliParameterInfo(this, name, parameterMd))
+          result.set(name, new CliParameterInfo(this, name, serviceMd, parameterMd))
         }
       }
 
@@ -259,6 +266,14 @@ export class CliCommandInfo extends CliInfo {
 
   get parent() { return this.#parent }
   get classMd$() { return this.#classMd }
+  get services$() { return this.#services }
+  get visited$() { return this.#visited }
+  get __comment() {
+    return { 
+      partition: this.#partitionMd.map(o => o.name),
+      services: this.#services.map(o => o.name).sort(),
+    }
+  }
 
   *hierarchy() {
     yield this
@@ -296,8 +311,8 @@ export class CliCommandInfo extends CliInfo {
 
   get description() { return this.#classMd.description }
   get isDefaultCommand() { return !!this.#classMd.defaultCommand }
-  async *parameters() { yield* (await this.#parameters.load()).values() }
-  async getParameter(name) { return (await this.#parameters.load()).get(name) }
+  async *parameters() { yield* (await this.#parameters.value).values() }
+  async getParameter(name) { return (await this.#parameters.value).get(name) }
   *positionals() { yield* this.parameters().filter(o => o.isPositional) }
   *options() { yield* this.parameters().filter(o => o.isOption) }
 

@@ -220,7 +220,7 @@ export class CliClassMetadata extends CliMetadata {
   }
 
   async *commands() { yield* this.#commandsFn() }
-  async *services() { yield* this.#servicesFn() }
+  *services() { yield* this.#servicesFn() }
   *parameters() { yield* this.#parameters.value }
 }
 
@@ -299,13 +299,16 @@ export class CliMetadataClassLoader extends CliMetadataLoader {
           yield [name, this.loader.load$(commandClass)]
         }
       }, 
-      servicesFn: async function*() { 
+      servicesFn: function*() { 
         assert(this instanceof CliClassMetadata)
 
-        for (const [name, value] of class$.getOwnServiceProviderClasses()) {
-          const class$ = await value
-          if (class$ == Cli || class$.prototype instanceof Cli)
-            yield this.loader.load$(class$)
+        for (const [_, value] of class$.getOwnServiceProviderClasses()) {
+          const provider = value
+          // if (!(typeof provider == 'function'))
+          //   throw new Error(`Expected a function.`)
+          // if (provider.prototype instanceof CliServiceProvider)
+          //   throw new Error(`Class ${provider.name} must extend CliServiceProvider.`)
+          yield this.loader.load$(provider)
         }
       }, 
     }
@@ -351,7 +354,7 @@ export class CliMetadataPojoLoader extends CliMetadataLoader {
         for (const [name, ref] of Object.entries(commands ?? { }))
           yield [name, this.loader.load$(poja[ref[0]])]
       }, 
-      servicesFn: async function*() { 
+      servicesFn: function*() { 
         assert(this instanceof CliClassMetadata)
         for (const ref of services ?? [])
           yield this.loader.load$(poja[ref[0]])

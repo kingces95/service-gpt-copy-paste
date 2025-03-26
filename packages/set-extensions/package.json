@@ -1,0 +1,15 @@
+{
+  "name": "@kingjs/set-extensions",
+  "version": "1.0.0",
+  "description": "Basic set operations.",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "peerDependencies": {},
+  "author": "Chris King",
+  "license": "MIT"
+}

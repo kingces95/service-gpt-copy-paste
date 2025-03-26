@@ -276,23 +276,23 @@ export class Cli {
 
   static { this.initialize() }
  
-  #info
+  #services
 
-  constructor({ _services, _info } = {}) {
+  constructor({ _services } = {}) {
     if (Cli.initializing(new.target, { })) {
       const defaults = new.target[OwnDefaults]
       delete new.target[OwnDefaults]
       return defaults
     }
     assert(_services)
-    this.#info = _info
+    this.#services = _services
 
     // assign services by name to this
     for (const [name, service] of this.constructor.getServiceProviderClasses())
       this[name] = _services.get(service)
   }
 
-  get info() { return this.#info }
+  getService(provider) { return this.#services.get(provider) }
 }
 
 export class CliServiceProvider extends Cli {
