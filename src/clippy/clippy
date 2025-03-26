@@ -1,15 +1,17 @@
 #!/usr/bin/env node
 import { Clippy } from './index.js'
 import { cliYargs } from '@kingjs/cli-yargs'
+import { CliRuntime } from '@kingjs/cli-runtime'
 import { hideBin } from 'yargs/helpers'
-import { open } from 'node:fs/promises'
 
-cliYargs(Clippy).then(async (yargs) => {
-  const argv = await yargs.parse(hideBin(process.argv))
-  // const argv = await yargs.parse('spy md'.split(' '))
-  // const argv = await yargs.parse('poll --stdis --errorRate .2'.split(' '))
-  // const argv = await yargs.parse('orb --stdin ./polling.txt'.split(' '))
-  await argv._class.activate(...argv._args)
-})
+CliRuntime.activate(Clippy)
+  .then(runtime => cliYargs(runtime.info)
+    .then(async yargs => {
+      const argv = await yargs.parse(hideBin(process.argv))
+      // const argv = await yargs.parse('spy info spy'.split(' '))
+      // const argv = await yargs.parse('poll --stdis --errorRate .2'.split(' '))
+      // const argv = await yargs.parse('orb --stdin ./polling.txt'.split(' '))
 
-// node.exe src\clippy\index.js poll --error-rate .5 --poll-ms 1000 --stdis | node.exe src\clippy\index.js orb
+      await runtime.execute(argv._, argv)
+    })
+  )

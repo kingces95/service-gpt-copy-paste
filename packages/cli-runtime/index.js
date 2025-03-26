@@ -1,96 +1,58 @@
+import { CliServiceProvider } from '@kingjs/cli'
 import { CliCommand } from '@kingjs/cli-command'
-import { interval } from 'rxjs'
-import { tap } from 'rxjs/operators'
-import ora from 'ora'
-import util from "util"
+import { CliClassMetadata } from '@kingjs/cli-metadata'
+import { CliCommandInfo } from '@kingjs/cli-info'
 
-export default class CliRuntime {
-  
-  static entrypoint(ctor, argv) {
-    const abortController = new AbortController()
-    const signal = abortController.signal
-    const cli = new ctor({ ...argv, signal })
+export class CliRuntime {
+  static async activate(classOrPojo, options = { }) {
+    const { metadata } = options
+    const isClass = typeof classOrPojo == 'function'
+    const tool = isClass ? classOrPojo : CliCommand.extend(classOrPojo)
+    const cachedMetadata = CliClassMetadata.fromMetadataPojo(
+      metadata ?? await (await CliClassMetadata.fromClass(tool)).toPojo()
+    )
+    const info = CliCommandInfo.fromMetadata(cachedMetadata)
+    return new CliRuntime(tool, info)
+  }
 
-    const abort = () => abortController.abort()
-    process.on('SIGINT', abort)
-    cli.on('close', () => process.off('SIGINT', abort))
+  #tool 
+  #info
 
-    process.stdin.pipe(cli.stdin)
-    
-    if (process.stdout.isTTY) {
-      new CliRuntime(cli)
-    } else {
-      cli.stdout.pipe(process.stdout)
-      cli.stderr.pipe(process.stderr)
+  constructor(tool, info) {
+    this.#tool = tool
+    this.#info = info
+  }
+
+  get tool() { return this.#tool }
+  get info() { return this.#info }
+
+  async execute(path, argv) {
+    const command = await this.tool.getRuntimeCommand(...path)
+    const info = await this.info.getRuntimeCommand(...path)
+    const args = await info.getRuntimeArgs(argv)
+    const options = args.at(-1)
+
+    const services = options._services = new Map()
+    for await (const providerClass of command.getServiceProviderClasses(options)) {
+      const runtimeProviderClass = await providerClass.getRuntimeClass(options)
+      const serviceProvider = new runtimeProviderClass(options)
+      const service = await serviceProvider.activate(this)
+      services.set(providerClass, service)
     }
-
-    cli.on('close', (result) => process.exit(result ? 1 : 0))
-  }
-
-  constructor(cli) {
-    this.cli = cli
-    this.spinner = ora({ spinner: 'dots' }).start()
-    this.bytes = { in: 0, out: 0, error: 0 }
-    this.status = { state: 'starting', result: null }
-
-    cli.stdin.on('data', (chunk) => (this.bytes.in += chunk.length))
-    cli.stdout.on('data', (chunk) => (this.bytes.out += chunk.length))
-    cli.stderr.on('data', (chunk) => (this.bytes.error += chunk.length))
-
-    cli.on('status', (state, ...result) => {
-      if (this.cli.verbose 
-        && !CliCommand.isFinished(this.status.state) 
-        && state != this.status.state) {
-        this.spinner.info(this.toHeadline())
-        this.spinner.start()
-      }
-
-      this.status.state = state
-      this.status.result = result
-    })
-
-    this.subscription = interval(200).pipe(
-      tap(() => {
-        const headline = this.toHeadline()
-        if (headline != this.spinner.text)
-          this.spinner.text = headline
-      })  
-    ).subscribe()  
-
-    cli.on('exit', () => {
-      const headline = this.toHeadline()
-
-      if (this.isSuccess()) {
-        this.spinner.succeed(headline)
-      } else {
-        this.spinner.fail(headline)
-      }
-    })
     
-    cli.on('close', () => {
-      this.subscription.unsubscribe()
-    })
+    const runtimeClass = await command.getRuntimeClass(options)
+    return new runtimeClass(...args)
+  }
+}
 
-    cli.on('error', (err) => {
-      const headline = this.toHeadline()
+export class CliTool extends CliServiceProvider {
+  static { this.initialize() }
 
-      this.spinner.fail(headline)
-      if (err instanceof Error)
-        console.log(util.inspect(err))
-
-      this.subscription.unsubscribe()
-    })
+  constructor(options) {
+    if (CliTool.initializing(new.target))
+      return super()
+    super(options)
   }
 
-  isSuccess() {
-    const { state, result } = this.status
-    return CliCommand.isSuccess(state, ...result)
-  }
-
-  toHeadline() {
-    const { in: inBytes, out: outBytes, error: errorBytes } = this.bytes
-    const { state, result } = this.status
-    const headline = this.cli.toString(state, ...(result || []))
-    return headline
-  }
+  async activate(runtime) { return runtime }
 }

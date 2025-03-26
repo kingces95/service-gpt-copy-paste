@@ -5,6 +5,7 @@ import { Lazy, LazyGenerator } from '@kingjs/lazy'
 import { LoadAsync } from '@kingjs/load'
 import { cliTypeof } from '@kingjs/cli-typeof'
 import { getOwn } from '@kingjs/get-own'
+import { IdentifierStyle } from '@kingjs/identifier-style'
 import assert from 'assert'
 async function __import() {
   const { cliMetadataToPojo } = await import('@kingjs/cli-metadata-to-pojo')
@@ -88,6 +89,10 @@ export class Cli {
     if (!command) throw new Error(`Command '${name}' not found`)
     return command.getCommand(...rest)
   }
+  static async getRuntimeCommand(...kebabNames) {
+    const names = kebabNames.map(o => IdentifierStyle.fromKebab(o).toCamel())
+    return this.getCommand(...names) 
+  }
   
   static get ownDiscriminatingOption() { return this[OwnDiscriminatingOption].value }
   static async getRuntimeClass(options) {
@@ -119,21 +124,6 @@ export class Cli {
       yield* class$.getServiceProviderClasses(options)
       yield class$
     }
-  }
-
-  static async activate(...args) {
-    const options = args.at(-1)
-
-    const services = options._services = new Map()
-    for await (const providerClass of this.getServiceProviderClasses(options)) {
-      const runtimeProviderClass = await providerClass.getRuntimeClass(options)
-      const serviceProvider = new runtimeProviderClass(options)
-      const service = await serviceProvider.activate()
-      services.set(providerClass, service)
-    }
-    
-    const runtimeClass = await this.getRuntimeClass(options)
-    return new runtimeClass(...args)
   }
 
   static initialize() {

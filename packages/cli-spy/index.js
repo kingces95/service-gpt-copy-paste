@@ -1,4 +1,5 @@
-import { CliCommand } from '@kingjs/cli-command'
+import { CliTool } from '@kingjs/cli-runtime'
+import { CliCommand, CliOut } from '@kingjs/cli-command'
 import { CliOutputService } from '@kingjs/cli-output-service'
 import { CliClassMetadata } from '@kingjs/cli-metadata'
 import { CliCommandInfo } from '@kingjs/cli-info'
@@ -66,7 +67,7 @@ export class CliSpy extends CliCommand {
   static parameters = {
     path: 'Path of command',
   }
-  static services = [ CliOutputService ]
+  static services = [ CliOutputService, CliOut, CliTool ]
   static commands = { 
     ls, find,
     raw, md, json,
@@ -75,8 +76,8 @@ export class CliSpy extends CliCommand {
   static { this.initialize() }
 
   #path
-  #nodeName
-  #options
+  #stdout
+  #runtime
 
   constructor(path = [], options = {}) {
     if (CliSpy.initializing(new.target, path, options))
@@ -85,23 +86,22 @@ export class CliSpy extends CliCommand {
     super(options)
 
     this.#path = path
-    this.#options = options
+    this.#stdout = this.getService(CliOut)
+    this.#runtime = this.getService(CliTool)
   }
 
   get path() { return this.#path }
-  get nodeName() { return this.#nodeName }
-  get options() { return this.#options }
 
   async getScope() { 
-    return await this.#options._root
+    return await this.#runtime.tool
   }
-  async getClass() { 
+  async getCommand() { 
     const scope = await this.getScope()
-    return await scope.getCommand(...this.#path)
+    return await scope.getRuntimeCommand(...this.#path)
   }
   async getMetadata() { 
-    const class$ = await this.getClass()
-    return await CliClassMetadata.fromClass(class$)
+    const command = await this.getCommand()
+    return await CliClassMetadata.fromClass(command)
   }
   async getCachedMetadata() { 
     const metadata = await this.getMetadata()
@@ -114,6 +114,10 @@ export class CliSpy extends CliCommand {
   async getYargs() {
     const info = await this.getInfo()
     return CliYargsCommand.fromInfoPojo(await info.toPojo())
+  }
+  
+  write(string) {
+    this.#stdout.write(string + '\n')
   }
   log(pojo) {
     const service = this.getService(CliOutputService)

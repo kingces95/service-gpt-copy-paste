@@ -1,9 +1,6 @@
 import _ from 'lodash'
 import yargs from 'yargs'
 import { Lazy } from '@kingjs/lazy'
-import { CliCommand } from '@kingjs/cli-command'
-import { CliClassMetadata } from '@kingjs/cli-metadata'
-import { CliCommandInfo } from '@kingjs/cli-info'
 import { dumpPojo } from '@kingjs/pojo-dump'
 import { toPojo } from '@kingjs/pojo'
 
@@ -130,7 +127,8 @@ export class CliYargsCommand extends CliYargs {
       for (const [name, parameter] of Object.entries(pojo.parameters ?? { })) {
         if (KNONWN_OPTIONS.includes(name))
           continue
-        parameters.push(CliYargsParameter.create(this, name, parameter))
+        const kababName = parameter.kababName ?? name
+        parameters.push(CliYargsParameter.create(this, kababName, parameter))
       }
       return parameters
     })
@@ -138,7 +136,8 @@ export class CliYargsCommand extends CliYargs {
     this.#commands = new Lazy(() => {
       const commands = [ ]
       for (const [name, command] of Object.entries(pojo.commands ?? { })) {
-        commands.push(new CliYargsCommand(this, name, command))
+        const kababName = command.kababName ?? name
+        commands.push(new CliYargsCommand(this, kababName, command))
       }
       return commands
     })
@@ -225,14 +224,7 @@ export class CliYargsCommand extends CliYargs {
   }
 }
 
-export async function cliYargs(classOrPojo, options = { }) {
-  const { metadata } = options
-  const isClass = typeof classOrPojo == 'function'
-  const class$ = isClass ? classOrPojo : CliCommand.extend(classOrPojo)
-  const cachedMetadata = CliClassMetadata.fromMetadataPojo(
-    metadata ?? await (await CliClassMetadata.fromClass(class$)).toPojo()
-  )
-  const info = CliCommandInfo.fromMetadata(cachedMetadata)
+export async function cliYargs(info) {
   const yargsCommand = CliYargsCommand.fromInfoPojo(await info.toPojo())
   
   const yargs$ = yargs()
@@ -248,37 +240,6 @@ export async function cliYargs(classOrPojo, options = { }) {
         process.exit(0)
       }
     })
-    .middleware(async (argv) => ({ 
-      _root: class$,
-      _class: await class$.getCommand(...argv._),
-      _info: await info.getCommand(...argv._),
-    }))
-    .middleware(async (argv) => { 
-      const _args = []
-      const { _root, _class, _info } = argv
-      const parameters = await Array.fromAsync(CliCommandInfo.runtimeParameters(_info))
-      const _options = { _root, _info }
-
-      parameters.filter(o => o.isPositional)
-        .sort((a, b) => a.position - b.position)
-        .reduce((acc, { name }) => {
-          acc.push(argv[name])
-          return acc
-        }, _args)
-
-      _args.push(_options)
-
-      parameters.filter(o => o.isOption)
-        // sort by name
-        .reduce((acc, { name }) => {
-          if (Object.hasOwn(argv, name))
-            acc[name] = argv[name]
-          return acc
-        }, _options)
-
-      return { _args, _options }
-    })
-
 
   return yargsCommand.apply(yargs$)
 }
