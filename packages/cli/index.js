@@ -48,7 +48,7 @@ export class Cli {
 
     return await NodeName.loadClass(value)
   }
-  static extend({ name, commands, ctor, handler, ...values } = { }) {
+  static extend({ name, handler, ...rest } = { }) {
     if (!name) throw new Error(`Class must have a name`)
 
     const className = `${this.name}_${name}`
@@ -64,16 +64,11 @@ export class Cli {
       `}`
     ].join('\n'))(this, handler)
 
-    extension.initialize()
-    extension.commands = commands
-
-    const knownKeys = ['name', 'ctor', 'commands', 'handler']
-    for (const [key, value] of Object.entries(values)) {
-      if (knownKeys.includes(key))
-        continue
+    for (const [key, value] of Object.entries(rest)) 
       extension[key] = value
-    }
-
+    
+    extension.initialize()
+    
     return extension
   }
 
