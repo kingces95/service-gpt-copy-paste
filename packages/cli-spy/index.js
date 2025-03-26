@@ -8,8 +8,8 @@ import { CliYargsCommand } from '@kingjs/cli-yargs'
 const raw = {
   description: 'Dump Cli.ownMetadata',
   handler: async function() {
-    const class$ = await this.getClass()
-    const pojo = [...class$.hierarchy()].map(o => o.ownMetadata)
+    const command = await this.getCommand()
+    const pojo = [...command.hierarchy()].map(o => o.ownMetadata)
     this.log(pojo)
   }
 }
@@ -67,7 +67,11 @@ export class CliSpy extends CliCommand {
   static parameters = {
     path: 'Path of command',
   }
-  static services = [ CliOutputService, CliOut, CliTool ]
+  static services = { 
+    format: CliOutputService, 
+    stdout: CliOut, 
+    runtime: CliTool 
+  }
   static commands = { 
     ls, find,
     raw, md, json,
@@ -76,8 +80,6 @@ export class CliSpy extends CliCommand {
   static { this.initialize() }
 
   #path
-  #stdout
-  #runtime
 
   constructor(path = [], options = {}) {
     if (CliSpy.initializing(new.target, path, options))
@@ -86,14 +88,12 @@ export class CliSpy extends CliCommand {
     super(options)
 
     this.#path = path
-    this.#stdout = this.getService(CliOut)
-    this.#runtime = this.getService(CliTool)
   }
 
   get path() { return this.#path }
 
   async getScope() { 
-    return await this.#runtime.tool
+    return await this.runtime.tool
   }
   async getCommand() { 
     const scope = await this.getScope()
@@ -117,10 +117,10 @@ export class CliSpy extends CliCommand {
   }
   
   write(string) {
-    this.#stdout.write(string + '\n')
+    this.stdout.write(string + '\n')
   }
   log(pojo) {
-    const service = this.getService(CliOutputService)
+    const service = this.format
     service.write(pojo)
   }
 }

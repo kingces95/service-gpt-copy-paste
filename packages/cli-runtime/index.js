@@ -15,8 +15,8 @@ export class CliRuntime {
     return new CliRuntime(tool, info)
   }
 
-  #tool 
-  #info
+  #tool // CliCommand
+  #info // CliCommandInfo
 
   constructor(tool, info) {
     this.#tool = tool
@@ -27,13 +27,14 @@ export class CliRuntime {
   get info() { return this.#info }
 
   async execute(path, argv) {
-    const command = await this.tool.getRuntimeCommand(...path)
-    const info = await this.info.getRuntimeCommand(...path)
+    const command = await this.#tool.getRuntimeCommand(...path)
+    const info = await this.#info.getRuntimeCommand(...path)
     const args = await info.getRuntimeArgs(argv)
     const options = args.at(-1)
 
     const services = options._services = new Map()
-    for await (const providerClass of command.getServiceProviderClasses(options)) {
+    for (const [_, providerClass] of 
+      command.getServiceProviderClasses({ recurse: true })) {
       const runtimeProviderClass = await providerClass.getRuntimeClass(options)
       const serviceProvider = new runtimeProviderClass(options)
       const service = await serviceProvider.activate(this)

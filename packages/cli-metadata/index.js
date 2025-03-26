@@ -302,7 +302,7 @@ export class CliMetadataClassLoader extends CliMetadataLoader {
       servicesFn: async function*() { 
         assert(this instanceof CliClassMetadata)
 
-        for (const value of class$.getOwnServiceProviderClasses()) {
+        for (const [name, value] of class$.getOwnServiceProviderClasses()) {
           const class$ = await value
           if (class$ == Cli || class$.prototype instanceof Cli)
             yield this.loader.load$(class$)

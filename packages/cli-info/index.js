@@ -6,7 +6,6 @@ async function __import() {
   const { dumpPojo } = await import('@kingjs/pojo-dump')
   return { toPojo: cliInfoToPojo, dumpPojo }
 }
-const RUNTIME_OPTIONS = [ '_root', '_info' ]
 const DEFAULT_DEFAULTS = {
   string: null,
   array: null,
@@ -323,12 +322,6 @@ export class CliCommandInfo extends CliInfo {
       }
     }
     result.push(options)
-
-    // copy known runtime options from argv to options
-    for (const name of RUNTIME_OPTIONS) {
-      if (argv[name] !== undefined)
-        options[name] = argv[name]
-    }
 
     return result
   }

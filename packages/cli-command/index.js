@@ -81,6 +81,7 @@ export class CliCommand extends Cli {
     help: ['h'],
     version: ['v'],
   }
+  static services = { stderr: CliErr }
   static { this.initialize() }
 
   constructor({ 
@@ -131,8 +132,7 @@ export class CliCommand extends Cli {
 
   toString() {
     if (this.succeeded) {
-      const stderr = this.getService(CliErr)
-      if (stderr.count)
+      if (this.stderr.count)
         return 'Command succeeded with warnings'
       else
         return 'Command succeeded'

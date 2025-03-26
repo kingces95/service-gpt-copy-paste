@@ -23,12 +23,11 @@ export class CliOutputService extends CliServiceProvider {
       table: MODULE_NAME.addExport('table'),
     },
   }
-  static services = [ CliOut ]
+  static services = { stdout: CliOut }
   static { this.initialize() }
 
   #color
   #query
-  #stdout
   
   constructor({ output = 'util', query = null, color = true, ...rest } = { }) {
     if (CliOutputService.initializing(new.target, { output, query, color }))
@@ -37,10 +36,8 @@ export class CliOutputService extends CliServiceProvider {
     super({ ...rest })
     this.#color = color
     this.#query = query
-    this.#stdout = this.getService(CliOut)
   }
 
-  get stdout() { return this.#stdout }
   get color() { return this.#color && this.stdout.isTTY }
 
   query(pojo) {

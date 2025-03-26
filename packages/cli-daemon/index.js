@@ -28,35 +28,32 @@ export class CliIs extends CliServiceProvider {
 }
 
 export class CliDaemonState extends CliServiceProvider { 
-  static services = [ CliIs ]
+  static services = { cliis: CliIs }
   static { this.initialize() }
 
-  #cliis
   #echo
-  #state
 
   constructor(options) { 
     if (CliDaemonState.initializing(new.target)) 
       return super()
     super(options)
 
-    this.#cliis = this.getService(CliIs)
-    this.#echo = new CliEcho(this.#cliis)
+    this.#echo = new CliEcho(this.cliis)
   }
 
-  get state() { return this.#state }
+  get state() { return this._state }
 
   async update(...fields) {
     await this.#echo.writeRecord(fields)
   }
 
   async warnThat(name) {
-    this.#state = name
+    this._state = name
     await this.update('warning', name, this.toString())
   }
   
   async is(name) {
-    this.#state = name
+    this._state = name
     await this.update(name, this.toString())
   }  
 
@@ -71,7 +68,7 @@ export class CliPulse extends CliServiceProvider {
     intervalMs: 'Cancellation polling',
     reportMs: 'Report interval',
   }
-  static services = [ CliIn, CliOut, CliErr ]
+  static services = { stdin: CliIn, stdout: CliOut, stderr: CliErr }
   static { this.initialize() }
 
   constructor({ intervalMs = 100, reportMs = 1000, ...rest } = {}) {
@@ -104,8 +101,9 @@ export class CliPulse extends CliServiceProvider {
 
       const memoryUsage = (process.memoryUsage().rss / os.totalmem() * 100).toFixed(1)
       
-      const [ stdin, stdout, stderr ] = this.getService(CliIn, CliOut, CliErr)
-      callback(stdin.count, stdout.count, stderr.count, totalCPU.toFixed(1), memoryUsage)
+      const { stdin, stdout, stderr } = this
+      callback(stdin.count, stdout.count, stderr.count,
+        totalCPU.toFixed(1), memoryUsage)
       ms = 0
     }
   }
@@ -116,20 +114,14 @@ export class CliPulse extends CliServiceProvider {
 }
 
 export class CliDaemon extends CliCommand {
-  static services = [ CliDaemonState, CliPulse ]
+  static services = { state: CliDaemonState, pulse: CliPulse }
   static { this.initialize() }
-
-  #state
-  #pulse
 
   constructor(options) {
     if (CliDaemon.initializing(new.target)) 
       return super()
     super(options)
 
-    this.#state = this.getService(CliDaemonState)
-    this.#pulse = this.getService(CliPulse)
-    
     const abortController = new AbortController()
     this.signal = abortController.signal
 
@@ -151,19 +143,19 @@ export class CliDaemon extends CliCommand {
       )
     })
 
-    this.#pulse.start((stdinCount, stdoutCount, stderrCount, cpu, memory) => {
+    this.pulse.start((stdinCount, stdoutCount, stderrCount, cpu, memory) => {
       this.update$('data', stdinCount, stdoutCount, stderrCount, cpu, memory)
     })
     this.is$('starting')
   }
 
-  get state$() { return this.#state.state }
-  async update$(...fields) { await this.#state.update(...fields) }
-  async warnThat$(name) { await this.#state.warnThat(name) } 
-  async is$(name) { await this.#state.is(name) }
+  get state$() { return this.state.state }
+  async update$(...fields) { await this.state.update(...fields) }
+  async warnThat$(name) { await this.state.warnThat(name) } 
+  async is$(name) { await this.state.is(name) }
 
   async stop$() {
-    await this.#pulse.stop()
+    await this.pulse.stop()
     await this.is$('stopping')
   }
 
@@ -195,7 +187,7 @@ export class CliDaemon extends CliCommand {
   get aborting() { return this.state$ == 'aborting' }
   get stopping() { return this.state$ == 'stopping' }
 
-  toString() { return this.#state.toString() }
+  toString() { return this.state.toString() }
 }
 
 // CliDaemon.__dumpMetadata()

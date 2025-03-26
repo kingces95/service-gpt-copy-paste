@@ -23,12 +23,10 @@ export default class CliOrb extends CliCommand {
     cpuHot: 'Threshold for high CPU usage',
     memHot: 'Threshold for high memory usage',
   }
-  static services = [ CliParser, CliIn ]
+  static services = { parser: CliParser, stdin: CliIn }
   static { this.initialize() }
 
   #reader
-  #parser
-  #stdin
   
   constructor({ cpuHot = CPU_HOT, memHot = MEM_HOT, ...rest } = { }) {
     if (CliOrb.initializing(new.target, { cpuHot, memHot }))
@@ -41,9 +39,7 @@ export default class CliOrb extends CliCommand {
     this.stats = { in: 0, out: 0, error: 0 }
     this.message = ''
     
-    this.#parser = this.getService(CliParser)
-    this.#stdin = this.getService(CliIn)
-    this.#reader = CliReader.from(this.#stdin, this.#parser)
+    this.#reader = CliReader.from(this.stdin, this.parser)
     
     // Initialize spinner for TTY
     this.start()
@@ -75,7 +71,7 @@ export default class CliOrb extends CliCommand {
         const { type, rest } = record
 
         if (type == 'data') {
-          this.stats = await this.#parser.toRecord(
+          this.stats = await this.parser.toRecord(
             rest, { inCount: '#', outCount: '#', errorCount: '#', cpu: '#', memory: '#' }) 
 
           this.adjustSpinner(this.stats.cpu, this.stats.memory)
@@ -84,7 +80,7 @@ export default class CliOrb extends CliCommand {
         }
 
         if (type == 'exiting') {
-          const { code } = await this.#parser.toRecord(rest, { code: '#' })
+          const { code } = await this.parser.toRecord(rest, { code: '#' })
           process.exitCode = code
           continue
         }
@@ -113,7 +109,7 @@ export default class CliOrb extends CliCommand {
 
         } else if (type == 'warning') {
           const { _, warnMessage } 
-            = await this.#parser.toRecord(rest, ['warnType', 'warnMessage'])
+            = await this.parser.toRecord(rest, ['warnType', 'warnMessage'])
           this.message = `${warnMessage}`
           this.spinner.color = WARN_COLOR
 

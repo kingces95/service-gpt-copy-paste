@@ -8,10 +8,8 @@ import { CliErr, CliOut } from '@kingjs/cli-command'
 
 export class CliRx extends CliDaemon {
   static { this.initialize() }
-  static services = [ CliOut, CliErr ]
+  static services = { stdout: CliOut, stderr: CliErr }
 
-  #stdout
-  #stderr
   #errorSubject
   #signalRx
 
@@ -20,18 +18,16 @@ export class CliRx extends CliDaemon {
       return super()
     super(options)
 
-    this.#stdout = this.getService(CliOut)
-    this.#stderr = this.getService(CliErr)
     this.#errorSubject = new Subject()
     this.#signalRx = fromAbortSignal(this.signal).pipe(share())
     
     const stdoutPipeline = workflow.pipe(
       takeUntil(this.#signalRx),
-      concatWrite(this.#stdout),
+      concatWrite(this.stdout),
       tap({ complete: () => this.#errorSubject.complete() }),
     )
     const stderrPipeline = this.#errorSubject.pipe(
-      concatWrite(this.#stderr)
+      concatWrite(this.stderr)
     )
     merge(stdoutPipeline, stderrPipeline).subscribe({
       complete: () => {

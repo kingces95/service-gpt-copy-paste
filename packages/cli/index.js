@@ -7,6 +7,7 @@ import { cliTypeof } from '@kingjs/cli-typeof'
 import { getOwn } from '@kingjs/get-own'
 import { IdentifierStyle } from '@kingjs/identifier-style'
 import assert from 'assert'
+import { CliOut } from '@kingjs/cli-command'
 async function __import() {
   const { cliMetadataToPojo } = await import('@kingjs/cli-metadata-to-pojo')
   const { dumpPojo } = await import('@kingjs/pojo-dump')
@@ -20,7 +21,7 @@ const PARAMETER_METADATA_NAMES =  [
   // functions
   'coerce',
   // strings
-  'defaultDescription', 'services',
+  'defaultDescription',
   // booleans
   'hidden', 'local', 'normalize',
 ]
@@ -108,19 +109,25 @@ export class Cli {
     return class$
   }
 
-  static *getOwnServiceProviderClasses() { yield* getOwn(this, 'services') ?? [] }
-  static async* getServiceProviderClasses(options, visited = new Set()) {
+  static *getOwnServiceProviderClasses() { 
+    yield* Object.entries(getOwn(this, 'services') ?? { })
+  }
+  static *getServiceProviderClasses({
+    visited = new Set(),
+    recurse = false,
+  } = { }) {
     const baseClass = this.baseClass
     if (baseClass)
-      yield* baseClass.getServiceProviderClasses(options)
+      yield* baseClass.getServiceProviderClasses({visited, recurse})
 
-    for (const class$ of this.getOwnServiceProviderClasses()) {
+    for (const [name, class$] of this.getOwnServiceProviderClasses()) {
       if (visited.has(class$)) continue
       visited.add(class$)
       if (!(class$.prototype instanceof CliServiceProvider))
         throw new Error(`Service ${class$.name} must extend ${CliServiceProvider.name}`)
-      yield* class$.getServiceProviderClasses(options)
-      yield class$
+      if (recurse)
+        yield* class$.getServiceProviderClasses({visited, recurse})
+      yield [name, class$]
     }
   }
 
@@ -269,7 +276,6 @@ export class Cli {
 
   static { this.initialize() }
  
-  #services // map of service type to service instance
   #info
 
   constructor({ _services, _info } = {}) {
@@ -279,14 +285,11 @@ export class Cli {
       return defaults
     }
     assert(_services)
-    this.#services = _services
     this.#info = _info
-  }
 
-  getService(...classes) {
-    if (classes.length == 1)
-      return this.#services.get(classes[0]) 
-    return classes.map(o => this.getService(o))
+    // assign services by name to this
+    for (const [name, service] of this.constructor.getServiceProviderClasses())
+      this[name] = _services.get(service)
   }
 
   get info() { return this.#info }
