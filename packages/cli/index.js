@@ -38,40 +38,43 @@ export class Cli {
     await dumpPojo(await toPojo(this.ownMetadata))
   }
 
-  static async loadClass(value) {
+  static async loadClass(entry) {
+    const [name, value] = entry
     if (value instanceof NodeName) 
-      return Cli.loadClass(await value.importObject()) 
+      return Cli.loadClass([name, await value.importObject()]) 
 
     if (typeof value == 'object')
-      return this.extend({ ...value })
+      return this.extend({ name, ...value })
 
     return await NodeName.loadClass(value)
   }
-  static extend({ name = 'annon', commands, ctor, handler, ...values } = { }) {
+  static extend({ name, commands, ctor, handler, ...values } = { }) {
     if (!name) throw new Error(`Class must have a name`)
 
-    const cls = class extends this {
-      constructor(...args) {
-        if (cls.initializing(new.target, ...args))
-          return super()
+    const className = `${this.name}_${name}`
+    const extension = new Function('base', 'handler', [
+      `return class ${className} extends base {`,
+      `  constructor(...args) {`,
+      `    if (${className}.initializing(new.target, ...args))`,
+      `      return super()`,
+      ``,
+      `    super(...args)`,
+      `    handler?.call(this, ...args)`,
+      `  }`,
+      `}`
+    ].join('\n'))(this, handler)
 
-        super(...args)
-
-        handler?.call(this, ...args)
-      }
-    }
-    cls.initialize()
-    Object.defineProperty(cls, "name", { value: name });
-    cls.commands = commands
+    extension.initialize()
+    extension.commands = commands
 
     const knownKeys = ['name', 'ctor', 'commands', 'handler']
     for (const [key, value] of Object.entries(values)) {
       if (knownKeys.includes(key))
         continue
-      cls[key] = value
+      extension[key] = value
     }
-  
-    return cls
+
+    return extension
   }
 
   static get ownMetadata() { return this[OwnMetadata].value }
@@ -100,11 +103,11 @@ export class Cli {
 
     const [name, discriminations] = this.ownDiscriminatingOption
     const discriminator = options[name]
-    const className = discriminations[discriminator]
-    if (!className) return this
+    const importOrObject = discriminations[discriminator]
+    if (!importOrObject) return this
 
     // runtime class must be a derivation enclosing class
-    const class$ = await this.loadClass(className)
+    const class$ = await this.loadClass([name, importOrObject])
     if (class$ != this && !(class$.prototype instanceof this))
       throw new Error(`Class ${class$.name} must extend ${this.name}`)
     return class$
@@ -244,7 +247,7 @@ export class Cli {
       // return a map of promises
       return Object.fromEntries(
         Object.entries(commands)
-          .map(([name, value]) => [name, this.loadClass(value)])
+          .map(([name, value]) => [name, this.loadClass([name, value])])
       )
 
     }, this)
