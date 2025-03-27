@@ -6,20 +6,20 @@ import { CliEcho } from '@kingjs/cli-echo'
 import os from 'os'
 import assert from 'assert'
 
-export class CliIs extends CliServiceProvider { 
+export class CliLog extends CliServiceProvider { 
   static parameters = {
-    stdis: 'Status stream',
+    stdlog: 'Status stream',
   }
   static { this.initialize() }
 
   #path
 
-  constructor({ stdis = DEV_STDOUT, ...rest } = { }) { 
-    if (CliIs.initializing(new.target, { stdis })) 
+  constructor({ stdlog = DEV_STDOUT, ...rest } = { }) { 
+    if (CliLog.initializing(new.target, { stdlog })) 
       return super()
     super(rest)
 
-    this.#path = stdis
+    this.#path = stdlog
   }
   
   async activate() { 
@@ -28,7 +28,7 @@ export class CliIs extends CliServiceProvider {
 }
 
 export class CliDaemonState extends CliServiceProvider { 
-  static services = { cliis: CliIs }
+  static services = { stdlog: CliLog }
   static { this.initialize() }
 
   #echo
@@ -38,13 +38,13 @@ export class CliDaemonState extends CliServiceProvider {
       return super()
     super(options)
 
-    this.#echo = new CliEcho(this.cliis)
+    this.#echo = new CliEcho(this.stdlog)
   }
 
   get state() { return this._state }
 
   async update(...fields) {
-    await this.#echo.writeRecord(fields)
+    await this.#echo.echoRecord(fields)
   }
 
   async warnThat(name) {

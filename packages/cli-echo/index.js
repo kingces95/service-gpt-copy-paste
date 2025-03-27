@@ -23,10 +23,10 @@ export class CliEcho {
     }
   }
 
-  async write(line) { 
-    await this.writeRecord([line])
+  async echo(line) { 
+    await this.echoRecord([line])
   }
-  async writeRecord(fields, separator = ' ') {
+  async echoRecord(fields, separator = ' ') {
     const stream = this.#stream
     const encoding = this.#encoding
 

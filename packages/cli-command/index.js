@@ -2,6 +2,7 @@
 import { Cli, CliServiceProvider } from '@kingjs/cli'
 import { CliReadable, DEV_STDIN } from '@kingjs/cli-readable'
 import { CliWritable, DEV_STDOUT, DEV_STDERR } from '@kingjs/cli-writable'
+import { CliEcho } from '@kingjs/cli-echo'
 import assert from 'assert'
 
 const EXIT_SUCCESS = 0
