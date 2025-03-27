@@ -140,6 +140,22 @@ export class CliCommandInfo extends CliInfo {
     }
   }
 
+  static isParameterized(commandOrServiceMd, isService = false) {
+    if (!current.parameters().next().done)
+      return true
+    for (const current of !isService 
+      ? [commandOrServiceMd] : commandOrServiceMd.hierarchy()) {
+
+
+      for (const serviceMd of current.services()) {
+        if (CliCommandInfo.isParameterized(serviceMd, true))
+          return true
+      }
+    }
+      
+    return false
+  }
+
   static *#classHierarchy(
     classMdStart, 
     classMdEndExclusive) {
@@ -147,6 +163,7 @@ export class CliCommandInfo extends CliInfo {
     if (!classMdStart) return
     for (const current of classMdStart.hierarchy()) {
       if (current == classMdEndExclusive) return
+      if (current.baren) continue
       yield current
     }
 
@@ -160,7 +177,8 @@ export class CliCommandInfo extends CliInfo {
   static *#servicePoset(classMd, visited) {
     // yield all services in the poset of services
     for (const serviceMd of classMd.services()) {
-      if (visited.has(serviceMd)) return
+      if (serviceMd.baren) continue
+      if (visited.has(serviceMd)) continue
       visited.add(serviceMd)
 
       if (!serviceMd.isService) 
@@ -174,16 +192,16 @@ export class CliCommandInfo extends CliInfo {
   #classMd
   #commands
   #parameters
-  #visited
+  #visitedMd
   #partitionMd
-  #services
+  #servicesMd
 
   constructor(parent, name, classMd) {
     super(name)
 
     this.#parent = parent
     this.#classMd = classMd
-    this.#visited = new Set(parent?.visited$)
+    this.#visitedMd = new Set(parent?.visited$)
 
     // Load nested commands
     this.#commands = new LoadAsync(async () => {
@@ -219,16 +237,14 @@ export class CliCommandInfo extends CliInfo {
     //    CliCommand -> Web -> Http -> HttpPost
     // In this way the scope hierarchy is a partition of the subset of the class hierarchy
     // which have parameters. Hence, both hierarchies share the same parameter set.
-    const firstParentClassMdWithParameters = [
-      ...this.parent?.classMd$.hierarchy() ?? [],
-    ].find(o => [...o.parameters()].length > 0)
+    this.#partitionMd = [
+      ...CliCommandInfo.#classHierarchy(
+        this.#classMd, this.parent?.partitionMd$[0])
+    ]
 
-    this.#partitionMd = [...CliCommandInfo.#classHierarchy(
-      this.#classMd, firstParentClassMdWithParameters)]
-
-    this.#services = this.#partitionMd.map(
-      o => [...CliCommandInfo.#servicePoset(o, this.#visited)]
-    ).flat()
+    this.#servicesMd = this.#partitionMd.map(o => [
+      ...CliCommandInfo.#servicePoset(o, this.#visitedMd)
+    ]).flat()
 
     this.#parameters = new Lazy(() => {
       const result = new Map()
@@ -246,7 +262,7 @@ export class CliCommandInfo extends CliInfo {
       }
 
       // Gather parameters from the service poset
-      for (const serviceMd of this.#services) {
+      for (const serviceMd of this.#servicesMd) {
         for (const parameterMd of serviceMd.parameters()) {
           const name = parameterMd.name
           if (result.has(name))
@@ -266,12 +282,13 @@ export class CliCommandInfo extends CliInfo {
 
   get parent() { return this.#parent }
   get classMd$() { return this.#classMd }
-  get services$() { return this.#services }
-  get visited$() { return this.#visited }
+  get servicesMd$() { return this.#servicesMd }
+  get visitedMd$() { return this.#visitedMd }
+  get partitionMd$() { return this.#partitionMd }
   get __comment() {
     return { 
       partition: this.#partitionMd.map(o => o.name),
-      services: this.#services.map(o => o.name).sort(),
+      services: this.#servicesMd.map(o => o.name).sort(),
     }
   }
 

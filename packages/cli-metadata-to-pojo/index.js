@@ -14,6 +14,7 @@ CliClassMetadata[symbol] = {
   wellKnown: 'boolean',
   description: 'string',
   baseClass: 'any',
+  baren: 'boolean',
   defaultCommand: 'boolean',
   parameters: 'infos',
   commands: 'entries',

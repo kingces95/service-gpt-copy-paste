@@ -38,9 +38,8 @@ function assertAreObjectNames(...values) {
 
 export class NodeName {
   async __dump() { 
-    const { toPojo, dumpPojo } = await __import()
-    const pojo = await toPojo(this)
-    await dumpPojo(pojo) 
+    const { dumpPojo } = await __import()
+    await dumpPojo(await this.toPojo()) 
   }
 
   static async loadClass(value) {
@@ -345,6 +344,11 @@ export class NodeName {
       return module.default ?? module[this.defaultName] 
 
     return module[this.name]
+  }
+
+  async toPojo() {
+    const { toPojo } = await __import()
+    return await toPojo(this)
   }
 
   toString() {

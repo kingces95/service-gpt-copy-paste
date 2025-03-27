@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { LazyGenerator } from '@kingjs/lazy'
+import { LazyGenerator, Lazy } from '@kingjs/lazy'
 import { Cli, CliServiceProvider } from '@kingjs/cli'
 import { CliCommand } from '@kingjs/cli-command'
 import assert from 'assert'
@@ -170,6 +170,8 @@ export class CliClassMetadata extends CliMetadata {
   #baseClassFn
   #commandsFn
   #servicesFn
+  #baren
+  #services
 
   constructor(loader, id, name, {
     baseClassFn,
@@ -194,6 +196,16 @@ export class CliClassMetadata extends CliMetadata {
         yield CliParameterMetadata.create(this, name, pojo)
       }
     }, this)
+
+    this.#services = new LazyGenerator(function* () {
+      yield* this.#servicesFn()
+    }, this)
+
+    // no parameters and all services are also baren
+    this.#baren = new Lazy(() => {
+      if (!this.parameters().next().done) return false
+      return [...this.services()].every(o => o.baren)
+    }, this)
   }
 
   isWellKnownClass$(class$) {
@@ -208,6 +220,7 @@ export class CliClassMetadata extends CliMetadata {
   get isService() { return this.isWellKnownClass$(CliServiceProvider) }
   get isCli() { return this.isWellKnownClass$(Cli) }
   get baseClass() { return this.#baseClassFn() }
+  get baren() { return this.#baren.value }
 
   get description() { return this.#pojo.description }
   get defaultCommand() { return this.#pojo.defaultCommand }
@@ -220,7 +233,7 @@ export class CliClassMetadata extends CliMetadata {
   }
 
   async *commands() { yield* this.#commandsFn() }
-  *services() { yield* this.#servicesFn() }
+  *services() { yield* this.#services.value }
   *parameters() { yield* this.#parameters.value }
 }
 

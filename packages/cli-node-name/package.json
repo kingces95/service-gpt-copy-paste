@@ -1,0 +1,15 @@
+{
+  "name": "@kingjs/cli-node-name",
+  "version": "1.0.0",
+  "description": "Command for reflecting node names.",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "peerDependencies": {},
+  "author": "Chris King",
+  "license": "MIT"
+}

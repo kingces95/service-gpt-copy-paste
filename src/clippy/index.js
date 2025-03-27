@@ -10,6 +10,7 @@ export const Clippy = CliCommand.extend({
     orb: '@kingjs/cli-orb',
     eval: '@kingjs/cli-eval',
     spy: '@kingjs/cli-spy',
+    name: '@kingjs/cli-node-name',
   }
 })
 
