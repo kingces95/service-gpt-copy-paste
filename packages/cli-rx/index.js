@@ -4,11 +4,11 @@ import { tap, share, takeUntil } from 'rxjs/operators'
 import { fromAbortSignal } from '@kingjs/rx-from-abort-signal'
 import { AbortError } from '@kingjs/abort-error'
 import concatWrite from '@kingjs/rx-concat-write'
-import { CliErr, CliOut } from '@kingjs/cli-command'
+import { CliStdErr, CliStdOut } from '@kingjs/cli-command'
 
 export class CliRx extends CliDaemon {
   static { this.initialize() }
-  static services = { stdout: CliOut, stderr: CliErr }
+  static services = { stdout: CliStdOut, stderr: CliStdErr }
 
   #errorSubject
   #signalRx

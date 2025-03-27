@@ -1,4 +1,4 @@
-import { CliCommand, CliIn } from '@kingjs/cli-command'
+import { CliCommand, CliStdIn } from '@kingjs/cli-command'
 import { AbortError } from '@kingjs/abort-error'
 import ora from 'ora'
 import process from 'process'
@@ -23,7 +23,7 @@ export default class CliOrb extends CliCommand {
     cpuHot: 'Threshold for high CPU usage',
     memHot: 'Threshold for high memory usage',
   }
-  static services = { parser: CliParser, stdin: CliIn }
+  static services = { parser: CliParser, stdin: CliStdIn }
   static { this.initialize() }
 
   #reader

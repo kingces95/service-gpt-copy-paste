@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { CliServiceProvider } from '@kingjs/cli'
-import { CliCommand, CliIn, CliOut, CliErr } from '@kingjs/cli-command'
+import { CliCommand, CliStdIn, CliStdOut, CliStdErr } from '@kingjs/cli-command'
 import { CliWritable, DEV_STDOUT } from '@kingjs/cli-writable'
 import { CliEcho } from '@kingjs/cli-echo'
 import os from 'os'
@@ -68,7 +68,7 @@ export class CliPulse extends CliServiceProvider {
     intervalMs: 'Cancellation polling',
     reportMs: 'Report interval',
   }
-  static services = { stdin: CliIn, stdout: CliOut, stderr: CliErr }
+  static services = { stdin: CliStdIn, stdout: CliStdOut, stderr: CliStdErr }
   static { this.initialize() }
 
   constructor({ intervalMs = 100, reportMs = 1000, ...rest } = {}) {

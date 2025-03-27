@@ -7,7 +7,6 @@ import { cliTypeof } from '@kingjs/cli-typeof'
 import { getOwn } from '@kingjs/get-own'
 import { IdentifierStyle } from '@kingjs/identifier-style'
 import assert from 'assert'
-import { CliOut } from '@kingjs/cli-command'
 async function __import() {
   const { cliMetadataToPojo } = await import('@kingjs/cli-metadata-to-pojo')
   const { dumpPojo } = await import('@kingjs/pojo-dump')

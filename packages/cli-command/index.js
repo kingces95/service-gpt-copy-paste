@@ -4,6 +4,7 @@ import { CliReadable, DEV_STDIN } from '@kingjs/cli-readable'
 import { CliWritable, DEV_STDOUT, DEV_STDERR } from '@kingjs/cli-writable'
 import { CliEcho } from '@kingjs/cli-echo'
 import assert from 'assert'
+import { stdin } from 'process'
 
 const EXIT_SUCCESS = 0
 const EXIT_FAILURE = 1
@@ -13,14 +14,14 @@ const EXIT_SIGINT = EXIT_ABORT + 2
 
 export const REQUIRED = undefined
 
-export class CliIn extends CliServiceProvider { 
+export class CliStdIn extends CliServiceProvider { 
   static parameters = { stdin: 'Input stream'}
   static { this.initialize() }
 
   #path
 
   constructor({ stdin = DEV_STDIN, ...rest } = { }) { 
-    if (CliIn.initializing(new.target, { stdin })) 
+    if (CliStdIn.initializing(new.target, { stdin })) 
       return super()
     super(rest)
 
@@ -32,14 +33,14 @@ export class CliIn extends CliServiceProvider {
   }
 }
 
-export class CliOut extends CliServiceProvider {
+export class CliStdOut extends CliServiceProvider {
   static parameters = { stdout: 'Output stream' }
   static { this.initialize() }
 
   #path
 
   constructor({ stdout = DEV_STDOUT, ...rest } = {}) {
-    if (CliOut.initializing(new.target, { stdout }))
+    if (CliStdOut.initializing(new.target, { stdout }))
       return super()
     super(rest)
 
@@ -53,14 +54,14 @@ export class CliOut extends CliServiceProvider {
   }
 }
 
-export class CliErr extends CliServiceProvider {
+export class CliStdErr extends CliServiceProvider {
   static parameters = { stderr: 'Error stream' }
   static { this.initialize() }
 
   #path
 
   constructor({ stderr = DEV_STDERR, ...rest } = {}) {
-    if (CliErr.initializing(new.target, { stderr }))
+    if (CliStdErr.initializing(new.target, { stderr }))
       return super()
     super(rest)
 
@@ -70,6 +71,34 @@ export class CliErr extends CliServiceProvider {
   async activate() {
     return await CliWritable.fromPath(this.#path)
   }
+}
+
+export class CliConsole extends CliServiceProvider {
+  static service = { 
+    stdout: CliStdOut,
+    stderr: CliStdErr,
+    stdin: CliStdIn,
+  }
+  static { this.initialize() }
+
+  #out
+  #err
+
+  constructor(options) {
+    if (CliConsole.initializing(new.target))
+      return super()
+    super(options)
+
+    this.#out = new CliEcho(this.stdout)
+  }
+
+  async echo(line) { 
+    await this.#out.echo(line)
+  }
+  async echoRecord(fields, separator = ' ') {
+    await this.#out.echoRecord(fields, separator)
+  }
+
 }
 
 export class CliCommand extends Cli {
@@ -132,7 +161,7 @@ export class CliCommand extends Cli {
 
   toString() {
     if (this.succeeded) {
-      const stderr = this.getService(CliErr)
+      const stderr = this.getService(CliStdErr)
       if (stderr?.count)
         return 'Command succeeded with warnings'
       else

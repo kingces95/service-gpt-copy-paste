@@ -1,5 +1,5 @@
 import { CliServiceProvider } from '@kingjs/cli'
-import { CliOut } from '@kingjs/cli-command'
+import { CliStdOut } from '@kingjs/cli-command'
 import { NodeName } from '@kingjs/node-name'
 import jmespath from 'jmespath'
 
@@ -23,12 +23,12 @@ export class CliOutputService extends CliServiceProvider {
       table: MODULE_NAME.addExport('table'),
     },
   }
-  static services = { stdout: CliOut }
+  static services = { stdout: CliStdOut }
   static { this.initialize() }
 
   #color
   #query
-  
+
   constructor({ output = 'util', query = null, color = true, ...rest } = { }) {
     if (CliOutputService.initializing(new.target, { output, query, color }))
       return super()

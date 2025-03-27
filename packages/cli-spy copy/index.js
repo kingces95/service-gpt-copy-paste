@@ -1,5 +1,5 @@
 import { CliTool } from '@kingjs/cli-runtime'
-import { CliCommand, CliStdOut } from '@kingjs/cli-command'
+import { CliCommand, CliConsole } from '@kingjs/cli-command'
 import { CliOutputService } from '@kingjs/cli-output-service'
 import { CliClassMetadata } from '@kingjs/cli-metadata'
 import { CliCommandInfo } from '@kingjs/cli-info'
@@ -69,7 +69,7 @@ export class CliSpy extends CliCommand {
   }
   static services = { 
     format: CliOutputService, 
-    stdout: CliStdOut, 
+    stdout: CliConsole, 
     runtime: CliTool 
   }
   static commands = { 
