@@ -208,23 +208,13 @@ export class CliClassMetadata extends CliMetadata {
     }, this)
   }
 
-  isWellKnownClass$(class$) {
-    if (this.wellKnown && this.name == class$.name) 
-      return true 
-    return this.baseClass?.isWellKnownClass$(class$) 
-  }
-
   get loader() { return this.#loader }
   get isClass() { return true }
-  get isCommand() { return this.isWellKnownClass$(CliCommand) }
-  get isService() { return this.isWellKnownClass$(CliServiceProvider) }
-  get isCli() { return this.isWellKnownClass$(Cli) }
   get baseClass() { return this.#baseClassFn() }
   get baren() { return this.#baren.value }
 
   get description() { return this.#pojo.description }
   get defaultCommand() { return this.#pojo.defaultCommand }
-  get wellKnown() { return this.#pojo.wellKnown }
 
   *hierarchy() {
     yield this
@@ -288,9 +278,6 @@ export class CliMetadataLoader extends CliClassMetadata {
 export class CliMetadataClassLoader extends CliMetadataLoader {
   static getInjections(class$, loadedAsBaseClass = false) {
     return { 
-      wellKnown: class$ == Cli ||
-          class$ == CliServiceProvider ||
-          class$ == CliCommand,
       baseClassFn: function() { 
         assert(this instanceof CliClassMetadata)
 

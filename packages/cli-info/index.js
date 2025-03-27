@@ -140,22 +140,6 @@ export class CliCommandInfo extends CliInfo {
     }
   }
 
-  static isParameterized(commandOrServiceMd, isService = false) {
-    if (!current.parameters().next().done)
-      return true
-    for (const current of !isService 
-      ? [commandOrServiceMd] : commandOrServiceMd.hierarchy()) {
-
-
-      for (const serviceMd of current.services()) {
-        if (CliCommandInfo.isParameterized(serviceMd, true))
-          return true
-      }
-    }
-      
-    return false
-  }
-
   static *#classHierarchy(
     classMdStart, 
     classMdEndExclusive) {
@@ -180,9 +164,6 @@ export class CliCommandInfo extends CliInfo {
       if (serviceMd.baren) continue
       if (visited.has(serviceMd)) continue
       visited.add(serviceMd)
-
-      if (!serviceMd.isService) 
-        throw new Error(`Class "${serviceMd.name}" is not a service.`)
       yield* CliCommandInfo.#servicePoset(serviceMd, visited)
       yield serviceMd
     }

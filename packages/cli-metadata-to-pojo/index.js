@@ -11,7 +11,6 @@ CliClassMetadata[symbol] = {
   [symbol]: 'ref',
   id: 'number',
   name: 'string',
-  wellKnown: 'boolean',
   description: 'string',
   baseClass: 'any',
   baren: 'boolean',
