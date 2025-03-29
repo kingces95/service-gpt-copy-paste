@@ -15,7 +15,7 @@ export class CliRxPoller extends CliRx {
     errorMs: 'Retry delay',
     writeError: 'Log service errors to stderr',
   }
-  static { this.initialize() }
+  static { this.initialize(import.meta) }
 
   constructor({ 
     pollMs = POLL_MS,

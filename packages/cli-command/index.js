@@ -4,7 +4,6 @@ import { CliReadable, DEV_STDIN } from '@kingjs/cli-readable'
 import { CliWritable, DEV_STDOUT, DEV_STDERR } from '@kingjs/cli-writable'
 import { CliEcho } from '@kingjs/cli-echo'
 import assert from 'assert'
-import { stdin } from 'process'
 
 const EXIT_SUCCESS = 0
 const EXIT_FAILURE = 1
@@ -14,75 +13,84 @@ const EXIT_SIGINT = EXIT_ABORT + 2
 
 export const REQUIRED = undefined
 
-export class CliStdIn extends CliServiceProvider { 
-  static parameters = { stdin: 'Input stream'}
-  static { this.initialize() }
+export class CliStdStream extends CliServiceProvider {
+  static { this.initialize(import.meta) }
+  static group = 'Standard Streams'
 
   #path
+  #isReadable
+
+  constructor(options, { path, isReadable } = { }) {
+    if (CliStdStream.initializing(new.target))
+      return super()
+    super(options)
+
+    this.#path = path
+    this.#isReadable = isReadable
+  }
+
+  async activate() {
+    return await this.#isReadable 
+      ? CliReadable.fromPath(this.#path)
+      : CliWritable.fromPath(this.#path)
+  }
+}
+
+export class CliStdIn extends CliStdStream { 
+  static parameters = { stdin: 'Input stream'}
+  static { this.initialize(import.meta) }
 
   constructor({ stdin = DEV_STDIN, ...rest } = { }) { 
     if (CliStdIn.initializing(new.target, { stdin })) 
       return super()
-    super(rest)
-
-    this.#path = stdin
-  }
-  
-  async activate() { 
-    return await CliReadable.fromPath(this.#path)
+    super(rest, { path: stdin, isReadable: true })
   }
 }
 
-export class CliStdOut extends CliServiceProvider {
+export class CliStdOut extends CliStdStream {
   static parameters = { stdout: 'Output stream' }
-  static { this.initialize() }
+  static { this.initialize(import.meta) }
 
-  #path
-
-  constructor({ stdout = DEV_STDOUT, ...rest } = {}) {
+  constructor({ stdout = DEV_STDOUT, ...rest } = { }) {
     if (CliStdOut.initializing(new.target, { stdout }))
       return super()
-    super(rest)
-
-    this.#path = stdout
+    super(rest, { path: stdout })
   }
 
   async activate() {
-    const stdout = await CliWritable.fromPath(this.#path)
+    const stdout = await super.activate()
     stdout.isTTY = process.stdout.isTTY
     return stdout
   }
 }
 
-export class CliStdErr extends CliServiceProvider {
+export class CliStdErr extends CliStdStream {
   static parameters = { stderr: 'Error stream' }
-  static { this.initialize() }
+  static { this.initialize(import.meta) }
 
-  #path
-
-  constructor({ stderr = DEV_STDERR, ...rest } = {}) {
+  constructor({ stderr = DEV_STDERR, ...rest } = { }) {
     if (CliStdErr.initializing(new.target, { stderr }))
       return super()
-    super(rest)
-
-    this.#path = stderr
+    super(rest, { path: stderr })
   }
+}
 
-  async activate() {
-    return await CliWritable.fromPath(this.#path)
+export class CliStdLog extends CliStdStream { 
+  static parameters = { stdlog: 'Status stream' }
+  static { this.initialize(import.meta) }
+
+  constructor({ stdlog = DEV_STDOUT, ...rest } = { }) { 
+    if (CliStdLog.initializing(new.target, { stdlog })) 
+      return super()
+    super(rest, { path: stdlog })
   }
 }
 
 export class CliConsole extends CliServiceProvider {
-  static service = { 
-    stdout: CliStdOut,
-    stderr: CliStdErr,
-    stdin: CliStdIn,
-  }
-  static { this.initialize() }
+  static services = { stdout: CliStdOut }
+  static { this.initialize(import.meta) }
 
   #out
-  #err
 
   constructor(options) {
     if (CliConsole.initializing(new.target))
@@ -111,7 +119,7 @@ export class CliCommand extends Cli {
     help: ['h'],
     version: ['v'],
   }
-  static { this.initialize() }
+  static { this.initialize(import.meta) }
 
   constructor({ 
     help = false, 

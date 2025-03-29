@@ -2,7 +2,7 @@ import { format } from 'fast-csv';
 import { CliOutputService } from './index.js'
 
 export default class CliOutputTsvService extends CliOutputService {
-  static { this.initialize(); }
+  static { this.initialize(import.meta); }
 
   constructor(options = { }) {
     if (CliOutputTsvService.initializing(new.target)) {

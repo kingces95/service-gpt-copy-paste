@@ -6,6 +6,7 @@ import { LoadAsync } from '@kingjs/load'
 import { cliTypeof } from '@kingjs/cli-typeof'
 import { getOwn } from '@kingjs/get-own'
 import { IdentifierStyle } from '@kingjs/identifier-style'
+import { nodeNameFromMetaUrl } from '@kingjs/node-name-from-meta-url' 
 import assert from 'assert'
 async function __import() {
   const { cliMetadataToPojo } = await import('@kingjs/cli-metadata-to-pojo')
@@ -20,7 +21,7 @@ const PARAMETER_METADATA_NAMES =  [
   // functions
   'coerce',
   // strings
-  'defaultDescription',
+  'defaultDescription', 
   // booleans
   'hidden', 'local', 'normalize',
 ]
@@ -31,6 +32,8 @@ const OwnCommands = Symbol('Cli.OwnCommands')
 const OwnDiscriminatingOption = Symbol('Cli.OwnDiscriminatingOption')
 const Hierarchy = Symbol('Cli.Hierarchy')
 const BaseClass = Symbol('Cli.BaseClass')
+const ModuleName = Symbol('Cli.ModuleName')
+const Meta = Symbol('Cli.Meta')
 
 export class Cli {
   static async __dumpMetadata() { 
@@ -50,8 +53,8 @@ export class Cli {
   }
   static extend({ name, handler, ...rest } = { }) {
     if (!name) throw new Error(`Class must have a name`)
-
-    const className = `${this.name}_${name}`
+      
+    const className = `${this.name}${name[0].toUpperCase() + name.slice(1)}`
     const extension = new Function('base', 'handler', [
       `return class ${className} extends base {`,
       `  constructor(...args) {`,
@@ -67,7 +70,7 @@ export class Cli {
     for (const [key, value] of Object.entries(rest)) 
       extension[key] = value
     
-    extension.initialize()
+    extension.initialize(this[Meta])
     
     return extension
   }
@@ -75,6 +78,10 @@ export class Cli {
   static get ownMetadata() { return this[OwnMetadata].value }
   static get baseClass() { return this[BaseClass].value } 
   static *hierarchy() { yield* this[Hierarchy].value }
+  static async getModuleName() { return await this[ModuleName].load() }
+  static async getGroup() { 
+    return this 
+  }
   
   static async *ownCommandNames() { yield* Object.keys(await this[OwnCommands].load()) }
   static async getCommand(...names) {
@@ -92,11 +99,11 @@ export class Cli {
     return this.getCommand(...names) 
   }
   
-  static get ownDiscriminatingOption() { return this[OwnDiscriminatingOption].value }
   static async getRuntimeClass(options) {
-    if (!this.ownDiscriminatingOption) return this
+    const ownDiscriminatingOption = this[OwnDiscriminatingOption].value
+    if (!ownDiscriminatingOption) return this
 
-    const [name, discriminations] = this.ownDiscriminatingOption
+    const [name, discriminations] = ownDiscriminatingOption
     const discriminator = options[name]
     const importOrObject = discriminations[discriminator]
     if (!importOrObject) return this
@@ -117,7 +124,7 @@ export class Cli {
   } = { }) {
     const baseClass = this.baseClass
     if (baseClass)
-      yield* baseClass.getServiceProviderClasses({visited, recurse})
+      yield* baseClass.getServiceProviderClasses({ visited, recurse })
 
     for (const [name, class$] of this.getOwnServiceProviderClasses()) {
       if (visited.has(class$)) continue
@@ -125,18 +132,20 @@ export class Cli {
       if (!(class$.prototype instanceof CliServiceProvider))
         throw new Error(`Service ${class$.name} must extend ${CliServiceProvider.name}`)
       if (recurse)
-        yield* class$.getServiceProviderClasses({visited, recurse})
+        yield* class$.getServiceProviderClasses({ visited, recurse })
       yield [name, class$]
     }
   }
 
-  static initialize() {
+  static initialize(meta) {
     assert(!Object.hasOwn(this, 'defaults'))
-
     // By construction, when any Cli is *first* activated, it will
     // return an array of default positional arguments with an additional 
     // last element which is an object of default option arguments.
     this.defaults = new this()
+    
+    if (!meta) throw new Error(`Meta is required`)
+    this[Meta] = meta
 
     const getOwnParameterMetadata = (name, metadata) => {
       PARAMETER_METADATA_NAMES.reduce((acc, metadataName) => {
@@ -175,9 +184,14 @@ export class Cli {
   
       // compute the type of the parameter.
       metadata.type = cliTypeof(defaultOrArrayDefault)
-  
+      
       return metadata
     }
+
+    this[ModuleName] = new LoadAsync(async () => {
+      const nodeName = await nodeNameFromMetaUrl(this[Meta].url)
+      return nodeName.moduleName
+    }, this)
 
     this[OwnMetadata] = new Lazy(() => {
       const description = getOwn(this, 'description')
@@ -273,7 +287,7 @@ export class Cli {
     return true
   }
 
-  static { this.initialize() }
+  static { this.initialize(import.meta) }
  
   #services
 
@@ -295,7 +309,7 @@ export class Cli {
 }
 
 export class CliServiceProvider extends Cli {
-  static { this.initialize() }
+  static { this.initialize(import.meta) }
 
   constructor(options) {
     if (CliServiceProvider.initializing(new.target, { })) 

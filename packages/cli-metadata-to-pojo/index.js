@@ -12,6 +12,7 @@ CliClassMetadata[symbol] = {
   id: 'number',
   name: 'string',
   description: 'string',
+  scope: 'string',
   baseClass: 'any',
   baren: 'boolean',
   defaultCommand: 'boolean',
@@ -23,7 +24,6 @@ CliClassMetadata[symbol] = {
 CliParameterMetadata[symbol] = {
   name: 'string',
   description: 'string',
-  group: 'string',
   default: 'any',
 
   type: 'string',

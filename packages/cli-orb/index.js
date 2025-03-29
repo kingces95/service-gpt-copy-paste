@@ -24,7 +24,7 @@ export default class CliOrb extends CliCommand {
     memHot: 'Threshold for high memory usage',
   }
   static services = { parser: CliParser, stdin: CliStdIn }
-  static { this.initialize() }
+  static { this.initialize(import.meta) }
 
   #reader
   

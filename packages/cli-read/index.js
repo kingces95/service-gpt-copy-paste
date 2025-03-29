@@ -10,7 +10,7 @@ export class CliParser extends CliServiceProvider {
   static parameters = {
     ifs: 'Input field separator',
   }
-  static { this.initialize() }
+  static { this.initialize(import.meta) }
 
   #ifs
 

@@ -259,6 +259,8 @@ export class NodeName {
     return null
   }
 
+  get scope() { return this.#scope }
+
   get packageName() { 
     if (this.isModuleName && !this.#exports)
       return this

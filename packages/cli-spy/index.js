@@ -1,5 +1,5 @@
-import { CliTool } from '@kingjs/cli-runtime'
-import { CliCommand, CliStdOut } from '@kingjs/cli-command'
+import { CliRuntime } from '@kingjs/cli-runtime'
+import { CliCommand, CliConsole } from '@kingjs/cli-command'
 import { CliOutputService } from '@kingjs/cli-output-service'
 import { CliClassMetadata } from '@kingjs/cli-metadata'
 import { CliCommandInfo } from '@kingjs/cli-info'
@@ -20,6 +20,16 @@ const md = {
     this.log(await metadata.toPojo())
   }
 }
+const mdParams = {
+  description: `Dump ${CliCommandInfo.name}`,
+  handler: async function() {
+    const md = await this.getMetadata()
+    for await (const classMd of md.classes()) {
+      for await (const paramMd of classMd.parameters())
+        await this.console.echoRecord([paramMd.name, classMd.name])
+    }
+  }
+}
 const json = {
   description: `Dump ${CliClassMetadata.name}.toPojo()`,
   handler: async function() {
@@ -32,6 +42,19 @@ const info = {
   handler: async function() {
     const info = await this.getInfo()
     this.log(await info.toPojo())
+  }
+}
+const params = {
+  description: `Dump ${CliCommandInfo.name}`,
+  handler: async function() {
+    const info = await this.getInfo()
+    const dumpParams = async (info) => {
+      for await (const parameter of info.parameters())
+        await this.console.echoRecord([info.name, parameter.name])
+      for await (const command of info.commands())
+        await dumpParams(command)
+    }
+    await dumpParams(info)
   }
 }
 const yargs = {
@@ -69,15 +92,15 @@ export class CliSpy extends CliCommand {
   }
   static services = { 
     format: CliOutputService, 
-    stdout: CliStdOut, 
-    runtime: CliTool 
+    console: CliConsole, 
+    runtime: CliRuntime 
   }
   static commands = { 
     ls, find,
     raw, md, json,
-    info, yargs,
+    info, yargs, params, mdParams
   }
-  static { this.initialize() }
+  static { this.initialize(import.meta) }
 
   #path
 
@@ -93,7 +116,7 @@ export class CliSpy extends CliCommand {
   get path() { return this.#path }
 
   async getScope() { 
-    return await this.runtime.tool
+    return await this.runtime.class
   }
   async getCommand() { 
     const scope = await this.getScope()
@@ -117,7 +140,7 @@ export class CliSpy extends CliCommand {
   }
   
   write(string) {
-    this.stdout.write(string + '\n')
+    this.console.echo(string)
   }
   log(pojo) {
     const service = this.format

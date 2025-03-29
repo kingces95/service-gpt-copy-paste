@@ -11,7 +11,7 @@ export class CliNodeName extends CliCommand {
   static services = { 
     format: CliOutputService
   }
-  static { this.initialize() }
+  static { this.initialize(import.meta) }
 
   constructor(name, options = {}) {
     if (CliNodeName.initializing(new.target, name))

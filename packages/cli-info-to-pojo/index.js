@@ -38,6 +38,7 @@ CliCommandInfo[symbol] = {
   kababName: 'string',
   description: 'string',
   __comment: 'any',
+  group: 'string',
   isDefaultCommand: 'boolean',
   parameters: 'infos',
   commands: 'infos',

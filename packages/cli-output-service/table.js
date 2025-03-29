@@ -4,7 +4,7 @@ import { createTable } from '@tanstack/table-core'
 const COLUMN_SPACING = 2
 
 export default class CliOutputAzTableService extends CliOutputService {
-  static { this.initialize() }
+  static { this.initialize(import.meta) }
 
   constructor(options = { }) {
     if (CliOutputAzTableService.initializing(new.target)) {

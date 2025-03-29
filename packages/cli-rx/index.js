@@ -7,8 +7,11 @@ import concatWrite from '@kingjs/rx-concat-write'
 import { CliStdErr, CliStdOut } from '@kingjs/cli-command'
 
 export class CliRx extends CliDaemon {
-  static { this.initialize() }
-  static services = { stdout: CliStdOut, stderr: CliStdErr }
+  static { this.initialize(import.meta) }
+  static services = { 
+    stdout: CliStdOut, 
+    stderr: CliStdErr 
+  }
 
   #errorSubject
   #signalRx

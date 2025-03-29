@@ -2,7 +2,7 @@ import { CliOutputService } from './index.js'
 import util from 'util'
 
 export default class CliOutputUtilService extends CliOutputService {
-  static { this.initialize() }
+  static { this.initialize(import.meta) }
 
   constructor(options = { }) {
     if (CliOutputUtilService.initializing(new.target))

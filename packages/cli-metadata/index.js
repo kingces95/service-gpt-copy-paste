@@ -3,6 +3,7 @@ import { LazyGenerator, Lazy } from '@kingjs/lazy'
 import { Cli, CliServiceProvider } from '@kingjs/cli'
 import { CliCommand } from '@kingjs/cli-command'
 import assert from 'assert'
+import { LoadAsync } from '@kingjs/load'
 async function __import() {
   const { cliMetadataToPojo } = await import('@kingjs/cli-metadata-to-pojo')
   const { dumpPojo } = await import('@kingjs/pojo-dump')
@@ -170,13 +171,16 @@ export class CliClassMetadata extends CliMetadata {
   #baseClassFn
   #commandsFn
   #servicesFn
+  #scopeFn
   #baren
   #services
+  #scope
 
   constructor(loader, id, name, {
     baseClassFn,
     commandsFn,
     servicesFn,
+    scopeFn,
     ...pojo
   }) {
     super(name)
@@ -186,6 +190,7 @@ export class CliClassMetadata extends CliMetadata {
     this.#baseClassFn = baseClassFn
     this.#commandsFn = commandsFn
     this.#servicesFn = servicesFn
+    this.#scopeFn = scopeFn
 
     this.id = id
     this.ref = [this.id, this.name]
@@ -197,21 +202,30 @@ export class CliClassMetadata extends CliMetadata {
       }
     }, this)
 
+    this.#scope = new LoadAsync(async () => {
+      const scope = await this.#scopeFn()
+      if (!this.isLoader && scope == await this.loader.scope) return
+      return scope
+    }, this)
+
     this.#services = new LazyGenerator(function* () {
       yield* this.#servicesFn()
     }, this)
 
-    // no parameters and all services are also baren
+    // no own parameters and all own services are also baren
     this.#baren = new Lazy(() => {
       if (!this.parameters().next().done) return false
       return [...this.services()].every(o => o.baren)
     }, this)
   }
 
+  get isLoader() { return this.#loader == this }
+
   get loader() { return this.#loader }
   get isClass() { return true }
   get baseClass() { return this.#baseClassFn() }
   get baren() { return this.#baren.value }
+  get scope() { return this.#scope.load() }
 
   get description() { return this.#pojo.description }
   get defaultCommand() { return this.#pojo.defaultCommand }
@@ -231,13 +245,8 @@ export class CliMetadataLoader extends CliClassMetadata {
   #cache
   #loaded
 
-  constructor(classOrPojo, id, name, {
-    baseClassFn,
-    commandsFn,
-    servicesFn,
-    ...pojo
-  }) {
-    super(null, id, name, { baseClassFn, commandsFn, servicesFn, ...pojo })
+  constructor(classOrPojo, id, name, fnAndPojo) {
+    super(null, id, name, fnAndPojo)
 
     this.#cache = new Map()
     this.#cache.set(classOrPojo, this)
@@ -257,8 +266,12 @@ export class CliMetadataLoader extends CliClassMetadata {
   }
 
   async *classes() {
-    for(let id = 0; id < this.#loaded.length; id++)
-      yield this.#loaded[id]
+    for(let id = 0; id < this.#loaded.length; id++) {
+      const classMd = this.#loaded[id]
+      yield classMd
+      // hack to force loading
+      const load = [...classMd.services()]
+    }
   }
 
   async toPojo() {
@@ -278,6 +291,12 @@ export class CliMetadataLoader extends CliClassMetadata {
 export class CliMetadataClassLoader extends CliMetadataLoader {
   static getInjections(class$, loadedAsBaseClass = false) {
     return { 
+      scopeFn: async function() {
+        assert(this instanceof CliClassMetadata)
+
+        const moduleName = await class$.getModuleName()
+        return moduleName.scope
+      },
       baseClassFn: function() { 
         assert(this instanceof CliClassMetadata)
 
@@ -339,12 +358,17 @@ export class CliMetadataPojoLoader extends CliMetadataLoader {
   static getInjections(poja, pojo) {
 
     const { 
+      scope,     // 'kingjs'
       baseClass, // [ 42, 'MyBaseClass' ]
       commands,  // { 'my-command': [43, 'MyCommandClass'], ... }
       services,  // [ [44, 'MyGroupClass'], ... ]
     } = pojo
 
-    return { 
+    return {
+      scopeFn: function() {
+        assert(this instanceof CliClassMetadata)
+        return scope
+      },
       baseClassFn: function() { 
         assert(this instanceof CliClassMetadata)
         return !baseClass ? null : this.loader.load$(poja[baseClass[0]])

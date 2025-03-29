@@ -2,7 +2,7 @@ import { readPackageUp } from 'read-pkg-up'
 import { fileURLToPath } from 'url'
 import { NodeName } from '@kingjs/node-name'
 
-export async function moduleNameFromMetaUrl(url) {
+export async function nodeNameFromMetaUrl(url) {
   if (!url)
     return null
 

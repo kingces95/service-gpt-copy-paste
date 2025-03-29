@@ -1,50 +1,30 @@
 #!/usr/bin/env node
 import { CliServiceProvider } from '@kingjs/cli'
-import { CliCommand, CliStdIn, CliStdOut, CliStdErr } from '@kingjs/cli-command'
-import { CliWritable, DEV_STDOUT } from '@kingjs/cli-writable'
+import { 
+  CliCommand, CliStdIn, CliStdOut, CliStdErr, CliStdLog 
+} from '@kingjs/cli-command'
 import { CliEcho } from '@kingjs/cli-echo'
 import os from 'os'
 import assert from 'assert'
 
-export class CliLog extends CliServiceProvider { 
-  static parameters = {
-    stdlog: 'Status stream',
-  }
-  static { this.initialize() }
-
-  #path
-
-  constructor({ stdlog = DEV_STDOUT, ...rest } = { }) { 
-    if (CliLog.initializing(new.target, { stdlog })) 
-      return super()
-    super(rest)
-
-    this.#path = stdlog
-  }
-  
-  async activate() { 
-    return await CliWritable.fromPath(this.#path)
-  }
-}
-
 export class CliDaemonState extends CliServiceProvider { 
-  static services = { stdlog: CliLog }
-  static { this.initialize() }
+  static services = { stdlog: CliStdLog }
+  static { this.initialize(import.meta) }
 
-  #echo
+  #console
 
   constructor(options) { 
     if (CliDaemonState.initializing(new.target)) 
       return super()
     super(options)
 
-    this.#echo = new CliEcho(this.stdlog)
+    this.#console = new CliEcho(this.stdlog)
   }
 
   get state() { return this._state }
 
   async update(...fields) {
-    await this.#echo.echoRecord(fields)
+    await this.#console.echoRecord(fields)
   }
 
   async warnThat(name) {
@@ -69,7 +49,7 @@ export class CliPulse extends CliServiceProvider {
     reportMs: 'Report interval',
   }
   static services = { stdin: CliStdIn, stdout: CliStdOut, stderr: CliStdErr }
-  static { this.initialize() }
+  static { this.initialize(import.meta) }
 
   constructor({ intervalMs = 100, reportMs = 1000, ...rest } = {}) {
     if (CliPulse.initializing(new.target, { intervalMs, reportMs }))
@@ -114,8 +94,11 @@ export class CliPulse extends CliServiceProvider {
 }
 
 export class CliDaemon extends CliCommand {
-  static services = { state: CliDaemonState, pulse: CliPulse }
-  static { this.initialize() }
+  static services = { 
+    state: CliDaemonState, 
+    pulse: CliPulse 
+  }
+  static { this.initialize(import.meta) }
 
   constructor(options) {
     if (CliDaemon.initializing(new.target)) 

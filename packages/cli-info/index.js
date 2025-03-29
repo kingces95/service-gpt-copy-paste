@@ -272,6 +272,7 @@ export class CliCommandInfo extends CliInfo {
       services: this.#servicesMd.map(o => o.name).sort(),
     }
   }
+  get group() { return this.#classMd.group }
 
   *hierarchy() {
     yield this

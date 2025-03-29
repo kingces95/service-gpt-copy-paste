@@ -24,7 +24,7 @@ export class CliOutputService extends CliServiceProvider {
     },
   }
   static services = { stdout: CliStdOut }
-  static { this.initialize() }
+  static { this.initialize(import.meta) }
 
   #color
   #query

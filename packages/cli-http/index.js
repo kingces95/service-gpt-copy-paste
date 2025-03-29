@@ -30,7 +30,7 @@ export class CliHttp extends CliCommand {
     head: declareHttpMethod('HEAD', 'Perform an http HEAD request'),
   })
   static defaultCommand = true
-  static { this.initialize() }
+  static { this.initialize(import.meta) }
 
   constructor(url, { headers = 0, method = 'GET', ...rest } = { }) {
     if (CliHttp.initializing(new.target, url, { headers, method }))
@@ -123,7 +123,7 @@ function declareHttpMethod(method, description) {
     }
   }
 
-  CliHttpMethod.initialize()
+  CliHttpMethod.initialize(import.meta)
 
   // Set the name of the class to be CliHttp{Method} via property descriptor
   const name = `CliHttp${method.charAt(0)}${method.slice(1).toLowerCase()}`
