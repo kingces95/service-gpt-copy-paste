@@ -182,14 +182,16 @@ export class CliClassMetadata extends CliMetadata {
     if (this.baseClass)
       yield* this.baseClass.hierarchy()
   }
+  *parameters() { yield* this.#parameters.value }
   *commands() { yield* this.loader.commands$(this.#classOrPojo) }
   *services() { yield* this.loader.services$(this.#classOrPojo) }
-  *parameters() { yield* this.#parameters.value }
+  *groups() { yield* this.loader.groups$(this.#classOrPojo) }
 }
 
 export class CliMetadataLoader extends CliClassMetadata {
   #cache
   #loaded
+  #groups
 
   constructor(classOrPojo, id, name, pojo) {
     super(null, classOrPojo, id, name, pojo)
@@ -197,12 +199,21 @@ export class CliMetadataLoader extends CliClassMetadata {
     this.#cache = new Map()
     this.#cache.set(classOrPojo, this)
     this.#loaded = [this]
+    this.#groups = new Lazy(() => {
+      const groups = new Map()
+      for (const [name, ...classMds] of this.groups()) {
+        for (const classMd of classMds)
+          groups.set(classMd, name)
+      }
+      return groups
+    })
   }
 
   activate$(classOrPojo, id) { throw 'abstract' }
   getBaseClass$(classOrPojo) { throw 'abstract' }
-  getGroup$(classclassOrPojo) { throw 'abstract' }
+  getGroup$(classOrPojo) { throw 'abstract' }
   getScope$(classOrPojo) { throw 'abstract' }
+  *groups$(classclassOrPojo) { throw 'abstract' }
   *commands$(classOrPojo) { throw 'abstract' }
   *services$(classOrPojo) { throw 'abstract' }
 
@@ -241,16 +252,18 @@ export class CliMetadataClassLoader extends CliMetadataLoader {
   static async activate(rootClass) {
     const scopeMap = new Map()
     const groupMap = new Map()
+    const groupOrder = []
     const subCommandMap = new Map()
-
+    
     for await (const [name, ...groups] of rootClass.ownGroups()) {
+      groupOrder.push(name)
       for (const group of groups)
         groupMap.set(group, name)
     }
 
     // Squeeze out async operations. Pass the results as maps.
     const rootMd = new CliMetadataClassLoader(
-      rootClass, groupMap, scopeMap, subCommandMap)
+      rootClass, groupMap, groupOrder, scopeMap, subCommandMap)
 
     const commands = []
     const services = []
@@ -307,19 +320,25 @@ export class CliMetadataClassLoader extends CliMetadataLoader {
   }
 
   #groups
+  #groupOrder
   #scopes
   #subCommands
 
-  constructor(class$, groups, scopes, subCommands) {
+  constructor(class$, groups, groupOrder, scopes, subCommands) {
     const { name } = class$
     super(class$, 0, name, class$.ownMetadata)
 
     this.#groups = groups
+    this.#groupOrder = groupOrder
     this.#scopes = scopes
     this.#subCommands = subCommands
   }
 
   getGroup$(class$) { return this.#groups.get(class$) }
+  *groups$(class$) { 
+    if (this.class$ != class$) return
+    yield* this.#groupOrder
+  }
   getScope$(class$) { return this.#scopes.get(class$) }
 
   getBaseClass$(class$) { 
@@ -372,12 +391,14 @@ export class CliMetadataPojoLoader extends CliMetadataLoader {
 
   getGroup$(pojo) { return pojo.group }
   getScope$(pojo) { return pojo.scope }
-
+  
   getBaseClass$(pojo) { 
     const { baseClass } = pojo
     return !baseClass ? null : this.#loadRef(baseClass)
-  } 
+  }
 
+  *groups$(pojo) { yield* (pojo.groups ?? []) }
+  
   *commands$(pojo) { 
     const { commands } = pojo
     for (const [name, ref] of Object.entries(commands ?? { }))

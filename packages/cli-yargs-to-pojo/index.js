@@ -18,6 +18,7 @@ CliYargsParameter[symbol] = {
   ...CliYargs[symbol],
   type: 'string',
   description: 'string',
+  group: 'string',
   alias: 'list',
   choices: 'list',
   conflicts: 'list',

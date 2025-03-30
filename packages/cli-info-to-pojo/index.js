@@ -41,6 +41,7 @@ CliCommandInfo[symbol] = {
   __comment: 'any',
   group: 'string',
   isDefaultCommand: 'boolean',
+  groups: 'list',
   parameters: 'infos',
   commands: 'infos',
 }
