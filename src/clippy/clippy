@@ -18,7 +18,7 @@ CliRuntime.activate(Clippy)
       group(yargs)
 
       const argv = await yargs.parse(hideBin(process.argv))
-      // const argv = await yargs.parse('spy md'.split(' '))
+      // const argv = await yargs.parse('spy info'.split(' '))
       // const argv = await yargs.parse('poll --stdlog --errorRate .2'.split(' '))
       // const argv = await yargs.parse('orb --stdin ./polling.txt'.split(' '))
 

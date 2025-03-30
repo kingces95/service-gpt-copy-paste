@@ -59,6 +59,7 @@ export class CliParameterInfo extends CliInfo {
   #classMd
   #parameterMd
   #default
+  #group
 
   constructor(command, name, classMd, parameterMd) {
     super(name, classMd.name, classMd.scope)
@@ -83,7 +84,12 @@ export class CliParameterInfo extends CliInfo {
     return { 
     }
   }
-  get group() { return this.#classMd.name }
+  get group() { 
+    if (this.name == 'stdlog')
+      debugger
+    return this.#classMd.group 
+    ?? this.#classMd.baseClass?.group
+  }
   get scope() { return this.#classMd.scope }
 
   get isParameter() { return true }
