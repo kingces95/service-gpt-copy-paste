@@ -347,7 +347,14 @@ export class CliMetadataClassLoader extends CliMetadataLoader {
 }
 
 export class CliMetadataPojoLoader extends CliMetadataLoader {
-  static activate(poja) { return new CliMetadataPojoLoader(poja) }
+  static activate(poja) { 
+    const rootMd = new CliMetadataPojoLoader(poja)
+
+    for (let i = 1; i < poja.length; i++)
+      rootMd.load$(rootMd.#poja[i])
+
+    return rootMd
+  }
 
   #poja
 
