@@ -2,7 +2,7 @@
 import { trimPojo } from '@kingjs/pojo-trim'
 import { NodeName } from '@kingjs/node-name'
 import { Lazy, LazyGenerator } from '@kingjs/lazy'
-import { LoadAsync } from '@kingjs/load'
+import { LoadAsync, LoadAsyncGenerator } from '@kingjs/load'
 import { cliTypeof } from '@kingjs/cli-typeof'
 import { getOwn } from '@kingjs/get-own'
 import { IdentifierStyle } from '@kingjs/identifier-style'
@@ -29,6 +29,7 @@ const PARAMETER_METADATA_NAMES =  [
 const OwnDefaults = Symbol('Cli.OwnDefaults')
 const OwnMetadata = Symbol('Cli.OwnMetadata')
 const OwnCommands = Symbol('Cli.OwnCommands')
+const OwnGroups = Symbol('Cli.OwnGroups')
 const OwnDiscriminatingOption = Symbol('Cli.OwnDiscriminatingOption')
 const Hierarchy = Symbol('Cli.Hierarchy')
 const BaseClass = Symbol('Cli.BaseClass')
@@ -41,15 +42,30 @@ export class Cli {
     await dumpPojo(await toPojo(this.ownMetadata))
   }
 
-  static async loadClass(entry) {
-    const [name, value] = entry
-    if (value instanceof NodeName) 
-      return Cli.loadClass([name, await value.importObject()]) 
+  static async loadClass(nameOrFunction) {
+    if (typeof nameOrFunction == 'function') return nameOrFunction
 
-    if (typeof value == 'object')
-      return this.extend({ name, ...value })
+    const value = nameOrFunction
+    if (value instanceof NodeName) 
+      return Cli.loadOrDeclareClass([nameOrFunction, await value.importObject()]) 
+
+    if (typeof value != 'string')
+      throw new Error(`Cannot load class from ${value}`)
 
     return await NodeName.loadClass(value)
+  }
+  static async loadOrDeclareClass(entry) {
+    const [name, value] = entry
+
+    if (typeof value == 'function') return value
+
+    if (value instanceof NodeName || typeof value == 'string')
+      return await Cli.loadClass(value)
+
+    if (typeof value != 'object')
+      throw new Error(`Cannot load class from ${value}`)
+
+    return this.extend({ name, ...value })
   }
   static extend({ name, handler, ...rest } = { }) {
     if (!name) throw new Error(`Class must have a name`)
@@ -79,10 +95,8 @@ export class Cli {
   static get baseClass() { return this[BaseClass].value } 
   static *hierarchy() { yield* this[Hierarchy].value }
   static async getModuleName() { return await this[ModuleName].load() }
-  static async getGroup() { 
-    return this 
-  }
   
+  static async *ownGroups() { yield* await this[OwnGroups].load() }
   static async *ownCommandNames() { yield* Object.keys(await this[OwnCommands].load()) }
   static async getCommand(...names) {
     if (names.length == 0)
@@ -109,7 +123,7 @@ export class Cli {
     if (!importOrObject) return this
 
     // runtime class must be a derivation enclosing class
-    const class$ = await this.loadClass([name, importOrObject])
+    const class$ = await this.loadOrDeclareClass([name, importOrObject])
     if (class$ != this && !(class$.prototype instanceof this))
       throw new Error(`Class ${class$.name} must extend ${this.name}`)
     return class$
@@ -262,9 +276,26 @@ export class Cli {
       // return a map of promises
       return Object.fromEntries(
         Object.entries(commands)
-          .map(([name, value]) => [name, this.loadClass([name, value])])
+          .map(([name, value]) => [name, this.loadOrDeclareClass([name, value])])
       )
+    }, this)
 
+    this[OwnGroups] = new LoadAsyncGenerator(async function*() {
+      // (1) class
+      // (2) import string of a class
+      // e.g. static groups = [ 'MyGroup', 
+      // ' @myScope/service-a', '@myScope/service-b', ServiceC ]
+      const groups = getOwn(this, 'groups') ?? []
+
+      // yield arrays where the first element is a class and the remaining
+      // elements are resolved classes. Make use of this.loadClass(name)
+      for (const [name, ...rest] of groups) {
+        const promises = rest.map(o => this.loadClass(o))
+        const classes = await Promise.all(promises)
+        if (classes.length == 0) continue
+        const result = [name, ...classes]
+        yield result
+      }
     }, this)
 
     this[BaseClass] = new Lazy(() => {

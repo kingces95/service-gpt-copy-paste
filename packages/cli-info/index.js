@@ -20,7 +20,7 @@ export class CliInfo {
   #name
 
   constructor(name) {
-    this.#name = name ?? null
+    this.#name = name
   }
 
   get isParameter() { return false }
@@ -61,7 +61,7 @@ export class CliParameterInfo extends CliInfo {
   #default
 
   constructor(command, name, classMd, parameterMd) {
-    super(name)
+    super(name, classMd.name, classMd.scope)
     this.#command = command
     this.#classMd = classMd
     this.#parameterMd = parameterMd
@@ -81,9 +81,10 @@ export class CliParameterInfo extends CliInfo {
 
   get __comment() {
     return { 
-      class: this.#classMd.name,
     }
   }
+  get group() { return this.#classMd.name }
+  get scope() { return this.#classMd.scope }
 
   get isParameter() { return true }
   get isOption () { return this.#parameterMd.isOption }
@@ -272,7 +273,6 @@ export class CliCommandInfo extends CliInfo {
       services: this.#servicesMd.map(o => o.name).sort(),
     }
   }
-  get group() { return this.#classMd.group }
 
   *hierarchy() {
     yield this
