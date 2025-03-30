@@ -1,7 +1,10 @@
 import { LoadAsync } from '@kingjs/load'
 import { Lazy } from '@kingjs/lazy'
 import { IdentifierStyle } from '@kingjs/identifier-style'
-import { setDifference } from '@kingjs/set-extensions'
+import { CliClassMetadata } from '@kingjs/cli-metadata'
+
+const CLI_SCOPE = 'kingjs'
+const CLI_SERVICE_PROVIDER = 'CliServiceProvider'
 
 async function __import() {
   const { cliInfoToPojo } = await import('@kingjs/cli-info-to-pojo')
@@ -59,7 +62,6 @@ export class CliParameterInfo extends CliInfo {
   #classMd
   #parameterMd
   #default
-  #group
 
   constructor(command, name, classMd, parameterMd) {
     super(name, classMd.name, classMd.scope)
@@ -80,15 +82,13 @@ export class CliParameterInfo extends CliInfo {
     this.#default = this.#parameterMd.default ?? DEFAULT_DEFAULTS[this.type]
   }
 
-  get __comment() {
-    return { 
-    }
-  }
-  get group() { 
-    if (this.name == 'stdlog')
-      debugger
-    return this.#classMd.group 
-    ?? this.#classMd.baseClass?.group
+  get group() {
+    const isService = CliClassMetadata.isSubclassOf(
+      this.#classMd, CLI_SCOPE, CLI_SERVICE_PROVIDER)
+  
+    const group = this.#classMd.group 
+      ?? (isService ? this.#classMd.baseClass?.group : null)
+    return group
   }
   get scope() { return this.#classMd.scope }
 

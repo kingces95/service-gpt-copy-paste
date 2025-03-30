@@ -4,18 +4,9 @@ import { cliYargs } from '@kingjs/cli-yargs'
 import { CliRuntime } from '@kingjs/cli-runtime'
 import { hideBin } from 'yargs/helpers'
 
-function group(yargs) {
-  yargs.group(['error-ms','error-rate','poll-ms','write-error'], 'Polling Options:')
-  yargs.group(['stdin', 'stdout', 'stderr'], 'I/O Options:')
-  yargs.group(['help', 'version'], 'Global Options:')
-
-  return yargs
-}
-
 CliRuntime.activate(Clippy)
   .then(async runtime => cliYargs(await runtime.info.toPojo())
     .then(async yargs => {
-      group(yargs)
 
       const argv = await yargs.parse(hideBin(process.argv))
       // const argv = await yargs.parse('spy info'.split(' '))

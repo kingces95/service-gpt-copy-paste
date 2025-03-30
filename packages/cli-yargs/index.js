@@ -102,6 +102,7 @@ export class CliYargsOption extends CliYargsParameter {
   get demandOption() { return this.#pojo.isRequired }
   get global() { return !this.#pojo.isLocal }
   get hidden() { return this.#pojo.isHidden }
+  get group() { return this.#pojo.group }
 }
 
 export class CliYargsCommand extends CliYargs {
@@ -125,8 +126,8 @@ export class CliYargsCommand extends CliYargs {
     this.#parameters = new Lazy(() => {
       const parameters = [ ]
       for (const [name, parameter] of Object.entries(pojo.parameters ?? { })) {
-        if (KNONWN_OPTIONS.includes(name))
-          continue
+        // if (KNONWN_OPTIONS.includes(name))
+        //   continue
         const kababName = parameter.kababName ?? name
         parameters.push(CliYargsParameter.create(this, kababName, parameter))
       }
@@ -187,21 +188,22 @@ export class CliYargsCommand extends CliYargs {
       yargs.positional(positional.name, pojo)
     }
 
-    const sortedOptions = [...this.options()]
-      .sort((a, b) => a.name.localeCompare(b.name))
-      
-    for (const option of sortedOptions) {
-      const pojo = await option.toPojo()
-      yargs.option(option.name, pojo)
-      // yargs.group(name, `Options (${group}):`)
-    }
-
     for (const child of this.commands()) {
       yargs.command(
         child.template, 
         child.description, 
         child.apply.bind(child),
       )
+    }
+
+    const sortedOptions = [...this.options()]
+      .sort((a, b) => a.name.localeCompare(b.name))
+      
+    for (const option of sortedOptions) {
+      const name = option.name
+      const pojo = await option.toPojo()
+      if (!KNONWN_OPTIONS.includes(name)) yargs.option(name, pojo)
+      yargs.group(name, option.group ? `Options (${option.group}):` : 'Options:')
     }
 
     return yargs

@@ -119,6 +119,19 @@ export class CliClassMetadata extends CliMetadata {
   static fromMetadataPojo(poja) { return CliMetadataPojoLoader.activate(poja) }
   static async fromClass(class$) { return CliMetadataClassLoader.activate(class$) }
 
+  static isSubclassOf(classMd, scope, name) {
+    const defaultScope = classMd.loader.scope
+
+    let current = classMd.baseClass
+    while (current) {
+      if ((current.scope ?? defaultScope) == scope 
+        && current.name == name)
+        return true
+      current = current.baseClass
+    }
+    return false
+  }
+
   #loader
   #pojo
   #parameters
@@ -153,13 +166,13 @@ export class CliClassMetadata extends CliMetadata {
     return typeof this.#classOrPojo == 'function' ? this.#classOrPojo : null 
   }
 
-  get isLoader() { return this.#loader == this }
-  get loader() { return this.#loader }
   get isClass() { return true }
+
+  get loader() { return this.#loader }
   get baseClass() { return this.loader.getBaseClass$(this.#classOrPojo) }
-  get baren() { return this.#baren.value }
   get group() { return this.loader.getGroup$(this.#classOrPojo) }
   get scope() { return this.loader.getScope$(this.#classOrPojo) }
+  get baren() { return this.#baren.value }
 
   get description() { return this.#pojo.description }
   get defaultCommand() { return this.#pojo.defaultCommand }
@@ -169,16 +182,9 @@ export class CliClassMetadata extends CliMetadata {
     if (this.baseClass)
       yield* this.baseClass.hierarchy()
   }
-
-  *commands() { 
-    yield* this.loader.commands$(this.#classOrPojo)
-  }
-  *services() {
-    yield* this.loader.services$(this.#classOrPojo)
-  }
-  *parameters() { 
-    yield* this.#parameters.value 
-  }
+  *commands() { yield* this.loader.commands$(this.#classOrPojo) }
+  *services() { yield* this.loader.services$(this.#classOrPojo) }
+  *parameters() { yield* this.#parameters.value }
 }
 
 export class CliMetadataLoader extends CliClassMetadata {

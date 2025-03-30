@@ -13,14 +13,14 @@ export const Clippy = CliCommand.extend({
     name: '@kingjs/cli-node-name',
   },
   groups: [
-    ['Global', 
-      '@kingjs/cli-command'],
-    ['I/O', 
-      '@kingjs/cli-command, CliStdStream'],
     ['Polling', 
       '@kingjs/cli-rx-poller'],
     ['Daemon', 
       '@kingjs/cli-daemon, CliDaemonState',
       '@kingjs/cli-daemon, CliPulse'],
+    ['I/O', 
+      '@kingjs/cli-command, CliStdStream'],
+    ['Global', 
+      '@kingjs/cli-command'],
   ]
 })
