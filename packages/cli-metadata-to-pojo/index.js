@@ -41,7 +41,6 @@ CliClassMetadata[symbol] = {
   parameters: 'infos',
   commands: 'entries',
   services: 'list',
-  groups: 'list',
 }
 
 export async function cliMetadataToPojo(metadata, { type, depth = 1 } = { }) {
