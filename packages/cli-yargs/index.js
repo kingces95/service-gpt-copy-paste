@@ -188,22 +188,22 @@ export class CliYargsCommand extends CliYargs {
       yargs.positional(positional.name, pojo)
     }
 
+    for (const option of this.options()) {
+      const name = option.name
+      // if (name == 'stdlog') continue
+      const pojo = await option.toPojo()
+      // console.log(`-${this.name}:${name} (${pojo.group})`)
+      delete pojo.group
+      if (!KNONWN_OPTIONS.includes(name)) yargs.option(name, pojo)
+      yargs.group(name, option.group ? `Options (${option.group}):` : 'Options:')
+    }
+
     for (const child of this.commands()) {
       yargs.command(
         child.template, 
         child.description, 
         child.apply.bind(child),
       )
-    }
-
-    const sortedOptions = [...this.options()]
-      .sort((a, b) => a.name.localeCompare(b.name))
-      
-    for (const option of sortedOptions) {
-      const name = option.name
-      const pojo = await option.toPojo()
-      if (!KNONWN_OPTIONS.includes(name)) yargs.option(name, pojo)
-      yargs.group(name, option.group ? `Options (${option.group}):` : 'Options:')
     }
 
     return yargs
@@ -222,7 +222,6 @@ export class CliYargsCommand extends CliYargs {
     // options sorted by name
     yield* this.#parameters.value
       .filter(o => o instanceof CliYargsOption)
-      .sort((a, b) => a.name.localeCompare(b.name))
   }
 }
 

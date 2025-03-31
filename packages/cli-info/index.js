@@ -2,6 +2,7 @@ import { LoadAsync } from '@kingjs/load'
 import { Lazy, LazyGenerator } from '@kingjs/lazy'
 import { IdentifierStyle } from '@kingjs/identifier-style'
 import { CliClassMetadata } from '@kingjs/cli-metadata'
+import { CliStdIn } from '@kingjs/cli-command'
 
 const CLI_SCOPE = 'kingjs'
 const CLI_SERVICE_PROVIDER = 'CliServiceProvider'
@@ -52,11 +53,6 @@ export class CliInfo {
 }
 
 export class CliParameterInfo extends CliInfo {
-  static create(command, name, parameterMd) {
-    return parameterMd.position !== undefined
-      ? new CliPositionalInfo(command, name, parameterMd)
-      : new CliOptionInfo(command, name, parameterMd)
-  }
 
   #command
   #classMd
@@ -165,14 +161,16 @@ export class CliCommandInfo extends CliInfo {
     ].join(' '))
   }
 
-  static *#servicePoset(classMd, visited) {
+  static *#servicePoset(classMd, visited, tree) {
+
     // yield all services in the poset of services
-    for (const serviceMd of classMd.services()) {
+    for (const serviceMd of [...classMd.services()].reverse()) {
       if (serviceMd.baren) continue
       if (visited.has(serviceMd)) continue
       visited.add(serviceMd)
-      yield* CliCommandInfo.#servicePoset(serviceMd, visited)
-      yield serviceMd
+      const subTree = tree[serviceMd.name] = { }
+      yield* CliCommandInfo.#servicePoset(serviceMd, visited, subTree)
+      yield [serviceMd, subTree]
     }
   }
 
@@ -183,13 +181,14 @@ export class CliCommandInfo extends CliInfo {
   #visitedMd
   #partitionMd
   #servicesMd
+  #parameterTree
 
   constructor(parent, name, classMd) {
     super(name)
 
     this.#parent = parent
     this.#classMd = classMd
-    this.#visitedMd = new Set(parent?.visited$)
+    this.#visitedMd = new Set(parent?.visitedMd$)
 
     // Load nested commands
     this.#commands = new Lazy(() => {
@@ -230,39 +229,70 @@ export class CliCommandInfo extends CliInfo {
         this.#classMd, this.parent?.partitionMd$[0])
     ]
 
-    this.#servicesMd = this.#partitionMd.map(o => [
-      ...CliCommandInfo.#servicePoset(o, this.#visitedMd)
-    ]).flat()
+    this.#servicesMd = []
+
+    if (this.name == 'poll') {
+      this.#parameterTree = {
+        Cli: [],
+        CliCommand: [],
+        CliDaemon: {
+          CliDaemonState: {
+            CliStdLog: [ 'stdlog' ]
+          },
+          CliPulse: [{
+            CliStdIn: [ 'stdin' ],
+            CliStdOut: [ 'stdout' ],
+            CliStdErr: [ 'stderr' ]
+          }, 'reportMs', 'intervalMs' ],
+        },
+        CliRx: { },
+        CliRxPoller: [ 'writeError', 'errorMs', 'errorRate', 'pollMs' ],
+        CliPollClipboard: [ 'prefix' ],
+      }
+    }
+    this.#parameterTree = { }
 
     this.#parameters = new Lazy(() => {
-      const result = new Map()
+      const slots = new Map()
+      const result = []
 
-      // Gather parameters from the class hierarchy
-      for (const classMd of this.#partitionMd) {
-        for (const parameterMd of classMd.parameters()) {
+      for (const classMd of this.#partitionMd.reverse()) {
+        const tree = this.#parameterTree[classMd.name] = { }
+
+        // Gather parameters from the service poset
+        for (const [serviceMd, subTree] of
+          CliCommandInfo.#servicePoset(classMd, this.#visitedMd, tree)) {
+          this.#servicesMd.push(serviceMd)
+
+          for (const parameterMd of [...serviceMd.parameters()].reverse()) {
+            const name = parameterMd.name
+            if (slots.has(name))
+              throw new Error([
+                `Parameter "${name}" in service "${serviceMd.name}"`,
+                `conflicts with parameter in class "${this.#classMd.name}".`
+              ].join(' '))
+            const parameter = new CliParameterInfo(this, name, serviceMd, parameterMd)
+            subTree[name] = parameter.group ?? '.'
+            slots.set(name, parameter)
+            result.push(parameter)
+          }
+        }
+
+        // Gather parameters from the class hierarchy
+        for (const parameterMd of [...classMd.parameters()].reverse()) {
           const name = parameterMd.name
           if (classMd != this.#classMd) {
-            if (result.has(name)) continue
+            if (slots.has(name)) continue
             if (parameterMd.local) continue
           }
-          result.set(name, new CliParameterInfo(this, name, classMd, parameterMd))
+          const parameter = new CliParameterInfo(this, name, classMd, parameterMd)
+          tree[name] = parameter.group ?? '.'
+          slots.set(name, parameter)
+          result.push(parameter)
         }
       }
 
-      // Gather parameters from the service poset
-      for (const serviceMd of this.#servicesMd) {
-        for (const parameterMd of serviceMd.parameters()) {
-          const name = parameterMd.name
-          if (result.has(name))
-            throw new Error([
-              `Parameter "${name}" in service "${serviceMd.name}"`,
-              `conflicts with parameter in class "${this.#classMd.name}".`
-            ].join(' '))
-          result.set(name, new CliParameterInfo(this, name, serviceMd, parameterMd))
-        }
-      }
-
-      return result
+      return result.reverse()
     })
   }
 
@@ -274,9 +304,11 @@ export class CliCommandInfo extends CliInfo {
   get visitedMd$() { return this.#visitedMd }
   get partitionMd$() { return this.#partitionMd }
   get __comment() {
-    return { 
+    return {
+      parameters: [...this.parameters()].map(o => o.name),
+      groups: this.#parameterTree,
       partition: this.#partitionMd.map(o => o.name),
-      services: this.#servicesMd.map(o => o.name).sort(),
+      services: this.#servicesMd.map(o => o.name),
     }
   }
 
@@ -315,8 +347,7 @@ export class CliCommandInfo extends CliInfo {
 
   get description() { return this.#classMd.description }
   get isDefaultCommand() { return !!this.#classMd.defaultCommand }
-  *parameters() { yield* this.#parameters.value.values() }
-  getParameter(name) { return this.#parameters.value.get(name) }
+  *parameters() { yield* this.#parameters.value }
   *positionals() { yield* this.parameters().filter(o => o.isPositional) }
   *options() { yield* this.parameters().filter(o => o.isOption) }
   *groups() { yield* this.#classMd.groups() }

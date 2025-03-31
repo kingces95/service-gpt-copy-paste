@@ -254,7 +254,7 @@ export class CliMetadataClassLoader extends CliMetadataLoader {
     const groupMap = new Map()
     const groupOrder = []
     const subCommandMap = new Map()
-    
+
     for await (const [name, ...groups] of rootClass.ownGroups()) {
       groupOrder.push(name)
       for (const group of groups)
