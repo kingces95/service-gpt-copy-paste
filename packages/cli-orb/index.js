@@ -23,7 +23,10 @@ export default class CliOrb extends CliCommand {
     cpuHot: 'Threshold for high CPU usage',
     memHot: 'Threshold for high memory usage',
   }
-  static services = { parser: CliParser, stdin: CliStdIn }
+  static services = { 
+    parser: CliParser, 
+    stdin: CliStdIn 
+  }
   static { this.initialize(import.meta) }
 
   #reader

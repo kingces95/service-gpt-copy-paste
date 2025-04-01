@@ -119,7 +119,11 @@ export class CliCommand extends Cli {
     help: ['h'],
     version: ['v'],
   }
-  static services = { stdin: CliStdIn, stdout: CliStdOut, stderr: CliStdErr }
+  static services = { 
+    stdin: CliStdIn, 
+    stdout: CliStdOut, 
+    stderr: CliStdErr 
+  }
   static { this.initialize(import.meta) }
 
   constructor({ 

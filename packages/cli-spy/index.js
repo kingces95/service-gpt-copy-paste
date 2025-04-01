@@ -20,7 +20,7 @@ const md = {
     this.log(await metadata.toPojo())
   }
 }
-const mdc = {
+const cachedMd = {
   description: `Dump cached ${CliClassMetadata.name}`,
   handler: async function() {
     const metadata = await this.getCachedMetadata()
@@ -99,12 +99,11 @@ export class CliSpy extends CliCommand {
   }
   static services = { 
     format: CliOutputService, 
-    console: CliConsole, 
-    runtime: CliRuntime 
+    console: CliConsole
   }
   static commands = { 
     ls, find,
-    raw, md, mdc, json,
+    raw, md, cachedMd, json,
     info, yargs, params, mdParams
   }
   static { this.initialize(import.meta) }
@@ -122,12 +121,10 @@ export class CliSpy extends CliCommand {
 
   get path() { return this.#path }
 
-  async getScope() { 
-    return await this.runtime.class
-  }
   async getCommand() { 
-    const scope = await this.getScope()
-    return await scope.getRuntimeCommand(...this.#path)
+    const { runtime } = this.info
+    const { class: class$ } = await runtime.getCommand(...this.#path)
+    return class$
   }
   async getMetadata() { 
     const command = await this.getCommand()

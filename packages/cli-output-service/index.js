@@ -23,7 +23,9 @@ export class CliOutputService extends CliServiceProvider {
       table: MODULE_NAME.addExport('table'),
     },
   }
-  static services = { stdout: CliStdOut }
+  static services = { 
+    stdout: CliStdOut 
+  }
   static { this.initialize(import.meta) }
 
   #color

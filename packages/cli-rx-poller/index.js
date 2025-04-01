@@ -2,7 +2,7 @@
 
 import { CliRx } from '@kingjs/cli-rx'
 import { interval, timer } from 'rxjs'
-import { switchMap, tap, retry, takeUntil } from 'rxjs/operators'
+import { switchMap, retry, takeUntil } from 'rxjs/operators'
 
 const POLL_MS = 200
 const ERROR_RATE = 0.01

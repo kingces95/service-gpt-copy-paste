@@ -8,7 +8,9 @@ import os from 'os'
 import assert from 'assert'
 
 export class CliDaemonState extends CliServiceProvider { 
-  static services = { stdlog: CliStdLog }
+  static services = { 
+    stdlog: CliStdLog 
+  }
   static { this.initialize(import.meta) }
 
   #console
@@ -48,7 +50,11 @@ export class CliPulse extends CliServiceProvider {
     intervalMs: 'Cancellation polling',
     reportMs: 'Report interval',
   }
-  static services = { stdin: CliStdIn, stdout: CliStdOut, stderr: CliStdErr }
+  static services = { 
+    stdin: CliStdIn, 
+    stdout: CliStdOut, 
+    stderr: CliStdErr 
+  }
   static { this.initialize(import.meta) }
 
   constructor({ intervalMs = 100, reportMs = 1000, ...rest } = {}) {

@@ -8,9 +8,6 @@ export class CliNodeName extends CliCommand {
   static parameters = {
     name: 'Name to resolve',
   }
-  static services = { 
-    format: CliOutputService
-  }
   static { this.initialize(import.meta) }
 
   constructor(name, options = {}) {

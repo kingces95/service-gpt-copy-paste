@@ -5,7 +5,6 @@ import { Lazy, LazyGenerator } from '@kingjs/lazy'
 import { LoadAsync, LoadAsyncGenerator } from '@kingjs/load'
 import { cliTypeof } from '@kingjs/cli-typeof'
 import { getOwn } from '@kingjs/get-own'
-import { IdentifierStyle } from '@kingjs/identifier-style'
 import { nodeNameFromMetaUrl } from '@kingjs/node-name-from-meta-url' 
 import assert from 'assert'
 async function __import() {
@@ -30,7 +29,6 @@ const OwnDefaults = Symbol('Cli.OwnDefaults')
 const OwnMetadata = Symbol('Cli.OwnMetadata')
 const OwnCommands = Symbol('Cli.OwnCommands')
 const OwnGroups = Symbol('Cli.OwnGroups')
-const OwnDiscriminatingOption = Symbol('Cli.OwnDiscriminatingOption')
 const Hierarchy = Symbol('Cli.Hierarchy')
 const BaseClass = Symbol('Cli.BaseClass')
 const ModuleName = Symbol('Cli.ModuleName')
@@ -108,27 +106,7 @@ export class Cli {
     if (!command) throw new Error(`Command '${name}' not found`)
     return command.getCommand(...rest)
   }
-  static async getRuntimeCommand(...kebabNames) {
-    const names = kebabNames.map(o => IdentifierStyle.fromKebab(o).toCamel())
-    return this.getCommand(...names) 
-  }
   
-  static async getRuntimeClass(options) {
-    const ownDiscriminatingOption = this[OwnDiscriminatingOption].value
-    if (!ownDiscriminatingOption) return this
-
-    const [name, discriminations] = ownDiscriminatingOption
-    const discriminator = options[name]
-    const importOrObject = discriminations[discriminator]
-    if (!importOrObject) return this
-
-    // runtime class must be a derivation enclosing class
-    const class$ = await this.loadOrDeclareClass([name, importOrObject])
-    if (class$ != this && !(class$.prototype instanceof this))
-      throw new Error(`Class ${class$.name} must extend ${this.name}`)
-    return class$
-  }
-
   static *getOwnServiceProviderClasses() { 
     yield* Object.entries(getOwn(this, 'services') ?? { })
   }
@@ -247,20 +225,6 @@ export class Cli {
       return metadata
     }, this)
 
-    this[OwnDiscriminatingOption] = new Lazy(() => {
-      // If this command (or group) has an option with a choice constraint, 
-      // then that option can be used as a discriminator to select an alternative
-      // command to activate.
-
-      // a choice which is an object (instead of array) is a discriminator. 
-      const choices = getOwn(this, 'choices') ?? { 
-        // myOption: [ 'left', 'right' ],
-        // myDiscriminator: { foo: @kingjs/mycmd/foo, bar: @kingjs/mycmd/bar }
-      }
-
-      return Object.entries(choices).find(([_, value]) => typeof value == 'object')
-    }, this)
-
     this[OwnCommands] = new LoadAsync(async () => {
       // (1) class
       // (2) import string of a class
@@ -320,23 +284,26 @@ export class Cli {
 
   static { this.initialize(import.meta) }
  
-  #services
+  #info
+  #container
 
-  constructor({ _services } = {}) {
+  constructor({ _services, _info, _container } = {}) {
     if (Cli.initializing(new.target, { })) {
       const defaults = new.target[OwnDefaults]
       delete new.target[OwnDefaults]
       return defaults
     }
-    assert(_services)
-    this.#services = _services
+
+    this.#info = _info
+    this.#container = _container
 
     // assign services by name to this
     for (const [name, service] of this.constructor.getServiceProviderClasses())
       this[name] = _services.get(service)
   }
 
-  getService(provider) { return this.#services.get(provider) }
+  getService(provider) { return this.#container.getService(provider) }
+  get info() { return this.#info }
 }
 
 export class CliServiceProvider extends Cli {
