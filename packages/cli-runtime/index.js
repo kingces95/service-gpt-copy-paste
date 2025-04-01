@@ -1,4 +1,4 @@
-import { CliServiceProvider } from '@kingjs/cli'
+import { CliServiceProvider, CliService } from '@kingjs/cli'
 import { CliCommand } from '@kingjs/cli-command'
 import { CliClassMetadata } from '@kingjs/cli-metadata'
 import { CliCommandInfo } from '@kingjs/cli-info'
@@ -30,12 +30,12 @@ export class CliRuntime {
   get class() { return this.#class }
   get info() { return this.#info }
 
-  async getCommand(path) {
-    return await CliRuntimeCommand.activate(this, path)
+  async getCommandInfo(path) {
+    return await CliRuntimeCommandInfo.activate(this, path)
   }
 
   async execute(userPath, userArgs) {
-    const command = await this.getCommand(userPath)
+    const command = await this.getCommandInfo(userPath)
     return command.execute(userArgs)
   }
 }
@@ -49,12 +49,29 @@ export class CliRuntimeContainer {
     this.#services = new Map()
   }
 
+  tryGetServiceSync(class$) {
+    const services = this.#services
+    if (!services.has(class$)) return null
+    return services.get(class$)
+  }
+
+  getServiceSync(serviceClass) {
+    const services = this.#services
+    if (!services.has(serviceClass)) {
+      if (!(serviceClass.prototype instanceof CliService))
+        throw new Error(`Class ${serviceClass.name} must extend ${CliService.name}.`)
+      
+      const service = new serviceClass(this.#options)
+      services.set(serviceClass, service)
+    }
+    return services.get(serviceClass)
+  }
+
   async getService(providerClass) {
     const services = this.#services
-
     if (!services.has(providerClass)) {
       if (!(providerClass.prototype instanceof CliServiceProvider))
-        throw new Error(`Class ${providerClass.name} is not a service provider.`)
+        throw new Error(`Class ${providerClass.name} must extedn ${CliServiceProvider.name}.`)
   
       const activator = new CliRuntimeActivator(providerClass)
       const serviceProvider = await activator.activate(this.#options)
@@ -147,7 +164,7 @@ export class CliPathStyle {
   }
 }
 
-export class CliRuntimeCommand {
+export class CliRuntimeCommandInfo {
   static async activate(runtime, userPath) {
     const path = CliPathStyle.fromUser(userPath)
     const runtimePath = path.toRuntime()
@@ -187,7 +204,7 @@ export class CliRuntimeCommand {
     this.#path = path
     this.#class = class$
     this.#info = info
-    this.#parameters = parameters
+    this.#parameters = parameters.sort((a, b) => a.position - b.position)
   }
 
   get runtime() { return this.#runtime }
@@ -206,14 +223,11 @@ export class CliRuntimeCommand {
     // Return an array of positional arguments with an additional last element
     // which is an object containing the option arguments with names converted
     // to camel case.
-    const result = []
     const options = { _info: this }
+    options._container = new CliRuntimeContainer(options)
 
-    const container = new CliRuntimeContainer(options)
-    options._container = container
-
-    const parameters = this.#parameters
-    for (const parameter of [...parameters].sort((a, b) => a.position - b.position)) {
+    const result = []
+    for (const parameter of this.#parameters) {
       const { name, kababName, isPositional } = parameter
       const userName = kababName ?? name
       if (isPositional) {
@@ -228,20 +242,8 @@ export class CliRuntimeCommand {
   }
 
   async execute(userArgs) {
-    const command = this.class
     const args = this.#getArgs(userArgs)
-    const positionals = args.slice(0, -1)
-    const options = args.at(-1)
-
-    const { _container } = options
-    const services = options._services = new Map()
-    for (const [_, providerClass] of 
-      command.getServiceProviderClasses({ recurse: true })) {  
-      const service = await _container.getService(providerClass)
-      services.set(providerClass, service)
-    }
-    
-    const activator = new CliRuntimeActivator(command)
-    return await activator.activate(...positionals, options)
+    const activator = new CliRuntimeActivator(this.class)
+    return await activator.activate(...args)
   }
 }

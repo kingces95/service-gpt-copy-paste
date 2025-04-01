@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { CliServiceProvider } from '@kingjs/cli'
+import { CliService } from '@kingjs/cli'
 import { 
   CliCommand, CliStdIn, CliStdOut, CliStdErr, CliStdLog 
 } from '@kingjs/cli-command'
@@ -7,10 +7,10 @@ import { CliEcho } from '@kingjs/cli-echo'
 import os from 'os'
 import assert from 'assert'
 
-export class CliDaemonState extends CliServiceProvider { 
-  static services = { 
-    stdlog: CliStdLog 
-  }
+export class CliDaemonState extends CliService { 
+  static services = [
+    CliStdLog,
+  ]
   static { this.initialize(import.meta) }
 
   #console
@@ -20,7 +20,7 @@ export class CliDaemonState extends CliServiceProvider {
       return super()
     super(options)
 
-    this.#console = new CliEcho(this.stdlog)
+    this.#console = new CliEcho(this.getService(CliStdLog))
   }
 
   get state() { return this._state }
@@ -45,16 +45,16 @@ export class CliDaemonState extends CliServiceProvider {
   }
 }
 
-export class CliPulse extends CliServiceProvider {
+export class CliPulse extends CliService {
   static parameters = {
     intervalMs: 'Cancellation polling',
     reportMs: 'Report interval',
   }
-  static services = { 
-    stdin: CliStdIn, 
-    stdout: CliStdOut, 
-    stderr: CliStdErr 
-  }
+  static services = [
+    CliStdIn,
+    CliStdOut,
+    CliStdErr,
+  ]
   static { this.initialize(import.meta) }
 
   constructor({ intervalMs = 100, reportMs = 1000, ...rest } = {}) {
@@ -87,7 +87,9 @@ export class CliPulse extends CliServiceProvider {
 
       const memoryUsage = (process.memoryUsage().rss / os.totalmem() * 100).toFixed(1)
       
-      const { stdin, stdout, stderr } = this
+      const stdin = await this.getService(CliStdIn)
+      const stdout = await this.getService(CliStdOut)
+      const stderr = await this.getService(CliStdErr)
       callback(stdin.count, stdout.count, stderr.count,
         totalCPU.toFixed(1), memoryUsage)
       ms = 0

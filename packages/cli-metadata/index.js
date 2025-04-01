@@ -334,11 +334,11 @@ export class CliMetadataClassLoader extends CliMetadataLoader {
   }
 
   *services$(class$) { 
-    for (const [_, provider] of class$.getOwnServiceProviderClasses()) {
-      if (!(provider.prototype instanceof CliServiceProvider))
-        throw new Error(`Class ${provider.name} must extend CliServiceProvider.`)
+    for (const [_, service] of class$.getOwnServiceClasses())
+      yield this.load$(service)
+
+    for (const provider of class$.getOwnServiceProviderClasses())
       yield this.load$(provider)
-    }
   }
 
   activate$(class$, id) {

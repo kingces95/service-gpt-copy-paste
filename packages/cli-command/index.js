@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { Cli, CliServiceProvider } from '@kingjs/cli'
+import { Cli, CliServiceProvider, CliService } from '@kingjs/cli'
 import { CliReadable, DEV_STDIN } from '@kingjs/cli-readable'
 import { CliWritable, DEV_STDOUT, DEV_STDERR } from '@kingjs/cli-writable'
 import { CliEcho } from '@kingjs/cli-echo'
@@ -86,8 +86,10 @@ export class CliStdLog extends CliStdStream {
   }
 }
 
-export class CliConsole extends CliServiceProvider {
-  static services = { stdout: CliStdOut }
+export class CliConsole extends CliService {
+  static services = [ 
+    CliStdOut 
+  ]
   static { this.initialize(import.meta) }
 
   #out
@@ -97,7 +99,7 @@ export class CliConsole extends CliServiceProvider {
       return super()
     super(options)
 
-    this.#out = new CliEcho(this.stdout)
+    this.#out = new CliEcho(this.getService(CliStdOut))
   }
 
   async echo(line) { 
@@ -119,11 +121,9 @@ export class CliCommand extends Cli {
     help: ['h'],
     version: ['v'],
   }
-  static services = { 
-    stdin: CliStdIn, 
-    stdout: CliStdOut, 
-    stderr: CliStdErr 
-  }
+  static services = [
+    CliStdErr 
+  ]
   static { this.initialize(import.meta) }
 
   constructor({ 
@@ -174,7 +174,7 @@ export class CliCommand extends Cli {
 
   toString() {
     if (this.succeeded) {
-      const stderr = this.getService(CliStdErr)
+      const stderr = this.tryGetServiceSync(CliStdErr)
       if (stderr?.count)
         return 'Command succeeded with warnings'
       else

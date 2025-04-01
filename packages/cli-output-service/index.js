@@ -23,9 +23,9 @@ export class CliOutputService extends CliServiceProvider {
       table: MODULE_NAME.addExport('table'),
     },
   }
-  static services = { 
-    stdout: CliStdOut 
-  }
+  static services = [
+    CliStdOut,
+  ]
   static { this.initialize(import.meta) }
 
   #color
@@ -40,8 +40,6 @@ export class CliOutputService extends CliServiceProvider {
     this.#query = query
   }
 
-  get color() { return this.#color && this.stdout.isTTY }
-
   query(pojo) {
     if (!this.#query) return pojo
     return jmespath.search(pojo, this.#query) 
@@ -49,6 +47,7 @@ export class CliOutputService extends CliServiceProvider {
 
   // TODO: forEach not used; update tsv/table to use this
   async forEach(poja, action) {
+    const stdout = await this.getService(CliStdOut)
     poja = this.query(poja)
     poja = Array.isArray(poja) ? poja : [poja]
     for (var i = 0; i < poja.length; i++) {
@@ -58,19 +57,21 @@ export class CliOutputService extends CliServiceProvider {
 
     // per unix conventions, ensure there is a newline at the end of the output
     if (!poja.length) {
-      await this.stdout.write('\n')
+      await stdout.write('\n')
       return
     }
   }
 
   async writeObject(pojo, formatFn) {
+    const stdout = await this.getService(CliStdOut)
     pojo = this.query(pojo)
-    const value = formatFn(pojo)
-    await this.stdout.write(value)
+    const color = this.#color && stdout.isTTY
+    const value = formatFn(pojo, color)
+    await stdout.write(value)
 
     // per unix conventions, ensure there is a newline at the end of the output
     if (!value.endsWith('\n'))
-      await this.stdout.write('\n')
+      await stdout.write('\n')
   }
 
   async write(pojo) { }

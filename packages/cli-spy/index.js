@@ -10,21 +10,21 @@ const raw = {
   handler: async function() {
     const command = await this.getCommand()
     const pojo = [...command.hierarchy()].map(o => o.ownMetadata)
-    this.log(pojo)
+    await this.log(pojo)
   }
 }
 const md = {
   description: `Dump ${CliClassMetadata.name}`,
   handler: async function() {
     const metadata = await this.getMetadata()
-    this.log(await metadata.toPojo())
+    await this.log(await metadata.toPojo())
   }
 }
 const cachedMd = {
   description: `Dump cached ${CliClassMetadata.name}`,
   handler: async function() {
     const metadata = await this.getCachedMetadata()
-    this.log(await metadata.toPojo())
+    await this.log(await metadata.toPojo())
   }
 }
 const mdParams = {
@@ -41,14 +41,14 @@ const json = {
   description: `Dump ${CliClassMetadata.name}.toPojo()`,
   handler: async function() {
     const metadata = await this.getCachedMetadata()
-    this.log(await metadata.toPojo())
+    await this.log(await metadata.toPojo())
   }
 }
 const info = {
   description: `Dump ${CliCommandInfo.name}`,
   handler: async function() {
     const info = await this.getInfo()
-    this.log(await info.toPojo())
+    await this.log(await info.toPojo())
   }
 }
 const params = {
@@ -68,7 +68,7 @@ const yargs = {
   description: `Dump ${CliYargsCommand.name}`,
   handler: async function() {
     const yargs = await this.getYargs()
-    this.log(await yargs.toPojo())
+    await this.log(await yargs.toPojo())
   }
 }
 const ls = {
@@ -76,14 +76,14 @@ const ls = {
   handler: async function() {
     const info = await this.getInfo()
     for await (const command of info.commands())
-      this.write(command.path)
+      await this.write(command.path)
   }
 }
 const find = {
   description: 'Find commands',
   handler: async function() {
     const walk = async (info) => {
-      this.write(info.path)
+      await this.write(info.path)
       for await (const child of info.commands())
         await walk(child)
     }
@@ -97,10 +97,9 @@ export class CliSpy extends CliCommand {
   static parameters = {
     path: 'Path of command',
   }
-  static services = { 
-    format: CliOutputService, 
+  static services = [CliOutputService, { 
     console: CliConsole
-  }
+  }]
   static commands = { 
     ls, find,
     raw, md, cachedMd, json,
@@ -123,7 +122,7 @@ export class CliSpy extends CliCommand {
 
   async getCommand() { 
     const { runtime } = this.info
-    const { class: class$ } = await runtime.getCommand(...this.#path)
+    const { class: class$ } = await runtime.getCommandInfo(...this.#path)
     return class$
   }
   async getMetadata() { 
@@ -143,11 +142,11 @@ export class CliSpy extends CliCommand {
     return CliYargsCommand.fromInfoPojo(await info.toPojo())
   }
   
-  write(string) {
-    this.console.echo(string)
+  async write(string) {
+    await this.console.echo(string)
   }
-  log(pojo) {
-    const service = this.format
+  async log(pojo) {
+    const service = await this.getService(CliOutputService)
     service.write(pojo)
   }
 }

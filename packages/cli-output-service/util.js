@@ -12,7 +12,7 @@ export default class CliOutputUtilService extends CliOutputService {
   }
 
   async write(pojo) {
-    const options = { colors: this.color, depth: null }
-    this.writeObject(pojo, o => util.inspect(o, options))
+    this.writeObject(pojo, 
+      (o, isTTY) => util.inspect(o, { colors: isTTY, depth: null }),)
   }
 }

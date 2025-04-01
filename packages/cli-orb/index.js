@@ -23,14 +23,12 @@ export default class CliOrb extends CliCommand {
     cpuHot: 'Threshold for high CPU usage',
     memHot: 'Threshold for high memory usage',
   }
-  static services = { 
+  static services = [
+    CliStdIn, { 
     parser: CliParser, 
-    stdin: CliStdIn 
-  }
+  }]
   static { this.initialize(import.meta) }
 
-  #reader
-  
   constructor({ cpuHot = CPU_HOT, memHot = MEM_HOT, ...rest } = { }) {
     if (CliOrb.initializing(new.target, { cpuHot, memHot }))
       return super()
@@ -42,7 +40,6 @@ export default class CliOrb extends CliCommand {
     this.stats = { in: 0, out: 0, error: 0 }
     this.message = ''
     
-    this.#reader = CliReader.from(this.stdin, this.parser)
     
     // Initialize spinner for TTY
     this.start()
@@ -65,9 +62,12 @@ export default class CliOrb extends CliCommand {
       frames: DOTS_FRAMES
     }, color: INIT_COLOR}).start()
 
+    const stdin = await this.getService(CliStdIn)
+    const reader = CliReader.from(stdin, this.parser)
+
     while (true) {
       try {
-        const record = await this.#reader.readRecord(['type', 'rest'])
+        const record = await reader.readRecord(['type', 'rest'])
         if (!record) 
           break
 

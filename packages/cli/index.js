@@ -108,25 +108,30 @@ export class Cli {
   }
   
   static *getOwnServiceProviderClasses() { 
-    yield* Object.entries(getOwn(this, 'services') ?? { })
-  }
-  static *getServiceProviderClasses({
-    visited = new Set(),
-    recurse = false,
-  } = { }) {
-    const baseClass = this.baseClass
-    if (baseClass)
-      yield* baseClass.getServiceProviderClasses({ visited, recurse })
-
-    for (const [name, class$] of this.getOwnServiceProviderClasses()) {
-      if (visited.has(class$)) continue
-      visited.add(class$)
+    const services = getOwn(this, 'services') ?? {}
+    if (!Array.isArray(services)) return
+    for (const class$ of services.filter(o => typeof o == 'function')) {
       if (!(class$.prototype instanceof CliServiceProvider))
-        throw new Error(`Service ${class$.name} must extend ${CliServiceProvider.name}`)
-      if (recurse)
-        yield* class$.getServiceProviderClasses({ visited, recurse })
-      yield [name, class$]
+        throw new Error(`Class ${class$.name} must extend ${CliServiceProvider.name}.`)
+      yield class$
     }
+  }
+  static *getOwnServiceClasses() { 
+    const services$ = getOwn(this, 'services') ?? {}
+    const services = Array.isArray(services$) 
+      ? (services$.find(o => !(typeof o == 'function')) ?? {})
+      : services$
+
+    for (const entry of Object.entries(services)) {
+      const [name, class$] = entry
+      if (!(class$.prototype instanceof CliService))
+        throw new Error(`Class ${class$.name} must extend ${CliService.name}.`)
+      yield entry
+    }
+  }
+  static *getServiceClasses() {
+    yield* (this.baseClass?.getServiceClasses() ?? [])
+    yield* this.getOwnServiceClasses()
   }
 
   static initialize(meta) {
@@ -287,7 +292,7 @@ export class Cli {
   #info
   #container
 
-  constructor({ _services, _info, _container } = {}) {
+  constructor({ _info, _container } = {}) {
     if (Cli.initializing(new.target, { })) {
       const defaults = new.target[OwnDefaults]
       delete new.target[OwnDefaults]
@@ -298,12 +303,24 @@ export class Cli {
     this.#container = _container
 
     // assign services by name to this
-    for (const [name, service] of this.constructor.getServiceProviderClasses())
-      this[name] = _services.get(service)
+    for (const [name, service] of this.constructor.getServiceClasses())
+      this[name] = this.getServiceSync(service)
   }
 
   getService(provider) { return this.#container.getService(provider) }
+  getServiceSync(provider) { return this.#container.getServiceSync(provider) }
   get info() { return this.#info }
+}
+
+export class CliService extends Cli {
+  static { this.initialize(import.meta) }
+
+  constructor(options) {
+    if (CliService.initializing(new.target, { })) 
+      return super()
+
+    super(options)
+  }
 }
 
 export class CliServiceProvider extends Cli {

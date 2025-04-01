@@ -27,7 +27,7 @@ export class CliEcho {
     await this.echoRecord([line])
   }
   async echoRecord(fields, separator = ' ') {
-    const stream = this.#stream
+    const stream = await this.#stream
     const encoding = this.#encoding
 
     for (let i = 0; i < fields.length; i++) {
