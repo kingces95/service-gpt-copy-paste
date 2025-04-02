@@ -41,47 +41,58 @@ export class CliRuntime {
 }
 
 export class CliRuntimeContainer {
-  #options
   #services
 
-  constructor(options) {
-    this.#options = options
+  constructor() {
     this.#services = new Map()
   }
 
-  tryGetServiceSync(class$) {
-    const services = this.#services
-    if (!services.has(class$)) return null
-    return services.get(class$)
-  }
-
-  getServiceSync(serviceClass) {
+  #getServiceSync(serviceClass, options) {
     const services = this.#services
     if (!services.has(serviceClass)) {
       if (!(serviceClass.prototype instanceof CliService))
         throw new Error(`Class ${serviceClass.name} must extend ${CliService.name}.`)
       
-      const service = new serviceClass(this.#options)
+      const service = new serviceClass(options)
       services.set(serviceClass, service)
     }
     return services.get(serviceClass)
   }
 
-  async getService(providerClass) {
+  #getService(providerClass, options) {
     const services = this.#services
     if (!services.has(providerClass)) {
       if (!(providerClass.prototype instanceof CliServiceProvider))
         throw new Error(`Class ${providerClass.name} must extedn ${CliServiceProvider.name}.`)
   
       const activator = new CliRuntimeActivator(providerClass)
-      const serviceProvider = await activator.activate(this.#options)
-      const service = await serviceProvider.activate()
-      if (!service)
-        throw new Exception(`Service provider ${providerClass.name} failed to provide a service.`)
+      const serviceAsync = activator.activate(options)
+      .then(async serviceProvider => {
+          const service = await serviceProvider.activate()
+          if (!service)
+            throw new Exception(`Service provider ${providerClass.name} failed to provide a service.`)
+          return service
+        })
       
-      services.set(providerClass, service)
+      services.set(providerClass, serviceAsync)
     }
     return services.get(providerClass)
+  }
+
+  getServices(class$, options = { }) {
+    const result = {}
+    for (const name of class$.ownServiceNames()) {
+      const serviceClass = class$.getOwnService(name)
+      const prototype = serviceClass.prototype
+      if (prototype instanceof CliService) {
+        result[name] = this.#getServiceSync(serviceClass, options)
+      } else if (prototype instanceof CliServiceProvider) {
+        result[name] = this.#getService(serviceClass, options)
+      } else {
+        throw new Error(`Service ${name} must be an instance of ${CliService.name} or ${CliServiceProvider.name}.`)
+      }
+    }
+    return result
   }
 }
 
@@ -119,7 +130,8 @@ export class CliRuntimeActivator {
 
     const discriminator = options[name]
     const importOrObject = discriminations[discriminator]
-    if (!importOrObject) return class$
+    if (!importOrObject) 
+      throw new Error(`Discriminator ${name} is ${discriminator} which is not ${Object.keys(discriminations).join(', ')}.`)
 
     // runtime class must be a derivation enclosing class
     const runtimeClass = await class$.loadOrDeclareClass([name, importOrObject])
@@ -198,6 +210,7 @@ export class CliRuntimeCommandInfo {
   #class
   #info
   #parameters
+  #container
 
   constructor(runtime, path, class$, info, parameters) {
     this.#runtime = runtime
@@ -205,6 +218,7 @@ export class CliRuntimeCommandInfo {
     this.#class = class$
     this.#info = info
     this.#parameters = parameters.sort((a, b) => a.position - b.position)
+    this.#container = new CliRuntimeContainer()
   }
 
   get runtime() { return this.#runtime }
@@ -224,7 +238,6 @@ export class CliRuntimeCommandInfo {
     // which is an object containing the option arguments with names converted
     // to camel case.
     const options = { _info: this }
-    options._container = new CliRuntimeContainer(options)
 
     const result = []
     for (const parameter of this.#parameters) {
@@ -245,5 +258,9 @@ export class CliRuntimeCommandInfo {
     const args = this.#getArgs(userArgs)
     const activator = new CliRuntimeActivator(this.class)
     return await activator.activate(...args)
+  }
+
+  getServices(class$, options = { }) {
+    return this.#container.getServices(class$, options)
   }
 }

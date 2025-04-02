@@ -23,18 +23,23 @@ export default class CliOrb extends CliCommand {
     cpuHot: 'Threshold for high CPU usage',
     memHot: 'Threshold for high memory usage',
   }
-  static services = [
-    CliStdIn, { 
+  static services = {
+    stdin: CliStdIn,
     parser: CliParser, 
-  }]
+  }
   static { this.initialize(import.meta) }
+
+  #stdin
+  #parser
 
   constructor({ cpuHot = CPU_HOT, memHot = MEM_HOT, ...rest } = { }) {
     if (CliOrb.initializing(new.target, { cpuHot, memHot }))
       return super()
-
     super(rest)
-    
+
+    const { stdin, parser } = this.getServices(CliOrb, rest)
+    this.#stdin = stdin
+    this.#parser = parser
     this.cpuHot = cpuHot
     this.memHot = memHot
     this.stats = { in: 0, out: 0, error: 0 }
@@ -62,8 +67,7 @@ export default class CliOrb extends CliCommand {
       frames: DOTS_FRAMES
     }, color: INIT_COLOR}).start()
 
-    const stdin = await this.getService(CliStdIn)
-    const reader = CliReader.from(stdin, this.parser)
+    const reader = CliReader.from(await this.#stdin, this.#parser)
 
     while (true) {
       try {
@@ -74,7 +78,7 @@ export default class CliOrb extends CliCommand {
         const { type, rest } = record
 
         if (type == 'data') {
-          this.stats = await this.parser.toRecord(
+          this.stats = await this.#parser.toRecord(
             rest, { inCount: '#', outCount: '#', errorCount: '#', cpu: '#', memory: '#' }) 
 
           this.adjustSpinner(this.stats.cpu, this.stats.memory)
@@ -83,7 +87,7 @@ export default class CliOrb extends CliCommand {
         }
 
         if (type == 'exiting') {
-          const { code } = await this.parser.toRecord(rest, { code: '#' })
+          const { code } = await this.#parser.toRecord(rest, { code: '#' })
           process.exitCode = code
           continue
         }
@@ -112,7 +116,7 @@ export default class CliOrb extends CliCommand {
 
         } else if (type == 'warning') {
           const { _, warnMessage } 
-            = await this.parser.toRecord(rest, ['warnType', 'warnMessage'])
+            = await this.#parser.toRecord(rest, ['warnType', 'warnMessage'])
           this.message = `${warnMessage}`
           this.spinner.color = WARN_COLOR
 

@@ -334,11 +334,8 @@ export class CliMetadataClassLoader extends CliMetadataLoader {
   }
 
   *services$(class$) { 
-    for (const [_, service] of class$.getOwnServiceClasses())
-      yield this.load$(service)
-
-    for (const provider of class$.getOwnServiceProviderClasses())
-      yield this.load$(provider)
+    for (const name of class$.ownServiceNames())
+      yield this.load$(class$.getOwnService(name))
   }
 
   activate$(class$, id) {

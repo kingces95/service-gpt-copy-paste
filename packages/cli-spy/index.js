@@ -97,9 +97,10 @@ export class CliSpy extends CliCommand {
   static parameters = {
     path: 'Path of command',
   }
-  static services = [CliOutputService, { 
+  static services = {
+    outputService: CliOutputService, 
     console: CliConsole
-  }]
+  }
   static commands = { 
     ls, find,
     raw, md, cachedMd, json,
@@ -108,13 +109,17 @@ export class CliSpy extends CliCommand {
   static { this.initialize(import.meta) }
 
   #path
+  #console
+  #outputService
 
   constructor(path = [], options = {}) {
     if (CliSpy.initializing(new.target, path, options))
       return super()
-
     super(options)
 
+    const { console, outputService } = this.getServices(CliSpy, options)
+    this.#console = console
+    this.#outputService = outputService
     this.#path = path
   }
 
@@ -122,7 +127,7 @@ export class CliSpy extends CliCommand {
 
   async getCommand() { 
     const { runtime } = this.info
-    const { class: class$ } = await runtime.getCommandInfo(...this.#path)
+    const { class: class$ } = await runtime.getCommandInfo(this.#path)
     return class$
   }
   async getMetadata() { 
@@ -143,11 +148,10 @@ export class CliSpy extends CliCommand {
   }
   
   async write(string) {
-    await this.console.echo(string)
+    await this.#console.echo(string)
   }
   async log(pojo) {
-    const service = await this.getService(CliOutputService)
-    service.write(pojo)
+    await (await this.#outputService).write(pojo)
   }
 }
 

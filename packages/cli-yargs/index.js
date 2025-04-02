@@ -3,6 +3,7 @@ import yargs from 'yargs'
 import { Lazy } from '@kingjs/lazy'
 import { dumpPojo } from '@kingjs/pojo-dump'
 import { toPojo } from '@kingjs/pojo'
+import { hideBin } from 'yargs/helpers'
 
 async function __import() {
   const { cliYargsToPojo } = await import('@kingjs/cli-yargs-to-pojo')
@@ -10,7 +11,7 @@ async function __import() {
 }
 
 const KNONWN_OPTIONS = [
-  'help', 'version'
+  'help'//, 'version'
 ]
 
 export class CliYargs {
@@ -110,6 +111,19 @@ export class CliYargsCommand extends CliYargs {
     return new CliYargsCommand(null, null, pojo)
   }
 
+  static #sortByGroups(groups) {
+    // 1. Reverse the input list and project just the group names
+    const reversed = groups.map(([_, group]) => group).reverse()
+  
+    // 2. Build Set from reversed group names to dedupe in last-seen order
+    const priority = [...new Set(reversed)].reverse()
+  
+    // 3. Sort the original list by group priority
+    return groups.slice().sort((a, b) => {
+      return priority.indexOf(a[1]) - priority.indexOf(b[1])
+    });
+  }
+
   #scope          // CliYargsCommand
   #pojo           // CliCommandInfo pojo
   #parameters     // array of CliYargsParameter
@@ -177,7 +191,27 @@ export class CliYargsCommand extends CliYargs {
     return this.#commands.value.length > 0 && !this.#pojo.isDefaultCommand
   }
 
-  async apply(yargs) {
+  async #group(yargs$, argv) {
+    let groups = []
+
+    await this.apply$(
+      yargs(argv)
+        .version(false)
+        .help(false)
+        .option('help', { alias: 'h' })
+        .fail(() => { })
+        .exitProcess(false),
+      groups,
+    ).then(yargs => yargs.parse())
+
+    const sortedGroups = CliYargsCommand.#sortByGroups(groups)
+    for (const [name, group] of sortedGroups)
+      yargs$.group(name, group)
+
+    return yargs$
+  }
+
+  async apply$(yargs, groups) {
     yargs.strict()
 
     if (this.demandCommand)
@@ -188,25 +222,41 @@ export class CliYargsCommand extends CliYargs {
       yargs.positional(positional.name, pojo)
     }
 
-    for (const option of this.options()) {
+    for (const option of [...this.options()].reverse()) {
       const name = option.name
-      // if (name == 'stdlog') continue
-      const pojo = await option.toPojo()
-      // console.log(`-${this.name}:${name} (${pojo.group})`)
-      delete pojo.group
-      if (!KNONWN_OPTIONS.includes(name)) yargs.option(name, pojo)
-      yargs.group(name, option.group ? `Options (${option.group}):` : 'Options:')
+      const { group, ...pojo } = await option.toPojo()
+      groups?.unshift([name, group ? `Options (${group}):` : 'Options:'])
+      if (KNONWN_OPTIONS.includes(name)) continue
+      yargs.option(name, pojo)
     }
 
     for (const child of this.commands()) {
       yargs.command(
         child.template, 
         child.description, 
-        child.apply.bind(child),
+        o => child.apply$(o, groups),
       )
     }
 
     return yargs
+  }
+
+  async yargs(argv = hideBin(process.argv)) {
+    return await this.apply$(
+      yargs(argv)
+        .version(false)
+        .alias('help', 'h')
+        .demandCommand(1, 'You must specify a command.')
+        .showHelpOnFail(false, "Run --help for details.")
+        .option('argv$', { hidden: true })
+        .middleware(async (argv) => {
+          if (argv['argv$']) {
+            const pojo = await toPojo(argv)
+            await dumpPojo(pojo)
+            process.exit(0)
+          }
+        })
+    ).then(yargs => this.#group(yargs, argv))
   }
 
   *commands() { yield* this.#commands.value }
@@ -223,24 +273,4 @@ export class CliYargsCommand extends CliYargs {
     yield* this.#parameters.value
       .filter(o => o instanceof CliYargsOption)
   }
-}
-
-export function cliYargs(pojo) {
-  const yargsCommand = CliYargsCommand.fromInfoPojo(pojo)
-  
-  const yargs$ = yargs()
-    .alias('help', 'h')
-    .alias('version', 'v')
-    .demandCommand(1, 'You must specify a command.')
-    .showHelpOnFail(false, "Run --help for details.")
-    .option('argv$', { hidden: true })
-    .middleware(async (argv) => {
-      if (argv['argv$']) {
-        const pojo = await toPojo(argv)
-        await dumpPojo(pojo)
-        process.exit(0)
-      }
-    })
-
-  return yargsCommand.apply(yargs$)
 }

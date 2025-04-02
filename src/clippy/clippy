@@ -1,18 +1,19 @@
 #!/usr/bin/env node
 import { Clippy } from './index.js'
-import { cliYargs } from '@kingjs/cli-yargs'
 import { CliRuntime } from '@kingjs/cli-runtime'
-import { hideBin } from 'yargs/helpers'
+import { CliYargsCommand } from '@kingjs/cli-yargs'
+
+const argv = undefined
+// const argv = 'spy info -h'.split(' ')
+// const argv = 'spy info spy'.split(' ')
+// const argv = 'orb --stdin ./polling.txt'.split(' ')
 
 CliRuntime.activate(Clippy)
-  .then(async runtime => cliYargs(await runtime.info.toPojo())
-    .then(async yargs => {
-
-      const argv = await yargs.parse(hideBin(process.argv))
-      // const argv = await yargs.parse('spy info'.split(' '))
-      // const argv = await yargs.parse('poll --stdlog --errorRate .2'.split(' '))
-      // const argv = await yargs.parse('orb --stdin ./polling.txt'.split(' '))
-
-      await runtime.execute(argv._, argv)
+  .then(async runtime => runtime.info.toPojo()
+    .then(async pojo => {
+      const cliYargs = CliYargsCommand.fromInfoPojo(pojo)
+      const yargs = await cliYargs.yargs(argv)
+      const args = await yargs.parse()
+      await runtime.execute(args._, args)
     })
   )

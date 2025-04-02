@@ -95,6 +95,7 @@ export class Cli {
   static async getModuleName() { return await this[ModuleName].load() }
   
   static async *ownGroups() { yield* await this[OwnGroups].load() }
+
   static async *ownCommandNames() { yield* Object.keys(await this[OwnCommands].load()) }
   static async getCommand(...names) {
     if (names.length == 0)
@@ -107,31 +108,18 @@ export class Cli {
     return command.getCommand(...rest)
   }
   
-  static *getOwnServiceProviderClasses() { 
+  static *ownServiceNames() {
     const services = getOwn(this, 'services') ?? {}
-    if (!Array.isArray(services)) return
-    for (const class$ of services.filter(o => typeof o == 'function')) {
-      if (!(class$.prototype instanceof CliServiceProvider))
-        throw new Error(`Class ${class$.name} must extend ${CliServiceProvider.name}.`)
-      yield class$
-    }
+    yield* Object.keys(services)
   }
-  static *getOwnServiceClasses() { 
-    const services$ = getOwn(this, 'services') ?? {}
-    const services = Array.isArray(services$) 
-      ? (services$.find(o => !(typeof o == 'function')) ?? {})
-      : services$
-
-    for (const entry of Object.entries(services)) {
-      const [name, class$] = entry
-      if (!(class$.prototype instanceof CliService))
-        throw new Error(`Class ${class$.name} must extend ${CliService.name}.`)
-      yield entry
-    }
-  }
-  static *getServiceClasses() {
-    yield* (this.baseClass?.getServiceClasses() ?? [])
-    yield* this.getOwnServiceClasses()
+  static getOwnService(name) {
+    const services = getOwn(this, 'services') ?? {}
+    const class$ = services[name]
+    if (!class$) throw new Error(`Service '${name}' not found`)
+    if (!(class$.prototype instanceof CliService) &&
+        !(class$.prototype instanceof CliServiceProvider))
+      throw new Error(`Class ${class$.name} must extend ${CliService.name} or ${CliServiceProvider.name}.`)
+    return class$
   }
 
   static initialize(meta) {
@@ -290,9 +278,8 @@ export class Cli {
   static { this.initialize(import.meta) }
  
   #info
-  #container
 
-  constructor({ _info, _container } = {}) {
+  constructor({ _info } = {}) {
     if (Cli.initializing(new.target, { })) {
       const defaults = new.target[OwnDefaults]
       delete new.target[OwnDefaults]
@@ -300,15 +287,9 @@ export class Cli {
     }
 
     this.#info = _info
-    this.#container = _container
-
-    // assign services by name to this
-    for (const [name, service] of this.constructor.getServiceClasses())
-      this[name] = this.getServiceSync(service)
   }
 
-  getService(provider) { return this.#container.getService(provider) }
-  getServiceSync(provider) { return this.#container.getServiceSync(provider) }
+  getServices(class$, options) { return this.info.getServices(class$, options) }
   get info() { return this.#info }
 }
 

@@ -87,9 +87,9 @@ export class CliStdLog extends CliStdStream {
 }
 
 export class CliConsole extends CliService {
-  static services = [ 
-    CliStdOut 
-  ]
+  static services = { 
+    stdout: CliStdOut 
+  }
   static { this.initialize(import.meta) }
 
   #out
@@ -99,7 +99,8 @@ export class CliConsole extends CliService {
       return super()
     super(options)
 
-    this.#out = new CliEcho(this.getService(CliStdOut))
+    const { stdout } = this.getServices(CliConsole, options)
+    this.#out = new CliEcho(stdout)
   }
 
   async echo(line) { 
@@ -114,17 +115,19 @@ export class CliConsole extends CliService {
 export class CliCommand extends Cli {
   static parameters = {
     help: 'Show help',
-    version: 'Show version number',
+    version: 'Show version',
     verbose: 'Provide verbose output',
   }
   static aliases = {
     help: ['h'],
     version: ['v'],
   }
-  static services = [
-    CliStdErr 
-  ]
+  static services = {
+    stderr: CliStdErr 
+  }
   static { this.initialize(import.meta) }
+
+  #stderr
 
   constructor({ 
     help = false, 
@@ -134,8 +137,10 @@ export class CliCommand extends Cli {
   } = { }) {
     if (CliCommand.initializing(new.target, { help, version, verbose }))
       return super()
-    
     super({ ...rest })
+
+    const { stderr } = this.getServices(CliCommand, rest)
+    this.#stderr = stderr
 
     // handle graceful shutdown
     this.exitCode = undefined
@@ -174,8 +179,7 @@ export class CliCommand extends Cli {
 
   toString() {
     if (this.succeeded) {
-      const stderr = this.tryGetServiceSync(CliStdErr)
-      if (stderr?.count)
+      if (this.#stderr.count)
         return 'Command succeeded with warnings'
       else
         return 'Command succeeded'

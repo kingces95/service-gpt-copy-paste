@@ -23,19 +23,22 @@ export class CliOutputService extends CliServiceProvider {
       table: MODULE_NAME.addExport('table'),
     },
   }
-  static services = [
-    CliStdOut,
-  ]
+  static services = {
+    stdout: CliStdOut,
+  }
   static { this.initialize(import.meta) }
 
   #color
   #query
+  #stdout
 
   constructor({ output = 'util', query = null, color = true, ...rest } = { }) {
     if (CliOutputService.initializing(new.target, { output, query, color }))
       return super()
-
     super({ ...rest })
+
+    const { stdout } = this.getServices(CliOutputService, rest)
+    this.#stdout = stdout
     this.#color = color
     this.#query = query
   }
@@ -47,7 +50,7 @@ export class CliOutputService extends CliServiceProvider {
 
   // TODO: forEach not used; update tsv/table to use this
   async forEach(poja, action) {
-    const stdout = await this.getService(CliStdOut)
+    const stdout = await this.#stdout
     poja = this.query(poja)
     poja = Array.isArray(poja) ? poja : [poja]
     for (var i = 0; i < poja.length; i++) {
@@ -63,7 +66,7 @@ export class CliOutputService extends CliServiceProvider {
   }
 
   async writeObject(pojo, formatFn) {
-    const stdout = await this.getService(CliStdOut)
+    const stdout = await this.#stdout
     pojo = this.query(pojo)
     const color = this.#color && stdout.isTTY
     const value = formatFn(pojo, color)
