@@ -45,7 +45,7 @@ CliCommandInfo[symbol] = {
   commands: 'infos',
 }
 
-export async function cliInfoToPojo(info, type) {
-  let pojo = await toPojo(info, { symbol, type, depth: 1 })
+export async function cliInfoToPojo(info) {
+  let pojo = await toPojo(info, { symbol })
   return trimPojo(pojo)
 }

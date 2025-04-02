@@ -233,7 +233,7 @@ export class CliMetadataLoader extends CliClassMetadata {
 
   async toPojo() {
     const { toPojo } = await __import()
-    return toPojo(this.classes(), { depth: 1, type: 'list' })
+    return toPojo(this.classes())
   }
 
   async __dump() {

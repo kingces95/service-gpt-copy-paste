@@ -8,7 +8,7 @@ async function getOrCall(target, name) {
 }
 
 export async function toPojo(value, options = { }) {
-  const { type = null, symbol, depth, path = [] } = options
+  const { type = null, symbol, depth = 1, path = [] } = options
   const jsType = typeof value
 
   if (value === null || value === undefined)
@@ -16,7 +16,7 @@ export async function toPojo(value, options = { }) {
   
   if (!type) {
     if (Array.isArray(value))
-      return await toPojo(value, { symbol, type: 'list', depth, path })
+      return await toPojo(value, { ...options, type: 'list' })
   
     switch (jsType) {
       case 'symbol':
@@ -32,12 +32,17 @@ export async function toPojo(value, options = { }) {
         return value
         
       case 'object': {
+        // iterators are treated as lists regardless of attached metadata.
+        if (value[Symbol.iterator] || value[Symbol.asyncIterator])
+          return await toPojo(value, { ...options, type: 'list' })
+
         const metadata = value.constructor?.[symbol]
         const isPojo = Object.getPrototypeOf(value) === Object.prototype
         
         // if there is no metadata, then ignore unless it is a plain object.
-        if (!metadata && !isPojo)
+        if (!metadata && !isPojo) {
           return
+        }
         
         // if there is no metadata, then transform all properties to pojos.
         if (!metadata) {
@@ -82,15 +87,6 @@ export async function toPojo(value, options = { }) {
           return
         return result
       }
-
-      case 'array':
-        const array = []
-        for (const item of value) {
-          array.push(await toPojo(item), { symbol, depth, path })
-        }
-        if (!array.length)
-          return
-        return array
     
       default:
         throw new Error(`unexpected type: ${jsType}`)

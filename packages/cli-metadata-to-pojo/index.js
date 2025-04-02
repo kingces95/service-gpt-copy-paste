@@ -44,7 +44,7 @@ CliClassMetadata[symbol] = {
   services: 'list',
 }
 
-export async function cliMetadataToPojo(metadata, { type, depth = 1 } = { }) {
-  let pojo = await toPojo(metadata, { symbol, type, depth })
+export async function cliMetadataToPojo(metadata) {
+  let pojo = await toPojo(metadata, { symbol })
   return trimPojo(pojo)
 }

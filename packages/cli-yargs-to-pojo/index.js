@@ -52,7 +52,7 @@ CliYargsCommand[symbol] = {
   commands: 'infos',
 }
 
-export async function cliYargsToPojo(info, type) {
-  let pojo = await toPojo(info, { symbol, type, depth: 1 })
+export async function cliYargsToPojo(info) {
+  let pojo = await toPojo(info, { symbol })
   return trimPojo(pojo)
 }
