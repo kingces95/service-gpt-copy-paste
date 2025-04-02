@@ -8,12 +8,15 @@ async function __import() {
 }
 
 export class CliMetadata {
+  #id
   #name
   
-  constructor(name) {
+  constructor(id, name) {
+    this.#id = id
     this.#name = name
   }
 
+  get id() { return this.#id }
   get name() { return this.#name }
 
   get isParameter() { return false }
@@ -35,12 +38,12 @@ export class CliParameterMetadata extends CliMetadata {
   #pojo
 
   constructor(scope, name, pojo) {
-    super(name)
-
+    super(pojo.id ?? scope.loader.getParameterId(), name)
     this.#scope = scope
     this.#pojo = pojo
   }
 
+  get loader() { return this.#scope.loader }
   get scope() { return this.#scope }
   get isParameter() { return true }
   get isOption() { }
@@ -139,13 +142,12 @@ export class CliClassMetadata extends CliMetadata {
   #classOrPojo
 
   constructor(loader, classOrPojo, id, name, pojo) {
-    super(name)
+    super(id, name)
 
     this.#loader = loader ?? this
     this.#classOrPojo = classOrPojo
     this.#pojo = pojo
 
-    this.id = id
     this.ref = [this.id, this.name]
 
     this.#parameters = new LazyGenerator(function* () {
@@ -157,7 +159,8 @@ export class CliClassMetadata extends CliMetadata {
 
     // no own parameters and all own services are also baren
     this.#baren = new Lazy(() => {
-      if (!this.parameters().next().done) return false
+      const parameters = this.#pojo.parameters ?? { }
+      if (Object.keys(parameters).length) return false
       return [...this.services()].every(o => o.baren)
     }, this)
   }
@@ -191,6 +194,7 @@ export class CliClassMetadata extends CliMetadata {
 export class CliMetadataLoader extends CliClassMetadata {
   #cache
   #loaded
+  #parameterId
 
   constructor(classOrPojo, id, name, pojo) {
     super(null, classOrPojo, id, name, pojo)
@@ -198,6 +202,7 @@ export class CliMetadataLoader extends CliClassMetadata {
     this.#cache = new Map()
     this.#cache.set(classOrPojo, this)
     this.#loaded = [this]
+    this.#parameterId = 0
   }
 
   activate$(classOrPojo, id) { throw 'abstract' }
@@ -206,6 +211,8 @@ export class CliMetadataLoader extends CliClassMetadata {
   getScope$(classOrPojo) { throw 'abstract' }
   *commands$(classOrPojo) { throw 'abstract' }
   *services$(classOrPojo) { throw 'abstract' }
+
+  getParameterId() { return this.#parameterId++ }
 
   load$(classOrPojo) {
     if (!this.#cache.has(classOrPojo)) {

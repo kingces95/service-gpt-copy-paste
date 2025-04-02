@@ -8,6 +8,7 @@ import { toPojo } from '@kingjs/pojo'
 const symbol = Symbol('cli-metadata-to-pojo')
 
 CliParameterMetadata[symbol] = {
+  id: 'number',
   name: 'string',
   description: 'string',
   default: 'any',

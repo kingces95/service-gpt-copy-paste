@@ -3,10 +3,11 @@ import { Clippy } from './index.js'
 import { CliRuntime } from '@kingjs/cli-runtime'
 import { CliYargsCommand } from '@kingjs/cli-yargs'
 
-const argv = undefined
-// const argv = 'spy info -h'.split(' ')
-// const argv = 'spy info spy'.split(' ')
-// const argv = 'orb --stdin ./polling.txt'.split(' ')
+let argv = undefined
+// argv = 'spy info -h'.split(' ')
+// argv = 'spy info spy'.split(' ')
+// argv = 'orb --stdin ./polling.txt'.split(' ')
+// argv = 'spy poll -- --get-yargs-completions'.split(' ')
 
 CliRuntime.activate(Clippy)
   .then(async runtime => runtime.info.toPojo()

@@ -194,6 +194,10 @@ export class CliYargsCommand extends CliYargs {
   async #group(yargs$, argv) {
     let groups = []
 
+    // hack; w/o this, suggestions are duplicated due to .exitProcess(false)
+    // seems yargs() instances are not totally isolated when .exitProcess(false)
+    if (argv.includes('--get-yargs-completions')) return yargs$
+
     await this.apply$(
       yargs(argv)
         .version(false)
@@ -242,13 +246,15 @@ export class CliYargsCommand extends CliYargs {
   }
 
   async yargs(argv = hideBin(process.argv)) {
+    const yargs$ = yargs(argv)
     return await this.apply$(
-      yargs(argv)
+      yargs$
         .version(false)
         .alias('help', 'h')
         .demandCommand(1, 'You must specify a command.')
         .showHelpOnFail(false, "Run --help for details.")
         .option('argv$', { hidden: true })
+        .completion('completion')
         .middleware(async (argv) => {
           if (argv['argv$']) {
             const pojo = await toPojo(argv)
