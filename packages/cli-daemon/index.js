@@ -61,6 +61,9 @@ export class CliPulse extends CliService {
   #stdin
   #stdout
   #stderr
+  #running
+  #intervalMs
+  #reportMs
 
   constructor({ intervalMs = 100, reportMs = 1000, ...rest } = {}) {
     if (CliPulse.initializing(new.target, { intervalMs, reportMs }))
@@ -71,20 +74,20 @@ export class CliPulse extends CliService {
     this.#stdin = stdin
     this.#stdout = stdout
     this.#stderr = stderr
-    this.running = false
-    this.intervalMs = intervalMs
-    this.reportMs = reportMs
+    this.#running = false
+    this.#intervalMs = intervalMs
+    this.#reportMs = reportMs
   }
 
   async start(callback) {
     let ms = 0
     let prevCPU = process.cpuUsage()
-    this.running = true
+    this.#running = true
     
-    while (this.running) {
-      await new Promise(resolve => setTimeout(resolve, this.intervalMs))
-      ms += this.intervalMs
-      if (ms < this.reportMs) 
+    while (this.#running) {
+      await new Promise(resolve => setTimeout(resolve, this.#intervalMs))
+      ms += this.#intervalMs
+      if (ms < this.#reportMs) 
         continue
       
       const cpuUsage = process.cpuUsage(prevCPU)
@@ -106,7 +109,7 @@ export class CliPulse extends CliService {
   }
 
   async stop() {
-    this.running = false
+    this.#running = false
   }
 }
 
