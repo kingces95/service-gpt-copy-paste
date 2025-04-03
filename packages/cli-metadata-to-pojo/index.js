@@ -10,7 +10,6 @@ const symbol = Symbol('cli-metadata-to-pojo')
 
 CliMetadata[symbol] = {
   // __type: 'type',
-  id: 'ref',
   name: 'string',
 }
 

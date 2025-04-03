@@ -7,21 +7,13 @@ async function __import() {
   return { toPojo: cliMetadataToPojo, dumpPojo }
 }
 
-const CLI_CLASS_METADATA_TYPE_ID = 0
-const CLI_CLASS_METADATA_PARAMETER_ID = 1
-
 export class CliMetadata {
-  #id
   #name
   
-  constructor(id, name) {
-    this.#id = [this.constructor.typeId$, id]
+  constructor(name) {
     this.#name = name
   }
 
-  get typeId$() { throw 'abstract' }
-
-  get id() { return this.#id }
   get name() { return this.#name }
 
   get isParameter() { return false }
@@ -33,8 +25,6 @@ export class CliMetadata {
 }
 
 export class CliParameterMetadata extends CliMetadata {
-  static typeId$ = CLI_CLASS_METADATA_PARAMETER_ID
-
   static create(scope, name, pojo) {
     return pojo.position !== undefined
       ? new CliPostionalMetadata(scope, name, pojo)
@@ -45,7 +35,7 @@ export class CliParameterMetadata extends CliMetadata {
   #pojo
 
   constructor(scope, name, pojo) {
-    super(pojo.id ?? scope.loader.getParameterId(), name)
+    super(name)
     this.#scope = scope
     this.#pojo = pojo
   }
@@ -126,8 +116,6 @@ class CliPostionalMetadata extends CliParameterMetadata {
 }
 
 export class CliClassMetadata extends CliMetadata {
-  static typeId$ = CLI_CLASS_METADATA_TYPE_ID
-
   static fromMetadataPojo(poja) { return CliMetadataPojoLoader.activate(poja) }
   static async fromClass(class$) { return CliMetadataClassLoader.activate(class$) }
 
@@ -150,14 +138,14 @@ export class CliClassMetadata extends CliMetadata {
   #baren
   #classOrPojo
 
-  constructor(loader, classOrPojo, id, name, pojo) {
-    super(id, name)
+  constructor(loader, classOrPojo, name, pojo) {
+    super(name)
 
     this.#loader = loader ?? this
     this.#classOrPojo = classOrPojo
     this.#pojo = pojo
 
-    this.ref = [CLI_CLASS_METADATA_TYPE_ID, id, this.name]
+    this.ref = this.name
 
     this.#parameters = new LazyGenerator(function* () {
       const parameters = this.#pojo.parameters ?? { }
@@ -207,15 +195,13 @@ export class CliClassMetadata extends CliMetadata {
 export class CliMetadataLoader extends CliClassMetadata {
   #cache
   #loaded
-  #parameterId
 
-  constructor(classOrPojo, id, name, pojo) {
-    super(null, classOrPojo, id, name, pojo)
+  constructor(classOrPojo, name, pojo) {
+    super(null, classOrPojo, name, pojo)
 
     this.#cache = new Map()
     this.#cache.set(classOrPojo, this)
     this.#loaded = [this]
-    this.#parameterId = 0
   }
 
   get isLoader() { return true }
@@ -227,11 +213,9 @@ export class CliMetadataLoader extends CliClassMetadata {
   *commands$(classOrPojo) { throw 'abstract' }
   *services$(classOrPojo) { throw 'abstract' }
 
-  getParameterId() { return this.#parameterId++ }
-
   load$(classOrPojo) {
     if (!this.#cache.has(classOrPojo)) {
-      const metadata = this.activate$(classOrPojo, this.#loaded.length)
+      const metadata = this.activate$(classOrPojo)
       this.#loaded.push(metadata)
       this.#cache.set(classOrPojo, metadata)
     }
@@ -335,7 +319,7 @@ export class CliMetadataClassLoader extends CliMetadataLoader {
 
   constructor(class$, groups, scopes, subCommands) {
     const { name } = class$
-    super(class$, 0, name, class$.ownMetadata)
+    super(class$, name, class$.ownMetadata)
 
     this.#groups = groups
     this.#scopes = scopes
@@ -360,12 +344,12 @@ export class CliMetadataClassLoader extends CliMetadataLoader {
       yield this.load$(class$.getOwnService(name))
   }
 
-  activate$(class$, id) {
+  activate$(class$) {
     if (typeof class$ != 'function')
       throw new Error(`Class ${class$} must be a function.`)
     if (class$ != Cli && !(class$.prototype instanceof Cli))
       throw new Error(`Class ${class$.name} must extend Cli.`)
-    return new CliClassMetadata(this, class$, id, class$.name, class$.ownMetadata)
+    return new CliClassMetadata(this, class$, class$.name, class$.ownMetadata)
   }
 }
 
@@ -380,15 +364,21 @@ export class CliMetadataPojoLoader extends CliMetadataLoader {
   }
 
   #poja
+  #map
 
   constructor(poja) {
     const pojo = poja[0]
     const { id, name } = pojo
     super(pojo, id, name, pojo)
     this.#poja = poja
+
+    this.#map = new Map()
+    for (const pojo of poja) this.#map.set(pojo.name, pojo)
   }
 
-  #loadRef(ref) { return this.load$(this.#poja[ref[1]]) }
+  #loadRef(ref) { 
+    return this.load$(this.#map.get(ref)) 
+  }
 
   getGroup$(pojo) { return pojo.group }
   getScope$(pojo) { return pojo.scope }
@@ -413,6 +403,6 @@ export class CliMetadataPojoLoader extends CliMetadataLoader {
   activate$(pojo) {
     if (typeof pojo == 'function')
       throw new Error(`Expected a pojo.`)
-    return new CliClassMetadata(this, pojo, pojo.id, pojo.name, pojo)
+    return new CliClassMetadata(this, pojo, pojo.name, pojo)
   }
 }
