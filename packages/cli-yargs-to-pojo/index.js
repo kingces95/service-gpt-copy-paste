@@ -11,6 +11,7 @@ import { toPojo } from '@kingjs/pojo'
 const symbol = Symbol('cli-yargs-to-pojo')
 
 CliYargs[symbol] = {
+  // __type: 'type',
   name: 'string',
 }
 
@@ -41,7 +42,7 @@ CliYargsOption[symbol] = {
 }
 
 CliYargsCommand[symbol] = {
-  name: 'string',
+  ...CliYargs[symbol],
   description: 'string',
   demandCommand: 'boolean',
   path: 'string',

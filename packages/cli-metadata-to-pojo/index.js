@@ -1,4 +1,5 @@
 import {
+  CliMetadata,
   CliParameterMetadata,
   CliClassMetadata,
 } from '@kingjs/cli-metadata'
@@ -7,9 +8,14 @@ import { toPojo } from '@kingjs/pojo'
 
 const symbol = Symbol('cli-metadata-to-pojo')
 
-CliParameterMetadata[symbol] = {
-  id: 'number',
+CliMetadata[symbol] = {
+  // __type: 'type',
+  id: 'ref',
   name: 'string',
+}
+
+CliParameterMetadata[symbol] = {
+  ...CliMetadata[symbol],
   description: 'string',
   default: 'any',
 
@@ -30,18 +36,16 @@ CliParameterMetadata[symbol] = {
 
 CliClassMetadata[symbol] = {
   [symbol]: 'ref',
-  id: 'number',
-  name: 'string',
+  ...CliMetadata[symbol],
   description: 'string',
   group: 'string',
   scope: 'string',
-  baseClass: 'any',
+  baseClass: 'ref',
   baren: 'boolean',
-  isCommand: 'boolean',
   defaultCommand: 'boolean',
   parameters: 'infos',
   commands: 'entries',
-  services: 'list',
+  services: 'refs',
 }
 
 export async function cliMetadataToPojo(metadata) {

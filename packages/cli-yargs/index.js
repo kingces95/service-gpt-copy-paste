@@ -171,7 +171,11 @@ export class CliYargsCommand extends CliYargs {
     })
 
     this.#path = new Lazy(() => {
-      return [...this.hierarchy()].reverse().map(o => o.name).join(' ')
+      return [...this.hierarchy()]
+        .reverse()
+        .map(o => o.name)
+        .filter(Boolean)
+        .join(' ')
     })
   }
 

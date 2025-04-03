@@ -17,7 +17,7 @@ export async function toPojo(value, options = { }) {
   if (!type) {
     if (Array.isArray(value))
       return await toPojo(value, { ...options, type: 'list' })
-  
+
     switch (jsType) {
       case 'symbol':
       case 'function':
@@ -30,7 +30,7 @@ export async function toPojo(value, options = { }) {
       case 'bigint':
       case 'string':
         return value
-        
+
       case 'object': {
         // iterators are treated as lists regardless of attached metadata.
         if (value[Symbol.iterator] || value[Symbol.asyncIterator])
@@ -38,12 +38,12 @@ export async function toPojo(value, options = { }) {
 
         const metadata = value.constructor?.[symbol]
         const isPojo = Object.getPrototypeOf(value) === Object.prototype
-        
+
         // if there is no metadata, then ignore unless it is a plain object.
         if (!metadata && !isPojo) {
           return
         }
-        
+
         // if there is no metadata, then transform all properties to pojos.
         if (!metadata) {
           const result = { }
@@ -76,6 +76,7 @@ export async function toPojo(value, options = { }) {
         const result = { }
         for (const key in metadata) {
           let type = metadata[key]
+          if (type == 'type') { result[key] = value.constructor.name; continue }
           const keyValue = await getOrCall(value, key)
           const pojo = await toPojo(keyValue, { 
             type, symbol, depth: newDepth, path: [...path, key]
@@ -117,11 +118,13 @@ export async function toPojo(value, options = { }) {
         throw new Error(`Pojo url type must be instanceof URL`)
       return await toPojo(value?.toString(), { symbol, depth, path })
 
+    case 'ref':
     case 'any':
       if (jsType == 'function')
         throw new Error(`Pojo any type must not be typeof function`)
       return await toPojo(value, { symbol, depth, path })
 
+    case 'refs':
     case 'list': {
       if (jsType != 'object')
         throw new Error(`Pojo list type must be typeof object; got ${jsType}`)

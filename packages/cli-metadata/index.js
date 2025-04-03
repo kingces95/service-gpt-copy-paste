@@ -7,14 +7,19 @@ async function __import() {
   return { toPojo: cliMetadataToPojo, dumpPojo }
 }
 
+const CLI_CLASS_METADATA_TYPE_ID = 0
+const CLI_CLASS_METADATA_PARAMETER_ID = 1
+
 export class CliMetadata {
   #id
   #name
   
   constructor(id, name) {
-    this.#id = id
+    this.#id = [this.constructor.typeId$, id]
     this.#name = name
   }
+
+  get typeId$() { throw 'abstract' }
 
   get id() { return this.#id }
   get name() { return this.#name }
@@ -28,6 +33,8 @@ export class CliMetadata {
 }
 
 export class CliParameterMetadata extends CliMetadata {
+  static typeId$ = CLI_CLASS_METADATA_PARAMETER_ID
+
   static create(scope, name, pojo) {
     return pojo.position !== undefined
       ? new CliPostionalMetadata(scope, name, pojo)
@@ -119,6 +126,8 @@ class CliPostionalMetadata extends CliParameterMetadata {
 }
 
 export class CliClassMetadata extends CliMetadata {
+  static typeId$ = CLI_CLASS_METADATA_TYPE_ID
+
   static fromMetadataPojo(poja) { return CliMetadataPojoLoader.activate(poja) }
   static async fromClass(class$) { return CliMetadataClassLoader.activate(class$) }
 
@@ -148,7 +157,7 @@ export class CliClassMetadata extends CliMetadata {
     this.#classOrPojo = classOrPojo
     this.#pojo = pojo
 
-    this.ref = [this.id, this.name]
+    this.ref = [CLI_CLASS_METADATA_TYPE_ID, id, this.name]
 
     this.#parameters = new LazyGenerator(function* () {
       const parameters = this.#pojo.parameters ?? { }
@@ -174,7 +183,11 @@ export class CliClassMetadata extends CliMetadata {
   get loader() { return this.#loader }
   get baseClass() { return this.loader.getBaseClass$(this.#classOrPojo) }
   get group() { return this.loader.getGroup$(this.#classOrPojo) }
-  get scope() { return this.loader.getScope$(this.#classOrPojo) }
+  get scope() {
+    const scope = this.loader.getScope$(this.#classOrPojo)
+    if (!this.isLoader && scope == this.#loader.scope) return
+    return scope
+  }
   get baren() { return this.#baren.value }
 
   get description() { return this.#pojo.description }
@@ -204,6 +217,8 @@ export class CliMetadataLoader extends CliClassMetadata {
     this.#loaded = [this]
     this.#parameterId = 0
   }
+
+  get isLoader() { return true }
 
   activate$(classOrPojo, id) { throw 'abstract' }
   getBaseClass$(classOrPojo) { throw 'abstract' }
@@ -373,7 +388,7 @@ export class CliMetadataPojoLoader extends CliMetadataLoader {
     this.#poja = poja
   }
 
-  #loadRef(ref) { return this.load$(this.#poja[ref[0]]) }
+  #loadRef(ref) { return this.load$(this.#poja[ref[1]]) }
 
   getGroup$(pojo) { return pojo.group }
   getScope$(pojo) { return pojo.scope }

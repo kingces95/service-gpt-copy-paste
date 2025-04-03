@@ -1,4 +1,5 @@
 import {
+  CliInfo,
   CliParameterInfo,
   CliCommandInfo,
 } from '@kingjs/cli-info'
@@ -7,8 +8,13 @@ import { toPojo } from '@kingjs/pojo'
 
 const symbol = Symbol('cli-metadata-to-pojo')
 
-CliParameterInfo[symbol] = {
+CliInfo[symbol] = {
+  // __type: 'type',
   name: 'string',
+}
+
+CliParameterInfo[symbol] = {
+  ...CliInfo[symbol],
   description: 'string',
   position: 'number',
   kababName: 'string',
@@ -35,7 +41,7 @@ CliParameterInfo[symbol] = {
 }
 
 CliCommandInfo[symbol] = {
-  name: 'string',
+  ...CliInfo[symbol],
   description: 'string',
   kababName: 'string',
   __comment: 'any',
