@@ -211,31 +211,10 @@ export class CliCommandInfo extends CliInfo {
     ]
 
     this.#servicesMd = []
-
-    if (this.name == 'poll') {
-      this.#parameterTree = {
-        Cli: [],
-        CliCommand: [],
-        CliDaemon: {
-          CliDaemonState: {
-            CliStdLog: [ 'stdlog' ]
-          },
-          CliPulse: [{
-            CliStdIn: [ 'stdin' ],
-            CliStdOut: [ 'stdout' ],
-            CliStdErr: [ 'stderr' ]
-          }, 'reportMs', 'intervalMs' ],
-        },
-        CliRx: { },
-        CliRxPoller: [ 'writeError', 'errorMs', 'errorRate', 'pollMs' ],
-        CliPollClipboard: [ 'prefix' ],
-      }
-    }
     this.#parameterTree = { }
 
     this.#parameters = new Lazy(() => {
       const slots = new Map()
-      const result = []
 
       for (const classMd of this.#partitionMd.reverse()) {
         const tree = this.#parameterTree[classMd.name] = { }
@@ -255,25 +234,20 @@ export class CliCommandInfo extends CliInfo {
             const parameter = new CliParameterInfo(this, name, serviceMd, parameterMd)
             subTree[name] = parameter.group ?? '.'
             slots.set(name, parameter)
-            result.push(parameter)
           }
         }
 
         // Gather parameters from the class hierarchy
         for (const parameterMd of [...classMd.parameters()].reverse()) {
           const name = parameterMd.name
-          if (classMd != this.#classMd) {
-            if (slots.has(name)) continue
-            if (parameterMd.local) continue
-          }
+          if (classMd != this.#classMd && parameterMd.local) continue
           const parameter = new CliParameterInfo(this, name, classMd, parameterMd)
           tree[name] = parameter.group ?? '.'
           slots.set(name, parameter)
-          result.push(parameter)
         }
       }
 
-      return result.reverse()
+      return [...slots.values()].reverse()
     })
   }
 
@@ -286,6 +260,7 @@ export class CliCommandInfo extends CliInfo {
   get partitionMd$() { return this.#partitionMd }
   get __comment() {
     return {
+      name: this.#classMd.name,
       parameters: [...this.parameters()].map(o => o.name),
       groups: this.#parameterTree,
       partition: this.#partitionMd.map(o => o.name),

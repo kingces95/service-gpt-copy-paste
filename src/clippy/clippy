@@ -10,6 +10,8 @@ let argv = undefined
 // argv = 'orb --stdin ./polling.txt'.split(' ')
 // argv = 'spy poll -- --get-yargs-completions'.split(' ')
 // argv = 'http get https://jsonplaceholder.typicode.com/todos/1'.split(' ')
+// argv = 'spy info http get'.split(' ')
+// argv = 'http get -h'.split(' ')
 
 CliRuntime.activate(Clippy)
   .then(async runtime => runtime.info.toPojo()

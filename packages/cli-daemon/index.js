@@ -126,19 +126,14 @@ export class CliDaemon extends CliCommand {
   constructor(options) {
     if (CliDaemon.initializing(new.target)) 
       return super()
-    super(options)
 
+    super(options)
+    
     const { state, pulse } = this.getServices(CliDaemon, options)
     this.#state = state
     this.#pulse = pulse
 
-    const abortController = new AbortController()
-    this.signal = abortController.signal
-
-    process.once('SIGINT', async () => {
-      await this.is$('aborting')
-      abortController.abort()
-    })
+    this.signal.addEventListener('abort', async () => { await this.is$('aborting') })
 
     process.once('beforeExit', async () => {
       const code = process.exitCode

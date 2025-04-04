@@ -213,32 +213,27 @@ export class CliCommand extends Cli {
     const { stderr } = this.getServices(CliCommand, rest)
     this.#stderr = stderr
 
+    const abortController = new AbortController()
+    this.signal = abortController.signal
+    process.once('SIGINT', async () => { abortController.abort() })
+
     // handle graceful shutdown
     this.exitCode = undefined
-    process.once('beforeExit', async () => {
-      process.exitCode = this.exitCode
-    })
-    
+    process.once('beforeExit', async () => { process.exitCode = this.exitCode })
+
     // handle ungraceful shutdown
     this.exitError = undefined
-    process.once('uncaughtException', (error) => {
-      this.error$(error)
-    })
-
-    process.once('unhandledRejection', (reason) => {
-      this.error$(reason)
-    })
+    process.once('uncaughtException', (error) => { this.error$(error) })
+    process.once('unhandledRejection', (reason) => { this.error$(reason) })
   }
-  
+
   async success$() { this.exitCode = EXIT_SUCCESS }
   async abort$() { this.exitCode = EXIT_SIGINT }
   async fail$(code = EXIT_FAILURE) { this.exitCode = code }
   async error$(error) {
     this.exitError = error
     this.exitCode = EXIT_ERRORED
-    error = error instanceof Error 
-      ? error 
-      : new Error(err || 'Internal error')
+    error = error instanceof Error ? error : new Error(error || 'Internal error')
     console.error(error)
   }
 

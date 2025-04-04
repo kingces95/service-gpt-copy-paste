@@ -5,6 +5,8 @@ import axios from 'axios'
 import { reduce } from 'rxjs/operators'
 
 const HTTP_UPDATE_METHODS = ['POST', 'PUT', 'PATCH']
+const HTTP_SAMPLE = 'https://jsonplaceholder.typicode.com/posts/1'
+const HTTP_HANG = 'https://httpbin.org/delay/10'
 
 export class CliHttp extends CliCommand {
   static description = 'Send a HTTP request'
@@ -39,7 +41,12 @@ export class CliHttp extends CliCommand {
     const { console } = this.getServices(CliHttp, rest)
 
     const isUpdate = HTTP_UPDATE_METHODS.includes(method)
-    const signal = null
+    const signal = this.signal
+
+    switch (url) {
+      case 'sample': url = HTTP_SAMPLE; break
+      case 'hang': url = HTTP_HANG; break
+    }
 
     // Process headers and body, then execute
     CliHttp.processLines(console, headers, isUpdate).then(async ({ headers, body }) => {
@@ -81,7 +88,7 @@ export class CliHttp extends CliCommand {
   }
 
   static async processLines(lines$, headersCount, isUpdate) {
-    if (headersCount === 0 && !isUpdate) {
+    if (headersCount === 0 || !isUpdate) {
       return Promise.resolve({ headers: undefined, body: undefined })
     }
 

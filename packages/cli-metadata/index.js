@@ -368,8 +368,8 @@ export class CliMetadataPojoLoader extends CliMetadataLoader {
 
   constructor(poja) {
     const pojo = poja[0]
-    const { id, name } = pojo
-    super(pojo, id, name, pojo)
+    const { name } = pojo
+    super(pojo, name, pojo)
     this.#poja = poja
 
     this.#map = new Map()

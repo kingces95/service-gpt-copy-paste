@@ -1,0 +1,15 @@
+{
+  "name": "@kingjs/cli-simulator",
+  "version": "1.0.0",
+  "description": "Command simulating error conditions.",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "peerDependencies": {},
+  "author": "Chris King",
+  "license": "MIT"
+}

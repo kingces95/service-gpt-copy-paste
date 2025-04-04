@@ -11,6 +11,7 @@ export const Clippy = CliCommand.extend({
     eval: '@kingjs/cli-eval',
     spy: '@kingjs/cli-spy',
     name: '@kingjs/cli-node-name',
+    err: '@kingjs/cli-simulator',
   },
   groups: [
     ['Polling', 
@@ -19,7 +20,8 @@ export const Clippy = CliCommand.extend({
       '@kingjs/cli-daemon, CliDaemonState',
       '@kingjs/cli-daemon, CliPulse'],
     ['I/O', 
-      '@kingjs/cli-command, CliStdStream'],
+      '@kingjs/cli-command, CliStdStream',
+      '@kingjs/cli-reader, CliParser',],
     ['Global', 
       '@kingjs/cli-command'],
   ]

@@ -112,8 +112,8 @@ export class CliRuntimeActivator {
       // myDiscriminator: { foo: @kingjs/mycmd/foo, bar: @kingjs/mycmd/bar }
     }
 
-    const ownDiscriminatingOption =  
-      Object.entries(choices).find(([_, value]) => typeof value == 'object') ?? []
+    const ownDiscriminatingOption = Object.entries(choices)
+      .find(([_, value]) => !Array.isArray(value)) ?? []
 
     const [name, discriminations] = ownDiscriminatingOption
     this.#name = name
