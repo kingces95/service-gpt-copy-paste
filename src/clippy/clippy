@@ -6,8 +6,10 @@ import { CliYargsCommand } from '@kingjs/cli-yargs'
 let argv = undefined
 // argv = 'spy info -h'.split(' ')
 // argv = 'spy info'.split(' ')
+// argv = 'poll'.split(' ')
 // argv = 'orb --stdin ./polling.txt'.split(' ')
 // argv = 'spy poll -- --get-yargs-completions'.split(' ')
+// argv = 'http get https://jsonplaceholder.typicode.com/todos/1'.split(' ')
 
 CliRuntime.activate(Clippy)
   .then(async runtime => runtime.info.toPojo()

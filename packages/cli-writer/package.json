@@ -1,7 +1,7 @@
 {
-  "name": "@kingjs/cli-tree",
+  "name": "@kingjs/cli-writer",
   "version": "1.0.0",
-  "description": "Framework for loading and executing command line tools.",
+  "description": "Class to emulate bash echo.",
   "main": "index.js",
   "type": "module",
   "exports": {

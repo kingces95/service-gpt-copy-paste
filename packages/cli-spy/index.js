@@ -1,5 +1,4 @@
-import { CliRuntime } from '@kingjs/cli-runtime'
-import { CliCommand, CliConsole } from '@kingjs/cli-command'
+import { CliCommand, CliConsoleOut } from '@kingjs/cli-command'
 import { CliOutputService } from '@kingjs/cli-output-service'
 import { CliClassMetadata } from '@kingjs/cli-metadata'
 import { CliCommandInfo } from '@kingjs/cli-info'
@@ -33,7 +32,7 @@ const mdParams = {
     const md = await this.getMetadata()
     for await (const classMd of md.classes()) {
       for await (const paramMd of classMd.parameters())
-        await this.console.echoRecord([paramMd.name, classMd.name])
+        await this.log.echoRecord([paramMd.name, classMd.name])
     }
   }
 }
@@ -57,7 +56,7 @@ const params = {
     const info = await this.getInfo()
     const dumpParams = async (info) => {
       for await (const parameter of info.parameters())
-        await this.console.echoRecord([info.name, parameter.name])
+        await this.log.echoRecord([info.name, parameter.name])
       for await (const command of info.commands())
         await dumpParams(command)
     }
@@ -99,7 +98,7 @@ export class CliSpy extends CliCommand {
   }
   static services = {
     outputService: CliOutputService, 
-    console: CliConsole
+    console: CliConsoleOut
   }
   static commands = { 
     ls, find,

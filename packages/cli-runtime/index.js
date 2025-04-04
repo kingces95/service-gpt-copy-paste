@@ -254,13 +254,13 @@ export class CliRuntimeCommandInfo {
     return result
   }
 
+  getServices(class$, options = { }) {
+    return this.#container.getServices(class$, options)
+  }
+
   async execute(userArgs) {
     const args = this.#getArgs(userArgs)
     const activator = new CliRuntimeActivator(this.class)
     return await activator.activate(...args)
-  }
-
-  getServices(class$, options = { }) {
-    return this.#container.getServices(class$, options)
   }
 }

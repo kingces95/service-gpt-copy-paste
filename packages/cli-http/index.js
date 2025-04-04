@@ -1,9 +1,7 @@
 #!/usr/bin/env node
 
-import { CliCommand } from '@kingjs/cli-command'
+import { CliCommand, CliConsole } from '@kingjs/cli-command'
 import axios from 'axios'
-import { fromReadline } from '@kingjs/rx-from-readline'
-import readline from 'readline/promises'
 import { reduce } from 'rxjs/operators'
 
 const HTTP_UPDATE_METHODS = ['POST', 'PUT', 'PATCH']
@@ -30,6 +28,7 @@ export class CliHttp extends CliCommand {
     head: declareHttpMethod('HEAD', 'Perform an http HEAD request'),
   })
   static defaultCommand = true
+  static services = { console: CliConsole }
   static { this.initialize(import.meta) }
 
   constructor(url, { headers = 0, method = 'GET', ...rest } = { }) {
@@ -37,17 +36,13 @@ export class CliHttp extends CliCommand {
       return super()
 
     super(rest)
+    const { console } = this.getServices(CliHttp, rest)
 
     const isUpdate = HTTP_UPDATE_METHODS.includes(method)
-
-    // Activate readline interface
-    const readlineInterface = readline.createInterface({ input: this.stdin })
-
-    // Create an observable from readline using @kingjs/rx-from-readline
-    const lines$ = fromReadline(readlineInterface)
+    const signal = null
 
     // Process headers and body, then execute
-    CliHttp.processLines(lines$, headers, isUpdate).then(async ({ headers, body }) => {
+    CliHttp.processLines(console, headers, isUpdate).then(async ({ headers, body }) => {
       try {
         const response = await axios({
           url,
@@ -59,7 +54,7 @@ export class CliHttp extends CliCommand {
           validateStatus: () => true
         })
 
-        response.data.pipe(this.stdout)
+        response.data.pipe(await console.stdout)
 
         response.data.on('error', (error) => {
           this.stderr.write(`Stream error: ${error.message}\n`)
@@ -68,7 +63,7 @@ export class CliHttp extends CliCommand {
 
         response.data.on('end', () => {
           if (response.status >= 200 && response.status < 300) {
-            this.done$()
+            this.success$()
           } else {
             this.stderr.write(`HTTP request failed with status ${response.status}: ${response.statusText}\n`)
             this.fail$()

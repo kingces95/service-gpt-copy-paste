@@ -3,7 +3,7 @@ import { CliService } from '@kingjs/cli'
 import { 
   CliCommand, CliStdIn, CliStdOut, CliStdErr, CliStdLog 
 } from '@kingjs/cli-command'
-import { CliEcho } from '@kingjs/cli-echo'
+import { CliWriter } from '@kingjs/cli-writer'
 import os from 'os'
 import assert from 'assert'
 
@@ -21,13 +21,13 @@ export class CliDaemonState extends CliService {
     super(options)
 
     const { stdlog } = this.getServices(CliDaemonState, options)
-    this.#console = new CliEcho(stdlog)
+    this.#console = stdlog.then(stdlog => new CliWriter(stdlog))
   }
 
   get state() { return this._state }
 
   async update(...fields) {
-    await this.#console.echoRecord(fields)
+    await (await this.#console).echoRecord(fields)
   }
 
   async warnThat(name) {

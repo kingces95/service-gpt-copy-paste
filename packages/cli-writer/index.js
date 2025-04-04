@@ -3,9 +3,9 @@ import { CliWritable } from '@kingjs/cli-writable'
 
 export const ENCODING_UTF8 = 'utf8'
 
-export class CliEcho {
+export class CliWriter {
   static from(path) {
-    return new CliEcho(CliWritable.fromPath(path))
+    return new CliWriter(CliWritable.fromPath(path))
   }
 
   #stream
@@ -27,7 +27,7 @@ export class CliEcho {
     await this.echoRecord([line])
   }
   async echoRecord(fields, separator = ' ') {
-    const stream = await this.#stream
+    const stream = this.#stream
     const encoding = this.#encoding
 
     for (let i = 0; i < fields.length; i++) {

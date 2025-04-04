@@ -1,5 +1,5 @@
 {
-  "name": "@kingjs/cli-read",
+  "name": "@kingjs/cli-reader",
   "version": "1.0.0",
   "description": "Class to emulate bash read and mapfile.",
   "main": "index.js",

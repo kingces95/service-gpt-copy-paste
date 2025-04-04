@@ -2,7 +2,7 @@ import { CliCommand, CliStdIn } from '@kingjs/cli-command'
 import { AbortError } from '@kingjs/abort-error'
 import ora from 'ora'
 import process from 'process'
-import { CliParser, CliReader } from '@kingjs/cli-read'
+import { CliParser, CliReader } from '@kingjs/cli-reader'
 
 const CPU_HOT = 80
 const MEM_HOT = 90
