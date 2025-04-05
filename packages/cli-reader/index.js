@@ -104,6 +104,13 @@ export class CliReader {
     this.#parser = parser
     this.#signal = null
   }
+
+  from(streamStringOrGenerator) { 
+    return CliReader.from(streamStringOrGenerator, this.#parser)
+  }
+  fromPath(path) { 
+    return CliReader.fromPath(path, this.#parser)
+  }
   
   async readByte() {
     const stream = this.#stream

@@ -96,6 +96,13 @@ export class CliConsoleIn extends CliService {
   get stdin() { return this.#stdin }
   get parser() { return this.#parser }
 
+  async from(streamStringOrGenerator) { 
+    return (await this.#reader).from(streamStringOrGenerator)
+  }
+  async fromPath(path) { 
+    return (await this.#reader).fromPath(path)
+  }
+
   async readByte() { return (await this.#reader).readByte() }
   async readString(charCount) { return (await this.#reader).readString(charCount) }
   async readChar() { return (await this.#reader).readChar() }

@@ -44,11 +44,6 @@ export default class CliOrb extends CliCommand {
     
     // Initialize spinner for TTY
     this.start()
-    
-    process.once('SIGINT', () => {
-      // keep spinning so long as the upstream process is running
-      // but only once, so a second break will kill this orb task
-    })
   }
 
   get console() { return this.#console }
@@ -65,70 +60,69 @@ export default class CliOrb extends CliCommand {
       frames: DOTS_FRAMES
     }, color: INIT_COLOR}).start()
 
-    const { console } = this
-    const { parser } = console
-
     while (true) {
       try {
+        const { console } = this
         const record = await console.readRecord(['type', 'rest'])
-        if (!record) 
-          break
-
+        if (!record) break
         const { type, rest } = record
+        const subConsole = await console.from(rest)
 
-        if (type == 'data') {
-          this.stats = await parser.toRecord(
-            rest, { inCount: '#', outCount: '#', errorCount: '#', cpu: '#', memory: '#' }) 
+        switch (type) {
+          case 'data':
+            this.stats = await subConsole.readRecord({ 
+              inCount: '#', outCount: '#', errorCount: '#', cpu: '#', memory: '#' }) 
 
-          this.adjustSpinner(this.stats.cpu, this.stats.memory)
-          this.spinner.text = this.toString()
-          continue
-        }
+            this.adjustSpinner(this.stats.cpu, this.stats.memory)
+            this.spinner.text = this.toString()
+            continue
 
-        if (type == 'exiting') {
-          const { code } = await parser.toRecord(rest, { code: '#' })
-          process.exitCode = code
-          continue
-        }
+          case 'exiting':
+            const { code } = await subConsole.readRecord({ code: '#' })
+            process.exitCode = code
+            continue
 
-        if (['succeeded', 'failed', 'aborted', 'errored'].includes(type)) {
-          this.message = rest
+          case 'succeeded':
+          case 'failed':
+          case 'aborted':
+          case 'errored':
+            this.message = rest
 
-          this.stats.cpu = 0
-          this.stats.memory = 0
+            this.stats.cpu = 0
+            this.stats.memory = 0
 
-          if (type === 'succeeded') {
-            if (this.stats.errorCount) {
-              this.spinner.warn(this.toString())
+            if (type === 'succeeded') {
+              if (this.stats.errorCount) {
+                this.spinner.warn(this.toString())
+              } else {
+                this.spinner.succeed(this.toString())
+              }
             } else {
-              this.spinner.succeed(this.toString())
+              this.spinner.fail(this.toString())
             }
-          } else {
-            this.spinner.fail(this.toString())
-          }
-          break
-        } 
+            return
+          
+          case 'starting':
+            this.message = rest
+            this.spinner.color = INIT_COLOR
+            break
 
-        if (type == 'starting') {
-          this.message = rest
-          this.spinner.color = INIT_COLOR
+          case 'warning':
+            const { _, warnMessage } 
+              = await subConsole.readRecord(['warnType', 'warnMessage'])
+            this.message = `${warnMessage}`
+            this.spinner.color = WARN_COLOR
+            break
 
-        } else if (type == 'warning') {
-          const { _, warnMessage } 
-            = await parser.toRecord(rest, ['warnType', 'warnMessage'])
-          this.message = `${warnMessage}`
-          this.spinner.color = WARN_COLOR
-
-        } else {
-          this.message = rest
-          this.spinner.color = NORMAL_COLOR
+          default:
+            this.message = rest
+            this.spinner.color = NORMAL_COLOR        
         }
 
         this.spinner.text = this.toString()
+
       } catch (err) {
-        if (err instanceof AbortError)
-          continue
-        
+        if (err instanceof AbortError) continue
         console.error(err)
         this.spinner.fail(`CliOrb caught: ${err.message}`)
         break

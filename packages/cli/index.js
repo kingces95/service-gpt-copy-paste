@@ -315,7 +315,7 @@ export class CliServiceProvider extends Cli {
     super(options)
   }
 
-  activate() { return this }
+  async activate() { return this }
 }
 
 // Cli.__dumpMetadata()

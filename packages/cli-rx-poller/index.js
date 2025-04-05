@@ -31,7 +31,7 @@ export class CliRxPollerState extends CliService {
     runtime.on('polling', async () => { await daemonState.is('polling') })
     runtime.on('retrying', async (error) => { 
       this.#retryError = error
-      await daemonState.is('retrying') 
+      await daemonState.warnThat('retrying') 
     })
   }
 
@@ -98,7 +98,7 @@ export class CliRxPoller extends CliRx {
 
     return interval(pollMs).pipe(
       switchMap(async () => { 
-        await runtime.emitAsync('polling')
+        await this.runtime.emitAsync('polling')
         if (Math.random() < errorRate) 
           throw new Error('Simulated polling error')
       }),
