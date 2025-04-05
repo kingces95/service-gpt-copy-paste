@@ -1,8 +1,7 @@
-import { CliCommand, CliStdIn } from '@kingjs/cli-command'
+import { CliCommand, CliConsoleIn } from '@kingjs/cli-command'
 import { AbortError } from '@kingjs/abort-error'
 import ora from 'ora'
 import process from 'process'
-import { CliParser, CliReader } from '@kingjs/cli-reader'
 
 const CPU_HOT = 80
 const MEM_HOT = 90
@@ -24,27 +23,24 @@ export default class CliOrb extends CliCommand {
     memHot: 'Threshold for high memory usage',
   }
   static services = {
-    stdin: CliStdIn,
-    parser: CliParser, 
+    console: CliConsoleIn,
   }
   static { this.initialize(import.meta) }
 
-  #stdin
-  #parser
+  #console
 
   constructor({ cpuHot = CPU_HOT, memHot = MEM_HOT, ...rest } = { }) {
     if (CliOrb.initializing(new.target, { cpuHot, memHot }))
       return super()
     super(rest)
 
-    const { stdin, parser } = this.getServices(CliOrb, rest)
-    this.#stdin = stdin
-    this.#parser = parser
+    const { console } = this.getServices(CliOrb, rest)
+    this.#console = console
+
     this.cpuHot = cpuHot
     this.memHot = memHot
     this.stats = { in: 0, out: 0, error: 0 }
     this.message = ''
-    
     
     // Initialize spinner for TTY
     this.start()
@@ -54,6 +50,8 @@ export default class CliOrb extends CliCommand {
       // but only once, so a second break will kill this orb task
     })
   }
+
+  get console() { return this.#console }
 
   formatNumber(num) {
     if (num >= 1e6) return (num / 1e6).toFixed(1) + 'm'
@@ -67,18 +65,19 @@ export default class CliOrb extends CliCommand {
       frames: DOTS_FRAMES
     }, color: INIT_COLOR}).start()
 
-    const reader = CliReader.from(await this.#stdin, this.#parser)
+    const { console } = this
+    const { parser } = console
 
     while (true) {
       try {
-        const record = await reader.readRecord(['type', 'rest'])
+        const record = await console.readRecord(['type', 'rest'])
         if (!record) 
           break
 
         const { type, rest } = record
 
         if (type == 'data') {
-          this.stats = await this.#parser.toRecord(
+          this.stats = await parser.toRecord(
             rest, { inCount: '#', outCount: '#', errorCount: '#', cpu: '#', memory: '#' }) 
 
           this.adjustSpinner(this.stats.cpu, this.stats.memory)
@@ -87,7 +86,7 @@ export default class CliOrb extends CliCommand {
         }
 
         if (type == 'exiting') {
-          const { code } = await this.#parser.toRecord(rest, { code: '#' })
+          const { code } = await parser.toRecord(rest, { code: '#' })
           process.exitCode = code
           continue
         }
@@ -116,7 +115,7 @@ export default class CliOrb extends CliCommand {
 
         } else if (type == 'warning') {
           const { _, warnMessage } 
-            = await this.#parser.toRecord(rest, ['warnType', 'warnMessage'])
+            = await parser.toRecord(rest, ['warnType', 'warnMessage'])
           this.message = `${warnMessage}`
           this.spinner.color = WARN_COLOR
 

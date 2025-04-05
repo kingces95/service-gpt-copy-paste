@@ -291,6 +291,7 @@ export class Cli {
 
   getServices(class$, options) { return this.info.getServices(class$, options) }
   get info() { return this.#info }
+  get runtime() { return this.#info.runtime }
 }
 
 export class CliService extends Cli {

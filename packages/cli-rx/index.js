@@ -2,56 +2,57 @@ import { CliDaemon } from '@kingjs/cli-daemon'
 import { Subject, merge } from 'rxjs'
 import { tap, share, takeUntil } from 'rxjs/operators'
 import { fromAbortSignal } from '@kingjs/rx-from-abort-signal'
-import { AbortError } from '@kingjs/abort-error'
 import concatWrite from '@kingjs/rx-concat-write'
-import { CliStdErr, CliStdOut } from '@kingjs/cli-command'
+import { CliStdOut } from '@kingjs/cli-command'
 
 export class CliRx extends CliDaemon {
   static { this.initialize(import.meta) }
   static services = {
     stdout: CliStdOut,
-    stderr: CliStdErr,
   }
 
   #errorSubject
-  #signalRx
   #stdout
   #stderr
 
-  constructor(options = { }, workflow) {
+  constructor(options = { }) {
     if (CliRx.initializing(new.target, options))
       return super()
     super(options)
 
-    const { stdout, stderr } = this.getServices(CliRx, options)
+    const { stdout } = this.getServices(CliRx, options)
     this.#stdout = stdout
-    this.#stderr = stderr
+    this.#stderr = stdout
+
     this.#errorSubject = new Subject()
-    this.#signalRx = fromAbortSignal(this.signal).pipe(share())
-    
-    const stdoutPipeline = workflow.pipe(
-      takeUntil(this.#signalRx),
-      concatWrite(this.#stdout),
-      tap({ complete: () => this.#errorSubject.complete() }),
-    )
-    const stderrPipeline = this.#errorSubject.pipe(
-      concatWrite(this.#stderr),
-    )
-    merge(stdoutPipeline, stderrPipeline).subscribe({
-      complete: () => {
-        this.success$()
-      },
-      error: (err) => {
-        if (err instanceof AbortError)
-          this.abort$()
-        else
-          this.error$(err)
-      },
-    })
   }
 
+  async start(signal) {
+    const stdout = this.#stdout
+    const stderr = this.#stderr
+    const errorSubject = this.#errorSubject
+
+    const signalRx = fromAbortSignal(signal).pipe(share())
+    const stdoutPipeline = this.workflow(signalRx).pipe(
+      takeUntil(signalRx),
+      concatWrite(await stdout),
+      tap({ complete: () => errorSubject.complete() }),
+    )
+    const stderrPipeline = errorSubject.pipe(
+      concatWrite(await stderr),
+    )
+    const pipeline = merge(stdoutPipeline, stderrPipeline)
+
+    // imperative => reactive
+    await new Promise((resolve, reject) => {
+      pipeline.subscribe({ complete: resolve, error: reject })
+    }) 
+  }
+
+  workflow(signalRx) { }
+
   writeError(data) {
-    this.errorSubject.next(data)
+    this.#errorSubject.next(data)
   }
 }
 

@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
-import { CliCommand, CliConsole } from '@kingjs/cli-command'
+import { CliCommand, CliStdOut } from '@kingjs/cli-command'
 import axios from 'axios'
-import { reduce } from 'rxjs/operators'
 
 const HTTP_UPDATE_METHODS = ['POST', 'PUT', 'PATCH']
 const HTTP_SAMPLE = 'https://jsonplaceholder.typicode.com/posts/1'
 const HTTP_HANG = 'https://httpbin.org/delay/10'
+const HTTP_FAIL = 'https://httpstat.us/500'
 
 export class CliHttp extends CliCommand {
   static description = 'Send a HTTP request'
@@ -30,26 +30,71 @@ export class CliHttp extends CliCommand {
     head: declareHttpMethod('HEAD', 'Perform an http HEAD request'),
   })
   static defaultCommand = true
-  static services = { console: CliConsole }
+  static services = { stdout: CliStdOut }
   static { this.initialize(import.meta) }
+
+  #stdout
+  #url
+  #method
+  #headerCount
+  #isUpdate
 
   constructor(url, { headers = 0, method = 'GET', ...rest } = { }) {
     if (CliHttp.initializing(new.target, url, { headers, method }))
       return super()
-
     super(rest)
-    const { console } = this.getServices(CliHttp, rest)
 
-    const isUpdate = HTTP_UPDATE_METHODS.includes(method)
-    const signal = this.signal
+    const { stdout } = this.getServices(CliHttp, rest)
+    this.#stdout = stdout
 
     switch (url) {
       case 'sample': url = HTTP_SAMPLE; break
       case 'hang': url = HTTP_HANG; break
+      case 'fail': url = HTTP_FAIL; break
     }
+    this.#url = url
+    this.#method = method
+    this.#headerCount = headers
+    this.#isUpdate = HTTP_UPDATE_METHODS.includes(method)
+  }
 
-    // Process headers and body, then execute
-    CliHttp.processLines(console, headers, isUpdate).then(async ({ headers, body }) => {
+  get url() { return this.#url }
+  get method() { return this.#method }
+  get headersCount() { return this.#headerCount }
+  get isUpdate() { return this.#isUpdate }
+  get stdout() { return this.#stdout }
+
+  async #handleRequest() {
+    const { headers: headersCount, isUpdate } = this
+
+    if (headersCount === 0 || !isUpdate)
+      return { }
+
+    throw new Error('Header parsing not implemented yet')
+    // const headerRecord = new Record(['key', 'value'])
+    // return lines$.pipe(
+    //   reduce((acc, line, index) => {
+    //     if (index < headersCount) {
+    //       // Use Record to parse header lines
+    //       const { key, value } = headerRecord.split(line)
+    //       acc.headers[key.trim()] = value?.trim() || ''
+    //     } else {
+    //       // Lazily create the body accumulator array
+    //       acc.body = acc.body || []
+    //       acc.body.push(line)
+    //     }
+    //     return acc
+    //   }, { headers: {}, body: undefined })
+    // ).toPromise().then(({ headers, body }) => ({
+    //   headers,
+    //   body: body ? body.join('\n') : undefined
+    // }))
+  }
+  
+  async execute(signal) {
+    const { url, method, stdout } = this
+    const { headers, body } = await this.#handleRequest()
+    await new Promise(async (resolve, reject) => {
       try {
         const response = await axios({
           url,
@@ -60,56 +105,25 @@ export class CliHttp extends CliCommand {
           responseType: 'stream',
           validateStatus: () => true
         })
-
-        response.data.pipe(await console.stdout)
-
-        response.data.on('error', (error) => {
-          this.stderr.write(`Stream error: ${error.message}\n`)
-          this.error$(error)
-        })
-
+  
+        response.data.pipe(await stdout)
+        response.data.on('error', reject)
         response.data.on('end', () => {
-          if (response.status >= 200 && response.status < 300) {
-            this.success$()
-          } else {
-            this.stderr.write(`HTTP request failed with status ${response.status}: ${response.statusText}\n`)
-            this.fail$()
-          }
+          if (response.status < 200 || response.status >= 300)
+            reject(new Error([
+              `HTTP ${method} failed with status ${response.status}:`,
+              `${response.statusText}\n`].join(' ')))
+          else
+            resolve()
         })
+
       } catch (error) {
-        if (axios.isCancel(error) || error.code === 'ERR_CANCELED') {
-          this.abort$()
-        } else {
-          this.stderr.write(`Network error: ${error.message}\n`)
-          this.error$(error)
-        }
+        if (axios.isCancel(error) || error.code === 'ERR_CANCELED') 
+          resolve()
+        else
+          reject(error)
       }
-    }).catch(err => this.error$(err))
-  }
-
-  static async processLines(lines$, headersCount, isUpdate) {
-    if (headersCount === 0 || !isUpdate) {
-      return Promise.resolve({ headers: undefined, body: undefined })
-    }
-
-    const headerRecord = new Record(['key', 'value'])
-    return lines$.pipe(
-      reduce((acc, line, index) => {
-        if (index < headersCount) {
-          // Use Record to parse header lines
-          const { key, value } = headerRecord.split(line)
-          acc.headers[key.trim()] = value?.trim() || ''
-        } else {
-          // Lazily create the body accumulator array
-          acc.body = acc.body || []
-          acc.body.push(line)
-        }
-        return acc
-      }, { headers: {}, body: undefined })
-    ).toPromise().then(({ headers, body }) => ({
-      headers,
-      body: body ? body.join('\n') : undefined
-    }))
+    })
   }
 }
 
