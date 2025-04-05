@@ -66,7 +66,7 @@ export default class CliOrb extends CliCommand {
         const record = await console.readRecord(['type', 'rest'])
         if (!record) break
         const { type, rest } = record
-        const subConsole = await console.from(rest)
+        const subConsole = console.from(rest)
 
         switch (type) {
           case 'data':
