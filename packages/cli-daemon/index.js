@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { CliService, CliServiceThread } from '@kingjs/cli'
+import { CliService, CliServiceThread } from '@kingjs/cli-service'
 import { 
   CliCommand, CliStdIn, CliStdOut 
 } from '@kingjs/cli-command'

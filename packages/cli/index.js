@@ -116,9 +116,6 @@ export class Cli {
     const services = getOwn(this, 'services') ?? {}
     const class$ = services[name]
     if (!class$) throw new Error(`Service '${name}' not found`)
-    if (!(class$.prototype instanceof CliService) &&
-        !(class$.prototype instanceof CliServiceProvider))
-      throw new Error(`Class ${class$.name} must extend ${CliService.name} or ${CliServiceProvider.name}.`)
     return class$
   }
 
@@ -292,42 +289,6 @@ export class Cli {
   getServices(class$, options) { return this.info.getServices(class$, options) }
   get info() { return this.#info }
   get runtime() { return this.#info.runtime }
-}
-
-export class CliService extends Cli {
-  static { this.initialize(import.meta) }
-
-  constructor(options) {
-    if (CliService.initializing(new.target, { })) 
-      return super()
-
-    super(options)
-  }
-}
-
-export class CliServiceThread extends CliService {
-  static { this.initialize(import.meta) }
-
-  constructor(options) {
-    if (CliServiceThread.initializing(new.target))
-      return super()
-    super(options)
-  }
-
-  async start(signal) { }
-}
-
-export class CliServiceProvider extends Cli {
-  static { this.initialize(import.meta) }
-
-  constructor(options) {
-    if (CliServiceProvider.initializing(new.target, { })) 
-      return super()
-
-    super(options)
-  }
-
-  async activate() { return this }
 }
 
 // Cli.__dumpMetadata()

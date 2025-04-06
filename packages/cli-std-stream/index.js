@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { CliServiceProvider } from '@kingjs/cli'
+import { CliServiceProvider } from '@kingjs/cli-service'
 import { CliReadable } from '@kingjs/cli-readable'
 import { CliWritable } from '@kingjs/cli-writable'
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-import { Cli, CliService } from '@kingjs/cli'
+import { Cli } from '@kingjs/cli'
+import { CliService } from '@kingjs/cli-service'
 import { DEV_STDIN } from '@kingjs/cli-readable'
 import { DEV_STDOUT } from '@kingjs/cli-writable'
 import { CliWriter } from '@kingjs/cli-writer'

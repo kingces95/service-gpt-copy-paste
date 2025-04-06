@@ -1,5 +1,5 @@
 import Utf8CharReader from '@kingjs/utf8-char-reader'
-import { CliService } from '@kingjs/cli'
+import { CliService } from '@kingjs/cli-service'
 import { AbortError } from '@kingjs/abort-error'
 import { CliReadable } from '@kingjs/cli-readable'
 

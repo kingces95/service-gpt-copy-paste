@@ -8,7 +8,7 @@ import {
 } from '@kingjs/cli-runtime-container'
 import { DEV_STDOUT } from '@kingjs/cli-writable'
 import { CliStdStream } from '@kingjs/cli-std-stream'
-import { CliService } from '@kingjs/cli'
+import { CliService } from '@kingjs/cli-service'
 import { CliWriter } from '@kingjs/cli-writer'
 
 const EXIT_SUCCESS = 0

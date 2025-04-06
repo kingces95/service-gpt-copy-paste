@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { CliService } from '@kingjs/cli'
+import { CliService } from '@kingjs/cli-service'
 import { CliRx } from '@kingjs/cli-rx'
 import { interval, timer } from 'rxjs'
 import { switchMap, retry, takeUntil } from 'rxjs/operators'

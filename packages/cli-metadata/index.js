@@ -1,5 +1,5 @@
 import { LazyGenerator, Lazy } from '@kingjs/lazy'
-import { Cli, CliServiceProvider } from '@kingjs/cli'
+import { Cli } from '@kingjs/cli'
 import { CliCommand } from '@kingjs/cli-command'
 async function __import() {
   const { cliMetadataToPojo } = await import('@kingjs/cli-metadata-to-pojo')

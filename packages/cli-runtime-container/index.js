@@ -1,4 +1,6 @@
-import { CliServiceProvider, CliService, CliServiceThread } from '@kingjs/cli'
+import { 
+  CliService, CliServiceProvider, CliServiceThread 
+} from '@kingjs/cli-service'
 import { getOwn } from '@kingjs/get-own'
 
 export class CliRuntimeContainer {
@@ -55,7 +57,10 @@ export class CliRuntimeContainer {
       } else if (prototype instanceof CliServiceProvider) {
         result[name] = this.#getService(serviceClass, options)
       } else {
-        throw new Error(`Service ${name} must be an instance of ${CliService.name} or ${CliServiceProvider.name}.`)
+        throw new Error([
+          `Class ${name} must extend`,
+          `${CliService.name} or ${CliServiceProvider.name}.`
+        ].join(' '))
       }
     }
     return result
