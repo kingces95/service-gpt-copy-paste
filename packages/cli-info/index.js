@@ -73,7 +73,8 @@ export class CliParameterInfo extends CliInfo {
     // for options to determine if the parameter is optional. If the parameter is
     // optional and default is undefined, then a "default default" is selected based on 
     // the type: null for strings/arrays/counts, false for booleans, 0 for numbers.
-    this.#default = this.#parameterMd.default ?? DEFAULT_DEFAULTS[this.type]
+    if (!this.isArray)
+      this.#default = this.#parameterMd.default ?? DEFAULT_DEFAULTS[this.type]
   }
 
   get group() {
