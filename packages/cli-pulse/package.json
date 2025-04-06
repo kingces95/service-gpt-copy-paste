@@ -1,0 +1,15 @@
+{
+  "name": "@kingjs/cli-pulse",
+  "version": "1.0.0",
+  "description": "Framework for developing command line tools the host services.",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "peerDependencies": {},
+  "author": "Chris King",
+  "license": "MIT"
+}

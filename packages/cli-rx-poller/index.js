@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import { CliService } from '@kingjs/cli-service'
 import { CliRx } from '@kingjs/cli-rx'
 import { interval, timer } from 'rxjs'
@@ -23,10 +22,10 @@ export class CliRxPollerState extends CliService {
     const { console } = this.getServices(CliRxPollerState, options)
 
     const { runtime } = this
-    runtime.on('polling', async () => { await console.is('polling') })
-    runtime.on('retrying', async (error) => { 
-      await console.warnThat('retrying', `Retrying (${error})...`) 
-    })
+    runtime.on('polling', async () => await console.is('polling'))
+    runtime.on('retrying', async (error) =>
+      console.warnThat('retrying', `Retrying (${error})...`) 
+    )
   }
 }
 

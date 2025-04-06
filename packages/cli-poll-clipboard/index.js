@@ -3,7 +3,8 @@ import { Clipboard } from '@napi-rs/clipboard'
 import { exhaustMap, filter, first } from 'rxjs/operators'
 import { pipe } from 'rxjs'
 import { CliRuntimeState } from '@kingjs/cli-runtime'
-import { CliPulse, CliDaemonState } from '@kingjs/cli-daemon'
+import { CliDaemonState } from '@kingjs/cli-daemon'
+import { CliPulse } from '@kingjs/cli-pulse'
 
 const PREFIX = '!#/clipboard/'
 

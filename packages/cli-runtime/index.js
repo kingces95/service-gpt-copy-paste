@@ -32,10 +32,10 @@ export class CliRuntimeState extends CliService {
     const { console } = this.getServices(CliRuntimeState, options)
 
     const { runtime } = this
-    runtime.once('beforeAbort', async () => { await console.is('aborting') })
+    runtime.once('beforeAbort', async () => console.is('aborting'))
     runtime.once('beforeExit', async () => {
-      await console.update('exiting', runtime.exitCode)
-      await console.is(
+      console.update('exiting', runtime.exitCode)
+      console.is(
         runtime.succeeded ? 'succeeded' :
         runtime.aborted ? 'aborted' :
         runtime.errored ? 'errored' :

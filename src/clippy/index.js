@@ -16,7 +16,7 @@ export const Clippy = CliCommand.extend({
     ['Polling', 
       '@kingjs/cli-rx-poller'],
     ['Pulse', 
-      '@kingjs/cli-daemon, CliPulse'],
+      '@kingjs/cli-pulse, CliPulse'],
     ['I/O', 
       '@kingjs/cli-std-stream, CliStdStream',
       '@kingjs/cli-reader, CliParser',],
