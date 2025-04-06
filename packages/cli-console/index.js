@@ -1,9 +1,8 @@
-import { CliService } from '@kingjs/cli-service'
+import { CliService, CliServiceThread } from '@kingjs/cli-service'
 import { CliWriter } from '@kingjs/cli-writer'
 import { CliReader, CliParser } from '@kingjs/cli-reader'
 import { CliStdIn, CliStdOut, CliStdMon } from '@kingjs/cli-std-stream'
-
-export const REQUIRED = undefined
+import { PassThrough } from 'stream'
 
 export class CliConsoleIn extends CliService {
   static services = {
@@ -108,13 +107,14 @@ export class CliConsole extends CliService {
   }
 }
 
-export class CliConsoleMon extends CliService {
+export class CliConsoleMon extends CliServiceThread {
   static services = { 
     stdmon: CliStdMon 
   }
   static { this.initialize(import.meta) }
 
   #writer
+  #stream
 
   constructor(options) {
     if (CliConsoleMon.initializing(new.target))
@@ -122,20 +122,49 @@ export class CliConsoleMon extends CliService {
     super(options)
 
     const { stdmon } = this.getServices(CliConsoleMon, options)
-    this.#writer = stdmon.then(stdmon => new CliWriter(stdmon))
+    this.#writer = stdmon.then(stream => new CliWriter(stream))
+    this.#stream = new PassThrough({ objectMode: true })
   }
 
-  #defaultMessage(state) {
-    return state.charAt(0).toUpperCase() + state.slice(1) + '...'
+  #defaultMessage(status) {
+    return status.charAt(0).toUpperCase() + status.slice(1) + '...'
   }
 
-  async update(...fields) { await (await this.#writer).echoRecord(fields, ' ') }
-  async warnThat(name, message = this.#defaultMessage(name)) { 
-    await this.update('warning', name, message) 
+  update(...items) {
+    this.#stream.write(items)
   }
-  async is(name, message = this.#defaultMessage(name)) { 
-    await this.update(name, message) 
-  }  
+
+  warnThat(status, note = this.#defaultMessage(status)) { 
+    this.update('warning', status, note) 
+  }
+
+  is(status, note = this.#defaultMessage(status)) { 
+    this.update(status, note) 
+  }
+
+  async start(signal) {
+    const writer = await this.#writer
+    const reader = this.#stream
+
+    const abort = new Promise(accept => {
+      signal.addEventListener('abort', accept, { once: true })
+    })
+
+    try {
+      const iterator = reader[Symbol.asyncIterator]()
+      const abortNext = abort.then(() => ({ done: true }))
+
+      while (true) {
+        const result = await Promise.race([
+          iterator.next(),
+          abortNext
+        ])
+
+        if (result.done) { break }
+        if (result.value) await writer.echoRecord(result.value, ' ')
+      }
+    } catch (error) {
+      if (error !== signal.reason) throw error
+    }
+  }
 }
-
-// CliCommand.__dumpMetadata()

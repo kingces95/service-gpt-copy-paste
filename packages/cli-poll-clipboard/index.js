@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import { CliRxPoller, CliRxPollerState } from '@kingjs/cli-rx-poller'
 import { Clipboard } from '@napi-rs/clipboard'
 import { exhaustMap, filter, first } from 'rxjs/operators'

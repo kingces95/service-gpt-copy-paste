@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import { CliCommand } from '@kingjs/cli-command'
 import { CliStdOut } from '@kingjs/cli-std-stream'
 import axios from 'axios'

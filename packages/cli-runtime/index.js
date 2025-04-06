@@ -2,13 +2,13 @@ import { CliCommand } from '@kingjs/cli-command'
 import { CliClassMetadata } from '@kingjs/cli-metadata'
 import { CliCommandInfo } from '@kingjs/cli-info'
 import { IdentifierStyle } from '@kingjs/identifier-style'
-import { AsyncEmitter } from '@kingjs/async-emitter'
 import { CliService } from '@kingjs/cli-service'
 import { CliConsoleMon } from '@kingjs/cli-console'
 import { 
   CliRuntimeContainer, 
   CliRuntimeActivator 
 } from '@kingjs/cli-runtime-container'
+import { EventEmitter } from 'events'
 
 const EXIT_SUCCESS = 0
 const EXIT_FAILURE = 1
@@ -47,7 +47,7 @@ export class CliRuntimeState extends CliService {
   }
 }
 
-export class CliRuntime extends AsyncEmitter {
+export class CliRuntime extends EventEmitter {
   static async activate(classOrPojo, options = { }) {
     const { metadata } = options
     const isClass = typeof classOrPojo == 'function'
@@ -109,7 +109,7 @@ export class CliRuntime extends AsyncEmitter {
       // capture SIGINT once; a second break kills the runtime
       process.once('SIGINT', async () => { 
         this.#exitCode = EXIT_SIGINT
-        await this.emitAsync('beforeAbort')
+        this.emit('beforeAbort')
         this.#abortController.abort() 
       })
 
@@ -145,7 +145,7 @@ export class CliRuntime extends AsyncEmitter {
       // trap graceful shutdown; the goal is a graceful shutdown of node, not exit(0)
       process.once('beforeExit', async () => { 
         process.exitCode = this.#exitCode 
-        await this.emitAsync('beforeExit')
+        this.emit('beforeExit')
       })
     }
   }

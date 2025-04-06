@@ -71,7 +71,7 @@ export class CliRxPoller extends CliRx {
 
     return interval(pollMs).pipe(
       switchMap(async () => { 
-        await this.runtime.emitAsync('polling')
+        this.runtime.emit('polling')
         if (Math.random() < errorRate) 
           throw new Error('Simulated polling error')
       }),
@@ -79,7 +79,7 @@ export class CliRxPoller extends CliRx {
       retry({
         count: Infinity,
         delay: async (error) => {
-          await this.runtime.emitAsync('retrying', error)
+          this.runtime.emit('retrying', error)
           if (writeError)
             this.writeError(`${error}`)
           return timer(errorMs).pipe(takeUntil(signalRx))

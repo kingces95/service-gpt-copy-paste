@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import { CliCommand } from '@kingjs/cli-command'
 
 export const Clippy = CliCommand.extend({

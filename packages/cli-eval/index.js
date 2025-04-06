@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import { CliCommand } from '@kingjs/cli-command'
 import { spawn } from 'child_process'
 

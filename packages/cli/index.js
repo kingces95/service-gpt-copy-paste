@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import { trimPojo } from '@kingjs/pojo-trim'
 import { NodeName } from '@kingjs/node-name'
 import { Lazy, LazyGenerator } from '@kingjs/lazy'

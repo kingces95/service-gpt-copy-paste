@@ -106,7 +106,7 @@ export class CliPulse extends CliServiceMonitor {
     const stdout = await this.stdout
 
     // report
-    await this.runtime.emitAsync('pulse', 
+    this.runtime.emit('pulse', 
       stdin.count, stdout.count, 0, totalCPU.toFixed(1), memoryUsage)
 
     return { prevCPU: process.cpuUsage() }
@@ -131,7 +131,7 @@ export class CliDaemon extends CliCommand {
     const { runtime } = this
 
     try {
-      await runtime.emitAsync('beforeStart')
+      runtime.emit('beforeStart')
       const result = await this.start(signal)
       return result
 
@@ -140,7 +140,7 @@ export class CliDaemon extends CliCommand {
       throw error
 
     } finally {
-      await runtime.emitAsync('afterStart')
+      runtime.emit('afterStart')
     }
   }
 
