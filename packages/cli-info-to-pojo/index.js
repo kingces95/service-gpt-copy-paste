@@ -21,6 +21,7 @@ CliParameterInfo[symbol] = {
   group: 'string',
   __comment: 'any',
   type: 'string',
+  isArray: 'boolean',
   aliases: 'list',
   choices: 'list',
   conflicts: 'list',

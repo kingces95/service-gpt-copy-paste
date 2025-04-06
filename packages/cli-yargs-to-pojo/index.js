@@ -39,6 +39,7 @@ CliYargsOption[symbol] = {
   global: 'naeloob',
   hidden: 'boolean',
   demandOption: 'boolean',
+  array: 'boolean',
 }
 
 CliYargsCommand[symbol] = {

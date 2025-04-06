@@ -71,6 +71,7 @@ export class CliParameterMetadata extends CliMetadata {
   get local() { return undefined }
   get hidden() { return undefined }
   get required() { return undefined }
+  get array() { return undefined }
 
   // CliClassPositionalInfo
   get position() { return undefined }
@@ -94,6 +95,7 @@ class CliOptionMetadata extends CliParameterMetadata {
   get local() { return this.#pojo.local }
   get hidden() { return this.#pojo.hidden }
   get required() { return this.#pojo.required }
+  get array() { return this.#pojo.array }
 
   toString() { return `${super.toString()}, option, type=${this.type}` }
 }

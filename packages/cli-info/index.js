@@ -95,8 +95,8 @@ export class CliParameterInfo extends CliInfo {
   get isBoolean() { return this.#parameterMd.isBoolean }
   get isNumber() { return this.#parameterMd.isNumber }
   get isCount() { return this.#parameterMd.isCount }
-  get isArray() { return this.#parameterMd.isArray }
-
+  
+  get isArray() { return this.#parameterMd.array }
   get default() { return this.#default }
 
   get defaultDescription() { return this.#parameterMd.defaultDescription }

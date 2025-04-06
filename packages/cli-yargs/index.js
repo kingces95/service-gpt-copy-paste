@@ -103,6 +103,7 @@ export class CliYargsOption extends CliYargsParameter {
   get demandOption() { return this.#pojo.isRequired }
   get global() { return !this.#pojo.isLocal }
   get hidden() { return this.#pojo.isHidden }
+  get array() { return this.#pojo.isArray }
   get group() { return this.#pojo.group }
 }
 
@@ -250,6 +251,7 @@ export class CliYargsCommand extends CliYargs {
   }
 
   async yargs(argv = hideBin(process.argv)) {
+
     const yargs$ = yargs(argv)
     return await this.apply$(
       yargs$

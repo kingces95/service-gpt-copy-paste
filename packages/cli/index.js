@@ -148,8 +148,8 @@ export class Cli {
       // Assume the variadic is the parameter whose metadata we are building.
       const isPositional = metadata.position !== undefined
       const isArray = Array.isArray(metadata.default)
-      if (isPositional && isArray)
-        metadata.variadic = true
+      if (isArray)
+        metadata[isPositional ? 'variadic' : 'array'] = true
   
       const defaultOrArrayDefault = 
         // e.g. [[], { myOption: 42 }] vs [[REQUIRED], { myOption: 42 }]

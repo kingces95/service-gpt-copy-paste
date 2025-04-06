@@ -20,6 +20,10 @@ export class CliHttp extends CliCommand {
   static local = {
     method: true
   }
+  static aliases = {
+    headers: ['H'],
+    method: ['m'],
+  }
   static commands = () => ({
     get: declareHttpMethod('GET', 'Perform an http GET request'),
     post: declareHttpMethod('POST', 'Perform an http POST request'),
@@ -38,7 +42,7 @@ export class CliHttp extends CliCommand {
   #headerCount
   #isUpdate
 
-  constructor(url, { headers = 0, method = 'GET', ...rest } = { }) {
+  constructor(url, { headers = [], method = 'GET', ...rest } = { }) {
     if (CliHttp.initializing(new.target, url, { headers, method }))
       return super()
     super(rest)
@@ -69,6 +73,8 @@ export class CliHttp extends CliCommand {
     if (headersCount === 0 || !isUpdate)
       return { }
 
+    return { headers: 'X-Test: Hello', body: '{"Hello": "world"}' }
+
     throw new Error('Header parsing not implemented yet')
     // const headerRecord = new Record(['key', 'value'])
     // return lines$.pipe(
@@ -93,6 +99,7 @@ export class CliHttp extends CliCommand {
   async execute(signal) {
     const { url, method, stdout } = this
     const { headers, body } = await this.#handleRequest()
+
     await new Promise(async (resolve, reject) => {
       try {
         const response = await axios({
@@ -130,11 +137,11 @@ function declareHttpMethod(method, description) {
   const CliHttpMethod = class extends CliHttp {
     static description = description
 
-    constructor(url, headers, options = { }) {
+    constructor(url, options = { }) {
       if (CliHttpMethod.initializing(new.target, options))
         return super()
 
-      super(url, headers, { method, ...options })
+      super(url, { method, ...options })
     }
   }
 
