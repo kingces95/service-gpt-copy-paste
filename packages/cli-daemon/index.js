@@ -7,34 +7,6 @@ import { CliConsoleMon } from '@kingjs/cli-runtime'
 import { AbortError } from '@kingjs/abort-error'
 import os from 'os'
 
-export class CliRuntimeState extends CliService { 
-  static services = {
-    console: CliConsoleMon,
-  }
-  static { this.initialize(import.meta) }
-
-  constructor(options) { 
-    if (CliRuntimeState.initializing(new.target)) 
-      return super()
-    super(options)
-
-    const { console } = this.getServices(CliRuntimeState, options)
-
-    const { runtime } = this
-    runtime.once('beforeExecute', async () => { await console.is('initializing') })
-    runtime.once('beforeAbort', async () => { await console.is('aborting') })
-    runtime.once('beforeExit', async () => {
-      await console.update('exiting', runtime.exitCode)
-      await console.is(
-        runtime.succeeded ? 'succeeded' :
-        runtime.aborted ? 'aborted' :
-        runtime.errored ? 'errored' :
-        'failed'
-      )
-    })
-  }
-}
-
 export class CliDaemonState extends CliService { 
   static services = {
     console: CliConsoleMon,
@@ -144,10 +116,6 @@ export class CliPulse extends CliServiceMonitor {
 
 export class CliDaemon extends CliCommand {
   static services = { 
-    rtState: CliRuntimeState,
-    state: CliDaemonState, 
-    pulse: CliPulse,
-    console: CliConsoleMon,
   }
   static { this.initialize(import.meta) }
 
@@ -156,9 +124,8 @@ export class CliDaemon extends CliCommand {
       return super()
 
     super(options)
-    
-    const { console } = this.getServices(CliDaemon, options)
-    this.runtime.on('pulse', (...record) => { console.update('data', ...record) })
+
+    this.getServices(CliDaemon, options)
   }
 
   async execute(signal) {

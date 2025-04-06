@@ -1,8 +1,10 @@
 #!/usr/bin/env node
-import { CliRxPoller } from '@kingjs/cli-rx-poller'
+import { CliRxPoller, CliRxPollerState } from '@kingjs/cli-rx-poller'
 import { Clipboard } from '@napi-rs/clipboard'
 import { exhaustMap, filter, first } from 'rxjs/operators'
 import { pipe } from 'rxjs'
+import { CliRuntimeState } from '@kingjs/cli-runtime'
+import { CliPulse, CliDaemonState } from '@kingjs/cli-daemon'
 
 const PREFIX = '!#/clipboard/'
 
@@ -10,6 +12,12 @@ export default class CliPollClipboard extends CliRxPoller {
   static description = 'Poll clipboard content'
   static parameters = {
     prefix: 'Prefix to match in clipboard content'
+  }
+  static services = {
+    runtimeState: CliRuntimeState,
+    deamonState: CliDaemonState, 
+    pollerState: CliRxPollerState,
+    pulse: CliPulse,
   }
   static { this.initialize(import.meta) }
 
@@ -20,6 +28,7 @@ export default class CliPollClipboard extends CliRxPoller {
       return super()
     super(rest)
 
+    this.getServices(CliPollClipboard, rest)
     this.#prefix = prefix
   }
 

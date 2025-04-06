@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-
 import { CliService } from '@kingjs/cli'
 import { CliRx } from '@kingjs/cli-rx'
 import { interval, timer } from 'rxjs'
@@ -38,16 +37,12 @@ export class CliRxPoller extends CliRx {
     errorMs: 'Retry delay',
     writeError: 'Log service errors to stderr',
   }
-  static services = {
-    state: CliRxPollerState
-  }
   static { this.initialize(import.meta) }
 
   #pollMs
   #errorRate
   #errorMs
   #writeError
-  #state
 
   constructor({ 
     pollMs = POLL_MS,
@@ -61,9 +56,6 @@ export class CliRxPoller extends CliRx {
       return super()
 
     super(rest)
-
-    const { state } = this.getServices(CliRxPoller, rest)
-    this.#state = state
 
     this.#pollMs = pollMs
     this.#errorRate = errorRate
@@ -97,8 +89,6 @@ export class CliRxPoller extends CliRx {
   }
 
   poll(signalRx) { }
-
-  toString() { this.#state.toString() }  
 }
 
 // CliRxPoller.__dumpMetadata()

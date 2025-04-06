@@ -60,6 +60,35 @@ export class CliConsoleMon extends CliService {
   }  
 }
 
+export class CliRuntimeState extends CliService { 
+  static services = {
+    console: CliConsoleMon,
+  }
+  static { this.initialize(import.meta) }
+
+  constructor(options) { 
+    if (CliRuntimeState.initializing(new.target)) 
+      return super()
+    super(options)
+
+    const { console } = this.getServices(CliRuntimeState, options)
+
+    const { runtime } = this
+    runtime.once('beforeAbort', async () => { await console.is('aborting') })
+    runtime.once('beforeExit', async () => {
+      await console.update('exiting', runtime.exitCode)
+      await console.is(
+        runtime.succeeded ? 'succeeded' :
+        runtime.aborted ? 'aborted' :
+        runtime.errored ? 'errored' :
+        'failed'
+      )
+    })
+
+    runtime.on('pulse', (...record) => { console.update('data', ...record) })
+  }
+}
+
 export class CliRuntime extends AsyncEmitter {
   static async activate(classOrPojo, options = { }) {
     const { metadata } = options
@@ -138,7 +167,6 @@ export class CliRuntime extends AsyncEmitter {
       const command = await this.getCommandInfo(userPath)
 
       // functional => object oriented execution
-      await this.emitAsync('beforeExecute')
       const result = await command.execute(userArgs)
 
       if (this.aborted) return
