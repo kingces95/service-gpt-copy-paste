@@ -8,6 +8,8 @@ import {
 } from '@kingjs/cli-runtime-container'
 import { DEV_STDOUT } from '@kingjs/cli-writable'
 import { CliStdStream } from '@kingjs/cli-std-stream'
+import { CliService } from '@kingjs/cli'
+import { CliWriter } from '@kingjs/cli-writer'
 
 const EXIT_SUCCESS = 0
 const EXIT_FAILURE = 1
@@ -26,6 +28,36 @@ export class CliStdMon extends CliStdStream {
       return super()
     super(rest, { path: stdmon })
   }
+}
+
+export class CliConsoleMon extends CliService {
+  static services = { 
+    stdmon: CliStdMon 
+  }
+  static { this.initialize(import.meta) }
+
+  #writer
+
+  constructor(options) {
+    if (CliConsoleMon.initializing(new.target))
+      return super()
+    super(options)
+
+    const { stdmon } = this.getServices(CliConsoleMon, options)
+    this.#writer = stdmon.then(stdmon => new CliWriter(stdmon))
+  }
+
+  #defaultMessage(state) {
+    return state.charAt(0).toUpperCase() + state.slice(1) + '...'
+  }
+
+  async update(...fields) { await (await this.#writer).echoRecord(fields, ' ') }
+  async warnThat(name, message = this.#defaultMessage(name)) { 
+    await this.update('warning', name, message) 
+  }
+  async is(name, message = this.#defaultMessage(name)) { 
+    await this.update(name, message) 
+  }  
 }
 
 export class CliRuntime extends AsyncEmitter {
@@ -93,7 +125,7 @@ export class CliRuntime extends AsyncEmitter {
         await this.emitAsync('beforeAbort')
         this.#abortController.abort() 
       })
-  
+
       // trap ungraceful shutdown
       process.once('uncaughtException', (error) => { 
         this.#onError(EXIT_ERRORED_UNCAUGHT, error) 

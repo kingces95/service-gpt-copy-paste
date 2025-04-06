@@ -3,38 +3,29 @@ import { CliService, CliServiceThread } from '@kingjs/cli'
 import { 
   CliCommand, CliStdIn, CliStdOut 
 } from '@kingjs/cli-command'
-import { CliStdMon } from '@kingjs/cli-runtime'
-import { CliWriter } from '@kingjs/cli-writer'
+import { CliConsoleMon } from '@kingjs/cli-runtime'
 import { AbortError } from '@kingjs/abort-error'
 import os from 'os'
 
-export class CliDaemonState extends CliService { 
+export class CliRuntimeState extends CliService { 
   static services = {
-    stdmon: CliStdMon,
+    console: CliConsoleMon,
   }
   static { this.initialize(import.meta) }
 
-  #console
-  #state
-
   constructor(options) { 
-    if (CliDaemonState.initializing(new.target)) 
+    if (CliRuntimeState.initializing(new.target)) 
       return super()
     super(options)
 
-    const { stdmon } = this.getServices(CliDaemonState, options)
-    this.#console = stdmon.then(stream => new CliWriter(stream))
+    const { console } = this.getServices(CliRuntimeState, options)
 
     const { runtime } = this
-    runtime.once('beforeExecute', async () => { await this.is('initializing') })
-    runtime.once('beforeStart', async () => { 
-      await this.is('starting') 
-    })
-    runtime.once('beforeAbort', async () => { await this.is('aborting') })
-    runtime.once('afterStart', async () => { await this.is('stopping') })
+    runtime.once('beforeExecute', async () => { await console.is('initializing') })
+    runtime.once('beforeAbort', async () => { await console.is('aborting') })
     runtime.once('beforeExit', async () => {
-      await this.update('exiting', runtime.exitCode)
-      await this.is(
+      await console.update('exiting', runtime.exitCode)
+      await console.is(
         runtime.succeeded ? 'succeeded' :
         runtime.aborted ? 'aborted' :
         runtime.errored ? 'errored' :
@@ -42,29 +33,24 @@ export class CliDaemonState extends CliService {
       )
     })
   }
+}
 
-  get currently() { return this.#state }
-  get starting() { return this.currently == 'starting' }
-  get aborting() { return this.currently == 'aborting' }
-  get stopping() { return this.currently == 'stopping' }
-
-  async update(...fields) {
-    await (await this.#console).echoRecord(fields)
+export class CliDaemonState extends CliService { 
+  static services = {
+    console: CliConsoleMon,
   }
+  static { this.initialize(import.meta) }
 
-  async warnThat(name) {
-    this.#state = name
-    await this.update('warning', name, this.toString())
-  }
-  
-  async is(name) {
-    this.#state = name
-    await this.update(name, this.toString())
-  }  
+  constructor(options) { 
+    if (CliDaemonState.initializing(new.target)) 
+      return super()
+    super(options)
 
-  toString() {
-    const state = this.currently
-    return state.charAt(0).toUpperCase() + state.slice(1) + '...'
+    const { console } = this.getServices(CliDaemonState, options)
+
+    const { runtime } = this
+    runtime.once('beforeStart', async () => { await console.is('starting') })
+    runtime.once('afterStart', async () => { await console.is('stopping') })
   }
 }
 
@@ -158,12 +144,12 @@ export class CliPulse extends CliServiceMonitor {
 
 export class CliDaemon extends CliCommand {
   static services = { 
+    rtState: CliRuntimeState,
     state: CliDaemonState, 
-    pulse: CliPulse 
+    pulse: CliPulse,
+    console: CliConsoleMon,
   }
   static { this.initialize(import.meta) }
-
-  #state
 
   constructor(options) {
     if (CliDaemon.initializing(new.target)) 
@@ -171,9 +157,8 @@ export class CliDaemon extends CliCommand {
 
     super(options)
     
-    const { state } = this.getServices(CliDaemon, options)
-    this.#state = state
-    this.runtime.on('pulse', (...record) => { state.update('data', ...record) })
+    const { console } = this.getServices(CliDaemon, options)
+    this.runtime.on('pulse', (...record) => { console.update('data', ...record) })
   }
 
   async execute(signal) {
@@ -194,8 +179,6 @@ export class CliDaemon extends CliCommand {
   }
 
   async start(signal) { }
-
-  toString() { return this.#state.toString() }
 }
 
 // CliDaemon.__dumpMetadata()

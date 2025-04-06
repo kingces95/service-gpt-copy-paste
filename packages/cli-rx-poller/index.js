@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
 import { CliService } from '@kingjs/cli'
-import { CliDaemonState } from '@kingjs/cli-daemon'
 import { CliRx } from '@kingjs/cli-rx'
 import { interval, timer } from 'rxjs'
 import { switchMap, retry, takeUntil } from 'rxjs/operators'
+import { CliConsoleMon } from '@kingjs/cli-runtime'
 
 const POLL_MS = 200
 const ERROR_RATE = 0.01
@@ -12,42 +12,23 @@ const ERROR_MS = 1000
 
 export class CliRxPollerState extends CliService {
   static services = {
-    daemonState: CliDaemonState,
+    console: CliConsoleMon,
   }
   static { this.initialize(import.meta) }
-
-  #retryError
-  #daemonState
 
   constructor(options) {
     if (CliRxPollerState.initializing(new.target)) 
       return super()
     super(options)
 
-    const { daemonState } = this.getServices(CliRxPollerState, options)
-    this.#daemonState = daemonState
+    const { console } = this.getServices(CliRxPollerState, options)
 
     const { runtime } = this
-    runtime.on('polling', async () => { await daemonState.is('polling') })
+    runtime.on('polling', async () => { await console.is('polling') })
     runtime.on('retrying', async (error) => { 
-      this.#retryError = error
-      await daemonState.warnThat('retrying') 
+      await console.warnThat('retrying', `Retrying (${error})...`) 
     })
   }
-
-  get currently() { return this.#daemonState.currently }
-  get polling() { return this.currently == 'polling' }
-  get retrying() { return this.currently == 'retrying' }
-
-  toString() {
-    const daemonState = this.#daemonState
-    const retryError = this.#retryError
-
-    if (this.retrying)
-      return `Retrying (${retryError})...`
-    
-    return daemonState.toString()
-  }  
 }
 
 export class CliRxPoller extends CliRx {
