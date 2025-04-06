@@ -19,7 +19,7 @@ export const Clippy = CliCommand.extend({
     ['Pulse', 
       '@kingjs/cli-daemon, CliPulse'],
     ['I/O', 
-      '@kingjs/cli-command, CliStdStream',
+      '@kingjs/cli-std-stream, CliStdStream',
       '@kingjs/cli-reader, CliParser',],
     ['Global', 
       '@kingjs/cli-command'],

@@ -1,11 +1,13 @@
-import { CliServiceProvider, CliService } from '@kingjs/cli'
+import { CliServiceProvider, CliService, CliServiceThread } from '@kingjs/cli'
 import { getOwn } from '@kingjs/get-own'
 
 export class CliRuntimeContainer {
   #services
+  #signal
 
-  constructor() {
+  constructor(signal) {
     this.#services = new Map()
+    this.#signal = signal
   }
 
   #getServiceSync(serviceClass, options) {
@@ -15,6 +17,9 @@ export class CliRuntimeContainer {
         throw new Error(`Class ${serviceClass.name} must extend ${CliService.name}.`)
       
       const service = new serviceClass(options)
+      if (service instanceof CliServiceThread)
+        service.start(this.#signal)
+
       services.set(serviceClass, service)
     }
     return services.get(serviceClass)

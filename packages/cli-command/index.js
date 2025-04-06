@@ -1,36 +1,12 @@
 #!/usr/bin/env node
-import { Cli, CliServiceProvider, CliService } from '@kingjs/cli'
-import { CliReadable, DEV_STDIN } from '@kingjs/cli-readable'
-import { CliWritable, DEV_STDOUT } from '@kingjs/cli-writable'
+import { Cli, CliService } from '@kingjs/cli'
+import { DEV_STDIN } from '@kingjs/cli-readable'
+import { DEV_STDOUT } from '@kingjs/cli-writable'
 import { CliWriter } from '@kingjs/cli-writer'
 import { CliReader, CliParser } from '@kingjs/cli-reader'
-import assert from 'assert'
-
+import { CliStdStream } from '@kingjs/cli-std-stream'
 
 export const REQUIRED = undefined
-
-export class CliStdStream extends CliServiceProvider {
-  static { this.initialize(import.meta) }
-  static group = 'Standard Streams'
-
-  #path
-  #isReadable
-
-  constructor(options, { path, isReadable } = { }) {
-    if (CliStdStream.initializing(new.target))
-      return super()
-    super(options)
-
-    this.#path = path
-    this.#isReadable = isReadable
-  }
-
-  async activate() {
-    return await this.#isReadable 
-      ? CliReadable.fromPath(this.#path)
-      : CliWritable.fromPath(this.#path)
-  }
-}
 
 export class CliStdIn extends CliStdStream { 
   static parameters = { stdin: 'Input stream'}
@@ -57,17 +33,6 @@ export class CliStdOut extends CliStdStream {
     const stdout = await super.activate()
     stdout.isTTY = process.stdout.isTTY
     return stdout
-  }
-}
-
-export class CliStdLog extends CliStdStream { 
-  static parameters = { stdlog: 'Status stream' }
-  static { this.initialize(import.meta) }
-
-  constructor({ stdlog = DEV_STDOUT, ...rest } = { }) { 
-    if (CliStdLog.initializing(new.target, { stdlog })) 
-      return super()
-    super(rest, { path: stdlog })
   }
 }
 

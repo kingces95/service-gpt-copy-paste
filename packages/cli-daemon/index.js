@@ -1,16 +1,16 @@
 #!/usr/bin/env node
-import { CliService } from '@kingjs/cli'
+import { CliService, CliServiceThread } from '@kingjs/cli'
 import { 
-  CliCommand, CliStdIn, CliStdOut, CliStdLog 
+  CliCommand, CliStdIn, CliStdOut 
 } from '@kingjs/cli-command'
+import { CliStdMon } from '@kingjs/cli-runtime'
 import { CliWriter } from '@kingjs/cli-writer'
 import { AbortError } from '@kingjs/abort-error'
 import os from 'os'
-import assert from 'assert'
 
 export class CliDaemonState extends CliService { 
   static services = {
-    stdlog: CliStdLog,
+    stdmon: CliStdMon,
   }
   static { this.initialize(import.meta) }
 
@@ -22,8 +22,8 @@ export class CliDaemonState extends CliService {
       return super()
     super(options)
 
-    const { stdlog } = this.getServices(CliDaemonState, options)
-    this.#console = stdlog.then(stdlog => new CliWriter(stdlog))
+    const { stdmon } = this.getServices(CliDaemonState, options)
+    this.#console = stdmon.then(stream => new CliWriter(stream))
 
     const { runtime } = this
     runtime.once('beforeExecute', async () => { await this.is('initializing') })
@@ -68,10 +68,47 @@ export class CliDaemonState extends CliService {
   }
 }
 
-export class CliPulse extends CliService {
+export class CliServiceMonitor extends CliServiceThread {
+  static { this.initialize(import.meta) }
+
+  #intervalMs
+  #reportMs
+
+  constructor({ reportMs, intervalMs, ...rest } = {}) {
+    if (CliServiceMonitor.initializing(new.target))
+      return super()
+    super(rest)
+
+    this.#intervalMs = intervalMs
+    this.#reportMs = reportMs
+  }
+
+  get intervalMs() { return this.#intervalMs }
+  get reportMs() { return this.#reportMs }
+
+  async start(signal) {
+    const { intervalMs, reportMs } = this
+    
+    let ms = 0
+    let running = true
+    let context = await this.report({ ms })
+    signal.addEventListener('abort', () => { running = false }, { once: true })
+    
+    while (running) {
+      await new Promise(resolve => setTimeout(resolve, intervalMs))
+      if ((ms += intervalMs) < reportMs) continue
+      context = await this.report({ ...context, ms })
+      ms = 0
+    }
+  }
+
+  async report() { }
+}
+
+export class CliPulse extends CliServiceMonitor {
   static parameters = {
-    reportMs: 'Heartrate',
-    intervalMs: 'Cancellation polling',
+    reportMs: 'Reporting rate',
+    intervalMs: 'Cancellation polling rate',
   }
   static services = {
     stdin: CliStdIn,
@@ -81,59 +118,41 @@ export class CliPulse extends CliService {
 
   #stdin
   #stdout
-  #running
-  #intervalMs
-  #reportMs
 
   constructor({ reportMs = 1000, intervalMs = 100, ...rest } = {}) {
     if (CliPulse.initializing(new.target, { reportMs, intervalMs }))
       return super()
-    super(rest)
+    super({ reportMs, intervalMs, ...rest })
 
     const { stdin, stdout } = this.getServices(CliPulse, rest)
     this.#stdin = stdin
     this.#stdout = stdout
-    this.#running = false
-    this.#intervalMs = intervalMs
-    this.#reportMs = reportMs
   }
 
   get stdin() { return this.#stdin }
   get stdout() { return this.#stdout }
-  get intervalMs() { return this.#intervalMs }
-  get reportMs() { return this.#reportMs }
 
-  async start(callback) {
-    const { intervalMs, reportMs } = this
+  async report({ ms, prevCPU}) {
+    if (!prevCPU) return { prevCPU: process.cpuUsage() }
 
-    let ms = 0
-    let prevCPU = process.cpuUsage()
-    this.#running = true
-    
-    while (this.#running) {
-      await new Promise(resolve => setTimeout(resolve, intervalMs))
-      ms += intervalMs
-      if (ms < reportMs) 
-        continue
-      
-      const cpuUsage = process.cpuUsage(prevCPU)
-      prevCPU = process.cpuUsage()
-      
-      const userCPU = cpuUsage.user / 1e6
-      const systemCPU = cpuUsage.system / 1e6
-      const totalCPU = ((userCPU + systemCPU) / (ms / 1000) / os.cpus().length) * 100
+    // cpu usage
+    const cpuUsage = process.cpuUsage(prevCPU)
+    const userCPU = cpuUsage.user / 1e6
+    const systemCPU = cpuUsage.system / 1e6
+    const totalCPU = ((userCPU + systemCPU) / (ms / 1000) / os.cpus().length) * 100
 
-      const memoryUsage = (process.memoryUsage().rss / os.totalmem() * 100).toFixed(1)
+    // memory usage
+    const memoryUsage = (process.memoryUsage().rss / os.totalmem() * 100).toFixed(1)
 
-      const stdin = await this.stdin
-      const stdout = await this.stdout
-      callback(stdin.count, stdout.count, 0, totalCPU.toFixed(1), memoryUsage)
-      ms = 0
-    }
-  }
+    // stream usage
+    const stdin = await this.stdin
+    const stdout = await this.stdout
 
-  async stop() {
-    this.#running = false
+    // report
+    await this.runtime.emitAsync('pulse', 
+      stdin.count, stdout.count, 0, totalCPU.toFixed(1), memoryUsage)
+
+    return { prevCPU: process.cpuUsage() }
   }
 }
 
@@ -145,7 +164,6 @@ export class CliDaemon extends CliCommand {
   static { this.initialize(import.meta) }
 
   #state
-  #pulse
 
   constructor(options) {
     if (CliDaemon.initializing(new.target)) 
@@ -153,31 +171,24 @@ export class CliDaemon extends CliCommand {
 
     super(options)
     
-    const { state, pulse } = this.getServices(CliDaemon, options)
+    const { state } = this.getServices(CliDaemon, options)
     this.#state = state
-    this.#pulse = pulse
+    this.runtime.on('pulse', (...record) => { state.update('data', ...record) })
   }
 
   async execute(signal) {
     const { runtime } = this
-    const pulse = this.#pulse
-    const state = this.#state
 
-    pulse.start((...record) => { state.update('data', ...record) })
-    
     try {
       await runtime.emitAsync('beforeStart')
       const result = await this.start(signal)
-      assert(!state.aborting)
       return result
 
     } catch (error) {
-      if (error instanceof AbortError) { assert(state.aborting); return } 
-      assert(!state.aborting)
+      if (error instanceof AbortError) return
       throw error
 
     } finally {
-      await pulse.stop() 
       await runtime.emitAsync('afterStart')
     }
   }

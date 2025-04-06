@@ -6,6 +6,8 @@ import { AsyncEmitter } from '@kingjs/async-emitter'
 import { 
   CliRuntimeContainer, CliRuntimeActivator 
 } from '@kingjs/cli-runtime-container'
+import { DEV_STDOUT } from '@kingjs/cli-writable'
+import { CliStdStream } from '@kingjs/cli-std-stream'
 
 const EXIT_SUCCESS = 0
 const EXIT_FAILURE = 1
@@ -14,6 +16,17 @@ const EXIT_ERRORED_UNCAUGHT = EXIT_ERRORED + 1
 const EXIT_ERRORED_UNHANDLED = EXIT_ERRORED + 2
 const EXIT_ABORT = 128
 const EXIT_SIGINT = EXIT_ABORT + 2
+
+export class CliStdMon extends CliStdStream { 
+  static parameters = { stdmon: 'Status stream' }
+  static { this.initialize(import.meta) }
+
+  constructor({ stdmon = DEV_STDOUT, ...rest } = { }) { 
+    if (CliStdMon.initializing(new.target, { stdmon })) 
+      return super()
+    super(rest, { path: stdmon })
+  }
+}
 
 export class CliRuntime extends AsyncEmitter {
   static async activate(classOrPojo, options = { }) {
@@ -108,6 +121,9 @@ export class CliRuntime extends AsyncEmitter {
       this.#onError(EXIT_ERRORED, error) 
 
     } finally {
+      // stop any CliThreads
+      this.#abortController.abort() 
+
       // trap graceful shutdown; the goal is a graceful shutdown of node, not exit(0)
       process.once('beforeExit', async () => { 
         process.exitCode = this.#exitCode 
@@ -196,7 +212,7 @@ export class CliRuntimeCommandInfo {
     this.#class = class$
     this.#info = info
     this.#parameters = parameters.sort((a, b) => a.position - b.position)
-    this.#container = new CliRuntimeContainer()
+    this.#container = new CliRuntimeContainer(runtime.signal)
   }
 
   get runtime() { return this.#runtime }

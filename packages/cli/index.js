@@ -305,6 +305,18 @@ export class CliService extends Cli {
   }
 }
 
+export class CliServiceThread extends CliService {
+  static { this.initialize(import.meta) }
+
+  constructor(options) {
+    if (CliServiceThread.initializing(new.target))
+      return super()
+    super(options)
+  }
+
+  async start(signal) { }
+}
+
 export class CliServiceProvider extends Cli {
   static { this.initialize(import.meta) }
 
