@@ -11,14 +11,14 @@ let argv = undefined
 // argv = 'spy poll -- --get-yargs-completions'.split(' ')
 // argv = 'http get https://jsonplaceholder.typicode.com/todos/1'.split(' ')
 // argv = 'spy info http get'.split(' ')
-// argv = 'http get -h'.split(' ')
+// argv = 'http'.split(' ')
 
 // allow spaceless short options; e.g. '-k2' => '-k 2'
 // TODO: allow combining short predicatates; e.g. '-abc' => '-a -b -c'
 // TODO: will require reflection to get all short options
-argv = process.argv.slice(2).flatMap(arg =>
-  arg.match(/^-[a-zA-Z]\S+/) ? [arg.slice(0, 2), arg.slice(2)] : [arg]
-)
+// argv = argv.slice(2).flatMap(arg =>
+//   arg.match(/^-[a-zA-Z]\S+/) ? [arg.slice(0, 2), arg.slice(2)] : [arg]
+// )
 
 CliRuntime.activate(Clippy)
   .then(async runtime => runtime.info.toPojo()

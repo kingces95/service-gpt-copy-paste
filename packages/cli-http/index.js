@@ -6,6 +6,7 @@ const HTTP_UPDATE_METHODS = ['POST', 'PUT', 'PATCH']
 const HTTP_SAMPLE = 'https://jsonplaceholder.typicode.com/posts/1'
 const HTTP_HANG = 'https://httpbin.org/delay/10'
 const HTTP_FAIL = 'https://httpstat.us/500'
+const HTTP_ECHO = 'https://httpbin.org/anything'
 
 export class CliHttp extends CliCommand {
   static description = 'Send a HTTP request'
@@ -39,10 +40,13 @@ export class CliHttp extends CliCommand {
   #stdout
   #url
   #method
-  #headerCount
+  #headers
   #isUpdate
 
-  constructor(url, { headers = [], method = 'GET', ...rest } = { }) {
+  constructor(url = null, { 
+    headers = [], method = 'GET', ...rest 
+  } = { }) {
+
     if (CliHttp.initializing(new.target, url, { headers, method }))
       return super()
     super(rest)
@@ -50,25 +54,28 @@ export class CliHttp extends CliCommand {
     const { stdout } = this.getServices(CliHttp, rest)
     this.#stdout = stdout
 
+    if (!url) url = HTTP_ECHO
+
     switch (url) {
       case 'sample': url = HTTP_SAMPLE; break
       case 'hang': url = HTTP_HANG; break
       case 'fail': url = HTTP_FAIL; break
+      case 'echo': url = HTTP_ECHO; break
     }
     this.#url = url
     this.#method = method
-    this.#headerCount = headers
+    this.#headers = headers
     this.#isUpdate = HTTP_UPDATE_METHODS.includes(method)
   }
 
   get url() { return this.#url }
   get method() { return this.#method }
-  get headersCount() { return this.#headerCount }
+  get headers() { return this.#headers }
   get isUpdate() { return this.#isUpdate }
   get stdout() { return this.#stdout }
 
   async #handleRequest() {
-    const { headers: headersCount, isUpdate } = this
+    const { headers, isUpdate } = this
 
     if (headersCount === 0 || !isUpdate)
       return { }
@@ -97,15 +104,16 @@ export class CliHttp extends CliCommand {
   }
   
   async execute(signal) {
-    const { url, method, stdout } = this
-    const { headers, body } = await this.#handleRequest()
+    const { headers, url, method, stdout } = this
+    // const { body } = await this.#handleRequest()
+    const body = null
 
     await new Promise(async (resolve, reject) => {
       try {
         const response = await axios({
           url,
           method,
-          headers,
+          headers: headers.length ? headers.join('\n') : undefined,
           data: body || undefined,
           signal,
           responseType: 'stream',

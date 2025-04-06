@@ -70,7 +70,9 @@ export class CliYargsParameter extends CliYargs {
   get choices() { return this.#pojo?.choices }
   get coerce() { return this.#pojo?.coerce }
   get conflicts() { return this.#pojo?.conflicts }
-  get default() { return this.#pojo?.default }
+  get default() { return this.#pojo?.default 
+    ?? ((this.array || this.variadic) ? [] : undefined)
+  }
   get defaultDescription() { return this.#pojo?.defaultDescription }
   get implies() { return this.#pojo?.implies }
   get normalize() { return this.#pojo?.normalize }
