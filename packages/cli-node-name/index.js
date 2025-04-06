@@ -1,6 +1,5 @@
 import { NodeName } from '@kingjs/node-name' 
 import { CliCommand } from '@kingjs/cli-command'
-import { CliOutputService } from '@kingjs/cli-output-service'
 
 // Just for fun...
 export class CliNodeName extends CliCommand {

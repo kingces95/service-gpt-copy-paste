@@ -1,5 +1,5 @@
 import { CliServiceProvider } from '@kingjs/cli-service'
-import { CliStdOut } from '@kingjs/cli-command'
+import { CliStdOut } from '@kingjs/cli-std-stream'
 import { NodeName } from '@kingjs/node-name'
 import jmespath from 'jmespath'
 

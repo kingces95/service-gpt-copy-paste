@@ -3,7 +3,7 @@ import { CliService } from '@kingjs/cli-service'
 import { CliRx } from '@kingjs/cli-rx'
 import { interval, timer } from 'rxjs'
 import { switchMap, retry, takeUntil } from 'rxjs/operators'
-import { CliConsoleMon } from '@kingjs/cli-runtime'
+import { CliConsoleMon } from '@kingjs/cli-console'
 
 const POLL_MS = 200
 const ERROR_RATE = 0.01

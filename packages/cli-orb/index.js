@@ -1,4 +1,5 @@
-import { CliCommand, CliConsoleIn } from '@kingjs/cli-command'
+import { CliCommand } from '@kingjs/cli-command'
+import { CliConsoleIn } from '@kingjs/cli-console'
 import { AbortError } from '@kingjs/abort-error'
 import ora from 'ora'
 import process from 'process'

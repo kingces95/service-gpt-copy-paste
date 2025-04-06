@@ -3,7 +3,7 @@ import { Subject, merge } from 'rxjs'
 import { tap, share, takeUntil } from 'rxjs/operators'
 import { fromAbortSignal } from '@kingjs/rx-from-abort-signal'
 import concatWrite from '@kingjs/rx-concat-write'
-import { CliStdOut } from '@kingjs/cli-command'
+import { CliStdOut } from '@kingjs/cli-std-stream'
 
 export class CliRx extends CliDaemon {
   static { this.initialize(import.meta) }

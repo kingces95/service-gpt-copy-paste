@@ -1,4 +1,5 @@
-import { CliCommand, CliConsoleOut } from '@kingjs/cli-command'
+import { CliCommand } from '@kingjs/cli-command'
+import { CliConsoleOut } from '@kingjs/cli-console'
 import { CliOutputService } from '@kingjs/cli-output-service'
 import { CliClassMetadata } from '@kingjs/cli-metadata'
 import { CliCommandInfo } from '@kingjs/cli-info'

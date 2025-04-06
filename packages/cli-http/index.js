@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-import { CliCommand, CliStdOut } from '@kingjs/cli-command'
+import { CliCommand } from '@kingjs/cli-command'
+import { CliStdOut } from '@kingjs/cli-std-stream'
 import axios from 'axios'
 
 const HTTP_UPDATE_METHODS = ['POST', 'PUT', 'PATCH']

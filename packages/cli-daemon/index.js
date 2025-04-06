@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 import { CliService, CliServiceThread } from '@kingjs/cli-service'
-import { 
-  CliCommand, CliStdIn, CliStdOut 
-} from '@kingjs/cli-command'
-import { CliConsoleMon } from '@kingjs/cli-runtime'
+import { CliCommand } from '@kingjs/cli-command'
+import { CliStdIn, CliStdOut } from '@kingjs/cli-std-stream'
+import { CliConsoleMon } from '@kingjs/cli-console'
 import { AbortError } from '@kingjs/abort-error'
 import os from 'os'
 

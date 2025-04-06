@@ -3,13 +3,12 @@ import { CliClassMetadata } from '@kingjs/cli-metadata'
 import { CliCommandInfo } from '@kingjs/cli-info'
 import { IdentifierStyle } from '@kingjs/identifier-style'
 import { AsyncEmitter } from '@kingjs/async-emitter'
-import { 
-  CliRuntimeContainer, CliRuntimeActivator 
-} from '@kingjs/cli-runtime-container'
-import { DEV_STDOUT } from '@kingjs/cli-writable'
-import { CliStdStream } from '@kingjs/cli-std-stream'
 import { CliService } from '@kingjs/cli-service'
-import { CliWriter } from '@kingjs/cli-writer'
+import { CliConsoleMon } from '@kingjs/cli-console'
+import { 
+  CliRuntimeContainer, 
+  CliRuntimeActivator 
+} from '@kingjs/cli-runtime-container'
 
 const EXIT_SUCCESS = 0
 const EXIT_FAILURE = 1
@@ -18,47 +17,6 @@ const EXIT_ERRORED_UNCAUGHT = EXIT_ERRORED + 1
 const EXIT_ERRORED_UNHANDLED = EXIT_ERRORED + 2
 const EXIT_ABORT = 128
 const EXIT_SIGINT = EXIT_ABORT + 2
-
-export class CliStdMon extends CliStdStream { 
-  static parameters = { stdmon: 'Status stream' }
-  static { this.initialize(import.meta) }
-
-  constructor({ stdmon = DEV_STDOUT, ...rest } = { }) { 
-    if (CliStdMon.initializing(new.target, { stdmon })) 
-      return super()
-    super(rest, { path: stdmon })
-  }
-}
-
-export class CliConsoleMon extends CliService {
-  static services = { 
-    stdmon: CliStdMon 
-  }
-  static { this.initialize(import.meta) }
-
-  #writer
-
-  constructor(options) {
-    if (CliConsoleMon.initializing(new.target))
-      return super()
-    super(options)
-
-    const { stdmon } = this.getServices(CliConsoleMon, options)
-    this.#writer = stdmon.then(stdmon => new CliWriter(stdmon))
-  }
-
-  #defaultMessage(state) {
-    return state.charAt(0).toUpperCase() + state.slice(1) + '...'
-  }
-
-  async update(...fields) { await (await this.#writer).echoRecord(fields, ' ') }
-  async warnThat(name, message = this.#defaultMessage(name)) { 
-    await this.update('warning', name, message) 
-  }
-  async is(name, message = this.#defaultMessage(name)) { 
-    await this.update(name, message) 
-  }  
-}
 
 export class CliRuntimeState extends CliService { 
   static services = {
