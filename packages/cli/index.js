@@ -285,9 +285,9 @@ export class Cli {
     this.#info = _info
   }
 
-  getServices(class$, options) { return this.info.getServices(class$, options) }
   get info() { return this.#info }
   get runtime() { return this.#info.runtime }
+  getServices(class$, options) { return this.runtime.getServices(class$, options) }
 }
 
 // Cli.__dumpMetadata()

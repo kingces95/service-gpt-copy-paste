@@ -1,0 +1,15 @@
+{
+  "name": "@kingjs/cli-thread-pool",
+  "version": "1.0.0",
+  "description": "Cli thread pool.",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "peerDependencies": {},
+  "author": "Chris King",
+  "license": "MIT"
+}

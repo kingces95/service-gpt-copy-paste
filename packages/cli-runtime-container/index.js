@@ -2,14 +2,15 @@ import {
   CliService, CliServiceProvider, CliServiceThread 
 } from '@kingjs/cli-service'
 import { getOwn } from '@kingjs/get-own'
+import { CliThreadPool } from '@kingjs/cli-thread-pool'
 
 export class CliRuntimeContainer {
   #services
   #threadPool
 
-  constructor(threadPool) {
+  constructor() {
     this.#services = new Map()
-    this.#threadPool = threadPool
+    this.#threadPool = new CliThreadPool()
   }
 
   #getServiceSync(serviceClass, options) {
@@ -47,6 +48,10 @@ export class CliRuntimeContainer {
         }))
     }
     return services.get(providerClass)
+  }
+
+  async dispose() {
+    await this.#threadPool.stop()
   }
 
   getServices(class$, options = { }) {

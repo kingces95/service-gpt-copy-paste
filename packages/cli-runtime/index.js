@@ -2,7 +2,7 @@ import { CliCommand } from '@kingjs/cli-command'
 import { CliClassMetadata } from '@kingjs/cli-metadata'
 import { CliCommandInfo } from '@kingjs/cli-info'
 import { IdentifierStyle } from '@kingjs/identifier-style'
-import { CliService, CliServiceThread } from '@kingjs/cli-service'
+import { CliService } from '@kingjs/cli-service'
 import { CliConsoleMon } from '@kingjs/cli-console'
 import { 
   CliRuntimeContainer, 
@@ -45,43 +45,6 @@ export class CliRuntimeState extends CliService {
   }
 }
 
-export class CliThreadPool {
-  #threads
-
-  constructor() {
-    this.#threads = []
-  }
-
-  start(startable, ...args) {
-    const class$ = startable.constructor
-
-    if (!(startable instanceof CliServiceThread))
-      throw new Error([`Class ${class$.name}`,
-        `must extend ${CliServiceThread.name}.`].join(' '))
-
-    if (this.#threads.some(([started]) => started === class$))
-      throw new Error([`CliServiceThread ${class$.name}`,
-        `is already started.`].join(' '))
-
-    const controller = new AbortController()
-    const thread = startable.start(controller.signal, ...args)
-    this.#threads.push([class$, controller, thread])
-    return thread
-  }
-
-  async stop() {
-    while (this.#threads.length) {
-      const [class$, controller, thread] = this.#threads.shift()
-      try {
-        controller.abort()
-        await thread
-      } catch (error) { 
-        // TODO: report errors
-      }
-    }
-  }
-}
-
 export class CliRuntime extends EventEmitter {
   static runtimeServices = [ CliConsoleMon ]
   static async activate(classOrPojo, options = { }) {
@@ -102,12 +65,13 @@ export class CliRuntime extends EventEmitter {
   #exitError
   #exitCode
   #threadPool
+  #container
 
   constructor(class$, info) {
     super()
     this.#class = class$
     this.#info = info
-    this.#threadPool = new CliThreadPool()
+    this.#container = new CliRuntimeContainer()
   }
  
   #onError(error) {
@@ -152,8 +116,10 @@ export class CliRuntime extends EventEmitter {
   get class() { return this.#class }
   get info() { return this.#info }
   get exitError() { return this.#exitError }
+  get exitErrorMessage() { return !this.exitError ? null :
+    this.#exitError?.message ?? 'Unknown error' 
+  }
   get exitCode() { return this.#exitCode }
-  get threadPool() { return this.#threadPool }
 
   get running() { return this.exitCode === undefined }
   get succeeded() { return this.exitCode == EXIT_SUCCESS }
@@ -165,6 +131,10 @@ export class CliRuntime extends EventEmitter {
       || process.exitCode == EXIT_ERRORED
   }
   
+  getServices(class$, options = { }) {
+    return this.#container.getServices(class$, options)
+  }
+
   async getCommandInfo(path) {
     return await CliRuntimeCommandInfo.activate(this, path)
   }
@@ -178,7 +148,7 @@ export class CliRuntime extends EventEmitter {
 
     this.#exitCode = await this.#execute(userPath, userArgs)
     this.emit('beforeExit', this.#exitCode, this.toString())
-    await this.#threadPool.stop()
+    await this.#container.dispose()
 
     // stop node runtime
     process.once('beforeExit', async () => { 
@@ -192,7 +162,7 @@ export class CliRuntime extends EventEmitter {
     if (this.succeeded) return 'Command succeeded'
     if (this.aborted) return `Command aborted`
     if (this.failed) return `Command failed`
-    if (this.errored) return `Command exception: ${this.exitError}`
+    if (this.errored) return `Command exception: (${this.exitErrorMessage})`
     assert(this.running)
     return 'Running...'
   }
@@ -260,7 +230,6 @@ export class CliRuntimeCommandInfo {
   #class
   #info
   #parameters
-  #container
 
   constructor(runtime, path, class$, info, parameters) {
     this.#runtime = runtime
@@ -268,7 +237,6 @@ export class CliRuntimeCommandInfo {
     this.#class = class$
     this.#info = info
     this.#parameters = parameters.sort((a, b) => a.position - b.position)
-    this.#container = new CliRuntimeContainer(runtime.threadPool)
   }
 
   get runtime() { return this.#runtime }
@@ -305,11 +273,6 @@ export class CliRuntimeCommandInfo {
     result.push(options)
 
     return result
-  }
-
-  getServices(class$, options = { }) {
-    // instance => container activation (IoC)
-    return this.#container.getServices(class$, options)
   }
 
   async activate(userArgs) {
