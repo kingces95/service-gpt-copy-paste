@@ -2,7 +2,7 @@ import { CliCommand } from '@kingjs/cli-command'
 import { CliClassMetadata } from '@kingjs/cli-metadata'
 import { CliCommandInfo } from '@kingjs/cli-info'
 import { IdentifierStyle } from '@kingjs/identifier-style'
-import { CliService } from '@kingjs/cli-service'
+import { CliService, CliServiceThread } from '@kingjs/cli-service'
 import { CliConsoleMon } from '@kingjs/cli-console'
 import { 
   CliRuntimeContainer, 
@@ -13,14 +13,12 @@ import { EventEmitter } from 'events'
 const EXIT_SUCCESS = 0
 const EXIT_FAILURE = 1
 const EXIT_ERRORED = 2
-const EXIT_ERRORED_UNCAUGHT = EXIT_ERRORED + 1
-const EXIT_ERRORED_UNHANDLED = EXIT_ERRORED + 2
 const EXIT_ABORT = 128
 const EXIT_SIGINT = EXIT_ABORT + 2
 
 export class CliRuntimeState extends CliService { 
   static services = {
-    console: CliConsoleMon,
+    consoleMon: CliConsoleMon,
   }
   static { this.initialize(import.meta) }
 
@@ -29,25 +27,63 @@ export class CliRuntimeState extends CliService {
       return super()
     super(options)
 
-    const { console } = this.getServices(CliRuntimeState, options)
+    const { consoleMon } = this.getServices(CliRuntimeState, options)
 
     const { runtime } = this
-    runtime.once('beforeAbort', async () => console.is('aborting'))
-    runtime.once('beforeExit', async () => {
-      console.update('exiting', runtime.exitCode)
-      console.is(
+    runtime.once('beforeAbort', () => consoleMon.is('aborting'))
+    runtime.once('beforeExit', (exitCode, message) => {
+      consoleMon.update('exiting', exitCode)
+      consoleMon.is(
         runtime.succeeded ? 'succeeded' :
         runtime.aborted ? 'aborted' :
         runtime.errored ? 'errored' :
-        'failed'
+        'failed', message
       )
     })
 
-    runtime.on('pulse', (...record) => { console.update('data', ...record) })
+    runtime.on('pulse', (...record) => { consoleMon.update('data', ...record) })
+  }
+}
+
+export class CliThreadPool {
+  #threads
+
+  constructor() {
+    this.#threads = []
+  }
+
+  start(startable, ...args) {
+    const class$ = startable.constructor
+
+    if (!(startable instanceof CliServiceThread))
+      throw new Error([`Class ${class$.name}`,
+        `must extend ${CliServiceThread.name}.`].join(' '))
+
+    if (this.#threads.some(([started]) => started === class$))
+      throw new Error([`CliServiceThread ${class$.name}`,
+        `is already started.`].join(' '))
+
+    const controller = new AbortController()
+    const thread = startable.start(controller.signal, ...args)
+    this.#threads.push([class$, controller, thread])
+    return thread
+  }
+
+  async stop() {
+    while (this.#threads.length) {
+      const [class$, controller, thread] = this.#threads.shift()
+      try {
+        controller.abort()
+        await thread
+      } catch (error) { 
+        // TODO: report errors
+      }
+    }
   }
 }
 
 export class CliRuntime extends EventEmitter {
+  static runtimeServices = [ CliConsoleMon ]
   static async activate(classOrPojo, options = { }) {
     const { metadata } = options
     const isClass = typeof classOrPojo == 'function'
@@ -65,35 +101,68 @@ export class CliRuntime extends EventEmitter {
   #info // CliCommandInfo
   #exitError
   #exitCode
-  #abortController
+  #threadPool
 
   constructor(class$, info) {
     super()
     this.#class = class$
     this.#info = info
-    this.#abortController = new AbortController()
+    this.#threadPool = new CliThreadPool()
   }
  
-  #onError(code, error) {
-    this.#exitCode = code
+  #onError(error) {
+    this.#exitCode = EXIT_ERRORED
     this.#exitError = error
     console.error(error)
   }
-  
+
+  async #execute(userPath, userArgs) {
+
+    // unstructured => structured error handling
+    return new Promise(async (resolve) => {
+      const controller = new AbortController()
+
+      // procedural => declarative initialization
+      const commandInfo = await this.getCommandInfo(userPath)
+
+      let sigint = undefined
+      const result = await Promise.race([ 
+        // functional => object oriented execution
+        commandInfo.activate(userArgs)
+          .then(command => command.execute(controller.signal)), 
+
+        // signaling => event oriented abortion
+        new Promise((resolve) => process.on('SIGINT', 
+          sigint = async () => {
+            this.emit('beforeAbort')
+            controller.abort()
+            resolve(EXIT_SIGINT)
+          })
+        )
+      ]).finally(() => process.off('SIGINT', sigint))
+
+      resolve(result === undefined ? EXIT_SUCCESS
+        : result === true ? EXIT_SUCCESS
+        : result === false ? EXIT_FAILURE
+        : typeof result == 'number' ? result
+        : EXIT_FAILURE)
+    })
+  }
+
   get class() { return this.#class }
   get info() { return this.#info }
   get exitError() { return this.#exitError }
   get exitCode() { return this.#exitCode }
-  get signal() { return this.#abortController.signal }
+  get threadPool() { return this.#threadPool }
 
-  get running() { return process.exitCode === undefined }
-  get succeeded() { return process.exitCode == EXIT_SUCCESS }
-  get aborted() { return process.exitCode == EXIT_SIGINT }
-  get failed() { return process.exitCode == EXIT_FAILURE }
+  get running() { return this.exitCode === undefined }
+  get succeeded() { return this.exitCode == EXIT_SUCCESS }
+  get aborted() { return this.exitCode == EXIT_SIGINT }
+  get failed() { return this.exitCode == EXIT_FAILURE }
   get errored() { 
     return process.exitCode == EXIT_ERRORED
-      || process.exitCode == EXIT_ERRORED_UNHANDLED
-      || process.exitCode == EXIT_ERRORED_UNCAUGHT
+      || process.exitCode == EXIT_ERRORED
+      || process.exitCode == EXIT_ERRORED
   }
   
   async getCommandInfo(path) {
@@ -102,52 +171,21 @@ export class CliRuntime extends EventEmitter {
 
   async execute(userPath, userArgs) {
 
-    // unstructured => structured error handling
-    try {
-      
-      // signaling => event oriented abortion
-      // capture SIGINT once; a second break kills the runtime
-      process.once('SIGINT', async () => { 
-        this.#exitCode = EXIT_SIGINT
-        this.emit('beforeAbort')
-        this.#abortController.abort() 
-      })
+    // trap ungraceful shutdown
+    const onError = this.#onError.bind(this)
+    process.on('uncaughtException', onError)
+    process.on('unhandledRejection', onError)
 
-      // trap ungraceful shutdown
-      process.once('uncaughtException', (error) => { 
-        this.#onError(EXIT_ERRORED_UNCAUGHT, error) 
-      })
-      process.once('unhandledRejection', (reason) => {
-        this.#onError(EXIT_ERRORED_UNHANDLED, reason) 
-      })
+    this.#exitCode = await this.#execute(userPath, userArgs)
+    this.emit('beforeExit', this.#exitCode, this.toString())
+    await this.#threadPool.stop()
 
-      // procedural => declarative initialization
-      const command = await this.getCommandInfo(userPath)
-
-      // functional => object oriented execution
-      const result = await command.execute(userArgs)
-
-      if (this.aborted) return
-      switch (result) {
-        case undefined:
-        case true: this.#exitCode = EXIT_SUCCESS; break
-        case typeof result == 'number': this.#exitCode = result; break
-        default: this.#exitCode = EXIT_FAILURE; break
-      }
-
-    } catch (error) { 
-      this.#onError(EXIT_ERRORED, error) 
-
-    } finally {
-      // stop any CliThreads
-      this.#abortController.abort() 
-
-      // trap graceful shutdown; the goal is a graceful shutdown of node, not exit(0)
-      process.once('beforeExit', async () => { 
-        process.exitCode = this.#exitCode 
-        this.emit('beforeExit')
-      })
-    }
+    // stop node runtime
+    process.once('beforeExit', async () => { 
+      process.off('uncaughtException', onError)
+      process.off('unhandledRejection', onError)
+      process.exitCode = this.#exitCode 
+    })
   }
 
   toString() {
@@ -230,7 +268,7 @@ export class CliRuntimeCommandInfo {
     this.#class = class$
     this.#info = info
     this.#parameters = parameters.sort((a, b) => a.position - b.position)
-    this.#container = new CliRuntimeContainer(runtime.signal)
+    this.#container = new CliRuntimeContainer(runtime.threadPool)
   }
 
   get runtime() { return this.#runtime }
@@ -274,11 +312,10 @@ export class CliRuntimeCommandInfo {
     return this.#container.getServices(class$, options)
   }
 
-  async execute(userArgs) {
+  async activate(userArgs) {
     // cli => javascript casing (kabab => camel)
     const args = this.#getArgs(userArgs)
     const activator = new CliRuntimeActivator(this.class)
-    const command = await activator.activate(...args)
-    return await command.execute(this.runtime.signal)
+    return await activator.activate(...args)
   }
 }

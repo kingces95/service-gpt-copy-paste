@@ -146,25 +146,9 @@ export class CliConsoleMon extends CliServiceThread {
     const writer = await this.#writer
     const reader = this.#stream
 
-    const abort = new Promise(accept => {
-      signal.addEventListener('abort', accept, { once: true })
-    })
+    signal.addEventListener('abort', () => reader.end(), { once: true })
 
-    try {
-      const iterator = reader[Symbol.asyncIterator]()
-      const abortNext = abort.then(() => ({ done: true }))
-
-      while (true) {
-        const result = await Promise.race([
-          iterator.next(),
-          abortNext
-        ])
-
-        if (result.done) { break }
-        if (result.value) await writer.echoRecord(result.value, ' ')
-      }
-    } catch (error) {
-      if (error !== signal.reason) throw error
-    }
+    for await (const value of reader)
+      await writer.echoRecord(value, ' ')
   }
 }

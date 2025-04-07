@@ -5,22 +5,23 @@ import { getOwn } from '@kingjs/get-own'
 
 export class CliRuntimeContainer {
   #services
-  #signal
+  #threadPool
 
-  constructor(signal) {
+  constructor(threadPool) {
     this.#services = new Map()
-    this.#signal = signal
+    this.#threadPool = threadPool
   }
 
   #getServiceSync(serviceClass, options) {
     const services = this.#services
     if (!services.has(serviceClass)) {
       if (!(serviceClass.prototype instanceof CliService))
-        throw new Error(`Class ${serviceClass.name} must extend ${CliService.name}.`)
+        throw new Error([`Class ${providerClass.name}`
+          `must extend ${CliService.name}.`].join(' '))
       
       const service = new serviceClass(options)
       if (service instanceof CliServiceThread)
-        service.start(this.#signal)
+        this.#threadPool.start(service)
 
       services.set(serviceClass, service)
     }
@@ -31,18 +32,19 @@ export class CliRuntimeContainer {
     const services = this.#services
     if (!services.has(providerClass)) {
       if (!(providerClass.prototype instanceof CliServiceProvider))
-        throw new Error(`Class ${providerClass.name} must extedn ${CliServiceProvider.name}.`)
+        throw new Error([`Class ${providerClass.name}`
+          `must extend ${CliServiceProvider.name}.`].join(' '))
   
       const activator = new CliRuntimeActivator(providerClass)
-      const serviceAsync = activator.activate(options)
-        .then(async serviceProvider => {
-          const service = await serviceProvider.activate()
-          if (!service)
-            throw new Exception(`Service provider ${providerClass.name} failed to provide a service.`)
-          return service
-        })
       
-      services.set(providerClass, serviceAsync)
+      services.set(providerClass, activator.activate(options)
+        .then(async provider => {
+          const service = await provider.activate()
+          if (!service) throw new Exception([
+            `Service provider ${providerClass.name}`, 
+            `failed to provide a service.`].join(' '))
+          return service
+        }))
     }
     return services.get(providerClass)
   }

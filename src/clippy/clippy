@@ -20,6 +20,8 @@ let argv = undefined
 //   arg.match(/^-[a-zA-Z]\S+/) ? [arg.slice(0, 2), arg.slice(2)] : [arg]
 // )
 
+// setTimeout(() => { process.kill(process.pid, 'SIGINT') }, 2000)
+
 CliRuntime.activate(Clippy)
   .then(async runtime => runtime.info.toPojo()
     .then(async pojo => {

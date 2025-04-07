@@ -70,9 +70,7 @@ export class CliYargsParameter extends CliYargs {
   get choices() { return this.#pojo?.choices }
   get coerce() { return this.#pojo?.coerce }
   get conflicts() { return this.#pojo?.conflicts }
-  get default() { return this.#pojo?.default 
-    ?? ((this.array || this.variadic) ? [] : undefined)
-  }
+  get default() { return this.#pojo?.default }
   get defaultDescription() { return this.#pojo?.defaultDescription }
   get implies() { return this.#pojo?.implies }
   get normalize() { return this.#pojo?.normalize }
@@ -252,11 +250,9 @@ export class CliYargsCommand extends CliYargs {
     return yargs
   }
 
-  async yargs(argv = hideBin(process.argv)) {
-
-    const yargs$ = yargs(argv)
+  async yargs$(argv) {
     return await this.apply$(
-      yargs$
+      yargs(argv)
         .version(false)
         .alias('help', 'h')
         .demandCommand(1, 'You must specify a command.')
@@ -270,7 +266,13 @@ export class CliYargsCommand extends CliYargs {
             process.exit(0)
           }
         })
-    ).then(yargs => this.#group(yargs, argv))
+    )
+  }
+
+  async yargs(argv = hideBin(process.argv)) {
+    const yargs$ = yargs(argv)
+    return await this.yargs$(argv)
+      .then(yargs => this.#group(yargs, argv))
   }
 
   *commands() { yield* this.#commands.value }
