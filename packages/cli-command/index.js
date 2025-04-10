@@ -16,7 +16,7 @@ export class CliCommand extends Cli {
 
   constructor({ 
     help = false, 
-    version = '0.0', 
+    version = false, 
     verbose = false, 
     ...rest 
   } = { }) {

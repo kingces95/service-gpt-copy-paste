@@ -11,9 +11,9 @@ const HTTP_ECHO = 'https://httpbin.org/anything'
 export class CliHttp extends CliCommand {
   static description = 'Send a HTTP request'
   static parameters = {
-    url: 'The url to request',
-    headers: 'The number of lines to read as the HTTP header',
-    method: 'The HTTP method to use',
+    url: 'Url to request',
+    headers: 'HTTP headers',
+    method: 'HTTP method to use',
   }
   static choices = {
     method: [ 'GET', 'PUT', 'POST', 'DELETE', 'PATCH', 'HEAD' ]

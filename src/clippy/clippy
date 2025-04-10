@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import { Clippy } from './index.js'
-import { CliLoader } from '@kingjs/cli-loader'
-import { CliYargsCommand } from '@kingjs/cli-yargs'
+import { CliYargsLoader } from '@kingjs/cli-yargs'
 
 let argv = undefined
 // argv = 'spy info -h'.split(' ')
@@ -11,24 +10,6 @@ let argv = undefined
 // argv = 'spy poll -- --get-yargs-completions'.split(' ')
 // argv = 'http get https://jsonplaceholder.typicode.com/todos/1'.split(' ')
 // argv = 'spy info http get'.split(' ')
-// argv = 'http'.split(' ')
+// argv = 'http -Hfoo:bar'.split(' ')
 
-// allow spaceless short options; e.g. '-k2' => '-k 2'
-// TODO: allow combining short predicatates; e.g. '-abc' => '-a -b -c'
-// TODO: will require reflection to get all short options
-// argv = argv.slice(2).flatMap(arg =>
-//   arg.match(/^-[a-zA-Z]\S+/) ? [arg.slice(0, 2), arg.slice(2)] : [arg]
-// )
-
-// setTimeout(() => { process.kill(process.pid, 'SIGINT') }, 2000)
-
-CliLoader.activate(Clippy)
-  .then(async loader => loader.info.toPojo()
-    .then(async pojo => {
-      const cliYargs = CliYargsCommand.fromInfoPojo(pojo)
-      const yargs = await cliYargs.yargs(argv)
-      const args = await yargs.parse()
-      const runtime = await loader.load(args._)
-      await runtime.execute(args)
-    })
-  )
+CliYargsLoader.execute(Clippy, argv)

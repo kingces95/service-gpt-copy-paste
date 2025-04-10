@@ -4,6 +4,7 @@ import { Lazy } from '@kingjs/lazy'
 import { dumpPojo } from '@kingjs/pojo-dump'
 import { toPojo } from '@kingjs/pojo'
 import { hideBin } from 'yargs/helpers'
+import { CliLoader } from '@kingjs/cli-loader'
 
 async function __import() {
   const { cliYargsToPojo } = await import('@kingjs/cli-yargs-to-pojo')
@@ -221,8 +222,6 @@ export class CliYargsCommand extends CliYargs {
   }
 
   async apply$(yargs, groups) {
-    yargs.strict()
-
     if (this.demandCommand)
       yargs.demandCommand(1, 'You must specify a command.')
 
@@ -269,7 +268,7 @@ export class CliYargsCommand extends CliYargs {
     )
   }
 
-  async yargs(argv = hideBin(process.argv)) {
+  async load(argv = hideBin(process.argv)) {
     return await this.yargs$(argv)
       .then(yargs => this.#group(yargs, argv))
   }
@@ -287,5 +286,32 @@ export class CliYargsCommand extends CliYargs {
     // options sorted by name
     yield* this.#parameters.value
       .filter(o => o instanceof CliYargsOption)
+  }
+}
+
+export class CliYargsLoader {
+  static async execute(class$, argv = hideBin(process.argv)) {
+    const loader = await CliLoader.activate(class$)
+    const yargsCommand = CliYargsCommand.fromInfoPojo(await loader.info.toPojo())
+    const yargs = await yargsCommand.load(argv)
+    const argvEx = await CliYargsLoader.#expandArgs(loader, yargs, argv)
+    const yargsEx = await yargsCommand.load(argvEx)
+    const args = await yargsEx.strict(true).parse()
+    const runtime = await loader.load(args._)
+    await runtime.execute(args)
+  }
+
+  static async #expandArgs(loader, yargs, argv) {
+    const args = await yargs.parse()
+    const runtime = await loader.load(args._)
+    const parameters = [...runtime.parameters()]
+      .filter(o => !o.isBoolean)
+      .flatMap(o => [...o.aliases()])
+      .join('')
+
+    const shortOptPattern = new RegExp(`^-[${parameters}][^\s]*`)
+    return argv.flatMap(arg =>
+      shortOptPattern.test(arg) ? [arg.slice(0, 2), arg.slice(2)] : [arg]
+    )
   }
 }
