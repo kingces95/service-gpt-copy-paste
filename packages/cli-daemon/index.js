@@ -1,12 +1,10 @@
 import { CliService } from '@kingjs/cli-service'
 import { CliCommand } from '@kingjs/cli-command'
-import { CliConsoleMon } from '@kingjs/cli-console'
 import { AbortError } from '@kingjs/abort-error'
 
 export class CliDaemonState extends CliService { 
-  static services = {
-    console: CliConsoleMon,
-  }
+  static consumes = [ 'beforeStart', 'afterstart' ]
+  static produces = [ 'is' ]
   static { this.initialize(import.meta) }
 
   constructor(options) { 
@@ -14,33 +12,24 @@ export class CliDaemonState extends CliService {
       return super()
     super(options)
 
-    const { console } = this.getServices(CliDaemonState, options)
-
-    const { runtime } = this
-    runtime.once('beforeStart', () => console.is('starting'))
-    runtime.once('afterStart', () => console.is('stopping'))
+    this.once('beforeStart', () => this.emit('is', 'starting'))
+    this.once('afterStart', () => this.emit('is', 'stopping'))
   }
 }
 
 export class CliDaemon extends CliCommand {
-  static services = { 
-  }
+  static produces = [ 'beforeStart', 'afterStart' ]
   static { this.initialize(import.meta) }
 
   constructor(options) {
     if (CliDaemon.initializing(new.target)) 
       return super()
-
     super(options)
-
-    this.getServices(CliDaemon, options)
   }
 
   async execute(signal) {
-    const { runtime } = this
-
     try {
-      runtime.emit('beforeStart')
+      this.emit('beforeStart')
       const result = await this.start(signal)
       return result
 
@@ -49,7 +38,7 @@ export class CliDaemon extends CliCommand {
       throw error
 
     } finally {
-      runtime.emit('afterStart')
+      this.emit('afterStart')
     }
   }
 

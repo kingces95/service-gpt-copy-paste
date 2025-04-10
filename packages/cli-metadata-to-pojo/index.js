@@ -44,6 +44,8 @@ CliClassMetadata[symbol] = {
   baren: 'boolean',
   defaultCommand: 'boolean',
   parameters: 'infos',
+  produces: 'list',
+  consumes: 'list',
   commands: 'entries',
   services: 'refs',
 }

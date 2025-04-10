@@ -20,7 +20,7 @@ export class CliRx extends CliDaemon {
       return super()
     super(options)
 
-    const { stdout } = this.getServices(CliRx, options)
+    const { stdout } = this.getServices(CliRx)
     this.#stdout = stdout
     this.#stderr = stdout
 

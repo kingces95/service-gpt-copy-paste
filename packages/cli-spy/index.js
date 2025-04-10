@@ -117,7 +117,7 @@ export class CliSpy extends CliCommand {
       return super()
     super(options)
 
-    const { console, outputService } = this.getServices(CliSpy, options)
+    const { console, outputService } = this.getServices(CliSpy)
     this.#console = console
     this.#outputService = outputService
     this.#path = path
@@ -126,9 +126,9 @@ export class CliSpy extends CliCommand {
   get path() { return this.#path }
 
   async getCommand() { 
-    const { runtime } = this.info
-    const { class: class$ } = await runtime.getCommandInfo(this.#path)
-    return class$
+    const { loader } = this.info
+    const runtime = await loader.load(this.#path)
+    return runtime.class
   }
   async getMetadata() { 
     const command = await this.getCommand()

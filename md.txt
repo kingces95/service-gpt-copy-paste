@@ -1,0 +1,432 @@
+[
+  {
+    name: 'CliCommandClippy',
+    description: 'My funky cli',
+    scope: 'kingjs',
+    baseClass: 'CliCommand',
+    baren: true,
+    commands: {
+      poll: 'CliPollClipboard',
+      http: 'CliHttp',
+      orb: 'CliOrb',
+      eval: 'CliEval',
+      spy: 'CliSpy',
+      name: 'CliNodeName',
+      err: 'CliSimulator'
+    }
+  },
+  {
+    name: 'CliPollClipboard',
+    description: 'Poll clipboard content',
+    baseClass: 'CliRxPoller',
+    parameters: {
+      prefix: {
+        description: 'Prefix to match in clipboard content',
+        default: '!#/clipboard/',
+        type: 'string'
+      }
+    },
+    services: [
+      'CliRuntimeState',
+      'CliDaemonState',
+      'CliRxPollerState',
+      'CliPulse'
+    ]
+  },
+  {
+    name: 'CliHttp',
+    description: 'Send a HTTP request',
+    baseClass: 'CliCommand',
+    defaultCommand: true,
+    parameters: {
+      url: {
+        description: 'The url to request',
+        type: 'string',
+        optional: true,
+        position: 0
+      },
+      headers: {
+        description: 'The number of lines to read as the HTTP header',
+        type: 'string',
+        array: true,
+        aliases: [ 'H' ]
+      },
+      method: {
+        description: 'The HTTP method to use',
+        default: 'GET',
+        type: 'string',
+        local: true,
+        aliases: [ 'm' ],
+        choices: [ 'GET', 'PUT', 'POST', 'DELETE', 'PATCH', 'HEAD' ]
+      }
+    },
+    commands: {
+      get: 'CliHttpGet',
+      post: 'CliHttpPost',
+      put: 'CliHttpPut',
+      delete: 'CliHttpDelete',
+      patch: 'CliHttpPatch',
+      head: 'CliHttpHead'
+    },
+    services: [ 'CliStdOut' ]
+  },
+  {
+    name: 'CliOrb',
+    description: 'Tool for rendering status to tty',
+    baseClass: 'CliCommand',
+    parameters: {
+      cpuHot: {
+        description: 'Threshold for high CPU usage',
+        default: 80,
+        type: 'number'
+      },
+      memHot: {
+        description: 'Threshold for high memory usage',
+        default: 90,
+        type: 'number'
+      }
+    },
+    services: [ 'CliConsoleIn' ]
+  },
+  {
+    name: 'CliEval',
+    description: 'Evaluate a shell command',
+    baseClass: 'CliCommand',
+    parameters: {
+      exe: { description: 'The command to execute', position: 0 },
+      args: {
+        description: 'Arguments for the command',
+        type: 'string',
+        optional: true,
+        variadic: true,
+        position: 1
+      },
+      shell: {
+        description: 'The shell to use',
+        required: true,
+        choices: [ 'bash', 'cmd.exe' ]
+      }
+    },
+    commands: { bash: 'CliEvalBash', cmd: 'CliEvalCmd' }
+  },
+  {
+    name: 'CliSpy',
+    description: 'Reflect on command metadata',
+    baseClass: 'CliCommand',
+    parameters: {
+      path: {
+        description: 'Path of command',
+        type: 'string',
+        optional: true,
+        variadic: true,
+        position: 0
+      }
+    },
+    commands: {
+      ls: 'CliSpyLs',
+      find: 'CliSpyFind',
+      raw: 'CliSpyRaw',
+      md: 'CliSpyMd',
+      cachedMd: 'CliSpyCachedMd',
+      json: 'CliSpyJson',
+      info: 'CliSpyInfo',
+      yargs: 'CliSpyYargs',
+      params: 'CliSpyParams',
+      mdParams: 'CliSpyMdParams'
+    },
+    services: [ 'CliOutputService', 'CliConsoleOut' ]
+  },
+  {
+    name: 'CliNodeName',
+    description: 'Reflect on NodeName',
+    baseClass: 'CliCommand',
+    parameters: { name: { description: 'Name to resolve', position: 0 } }
+  },
+  {
+    name: 'CliSimulator',
+    description: 'Simulate error conditions',
+    baseClass: 'CliCommand',
+    parameters: {
+      where: {
+        description: 'Where to throw error',
+        default: 'ctor',
+        type: 'string',
+        choices: [ 'ctor', 'loop' ]
+      }
+    }
+  },
+  {
+    name: 'CliSpyLs',
+    description: 'List commands',
+    baseClass: 'CliSpy',
+    baren: true
+  },
+  {
+    name: 'CliSpyFind',
+    description: 'Find commands',
+    baseClass: 'CliSpy',
+    baren: true
+  },
+  {
+    name: 'CliSpyRaw',
+    description: 'Dump Cli.ownMetadata',
+    baseClass: 'CliSpy',
+    baren: true
+  },
+  {
+    name: 'CliSpyMd',
+    description: 'Dump CliClassMetadata',
+    baseClass: 'CliSpy',
+    baren: true
+  },
+  {
+    name: 'CliSpyCachedMd',
+    description: 'Dump cached CliClassMetadata',
+    baseClass: 'CliSpy',
+    baren: true
+  },
+  {
+    name: 'CliSpyJson',
+    description: 'Dump CliClassMetadata.toPojo()',
+    baseClass: 'CliSpy',
+    baren: true
+  },
+  {
+    name: 'CliSpyInfo',
+    description: 'Dump CliCommandInfo',
+    baseClass: 'CliSpy',
+    baren: true
+  },
+  {
+    name: 'CliSpyYargs',
+    description: 'Dump CliYargsCommand',
+    baseClass: 'CliSpy',
+    baren: true
+  },
+  {
+    name: 'CliSpyParams',
+    description: 'Dump CliCommandInfo',
+    baseClass: 'CliSpy',
+    baren: true
+  },
+  {
+    name: 'CliSpyMdParams',
+    description: 'Dump CliCommandInfo',
+    baseClass: 'CliSpy',
+    baren: true
+  },
+  {
+    name: 'CliEvalBash',
+    description: 'Evaluate a bash shell command',
+    baseClass: 'CliEval',
+    baren: true
+  },
+  {
+    name: 'CliEvalCmd',
+    description: 'Evaluate a cmd shell command',
+    baseClass: 'CliEval',
+    baren: true
+  },
+  {
+    name: 'CliHttpGet',
+    description: 'Perform an http GET request',
+    baseClass: 'CliHttp',
+    baren: true
+  },
+  {
+    name: 'CliHttpPost',
+    description: 'Perform an http POST request',
+    baseClass: 'CliHttp',
+    baren: true
+  },
+  {
+    name: 'CliHttpPut',
+    description: 'Perform an http PUT request',
+    baseClass: 'CliHttp',
+    baren: true
+  },
+  {
+    name: 'CliHttpDelete',
+    description: 'Perform an http DELETE request',
+    baseClass: 'CliHttp',
+    baren: true
+  },
+  {
+    name: 'CliHttpPatch',
+    description: 'Perform an http PATCH request',
+    baseClass: 'CliHttp',
+    baren: true
+  },
+  {
+    name: 'CliHttpHead',
+    description: 'Perform an http HEAD request',
+    baseClass: 'CliHttp',
+    baren: true
+  },
+  {
+    name: 'CliRxPoller',
+    group: 'Polling',
+    baseClass: 'CliRx',
+    parameters: {
+      pollMs: { description: 'Polling interval', default: 200, type: 'number' },
+      errorRate: {
+        description: 'Simulated polling error rate',
+        default: 0.01,
+        type: 'number'
+      },
+      errorMs: { description: 'Retry delay', default: 1000, type: 'number' },
+      writeError: { description: 'Log service errors to stderr', type: 'boolean' }
+    },
+    produces: [ 'polling', 'retrying' ]
+  },
+  { name: 'CliRx', baseClass: 'CliDaemon', services: [ 'CliStdOut' ] },
+  {
+    name: 'CliDaemon',
+    baseClass: 'CliCommand',
+    baren: true,
+    produces: [ 'beforeStart', 'afterStart' ]
+  },
+  {
+    name: 'CliCommand',
+    group: 'Global',
+    baseClass: 'Cli',
+    parameters: {
+      help: { description: 'Show help', type: 'boolean', aliases: [ 'h' ] },
+      version: {
+        description: 'Show version',
+        default: '0.0',
+        type: 'string',
+        aliases: [ 'v' ]
+      },
+      verbose: { description: 'Provide verbose output', type: 'boolean' }
+    }
+  },
+  { name: 'Cli', baren: true },
+  {
+    name: 'CliRuntimeState',
+    baseClass: 'CliService',
+    consumes: [ 'pulse', 'beforeAbort', 'beforeExit' ],
+    services: [ 'CliConsoleMon' ]
+  },
+  {
+    name: 'CliDaemonState',
+    baseClass: 'CliService',
+    consumes: [ 'beforeStart', 'afterstart' ],
+    services: [ 'CliConsoleMon' ]
+  },
+  {
+    name: 'CliRxPollerState',
+    baseClass: 'CliService',
+    produces: [ 'polling', 'retrying' ],
+    services: [ 'CliConsoleMon' ]
+  },
+  {
+    name: 'CliPulse',
+    group: 'Pulse',
+    baseClass: 'CliServiceMonitor',
+    parameters: {
+      reportMs: { description: 'Reporting rate', default: 1000, type: 'number' },
+      intervalMs: {
+        description: 'Cancellation polling rate',
+        default: 100,
+        type: 'number'
+      }
+    },
+    produces: [ 'pulse' ],
+    services: [ 'CliStdIn', 'CliStdOut' ]
+  },
+  {
+    name: 'CliStdOut',
+    baseClass: 'CliStdStream',
+    parameters: {
+      stdout: {
+        description: 'Output stream',
+        default: '/dev/stdout',
+        type: 'string'
+      }
+    }
+  },
+  {
+    name: 'CliConsoleIn',
+    baseClass: 'CliService',
+    services: [ 'CliStdIn', 'CliParser' ]
+  },
+  {
+    name: 'CliOutputService',
+    description: 'Output format',
+    baseClass: 'CliServiceProvider',
+    parameters: {
+      output: {
+        description: 'Output format',
+        default: 'util',
+        type: 'string',
+        choices: [ 'none', 'util', 'json', 'yaml', 'tsv', 'table' ]
+      },
+      query: { description: 'JMESPath query string', type: 'string' },
+      color: {
+        description: 'Colorize output; Always false if not a TTY',
+        default: true,
+        type: 'boolean'
+      }
+    },
+    services: [ 'CliStdOut' ]
+  },
+  {
+    name: 'CliConsoleOut',
+    baseClass: 'CliService',
+    services: [ 'CliStdOut' ]
+  },
+  { name: 'CliService', baseClass: 'Cli', baren: true },
+  {
+    name: 'CliConsoleMon',
+    baseClass: 'CliServiceThread',
+    services: [ 'CliStdMon' ]
+  },
+  {
+    name: 'CliStdMon',
+    baseClass: 'CliStdStream',
+    parameters: {
+      stdmon: {
+        description: 'Status stream',
+        default: '/dev/stdout',
+        type: 'string'
+      }
+    }
+  },
+  {
+    name: 'CliServiceMonitor',
+    baseClass: 'CliServiceThread',
+    baren: true
+  },
+  {
+    name: 'CliStdIn',
+    baseClass: 'CliStdStream',
+    parameters: {
+      stdin: {
+        description: 'Input stream',
+        default: '/dev/stdin',
+        type: 'string'
+      }
+    }
+  },
+  {
+    name: 'CliStdStream',
+    group: 'I/O',
+    baseClass: 'CliServiceProvider',
+    baren: true
+  },
+  {
+    name: 'CliParser',
+    group: 'I/O',
+    baseClass: 'CliService',
+    parameters: {
+      ifs: {
+        description: 'Input field separator',
+        default: ' ',
+        type: 'string'
+      }
+    }
+  },
+  { name: 'CliServiceProvider', baseClass: 'Cli', baren: true },
+  { name: 'CliServiceThread', baseClass: 'CliService', baren: true }
+]

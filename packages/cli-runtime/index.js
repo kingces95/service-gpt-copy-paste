@@ -1,120 +1,49 @@
-import { CliCommand } from '@kingjs/cli-command'
-import { CliClassMetadata } from '@kingjs/cli-metadata'
-import { CliCommandInfo } from '@kingjs/cli-info'
-import { IdentifierStyle } from '@kingjs/identifier-style'
+import { CliRuntimeActivator } from '@kingjs/cli-runtime-activator'
+import { CliRuntimeContainer } from '@kingjs/cli-runtime-container'
 import { CliService } from '@kingjs/cli-service'
-import { CliConsoleMon } from '@kingjs/cli-console'
-import { 
-  CliRuntimeContainer, 
-  CliRuntimeActivator 
-} from '@kingjs/cli-runtime-container'
+import { DirectedAcyclicGraph } from '@kingjs/directed-acyclic-graph'
+import { CliRuntimeEventHub } from '@kingjs/cli-runtime-event-hub'
 import { EventEmitter } from 'events'
-
-const EXIT_SUCCESS = 0
-const EXIT_FAILURE = 1
-const EXIT_ERRORED = 2
-const EXIT_ABORT = 128
-const EXIT_SIGINT = EXIT_ABORT + 2
+import { 
+  EXIT_SUCCESS, 
+  EXIT_FAILURE, 
+  EXIT_ERRORED,
+  EXIT_SIGINT 
+} from '@kingjs/cli-runtime-exit-code'
 
 export class CliRuntimeState extends CliService { 
-  static services = {
-    consoleMon: CliConsoleMon,
-  }
+  static consumes = [ 'pulse', 'beforeAbort', 'beforeExit', 'error' ]
+  static produces = [ 'is', 'update' ]
   static { this.initialize(import.meta) }
+
+  #exitError
+  #exitCode
 
   constructor(options) { 
     if (CliRuntimeState.initializing(new.target)) 
       return super()
     super(options)
 
-    const { consoleMon } = this.getServices(CliRuntimeState, options)
-
-    const { runtime } = this
-    runtime.once('beforeAbort', () => consoleMon.is('aborting'))
-    runtime.once('beforeExit', (exitCode, message) => {
-      consoleMon.update('exiting', exitCode)
-      consoleMon.is(
-        runtime.succeeded ? 'succeeded' :
-        runtime.aborted ? 'aborted' :
-        runtime.errored ? 'errored' :
-        'failed', message
+    this.once('error', (exitCode, error) => {
+      this.#exitCode = exitCode
+      this.#exitError = error
+      this.emit('is', 'failed', this.toString())
+    })
+    this.once('beforeAbort', () => this.emit('is', 'aborting'))
+    this.once('beforeExit', (exitCode) => {
+      this.#exitCode = exitCode
+      this.emit('update', 'exiting', exitCode)
+      this.emit('is',
+        this.succeeded ? 'succeeded' :
+        this.aborted ? 'aborted' :
+        this.errored ? 'errored' :
+        'failed', this.toString()
       )
     })
 
-    runtime.on('pulse', (...record) => { consoleMon.update('data', ...record) })
-  }
-}
-
-export class CliRuntime extends EventEmitter {
-  static runtimeServices = [ CliConsoleMon ]
-  static async activate(classOrPojo, options = { }) {
-    const { metadata } = options
-    const isClass = typeof classOrPojo == 'function'
-    const class$ = isClass ? classOrPojo : CliCommand.extend(classOrPojo)
-    const cachedMetadata = CliClassMetadata.fromMetadataPojo(
-      metadata ?? await (
-        await CliClassMetadata.fromClass(class$)
-      ).toPojo()
-    )
-    const info = CliCommandInfo.fromMetadata(cachedMetadata)
-    return new CliRuntime(class$, info)
+    this.on('pulse', (...record) => { this.emit('update', 'data', ...record) })
   }
 
-  #class // CliCommand
-  #info // CliCommandInfo
-  #exitError
-  #exitCode
-  #threadPool
-  #container
-
-  constructor(class$, info) {
-    super()
-    this.#class = class$
-    this.#info = info
-    this.#container = new CliRuntimeContainer()
-  }
- 
-  #onError(error) {
-    this.#exitCode = EXIT_ERRORED
-    this.#exitError = error
-    console.error(error)
-  }
-
-  async #execute(userPath, userArgs) {
-
-    // unstructured => structured error handling
-    return new Promise(async (resolve) => {
-      const controller = new AbortController()
-
-      // procedural => declarative initialization
-      const commandInfo = await this.getCommandInfo(userPath)
-
-      let sigint = undefined
-      const result = await Promise.race([ 
-        // functional => object oriented execution
-        commandInfo.activate(userArgs)
-          .then(command => command.execute(controller.signal)), 
-
-        // signaling => event oriented abortion
-        new Promise((resolve) => process.on('SIGINT', 
-          sigint = async () => {
-            this.emit('beforeAbort')
-            controller.abort()
-            resolve(EXIT_SIGINT)
-          })
-        )
-      ]).finally(() => process.off('SIGINT', sigint))
-
-      resolve(result === undefined ? EXIT_SUCCESS
-        : result === true ? EXIT_SUCCESS
-        : result === false ? EXIT_FAILURE
-        : typeof result == 'number' ? result
-        : EXIT_FAILURE)
-    })
-  }
-
-  get class() { return this.#class }
-  get info() { return this.#info }
   get exitError() { return this.#exitError }
   get exitErrorMessage() { return !this.exitError ? null :
     this.#exitError?.message ?? 'Unknown error' 
@@ -130,33 +59,6 @@ export class CliRuntime extends EventEmitter {
       || process.exitCode == EXIT_ERRORED
       || process.exitCode == EXIT_ERRORED
   }
-  
-  getServices(class$, options = { }) {
-    return this.#container.getServices(class$, options)
-  }
-
-  async getCommandInfo(path) {
-    return await CliRuntimeCommandInfo.activate(this, path)
-  }
-
-  async execute(userPath, userArgs) {
-
-    // trap ungraceful shutdown
-    const onError = this.#onError.bind(this)
-    process.on('uncaughtException', onError)
-    process.on('unhandledRejection', onError)
-
-    this.#exitCode = await this.#execute(userPath, userArgs)
-    this.emit('beforeExit', this.#exitCode, this.toString())
-    await this.#container.dispose()
-
-    // stop node runtime
-    process.once('beforeExit', async () => { 
-      process.off('uncaughtException', onError)
-      process.off('unhandledRejection', onError)
-      process.exitCode = this.#exitCode 
-    })
-  }
 
   toString() {
     if (this.succeeded) return 'Command succeeded'
@@ -168,88 +70,40 @@ export class CliRuntime extends EventEmitter {
   }
 }
 
-export class CliPathStyle {
-  static fromUser(path = []) {
-    return this.fromRuntime(
-      path.map(o => IdentifierStyle.fromKebab(o).toCamel())
-    )
-  }
-  static fromRuntime(path = []) {
-    return new CliPathStyle(path)
-  }
-
-  #names
-
-  constructor(names) {
-    this.#names = names
-  }
-
-  toUser() {
-    return this.#names.map(o => IdentifierStyle.fromCamel(o).toKebab())
-  }
-  toRuntime() {
-    return this.#names
-  }
-
-  toString() {
-    return this.toUser().join(' ')
-  }
-}
-
-export class CliRuntimeCommandInfo {
-  static async activate(runtime, userPath) {
-    const path = CliPathStyle.fromUser(userPath)
-    const runtimePath = path.toRuntime()
-    const class$ = await runtime.class.getCommand(...runtimePath)
-    const info = runtime.info.getCommand(...runtimePath)
-    const parameters = await Array.fromAsync(this.#runtimeParameters(info))
-    return new this(runtime, path, class$, info, parameters)
-  }
-
-  static async *#runtimeParameters(info) {
-    // walk command hierarchy yielding parameters; allow derived classes to 
-    // override base class parameters; skip local inherited parameters
-    const slots = new Map()
-    for await (const parameter of info.parameters()) {
-      yield parameter
-      slots.set(parameter.name, parameter)
-    }
-
-    for (const current of info.parent?.hierarchy() ?? []) {
-      for await (const parameter of current.parameters() ) {
-        if (slots.has(parameter.name)) continue
-        if (parameter.isLocal) continue
-        yield parameter
-        slots.set(parameter.name, parameter)
-      }
-    }
-  }
-
-  #runtime
+export class CliRuntime extends EventEmitter {
+  #loader
   #path
   #class
   #info
   #parameters
+  #eventHub
+  #container
 
-  constructor(runtime, path, class$, info, parameters) {
-    this.#runtime = runtime
+  constructor(loader, path, class$, info, parameters) {
+    super()
+    this.#loader = loader
     this.#path = path
     this.#class = class$
     this.#info = info
-    this.#parameters = parameters.sort((a, b) => a.position - b.position)
+    this.#eventHub = new CliRuntimeEventHub(this, { 
+      produces: [ 'error', 'beforeAbort', 'beforeExit' ],
+      consumes: [ 'error' ]
+    })
+    this.#parameters = (parameters).sort((a, b) => a.position - b.position)
+    this.#container = new CliRuntimeContainer(this.#eventHub)
+
+    this.on('error', 
+      (error) => console.error(error)
+    )
   }
 
-  get runtime() { return this.#runtime }
-
+  get loader() { return this.#loader }
   get path() { return this.#path }
-  get runtimePath() { return this.#path.toRuntime() }
-  get userPath() { return this.#path.toUser() }
-
   get class() { return this.#class }
   get info() { return this.#info }
   get parameters() { return this.#parameters }
 
-  #getArgs(userArgs) {
+  #buildFrame(userArgs) {
     // Assume argv is an object generated by a cli framework like yargs;
     // Assume argv names match the style entered on the command line;
     // Assume argv properties are in kabab case and positional args are named.
@@ -257,28 +111,123 @@ export class CliRuntimeCommandInfo {
     // Return an array of positional arguments with an additional last element
     // which is an object containing the option arguments with names converted
     // to camel case.
-    const options = { _info: this }
-    const result = []
+    const runtimeArgs = []
+
+    const options = { }
+    options._info = new CliRuntimeContext(this, options)
     
-    // cli => javascript stack framing (mixed => [...positional, {...options}])
+    // goto => stackframes (mixed => [...positional, {...options}])
     for (const parameter of this.#parameters) {
       const { name, kababName, isPositional } = parameter
       const userName = kababName ?? name
       if (isPositional) {
-        result.push(userArgs[userName])
+        runtimeArgs.push(userArgs[userName])
       } else if (Object.hasOwn(userArgs, userName)) {
         options[name] = userArgs[userName]
       }
     }
-    result.push(options)
+    runtimeArgs.push(options)
 
-    return result
+    return runtimeArgs
   }
 
-  async activate(userArgs) {
+  activateService(service, options) {
+    return this.#container.activate(service, options)
+  }
+
+  async #activate(userArgs) {
     // cli => javascript casing (kabab => camel)
-    const args = this.#getArgs(userArgs)
+    const runtimeArgs = this.#buildFrame(userArgs)
     const activator = new CliRuntimeActivator(this.class)
-    return await activator.activate(...args)
+    return await activator.activate(...runtimeArgs)
+  }
+
+  async #dispose() {
+    const services = new DirectedAcyclicGraph(this.#class, 
+      function *services(class$) {
+        for (const current of class$.hierarchy())
+          for (const name of current.ownServiceNames())
+            yield current.getOwnService(name)
+      }
+    )
+
+    for (const class$ of services.transpose())
+      await this.#container.dispose(class$)
+  }
+
+  async execute(userArgs) {
+
+    // trap unhandledRejection
+    const onError = (error) => this.emit('error', error)
+    process.on('unhandledRejection', onError)
+    process.once('beforeExit', () => { 
+      process.off('unhandledRejection', onError)
+    })
+
+    try
+    {
+      // unstructured => structured error handling
+      const controller = new AbortController()
+
+      let sigint = undefined
+      const result = await Promise.race([ 
+        // functional => object oriented execution
+        this.#activate(userArgs).then(async instance => {
+          try {
+            this.#eventHub.register(instance)
+            const result = await instance.execute(controller.signal)
+            return result
+          } catch (error) {
+            if (error instanceof AbortError) return
+            this.on('error', error)
+          } finally {
+            this.#eventHub.quiesce(instance)
+          }
+        }), 
+
+        // signaling => event oriented abortion
+        new Promise((resolve) => process.on('SIGINT', 
+          sigint = async () => {
+            this.emit('beforeAbort')
+            controller.abort()
+            resolve(EXIT_SIGINT)
+          })
+        )
+      ]).finally(() => process.off('SIGINT', sigint))
+
+      const exitCode = (result === undefined ? EXIT_SUCCESS
+        : result === true ? EXIT_SUCCESS
+        : result === false ? EXIT_FAILURE
+        : typeof result == 'number' ? result
+        : EXIT_FAILURE)
+
+      this.emit('beforeExit', process.exitCode = exitCode)
+      this.#dispose()
+        
+    } catch (error) {
+      this.on('error', process.exitCode = EXIT_ERRORED, error)
+    }
+  }
+}
+
+export class CliRuntimeContext {
+  #runtime
+  #options
+
+  constructor(runtime, options) {
+    this.#runtime = runtime
+    this.#options = options
+  }
+
+  get info() { return this.#runtime.info }
+  get loader() { return this.#runtime.loader }
+
+  getServices(class$) {
+    const result = { }
+    for (const name of class$.ownServiceNames()) {
+      const service = class$.getOwnService(name)
+      result[name] = this.#runtime.activateService(service, this.#options) 
+    }
+    return result
   }
 }

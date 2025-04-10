@@ -1,127 +1,93 @@
-import { 
-  CliService, CliServiceProvider, CliServiceThread 
-} from '@kingjs/cli-service'
-import { getOwn } from '@kingjs/get-own'
-import { CliThreadPool } from '@kingjs/cli-thread-pool'
+import { CliService } from '@kingjs/cli-service'
+import { CliRuntimeActivator } from '@kingjs/cli-runtime-activator'
+import { CliServiceProvider, CliServiceThread } from '@kingjs/cli-service'
+import { ThreadPool } from '@kingjs/thread-pool'
+import { Container } from '@kingjs/container'
+import { EventEmitter } from 'events'
 
-export class CliRuntimeContainer {
-  #services
+export class CliRuntimeContainer extends EventEmitter {
+  static #activateFn(class$, options) {
+    const prototype = class$.prototype
+
+    if (prototype instanceof CliService)
+      return new class$(options)
+
+    if (prototype instanceof CliServiceProvider)
+      // returns a promise of a provider which is used to activate an instance
+      return new CliRuntimeActivator(class$).activate(options)
+
+    throw new Error([`Class ${class$.name} must extend`,
+      `${CliService.name} or ${CliServiceThread.name}.`
+    ].join(' '))
+  }
+
+  static #activatedFn(instanceOrProvider) {
+    return instanceOrProvider instanceof CliServiceProvider
+      ? instanceOrProvider.activate()
+      : instanceOrProvider
+  }
+
+  #container
   #threadPool
+  #eventHub
 
-  constructor() {
-    this.#services = new Map()
-    this.#threadPool = new CliThreadPool()
+  constructor(eventHub) {
+    super()
+    this.#eventHub = eventHub
+    this.#threadPool = new ThreadPool()
+    this.#container = new Container({
+      // if CliService, then activate instance
+      // if CliServiceProvider, then 
+      //  return promise of provider as function of discriminator option
+      activateFn: CliRuntimeContainer.#activateFn,
+
+      // instance: already activated
+      // provider: use provider to activate instance
+      activatedFn: CliRuntimeContainer.#activatedFn,
+
+      // - eventHub: if CliService, register instance producer/consumer events
+      // - threadPool: if CliServiceThread, start thread
+      activatedSyncFn: this.#activatedSyncFn.bind(this),
+
+      // walk transposed service DAG:
+      // - threadPool: if CliServiceThread, then stop thread
+      // - eventHub: if CliService, then quiesce producer/consumer events
+      //   - e.g., CliConsoleMon and CliPulse are equal in the DAG.
+      //    So CliConsoleMon could be disposed before CliPulse.
+      //    If that happens, then the eventHub will ensure that CliPulse
+      //    events are prevented from reaching a disposed CliConsoleMon.
+      // - container: if CliService, then call dispose on instance
+      disposeFn: this.#disposeFn.bind(this),
+    })
   }
 
-  #getServiceSync(serviceClass, options) {
-    const services = this.#services
-    if (!services.has(serviceClass)) {
-      if (!(serviceClass.prototype instanceof CliService))
-        throw new Error([`Class ${providerClass.name}`
-          `must extend ${CliService.name}.`].join(' '))
-      
-      const service = new serviceClass(options)
-      if (service instanceof CliServiceThread)
-        this.#threadPool.start(service)
+  #activatedSyncFn(instance) {
+    if (instance instanceof CliService)
+      this.#eventHub.register(instance)
 
-      services.set(serviceClass, service)
-    }
-    return services.get(serviceClass)
+    if (instance instanceof CliServiceThread)
+      this.#threadPool.start(instance)
+
+    return instance
   }
 
-  #getService(providerClass, options) {
-    const services = this.#services
-    if (!services.has(providerClass)) {
-      if (!(providerClass.prototype instanceof CliServiceProvider))
-        throw new Error([`Class ${providerClass.name}`
-          `must extend ${CliServiceProvider.name}.`].join(' '))
-  
-      const activator = new CliRuntimeActivator(providerClass)
-      
-      services.set(providerClass, activator.activate(options)
-        .then(async provider => {
-          const service = await provider.activate()
-          if (!service) throw new Exception([
-            `Service provider ${providerClass.name}`, 
-            `failed to provide a service.`].join(' '))
-          return service
-        }))
-    }
-    return services.get(providerClass)
-  }
+  async #disposeFn(instance) {
+    if (instance instanceof CliServiceThread)
+      await this.#threadPool.stop(instance)
 
-  async dispose() {
-    await this.#threadPool.stop()
-  }
-
-  getServices(class$, options = { }) {
-    const result = {}
-    for (const name of class$.ownServiceNames()) {
-      const serviceClass = class$.getOwnService(name)
-      const prototype = serviceClass.prototype
-      if (prototype instanceof CliService) {
-        result[name] = this.#getServiceSync(serviceClass, options)
-      } else if (prototype instanceof CliServiceProvider) {
-        result[name] = this.#getService(serviceClass, options)
-      } else {
-        throw new Error([
-          `Class ${name} must extend`,
-          `${CliService.name} or ${CliServiceProvider.name}.`
-        ].join(' '))
-      }
-    }
-    return result
-  }
-}
-
-export class CliRuntimeActivator {
-  #class
-  #name
-  #discriminations
-
-  constructor(class$) {
-    this.#class = class$
-    // If class$ command has an option with a choice constraint, then that option can
-    // be used as a discriminator to select an alternative command to activate.
-
-    // The single choice which is an object instead of an array is a discriminator. 
-    const choices = getOwn(class$, 'choices') ?? { 
-      // myOption: [ 'left', 'right' ],
-      // myDiscriminator: { foo: @kingjs/mycmd/foo, bar: @kingjs/mycmd/bar }
+    if (instance instanceof CliService) {
+      this.#eventHub.quiesce(instance)
+      instance.dispose()
     }
 
-    const ownDiscriminatingOption = Object.entries(choices)
-      .find(([_, value]) => !Array.isArray(value)) ?? []
-
-    const [name, discriminations] = ownDiscriminatingOption
-    this.#name = name
-    this.#discriminations = discriminations
+    this.#container.dispose(instance)
   }
 
-  get name() { return this.#name }
-  get class() { return this.#class }
-  get discriminations() { return this.#discriminations }
-
-  async #getClass(options) {
-    const { name, discriminations, class: class$ } = this
-    if (!name) return class$
-
-    const discriminator = options[name]
-    const importOrObject = discriminations[discriminator]
-    if (!importOrObject) 
-      throw new Error(`Discriminator ${name} is ${discriminator} which is not ${Object.keys(discriminations).join(', ')}.`)
-
-    // runtime class must be a derivation enclosing class
-    const runtimeClass = await class$.loadOrDeclareClass([name, importOrObject])
-    if (runtimeClass != class$ && !(runtimeClass.prototype instanceof class$))
-      throw new Error(`Class ${runtimeClass.name} must extend ${class$.name}`)
-    
-    return runtimeClass
+  activate(class$, options) {
+    return this.#container.activate(class$, options)
   }
 
-  async activate(...args) {
-    const options = args.at(-1)
-    const class$ = await this.#getClass(options)
-    return new class$(...args)
+  async dispose(class$) {     
+    await this.#container.dispose(class$)
   }
 }

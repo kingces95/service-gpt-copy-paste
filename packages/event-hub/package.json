@@ -1,7 +1,7 @@
 {
-  "name": "@kingjs/cli-thread-pool",
+  "name": "@kingjs/event-hub",
   "version": "1.0.0",
-  "description": "Cli thread pool.",
+  "description": "An event hub.",
   "main": "index.js",
   "type": "module",
   "exports": {

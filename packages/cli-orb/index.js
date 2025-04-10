@@ -35,7 +35,7 @@ export default class CliOrb extends CliCommand {
       return super()
     super(rest)
 
-    const { console } = this.getServices(CliOrb, rest)
+    const { console } = this.getServices(CliOrb)
     this.#console = console
 
     this.cpuHot = cpuHot

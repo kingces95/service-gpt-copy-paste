@@ -1,7 +1,7 @@
 {
-  "name": "@kingjs/cli-runtime",
+  "name": "@kingjs/cli-loader",
   "version": "1.0.0",
-  "description": "Cli runtime.",
+  "description": "Framework for loading and executing command line tools with spinner.",
   "main": "index.js",
   "type": "module",
   "exports": {

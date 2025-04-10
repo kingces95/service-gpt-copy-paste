@@ -11,6 +11,7 @@ export class CliPulse extends CliServiceMonitor {
     stdin: CliStdIn,
     stdout: CliStdOut,
   }
+  static produces = [ 'pulse' ]
   static { this.initialize(import.meta) }
 
   #stdin
@@ -21,7 +22,7 @@ export class CliPulse extends CliServiceMonitor {
       return super()
     super({ reportMs, intervalMs, ...rest })
 
-    const { stdin, stdout } = this.getServices(CliPulse, rest)
+    const { stdin, stdout } = this.getServices(CliPulse)
     this.#stdin = stdin
     this.#stdout = stdout
   }
@@ -46,7 +47,7 @@ export class CliPulse extends CliServiceMonitor {
     const stdout = await this.stdout
 
     // report
-    this.runtime.emit('pulse', 
+    this.emit('pulse', 
       stdin.count, stdout.count, 0, totalCPU.toFixed(1), memoryUsage)
 
     return { prevCPU: process.cpuUsage() }

@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 import { Clippy } from './index.js'
-import { CliRuntime } from '@kingjs/cli-runtime'
+import { CliLoader } from '@kingjs/cli-loader'
 import { CliYargsCommand } from '@kingjs/cli-yargs'
 
 let argv = undefined
 // argv = 'spy info -h'.split(' ')
-// argv = 'spy info'.split(' ')
+// argv = 'spy md info'.split(' ')
 // argv = 'poll'.split(' ')
 // argv = 'orb --stdin ./polling.txt'.split(' ')
 // argv = 'spy poll -- --get-yargs-completions'.split(' ')
@@ -22,12 +22,13 @@ let argv = undefined
 
 // setTimeout(() => { process.kill(process.pid, 'SIGINT') }, 2000)
 
-CliRuntime.activate(Clippy)
-  .then(async runtime => runtime.info.toPojo()
+CliLoader.activate(Clippy)
+  .then(async loader => loader.info.toPojo()
     .then(async pojo => {
       const cliYargs = CliYargsCommand.fromInfoPojo(pojo)
       const yargs = await cliYargs.yargs(argv)
       const args = await yargs.parse()
-      await runtime.execute(args._, args)
+      const runtime = await loader.load(args._)
+      await runtime.execute(args)
     })
   )

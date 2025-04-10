@@ -5,6 +5,7 @@ import { pipe } from 'rxjs'
 import { CliRuntimeState } from '@kingjs/cli-runtime'
 import { CliDaemonState } from '@kingjs/cli-daemon'
 import { CliPulse } from '@kingjs/cli-pulse'
+import { CliConsoleMon } from '@kingjs/cli-console'
 
 const PREFIX = '!#/clipboard/'
 
@@ -18,6 +19,7 @@ export default class CliPollClipboard extends CliRxPoller {
     deamonState: CliDaemonState, 
     pollerState: CliRxPollerState,
     pulse: CliPulse,
+    console: CliConsoleMon,
   }
   static { this.initialize(import.meta) }
 
@@ -28,7 +30,7 @@ export default class CliPollClipboard extends CliRxPoller {
       return super()
     super(rest)
 
-    this.getServices(CliPollClipboard, rest)
+    this.getServices(CliPollClipboard)
     this.#prefix = prefix
   }
 

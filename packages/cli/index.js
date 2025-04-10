@@ -5,6 +5,7 @@ import { LoadAsync, LoadAsyncGenerator } from '@kingjs/load'
 import { cliTypeof } from '@kingjs/cli-typeof'
 import { getOwn } from '@kingjs/get-own'
 import { nodeNameFromMetaUrl } from '@kingjs/node-name-from-meta-url' 
+import { EventEmitter } from 'events'
 import assert from 'assert'
 async function __import() {
   const { cliMetadataToPojo } = await import('@kingjs/cli-metadata-to-pojo')
@@ -33,7 +34,7 @@ const BaseClass = Symbol('Cli.BaseClass')
 const ModuleName = Symbol('Cli.ModuleName')
 const Meta = Symbol('Cli.Meta')
 
-export class Cli {
+export class Cli extends EventEmitter {
   static async __dumpMetadata() { 
     const { toPojo, dumpPojo } = await __import()
     await dumpPojo(await toPojo(this.ownMetadata))
@@ -92,6 +93,9 @@ export class Cli {
   static get baseClass() { return this[BaseClass].value } 
   static *hierarchy() { yield* this[Hierarchy].value }
   static async getModuleName() { return await this[ModuleName].load() }
+
+  static *ownConsumes() { yield* getOwn(this, 'consumes') ?? [] }
+  static *ownProduces() { yield* getOwn(this, 'produces') ?? [] }
   
   static async *ownGroups() { yield* await this[OwnGroups].load() }
 
@@ -203,11 +207,16 @@ export class Cli {
             default: default$,
           })])
         )
+
+      const onConsumes = [...this.ownConsumes()]
+      const produces = [...this.ownProduces()]
   
       const metadata = trimPojo({ 
         name: this.name,
         description,
         defaultCommand,
+        onConsumes,
+        produces,
         parameters: { ...positionals, ...options },
       })
 
@@ -253,7 +262,7 @@ export class Cli {
 
     this[BaseClass] = new Lazy(() => {
       const baseClass = Object.getPrototypeOf(this.prototype).constructor
-      if (baseClass == Object) return null
+      if (baseClass == EventEmitter) return null
       return baseClass
     }, this)
 
@@ -273,7 +282,7 @@ export class Cli {
 
   static { this.initialize(import.meta) }
  
-  #info
+  #context
 
   constructor({ _info } = {}) {
     if (Cli.initializing(new.target, { })) {
@@ -281,13 +290,15 @@ export class Cli {
       delete new.target[OwnDefaults]
       return defaults
     }
-
-    this.#info = _info
+    super()
+    this.#context = _info
   }
 
-  get info() { return this.#info }
-  get runtime() { return this.#info.runtime }
-  getServices(class$, options) { return this.runtime.getServices(class$, options) }
+  dispose() { }
+
+  get info() { return this.#context }
+  get loader() { return this.#context.loader }
+  getServices(class$) { return this.#context.getServices(class$) }
 }
 
 // Cli.__dumpMetadata()

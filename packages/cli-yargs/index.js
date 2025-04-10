@@ -270,7 +270,6 @@ export class CliYargsCommand extends CliYargs {
   }
 
   async yargs(argv = hideBin(process.argv)) {
-    const yargs$ = yargs(argv)
     return await this.yargs$(argv)
       .then(yargs => this.#group(yargs, argv))
   }

@@ -2,16 +2,14 @@ import { CliService } from '@kingjs/cli-service'
 import { CliRx } from '@kingjs/cli-rx'
 import { interval, timer } from 'rxjs'
 import { switchMap, retry, takeUntil } from 'rxjs/operators'
-import { CliConsoleMon } from '@kingjs/cli-console'
 
 const POLL_MS = 200
 const ERROR_RATE = 0.01
 const ERROR_MS = 1000
 
 export class CliRxPollerState extends CliService {
-  static services = {
-    console: CliConsoleMon,
-  }
+  static consumes = [ 'polling', 'retrying' ]
+  static produces = [ 'is', 'warnThat' ]
   static { this.initialize(import.meta) }
 
   constructor(options) {
@@ -19,12 +17,9 @@ export class CliRxPollerState extends CliService {
       return super()
     super(options)
 
-    const { console } = this.getServices(CliRxPollerState, options)
-
-    const { runtime } = this
-    runtime.on('polling', async () => await console.is('polling'))
-    runtime.on('retrying', async (error) =>
-      console.warnThat('retrying', `Retrying (${error})...`) 
+    this.on('polling', () => this.emit('is', 'polling'))
+    this.on('retrying', (error) =>
+      this.emit('warnThat', 'retrying', `Retrying (${error})...`) 
     )
   }
 }
@@ -36,6 +31,7 @@ export class CliRxPoller extends CliRx {
     errorMs: 'Retry delay',
     writeError: 'Log service errors to stderr',
   }
+  static produces = [ 'polling', 'retrying' ]
   static { this.initialize(import.meta) }
 
   #pollMs
@@ -70,7 +66,7 @@ export class CliRxPoller extends CliRx {
 
     return interval(pollMs).pipe(
       switchMap(async () => { 
-        this.runtime.emit('polling')
+        this.emit('polling')
         if (Math.random() < errorRate) 
           throw new Error('Simulated polling error')
       }),
@@ -78,7 +74,7 @@ export class CliRxPoller extends CliRx {
       retry({
         count: Infinity,
         delay: async (error) => {
-          this.runtime.emit('retrying', error)
+          this.emit('retrying', error)
           if (writeError)
             this.writeError(`${error}`)
           return timer(errorMs).pipe(takeUntil(signalRx))

@@ -144,13 +144,15 @@ export class CliCommandInfo extends CliInfo {
   static *#servicePoset(classMd, visited, tree) {
 
     // yield all services in the poset of services
-    for (const serviceMd of [...classMd.services()].reverse()) {
-      if (serviceMd.baren) continue
-      if (visited.has(serviceMd)) continue
-      visited.add(serviceMd)
-      const subTree = tree[serviceMd.name] = { }
-      yield* CliCommandInfo.#servicePoset(serviceMd, visited, subTree)
-      yield [serviceMd, subTree]
+    for (const currentMd of [...classMd.hierarchy()].reverse()) {
+      for (const serviceMd of [...currentMd.services()].reverse()) {
+        if (serviceMd.baren) continue
+        if (visited.has(serviceMd)) continue
+        visited.add(serviceMd)
+        const subTree = tree[serviceMd.name] = { }
+        yield* CliCommandInfo.#servicePoset(serviceMd, visited, subTree)
+        yield [serviceMd, subTree]
+      }
     }
   }
 

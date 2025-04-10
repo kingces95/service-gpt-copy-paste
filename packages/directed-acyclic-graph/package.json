@@ -1,7 +1,7 @@
 {
-  "name": "@kingjs/cli-runtime",
+  "name": "@kingjs/directed-acyclic-graph",
   "version": "1.0.0",
-  "description": "Cli runtime.",
+  "description": "A directed acyclic graph.",
   "main": "index.js",
   "type": "module",
   "exports": {

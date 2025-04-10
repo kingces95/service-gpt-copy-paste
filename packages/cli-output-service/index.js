@@ -37,7 +37,7 @@ export class CliOutputService extends CliServiceProvider {
       return super()
     super({ ...rest })
 
-    const { stdout } = this.getServices(CliOutputService, rest)
+    const { stdout } = this.getServices(CliOutputService)
     this.#stdout = stdout
     this.#color = color
     this.#query = query

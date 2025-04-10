@@ -1,6 +1,7 @@
 import { LazyGenerator, Lazy } from '@kingjs/lazy'
 import { Cli } from '@kingjs/cli'
 import { CliCommand } from '@kingjs/cli-command'
+import EventEmitter from 'events'
 async function __import() {
   const { cliMetadataToPojo } = await import('@kingjs/cli-metadata-to-pojo')
   const { dumpPojo } = await import('@kingjs/pojo-dump')
@@ -192,6 +193,8 @@ export class CliClassMetadata extends CliMetadata {
   *commands() { yield* this.loader.commands$(this.#classOrPojo) }
   *services() { yield* this.loader.services$(this.#classOrPojo) }
   *groups() { yield* this.loader.groups$(this.#classOrPojo) }
+  *produces() { yield* this.#pojo.produces ?? [] }
+  *consumes() { yield* this.#pojo.consumes ?? [] }
 }
 
 export class CliMetadataLoader extends CliClassMetadata {
@@ -333,7 +336,7 @@ export class CliMetadataClassLoader extends CliMetadataLoader {
 
   getBaseClass$(class$) { 
     const baseClass = Object.getPrototypeOf(class$.prototype).constructor
-    return baseClass == Object ? null : this.load$(baseClass)
+    return baseClass == EventEmitter ? null : this.load$(baseClass)
   }
 
   *commands$(class$) { 

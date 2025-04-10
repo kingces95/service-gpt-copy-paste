@@ -1,7 +1,7 @@
 {
-  "name": "@kingjs/cli-runtime",
+  "name": "@kingjs/thread-pool",
   "version": "1.0.0",
-  "description": "Cli runtime.",
+  "description": "Thread pool.",
   "main": "index.js",
   "type": "module",
   "exports": {

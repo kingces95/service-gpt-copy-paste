@@ -51,7 +51,7 @@ export class CliHttp extends CliCommand {
       return super()
     super(rest)
 
-    const { stdout } = this.getServices(CliHttp, rest)
+    const { stdout } = this.getServices(CliHttp)
     this.#stdout = stdout
 
     if (!url) url = HTTP_ECHO

@@ -1,7 +1,7 @@
 {
-  "name": "@kingjs/cli-runtime",
+  "name": "@kingjs/cli-runtime-exit-code",
   "version": "1.0.0",
-  "description": "Cli runtime.",
+  "description": "Cli runtime code.",
   "main": "index.js",
   "type": "module",
   "exports": {

@@ -20,7 +20,7 @@ export class CliConsoleIn extends CliService {
       return super()
     super(options)
 
-    const { stdin, parser } = this.getServices(CliConsoleIn, options)
+    const { stdin, parser } = this.getServices(CliConsoleIn)
     this.#stdin = stdin
     this.#parser = parser
     this.#reader = stdin.then(stdin => new CliReader(stdin, parser))
@@ -58,7 +58,7 @@ export class CliConsoleOut extends CliService {
       return super()
     super(options)
 
-    const { stdout } = this.getServices(CliConsoleOut, options)
+    const { stdout } = this.getServices(CliConsoleOut)
     this.#stdout = stdout
     this.#writer = stdout.then(stdout => new CliWriter(stdout))
   }
@@ -85,7 +85,7 @@ export class CliConsole extends CliService {
     if (CliConsole.initializing(new.target))
       return super()
     super(options)
-    const { consoleIn, consoleOut } = this.getServices(CliConsole, options)
+    const { consoleIn, consoleOut } = this.getServices(CliConsole)
     this.#consoleIn = consoleIn
     this.#consoleOut = consoleOut
   }
@@ -111,6 +111,7 @@ export class CliConsoleMon extends CliServiceThread {
   static services = { 
     stdmon: CliStdMon 
   }
+  static consumes = [ 'update', 'warnThat', 'is' ]
   static { this.initialize(import.meta) }
 
   #writer
@@ -121,9 +122,19 @@ export class CliConsoleMon extends CliServiceThread {
       return super()
     super(options)
 
-    const { stdmon } = this.getServices(CliConsoleMon, options)
+    const { stdmon } = this.getServices(CliConsoleMon)
     this.#writer = stdmon.then(stream => new CliWriter(stream))
     this.#stream = new PassThrough({ objectMode: true })
+
+    this.on('update', (...items) => {
+      this.#stream.write(items)
+    })
+    this.on('warnThat', (status, note = this.#defaultMessage(status)) => {
+      this.#stream.write(['warning', status, note])
+    })
+    this.on('is', (status, note = this.#defaultMessage(status)) => {
+      this.#stream.write([status, note])
+    })
   }
 
   #defaultMessage(status) {

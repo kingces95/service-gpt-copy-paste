@@ -4,7 +4,7 @@ import { Observable } from 'rxjs'
  * Converts a Node.js stream into an RxJS Observable.
  * 
  * @param {stream.Readable} stream - The Node.js stream to convert.
- * @returns {Observable} An observable that emits data events and completes on end.
+ * @returns {Observable} An observable that produces data events and completes on end.
  */
 function fromStream(stream) {
   return new Observable((subscriber) => {
