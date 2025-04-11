@@ -1,97 +1,142 @@
 import { CliCommand } from '@kingjs/cli-command'
+import { CliService } from '@kingjs/cli-service'
+import { AbortError } from '@kingjs/abort-error'
+import { CliStdOut } from '@kingjs/cli-std-stream'
+import { LineEnding } from '@kingjs/line-ending'
+import { pipeline } from 'stream/promises'
 import { spawn } from 'child_process'
 
-class CliEval extends CliCommand {
+export class CliEvalState extends CliService { 
+  static consumes = [ 'beforeSpawn', 'beforeJoin' ]
+  static produces = [ 'is' ]
+  static { this.initialize(import.meta) }
+
+  #code
+  #signal
+
+  constructor(options) { 
+    if (CliEvalState.initializing(new.target)) 
+      return super()
+    super(options)
+
+    this.once('beforeSpawn', () => this.emit('is', 'spawning'))
+    this.once('beforeJoin', (code, signal) => {
+      this.#code = code
+      this.#signal = signal
+      this.emit('is', 'joining', this.toString())
+    })
+  }
+
+  toString() {
+    if (this.#code) return `Shell command failed (code=${this.#code}).`
+    if (this.#signal == 'SIGINT') return `Shell command aborted.`
+    return `Shell command completed successfully.`
+  }
+}
+
+export class CliEval extends CliCommand {
   static description = 'Evaluate a shell command'
   static parameters = {
     exe: 'The command to execute',
     args: 'Arguments for the command',
     shell: 'The shell to use'
   }
-  static choices = {
-    shell: [ 'bash', 'cmd.exe' ]
+  static services = {
+    stdout: CliStdOut,
   }
   static commands = {
     bash: '@kingjs/cli-eval, CliEvalBash',
     cmd: '@kingjs/cli-eval, CliEvalCmd',
+    ps: '@kingjs/cli-eval, CliEvalPs',
+    wsl: '@kingjs/cli-eval, CliEvalWsl',
   }
+  static produces = [ 'beforeSpawn', 'beforeJoin' ]
   static { this.initialize(import.meta) }
 
-  constructor(exe, args = [], { shell, ...rest } = { }) {
-    if (CliEval.initializing(new.target, exe, args, { shell }))
+  #args
+  #exe
+  #shell
+  #stdout
+
+  constructor(exe, args = [], { shell, ...options } = { }) {
+    if (CliEval.initializing(new.target, exe, args))
       return super()
+    super(options)
 
-    super(rest)
-    this.args = args
-    this.command = exe
+    this.#args = args
+    this.#exe = exe
+    this.#shell = shell
 
-    // Launch the shell command
-    const child = spawn(this.command, args, {
-      shell,
+    const { stdout } = this.getServices(CliEval)
+    this.#stdout = stdout
+  }
+
+  async run(signal) {
+    const child = spawn(this.#exe, this.#args, {
+      shell: this.#shell,
       env: process.env,
       stdio: ['pipe', 'pipe', 'pipe']
     })
     
-    // Handle piping streams
-    this.stdin.pipe(child.stdin)
-    child.stdout.pipe(this.stdout)
-    child.stderr.pipe(this.stderr)
+    signal.addEventListener('abort', () => child.kill('SIGINT'), { once: true })
     
-    // Handle abort signal
-    process.on('SIGINT', () => {
-      child.kill('SIGINT')
+    const stdout = await this.#stdout
+    const transform = { lineEnding: '\r\n' }
+    pipeline(child.stdout, new LineEnding(transform), stdout, { signal })
+    pipeline(child.stderr, new LineEnding(transform), process.stderr, { signal })
+    
+    const { code: exitCode } = await new Promise((resolve, reject) => {
+      let result = { }
+      child.on('error', reject)
+      child.on('exit', (code, signal) => (result = { code, signal }))
+      child.on('close', () => {
+        if (result.signal == 'SIGINT') return reject(new AbortError())
+        resolve(result)
+      })
     })
-    
-    // Handle process events
-    child.on('exit', (code, signal) => this.done$(code, signal))
-    child.on('close', () => this.$close())
-    child.on('error', (err) => this.error$(err))
-  }
 
-  toString() {
-    if (this.succeeded)
-      return `Shell command '${this.command}' completed successfully`
-
-    if (this.failed)
-      return `Shell command '${this.command}' exited with code ${this.state$.data}`
-
-    if (this.aborted)
-      return `Shell command '${this.command}' aborted`
-
-    return super.toString()
+    return exitCode
   }
 }
 
-class CliEvalBash extends CliEval {
+export class CliEvalWsl extends CliEval {
+  static description = 'Evaluate a shell command in the wsl'
+  static { this.initialize(import.meta) }
+  
+  constructor(exe, args, options) {
+    if (CliEvalWsl.initializing(new.target, { })) return super()
+    super('wsl', [exe, ...args], { shell: 'cmd', ...options})
+  }
+}
+
+export class CliEvalPs extends CliEval {
+  static description = 'Evaluate a power shell command'
+  static { this.initialize(import.meta) }
+  
+  constructor(exe, args, options) {
+    if (CliEvalPs.initializing(new.target, { })) return super()
+    super('powershell', ['-Command', exe, ...args], {  shell: 'cmd', ...options })
+  }
+}
+
+export class CliEvalBash extends CliEval {
   static description = 'Evaluate a bash shell command'
   static { this.initialize(import.meta) }
   
-  constructor(...args) {
-    if (CliEvalBash.initializing(new.target, { }))
-      return super()
-
-    this.verify(CliEvalBash, ...args)
-    super(...args, { shell: 'bash' })
+  constructor(exe, args, options) {
+    if (CliEvalBash.initializing(new.target, { })) return super()
+    super(exe, args, { shell: 'bash', ...options})
   }
 }
 
-class CliEvalCmd extends CliEval {
+export class CliEvalCmd extends CliEval {
   static description = 'Evaluate a cmd shell command'
   static { this.initialize(import.meta) }
   
-  constructor(...args) {
-    if (CliEvalCmd.initializing(new.target, { }))
-      return super()
-
-    super(...args, { shell: 'cmd.exe' })
+  constructor(exe, args, options) {
+    if (CliEvalCmd.initializing(new.target, { })) return super()
+    super(exe, args, { shell: 'cmd', ...options})
   }
-}
-
-export default CliEval
-export { 
-  CliEvalBash, 
-  CliEvalCmd, 
-  CliEval 
 }
 
 // CliEval.__dumpMetadata()

@@ -1,9 +1,8 @@
 import { CliService } from '@kingjs/cli-service'
 import { CliCommand } from '@kingjs/cli-command'
-import { AbortError } from '@kingjs/abort-error'
 
 export class CliDaemonState extends CliService { 
-  static consumes = [ 'beforeStart', 'afterstart' ]
+  static consumes = [ 'beforeStart', 'beforeStop' ]
   static produces = [ 'is' ]
   static { this.initialize(import.meta) }
 
@@ -13,12 +12,12 @@ export class CliDaemonState extends CliService {
     super(options)
 
     this.once('beforeStart', () => this.emit('is', 'starting'))
-    this.once('afterStart', () => this.emit('is', 'stopping'))
+    this.once('beforeStop', () => this.emit('is', 'stopping'))
   }
 }
 
 export class CliDaemon extends CliCommand {
-  static produces = [ 'beforeStart', 'afterStart' ]
+  static produces = [ 'beforeStart', 'beforeStop' ]
   static { this.initialize(import.meta) }
 
   constructor(options) {
@@ -27,18 +26,12 @@ export class CliDaemon extends CliCommand {
     super(options)
   }
 
-  async execute(signal) {
+  async run(signal) {
     try {
       this.emit('beforeStart')
-      const result = await this.start(signal)
-      return result
-
-    } catch (error) {
-      if (error instanceof AbortError) return
-      throw error
-
+      return await this.start(signal)
     } finally {
-      this.emit('afterStart')
+      this.emit('beforeStop')
     }
   }
 

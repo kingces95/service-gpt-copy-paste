@@ -11,5 +11,9 @@ let argv = undefined
 // argv = 'http get https://jsonplaceholder.typicode.com/todos/1'.split(' ')
 // argv = 'spy info http get'.split(' ')
 // argv = 'http -Hfoo:bar'.split(' ')
+// argv = 'eval bash echo hi'.split(' ')
+// argv = 'eval cmd dir'.split(' ')
+// argv = 'eval bash ls'.split(' ')
+// argv = 'eval ps dir'.split(' ')
 
 CliYargsLoader.execute(Clippy, argv)

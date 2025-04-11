@@ -3,6 +3,7 @@ import { CliRuntimeContainer } from '@kingjs/cli-runtime-container'
 import { CliService } from '@kingjs/cli-service'
 import { DirectedAcyclicGraph } from '@kingjs/directed-acyclic-graph'
 import { CliRuntimeEventHub } from '@kingjs/cli-runtime-event-hub'
+import { AbortError } from '@kingjs/abort-error'
 import { EventEmitter } from 'events'
 import { 
   EXIT_SUCCESS, 
@@ -175,11 +176,11 @@ export class CliRuntime extends EventEmitter {
         this.#activate(userArgs).then(async instance => {
           try {
             this.#eventHub.register(instance)
-            const result = await instance.execute(controller.signal)
+            const result = await instance.run(controller.signal)
             return result
           } catch (error) {
             if (error instanceof AbortError) return
-            this.on('error', error)
+            this.emit('error', error)
           } finally {
             this.#eventHub.quiesce(instance)
           }
@@ -202,10 +203,10 @@ export class CliRuntime extends EventEmitter {
         : EXIT_FAILURE)
 
       this.emit('beforeExit', process.exitCode = exitCode)
-      this.#dispose()
+      await this.#dispose()
         
     } catch (error) {
-      this.on('error', process.exitCode = EXIT_ERRORED, error)
+      this.emit('error', process.exitCode = EXIT_ERRORED, error)
     }
   }
 }
