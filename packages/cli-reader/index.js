@@ -1,9 +1,11 @@
 import Utf8CharReader from '@kingjs/utf8-char-reader'
 import { CliService } from '@kingjs/cli-service'
 import { AbortError } from '@kingjs/abort-error'
+import { macrotick } from '@kingjs/macrotick'
 import { CliReadable } from '@kingjs/cli-readable'
 
 const NEW_LINE_BYTE = 0x0A
+const CARRAGE_RETURN_BYTE = 0x0D
 const DEFAULT_IFS = ' '
 
 export class CliParser extends CliService {
@@ -33,7 +35,6 @@ export class CliParser extends CliService {
         yield match[1]
         lastIndex = regex.lastIndex
       } else {
-        yield null
         return
       }
     }
@@ -97,12 +98,10 @@ export class CliReader {
 
   #stream
   #parser
-  #signal
 
   constructor(stream, parser) {
     this.#stream = stream
     this.#parser = parser
-    this.#signal = null
   }
 
   from(streamStringOrGenerator) { 
@@ -112,9 +111,8 @@ export class CliReader {
     return CliReader.fromPath(path, this.#parser)
   }
   
-  async readByte() {
+  async readByte(signal) {
     const stream = this.#stream
-    const signal = this.#signal
 
     // Attempt immediate read
     const chunk = stream.read(1)
@@ -123,7 +121,7 @@ export class CliReader {
     }
   
     return new Promise((resolve, reject) => {
-      const onReadable = () => {
+      const onReadable = (...args) => {
         try {
           const chunk = stream.read(1)
           if (!chunk) {
@@ -151,7 +149,7 @@ export class CliReader {
   
       const onAbort = () => {
         cleanup()
-        reject(new AbortError())
+        reject(new AbortError('CliReader'))
       }
   
       const cleanup = () => {
@@ -161,18 +159,18 @@ export class CliReader {
         signal?.removeEventListener('abort', onAbort)
       }
   
-      stream.once('readable', onReadable)
-      stream.on('end', onEnd)
-      stream.on('error', onError)
       signal?.addEventListener('abort', onAbort)
+      stream.on('error', onError)
+      stream.on('end', onEnd)
+      stream.once('readable', onReadable)
     })
   }
   
-  async readString(charCount) {
+  async readString(charCount, signal) {
     const charReader = new Utf8CharReader()
   
     while (charReader.charCount < charCount) {
-      const byte = await this.readByte()
+      const byte = await this.readByte(signal)
       if (byte === null) break // Handle unexpected EOF
       charReader.processByte(byte)
     }
@@ -180,31 +178,41 @@ export class CliReader {
     return charReader.toString() // Convert the buffered bytes to a string
   }
   
-  async readChar() {
-    return await this.readString(1)
+  async readChar(signal) {
+    return await this.readString(1, signal)
   }
   
-  async read() {
+  async read(signal) {  
     const charReader = new Utf8CharReader()
   
     while (true) {
-      const byte = await this.readByte()
-      if (byte === null || byte === NEW_LINE_BYTE) break // Stop at newline or EOF
+      const byte = await this.readByte(signal)
+      
+      // gives tty a chance to send ctrl-c
+      if (byte === null) 
+        await macrotick(signal) 
+
+      if (byte === null || byte === NEW_LINE_BYTE) 
+        break
+
+      if (byte === CARRAGE_RETURN_BYTE)
+        continue
+
       charReader.processByte(byte)
     }
   
-    return charReader.toString() // Convert the buffered bytes to a string
+    return charReader.toString()
   }
 
-  async readArray() {
+  async readArray(signal) {
     if (!this.#parser) throw new Error('Parser not set')
-    const line = await this.read()
-    return this.#parser.toArray(line)
+    const line = await this.read(signal)
+    return !line ? null : this.#parser.toArray(line)
   }
   
-  async readRecord(fields) {
+  async readRecord(fields, signal) {
     if (!this.#parser) throw new Error('Parser not set')
-    const line = await this.read()
+    const line = await this.read(signal)
     return this.#parser.toRecord(line, fields)
   }
 }

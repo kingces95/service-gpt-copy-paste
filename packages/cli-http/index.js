@@ -26,12 +26,12 @@ export class CliHttp extends CliCommand {
     method: ['m'],
   }
   static commands = () => ({
-    get: declareHttpMethod('GET', 'Perform an http GET request'),
-    post: declareHttpMethod('POST', 'Perform an http POST request'),
-    put: declareHttpMethod('PUT', 'Perform an http PUT request'),
-    delete: declareHttpMethod('DELETE', 'Perform an http DELETE request'),
-    patch: declareHttpMethod('PATCH', 'Perform an http PATCH request'),
-    head: declareHttpMethod('HEAD', 'Perform an http HEAD request'),
+    get: '@kingjs/cli-http/methods, CliHttpGet',
+    post: '@kingjs/cli-http/methods, CliHttpPost',
+    put: '@kingjs/cli-http/methods, CliHttpPut',
+    delete: '@kingjs/cli-http/methods, CliHttpDelete',
+    patch: '@kingjs/cli-http/methods, CliHttpPatch',
+    head: '@kingjs/cli-http/methods, CliHttpHead',
   })
   static defaultCommand = true
   static services = { stdout: CliStdOut }
@@ -140,27 +140,6 @@ export class CliHttp extends CliCommand {
     })
   }
 }
-
-function declareHttpMethod(method, description) {
-  const CliHttpMethod = class extends CliHttp {
-    static description = description
-
-    constructor(url, options = { }) {
-      if (CliHttpMethod.initializing(new.target, options))
-        return super()
-
-      super(url, { method, ...options })
-    }
-  }
-
-  CliHttpMethod.initialize(import.meta)
-
-  // Set the name of the class to be CliHttp{Method} via property descriptor
-  const name = `CliHttp${method.charAt(0)}${method.slice(1).toLowerCase()}`
-  Object.defineProperty(CliHttpMethod, 'name', { value: name })
-  return CliHttpMethod
-}
   
 // CliHttp.__dumpMetadata(import.meta)
-// CliHttpGet.__dumpMetadata(import.meta)
 

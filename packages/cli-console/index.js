@@ -36,12 +36,16 @@ export class CliConsoleIn extends CliService {
     return CliReader.fromPath(path, this.#parser)
   }
 
-  async readByte() { return (await this.#reader).readByte() }
-  async readString(charCount) { return (await this.#reader).readString(charCount) }
-  async readChar() { return (await this.#reader).readChar() }
-  async read() { return (await this.#reader).read() }
-  async readArray() { return (await this.#reader).readArray() }
-  async readRecord(fields) { return (await this.#reader).readRecord(fields) }
+  async readByte(signal) { return (await this.#reader).readByte(signal) }
+  async readString(charCount, signal) { 
+    return (await this.#reader).readString(charCount, signal) 
+  }
+  async readChar(signal) { return (await this.#reader).readChar(signal) }
+  async read(signal) { return (await this.#reader).read(signal) }
+  async readArray(signal) { return (await this.#reader).readArray(signal) }
+  async readRecord(fields, signal) { 
+    return (await this.#reader).readRecord(fields, signal) 
+  }
 }
 
 export class CliConsoleOut extends CliService {
@@ -65,9 +69,9 @@ export class CliConsoleOut extends CliService {
 
   get stdout() { return this.#stdout }
 
-  async echo(line) { (await this.#writer).echo(line) }
+  async echo(line) { await (await this.#writer).echo(line) }
   async echoRecord(fields, separator = ' ') { 
-    (await this.#writer).echoRecord(fields, separator) 
+    await (await this.#writer).echoRecord(fields, separator) 
   }
 }
 
@@ -94,12 +98,16 @@ export class CliConsole extends CliService {
   get parser() { return this.#consoleIn.parser }
   get stdout() { return this.#consoleOut.stdout }
   
-  async readByte() { return await this.#consoleIn.readByte() }
-  async readString(charCount) { return await this.#consoleIn.readString(charCount) }
-  async readChar() { return await this.#consoleIn.readChar() }
-  async read() { return await this.#consoleIn.read() }
-  async readArray() { return await this.#consoleIn.readArray() }
-  async readRecord(fields) { return await this.#consoleIn.readRecord(fields) }
+  async readByte(signal) { return await this.#consoleIn.readByte(signal) }
+  async readString(charCount, signal) { 
+    return await this.#consoleIn.readString(charCount, signal) 
+  }
+  async readChar(signal) { return await this.#consoleIn.readChar(signal) }
+  async read(signal) { return await this.#consoleIn.read(signal) }
+  async readArray(signal) { return await this.#consoleIn.readArray(signal) }
+  async readRecord(fields, signal) { 
+    return await this.#consoleIn.readRecord(fields, signal) 
+  }
 
   async echo(line) { await this.#consoleOut.echo(line) }
   async echoRecord(fields, separator = ' ') {

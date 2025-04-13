@@ -1,4 +1,5 @@
 import { CliCommand } from '@kingjs/cli-command'
+import { CliDaemon } from '@kingjs/cli-daemon'
 import { CliConsoleIn } from '@kingjs/cli-console'
 import { AbortError } from '@kingjs/abort-error'
 import ora from 'ora'
@@ -17,7 +18,7 @@ const INIT_COLOR = 'gray'
 const NORMAL_COLOR = 'cyan'
 const WARN_COLOR = 'yellow'
 
-export default class CliOrb extends CliCommand {
+export default class CliOrb extends CliDaemon {
   static description = 'Tool for rendering status to tty'
   static parameters = {
     cpuHot: 'Threshold for high CPU usage',
@@ -44,7 +45,7 @@ export default class CliOrb extends CliCommand {
     this.message = ''
     
     // Initialize spinner for TTY
-    this.start()
+    // this.start()
   }
 
   get console() { return this.#console }
@@ -55,7 +56,7 @@ export default class CliOrb extends CliCommand {
     return num.toString()
   }
 
-  async start() {
+  async start(signal) {
     this.spinner = ora({ spinner: { 
       interval: NORMAL_INTERVAL, 
       frames: DOTS_FRAMES
@@ -64,7 +65,7 @@ export default class CliOrb extends CliCommand {
     while (true) {
       try {
         const { console } = this
-        const record = await console.readRecord(['type', 'rest'])
+        const record = await console.readRecord(['type', 'rest'], signal)
         if (!record) break
         const { type, rest } = record
         const subConsole = console.from(rest)

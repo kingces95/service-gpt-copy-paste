@@ -1,6 +1,5 @@
 import fs from 'fs'
 import { Readable } from 'stream'
-import assert from 'assert'
 
 const STDIN_FD = 0
 
@@ -17,13 +16,13 @@ export class CliReadable extends Readable {
     if (typeof value === 'string' || Buffer.isBuffer(value))
       return new CliStringReadable(value)
 
-    const gen = typeof value === 'function' ? value() : value
+    const generator = typeof value === 'function' ? value() : value
 
-    if (typeof gen[Symbol.asyncIterator] === 'function')
-      return new CliAsyncGeneratorReadable(gen)
+    if (typeof generator[Symbol.asyncIterator] === 'function')
+      return new CliAsyncGeneratorReadable(generator)
 
-    if (typeof gen[Symbol.iterator] === 'function')
-      return new CliGeneratorReadable(gen)
+    if (typeof generator[Symbol.iterator] === 'function')
+      return new CliGeneratorReadable(generator)
 
     throw new TypeError('Unsupported input type for CliReadable')
   }
@@ -33,7 +32,7 @@ export class CliReadable extends Readable {
     switch (path) {
       case DEV_STDIN:
       case DEV_FD_0:
-        return new CliFdReadable({ fd: STDIN_FD })
+        return new CliFdReadable(STDIN_FD)
       case DEV_NULL:
         return new CliNullReadable()
       default:
@@ -41,12 +40,12 @@ export class CliReadable extends Readable {
         const match = path.match(/^\/dev\/fd\/(\d+)$/)
         if (match) {
           const fd = Number(match[1])
-          return new CliFdReadable({ fd })
+          return new CliFdReadable(fd)
         }
 
         // Open the file
         const fileHandle = await fs.promises.open(path, 'r')
-        return new CliFileHandleReader({ fileHandle })
+        return new CliFileHandleReader(fileHandle)
     }
   }
 
@@ -57,78 +56,84 @@ export class CliReadable extends Readable {
 }
 
 class CliAsyncGeneratorReadable extends CliReadable {
+  #iterator
+  #buffer = Buffer.alloc(0)
+  #ended = false
+  #reading = false
+
   constructor(generator) {
     super()
-    this.iterator = typeof generator === 'function' ? generator() : generator
-    this.buffer = Buffer.alloc(0)
-    this.ended = false
-    this.reading = false
+    this.#iterator = typeof generator === 'function' ? generator() : generator
   }
 
-  async _refill(size) {
-    while (this.buffer.length < size && !this.ended) {
-      const { value, done } = await this.iterator.next()
+  async #refill(size) {
+    while (this.#buffer.length < size && !this.#ended) {
+      const { value, done } = await this.#iterator.next()
       if (done) {
-        this.ended = true
+        this.#ended = true
         break
       }
 
       const chunk = Buffer.isBuffer(value) ? value : Buffer.from(value)
-      this.buffer = Buffer.concat([this.buffer, chunk])
+      this.#buffer = Buffer.concat([this.#buffer, chunk])
     }
   }
 
   _read(size) {
-    if (this.reading) return
-    this.reading = true
+    if (this.#reading) return
+    this.#reading = true
 
-    this._refill(size).then(() => {
-      const toSend = this.buffer.slice(0, size)
-      this.buffer = this.buffer.slice(size)
+    this.#refill(size).then(() => {
+      const toSend = this.#buffer.slice(0, size)
+      this.#buffer = this.#buffer.slice(size)
 
       this.count += toSend.length
-      this.reading = false
-      this.push(toSend.length > 0 ? toSend : (this.ended ? null : ''))
+      this.#reading = false
+      this.push(toSend.length > 0 ? toSend : (this.#ended ? null : ''))
     }).catch(err => this.destroy(err))
   }
 }
 
 class CliGeneratorReadable extends CliReadable {
+  #iterator
+  #buffer = Buffer.alloc(0)
+  #ended = false
+
   constructor(generator) {
     super()
-    this.iterator = typeof generator === 'function' ? generator() : generator
-    this.buffer = Buffer.alloc(0)
-    this.ended = false
+    this.#iterator = typeof generator === 'function' ? generator() : generator
   }
 
   _read(size) {
-    while (this.buffer.length < size && !this.ended) {
-      const { value, done } = this.iterator.next()
+    while (this.#buffer.length < size && !this.#ended) {
+      const { value, done } = this.#iterator.next()
       if (done) {
-        this.ended = true
+        this.#ended = true
         break
       }
 
       const chunk = Buffer.isBuffer(value) ? value : Buffer.from(value)
-      this.buffer = Buffer.concat([this.buffer, chunk])
+      this.#buffer = Buffer.concat([this.#buffer, chunk])
     }
 
-    const toSend = this.buffer.slice(0, size)
-    this.buffer = this.buffer.slice(size)
+    const toSend = this.#buffer.slice(0, size)
+    this.#buffer = this.#buffer.slice(size)
 
     this.count += toSend.length
-    this.push(toSend.length > 0 ? toSend : (this.ended ? null : ''))
+    this.push(toSend.length > 0 ? toSend : (this.#ended ? null : ''))
   }
 }
 
 class CliStringReadable extends CliReadable {
-  constructor(str) {
+  #buffer
+
+  constructor(string) {
     super()
-    this.buffer = Buffer.from(str)
+    this.#buffer = Buffer.from(string)
   }
 
   _read(size) {
-    const remaining = this.buffer.length - this.count
+    const remaining = this.#buffer.length - this.count
     const toSend = Math.min(size, remaining)
 
     if (toSend <= 0) {
@@ -136,7 +141,7 @@ class CliStringReadable extends CliReadable {
       return
     }
 
-    const chunk = this.buffer.slice(this.count, this.count + toSend)
+    const chunk = this.#buffer.slice(this.count, this.count + toSend)
     this.push(chunk)
     this.count += toSend
   }
@@ -149,55 +154,55 @@ class CliNullReadable extends CliReadable {
 }
 
 class CliFdReadable extends CliReadable {
-  constructor({ fd }) {
+  #fd
+  #exact = true
+  #defered = false
+
+  constructor(fd) {
     super()
-    this.fd = fd
-    this.reading = false // Indicates if an async read is in progress
-    this.exact = true
+    this.#fd = fd
   }
 
   read(size) {
-    if (size > 1) {
-      this.exact = false;
-    }
-    return super.read(size);
+    if (size > 1) this.#exact = false
+
+    if (this.#defered) {
+      this.#defered = false
+      this.#read(size)
+    } 
+
+    return super.read(size)
   }
 
   _read(size) {
-    if (this.reading) 
-      return // Prevent multiple concurrent reads
-    this.reading = true
+    if (this.#exact && this.readableLength) {
+      this.#defered = true
+      return
+    }
 
-    if (this.exact) 
-      size = 1
+    this.#read(size)
+  }
 
-    // Expand the buffer size if client requests more than 1 byte
-    const buffer$ = Buffer.alloc(size) // Set a conventional buffer size
+  #read(size) {
+    const buffer$ = Buffer.alloc(this.#exact ? 1 : size)
 
-    // Initiate the asynchronous read operation
-    fs.read(this.fd, buffer$, 0, buffer$.length, null, (err, bytesRead, buffer) => {
-      this.reading = false
-      if (err) {
-        this.destroy(err)
-        return
-      }
-
+    fs.read(this.#fd, buffer$, 0, buffer$.length, null, (err, bytesRead, buffer) => {
+      if (err) return this.destroy(err)
       if (bytesRead > 0) {
         this.count += bytesRead
-        const slice = buffer.slice(0, bytesRead)
-        assert(this.push(slice)) // Push only the bytes read
+        this.push(buffer.slice(0, bytesRead))
       } else {
-        this.push(null) // Signal end of stream
+        this.push(null)
       }
     })
   }
 }
 
 class CliFileHandleReader extends CliFdReadable {
-  #fileHandle // Prevent garbage collection
+  #fileHandle
 
-  constructor({ fileHandle, autoClose = true }) {
-    super({ fd: fileHandle.fd, autoClose })
+  constructor(fileHandle, { autoClose = true } = { }) {
+    super(fileHandle.fd, { autoClose })
     this.#fileHandle = fileHandle
   }
 }

@@ -4,7 +4,7 @@ import { AbortError } from '@kingjs/abort-error'
 export function fromAbortSignal(signal) {
   return new Observable((observer) => {
     const abortHandler = () => {
-      observer.error(new AbortError())
+      observer.error(new AbortError('fromAbortSignal'))
     }
 
     signal.addEventListener('abort', abortHandler)

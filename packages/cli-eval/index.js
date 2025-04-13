@@ -6,6 +6,8 @@ import { LineEnding } from '@kingjs/line-ending'
 import { pipeline } from 'stream/promises'
 import { spawn } from 'child_process'
 
+const TRANSFORM = { lineEnding: '\r\n' }
+
 export class CliEvalState extends CliService { 
   static consumes = [ 'beforeSpawn', 'beforeJoin' ]
   static produces = [ 'is' ]
@@ -81,16 +83,19 @@ export class CliEval extends CliCommand {
     signal.addEventListener('abort', () => child.kill('SIGINT'), { once: true })
     
     const stdout = await this.#stdout
-    const transform = { lineEnding: '\r\n' }
-    pipeline(child.stdout, new LineEnding(transform), stdout, { signal })
-    pipeline(child.stderr, new LineEnding(transform), process.stderr, { signal })
+
+    pipeline(child.stdout, new LineEnding(TRANSFORM), stdout, 
+      { signal }).catch(e => { })
+
+    pipeline(child.stderr, new LineEnding(TRANSFORM), process.stderr, 
+      { signal }).catch(e => { })
     
     const { code: exitCode } = await new Promise((resolve, reject) => {
       let result = { }
       child.on('error', reject)
       child.on('exit', (code, signal) => (result = { code, signal }))
       child.on('close', () => {
-        if (result.signal == 'SIGINT') return reject(new AbortError())
+        if (result.signal == 'SIGINT') return reject(new AbortError('CliEval'))
         resolve(result)
       })
     })

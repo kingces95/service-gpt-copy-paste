@@ -169,6 +169,7 @@ export class CliRuntime extends EventEmitter {
     {
       // unstructured => structured error handling
       const controller = new AbortController()
+      const signal = controller.signal
 
       let sigint = undefined
       const result = await Promise.race([ 
@@ -188,7 +189,7 @@ export class CliRuntime extends EventEmitter {
 
         // signaling => event oriented abortion
         new Promise((resolve) => process.on('SIGINT', 
-          sigint = async () => {
+          sigint = () => {
             this.emit('beforeAbort')
             controller.abort()
             resolve(EXIT_SIGINT)
