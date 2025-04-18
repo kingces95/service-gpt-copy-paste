@@ -1,5 +1,5 @@
 {
-  "name": "@kingjs/shell",
+  "name": "@kingjs/cli-shell",
   "version": "1.0.0",
   "description": "Shell for launching shell-ish commands.",
   "main": "index.js",

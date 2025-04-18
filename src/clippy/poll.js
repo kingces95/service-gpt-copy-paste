@@ -9,7 +9,7 @@ import { CliConsoleMon } from '@kingjs/cli-console'
 
 const PREFIX = '!#/clipboard/'
 
-export default class CliPollClipboard extends CliRxPoller {
+export default class Poll extends CliRxPoller {
   static description = 'Poll clipboard content'
   static parameters = {
     prefix: 'Prefix to match in clipboard content'
@@ -26,11 +26,11 @@ export default class CliPollClipboard extends CliRxPoller {
   #prefix
 
   constructor({ prefix = PREFIX, ...rest } = { }) {
-    if (CliPollClipboard.initializing(new.target, { prefix }))
+    if (Poll.initializing(new.target, { prefix }))
       return super()
     super(rest)
 
-    this.getServices(CliPollClipboard)
+    this.getServices(Poll)
     this.#prefix = prefix
   }
 
@@ -48,4 +48,4 @@ export default class CliPollClipboard extends CliRxPoller {
   }
 }
 
-// CliPollClipboard.__dumpMetadata()
+// Poll.__dumpMetadata()

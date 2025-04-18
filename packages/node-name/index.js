@@ -48,7 +48,8 @@ export class NodeName {
       case 'function':
         return value
       case 'string':
-        const class$ = await NodeName.from(value).importObject()
+        const name = NodeName.from(value)
+        const class$ = await name.importObject()
         if (!class$) 
           throw new Error(`Could not load class ${value}`)
         if (!typeof class$ == 'function') 

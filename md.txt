@@ -9,10 +9,11 @@
       poll: 'CliPollClipboard',
       http: 'CliHttp',
       orb: 'CliOrb',
-      eval: 'CliEval',
+      shell: 'CliEval',
       spy: 'CliSpy',
       name: 'CliNodeName',
-      err: 'CliSimulator'
+      err: 'CliSimulator',
+      run: 'CliDispatch'
     }
   },
   {
@@ -30,7 +31,8 @@
       'CliRuntimeState',
       'CliDaemonState',
       'CliRxPollerState',
-      'CliPulse'
+      'CliPulse',
+      'CliConsoleMon'
     ]
   },
   {
@@ -40,19 +42,19 @@
     defaultCommand: true,
     parameters: {
       url: {
-        description: 'The url to request',
+        description: 'Url to request',
         type: 'string',
         optional: true,
         position: 0
       },
       headers: {
-        description: 'The number of lines to read as the HTTP header',
+        description: 'HTTP headers',
         type: 'string',
         array: true,
         aliases: [ 'H' ]
       },
       method: {
-        description: 'The HTTP method to use',
+        description: 'HTTP method to use',
         default: 'GET',
         type: 'string',
         local: true,
@@ -73,7 +75,7 @@
   {
     name: 'CliOrb',
     description: 'Tool for rendering status to tty',
-    baseClass: 'CliCommand',
+    baseClass: 'CliDaemon',
     parameters: {
       cpuHot: {
         description: 'Threshold for high CPU usage',
@@ -100,14 +102,16 @@
         optional: true,
         variadic: true,
         position: 1
-      },
-      shell: {
-        description: 'The shell to use',
-        required: true,
-        choices: [ 'bash', 'cmd.exe' ]
       }
     },
-    commands: { bash: 'CliEvalBash', cmd: 'CliEvalCmd' }
+    produces: [ 'beforeSpawn', 'beforeJoin' ],
+    commands: {
+      bash: 'CliEvalBash',
+      cmd: 'CliEvalCmd',
+      ps: 'CliEvalPs',
+      wsl: 'CliEvalWsl'
+    },
+    services: [ 'CliStdOut' ]
   },
   {
     name: 'CliSpy',
@@ -154,6 +158,13 @@
         choices: [ 'ctor', 'loop' ]
       }
     }
+  },
+  {
+    name: 'CliDispatch',
+    description: 'Dispatch commands to other modules',
+    scope: 'global',
+    baseClass: 'CliCommand',
+    services: [ 'CliConsole' ]
   },
   {
     name: 'CliSpyLs',
@@ -228,6 +239,18 @@
     baren: true
   },
   {
+    name: 'CliEvalPs',
+    description: 'Evaluate a power shell command',
+    baseClass: 'CliEval',
+    baren: true
+  },
+  {
+    name: 'CliEvalWsl',
+    description: 'Evaluate a shell command in the wsl',
+    baseClass: 'CliEval',
+    baren: true
+  },
+  {
     name: 'CliHttpGet',
     description: 'Perform an http GET request',
     baseClass: 'CliHttp',
@@ -284,7 +307,7 @@
     name: 'CliDaemon',
     baseClass: 'CliCommand',
     baren: true,
-    produces: [ 'beforeStart', 'afterStart' ]
+    produces: [ 'beforeStart', 'beforeStop' ]
   },
   {
     name: 'CliCommand',
@@ -294,8 +317,7 @@
       help: { description: 'Show help', type: 'boolean', aliases: [ 'h' ] },
       version: {
         description: 'Show version',
-        default: '0.0',
-        type: 'string',
+        type: 'boolean',
         aliases: [ 'v' ]
       },
       verbose: { description: 'Provide verbose output', type: 'boolean' }
@@ -305,20 +327,20 @@
   {
     name: 'CliRuntimeState',
     baseClass: 'CliService',
-    consumes: [ 'pulse', 'beforeAbort', 'beforeExit' ],
-    services: [ 'CliConsoleMon' ]
+    baren: true,
+    produces: [ 'is', 'update' ]
   },
   {
     name: 'CliDaemonState',
     baseClass: 'CliService',
-    consumes: [ 'beforeStart', 'afterstart' ],
-    services: [ 'CliConsoleMon' ]
+    baren: true,
+    produces: [ 'is' ]
   },
   {
     name: 'CliRxPollerState',
     baseClass: 'CliService',
-    produces: [ 'polling', 'retrying' ],
-    services: [ 'CliConsoleMon' ]
+    baren: true,
+    produces: [ 'is', 'warnThat' ]
   },
   {
     name: 'CliPulse',
@@ -334,6 +356,11 @@
     },
     produces: [ 'pulse' ],
     services: [ 'CliStdIn', 'CliStdOut' ]
+  },
+  {
+    name: 'CliConsoleMon',
+    baseClass: 'CliServiceThread',
+    services: [ 'CliStdMon' ]
   },
   {
     name: 'CliStdOut',
@@ -376,27 +403,10 @@
     baseClass: 'CliService',
     services: [ 'CliStdOut' ]
   },
-  { name: 'CliService', baseClass: 'Cli', baren: true },
   {
-    name: 'CliConsoleMon',
-    baseClass: 'CliServiceThread',
-    services: [ 'CliStdMon' ]
-  },
-  {
-    name: 'CliStdMon',
-    baseClass: 'CliStdStream',
-    parameters: {
-      stdmon: {
-        description: 'Status stream',
-        default: '/dev/stdout',
-        type: 'string'
-      }
-    }
-  },
-  {
-    name: 'CliServiceMonitor',
-    baseClass: 'CliServiceThread',
-    baren: true
+    name: 'CliConsole',
+    baseClass: 'CliService',
+    services: [ 'CliConsoleIn', 'CliConsoleOut' ]
   },
   {
     name: 'CliStdIn',
@@ -410,12 +420,6 @@
     }
   },
   {
-    name: 'CliStdStream',
-    group: 'I/O',
-    baseClass: 'CliServiceProvider',
-    baren: true
-  },
-  {
     name: 'CliParser',
     group: 'I/O',
     baseClass: 'CliService',
@@ -427,6 +431,29 @@
       }
     }
   },
-  { name: 'CliServiceProvider', baseClass: 'Cli', baren: true },
-  { name: 'CliServiceThread', baseClass: 'CliService', baren: true }
+  { name: 'CliService', baseClass: 'Cli', baren: true },
+  {
+    name: 'CliServiceMonitor',
+    baseClass: 'CliServiceThread',
+    baren: true
+  },
+  { name: 'CliServiceThread', baseClass: 'CliService', baren: true },
+  {
+    name: 'CliStdMon',
+    baseClass: 'CliStdStream',
+    parameters: {
+      stdmon: {
+        description: 'Status stream',
+        default: '/dev/stdout',
+        type: 'string'
+      }
+    }
+  },
+  {
+    name: 'CliStdStream',
+    group: 'I/O',
+    baseClass: 'CliServiceProvider',
+    baren: true
+  },
+  { name: 'CliServiceProvider', baseClass: 'Cli', baren: true }
 ]

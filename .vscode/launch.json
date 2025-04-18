@@ -17,8 +17,8 @@
       "skipFiles": [
         "<node_internals>/**"
       ],
-      "program": "${workspaceFolder}\\src\\clippy\\index.js",
-      "args": ["--stdlog"],
+      "program": "${workspaceFolder}\\src\\clippy\\clippy",
+      "args": [],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal"
     },

@@ -73,7 +73,7 @@ export class CliEval extends CliCommand {
     this.#stdout = stdout
   }
 
-  async run(signal) {
+  async execute(signal) {
     const child = spawn(this.#exe, this.#args, {
       shell: this.#shell,
       env: process.env,

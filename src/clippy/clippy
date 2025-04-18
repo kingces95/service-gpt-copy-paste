@@ -1,23 +1,40 @@
 #!/usr/bin/env node
-import { Clippy } from './index.js'
 import { CliYargsLoader } from '@kingjs/cli-yargs'
+import { CliCommand } from '@kingjs/cli-command'
+
+export const Clippy = CliCommand.extend({
+  name: 'Clippy',
+  description: 'My funky cli',
+  commands: {
+    main: 'clippy',
+    poll: 'clippy/poll',
+    dispatch: 'clippy/dispatch',
+    
+    http: '@kingjs/cli-http',
+    orb: '@kingjs/cli-orb',
+    shell: '@kingjs/cli-eval',
+    spy: '@kingjs/cli-spy',
+    name: '@kingjs/cli-node-name',
+    err: '@kingjs/cli-simulator',
+  },
+  groups: [
+    ['Polling', '@kingjs/cli-rx-poller'],
+    ['Pulse', '@kingjs/cli-pulse, CliPulse'],
+    ['I/O',
+      '@kingjs/cli-std-stream, CliStdStream',
+      '@kingjs/cli-reader, CliParser',],
+    ['Global', '@kingjs/cli-command'],
+  ]
+})
 
 let argv = undefined
-// argv = 'spy info -h'.split(' ')
-// argv = 'spy md info'.split(' ')
 // argv = 'poll'.split(' ')
 // argv = 'orb --stdin ./polling.txt'.split(' ')
 // argv = 'spy poll -- --get-yargs-completions'.split(' ')
-// argv = 'http get https://jsonplaceholder.typicode.com/todos/1'.split(' ')
-// argv = 'spy info http get'.split(' ')
-// argv = 'http -Hfoo:bar'.split(' ')
-// argv = 'eval bash echo hi'.split(' ')
-// argv = 'eval cmd dir'.split(' ')
-// argv = 'eval bash ls'.split(' ')
 // argv = 'eval ps dir'.split(' ')
 // argv = 'http get'.split(' ')
 // argv = 'eval bash node.exe src/clippy/clippy poll'.split(' ')
-// argv = 'run'.split(' ')
+argv = 'main'.split(' ')
 
 // alias cli='node.exe src/clippy/clippy $@'
 if (process.argv.length > 2) argv = undefined

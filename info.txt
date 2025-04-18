@@ -1,0 +1,455 @@
+{
+  description: 'My funky cli',
+  __comment: {
+    name: 'CliCommandClippy',
+    parameters: [ 'help', 'version', 'verbose' ],
+    groups: {
+      CliCommand: { verbose: 'Global', version: 'Global', help: 'Global' }
+    },
+    partition: [ 'CliCommand' ]
+  },
+  parameters: {
+    help: {
+      description: 'Show help',
+      group: 'Global',
+      type: 'boolean',
+      aliases: [ 'h' ]
+    },
+    version: {
+      description: 'Show version',
+      group: 'Global',
+      type: 'boolean',
+      aliases: [ 'v' ]
+    },
+    verbose: {
+      description: 'Provide verbose output',
+      group: 'Global',
+      type: 'boolean'
+    }
+  },
+  commands: {
+    poll: {
+      description: 'Poll clipboard content',
+      __comment: {
+        name: 'CliPollClipboard',
+        parameters: [
+          'prefix',     'reportMs',
+          'intervalMs', 'stdin',
+          'stdmon',     'pollMs',
+          'errorRate',  'errorMs',
+          'writeError', 'stdout'
+        ],
+        groups: {
+          CliRx: { CliStdOut: { stdout: 'I/O' } },
+          CliRxPoller: {
+            writeError: 'Polling',
+            errorMs: 'Polling',
+            errorRate: 'Polling',
+            pollMs: 'Polling'
+          },
+          CliPollClipboard: {
+            CliConsoleMon: { CliStdMon: { stdmon: 'I/O' } },
+            CliPulse: {
+              CliStdIn: { stdin: 'I/O' },
+              intervalMs: 'Pulse',
+              reportMs: 'Pulse'
+            },
+            prefix: '.'
+          }
+        },
+        partition: [ 'CliRx', 'CliRxPoller', 'CliPollClipboard' ],
+        services: [
+          'CliStdOut',
+          'CliStdMon',
+          'CliConsoleMon',
+          'CliStdIn',
+          'CliPulse'
+        ]
+      },
+      parameters: {
+        prefix: {
+          description: 'Prefix to match in clipboard content',
+          type: 'string',
+          default: '!#/clipboard/'
+        },
+        reportMs: {
+          description: 'Reporting rate',
+          kababName: 'report-ms',
+          group: 'Pulse',
+          type: 'number',
+          default: 1000
+        },
+        intervalMs: {
+          description: 'Cancellation polling rate',
+          kababName: 'interval-ms',
+          group: 'Pulse',
+          type: 'number',
+          default: 100
+        },
+        stdin: {
+          description: 'Input stream',
+          group: 'I/O',
+          type: 'string',
+          default: '/dev/stdin'
+        },
+        stdmon: {
+          description: 'Status stream',
+          group: 'I/O',
+          type: 'string',
+          default: '/dev/stdout'
+        },
+        pollMs: {
+          description: 'Polling interval',
+          kababName: 'poll-ms',
+          group: 'Polling',
+          type: 'number',
+          default: 200
+        },
+        errorRate: {
+          description: 'Simulated polling error rate',
+          kababName: 'error-rate',
+          group: 'Polling',
+          type: 'number',
+          default: 0.01
+        },
+        errorMs: {
+          description: 'Retry delay',
+          kababName: 'error-ms',
+          group: 'Polling',
+          type: 'number',
+          default: 1000
+        },
+        writeError: {
+          description: 'Log service errors to stderr',
+          kababName: 'write-error',
+          group: 'Polling',
+          type: 'boolean'
+        },
+        stdout: {
+          description: 'Output stream',
+          group: 'I/O',
+          type: 'string',
+          default: '/dev/stdout'
+        }
+      }
+    },
+    http: {
+      description: 'Send a HTTP request',
+      __comment: {
+        name: 'CliHttp',
+        parameters: [ 'url', 'headers', 'method', 'stdout' ],
+        groups: {
+          CliHttp: {
+            CliStdOut: { stdout: 'I/O' },
+            method: '.',
+            headers: '.',
+            url: '.'
+          }
+        },
+        partition: [ 'CliHttp' ],
+        services: [ 'CliStdOut' ]
+      },
+      isDefaultCommand: true,
+      parameters: {
+        url: {
+          description: 'Url to request',
+          position: 0,
+          type: 'string',
+          isOptional: true
+        },
+        headers: {
+          description: 'HTTP headers',
+          type: 'string',
+          isArray: true,
+          aliases: [ 'H' ]
+        },
+        method: {
+          description: 'HTTP method to use',
+          type: 'string',
+          aliases: [ 'm' ],
+          choices: [ 'GET', 'PUT', 'POST', 'DELETE', 'PATCH', 'HEAD' ],
+          default: 'GET',
+          isLocal: true
+        },
+        stdout: {
+          description: 'Output stream',
+          group: 'I/O',
+          type: 'string',
+          default: '/dev/stdout'
+        }
+      },
+      commands: {
+        get: {
+          description: 'Perform an http GET request',
+          __comment: { name: 'CliHttpGet' }
+        },
+        post: {
+          description: 'Perform an http POST request',
+          __comment: { name: 'CliHttpPost' }
+        },
+        put: {
+          description: 'Perform an http PUT request',
+          __comment: { name: 'CliHttpPut' }
+        },
+        delete: {
+          description: 'Perform an http DELETE request',
+          __comment: { name: 'CliHttpDelete' }
+        },
+        patch: {
+          description: 'Perform an http PATCH request',
+          __comment: { name: 'CliHttpPatch' }
+        },
+        head: {
+          description: 'Perform an http HEAD request',
+          __comment: { name: 'CliHttpHead' }
+        }
+      }
+    },
+    orb: {
+      description: 'Tool for rendering status to tty',
+      __comment: {
+        name: 'CliOrb',
+        parameters: [ 'cpuHot', 'memHot', 'stdin', 'ifs' ],
+        groups: {
+          CliOrb: {
+            CliConsoleIn: { CliParser: { ifs: 'I/O' }, CliStdIn: { stdin: 'I/O' } },
+            memHot: '.',
+            cpuHot: '.'
+          }
+        },
+        partition: [ 'CliOrb' ],
+        services: [ 'CliParser', 'CliStdIn', 'CliConsoleIn' ]
+      },
+      parameters: {
+        cpuHot: {
+          description: 'Threshold for high CPU usage',
+          kababName: 'cpu-hot',
+          type: 'number',
+          default: 80
+        },
+        memHot: {
+          description: 'Threshold for high memory usage',
+          kababName: 'mem-hot',
+          type: 'number',
+          default: 90
+        },
+        stdin: {
+          description: 'Input stream',
+          group: 'I/O',
+          type: 'string',
+          default: '/dev/stdin'
+        },
+        ifs: {
+          description: 'Input field separator',
+          group: 'I/O',
+          type: 'string',
+          default: ' '
+        }
+      }
+    },
+    shell: {
+      description: 'Evaluate a shell command',
+      __comment: {
+        name: 'CliEval',
+        parameters: [ 'exe', 'args', 'stdout' ],
+        groups: {
+          CliEval: { CliStdOut: { stdout: 'I/O' }, args: '.', exe: '.' }
+        },
+        partition: [ 'CliEval' ],
+        services: [ 'CliStdOut' ]
+      },
+      parameters: {
+        exe: { description: 'The command to execute', position: 0 },
+        args: {
+          description: 'Arguments for the command',
+          position: 1,
+          type: 'string',
+          isOptional: true,
+          isVariadic: true
+        },
+        stdout: {
+          description: 'Output stream',
+          group: 'I/O',
+          type: 'string',
+          default: '/dev/stdout'
+        }
+      },
+      commands: {
+        bash: {
+          description: 'Evaluate a bash shell command',
+          __comment: { name: 'CliEvalBash' }
+        },
+        cmd: {
+          description: 'Evaluate a cmd shell command',
+          __comment: { name: 'CliEvalCmd' }
+        },
+        ps: {
+          description: 'Evaluate a power shell command',
+          __comment: { name: 'CliEvalPs' }
+        },
+        wsl: {
+          description: 'Evaluate a shell command in the wsl',
+          __comment: { name: 'CliEvalWsl' }
+        }
+      }
+    },
+    spy: {
+      description: 'Reflect on command metadata',
+      __comment: {
+        name: 'CliSpy',
+        parameters: [ 'path', 'output', 'query', 'color', 'stdout' ],
+        groups: {
+          CliSpy: {
+            CliConsoleOut: { CliStdOut: { stdout: 'I/O' } },
+            CliOutputService: { color: '.', query: '.', output: '.' },
+            path: '.'
+          }
+        },
+        partition: [ 'CliSpy' ],
+        services: [ 'CliStdOut', 'CliConsoleOut', 'CliOutputService' ]
+      },
+      parameters: {
+        path: {
+          description: 'Path of command',
+          position: 0,
+          type: 'string',
+          isOptional: true,
+          isVariadic: true
+        },
+        output: {
+          description: 'Output format',
+          type: 'string',
+          choices: [ 'none', 'util', 'json', 'yaml', 'tsv', 'table' ],
+          default: 'util'
+        },
+        query: { description: 'JMESPath query string', type: 'string' },
+        color: {
+          description: 'Colorize output; Always false if not a TTY',
+          type: 'boolean',
+          default: true
+        },
+        stdout: {
+          description: 'Output stream',
+          group: 'I/O',
+          type: 'string',
+          default: '/dev/stdout'
+        }
+      },
+      commands: {
+        ls: {
+          description: 'List commands',
+          __comment: { name: 'CliSpyLs' }
+        },
+        find: {
+          description: 'Find commands',
+          __comment: { name: 'CliSpyFind' }
+        },
+        raw: {
+          description: 'Dump Cli.ownMetadata',
+          __comment: { name: 'CliSpyRaw' }
+        },
+        md: {
+          description: 'Dump CliClassMetadata',
+          __comment: { name: 'CliSpyMd' }
+        },
+        cachedMd: {
+          description: 'Dump cached CliClassMetadata',
+          kababName: 'cached-md',
+          __comment: { name: 'CliSpyCachedMd' }
+        },
+        json: {
+          description: 'Dump CliClassMetadata.toPojo()',
+          __comment: { name: 'CliSpyJson' }
+        },
+        info: {
+          description: 'Dump CliCommandInfo',
+          __comment: { name: 'CliSpyInfo' }
+        },
+        yargs: {
+          description: 'Dump CliYargsCommand',
+          __comment: { name: 'CliSpyYargs' }
+        },
+        params: {
+          description: 'Dump CliCommandInfo',
+          __comment: { name: 'CliSpyParams' }
+        },
+        mdParams: {
+          description: 'Dump CliCommandInfo',
+          kababName: 'md-params',
+          __comment: { name: 'CliSpyMdParams' }
+        }
+      }
+    },
+    name: {
+      description: 'Reflect on NodeName',
+      __comment: {
+        name: 'CliNodeName',
+        parameters: [ 'name' ],
+        groups: { CliNodeName: { name: '.' } },
+        partition: [ 'CliNodeName' ]
+      },
+      parameters: { name: { description: 'Name to resolve', position: 0 } }
+    },
+    err: {
+      description: 'Simulate error conditions',
+      __comment: {
+        name: 'CliSimulator',
+        parameters: [ 'where' ],
+        groups: { CliSimulator: { where: '.' } },
+        partition: [ 'CliSimulator' ]
+      },
+      parameters: {
+        where: {
+          description: 'Where to throw error',
+          type: 'string',
+          choices: [ 'ctor', 'loop' ],
+          default: 'ctor'
+        }
+      }
+    },
+    run: {
+      description: 'Dispatch commands to other modules',
+      __comment: {
+        name: 'CliDispatch',
+        parameters: [ 'stdin', 'ifs', 'stdout' ],
+        groups: {
+          CliDispatch: {
+            CliConsole: {
+              CliConsoleOut: { CliStdOut: { stdout: 'I/O' } },
+              CliConsoleIn: { CliParser: { ifs: 'I/O' }, CliStdIn: { stdin: 'I/O' } }
+            }
+          }
+        },
+        partition: [ 'CliDispatch' ],
+        services: [
+          'CliStdOut',
+          'CliConsoleOut',
+          'CliParser',
+          'CliStdIn',
+          'CliConsoleIn',
+          'CliConsole'
+        ]
+      },
+      parameters: {
+        stdin: {
+          description: 'Input stream',
+          group: 'I/O',
+          type: 'string',
+          default: '/dev/stdin'
+        },
+        ifs: {
+          description: 'Input field separator',
+          group: 'I/O',
+          type: 'string',
+          default: ' '
+        },
+        stdout: {
+          description: 'Output stream',
+          group: 'I/O',
+          type: 'string',
+          default: '/dev/stdout'
+        }
+      }
+    }
+  }
+}

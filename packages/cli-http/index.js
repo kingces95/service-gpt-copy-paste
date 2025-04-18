@@ -103,7 +103,7 @@ export class CliHttp extends CliCommand {
     // }))
   }
   
-  async run(signal) {
+  async execute(signal) {
     const { headers, url, method, stdout } = this
     // const { body } = await this.#handleRequest()
     const body = null

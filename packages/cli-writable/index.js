@@ -1,8 +1,8 @@
 import fs from 'fs'
 import { Writable } from 'stream'
 
-const STDOUT_FD = 1
-const STDERR_FD = 2
+export const STDOUT_FD = 1
+export const STDERR_FD = 2
 
 export const DEV_STDOUT = '/dev/stdout'
 export const DEV_FD_1 = '/dev/fd/1'

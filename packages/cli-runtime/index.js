@@ -177,7 +177,7 @@ export class CliRuntime extends EventEmitter {
         this.#activate(userArgs).then(async instance => {
           try {
             this.#eventHub.register(instance)
-            const result = await instance.run(controller.signal)
+            const result = await instance.execute(controller.signal)
             return result
           } catch (error) {
             if (error instanceof AbortError) return

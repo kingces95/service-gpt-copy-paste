@@ -4,6 +4,11 @@
   "main": "index.js",
   "type": "module",
   "license": "MIT",
+  "exports": {
+    ".": "./main.js",
+    "./poll": "./poll.js",
+    "./dispatch": "./dispatch.js"
+  },
   "dependencies": {
   }
 }

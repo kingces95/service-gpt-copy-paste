@@ -25,7 +25,7 @@ export class CliCommand extends Cli {
     super({ ...rest })
   }
 
-  async run(signal) { return true }
+  async execute(signal) { return true }
 
   toString() { this.runtime.toString() }
 }

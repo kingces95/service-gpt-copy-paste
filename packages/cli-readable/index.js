@@ -1,7 +1,7 @@
 import fs from 'fs'
 import { Readable } from 'stream'
 
-const STDIN_FD = 0
+export const STDIN_FD = 0
 
 export const DEV_STDIN = '/dev/stdin'
 export const DEV_FD_0 = '/dev/fd/0'

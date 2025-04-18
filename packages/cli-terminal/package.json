@@ -1,7 +1,7 @@
 {
-  "name": "@kingjs/cli-poll-clipboard",
+  "name": "@kingjs/cli-terminal",
   "version": "1.0.0",
-  "description": "A tool to robustly poll the clipboard for a prefix.",
+  "description": "A pseudo terminal environment.",
   "main": "index.js",
   "type": "module",
   "exports": {

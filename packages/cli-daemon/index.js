@@ -26,7 +26,7 @@ export class CliDaemon extends CliCommand {
     super(options)
   }
 
-  async run(signal) {
+  async execute(signal) {
     try {
       this.emit('beforeStart')
       return await this.start(signal)
