@@ -42,25 +42,20 @@ export class CliShell {
     env = Object.create(process.env), 
     stdio = new CliShellStdio(),
     shellInfo = CliShellInfo.default,
-    alias = {
-      this: (...args) => {
-        const [ node, cmd ] = process.argv
-        return [ node, cmd, ...args ]
-      },
-    }
   } = { }) {
     this.#signal = signal
     this.#env = env
     this.#stdio = stdio
     this.#pushdStack = [env.PWD || process.cwd()]
     this.#shellInfo = shellInfo
-    this.#alias = alias
+    this.#alias = new Map()
   }
 
   get signal() { return this.#signal }
   get env() { return this.#env }
   get shellInfo() { return this.#shellInfo }
   get stdio() { return this.#stdio }
+  get alias() { return this.#alias }
   
   get cwd() { return this.#pushdStack[this.#pushdStack.length - 1] }
   pushd(path) { this.#pushdStack.push(path) }
@@ -69,7 +64,7 @@ export class CliShell {
   #copy() {
     const env = Object.create(this.#env)
     const stdio = this.#stdio.copy()
-    const alias = { ...this.#alias }
+    const alias = new Map(this.#alias)
     const { signal, shellInfo } = this
     return new CliShell({ signal, env, stdio, shellInfo, alias })
   }
@@ -78,7 +73,7 @@ export class CliShell {
     const [ strings0, ...rest ] = strings
     const split0 = strings0.split(' ')
     const [ cmd, ...rest0 ] = split0
-    const alias = this.#alias[cmd]
+    const alias = this.#alias.get(cmd)
     const args = parseCommand(
       alias ? [ rest0.join(' '), ...rest ] : strings, 
       values
@@ -86,7 +81,7 @@ export class CliShell {
     return alias ? alias(...args) : args
   }
   
-  #spawn(cmd, args = []) {
+  spawn(cmd, args = []) {
     return CliSubshell.fromArgs(this.#copy(), cmd, args)
   }
 
@@ -114,6 +109,6 @@ export class CliShell {
   $(strings, ...values) {
     const [cmd, ...args] = this.#parseCommand(strings, values)
     const [ shellCmd, ...shellArgs ] = this.#shellInfo.getArgs(cmd, args)
-    return this.#spawn(shellCmd, shellArgs, this.#shellInfo.name)
+    return this.spawn(shellCmd, shellArgs, this.#shellInfo.name)
   }
 }

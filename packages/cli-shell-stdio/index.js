@@ -120,8 +120,8 @@ export class CliShellStdio {
         isInput ? CliShellStdio.#activateInputRedirect(redirection) 
           : CliShellStdio.#activateOutputRedirect(redirection)
 
-        // yield responsibility for subshells discovered during activation
-        if (typeof redirection == 'function') children.push(redirection)
+      // yield responsibility for subshells discovered during activation
+      if (typeof redirection == 'function') children.push(redirection)
     }
     return children
   }

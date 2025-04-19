@@ -129,8 +129,12 @@ export class CliCommandSubshell extends CliSubshell {
       const env = this.#flatEnv()
       const { cmd, args, stdio, signal, cwd } = this
       const child = stdio.spawn(cmd, args, { env, cwd, shell })
+
+      // propagate SIGINT as SIGINT instead of SIGTERM to child process
       signal.addEventListener('abort', () => child.kill('SIGINT'))
-      process.on('exit', () => child.kill('SIGINT'))
+
+      // take responsibility for child process termination
+      process.on('exit', () => child.kill('SIGTERM'))
 
       let result = { }
       child.on('error', reject)

@@ -12,7 +12,12 @@ export class CliTerminal extends CliCommand {
   }
 
   async execute(signal) {
-    await this.run(new CliShell({ signal }))
+    const shell = new CliShell({ signal })
+    shell.alias.set('this', (...args) => {
+        const [ node, cmd ] = process.argv
+        return [ node, cmd, ...args ]
+    })
+    await this.run(shell)
   }
 
   async run(shell) { }
