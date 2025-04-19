@@ -142,6 +142,7 @@ export class CliCommandSubshell extends CliSubshell {
       child.on('close', () => {
         const { signal, code } = result
         if (signal == 'SIGINT') return reject(new AbortError('CliShell'))
+        // TODO: failures should include a log dump; revisit once we have a logger
         if (signal) reject(new Error(`Child process killed by signal: ${signal}`))
         accept(code)
       })

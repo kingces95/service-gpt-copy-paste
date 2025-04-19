@@ -42,13 +42,14 @@ export class CliShell {
     env = Object.create(process.env), 
     stdio = new CliShellStdio(),
     shellInfo = CliShellInfo.default,
+    alias = new Map(),
   } = { }) {
     this.#signal = signal
     this.#env = env
     this.#stdio = stdio
     this.#pushdStack = [env.PWD || process.cwd()]
     this.#shellInfo = shellInfo
-    this.#alias = new Map()
+    this.#alias = alias
   }
 
   get signal() { return this.#signal }

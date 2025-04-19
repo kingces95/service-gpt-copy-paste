@@ -7,7 +7,6 @@ export class CliEvalState extends CliService {
   static { this.initialize(import.meta) }
 
   #code
-  #signal
 
   constructor(options) { 
     if (CliEvalState.initializing(new.target)) 
@@ -15,16 +14,14 @@ export class CliEvalState extends CliService {
     super(options)
 
     this.once('beforeSpawn', () => this.emit('is', 'spawning'))
-    this.once('beforeJoin', (code, signal) => {
+    this.once('beforeJoin', (code) => {
       this.#code = code
-      this.#signal = signal
       this.emit('is', 'joining', this.toString())
     })
   }
 
   toString() {
     if (this.#code) return `Shell command failed (code=${this.#code}).`
-    if (this.#signal == 'SIGINT') return `Shell command aborted.`
     return `Shell command completed successfully.`
   }
 }
