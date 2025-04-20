@@ -1,10 +1,9 @@
-import { CliShellInfo } from '@kingjs/cli-shell-info'
-import { CliSubshell, CliCommandSubshell } from '@kingjs/cli-subshell'
+import { CliSubshell } from '@kingjs/cli-subshell'
 import { CliShellStdio } from '@kingjs/cli-shell-stdio'
 import { PassThrough } from 'stream'
+import { Functor } from '@kingjs/functor'
 
-
-function parseCommand(strings, values) {
+function parseCommand(strings = [], values = []) {
   const result = []
 
   for (let i = 0; i < strings.length; i++) {
@@ -28,33 +27,30 @@ function parseCommand(strings, values) {
   return result
 }
 
-export class CliShell {
+export class CliShell extends Functor {
 
   #signal
   #env
   #stdio
   #pushdStack
-  #shellInfo
   #alias
 
   constructor({ 
     signal, 
     env = Object.create(process.env), 
     stdio = new CliShellStdio(),
-    shellInfo = CliShellInfo.default,
     alias = new Map(),
   } = { }) {
+    super(function() { return this.$(...arguments) })
     this.#signal = signal
     this.#env = env
     this.#stdio = stdio
     this.#pushdStack = [env.PWD || process.cwd()]
-    this.#shellInfo = shellInfo
     this.#alias = alias
   }
 
   get signal() { return this.#signal }
   get env() { return this.#env }
-  get shellInfo() { return this.#shellInfo }
   get stdio() { return this.#stdio }
   get alias() { return this.#alias }
   
@@ -66,50 +62,60 @@ export class CliShell {
     const env = Object.create(this.#env)
     const stdio = this.#stdio.copy()
     const alias = new Map(this.#alias)
-    const { signal, shellInfo } = this
-    return new CliShell({ signal, env, stdio, shellInfo, alias })
+    const { signal } = this
+    return new CliShell({ signal, env, stdio, alias })
   }
 
   #parseCommand(strings, values) {
-    const [ strings0, ...rest ] = strings
-    const split0 = strings0.split(' ')
-    const [ cmd, ...rest0 ] = split0
+    return this.expand(...parseCommand(strings, values))
+  }
+
+  expand(cmd, ...rest) {
     const alias = this.#alias.get(cmd)
-    const args = parseCommand(
-      alias ? [ rest0.join(' '), ...rest ] : strings, 
-      values
-    )
-    return alias ? alias(...args) : args
+    if (alias) return alias(...rest)
+    return arguments
   }
   
-  spawn(cmd, args = []) {
+  spawn(cmd, ...args) {
     return CliSubshell.fromArgs(this.#copy(), cmd, args)
   }
 
-  subshell(fn = async (shell) => { }) {
-    return CliSubshell.fromFn(this.#copy(), fn)
+  subshell() {
+    const [ arg0 ] = arguments
+    if (!arg0) return
+    
+    if (arg0 instanceof CliSubshell) 
+      return arg0
+
+    if (typeof arg0 === 'string')
+      return this.spawn(...this.expand(...arg0.split(/\s+/)))
+
+    if (arg0 instanceof Function)
+      return CliSubshell.fromFn(this.#copy(), arg0)
+
+    throw new Error([
+      `Invalid subshell type: ${arg0.constructor.name}.`,
+      `Expected string, function, or CliSubshell.`].join(' '))
   }
 
-  async pipeline(...subshells) {
-    if (subshells.length == 0) return Promise.resolve()
-    if (subshells.length == 1) return subshells[0]()
-    const [ first, ...rest ] = subshells
-
-    const results = []
-    rest.reduce((prev, next) => {
-      const middle = new PassThrough()
-      results.push(prev({ stdout: middle })())
-      return next({ stdin: middle })
-    }, first)
-    results.push(subshells.at(-1)())
-
-    return await Promise.all(results)
+  pipeline(...subshells) {
+    const last = subshells.pop()
+    return subshells.reverse().reduce((last, previous) => {
+      return this.subshell(previous)({ stdout: last })
+    }, this.subshell(last))
   }
 
   // command string: e.g. echo "hello"
-  $(strings, ...values) {
-    const [cmd, ...args] = this.#parseCommand(strings, values)
-    const [ shellCmd, ...shellArgs ] = this.#shellInfo.getArgs(cmd, args)
-    return this.spawn(shellCmd, shellArgs, this.#shellInfo.name)
+  $() {
+    const [ arg0 ] = arguments
+
+    // command string: e.g. echo $`my-cmd ${arg0} ${arg1}`
+    if (Array.isArray(arg0)) {
+      const [strings, values] = arguments
+      return this.spawn(...this.#parseCommand(strings, values))
+    }
+
+    // pipeline: e.g. $($'a', ..., $ => { ... }, ...)
+    return this.pipeline(...arguments)
   }
 }

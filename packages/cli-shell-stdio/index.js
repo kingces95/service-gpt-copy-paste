@@ -5,7 +5,6 @@ import { Writable, Readable, Duplex, Stream } from 'stream'
 import { CliReadable, DEV_NULL } from '@kingjs/cli-readable'
 import { CliWritable } from '@kingjs/cli-writable'
 import { PassThrough } from 'stream'
-import { stdin } from 'process'
 
 export class CliShellStdio {
   static DefaultStdioInfo = {

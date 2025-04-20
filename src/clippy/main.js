@@ -28,37 +28,66 @@ export default class Main extends CliTerminal {
     super(options)
   }
 
-  async run(shell) {
-    // const result = await shell.$`this poll`()
+  async run($) {
+    // const result = await $`this poll`()
 
-    // const result = await shell.$`this dispatch`(
+    // const result = await $`this dispatch`(
     //   '!#/clipboard/echo hello world'
     // )()
 
-    // const result = await shell.$`this poll --stdmon /dev/null`({
-    //   stdout: shell.$`this dispatch`,
+    // const result = await $`this poll --stdmon /dev/null`({
+    //   stdout: $`this dispatch`,
     // })()
 
-    // const result = await shell.$`this dispatch`({
-    //   stdin: shell.$`this poll --stdmon /dev/null`,
+    // const result = await $`this dispatch`({
+    //   stdin: $`this poll --stdmon /dev/null`,
     // })()
 
-    // const result = await shell.pipeline(
-    //   shell.$`this poll --stdmon /dev/null`,
-    //   shell.$`this dispatch`,
-    // )
+    // const result = await $.pipeline(
+    //   $`this poll --stdmon /dev/null`,
+    //   $`this dispatch`,
+    // )()
 
-    // const result = await shell.subshell(async shell => {
-    //   return await shell.$`this dispatch`()
+    // const result = await $(
+    //   $`this poll --stdmon /dev/null`,
+    //   $`this dispatch`,
+    // )()
+
+    // const result = await $(
+    //   'this poll'
+    // )()
+
+    // const result = await $.subshell(async $ => {
+    //   return await $`this dispatch`()
     // })({ 
-    //   stdin: shell.$`this poll --stdmon /dev/null`, 
+    //   stdin: $`this poll --stdmon /dev/null`, 
     // })()
 
-    const result = await shell.subshell(async shell => {
-      return await shell.$`this dispatch`()
-    })({ 
-      stdin: shell.$`this poll --stdmon /dev/null`, 
-    })()
+    // const result = await $.subshell(async $ => {
+    //   return await $`this poll --stdmon /dev/null`()
+    // })({ 
+    //   stdout: $`this dispatch`, 
+    // })()
+
+    // const result = await $(async $ => {
+    //   return await $`this poll --stdmon /dev/null`()
+    // })({ 
+    //   stdout: $`this dispatch`, 
+    // })()
+
+    // const result = await $(async function($) {
+    //   return 42
+    // })()
+
+    const result = await $(
+      $`this poll --stdmon /dev/null`,
+      $`this dispatch`,
+      function*($) { 
+        return
+        // for (const line of $) 
+        //   yield line 
+      }
+    )()
 
     //while (signal.aborted == false) {
       // shell.pipeline(

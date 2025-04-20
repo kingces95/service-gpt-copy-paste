@@ -1,21 +1,20 @@
 import { AbortError } from '@kingjs/abort-error'
-import assert from 'assert'
+import { Functor } from '@kingjs/functor'
 
-export class CliSubshell {
+export class CliSubshell extends Functor {
   static fromArgs(shell, cmd, args) {
-    const command = new CliCommandSubshell({ shell, cmd, args })
-    return command.spawn.bind(command)
+    return new CliCommandSubshell({ shell, cmd, args })
   }
 
   static fromFn(shell, fn) {
-    const command = new CliFunctionSubshell({ shell, fn })
-    return command.spawn.bind(command)
+    return new CliFunctionSubshell({ shell, fn })
   }
 
   #shell
   #children
 
   constructor(shell) {
+    super(function() { return this.$(...arguments) })
     this.#shell = shell
     this.#children = []
   }
@@ -23,12 +22,14 @@ export class CliSubshell {
   get shell() { return this.#shell }
   get signal() { return this.#shell.signal }
   get cwd() { return this.#shell.cwd }
-  get shellInfo() { return this.#shell.shellInfo }
   get stdio() { return this.#shell.stdio }
   get env() { return this.#shell.env }
 
-  redirect() {
-    if (arguments.length == 0) return false
+  $() {
+    if (arguments.length == 0) {
+      const promises = [this.spawn(), ...this.#children.map(child => child())]
+      return Promise.all(promises).then(result => result.flat())
+    }
 
     const [arg0, arg1, ...rest] = arguments
     if (typeof arg0 === 'string') {
@@ -53,15 +54,11 @@ export class CliSubshell {
       }
     }
 
-    return true
-  }
-
-  spawn() { 
-    return this.#children.map(child => child()) 
+    return this
   }
 }
 
-export class CliFunctionSubshell extends CliSubshell {
+class CliFunctionSubshell extends CliSubshell {
   #fn
 
   constructor({ shell, fn }) {
@@ -72,25 +69,12 @@ export class CliFunctionSubshell extends CliSubshell {
   get fn() { return this.#fn }
 
   spawn() {
-    if (this.redirect(...arguments)) {
-      // redirect was called; return a function to execute later
-      return this.spawn.bind(this)
-    }
-
-    // execute child subshells which are piping in or out of this subshell
-    const children = super.spawn()
-
     // (); execute in-process subshell
     return this.#fn(this.shell)
-      .then(async result => {
-        // await for all children to finish
-        await Promise.all(children)
-        return result
-      })
   }
 }
 
-export class CliCommandSubshell extends CliSubshell {
+class CliCommandSubshell extends CliSubshell {
   #cmd
   #args
 
@@ -115,26 +99,17 @@ export class CliCommandSubshell extends CliSubshell {
   get args() { return this.#args }
 
   spawn() {
-    if (this.redirect(...arguments)) {
-      // redirect was called; return a function to execute later
-      return this.spawn.bind(this)
-    }
-
-    // execute child subshells which are piping in or out of this subshell
-    const children = super.spawn()
-
     // (); execute command
     return new Promise((accept, reject) => {
-      const shell = this.shellInfo.name
       const env = this.#flatEnv()
       const { cmd, args, stdio, signal, cwd } = this
-      const child = stdio.spawn(cmd, args, { env, cwd, shell })
+      const child = stdio.spawn(cmd, args, { env, cwd })
 
       // propagate SIGINT as SIGINT instead of SIGTERM to child process
-      signal.addEventListener('abort', () => child.kill('SIGINT'))
+      // signal.addEventListener('abort', () => child.kill('SIGINT'))
 
       // take responsibility for child process termination
-      process.on('exit', () => child.kill('SIGTERM'))
+      // process.on('exit', () => child.kill('SIGTERM'))
 
       let result = { }
       child.on('error', reject)
@@ -146,10 +121,6 @@ export class CliCommandSubshell extends CliSubshell {
         if (signal) reject(new Error(`Child process killed by signal: ${signal}`))
         accept(code)
       })
-    }).then(async result => {
-      // await for all children to finish
-      await Promise.all(children)
-      return result 
     })
   }
 }

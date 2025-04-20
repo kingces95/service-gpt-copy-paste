@@ -1,7 +1,7 @@
 {
-  "name": "@kingjs/cli-shell-info",
+  "name": "@kingjs/functor",
   "version": "1.0.0",
-  "description": "A pseudo shell environment.",
+  "description": "A function that is also a class.",
   "main": "index.js",
   "type": "module",
   "exports": {
