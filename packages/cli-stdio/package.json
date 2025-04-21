@@ -1,5 +1,5 @@
 {
-  "name": "@kingjs/cli-shell-stdio",
+  "name": "@kingjs/cli-stdio",
   "version": "1.0.0",
   "description": "Fluent spawn that accepts redirects.",
   "main": "index.js",

@@ -1,38 +1,54 @@
 export class Container {
   
-  #singletons
+  #controllers
+  #services
   #activateFn
-  #activatedFn
-  #activatedSyncFn
+  #produceFn
+  #startFn
   #disposeFn
 
   constructor({ 
     activateFn = (class$, options) => { },
-    activatedFn = async (singleton) => { },
-    activatedSyncFn = (singleton) => { },
+    produceFn = async (singleton) => { },
+    startFn = (singleton) => { },
     disposeFn = (singleton) => { },
   }) {
-    this.#singletons = new Map()
+    this.#services = new Map()
+    this.#controllers = new Map()
     this.#activateFn = activateFn
     this.#disposeFn = disposeFn
-    this.#activatedFn = activatedFn
-    this.#activatedSyncFn = activatedSyncFn
+    this.#produceFn = produceFn
+    this.#startFn = startFn
   }
 
   activate(class$, options = { }) {
-    if (!this.#singletons.has(class$)) {
-      const instance = this.#activateFn(class$, options)
-      this.#singletons.set(class$, instance instanceof Promise
-        ? instance.then(this.#activatedFn).then(this.#activatedSyncFn) 
-        : this.#activatedSyncFn(instance))
+    if (!this.#services.has(class$)) {
+      const activation = this.#activateFn(class$, options)
+
+      if (activation instanceof Promise) {
+        this.#controllers.set(class$, activation)
+        this.#services.set(class$, activation.then(async () => {
+          const controller = await activation
+          this.#startFn(controller)
+          const instance = await this.#produceFn(controller)
+          return instance
+        }))
+
+      } else {
+        const controller = activation
+        this.#controllers.set(class$, controller)
+        this.#startFn(controller)
+        const instance = controller
+        this.#services.set(class$, instance)
+      }
     }
-    return this.#singletons.get(class$)
+    return this.#services.get(class$)
   }
 
   async dispose(class$) {
-    const singleton = this.#singletons.get(class$)
+    const singleton = await this.#controllers.get(class$)
     if (!singleton) return
     await this.#disposeFn(singleton)
-    this.#singletons.delete(class$)
+    this.#services.delete(class$)
   }
 }

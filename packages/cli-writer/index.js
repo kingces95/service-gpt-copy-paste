@@ -4,10 +4,6 @@ import { CliWritable } from '@kingjs/cli-writable'
 export const ENCODING_UTF8 = 'utf8'
 
 export class CliWriter {
-  static from(path) {
-    return new CliWriter(CliWritable.fromPath(path))
-  }
-
   #stream
   #signal
   #encoding

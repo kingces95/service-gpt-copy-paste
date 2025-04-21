@@ -79,23 +79,46 @@ export default class Main extends CliTerminal {
     //   return 42
     // })()
 
-    const result = await $(
-      $`this poll --stdmon /dev/null`,
-      $`this dispatch`,
-      function*($) { 
-        return
-        // for (const line of $) 
-        //   yield line 
-      }
-    )()
+    // const result = await $(
+    //   $`this poll --stdmon /dev/null`,
+    //   $`this dispatch`,
+    //   async function($) { 
+    //     $.stdin.pipe($.stdout)
+    //     return 0
+    //   }
+    // )()
 
-    //while (signal.aborted == false) {
-      // shell.pipeline(
-      //   shell.$`this poll --stdmon /dev/null`,
-      //   shell.$`this dispatch`,
-      // )
-    //}
+    // const result = await $(
+    //   async function*($) {
+    //     yield 'hello'
+    //     yield 'world'
+    //     // yield a string buffer
+    //     yield Buffer.from('hello world\n')
+    //   },
+    //   async function($) {
+    //     for await (const line of $) {
+    //       // make line upper case
+    //       $.stdout.write(line.toUpperCase())
+    //       $.stdout.write('\n')
+    //     }
+    //   }
+    // )()
 
-    console.error(result)
+    // await $`this dispatch`('!#/clipboard/echo hello world')()
+    // await $`this dispatch`('!#/clipboard/echo hello world')()
+
+    // while (!$.signal.aborted) {
+    //   await $`this dispatch`('!#/clipboard/echo hello world')()
+    // }
+
+    // while ($.signal.aborted == false) {
+    //   await $(
+    //     $`this poll --stdmon /dev/null`,
+    //     $`this dispatch`,
+    //   )()
+    // }
+
+    return 0
+    // console.error(result)
   }
 }

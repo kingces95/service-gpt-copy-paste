@@ -54,7 +54,7 @@ class CliFdWritable extends CliWritable {
   constructor({ fd, autoClose = true }) {
     super()
     this.fd = fd
-    this.autoClose = autoClose
+    this.autoClose = autoClose 
   }
 
   _write(chunk, encoding, callback) {

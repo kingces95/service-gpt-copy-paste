@@ -20,9 +20,9 @@ export default class Dispatch extends CliTerminal {
   }
 
   async run(shell) {
-    const { signal } = shell
-    const console = this.#console
-    const [shebang = null, ...args] = await console.readArray(signal)
+    const { signal } = shell  
+    const $ = this.#console
+    const [shebang = null, ...args] = await $.readArray(signal)
     const [_, _clipboard, command, ...route] = shebang.split('/')
 
     // await console.echo(`Shebang: ${shebang}`)
@@ -37,12 +37,13 @@ export default class Dispatch extends CliTerminal {
         const cmd = await shell.$$`${command} ${route} ${args}`()
         break
       case 'echo':
-        await console.echo(args.join(' ').trim())
+        await $.echo(args.join(' ').trim())
         break
       case 'throw':
         throw new Error('This is an error thrown for testing.')
       default:
         this.emit('failure', `Invalid command: ${command}`)
     }
+
   }
 }

@@ -2,7 +2,7 @@ import Utf8CharReader from '@kingjs/utf8-char-reader'
 import { CliService } from '@kingjs/cli-service'
 import { AbortError } from '@kingjs/abort-error'
 import { macrotick } from '@kingjs/macrotick'
-import { CliReadable } from '@kingjs/cli-readable'
+import { Stream } from 'stream'
 
 const NEW_LINE_BYTE = 0x0A
 const CARRAGE_RETURN_BYTE = 0x0D
@@ -89,26 +89,15 @@ export class CliParser extends CliService {
 }
 
 export class CliReader {
-  static fromPath(path, parser) {
-    return new CliReader(CliReadable.fromPath(path), parser)
-  }
-  static from(streamStringOrGenerator, parser) {
-    return new CliReader(CliReadable.from(streamStringOrGenerator), parser)
-  }
-
   #stream
   #parser
 
   constructor(stream, parser) {
+    if (!(stream instanceof Stream))
+      throw new Error('stream must be an instance of Stream')
+
     this.#stream = stream
     this.#parser = parser
-  }
-
-  from(streamStringOrGenerator) { 
-    return CliReader.from(streamStringOrGenerator, this.#parser)
-  }
-  fromPath(path) { 
-    return CliReader.fromPath(path, this.#parser)
   }
   
   async readByte(signal) {
@@ -189,8 +178,8 @@ export class CliReader {
       const byte = await this.readByte(signal)
       
       // gives tty a chance to send ctrl-c
-      if (byte === null) 
-        await macrotick(signal) 
+      if (byte === null)
+        await macrotick(signal)
 
       if (byte === null || byte === NEW_LINE_BYTE) 
         break
@@ -214,5 +203,14 @@ export class CliReader {
     if (!this.#parser) throw new Error('Parser not set')
     const line = await this.read(signal)
     return this.#parser.toRecord(line, fields)
+  }
+
+  // async iterator that yields lines
+  async *[Symbol.asyncIterator]() {
+    while (true) {
+      const line = await this.read()
+      if (line === null) break
+      yield line
+    }
   }
 }

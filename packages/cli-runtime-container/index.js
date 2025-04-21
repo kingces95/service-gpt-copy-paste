@@ -21,7 +21,7 @@ export class CliRuntimeContainer extends EventEmitter {
     ].join(' '))
   }
 
-  static #activatedFn(instanceOrProvider) {
+  static #produceFn(instanceOrProvider) {
     return instanceOrProvider instanceof CliServiceProvider
       ? instanceOrProvider.activate()
       : instanceOrProvider
@@ -43,11 +43,11 @@ export class CliRuntimeContainer extends EventEmitter {
 
       // instance: already activated
       // provider: use provider to activate instance
-      activatedFn: CliRuntimeContainer.#activatedFn,
+      produceFn: CliRuntimeContainer.#produceFn,
 
       // - eventHub: if CliService, register instance producer/consumer events
       // - threadPool: if CliServiceThread, start thread
-      activatedSyncFn: this.#activatedSyncFn.bind(this),
+      startFn: this.#startFn.bind(this),
 
       // walk transposed service DAG:
       // - threadPool: if CliServiceThread, then stop thread
@@ -61,26 +61,22 @@ export class CliRuntimeContainer extends EventEmitter {
     })
   }
 
-  #activatedSyncFn(instance) {
+  #startFn(instance) {
     if (instance instanceof CliService)
       this.#eventHub.register(instance)
 
     if (instance instanceof CliServiceThread)
       this.#threadPool.start(instance)
-
-    return instance
   }
 
   async #disposeFn(instance) {
     if (instance instanceof CliServiceThread)
       await this.#threadPool.stop(instance)
 
-    if (instance instanceof CliService) {
+    if (instance instanceof CliService)
       this.#eventHub.quiesce(instance)
-      instance.dispose()
-    }
-
-    this.#container.dispose(instance)
+    
+    instance.dispose()
   }
 
   activate(class$, options) {

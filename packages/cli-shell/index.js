@@ -1,7 +1,9 @@
 import { CliSubshell } from '@kingjs/cli-subshell'
-import { CliShellStdio } from '@kingjs/cli-shell-stdio'
-import { PassThrough } from 'stream'
+import { CliStdio } from '@kingjs/cli-stdio'
 import { Functor } from '@kingjs/functor'
+import { CliReader, CliParser } from '@kingjs/cli-reader'
+import { CliWriter } from '@kingjs/cli-writer'
+import { Lazy } from '@kingjs/lazy'
 
 function parseCommand(strings = [], values = []) {
   const result = []
@@ -34,11 +36,13 @@ export class CliShell extends Functor {
   #stdio
   #pushdStack
   #alias
-
+  #reader
+  #writer
+  
   constructor({ 
     signal, 
     env = Object.create(process.env), 
-    stdio = new CliShellStdio(),
+    stdio = new CliStdio(),
     alias = new Map(),
   } = { }) {
     super(function() { return this.$(...arguments) })
@@ -47,12 +51,38 @@ export class CliShell extends Functor {
     this.#stdio = stdio
     this.#pushdStack = [env.PWD || process.cwd()]
     this.#alias = alias
+
+    this.#reader = new Lazy(() => new CliReader(this.stdin, new CliParser()))
+    this.#writer = new Lazy(() => new CliWriter(this.stdout))
   }
 
   get signal() { return this.#signal }
   get env() { return this.#env }
   get stdio() { return this.#stdio }
   get alias() { return this.#alias }
+  get reader() { return this.#reader.value }
+  get writer() { return this.#writer.value }
+  get stdin() { return this.#stdio.getStream(0) }
+  get stdout() { return this.#stdio.getStream(1) }
+  get stderr() { return this.#stdio.getStream(2) }
+
+  [Symbol.asyncIterator]() { return this.reader[Symbol.asyncIterator]() }
+
+  async readByte(signal) { return await this.reader.readByte(signal) }
+  async readString(charCount, signal) { 
+    return await this.reader.readString(charCount, signal) 
+  }
+  async readChar(signal) { return await this.reader.readChar(signal) }
+  async read(signal) { return await this.reader.read(signal) }
+  async readArray(signal) { return await this.reader.readArray(signal) }
+  async readRecord(fields, signal) { 
+    return await this.reader.readRecord(fields, signal) 
+  }
+
+  async echo(line) { await this.writer.echo(line) }
+  async echoRecord(fields, separator = ' ') {
+    await this.writer.echoRecord(fields, separator)
+  }
   
   get cwd() { return this.#pushdStack[this.#pushdStack.length - 1] }
   pushd(path) { this.#pushdStack.push(path) }

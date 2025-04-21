@@ -68,9 +68,25 @@ class CliFunctionSubshell extends CliSubshell {
 
   get fn() { return this.#fn }
 
-  spawn() {
+  async spawn() {
+    const { shell } = this
+
     // (); execute in-process subshell
-    return this.#fn(this.shell)
+    const result = this.#fn(shell)
+
+    if (result && typeof result[Symbol.asyncIterator] === 'function') {
+      for await (const item of result) {
+        if (Buffer.isBuffer(item)) {
+          shell.stdout.write(item.toString())
+        } else {
+          shell.stdout.write(item)
+          shell.stdout.write('\n')
+        }
+      }
+    } else if (typeof result === 'string') {
+      this.stdio.write(result)
+      shell.stdout.write('\n')
+    }
   }
 }
 

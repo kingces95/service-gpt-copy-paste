@@ -9,6 +9,8 @@ export class CliService extends Cli {
 
     super(options)
   }
+
+  async dispose() { }
 }
 
 export class CliServiceThread extends CliService {
@@ -71,6 +73,8 @@ export class CliServiceProvider extends Cli {
   }
 
   async activate() { return this }
+  
+  async dispose() { }
 }
 
 // Cli.__dumpMetadata()

@@ -7,6 +7,7 @@ export class CliStdStream extends CliServiceProvider {
 
   #path
   #isReadable
+  #stream
 
   constructor(options, { path, isReadable } = { }) {
     if (CliStdStream.initializing(new.target))
@@ -17,15 +18,17 @@ export class CliStdStream extends CliServiceProvider {
     this.#isReadable = isReadable
   }
 
+  get stream() { return this.#stream }
+
   async activate() {
-    return await this.#isReadable 
+    return this.#stream = await (this.#isReadable 
       ? CliReadable.fromPath(this.#path)
-      : CliWritable.fromPath(this.#path)
+      : CliWritable.fromPath(this.#path))
   }
 }
 
 export class CliStdIn extends CliStdStream { 
-  static parameters = { stdin: 'Input stream'}
+  static parameters = { stdin: 'Input stream' }
   static { this.initialize(import.meta) }
 
   constructor({ stdin = DEV_STDIN, ...rest } = { }) { 

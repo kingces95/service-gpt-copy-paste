@@ -294,8 +294,6 @@ export class Cli extends EventEmitter {
     this.#context = _info
   }
 
-  dispose() { }
-
   get info() { return this.#context }
   get loader() { return this.#context.loader }
   getServices(class$) { return this.#context.getServices(class$) }
