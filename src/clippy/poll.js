@@ -1,11 +1,11 @@
 import { CliRxPoller, CliRxPollerState } from '@kingjs/cli-rx-poller'
-import { Clipboard } from '@napi-rs/clipboard'
-import { exhaustMap, filter, first } from 'rxjs/operators'
-import { pipe } from 'rxjs'
 import { CliRuntimeState } from '@kingjs/cli-runtime'
 import { CliDaemonState } from '@kingjs/cli-daemon'
 import { CliPulse } from '@kingjs/cli-pulse'
 import { CliConsoleMon } from '@kingjs/cli-console'
+import { Clipboard } from '@napi-rs/clipboard'
+import { exhaustMap, filter, first, scan, map } from 'rxjs/operators'
+import { pipe } from 'rxjs'
 
 const PREFIX = '!#/clipboard/'
 
@@ -39,11 +39,14 @@ export default class Poll extends CliRxPoller {
   poll(signalRx) {
     const { prefix } = this
     const clipboard = new Clipboard()
-    
+
     return pipe(
       exhaustMap(async () => clipboard.getText()),
-      filter((content) => content.startsWith(prefix)),
-      first()
+      scan((state, current) => ({ current, previous: state.current }), { }),
+      filter(({ current, previous }) => previous && current != previous),
+      map(({ current }) => current),
+      filter(current => current.startsWith(prefix)),
+      first(),
     )
   }
 }

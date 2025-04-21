@@ -141,7 +141,7 @@ export class CliShell extends Functor {
 
     // command string: e.g. echo $`my-cmd ${arg0} ${arg1}`
     if (Array.isArray(arg0)) {
-      const [strings, values] = arguments
+      const [strings, ...values] = arguments
       return this.spawn(...this.#parseCommand(strings, values))
     }
 

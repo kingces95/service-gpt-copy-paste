@@ -1,28 +1,17 @@
-import { CliConsole } from '@kingjs/cli-console'
 import { CliTerminal } from '@kingjs/cli-terminal'
 
 export default class Dispatch extends CliTerminal {
   static description = 'Dispatch commands to other modules'
-  static services = {
-    console: CliConsole,
-  }
   static { this.initialize(import.meta) }
-
-  #console
 
   constructor(options) {
     if (Dispatch.initializing(new.target))
       return super()
     super(options)
-
-    const { console } = this.getServices(Dispatch)
-    this.#console = console
   }
 
-  async run(shell) {
-    const { signal } = shell  
-    const $ = this.#console
-    const [shebang = null, ...args] = await $.readArray(signal)
+  async run($) {
+    const [shebang = null, ...args] = await $.readArray($.signal)
     const [_, _clipboard, command, ...route] = shebang.split('/')
 
     // await console.echo(`Shebang: ${shebang}`)
@@ -34,7 +23,7 @@ export default class Dispatch extends CliTerminal {
       case 'http': 
         // cli shell <ps|wsl|bash|cmd> [...args]
         // cli http <get|post|put|delete|patch|head> <url>
-        const cmd = await shell.$$`${command} ${route} ${args}`()
+        const cmd = await $`this ${command} ${route} ${args}`()
         break
       case 'echo':
         await $.echo(args.join(' ').trim())

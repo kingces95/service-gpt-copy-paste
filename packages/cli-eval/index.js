@@ -62,7 +62,7 @@ export class CliEval extends CliTerminal {
     let fn = CliEval[this.#shell]
     const [exe, ...args] = fn(this.#exe, ...this.#args)
     this.emit('beforeSpawn')
-    const result = await shell.spawn(exe, args)()
+    const result = await shell.spawn(exe, ...args)()
     this.emit('beforeJoin', result)
   }
 }

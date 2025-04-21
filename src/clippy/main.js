@@ -111,12 +111,13 @@ export default class Main extends CliTerminal {
     //   await $`this dispatch`('!#/clipboard/echo hello world')()
     // }
 
-    // while ($.signal.aborted == false) {
-    //   await $(
-    //     $`this poll --stdmon /dev/null`,
-    //     $`this dispatch`,
-    //   )()
-    // }
+    while ($.signal.aborted == false) {
+      const result = await $(
+        $`this poll --stdmon /dev/null`,
+        $`this dispatch`,
+      )()
+      console.error(result)
+    }
 
     return 0
     // console.error(result)
