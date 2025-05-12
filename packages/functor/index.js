@@ -1,10 +1,12 @@
 export class Functor {
-  constructor(fn) {
+  constructor() {
     const self = function (...args) {
-      return fn.apply(self, args)
+      return self.$(...args)
     }
     Object.setPrototypeOf(self, new.target.prototype)
     self.constructor = new.target
     return self
   }
+  
+  $() { }
 }

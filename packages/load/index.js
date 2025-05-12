@@ -1,4 +1,3 @@
-
 export class LoadAsync {
   constructor(executor) {
     this.promise = null

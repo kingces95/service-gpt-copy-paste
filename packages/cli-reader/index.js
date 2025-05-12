@@ -176,7 +176,7 @@ export class CliReader {
   
     while (true) {
       const byte = await this.readByte(signal)
-      
+
       // gives tty a chance to send ctrl-c
       if (byte === null)
         await macrotick(signal)
@@ -196,7 +196,8 @@ export class CliReader {
   async readArray(signal) {
     if (!this.#parser) throw new Error('Parser not set')
     const line = await this.read(signal)
-    return !line ? null : this.#parser.toArray(line)
+    const lines = !line ? null : await this.#parser.toArray(line)
+    return lines
   }
   
   async readRecord(fields, signal) {

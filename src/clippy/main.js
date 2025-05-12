@@ -4,6 +4,8 @@ import { CliRuntimeState } from '@kingjs/cli-runtime'
 import { CliDaemon, CliDaemonState } from '@kingjs/cli-daemon'
 import { CliPulse } from '@kingjs/cli-pulse'
 import { CliConsole, CliConsoleMon } from '@kingjs/cli-console'
+import { cliSubshellToPojo } from '@kingjs/cli-subshell-to-pojo'
+import { dumpPojo } from '@kingjs/pojo-dump'
 import clipboardy from 'clipboardy'
 
 // e.g., !#/clipboard/shell/bash echo hello world
@@ -29,66 +31,145 @@ export default class Main extends CliTerminal {
   }
 
   async run($) {
-    // const result = await $`this poll`()
+    let result = undefined
+    // result = await $`bash -c ${'echo hello world!'}`({ stdout: 'temp.txt' })
 
-    // const result = await $`this dispatch`(
+    // result = await ($({ IFS: ',' })($ => $.echo($.env.IFS)))
+    
+    // result = await $({ IFS: ',' })
+    //   ($ => $.echo($.env.IFS))
+    //   ({ stdout: process.stdout })
+
+    // result = await $`this poll`
+
+    // result = await $`this dispatch`(
     //   '!#/clipboard/echo hello world'
-    // )()
+    // )
 
-    // const result = await $`this poll --stdmon /dev/null`({
+    // result = await $`this dispatch`(
+    //   '!#/clipboard/echo ok'
+    // )({ stdout: 'temp.txt' })
+
+    // result = await $(
+    //   async $ => {
+    //     await $.echo('!#/clipboard/echo ok')
+    //     // $.stdout.on('end', () => console.error('stdout.end'))
+    //     // $.stdout.end()
+    //     // console.error('done')
+    //   },
+    //   $`this dispatch`,
+    //   // async $ => {
+    //   //   console.error('2')
+    //   //   $.stdin.on('end', () => console.error('stdin.end'))
+    //   //   $.stdin.pipe($.stdout)
+    //   // },
+    // )
+
+    // result = await $(
+    //   async $ => { 
+    //     await $.echo('echo hello world')
+    //     // $.stdout.end()
+    //     // subshell fails to explictly close stdout
+    //   },
+    //   async $ => {
+    //     const line = await $.read()
+    //     await $.echo(line) 
+    //   }
+    // )
+
+    // result = await $(
+    //   // { stdin: 'temp.txt' },
+    //   async $ => {
+    //     await $.echo('!#/clipboard/echo ok')
+    //   },
+    //   $`this dispatch`,
+    //   async $ => { 
+    //     let line = null
+    //     while (line = await $.read())
+    //       await $.echo(line)
+    //   },
+    //   async $ => { 
+    //     let line = null
+    //     $.read()//.__dump()
+    //     while (line = await $.read())
+    //       await $.echo(line)
+    //   },
+    //   // $(async $ => { $.stdin.pipe($.stdout) })
+    //     // ({ stdout: 'out.txt' }),
+    // ).__dump()
+    // ({ stdin: 'in.txt' })
+    // ({ stdin: '/dev/null' })
+    // (['here', 'doc'])
+    // ('here-string')
+    // ((function* itr() { yield 'hello world' })())
+    // result = await cliSubshellToPojo(result)
+    // dumpPojo(result)
+    // return
+
+    // result = await $`this poll --stdmon /dev/null`({
     //   stdout: $`this dispatch`,
-    // })()
+    // })//.__dump()
 
-    // const result = await $`this dispatch`({
+    // result = await $`this dispatch`({
     //   stdin: $`this poll --stdmon /dev/null`,
-    // })()
+    // })
 
-    // const result = await $.pipeline(
+    // result = await $.pipeline(
     //   $`this poll --stdmon /dev/null`,
     //   $`this dispatch`,
-    // )()
+    // )
 
-    // const result = await $(
+    // result = await $(
     //   $`this poll --stdmon /dev/null`,
     //   $`this dispatch`,
-    // )()
+    // )
 
-    // const result = await $(
+    // result = await $(
     //   'this poll'
-    // )()
+    // )
 
-    // const result = await $.subshell(async $ => {
-    //   return await $`this dispatch`()
+    // result = await $(async $ => {
+    //   return await $`this dispatch`
     // })({ 
     //   stdin: $`this poll --stdmon /dev/null`, 
-    // })()
+    // })
 
-    // const result = await $.subshell(async $ => {
+    // result = await $(async $ => {
     //   return await $`this poll --stdmon /dev/null`()
     // })({ 
     //   stdout: $`this dispatch`, 
-    // })()
+    // })
 
-    // const result = await $(async $ => {
+    // result = await $(async $ => {
     //   return await $`this poll --stdmon /dev/null`()
     // })({ 
     //   stdout: $`this dispatch`, 
-    // })()
+    // })
 
-    // const result = await $(async function($) {
+    // result = await $(async function($) {
     //   return 42
-    // })()
+    // })
 
-    // const result = await $(
-    //   $`this poll --stdmon /dev/null`,
-    //   $`this dispatch`,
+    // result = await $(
+    //   $`this poll`,
     //   async function($) { 
+    //     const line = await $.read()
     //     $.stdin.pipe($.stdout)
     //     return 0
     //   }
-    // )()
+    // )
 
-    // const result = await $(
+    // result = await $(
+    //   $`this poll --stdmon /dev/null`,
+    //   $`this dispatch`,
+    //   async function($) { 
+    //     const line = await $.read()
+    //     $.stdin.pipe($.stdout)
+    //     return 0
+    //   }
+    // )
+
+    // result = await $(
     //   async function*($) {
     //     yield 'hello'
     //     yield 'world'
@@ -102,24 +183,23 @@ export default class Main extends CliTerminal {
     //       $.stdout.write('\n')
     //     }
     //   }
-    // )()
+    // )
 
-    // await $`this dispatch`('!#/clipboard/echo hello world')()
-    // await $`this dispatch`('!#/clipboard/echo hello world')()
+    // await $`this dispatch`('!#/clipboard/echo hello world')
+    // await $`this dispatch`('!#/clipboard/echo hello world')
 
     // while (!$.signal.aborted) {
-    //   await $`this dispatch`('!#/clipboard/echo hello world')()
+    //   await $`this dispatch`('!#/clipboard/echo hello world')
     // }
 
     while ($.signal.aborted == false) {
-      const result = await $(
+      result = await $(
         $`this poll --stdmon /dev/null`,
         $`this dispatch`,
       )()
       console.error(result)
     }
 
-    return 0
-    // console.error(result)
+    console.error(result)
   }
 }

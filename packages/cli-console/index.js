@@ -3,38 +3,34 @@ import { CliWriter } from '@kingjs/cli-writer'
 import { CliReader, CliParser } from '@kingjs/cli-reader'
 import { CliStdIn, CliStdOut, CliStdMon } from '@kingjs/cli-std-stream'
 import { PassThrough } from 'stream'
+import { CliIfs } from '@kingjs/cli-ifs'
 
 export class CliConsoleIn extends CliService {
   static services = {
     stdin: CliStdIn,
-    parser: CliParser,
+    ifs: CliIfs,
   }
   static { this.initialize(import.meta) }
 
   #reader
   #stdin
-  #parser
+  #ifs
 
   constructor(options) {
     if (CliConsoleIn.initializing(new.target))
       return super()
     super(options)
 
-    const { stdin, parser } = this.getServices(CliConsoleIn)
+    const { stdin, ifs } = this.getServices(CliConsoleIn)
     this.#stdin = stdin
-    this.#parser = parser
+    this.#ifs = ifs
+
+    const parser = new CliParser({ ifs })
     this.#reader = stdin.then(stdin => new CliReader(stdin, parser))
   }
 
   get stdin() { return this.#stdin }
-  get parser() { return this.#parser }
-
-  from(streamStringOrGenerator) { 
-    return CliReader.from(streamStringOrGenerator, this.#parser)
-  }
-  fromPath(path) { 
-    return CliReader.fromPath(path, this.#parser)
-  }
+  get ifs() { return this.#ifs }
 
   async readByte(signal) { return (await this.#reader).readByte(signal) }
   async readString(charCount, signal) { 

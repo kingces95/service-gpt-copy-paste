@@ -1,7 +1,7 @@
 {
-  "name": "@kingjs/cli-stdio",
+  "name": "@kingjs/cli-shell-draft",
   "version": "1.0.0",
-  "description": "Fluent spawn that accepts redirects.",
+  "description": "Shell for launching shell-ish commands.",
   "main": "index.js",
   "type": "module",
   "exports": {

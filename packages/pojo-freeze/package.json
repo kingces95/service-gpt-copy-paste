@@ -1,0 +1,15 @@
+{
+  "name": "@kingjs/pojo-freeze",
+  "version": "1.0.0",
+  "description": "Shell for launching shell-ish commands.",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {
+    "rxjs": "^7.5.0"
+  },
+  "author": "Chris King",
+  "license": "MIT"
+}

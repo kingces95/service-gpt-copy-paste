@@ -20,7 +20,6 @@ export async function toPojo(value, options = { }) {
 
     switch (jsType) {
       case 'symbol':
-      case 'function':
         return
 
       case 'boolean':
@@ -31,6 +30,7 @@ export async function toPojo(value, options = { }) {
       case 'string':
         return value
 
+      case 'function': // functor
       case 'object': {
         // iterators are treated as lists regardless of attached metadata.
         if (value[Symbol.iterator] || value[Symbol.asyncIterator])
@@ -123,6 +123,19 @@ export async function toPojo(value, options = { }) {
       if (jsType == 'function')
         throw new Error(`Pojo any type must not be typeof function`)
       return await toPojo(value, { symbol, depth, path })
+
+    case 'functors': {
+      if (jsType != 'object')
+        throw new Error(`Pojo list type must be typeof object; got ${jsType}`)
+
+      const list = []
+      for (const functor of value) {
+        list.push(await toPojo(functor, { symbol, depth, path }))
+      }
+      if (!list.length)
+        return
+      return list
+    }
 
     case 'refs':
     case 'list': {

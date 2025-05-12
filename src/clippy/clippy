@@ -9,6 +9,7 @@ export const Clippy = CliCommand.extend({
     main: 'clippy',
     poll: 'clippy/poll',
     dispatch: 'clippy/dispatch',
+    clip: 'clippy/clip',
     
     http: '@kingjs/cli-http',
     orb: '@kingjs/cli-orb',
@@ -22,7 +23,8 @@ export const Clippy = CliCommand.extend({
     ['Pulse', '@kingjs/cli-pulse, CliPulse'],
     ['I/O',
       '@kingjs/cli-std-stream, CliStdStream',
-      '@kingjs/cli-reader, CliParser',],
+      '@kingjs/cli-ifs, CliIfs',],
+    ['Terminal', '@kingjs/cli-terminal'],
     ['Global', '@kingjs/cli-command'],
   ]
 })
@@ -35,6 +37,7 @@ let argv = undefined
 // argv = 'http get'.split(' ')
 // argv = 'eval bash node.exe src/clippy/clippy poll'.split(' ')
 argv = 'main'.split(' ')
+// argv = 'clip read'.split(' ')
 // argv = 'shell bash echo hello world'.split(' ')
 
 // alias cli='node.exe src/clippy/clippy $@'

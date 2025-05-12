@@ -1,5 +1,4 @@
-import { CliCommand } from '@kingjs/cli-command'
-import { CliDaemon } from '@kingjs/cli-daemon'
+import { CliTerminal } from '@kingjs/cli-terminal'
 import { CliConsoleIn } from '@kingjs/cli-console'
 import { AbortError } from '@kingjs/abort-error'
 import ora from 'ora'
@@ -18,26 +17,18 @@ const INIT_COLOR = 'gray'
 const NORMAL_COLOR = 'cyan'
 const WARN_COLOR = 'yellow'
 
-export default class CliOrb extends CliDaemon {
+export default class CliOrb extends CliTerminal {
   static description = 'Tool for rendering status to tty'
   static parameters = {
     cpuHot: 'Threshold for high CPU usage',
     memHot: 'Threshold for high memory usage',
   }
-  static services = {
-    console: CliConsoleIn,
-  }
   static { this.initialize(import.meta) }
-
-  #console
 
   constructor({ cpuHot = CPU_HOT, memHot = MEM_HOT, ...rest } = { }) {
     if (CliOrb.initializing(new.target, { cpuHot, memHot }))
       return super()
     super(rest)
-
-    const { console } = this.getServices(CliOrb)
-    this.#console = console
 
     this.cpuHot = cpuHot
     this.memHot = memHot
@@ -48,15 +39,13 @@ export default class CliOrb extends CliDaemon {
     // this.start()
   }
 
-  get console() { return this.#console }
-
   formatNumber(num) {
     if (num >= 1e6) return (num / 1e6).toFixed(1) + 'm'
     if (num >= 1e3) return (num / 1e3).toFixed(1) + 'k'
     return num.toString()
   }
 
-  async start(signal) {
+  async run($) {
     this.spinner = ora({ spinner: { 
       interval: NORMAL_INTERVAL, 
       frames: DOTS_FRAMES
@@ -64,25 +53,23 @@ export default class CliOrb extends CliDaemon {
 
     while (true) {
       try {
-        const { console } = this
-        const record = await console.readRecord(['type', 'rest'], signal)
-        if (!record) break
-        const { type, rest } = record
-        const subConsole = console.from(rest)
+        const { type, rest } = await $.readRecord(['type', 'rest'])
+        if (!type) break
 
         switch (type) {
           case 'data':
-            this.stats = await subConsole.readRecord({ 
-              inCount: '#', outCount: '#', errorCount: '#', cpu: '#', memory: '#' }) 
+            this.stats = await $.readRecord({ 
+              inCount: '#', outCount: '#', errorCount: '#', cpu: '#', memory: '#' 
+            })(rest)
 
             this.adjustSpinner(this.stats.cpu, this.stats.memory)
             this.spinner.text = this.toString()
-            continue
+            break
 
           case 'exiting':
-            const { code } = await subConsole.readRecord({ code: '#' })
+            const { code } = await $.readRecord({ code: '#' })(rest)
             process.exitCode = code
-            continue
+            break
 
           case 'succeeded':
           case 'failed':
@@ -111,17 +98,17 @@ export default class CliOrb extends CliDaemon {
 
           case 'warning':
             const { _, warnMessage } 
-              = await subConsole.readRecord(['warnType', 'warnMessage'])
+              = await $.readRecord(['warnType', 'warnMessage'])
             this.message = `${warnMessage}`
             this.spinner.color = WARN_COLOR
             break
 
           default:
             this.message = rest
-            this.spinner.color = NORMAL_COLOR        
-        }
+            this.spinner.color = NORMAL_COLOR  
 
-        this.spinner.text = this.toString()
+          this.spinner.text = this.toString()
+        }
 
       } catch (err) {
         if (err instanceof AbortError) continue

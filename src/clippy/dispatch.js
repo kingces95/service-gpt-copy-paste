@@ -31,8 +31,7 @@ export default class Dispatch extends CliTerminal {
       case 'throw':
         throw new Error('This is an error thrown for testing.')
       default:
-        this.emit('failure', `Invalid command: ${command}`)
+        throw new Error(`Invalid command: ${command}`)
     }
-
   }
 }

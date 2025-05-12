@@ -1,0 +1,15 @@
+{
+  "name": "@kingjs/cli-redirector",
+  "version": "1.0.0",
+  "description": "Fluent spawn that accepts redirects.",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {
+    "rxjs": "^7.5.0"
+  },
+  "author": "Chris King",
+  "license": "MIT"
+}

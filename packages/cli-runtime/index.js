@@ -182,6 +182,7 @@ export class CliRuntime extends EventEmitter {
           } catch (error) {
             if (error instanceof AbortError) return
             this.emit('error', error)
+            return EXIT_ERRORED
           } finally {
             this.#eventHub.quiesce(instance)
           }

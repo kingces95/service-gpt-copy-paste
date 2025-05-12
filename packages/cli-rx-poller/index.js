@@ -4,7 +4,7 @@ import { interval, timer } from 'rxjs'
 import { switchMap, retry, takeUntil } from 'rxjs/operators'
 
 const POLL_MS = 200
-const ERROR_RATE = 0.01
+const ERROR_RATE = 0.00
 const ERROR_MS = 1000
 
 export class CliRxPollerState extends CliService {
