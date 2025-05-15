@@ -1,19 +1,18 @@
 import { once } from 'events'
+import { sleep } from '@kingjs/sleep'
 
 export class DisposableResource {
   #__name
   #value
   #valueOrFn
   #disposeFn
-  #disposedEvent
   #end
 
-  constructor(valueOrFn, disposeFn = () => {}, options = { end: true }) {
-    const { end = true, disposedEvent, __name } = options
+  constructor(valueOrFn, disposeFn = () => true, options = { end: true }) {
+    const { end = true, __name } = options
     this.#valueOrFn = valueOrFn
     this.#disposeFn = disposeFn
     this.#end = end
-    this.#disposedEvent = disposedEvent
     this.#__name = __name
   }
 
@@ -27,19 +26,43 @@ export class DisposableResource {
     return this.#value
   }
   get isOwned() { return this.#end }
+  get isDisposed() { return this.#value === null }
+  get disposedEvent() { }
 
-  async dispose() {
+  async dispose(signal) {
+    // resource was never created
     if (this.#value === undefined) {
+
+      // prevent any further attempts to create resource
       this.#value = null
-      return
+      return true
+    }
+    
+    // resource is already disposed
+    if (this.isDisposed) return true
+
+    // resource is not owned
+    if (!this.isOwned) return true
+
+    const { value, disposedEvent } = this
+
+    // no disposal event
+    if (!disposedEvent) {
+      this.#disposeFn(value)
+      return true
     }
 
-    if (!this.#end) return
+    // synchronize with disposal event
+    const disposed = once(value, disposedEvent)
+    this.#disposeFn(value)
 
-    const { value } = this
-    const disposedEvent = this.#disposedEvent
-    const disposed = disposedEvent ? once(value, disposedEvent) : null
-    await this.#disposeFn(value)
-    if (disposed) await disposed
+    let aborted = false
+    let handler = null
+    const abort = new Promise(
+      resolve => signal?.addEventListener('abort', handler = resolve)
+    ).then(() => { aborted = true })
+    try { await Promise.any([ disposed, abort ]) } 
+    finally { signal?.removeEventListener('abort', handler) }
+    return !aborted
   }
 }

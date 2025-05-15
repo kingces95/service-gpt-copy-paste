@@ -4,7 +4,7 @@ import { CliShellDraft } from '@kingjs/cli-shell-draft'
 import { Lazy, LazyFn } from '@kingjs/lazy'
 import { DraftorPromise } from '@kingjs/draft'
 import { spawn } from 'child_process'
-import { PassThrough } from 'stream'
+import { Writable, Readable, PassThrough } from 'stream'
 import { 
   CliParentPipedReadableResource,
   CliParentPipedWritableResource,
@@ -55,9 +55,14 @@ async function __import() {
 //    implements getPipe$ and run$()
 
 export class CliSubshell extends DraftorPromise {
-  async __dump() {
-    const { toPojo, dumpPojo } = await __import()
-    dumpPojo(await toPojo(this))
+  async __toPojo() {
+    const { toPojo } = await __import()
+    const pojo = await toPojo(this)
+    return pojo
+  }
+  async __dump(options) {
+    const { dumpPojo } = await __import()
+    dumpPojo(await this.__toPojo(), options)
   }
 
   static fromArgs(parentShell, cmd, args) {
@@ -70,6 +75,37 @@ export class CliSubshell extends DraftorPromise {
     return new CliBuiltinSubshell({ parentShell, fn })
   }
 
+  static #normalize(redirection) {
+    // overload resolution; passing a subshell implies piping to stdout
+    if (redirection instanceof CliSubshell)
+      redirection = { stdout: redirection }
+
+    // here-string; e.g. echo <<< "hello world"
+    if (Buffer.isBuffer(redirection)) 
+      return { stdin: redirection }
+
+    if (typeof redirection === 'string') 
+      return { stdin: Buffer.from(redirection) }
+
+    // here-doc; e.g. echo <<EOF "hello world" EOF
+    if (Array.isArray(redirection))
+      return { stdin: redirection }
+    
+    // assume output redirection...; e.g. echo > file.txt
+    if (redirection instanceof Writable) 
+      return { stdout: redirection }
+
+    // ...unless it is a readable stream, then input redirection; e.g. echo < file.txt
+    if (redirection instanceof Readable) 
+      return { stdin: redirection }
+
+    // process substitution; e.g. echo <(echo "hello world")
+    if (redirection?.[Symbol.asyncIterator] || redirection?.[Symbol.iterator])
+      return { stdin: redirection }
+
+    return redirection
+  }
+  
   #shell
   #__parent
   #__children
@@ -77,9 +113,11 @@ export class CliSubshell extends DraftorPromise {
   #__id
 
   constructor(parentShell) {
+    const { loader } = parentShell
     const children = []
     const supplantedRedirects = []
     const shellDraft = new CliShellDraft(parentShell)
+    const thenFns = []
 
     // There are two types of subshells: interprocess and intraprocess. 
     // 
@@ -101,7 +139,7 @@ export class CliSubshell extends DraftorPromise {
     // The ability to test for the existence of a fd without loading the 
     // underlying stream is needed by spawn() when constructing the stdio 
     // array since a piped stream is created *after* spawn() creates the process.
-    function redirectSubshell(parent, { isInput, slot }, child) {
+    function interSubshellRedirect(parent, { isInput, slot }, child) {
       // register child edges in subshell DAG 
       children.push(child)
 
@@ -143,36 +181,57 @@ export class CliSubshell extends DraftorPromise {
       }, { [isChildConsumer ? '__from' : '__to']: parent.__id }) 
 
       // redirect parent/child resources
-      child.__setParent(parent)
+      parent({ [parentSlot]: parentResource })
       child({ [childSlot]: childResource })
-      return parentResource
+
+      child.__setParent(parent)
+    }
+
+    function intraSubshellRedirect(info, redirection) {
+      shellDraft.revise(info, redirection, {
+        // gather supplanted redirects; e.g. : > a > b, a is supplanted by b
+        // supplanting a slot still results in resource activation/disposal
+        // e.g. : > a.txt > b.txt still results in a.txt being created/closed
+        // We will await disposal of the supplanted redirects before we start the
+        // pipeline.
+        supplant(redirection) { supplantedRedirects.push(redirection) },
+      })
     }
 
     super({
       revise(redirections) {
-        // overload resolution; passing a subshell implies piping to stdout
-        if (redirections instanceof CliSubshell)
-          redirections = { stdout: redirections }
+        // overload resolution; javascript primitive -> { [slot]: redirection }
+        redirections = CliSubshell.#normalize(redirections)
 
-        const self = this
-        shellDraft.revise(redirections, {
+        // activate/replace resources
+        for (const entry of Object.entries(redirections)) {
+          const [name, redirection] = entry
 
-          redirect(info, redirection) {
-            const isSubshell = redirection instanceof CliSubshell
-            if (isSubshell) return redirectSubshell(self, info, redirection)
-          },
+          // add defferred promise transform
+          if (name == 'then') {
+            thenFns.push(redirection)
+            continue
+          }
 
-          // gather supplanted redirects; e.g. : > a > b, a is supplanted by b
-          // supplanting a slot still results in resource activation/disposal
-          // e.g. : > a.txt > b.txt still results in a.txt being created/closed
-          // We will await disposal of the supplanted redirects before we start the
-          // pipeline.
-          supplant(redirection) { supplantedRedirects.push(redirection) },
-        })
+          // load slot info
+          const info = loader.getInfo(name)
+          if (info == null) throw new TypeError(`Invalid redirect target: ${name}`)
+
+          // skip if no redirection
+          if (redirection == null) continue
+
+          const isSubshell = redirection instanceof CliSubshell
+          if (isSubshell) 
+            return interSubshellRedirect(this, info, redirection)
+
+          intraSubshellRedirect(info, redirection)
+        }
       },
       publish() {
+        const { shell } = this
+
         // connect to parent streams and trigger connection to siblings
-        const { slots } = this.shell
+        const { slots } = shell
         for (let i = 0; i < slots.length; i++) {
           const pipeFn = this.getPipe$(i)
           const pipe = pipeFn ? pipeFn() : null
@@ -181,13 +240,13 @@ export class CliSubshell extends DraftorPromise {
           const slot = slots[i]
           slot.connect(pipe)
         }
-    
-        return Promise.all(
+
+        const result = Promise.all(
           // close the fds of supplanted redirects 
           supplantedRedirects.map(o => o.dispose())
         ).then(() => Promise.all([
           // start parallel execution; wait for pipeline to finish
-          this.run$(this.shell), 
+          this.run$(shell), 
           ...children
         ])).then(([result, childResults = []]) => [
           // flattent the results of the pipeline
@@ -195,6 +254,11 @@ export class CliSubshell extends DraftorPromise {
           ...childResults.flatMap(x => x)
           // project the results of the pipeline
         ]).then(results => this.then$(results))
+
+        // apply defferred promise transforms; e.g. reverse pipline results, etc.
+        return thenFns.reduce((result, thenFn) => {
+          return result.then(thenFn)
+        }, result)
       }
     })
 
@@ -261,6 +325,7 @@ export class CliFunctionSubshell extends CliInProcessSubshell {
   get isUser() { return true }
 
   async return$(result) {
+    const { shell } = this
     let exitCode = 0
 
     // process result
@@ -335,7 +400,7 @@ export class CliProcessSubshell extends CliSubshell {
 
   getPipe$(slot) { return () => this.child.stdio[slot] }
 
-  run$() {
+  async run$() {
     return new Promise((accept, reject) => {
       let result = { }
       const child = this.child
@@ -353,5 +418,7 @@ export class CliProcessSubshell extends CliSubshell {
     })
   }
 
+  __cmd() { return this.#cmd == process.execPath ? 'node' : this.#cmd }
+  __args() { return this.#args }
   toString() { return this.#cmd + ' ' + this.#args.join(' ') }
 }

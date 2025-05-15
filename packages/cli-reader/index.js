@@ -1,3 +1,4 @@
+import assert from 'assert'
 import Utf8CharReader from '@kingjs/utf8-char-reader'
 import { CliService } from '@kingjs/cli-service'
 import { AbortError } from '@kingjs/abort-error'
@@ -102,11 +103,18 @@ export class CliReader {
   
   async readByte(signal) {
     const stream = this.#stream
+    // throw 'test'
 
     // Attempt immediate read
     const chunk = stream.read(1)
     if (chunk) {
+      assert(chunk.length == 1, 'stream.read(1) must return a single byte')
       return chunk[0]
+    }
+
+    // test if stream has ended
+    if (stream.readableEnded) {
+      return null
     }
   
     return new Promise((resolve, reject) => {
@@ -178,8 +186,8 @@ export class CliReader {
       const byte = await this.readByte(signal)
 
       // gives tty a chance to send ctrl-c
-      if (byte === null)
-        await macrotick(signal)
+      // if (byte === null)
+      //   await macrotick(signal)
 
       if (byte === null || byte === NEW_LINE_BYTE) 
         break

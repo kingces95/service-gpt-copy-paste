@@ -1,15 +1,10 @@
 import { Writable, Readable } from 'stream'
 import { Draft } from '@kingjs/draft'
 import { CliShell } from '@kingjs/cli-shell'
-import { DEV_NULL } from '@kingjs/cli-readable'
 import { 
   CliResource,
-  CliBorrowedFdReadableResource,
-  CliBorrowedFdWritableResource,
   CliBorrowedReadableResource,
   CliBorrowedWritableResource,
-  CliPipedReadableResource,
-  CliPipedWritableResource,
   CliHereStringResource,
   CliHereDocResource,
   CliPathReadableResource,
@@ -21,51 +16,18 @@ import {
 
 export class CliShellDraft extends Draft {
 
-  static #normalize(redirection) {
-    // here-string; e.g. echo <<< "hello world"
-    if (Buffer.isBuffer(redirection)) 
-      return { stdin: redirection }
-
-    if (typeof redirection === 'string') 
-      return { stdin: Buffer.from(redirection) }
-
-    // here-doc; e.g. echo <<EOF "hello world" EOF
-    if (Array.isArray(redirection))
-      // redirection = redirection.flatMap(value => [value, '\n'])
-      return { stdin: redirection }
-
-    // process substitution; e.g. echo <(echo "hello world")
-    if (redirection?.[Symbol.asyncIterator] || redirection?.[Symbol.iterator])
-      return { stdin: redirection }
-    
-    // assume output redirection...; e.g. echo > file.txt
-    if (redirection instanceof Writable) 
-      return { stdout: redirection }
-
-    // ...unless it is a readable stream, then input redirection; e.g. echo < file.txt
-    if (redirection instanceof Readable) 
-      return { stdin: redirection }
-
-    return redirection
-  }
-
   #__slots
 
   constructor(parent) {
-    const loader = parent.loader
     const slots = []
 
-    function resourceFromInputRedirect$(producer) {
-      // fd redirect; e.g. echo 0<&3
-      if (typeof producer === 'number') 
-        return new CliBorrowedFdReadableResource(producer)
-
+    function resourceFromInputRedirect(producer) {
       // fd redirect; e.g. echo 0<&3
       if (producer instanceof Readable) 
         return new CliBorrowedReadableResource(producer)
 
       // path redirect to /dev/null; e.g. echo < /dev/null
-      if (producer === DEV_NULL)
+      if (producer === '')
         return new CliNullReadableResource()
 
       // path redirect; e.g. echo < file.txt
@@ -88,17 +50,13 @@ export class CliShellDraft extends Draft {
       return null
     }
 
-    function resourceFromOutputRedirect$(consumer) {
-      // fd redirect; e.g. echo 1>&3
-      if (typeof consumer === 'number') 
-        return new CliBorrowedFdWritableResource(consumer)
-
+    function resourceFromOutputRedirect(consumer) {
       // fd redirect; e.g. echo 1>&3
       if (consumer instanceof Writable) 
         return new CliBorrowedWritableResource(consumer)
 
       // path redirect to bin-bucket; e.g. echo > /dev/null
-      if (consumer === DEV_NULL)
+      if (consumer === '')
         return new CliNullWritableResource()
 
       // path redirect; e.g. echo > file.txt
@@ -106,14 +64,10 @@ export class CliShellDraft extends Draft {
         return new CliPathWritableResource(
           parent.resolve(consumer), null, consumer)
 
-      // pipe redirect; e.g. echo | grep hello | wc -l
-      if (typeof consumer === 'function')
-        return new CliPipedWritableResource(consumer)
-
       return null
     }
 
-    function redirect$(info, redirection) {
+    function redirect(info, redirection) {
       const { isInput } = info
 
       // substituion redirection; 
@@ -123,8 +77,8 @@ export class CliShellDraft extends Draft {
   
       // simple redirection; e.g. echo > file.txt
       const resource = isInput ? 
-        resourceFromInputRedirect$(redirection) :
-        resourceFromOutputRedirect$(redirection)
+        resourceFromInputRedirect(redirection) :
+        resourceFromOutputRedirect(redirection)
       if (resource) return resource
   
       throw new Error([
@@ -133,31 +87,18 @@ export class CliShellDraft extends Draft {
     }
 
     super({
-      revise(redirections, { redirect, supplant }) {
-        // overload resolution; javascript primitive -> { [slot]: redirection }
-        redirections = CliShellDraft.#normalize(redirections)
+      revise(info, redirection, { supplant }) {
 
-        // activate/replace resources
-        for (const entry of Object.entries(redirections)) {
-          const [name, redirection] = entry
-          if (redirection == null) continue
+        // supplant slot
+        const { slot } = info
+        const resource = slots[slot]
+        if (resource instanceof CliResource) 
+          supplant(resource)
 
-          // load slot info
-          const info = loader.getInfo(name)
-          if (info == null) throw new TypeError(`Invalid redirect target: ${name}`)
-
-          // supplant slot
-          const { slot } = info
-          const resource = slots[slot]
-          if (resource instanceof CliResource) 
-            supplant(resource)
-
-          // redirect slot
-          slots[slot] = 
-            redirection instanceof CliResource ? redirection :
-              redirect(info, redirection) ??
-                redirect$(info, redirection)
-        }
+        // redirect slot
+        slots[slot] = 
+          redirection instanceof CliResource ? redirection :
+              redirect(info, redirection)
       },
       publish() {
         return new CliShell({ parent, redirects: slots })

@@ -58,14 +58,20 @@ export class DraftorPromise extends Draftor {
   }
 
   then(...args) {
-    return this().then(...args)
+    return Promise.resolve()
+      .then(() => this())
+      .then(...args)
   }
 
   catch(...args) {
-    return this().catch(...args)
+    return Promise.resolve()
+      .then(() => this())
+      .catch(...args)
   }
 
   finally(...args) {
-    return this().finally(...args)
+    return Promise.resolve()
+      .then(() => this())
+      .finally(...args)
   }
 } 

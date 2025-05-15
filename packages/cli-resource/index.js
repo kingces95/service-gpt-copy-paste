@@ -5,7 +5,8 @@ import { createReadStream } from 'fs'
 import { createWriteStream } from 'fs'
 import { CliReadable } from '@kingjs/cli-readable'
 import { CliWritable } from '@kingjs/cli-writable'
-import { Readable } from 'stream'
+import { Readable, Writable } from 'stream'
+import { once } from 'events'
 import { Lazy } from '@kingjs/lazy'
 
 export class CliResource extends DisposableResource {
@@ -50,30 +51,19 @@ export class CliResource extends DisposableResource {
   }
 }
 
-export class CliDestroyableResource extends CliResource {
-  constructor(resource, options) {
-    super(resource, async destroyable => 
-      new Promise(resolve => destroyable.destroy(null, resolve)), options)
-  }
-}
-
-export class CliEndableResource extends CliResource {
-  constructor(resource, options) {
-    super(resource, async endable => 
-      new Promise(resolve => endable.end(resolve)), options)
-  }
-}
-
-export class CliReadableResource extends CliDestroyableResource {
+export class CliReadableResource extends CliResource {
   #options
 
   constructor(stream, options) {
-    super(stream, { ...options, 
-      disposedEvent: stream.emitClose ? 'close' : 'end' })
+    super(stream, 
+      readable => new Promise(resolve => readable.destroy(null, resolve)), 
+      options)
   }
 
   get options() { return this.#options }
   get isInput() { return true }
+  get isDisposed() { return super.isDisposed || this.stream?.readableEnded }
+  get disposedEvent() { return this.stream?.emitClose ? 'close' : null }
 
   connect(pipe) {
     assert(this.stream instanceof Readable, 'stream must be a Readable')
@@ -83,16 +73,19 @@ export class CliReadableResource extends CliDestroyableResource {
   }
 }
 
-export class CliWritableResource extends CliEndableResource {
+export class CliWritableResource extends CliResource {
   #options
 
   constructor(stream, options) {
-    super(stream, { ...options, 
-      disposedEvent: stream.emitClose ? 'close' : 'end' })
+    super(stream, 
+      writable => new Promise(resolve => writable.end(null, resolve)), 
+      options)
   }
 
   get options() { return this.#options }
   get isOutput() { return true }
+  get isDisposed() { return super.isDisposed || this.stream?.writableEnded }
+  get disposedEvent() { return this.stream?.emitClose ? 'close' : 'end' }
 
   connect(pipe) {
     assert(this.stream instanceof Readable, 'stream must be a Readable')
@@ -170,25 +163,23 @@ export class CliChildPipedReadableResource extends CliPipedReadableResource {
   }
 }
 
-export class CliHereStringResource extends CliReadableResource {
-  #buffer
-  constructor(bufferOrString) {
-    const buffer = Buffer.isBuffer(bufferOrString) 
-      ? bufferOrString 
-      : Buffer.from(bufferOrString)
-    super(Readable.from(buffer))
-    this.#buffer = buffer
-  }
-  get buffer() { return this.#buffer }
-}
-
 export class CliIterableSubstitutionResource extends CliReadableResource {
   constructor(iterable) {
-    super(Readable.from(iterable))
+    // disable objectMode so that the stream treats results as string chunks
+    super(Readable.from(iterable, { objectMode: false }))
   }
 }
 
-export class CliHereDocResource extends CliReadableResource {
+export class CliHereStringResource extends CliIterableSubstitutionResource {
+  #__bufferOrString
+  constructor(bufferOrString) {
+    super(bufferOrString)
+    this.#__bufferOrString = bufferOrString
+  }
+  get __bufferOrString() { return this.#__bufferOrString }
+}
+
+export class CliHereDocResource extends CliIterableSubstitutionResource {
   static *lines(arrayOfStrings) {
     for (const line of arrayOfStrings) {
       yield line
@@ -198,7 +189,7 @@ export class CliHereDocResource extends CliReadableResource {
 
   #__lines
   constructor(arrayOfStrings) {
-    super(Readable.from(CliHereDocResource.lines(arrayOfStrings)))
+    super(CliHereDocResource.lines(arrayOfStrings))
     this.#__lines = arrayOfStrings
   }
   get __lines() { return this.#__lines }
@@ -294,6 +285,7 @@ export class CliPathReadableResource extends CliOsReadableResource {
   }
   get __path() { return this.#__path }
 }
+
 export class CliPathWritableResource extends CliOsWritableResource {
   #__path
   constructor(path, osOptions, __path) {
@@ -305,13 +297,17 @@ export class CliPathWritableResource extends CliOsWritableResource {
 
 export class CliNullReadableResource extends CliReadableResource {
   constructor() {
-    super(CliReadable.fromPath(DEV_NULL))
+    super(Readable.from([]))
   }
 }
 
 export class CliNullWritableResource extends CliWritableResource {
+  static Sink = new Writable({
+    write(chunk, encoding, callback) { callback() }
+  })
+
   constructor() {
-    super(CliWritable.fromPath(DEV_NULL))
+    super(new.target.Sink)
   }
 } 
 

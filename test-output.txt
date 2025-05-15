@@ -1,4 +1,0 @@
-sanity
-first
-yes
-second

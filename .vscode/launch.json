@@ -35,5 +35,25 @@
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal"
     },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Current File (internal)",
+      "program": "${file}",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "skipFiles": [],
+    },
+    {
+      "name": "Debug Vitest Current File",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/vitest/vitest.mjs",
+      "args": ["run", "${relativeFile}"],
+      "autoAttachChildProcesses": true,
+      "smartStep": true,
+      "skipFiles": ["<node_internals>/**"],
+      "cwd": "${workspaceFolder}"
+    }
   ]
 }

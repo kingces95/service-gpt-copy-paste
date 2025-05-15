@@ -52,8 +52,8 @@ CliBuiltinSubshell[symbol] = {
 
 CliProcessSubshell[symbol] = {
   ...CliSubshell[symbol],
-  cmd: 'string',
-  args: 'list',
+  __cmd: 'string',
+  __args: 'list',
   __children: 'functors',
 }
 

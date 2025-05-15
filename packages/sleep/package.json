@@ -1,0 +1,16 @@
+{
+  "name": "@kingjs/sleep",
+  "version": "1.0.0",
+  "description": "Sleep for a time.",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "keywords": [
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+  }
+}

@@ -1,0 +1,19 @@
+{
+  __id: 1,
+  __type: 'Process',
+  __slots: {
+    '0': { __type: 'ParentPiped', __flow: 'in', __from: 0 },
+    '1': { __type: 'Borrowed', __flow: 'out' }
+  },
+  __cmd: 'node',
+  __args: [ '-e', 'console.log(require("fs").readFileSync(0,"utf8"))' ],
+  __children: [
+    {
+      __id: 0,
+      __type: 'Process',
+      __slots: { '1': { __type: 'ChildPiped', __flow: 'out', __to: 1 } },
+      __cmd: 'node',
+      __args: [ '-e', 'process.stdout.write("hello world")' ]
+    }
+  ]
+}

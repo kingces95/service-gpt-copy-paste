@@ -1,15 +1,22 @@
 import util from 'util'
+import { createWriteStream } from 'fs'
 
 export function dumpPojo(pojo, { 
   format = 'util',
   colors = process.stdout.isTTY,
+  path = null
 } = { }) {
+
+  const writable = path ? 
+    createWriteStream(path) : process.stdout
 
   switch (format) {
     case 'json':
-      console.log(JSON.stringify(pojo, null, 2))
+      writable.write(JSON.stringify(pojo, null, 2))
       break
     default:
-      console.log(util.inspect(pojo, { colors, depth: null }))
+      writable.write(util.inspect(pojo, { colors, depth: null }))
   }
+
+  writable.write('\n')
 }

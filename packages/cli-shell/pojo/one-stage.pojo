@@ -1,0 +1,6 @@
+{
+  __id: 0,
+  __type: 'Process',
+  __cmd: 'node',
+  __args: [ '-e', 'process.stdout.write("hello world")' ]
+}
