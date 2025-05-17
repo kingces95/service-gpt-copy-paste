@@ -10,7 +10,6 @@ import {
   CliBorrowedWritableResource,
 } from '@kingjs/cli-resource'
 import path from 'path'
-import { last } from 'lodash'
 
 const DISPOSE_TIMEOUT_MS = 1000
 
@@ -145,7 +144,9 @@ export class CliShell extends Functor {
   get reader() { return this.#reader.value }
   get writer() { return this.#writer.value }
 
-  [Symbol.asyncIterator]() { return this.reader[Symbol.asyncIterator]() }
+  [Symbol.asyncIterator]() { 
+    return this.reader[Symbol.asyncIterator]() 
+  }
 
   readByte() { 
     return this.#builtin($ => $.reader.readByte($.signal))
@@ -224,11 +225,6 @@ export class CliShell extends Functor {
 
     // pipeline: e.g. $($'a', ..., $ => { ... }, ...)
     return this.pipeline(...arguments)
-  }
-
-  $$() {
-    const subshell = this.$(...arguments)
-    return subshell({ stdin: null })
   }
 
   async dispose() {

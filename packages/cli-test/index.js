@@ -2,22 +2,31 @@ import { Readable, PassThrough } from 'stream'
 import { describe, it, expect, beforeEach } from 'vitest'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
+import { mkdir } from 'fs/promises'
+import { 
+  createWriteStream,
+  createReadStream, 
+  existsSync, 
+} from 'fs'
+import { formatPojo } from '@kingjs/pojo-format'
 import path from 'path'
 
-export async function compareStreams(actualStream, expectedStringOrStream) {
-  // Normalize expected to a stream
+async function readToString(stream) {
+  let result = ''
+  for await (const chunk of stream) {
+    result += chunk.toString()
+    continue
+  }
+  return result
+}
+
+export async function compareStreams(actualStringOrStream, expectedStringOrStream) {
   const expectedStream = typeof expectedStringOrStream === 'string'
     ? Readable.from([expectedStringOrStream])
     : expectedStringOrStream
-
-  const readToString = async (stream) => {
-    let result = ''
-    for await (const chunk of stream) {
-      result += chunk.toString()
-      continue
-    }
-    return result
-  }
+  const actualStream = typeof actualStringOrStream === 'string'
+    ? Readable.from([actualStringOrStream])
+    : actualStringOrStream
 
   const actualResult = await readToString(actualStream)
   const expectedResult = await readToString(expectedStream)
@@ -39,18 +48,35 @@ export class CliVitestPaths {
 
 export class CliVitestPojo {
   #paths
-  constructor(paths) {
+  #overwrite
+  constructor(paths, { overwrite = false } = { }) {
     this.#paths = paths
+    this.#overwrite = overwrite
   }
 
   get pojoExt() { return 'pojo' }
   get pojoDir() { return path.join(this.#paths.rootDir, 'pojo') }
 
-  expect(target, fileName) {
+  async expect(pojoOrObject, fileNameOrTask) {
+    const fileName = typeof fileNameOrTask === 'string'
+      ? fileNameOrTask
+      : path.join(fileNameOrTask.suite.name, fileNameOrTask.name) 
+
+    const pojo = typeof pojoOrObject.__toPojo === 'function' 
+      ? await pojoOrObject.__toPojo() 
+      : pojoOrObject
+
     const filePath = path.join(this.pojoDir, fileName + '.' + this.pojoExt)
-    const pojo = target.__toPojo()
-    const dump = dumpPojo(pojo)
-    const expected = Readable.from([filePath])
-    return compareStreams(target, expected)
+    const actual = formatPojo(pojo)
+    if (!existsSync(filePath) || this.#overwrite) {
+      await mkdir(dirname(filePath), { recursive: true })
+      const writable = createWriteStream(filePath)
+      writable.write(actual)
+      writable.end()
+      return
+    }
+
+    const expected = createReadStream(filePath)
+    return compareStreams(actual, expected)
   }
 }

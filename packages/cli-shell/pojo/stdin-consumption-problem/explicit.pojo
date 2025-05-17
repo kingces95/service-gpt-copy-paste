@@ -1,6 +1,7 @@
 {
   __id: 0,
   __type: 'Process',
+  __slots: { '1': { __type: 'Borrowed', __flow: 'out' } },
   __cmd: 'node',
   __args: [ '-e', 'process.stdout.write("hello world")' ]
 }

@@ -1,34 +1,30 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { CliShell } from '@kingjs/cli-shell'
 import { PassThrough, Readable } from 'stream'
-import { fileURLToPath } from 'url'
-import { dirname } from 'path'
-import { compareStreams } from '@kingjs/cli-test'
 import path from 'path'
+import { 
+  compareStreams, 
+  CliVitestPaths, 
+  CliVitestPojo 
+} from '@kingjs/cli-test'
 
-const __fileName = fileURLToPath(import.meta.url)
-const __rootDir = dirname(__fileName)
-
-const __pojoDir = path.join(__rootDir, 'pojo')
-const __pojoExt = 'pojo'
-async function savePojo(subshell, fileName) {
-  const filePath = path.join(__pojoDir, fileName + '.' + __pojoExt)
-  await subshell.__dump({ path: filePath })
-}
+const __paths = new CliVitestPaths(import.meta)
+const __pojo = new CliVitestPojo(__paths, { overwrite: true })
 
 const NODE = process.execPath
 const HELLO_WORLD = 'hello world'
 const HELLO = 'hello'
 const WORLD = 'world'
 
-describe('Scope', () => {
+describe('scope', () => {
   let $
   beforeEach(() => { $ = new CliShell() })
 
   it('add', async () => {
-    await $.scope({ HELLO: HELLO })($ => {
-      expect($.env.HELLO).toBe(HELLO)
-    })
+    await $.scope({ HELLO: HELLO })
+      .subshell($ => {
+        expect($.env.HELLO).toBe(HELLO)
+      })
     expect($.env.HELLO).toBe(undefined)
   })
   
@@ -56,22 +52,24 @@ describe('Scope', () => {
   })
 
   it('add-add', async () => {
-    await $.scope({ HELLO: HELLO })(async $ => {
-      expect($.env.HELLO).toBe(HELLO)
-
-      await $.scope({ WORLD: WORLD })($ => {
+    await $.scope({ HELLO: HELLO })
+      .subshell(async $ => {
         expect($.env.HELLO).toBe(HELLO)
-        expect($.env.WORLD).toBe(WORLD)
+
+        await $.scope({ WORLD: WORLD })
+          .subshell($ => {
+            expect($.env.HELLO).toBe(HELLO)
+            expect($.env.WORLD).toBe(WORLD)
+          })
+        expect($.env.HELLO).toBe(HELLO)
+        expect($.env.WORLD).toBe(undefined)
       })
-      expect($.env.HELLO).toBe(HELLO)
-      expect($.env.WORLD).toBe(undefined)
-    })
     expect($.env.HELLO).toBe(undefined)
     expect($.env.WORLD).toBe(undefined)
   })
 })
 
-describe('Cwd', () => {
+describe('cwd', () => {
   let $
   beforeEach(() => { $ = new CliShell() })
 
@@ -128,7 +126,7 @@ describe('Cwd', () => {
   })
 })
 
-describe('Streams', () => {
+describe('streams', () => {
   let $
   beforeEach(() => { $ = new CliShell() })
 
@@ -154,7 +152,7 @@ describe('Streams', () => {
   })
 })
 
-describe('Expand', () => {
+describe('expand', () => {
   let $
   beforeEach(() => { $ = new CliShell() })
 
@@ -174,7 +172,7 @@ describe('Expand', () => {
     const args = $.expand('shell', '-c', 'echo', HELLO_WORLD)
     expect(args).toEqual(['bash', '-c', 'echo', HELLO_WORLD])
 
-    await $($ => {
+    await $.subshell($ => {
       const args = $.expand('shell', '-c', 'echo', HELLO_WORLD)
       expect(args).toEqual(['bash', '-c', 'echo', HELLO_WORLD])
 
@@ -192,7 +190,7 @@ describe('Expand', () => {
   })
 })
 
-describe('Spawn', () => {
+describe('spawn', () => {
   let $
   beforeEach(() => { $ = new CliShell() })
 
@@ -222,18 +220,23 @@ describe('subshell', () => {
   beforeEach(() => { $ = new CliShell() })
 
   it('null', async () => {
-    await $.subshell()
+    const subshell = $.subshell()
+    expect(subshell).toBe(undefined)
   })
 
-  it('function', async () => {
+  it('function', async ({ task }) => {
     let called = false
-    await $.subshell(() => called = true)
+    const subshell = $.subshell(() => called = true)
+    await __pojo.expect(subshell, task)
+    await subshell
     expect(called).toBe(true)
   })
   
-  it('function-function', async () => {
+  it('function-function', async ({ task }) => {
     let called = false
-    await $.subshell($.subshell(() => called = true))
+    const subshell = $.subshell($.subshell(() => called = true))
+    await __pojo.expect(subshell, task)
+    await subshell
     expect(called).toBe(true)
   })
 
@@ -247,37 +250,303 @@ describe('pipeline', () => {
   let $
   beforeEach(() => { $ = new CliShell() })
 
-  it('one-stage', async () => {
-    const stage = $`${NODE} -e ${'process.stdout.write("hello world")'}`
+  it('one-stage', async ({ task }) => {
+    const stage = $.subshell(function one() { })
     const pipeline = $.pipeline(stage)
     expect(pipeline).toBe(stage)
-    await savePojo(pipeline, 'one-stage')
+    await __pojo.expect(stage, task)
   })
 
-  it('two-stage', async () => {
+  it('two-stage', async ({ task }) => {
     const passThrough = new PassThrough()
     const stages = [
-      $`${NODE} -e ${'process.stdout.write("hello world")'}`,
-      $`${NODE} -e ${'console.log(require("fs").readFileSync(0,"utf8"))'}`,
+      $.subshell(function one() { }),
+      $.subshell(function two() { }),
     ]
     const stage = $.pipeline(...stages)(passThrough)
 
     const [ first, last ] = stages
     expect(stage).toBe(last)
-    await savePojo(last, 'two-stage')
+    await __pojo.expect(stage, task)
   })
-  
-  it('three-stage', async () => {
+
+  it('three-stage', async ({ task }) => {
     const passThrough = new PassThrough()
     const stages = [
-      $`${NODE} -e ${'process.stdout.write("hello world")'}`,
-      $`${NODE} -e ${'console.log(require("fs").readFileSync(0,"utf8"))'}`,
-      $`${NODE} -e ${'console.log(require("fs").readFileSync(0,"utf8"))'}`,
+      $.subshell(function one() { }),
+      $.subshell(function two() { }),
+      $.subshell(function three() { }),
     ]
     const stage = $.pipeline(...stages)(passThrough)
 
     const [ first, middle, last ] = stages
     expect(stage).toBe(last)
-    await savePojo(last, 'three-stage')
+    await __pojo.expect(stage, task)
   })
+})
+
+describe('reader', () => {
+  let $
+  beforeEach(() => { $ = new CliShell() })
+
+  it('read-byte', async () => {
+    const passThrough = new PassThrough()
+    passThrough.write(HELLO_WORLD)
+    passThrough.end()
+    await $.subshell(async $ => {
+      const result = await $.readByte()
+      const byte = HELLO_WORLD.charCodeAt(0)
+      expect(result).toBe(byte)
+    })({ stdin: passThrough })  
+  })
+
+  it('read-char', async () => {
+    const passThrough = new PassThrough()
+    passThrough.write(HELLO_WORLD)
+    passThrough.end()
+    await $.subshell(async $ => {
+      const result = await $.readChar()
+      expect(result).toBe(HELLO_WORLD.charAt(0))
+    })({ stdin: passThrough })
+  })
+
+  it('read-string', async () => {
+    const passThrough = new PassThrough()
+    passThrough.write(HELLO_WORLD)
+    passThrough.end()
+    await $.subshell(async $ => {
+      const result = await $.readString(2)
+      expect(result).toBe(HELLO_WORLD.substring(0, 2))
+    })({ stdin: passThrough })
+  })
+
+  it('read', async () => {
+    const passThrough = new PassThrough()
+    passThrough.write(HELLO_WORLD + '\n' + HELLO)
+    passThrough.end()
+    await $.subshell(async $ => {
+      const helloWorld = await $.read()
+      expect(helloWorld).toBe(HELLO_WORLD)
+      const hello = await $.read()
+      expect(hello).toBe(HELLO)
+    })({ stdin: passThrough })
+  })
+
+  it('async-iterator', async () => {
+    const passThrough = new PassThrough()
+    passThrough.write(HELLO_WORLD + '\n' + HELLO)
+    passThrough.end()
+    await $.subshell(async $ => {
+      let lines = []
+      for await (const list of $) 
+        lines.push(list)
+      const [ helloWorld, hello ] = lines
+      expect(helloWorld).toBe(HELLO_WORLD)
+      expect(hello).toBe(HELLO)
+    })({ stdin: passThrough })
+  })
+
+  it('read-array', async () => {
+    const passThrough = new PassThrough()
+    passThrough.write(HELLO_WORLD + '\n' + HELLO)
+    passThrough.end()
+    await $.subshell(async $ => {
+      const [ hello, world ] = await $.readArray()
+      expect(hello).toBe(HELLO)
+      expect(world).toBe(WORLD)
+      const [ hello$ ] = await $.readArray()
+      expect(hello$).toBe(HELLO)
+    })({ stdin: passThrough })
+  })
+
+  it('read-record-array', async () => {
+    const passThrough = new PassThrough()
+    passThrough.write(HELLO_WORLD + '\n' + HELLO)
+    passThrough.end()
+    await $.subshell(async $ => {
+      const record = await $.readRecord([ 'hello', 'world' ])
+      expect(record.hello).toBe(HELLO)
+      expect(record.world).toBe(WORLD)
+      const record$ = await $.readRecord([ 'hello' ])
+      expect(record$.hello).toBe(HELLO)
+    })({ stdin: passThrough })
+  })
+  
+  it('read-record-string', async () => {
+    const passThrough = new PassThrough()
+    passThrough.write(HELLO)
+    passThrough.end()
+    await $.subshell(async $ => {
+      const record = await $.readRecord({ value: '' })
+      expect(record.value).toBe(HELLO)
+    })({ stdin: passThrough })
+  })
+  
+  it('read-record-true', async () => {
+    const passThrough = new PassThrough()
+    passThrough.write('1 true True')
+    passThrough.end()
+    await $.subshell(async $ => {
+      const record = await $.readRecord({ p0: '!', p1: '!', p2: '!' })
+      expect(record.p0).toBe(true)
+      expect(record.p1).toBe(true)
+      expect(record.p2).toBe(true)
+    })({ stdin: passThrough })
+  })
+
+  it('read-record-false', async () => {
+    const passThrough = new PassThrough()
+    passThrough.write('0 false False')
+    passThrough.end()
+    await $.subshell(async $ => {
+      const record = await $.readRecord({ p0: '!', p1: '!', p2: '!' })
+      expect(record.p0).toBe(false)
+      expect(record.p1).toBe(false)
+      expect(record.p2).toBe(false)
+    })({ stdin: passThrough })
+  })
+
+  it('read-record-number', async () => {
+    const passThrough = new PassThrough()
+    passThrough.write('0 1')
+    passThrough.end()
+    await $.subshell(async $ => {
+      const record = await $.readRecord({ n0: '#', n1: '#' })
+      expect(record.n0).toBe(0)
+      expect(record.n1).toBe(1)
+    })({ stdin: passThrough })
+  })
+})
+
+describe('writer', () => {
+  let $
+  beforeEach(() => { $ = new CliShell() })
+
+  it('echo', async () => {
+    const passThrough = new PassThrough()
+    await $.subshell(async $ => {
+      await $.echo(HELLO_WORLD)
+    })(passThrough)
+    passThrough.end()
+    await compareStreams(passThrough, HELLO_WORLD + '\n')
+  })
+  
+  it('echo-record', async () => {
+    const passThrough = new PassThrough()
+    await $.subshell(async $ => {
+      await $.echoRecord([HELLO, WORLD])
+    })(passThrough)
+    passThrough.end()
+    await compareStreams(passThrough, HELLO_WORLD + '\n')
+  })
+})
+
+describe('publish', () => {
+  let $
+  beforeEach(() => { $ = new CliShell() })
+
+  it('noop', async () => {
+    const result = $()
+    expect(result).toBe(undefined)
+  })
+
+  it('variable', async () => {
+    const result = $({ hello: HELLO })
+    const { hello } = result.env
+    expect(hello).toBe(HELLO)
+  })
+
+  it('tagged-template-literal', async () => {
+    const ttl = await $`${NODE} -e ${'process.exit(42)'}`
+    expect(ttl).toEqual([42])
+  })
+
+  it('tagged-template-literal', async () => {
+    const ttl = await $`${[NODE, '-e', 'process.exit(42)']}`
+    expect(ttl).toEqual([42])
+  })
+
+  it('pipeline', async () => {
+    const passThrough = new PassThrough()
+    await $($ => $.echo(HELLO_WORLD))
+      (passThrough)
+    passThrough.end()
+    await compareStreams(passThrough, HELLO_WORLD + '\n')
+  })
+})
+
+describe('stdin-consumption-problem', () => {
+  let $
+  beforeEach(() => { $ = new CliShell() })
+
+  // ⚠ Design Limitation: Bash allows a spawned process to lazily inherit stdin.
+  // In Bash, if the child process does *not* read from its inherited stdin,
+  // the parent's stdin remains untouched — preserving the input stream.
+  //
+  // Node cannot fully replicate this behavior in all cases.
+  //
+  // In Node, a child can receive stdin in two main ways:
+  // (1) If the parent stream has a file descriptor (fd), it can be passed
+  //     directly via `stdio: [fd, ...]`, preserving Bash-like lazy semantics.
+  // (2) If the parent stream lacks a real fd, Node sets up a pipe and exposes
+  //     `child.stdin` — requiring the parent to explicitly `.pipe()` data in.
+  //
+  // In case (2), piping eagerly consumes the parent stream regardless of
+  // whether the child ever reads from stdin. This breaks the abstraction that
+  // "all pipes are equal" between subshells.
+  //
+  // To prevent premature consumption, the stdin must be explicitly nulled or
+  // guarded with a signaling mechanism. This asymmetry means that in some cases,
+  // stdin will be consumed even if the child ignores it — violating the
+  // intuitive pipe behavior from Bash.
+  it('implicit', async ({ task }) => {
+    const producer = new PassThrough()
+    producer.write(HELLO_WORLD)
+    producer.end()
+
+    await $.subshell(async $ => {
+      const consumer = new PassThrough()
+      const subshell = $.spawn(
+        NODE, 
+        '-e', 
+        `process.stdout.write("${HELLO_WORLD}")`
+      )(consumer)({
+        // Comment out to see the difference
+        stdin: null
+      })
+      await __pojo.expect(subshell, task)
+      await subshell
+
+      consumer.end()
+      await compareStreams(consumer, HELLO_WORLD)
+    })({ stdin: producer })
+
+    // This fails if the stdin: null is commented out
+    await compareStreams(producer, HELLO_WORLD)
+  })
+  
+  it('explicit', async ({ task }) => {
+    const producer = new PassThrough()
+    producer.write(HELLO_WORLD)
+    producer.end()
+
+    const consumer = new PassThrough()
+    const subshell = $.spawn(
+      NODE, 
+      '-e', 
+      `process.stdout.write("${HELLO_WORLD}")`
+    )({ 
+      // Uncomment to see the difference
+      // stdin: producer, 
+      stdout: consumer 
+    })
+    await __pojo.expect(subshell, task)
+    await subshell
+    consumer.end()
+    await compareStreams(consumer, HELLO_WORLD)
+
+    // This fails if the stdin: producer is uncommented
+    await compareStreams(producer, HELLO_WORLD)
+  })
+
 })

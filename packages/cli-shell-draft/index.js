@@ -27,7 +27,7 @@ export class CliShellDraft extends Draft {
         return new CliBorrowedReadableResource(producer)
 
       // path redirect to /dev/null; e.g. echo < /dev/null
-      if (producer === '')
+      if (producer === '' || producer == null)
         return new CliNullReadableResource()
 
       // path redirect; e.g. echo < file.txt
@@ -56,7 +56,7 @@ export class CliShellDraft extends Draft {
         return new CliBorrowedWritableResource(consumer)
 
       // path redirect to bin-bucket; e.g. echo > /dev/null
-      if (consumer === '')
+      if (consumer === '' || consumer == null)
         return new CliNullWritableResource()
 
       // path redirect; e.g. echo > file.txt
@@ -98,7 +98,7 @@ export class CliShellDraft extends Draft {
         // redirect slot
         slots[slot] = 
           redirection instanceof CliResource ? redirection :
-              redirect(info, redirection)
+            redirect(info, redirection)
       },
       publish() {
         return new CliShell({ parent, redirects: slots })

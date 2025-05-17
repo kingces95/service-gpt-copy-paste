@@ -198,7 +198,9 @@ export class CliReader {
       charReader.processByte(byte)
     }
   
-    return charReader.toString()
+    const result = charReader.toString()
+    if (result === '') return null
+    return result
   }
 
   async readArray(signal) {

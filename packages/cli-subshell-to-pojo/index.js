@@ -30,6 +30,7 @@ CliResource[symbol] = {
 CliSubshell[symbol] = {
   __id: 'number',
   __type: 'string',
+  __name: 'string',
   // isInProcess: 'boolean',
   // isBuiltin: 'boolean',
   __slots: 'any'

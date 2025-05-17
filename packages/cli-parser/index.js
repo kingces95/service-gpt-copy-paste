@@ -1,7 +1,9 @@
+export const DEFAULT_IFS = ' \t\n'
+
 export class CliParser {
   #ifs
 
-  constructor(ifs) {
+  constructor(ifs = DEFAULT_IFS) {
     this.#ifs = ifs
   }
 

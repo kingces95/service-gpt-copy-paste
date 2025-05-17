@@ -28,7 +28,9 @@ async function __import() {
 // stream. Alternatively, if the consumer does not create its own stdin pipe, then
 // that same prodcuer could offer its own stdout stream to the consumer. If neither
 // the producer or consumer create their own streams, then a PassThrough stream
-// can be created and given to each subshell as a fallback. 
+// can be created and given to each subshell as a fallback. Or if both the consumer
+// and producer create their own streams, then the consumer and pipe directly to the
+// consumer.
 
 // Ownership of streams is important when considering when to close streams. When
 // piping to a stream, the runtime should close the consumer when the producer emits
@@ -36,23 +38,15 @@ async function __import() {
 // process.stdout, then the runtime should not close the stream when the producer emits
 // EOF. If, however, the subshell is piping to a file created by the runtime in response
 // to a redirect specified as a file path, then the runtime should close the consumer 
-// when the producer emits EOF. 
+// when the producer emits EOF.
 
-// Subshells are implemented as a class hierarchy. The base class calls members of the
-// extneded classes. The base classes and their invocation methods are as follows:
-//
-// CliFunctor
-//     calls update$() repeatedly then activate$()
-// CliSubshell extends CliFunctor
-//    activate$() calls run$()
-//    takePipe$() calls getPipe$()
-// CliFunctionSubshell extends CliSubshell
-//    run$() calls return$()
-// CliFunctionSubshell extends CliFunctionSubshell
-//    implements return$()
-// CliBuiltinSubshell extends CliFunctionSubshell
-// CliCommandSubshell extends CliSubshell
-//    implements getPipe$ and run$()
+// The bash abstraction inspired our implementation. In bash, the activation of a
+// subshell is a two step process. First, the command is specified and then the
+// redirects are specified. In the abstract, activation of the subshell command must
+// be delayed until the redirects are specified. That abstraction is implemented
+// by DraftorPromise which is both a function and a promise. The function can be
+// repatedly called to specify the redirects in a fluent manner. Once the redirects
+// are specified, the promise is resolved and the subshell command is executed.
 
 export class CliSubshell extends DraftorPromise {
   async __toPojo() {
@@ -78,7 +72,7 @@ export class CliSubshell extends DraftorPromise {
   static #normalize(redirection) {
     // overload resolution; passing a subshell implies piping to stdout
     if (redirection instanceof CliSubshell)
-      redirection = { stdout: redirection }
+      return { stdout: redirection }
 
     // here-string; e.g. echo <<< "hello world"
     if (Buffer.isBuffer(redirection)) 
@@ -217,9 +211,6 @@ export class CliSubshell extends DraftorPromise {
           const info = loader.getInfo(name)
           if (info == null) throw new TypeError(`Invalid redirect target: ${name}`)
 
-          // skip if no redirection
-          if (redirection == null) continue
-
           const isSubshell = redirection instanceof CliSubshell
           if (isSubshell) 
             return interSubshellRedirect(this, info, redirection)
@@ -303,7 +294,7 @@ export class CliInProcessSubshell extends CliSubshell {
   }
 
   get isInProcess() { return true }
-  get name() { return this.#fn.name }
+  get __name() { return this.#fn.name }
 
   async run$(shell) {
     try {
