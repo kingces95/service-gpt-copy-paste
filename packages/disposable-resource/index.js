@@ -4,13 +4,17 @@ import { sleep } from '@kingjs/sleep'
 export class DisposableResource {
   #__name
   #value
-  #valueOrFn
+  #valueFn
   #disposeFn
   #end
 
   constructor(valueOrFn, disposeFn = () => true, options = { end: true }) {
     const { end = true, __name } = options
-    this.#valueOrFn = valueOrFn
+    if (typeof valueOrFn !== 'function')
+      this.#value = valueOrFn
+    else
+      this.#valueFn = valueOrFn
+  
     this.#disposeFn = disposeFn
     this.#end = end
     this.#__name = __name
@@ -18,11 +22,8 @@ export class DisposableResource {
 
   get __name() { return this.#__name }
   get value() { 
-    if (this.#value === undefined) {
-      this.#value = typeof this.#valueOrFn === 'function' 
-        ? this.#valueOrFn() 
-        : this.#valueOrFn
-    }
+    if (this.#value === undefined)
+      this.#value = this.#valueFn() 
     return this.#value
   }
   get isOwned() { return this.#end }
@@ -54,7 +55,7 @@ export class DisposableResource {
 
     // synchronize with disposal event
     const disposed = once(value, disposedEvent)
-    this.#disposeFn(value)
+    await this.#disposeFn(value)
 
     let aborted = false
     let handler = null

@@ -221,7 +221,7 @@ export class CliSubshell extends DraftorPromise {
       publish() {
         const { shell } = this
 
-        // connect to parent streams and trigger connection to siblings
+        // connect pipes
         const { slots } = shell
         for (let i = 0; i < slots.length; i++) {
           const pipeFn = this.getPipe$(i)
@@ -383,6 +383,28 @@ export class CliProcessSubshell extends CliSubshell {
 
       return spawn(cmd, args, { env, cwd, stdio })
     }, this)
+
+    // ⚠ Design Limitation: Bash allows a spawned process to lazily inherit stdin.
+    // In Bash, if the child process does *not* read from its inherited stdin,
+    // the parent's stdin remains untouched — preserving the input stream.
+    //
+    // Node cannot fully replicate this behavior in all cases.
+    //
+    // In Node, a child can receive stdin in two main ways:
+    // (1) If the parent stream has a file descriptor (fd), it can be passed
+    //     directly via `stdio: [fd, ...]`, preserving Bash-like lazy semantics.
+    // (2) If the parent stream lacks a real fd, Node sets up a pipe and exposes
+    //     `child.stdin` — requiring the parent to explicitly `.pipe()` data in.
+    //
+    // In case (2), piping eagerly consumes the parent stream regardless of
+    // whether the child ever reads from stdin. This breaks the abstraction that
+    // "all pipes are equal" between subshells.
+    //
+    // To prevent premature consumption, the stdin must be nulled. This nulling
+    // could be done explictly by the user, or implicitly by the runtime. The
+    // latter is chosen because hanging the spawned process for lack of stdin
+    // is a more explict failure  than siliently fetching and discarding input.
+    this({ stdin: null })
   }
 
   get cmd() { return this.#cmd }

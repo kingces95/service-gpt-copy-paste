@@ -74,7 +74,7 @@ export class CliShellDraft extends Draft {
       // e.g. echo 0<&3
       if (typeof redirection == 'number')
         return slots[redirection] ?? parent.slots[redirection]?.borrow()
-  
+
       // simple redirection; e.g. echo > file.txt
       const resource = isInput ? 
         resourceFromInputRedirect(redirection) :
@@ -109,7 +109,7 @@ export class CliShellDraft extends Draft {
   }
 
   get __slots() { 
-    // convert from array to pojo with slot indexes as keys
+    // convert from array to pojo with slot indices as keys
     return this.#__slots.reduce((o, resource, slot) => {
       o[slot] = resource
       return o

@@ -4,7 +4,6 @@ import { CliShell } from '@kingjs/cli-shell'
 import { Readable, PassThrough } from 'stream'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
-import { unlink } from 'fs/promises'
 import { once } from 'events'
 import { compareStreams } from '@kingjs/cli-test'
 
@@ -16,7 +15,7 @@ const HELLO_WORLD = 'hello world'
 const HELLO = 'hello'
 const WORLD = 'world'
 
-describe('Spawn', () => {
+describe('spawn', () => {
   let $
   beforeEach(() => { $ = new CliShell() })
 
@@ -50,7 +49,7 @@ describe('Spawn', () => {
   })
 })
 
-describe('Function', () => {
+describe('function', () => {
   let $
   beforeEach(() => { $ = new CliShell() })
 
@@ -90,7 +89,7 @@ describe('Function', () => {
   })
 })
 
-describe('Spawn <-> Function', () => {
+describe('spawn-function', () => {
   let $
   beforeEach(() => { $ = new CliShell() })
 
@@ -131,5 +130,71 @@ describe('Spawn <-> Function', () => {
     )(passThrough)
     passThrough.end()
     await compareStreams(passThrough, HELLO_WORLD)
+  })
+})
+
+describe('normalize', () => {
+  // Test redirects that coerced to the form { [stream]: value }. For example:
+  // $(...)('hello world') is equivalent to $(...)({ stdin: 'hello world' })
+  let $
+
+  beforeEach(() => { $ = new CliShell() })
+
+  // e.g. like reading fd 3; e.g. $ (...) 0<&3
+  it('input', async () => {
+    const readable = Readable.from(HELLO_WORLD, { objectMode: false })
+    await $(async $ => {
+      await compareStreams($.stdin, HELLO_WORLD)
+    })(readable)
+  })
+
+  // e.g. like writing fd 3; e.g. $ (...) 1>&3
+  it('output', async () => {
+    const passThrough = new PassThrough()
+    await $(async $ => {
+      passThrough.write(HELLO_WORLD)
+    })(passThrough)
+    passThrough.end()
+    await compareStreams(passThrough, HELLO_WORLD)
+  })
+
+  // e.g. like here-string; e.g. $ (...) <<< "hello world"
+  it('here-buffer', async () => {
+    await $(async $ => {
+      await compareStreams($.stdin, HELLO_WORLD)
+    })(Buffer.from(HELLO_WORLD))
+  })
+
+  // e.g. like here-string; e.g. $ (...) <<< "hello world"
+  it('here-string', async () => {
+    await $(async $ => {
+      const line = await $.read()
+      expect(line).toEqual(HELLO_WORLD)
+    })(HELLO_WORLD)
+  })
+
+  // e.g. like here-doc; e.g. $ (...) <<EOF 'hello world' EOF
+  it('here-doc', async () => {
+    await $(async $ => {
+      await compareStreams($.stdin, `${HELLO}\n${WORLD}\n`)
+    })([HELLO, WORLD])
+  })
+  
+  // e.g. like process-substitution; e.g. $ (...) <(echo "hello world")
+  it('process-substitution', async () => {
+    await $(async $ => {
+      await compareStreams($.stdin, HELLO_WORLD)
+    })(function* () {
+      for (const chunk of [HELLO, ' ', WORLD]) yield chunk
+    }())
+  })
+  
+  // e.g. like process-substitution; e.g. $ (...) <(echo "hello world")
+  it('process-substitution-async', async () => {
+    await $(async $ => {
+      await compareStreams($.stdin, HELLO_WORLD)
+    })(async function* () {
+      for (const chunk of [HELLO, ' ', WORLD]) yield chunk
+    }())
   })
 })

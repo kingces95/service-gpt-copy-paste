@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { CliShell } from '@kingjs/cli-shell'
-import { PassThrough, Readable } from 'stream'
+import { PassThrough } from 'stream'
 import path from 'path'
 import { 
   compareStreams, 
@@ -479,26 +479,6 @@ describe('stdin-consumption-problem', () => {
   let $
   beforeEach(() => { $ = new CliShell() })
 
-  // ⚠ Design Limitation: Bash allows a spawned process to lazily inherit stdin.
-  // In Bash, if the child process does *not* read from its inherited stdin,
-  // the parent's stdin remains untouched — preserving the input stream.
-  //
-  // Node cannot fully replicate this behavior in all cases.
-  //
-  // In Node, a child can receive stdin in two main ways:
-  // (1) If the parent stream has a file descriptor (fd), it can be passed
-  //     directly via `stdio: [fd, ...]`, preserving Bash-like lazy semantics.
-  // (2) If the parent stream lacks a real fd, Node sets up a pipe and exposes
-  //     `child.stdin` — requiring the parent to explicitly `.pipe()` data in.
-  //
-  // In case (2), piping eagerly consumes the parent stream regardless of
-  // whether the child ever reads from stdin. This breaks the abstraction that
-  // "all pipes are equal" between subshells.
-  //
-  // To prevent premature consumption, the stdin must be explicitly nulled or
-  // guarded with a signaling mechanism. This asymmetry means that in some cases,
-  // stdin will be consumed even if the child ignores it — violating the
-  // intuitive pipe behavior from Bash.
   it('implicit', async ({ task }) => {
     const producer = new PassThrough()
     producer.write(HELLO_WORLD)
@@ -511,8 +491,11 @@ describe('stdin-consumption-problem', () => {
         '-e', 
         `process.stdout.write("${HELLO_WORLD}")`
       )(consumer)({
-        // Comment out to see the difference
-        stdin: null
+        // Uncomment out to observe issue with implicit inheritance of stdin
+        // Only happens if stdin is not backed by an fd. In that case, stdin
+        // is fetched as part of the piping process into the spawned process.
+        // If the process does nont consume stdin, then the fetched dats is lost.
+        // stdin: $.stdin
       })
       await __pojo.expect(subshell, task)
       await subshell
@@ -521,32 +504,7 @@ describe('stdin-consumption-problem', () => {
       await compareStreams(consumer, HELLO_WORLD)
     })({ stdin: producer })
 
-    // This fails if the stdin: null is commented out
+    // This fails if the stdin: $.stdin is uncommented
     await compareStreams(producer, HELLO_WORLD)
   })
-  
-  it('explicit', async ({ task }) => {
-    const producer = new PassThrough()
-    producer.write(HELLO_WORLD)
-    producer.end()
-
-    const consumer = new PassThrough()
-    const subshell = $.spawn(
-      NODE, 
-      '-e', 
-      `process.stdout.write("${HELLO_WORLD}")`
-    )({ 
-      // Uncomment to see the difference
-      // stdin: producer, 
-      stdout: consumer 
-    })
-    await __pojo.expect(subshell, task)
-    await subshell
-    consumer.end()
-    await compareStreams(consumer, HELLO_WORLD)
-
-    // This fails if the stdin: producer is uncommented
-    await compareStreams(producer, HELLO_WORLD)
-  })
-
 })

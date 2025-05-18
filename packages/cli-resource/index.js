@@ -23,7 +23,7 @@ export class CliResource extends DisposableResource {
   get hasFd() { return this.stream.fd != null }
   get isInput() { return false }
   get isOutput() { return false }
-  get parent() { return null }
+  get __resource() { return null }
 
   get __from() { return this.#__from }
   get __to() { return this.#__to }
@@ -63,7 +63,11 @@ export class CliReadableResource extends CliResource {
   get options() { return this.#options }
   get isInput() { return true }
   get isDisposed() { return super.isDisposed || this.stream?.readableEnded }
-  get disposedEvent() { return this.stream?.emitClose ? 'close' : null }
+  get disposedEvent() { 
+    return this.stream?.emitClose 
+    ? 'close' 
+    : null // .destroy() doesn't emit 'end'
+  }
 
   connect(pipe) {
     assert(this.stream instanceof Readable, 'stream must be a Readable')
@@ -85,7 +89,7 @@ export class CliWritableResource extends CliResource {
   get options() { return this.#options }
   get isOutput() { return true }
   get isDisposed() { return super.isDisposed || this.stream?.writableEnded }
-  get disposedEvent() { return this.stream?.emitClose ? 'close' : 'end' }
+  get disposedEvent() { return this.stream?.emitClose ? 'close' : 'finish' }
 
   connect(pipe) {
     assert(this.stream instanceof Readable, 'stream must be a Readable')
@@ -108,21 +112,21 @@ export class CliBorrowedWritableResource extends CliWritableResource {
 }
 
 export class CliCopiedReadableResource extends CliBorrowedReadableResource {
-  #parent
-  constructor(stream, parent) {
+  #__resource
+  constructor(stream, __resource) {
     super(stream)
-    this.#parent = parent
+    this.#__resource = __resource
   }
-  get parent() { return this.#parent }
+  get __resource() { return this.#__resource }
 }
 
 export class CliCopiedWritableResource extends CliBorrowedWritableResource {
-  #parent
-  constructor(stream, parent) {
+  #__resource
+  constructor(stream, __resource) {
     super(stream)
-    this.#parent = parent
+    this.#__resource = __resource
   }
-  get parent() { return this.#parent }
+  get __resource() { return this.#__resource }
 }
 
 export class CliPipedWritableResource extends CliWritableResource {

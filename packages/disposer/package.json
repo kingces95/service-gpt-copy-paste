@@ -1,0 +1,15 @@
+{
+  "name": "@kingjs/disposer",
+  "version": "1.0.0",
+  "description": "Wrap a dispose function in an object implementing dispose.",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "peerDependencies": {},
+  "author": "Chris King",
+  "license": "MIT"
+}
