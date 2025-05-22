@@ -1,9 +1,17 @@
-import { access, constants, stat } from 'fs/promises'
-import { join, basename, dirname, extname } from 'path'
+import { access, constants, stat, lstat } from 'fs/promises'
+import { join, basename, dirname, extname, resolve, relative } from 'path'
 import { normalize, sep, isAbsolute } from 'path'
 import { Refinery } from '@kingjs/refinery'
-import { tmpdir } from 'os'
+import { tmpdir, type } from 'os'
 import { randomUUID } from 'crypto'
+import { AsyncLocalStorage } from 'async_hooks'
+
+const CLI_CONTEXT_SYMBOL = Symbol.for('@kingjs/cli-context')
+
+if (process[CLI_CONTEXT_SYMBOL] == null) {
+  const storage = new AsyncLocalStorage()
+  process[CLI_CONTEXT_SYMBOL] = storage
+}
 
 class TempPath {
   static create({ extension = '', prefix = 'tmp-', suffix = '' } = {}) {
@@ -13,7 +21,7 @@ class TempPath {
   }
 
   static async createFile(options) {
-    const path =this.create(options)
+    const path = this.create(options)
     await path.touch()
     return path
   }
@@ -26,24 +34,52 @@ class TempPath {
 } 
 
 export class Path extends Refinery {
+  static Readable = constants.R_OK
+  static Writable = constants.W_OK
+  static Executable = constants.X_OK
+  static Exists = constants.F_OK
+
   static root = new Path('/')
   static current = new Path('.')
   static parent = new Path('..')
 
+  static cwd() { 
+    const context = process[CLI_CONTEXT_SYMBOL].getStore()
+    return Path.create(context?.cwd ?? process.cwd())
+  }
+  static withCwd(cwd, callback) {
+    cwd = Path.create(cwd)
+    if (!cwd.isAbsolute) throw new Error('Path must be absolute.')
+    return new Promise((resolve, reject) => {
+      process[CLI_CONTEXT_SYMBOL].run({ cwd }, 
+        () => Promise.resolve().then(callback).catch(reject).then(resolve)
+      )
+    })
+  }
   static create(pathOrStringOrUrl) {
     if (pathOrStringOrUrl instanceof Path)
       return pathOrStringOrUrl
-    if (typeof pathOrStringOrUrl == 'string')
-      return new Path(pathOrStringOrUrl)
-    if (pathOrStringOrUrl instanceof URL)
-      return new Path(pathOrStringOrUrl.pathname)
-    throw new Error('Invalid Path.create argument. Must be a Path, string, or URL.')
+
+    return new Path(Path.toString(pathOrStringOrUrl))
   }
   static createRelative() {
     return Path.current(...arguments)
   }
   static createAbsolute() {
     return Path.root(...arguments)
+  }
+
+  static toString(pathOrStringOrUrl) {
+    if (pathOrStringOrUrl instanceof Path)
+      return pathOrStringOrUrl()
+
+    if (pathOrStringOrUrl instanceof URL)
+      return pathOrStringOrUrl.pathname
+
+    if (typeof pathOrStringOrUrl == 'string')
+      return pathOrStringOrUrl
+
+    throw new Error('Path must be a Path, string, or URL.')
   }
 
   // ========== Temp Path ==========
@@ -60,26 +96,30 @@ export class Path extends Refinery {
 
   #path
 
-  constructor(basePath = '.') {
+  constructor(path = '.') {
     super()
-    this.#path = normalize(basePath)
+    this.#path = normalize(path)
   }
 
   refine$() {
     if (arguments.length == 0)
       return this.#path
 
-    return new Path(join(this.#path, ...arguments))
+    return [...arguments].reduce((base, arg) => {
+      const segment = Path.create(arg)
+      if (segment.isAbsolute)
+        return segment
+      return Path.create(join(base(), segment()))
+    }, this)
   }
 
-  // ========== Path predicates ==========
+  // ========== IEquatable ==========
 
-  get isAbsolute() {
-    return isAbsolute(this.#path)
-  }
+  equals(path) {
+    if (!(path instanceof Path))
+      return false
 
-  get isRelative() {
-    return !this.isAbsolute
+    return this() == path()
   }
 
   // ========== Path parse ==========
@@ -89,213 +129,331 @@ export class Path extends Refinery {
   }
 
   get basename() {
-    return basename(this.#path, this.extension)
+    return basename(this(), this.extension)
   }
 
   get extension() {
-    return extname(this.#path)
+    return extname(this())
   }
 
   get parent() {
-    return new Path(dirname(this.#path))
+    return Path.create(dirname(this()))
   }
 
   get segments() {
-    return this.#path.split(sep).filter(Boolean)
+    return this().split(sep).filter(Boolean)
   }
 
   get value() {
-    return this.#path
+    return this()
+  }
+
+  relativeTo(basePath) {
+    const basePath$ = Path.create(basePath)
+    return Path.create(relative(basePath$(), this()))
   }
 
   toString() {
-    return this.value
+    return Path.toString(this)
+  }
+
+  // ========== Path predicates ==========
+
+  get isAbsolute() {
+    return isAbsolute(this())
+  }
+
+  get isRelative() {
+    return !this.isAbsolute
+  }
+
+  resolve() {
+    if (this.isAbsolute && arguments.length == 0) return this
+    const segments = [...arguments].map($ => Path.create($))
+    const cwd = Path.cwd()
+    const result = resolve(cwd(), this(), ...segments.map($ => $()))
+    return Path.create(result)
   }
 
   // ========== Path access ==========
 
-  get isReadable() {
-    return access(this.#path, constants.R_OK).then(() => true).catch(() => false)
-  }
+  async access({ mode = Path.Exists } = { }) {
+    // https://github.com/nodejs/node/issues/14025
+    // mirror behavior of fs.existsSync
+    // symlinks should be transparent
 
-  get isWritable() {
-    return access(this.#path, constants.W_OK).then(() => true).catch(() => false)
-  }
+    const this$ = this.resolve()
 
-  get isExecutable() {
-    return access(this.#path, constants.X_OK).then(() => true).catch(() => false)
+    // base case
+    if (!await this.isLink()) {
+      return await access(this$(), mode).then(() => true).catch(() => false)
+    }
+
+    // recursive case
+    const link = await this.parent(await this.readLink())
+    return link.access({ mode })
   }
+  exists() { return this.access({ mode: Path.Exists }) }
+  isReadable() { return this.access({ mode: Path.Readable }) }
+  isWritable() { return this.access({ mode: Path.Writable }) }
+  isExecutable() { return this.access({ mode: Path.Executable }) }
 
   // ========== Path type ==========
   
-  get stats() {
-    return stat(this.#path).catch(() => null)
+  stats({ ofLink = false } = {}) {
+    const this$  = this.resolve()
+    return (ofLink ? lstat : stat)(this$()).catch(() => null)
   }
 
-  get isFile() {
-    return this.stats.then(s => s?.isFile() ?? false)
+  isFile() {
+    return this.stats().then(s => s?.isFile() ?? false)
   }
 
-  get isDirectory() {
-    return this.stats.then(s => s?.isDirectory() ?? false)
+  isDirectory() {
+    return this.stats().then(s => s?.isDirectory() ?? false)
   }
 
-  get isLink() {
-    return this.stats.then(s => s?.isSymbolicLink() ?? false)
+  isLink() {
+    return this.stats({ ofLink: true })
+      .then(s => s?.isSymbolicLink() ?? false)
   }
 
-  // ========== Path dates ==========
-
-  get modifiedDate() {
-    return this.stats.then(s => s?.mtime ?? null)
-  }
+  // ========== Path identifiers ==========
   
-  get creationDate() {
-    return this.stats.then(s => s?.birthtime ?? null)
-  }
-  
-  get changeDate() {
-    return this.stats.then(s => s?.ctime ?? null)
-  }
-  
-  get accessDate() {
-    return this.stats.then(s => s?.atime ?? null)
+  ino(options) {
+    return this.stats(options).then(s => s?.ino ?? null)
   }
 
-  // ========== Path times ==========
-
-  get modifiedTime() {
-    return this.modifiedDate.then(d => d?.getTime() ?? null)
+  dev(options) {
+    return this.stats(options).then(s => s?.dev ?? null)
   }
 
-  get creationTime() {
-    return this.creationDate.then(d => d?.getTime() ?? null)
+  // ========== Path permissions ==========
+
+  ownerUserId(options) {
+    return this.stats(options).then(s => s?.uid ?? null)
   }
 
-  get changeTime() {
-    return this.changeDate.then(d => d?.getTime() ?? null)
-  }
-
-  get accessTime() {
-    return this.accessDate.then(d => d?.getTime() ?? null)
+  ownerGroupId(options) {
+    return this.stats(options).then(s => s?.gid ?? null)
   }
 
   // ========== Path stats ==========
 
-  get isEmpty() {
-    return this.stats.then(s => s ? s.size === 0 : true)
+  isEmpty(options) {
+    return this.stats(options).then(s => s ? s.size === 0 : true)
   }
 
-  get size() {
-    return this.stats.then(s => s?.size ?? null)
+  size(options) {
+    return this.stats(options).then(s => s?.size ?? null)
   }
 
-  get ownerUserId() {
-    return this.stats.then(s => s?.uid ?? null)
+  // ========== Path dates ==========
+
+  modifiedDate(options) {
+    return this.stats(options).then(s => s?.mtime ?? null)
+  }
+  
+  creationDate(options) {
+    return this.stats(options).then(s => s?.birthtime ?? null)
+  }
+  
+  changeDate(options) {
+    return this.stats(options).then(s => s?.ctime ?? null)
+  }
+  
+  accessDate(options) {
+    return this.stats(options).then(s => s?.atime ?? null)
   }
 
-  get ownerGroupId() {
-    return this.stats.then(s => s?.gid ?? null)
+  // ========== Path times ==========
+
+  modifiedTime(options) {
+    return this.modifiedDate(options).then(d => d?.getTime() ?? null)
+  }
+
+  creationTime(options) {
+    return this.creationDate(options).then(d => d?.getTime() ?? null)
+  }
+
+  changeTime(options) {
+    return this.changeDate(options).then(d => d?.getTime() ?? null)
+  }
+
+  accessTime(options) {
+    return this.accessDate(options).then(d => d?.getTime() ?? null)
   }
 
   // ========== Copying and moving ==========
 
-  async copyTo(target, { recursive = false } = {}) {
-    const target$ = Path.create(target)
+  // cp options:
+  // - recursive: copy directories recursively
+  // - dereference: follow symlinks and copy targets instead
+  // - filter: function (src, dest) => boolean to skip entries
+  // - preserveTimestamps: keep atime/mtime from source
+  // - errorOnExist: throw if destination exists
+  // - force: overwrite existing files (ignored if errorOnExist is true)
+  // - mode: file/dir permissions (only when creating)
+  async copy(relPath, {
+    preserveTimestamps = true,
+    errorOnExist = false,
+    force = false,
+    dereference = false,
+    mode = undefined,
+  } = { }) {
+    const path = this.parent(relPath)
+    const this$ = this.resolve()
+    const path$ = path.resolve()
+
+    if (!dereference && await this$.isLink()) {
+      // cp does not preserve the link value!
+      const link = await this$.readLink()
+      await path$.symlink(link)
+      return path
+    }
+
     const { cp } = await import('fs/promises')
-    await cp(this.#path, target$(), { recursive })
-    return this
+    await cp(this$(), path$(), {
+      recursive: false,
+      dereference,
+      preserveTimestamps,
+      errorOnExist,
+      force,
+      mode,
+    })
+
+    return path
   }
 
-  async moveTo(target) {
-    const target$ = Path.create(target)
+  async rename(relPath) {
+    const path = this.parent(relPath)
+    const this$ = this.resolve()
+    const path$ = path.resolve()
     const { rename } = await import('fs/promises')
-    await rename(this.#path, target$())
-    return this
+    await rename(this$(), path$())
+    return path
   }
 
   // ========== File content utilities ==========
 
   async read() {
     const { readFile } = await import('fs/promises')
-    return readFile(this.#path, 'utf8')
+    const this$ = this.resolve()
+    return readFile(this$(), 'utf8')
   }
 
   async write(data) {
     const { writeFile } = await import('fs/promises')
-    await writeFile(this.#path, data, { flush: true })
+    const this$ = this.resolve()
+    await writeFile(this$(), data, { flush: true })
     return this
   }
 
   async append(data) {
     const { appendFile } = await import('fs/promises')
-    await appendFile(this.#path, data, { flush: true })
+    const this$ = this.resolve()
+    await appendFile(this$(), data, { flush: true })
     return this
   }
 
   async touch(name) {
-    const path = name ? this(name) : this
     const { open } = await import('fs/promises')
-    const fh = await open(path(), 'a')
+    const path = name ? this(name) : this
+    const path$ = path.resolve()
+    const fh = await open(path$(), 'a')
     await fh.close()
     return path
   }
 
   async unlink() {
     const { unlink } = await import('fs/promises')
-    await unlink(this.#path)
+    const this$ = this.resolve()
+    await unlink(this$())
     return this
   }
 
+  // ========== JSON utilities ==========
+
+  async parse() {
+    const this$ = this.resolve()
+    const raw = await this$.read()
+    return JSON.parse(raw)
+  }
+
+  async stringify(obj) {
+    const json = JSON.stringify(obj, null, 2)
+    const this$ = this.resolve()
+    await this$.write(json)
+    return this
+  }
+  
   // ========== Directory utilities ==========
 
   async make() {
     const { mkdir } = await import('fs/promises')
-    await mkdir(this.#path, { recursive: true })
+    const this$ = this.resolve()
+    await mkdir(this$(), { recursive: true })
     return this
   }
 
   async list(projector) {
     const { readdir } = await import('fs/promises')
-    const entries = await readdir(this.#path)
+    const this$ = this.resolve()
+    const entries = await readdir(this$())
     const listing = entries.map(name => this(name))
     return projector ? listing.map(projector) : listing
-  }
-
-  // ========== Path existance ==========
-
-  async exists() {
-    try {
-      await access(this.#path)
-      return true
-    } catch {
-      return false
-    }
   }
 
   // ========== Path removal ==========
 
   async remove() {
     const { rm } = await import('fs/promises')
-    await rm(this.#path, { recursive: true, force: true })
+    const this$ = this.resolve()
+    await rm(this$(), { recursive: true, force: true })
     return this
   }
 
   async dispose() {
-    await this.remove()
-    return this
+    return await this.remove()
   }
   
-  // ========== JSON utilities ==========
+  // ========== Path resolution ==========
 
-  async readJson() {
-    const raw = await this.read()
-    return JSON.parse(raw)
+  async realPath() {
+    const { realpath } = await import('fs/promises')
+    const this$ = this.resolve()
+    const result = await realpath(this$())
+    return Path.create(result)
+  }
+  
+  // ========== Symbolic links ==========
+
+  async readLink() {
+    const { readlink } = await import('fs/promises')
+    const this$ = this.resolve()
+    const result = await readlink(this$())
+    return Path.create(result)
   }
 
-  async writeJson(obj) {
-    const json = JSON.stringify(obj, null, 2)
-    await this.write(json)
+  async symlink(value) {
+    const { symlink } = await import('fs/promises')
+    const value$ = Path.create(value)
+    const this$ = this.resolve()
+    await symlink(value$(), this$())
     return this
+  }
+
+  // ========== Hard links ==========
+
+  async link(value) {
+    const { link } = await import('fs/promises')
+    const value$ = Path.create(value)
+    const this$ = this.resolve()
+    const result = await link(this$(), value$())
+    return Path.create(result)
+  }
+
+  linkCount(options) {
+    return this.stats(options).then(s => s?.nlink ?? null)
   }
 }
