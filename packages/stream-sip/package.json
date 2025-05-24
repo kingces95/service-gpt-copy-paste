@@ -1,0 +1,16 @@
+{
+  "name": "@kingjs/stream-sip",
+  "version": "1.0.0",
+  "description": "Sip bytes from a stream until client is ready to decode to a string.",
+  "main": "index.mjs",
+  "type": "module",
+  "exports": {
+    ".": "./index.mjs"
+  },
+  "keywords": [
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+  }
+}

@@ -62,8 +62,8 @@ export class CliSubshell extends DraftorPromise {
   static fromArgs(parentShell, cmd, args) {
     return new CliProcessSubshell({ parentShell, cmd, args })
   }
-  static fromFn(parentShell, fn) {
-    return new CliFunctionSubshell({ parentShell, fn })
+  static fromFn(parentShell, fn, vars) {
+    return new CliFunctionSubshell({ parentShell, fn, vars })
   }
   static fromBuiltin(parentShell, fn) {
     return new CliBuiltinSubshell({ parentShell, fn })
@@ -106,11 +106,11 @@ export class CliSubshell extends DraftorPromise {
   #__draftShell
   #__id
 
-  constructor(parentShell) {
+  constructor(parentShell, vars) {
     const { loader } = parentShell
     const children = []
     const supplantedRedirects = []
-    const shellDraft = new CliShellDraft(parentShell)
+    const shellDraft = new CliShellDraft(parentShell, vars)
     const thenFns = []
 
     // There are two types of subshells: interprocess and intraprocess. 
@@ -287,8 +287,8 @@ export class CliSubshell extends DraftorPromise {
 export class CliInProcessSubshell extends CliSubshell {
   #fn
 
-  constructor({ parentShell, fn }) {
-    super(parentShell)
+  constructor({ parentShell, vars, fn }) {
+    super(parentShell, vars)
 
     this.#fn = fn
   }
@@ -309,8 +309,8 @@ export class CliInProcessSubshell extends CliSubshell {
 }
 
 export class CliFunctionSubshell extends CliInProcessSubshell {
-  constructor({ parentShell, fn }) {
-    super({ parentShell, fn })
+  constructor({ parentShell, vars, fn }) {
+    super({ parentShell, vars, fn })
   }
 
   get isUser() { return true }

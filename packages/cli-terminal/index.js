@@ -55,7 +55,7 @@ export class CliTerminal extends CliCommand {
   
   async execute(signal) {
     const { pwd } = this
-    const $ = new CliShell({ signal, pwd })
+    const $ = new CliShell({ signal, pushdStack: [ pwd ] })
 
     $.alias.set('this', (...args) => {
       const [ node, cmd ] = process.argv

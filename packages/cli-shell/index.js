@@ -2,16 +2,16 @@ import { CliStdioLoader } from '@kingjs/cli-stdio-loader'
 import { CliSubshell } from '@kingjs/cli-subshell'
 import { Functor } from '@kingjs/functor'
 import { CliReader } from '@kingjs/cli-reader'
-import { CliParser } from '@kingjs/cli-parser'
 import { CliWriter } from '@kingjs/cli-writer'
+import { isPojo } from '@kingjs/pojo-test'
+import { Path } from '@kingjs/path'
 import { Lazy } from '@kingjs/lazy'
 import { 
   CliBorrowedReadableResource,
   CliBorrowedWritableResource,
 } from '@kingjs/cli-resource'
-import path from 'path'
 
-const DISPOSE_TIMEOUT_MS = 1000
+export const DISPOSE_TIMEOUT_MS = 1000
 
 function parseCommand(strings = [], values = []) {
   const result = []
@@ -62,7 +62,7 @@ export class CliShell extends Functor {
     redirects = [],
     signal = parent?.signal, 
     disposeTimeoutMs = parent?.disposeTimeoutMs ?? DISPOSE_TIMEOUT_MS,
-    cwd = parent?.cwd ?? process.cwd(),
+    pushdStack = parent ? [...parent.dirs] : [ Path.create(process.cwd()) ],
     loader = parent?.loader ?? new CliStdioLoader(),
     alias = parent ? new Map(parent.alias) : new Map(),
     env = createAndExtend(parent?.env ?? process.env, vars), 
@@ -72,27 +72,24 @@ export class CliShell extends Functor {
       new CliBorrowedWritableResource(process.stderr, { __name: 'stderr' }), 
     ], redirects),
   } = { }) {
+    if (!signal) throw new TypeError('signal is required')
+
     super()
     this.#loader = loader
     this.#signal = signal
-    this.#pushdStack = [cwd]
+    this.#pushdStack = pushdStack
     this.#alias = alias
     this.#env = env
-    this.#slots = slots
     this.#disposeTimeoutMs = disposeTimeoutMs
-
-    const { ifs } = env
-    this.#reader = new Lazy(() => new CliReader(this.stdin, new CliParser(ifs)))
+    this.#slots = slots
+    this.#reader = new Lazy(() => new CliReader(this.stdin))
     this.#writer = new Lazy(() => new CliWriter(this.stdout))
   }
 
-  #builtin(fn, ...args) {
-    return CliSubshell.fromBuiltin(this, shell => fn(shell, ...args))
-  }
+  #pipeline(subshells) {
+    const last = subshells.pop()
 
-  #pipeline(stages) {
-    const last = stages.pop()
-    stages.reverse().reduce((consumer, producer) => {
+    subshells.reverse().reduce((consumer, producer) => {
       consumer({ stdin: producer })
       return producer
     }, last)
@@ -100,7 +97,18 @@ export class CliShell extends Functor {
     return last({ then: result => result.reverse() })
   }
 
+  #builtin(fn, ...args) {
+    return CliSubshell.fromBuiltin(this, shell => fn(shell, ...args))
+  }
+
   __getSubshellId() { return this.#__subshellId++ }
+
+  get loader() { return this.#loader }
+  get signal() { return this.#signal }
+  get env() { return this.#env }
+  get alias() { return this.#alias }
+  get slots() { return [...this.#slots] }
+  get disposeTimeoutMs() { return this.#disposeTimeoutMs }
 
   getStream(slotOrName) {
     const { loader, slots } = this
@@ -118,29 +126,21 @@ export class CliShell extends Functor {
   get stderr() { return this.getStream('stderr') }
 
   get cwd() { 
-    return this.#pushdStack[this.#pushdStack.length - 1] 
+    return this.#pushdStack[0] 
   }
   get dirs() {
-    return [...this.#pushdStack].reverse()
+    return [...this.#pushdStack]
   }
-  pushd(dir) { 
-    this.#pushdStack.push(this.resolve(dir))
-  }
-  popd() { 
-    if (this.#pushdStack.length > 1) 
-      this.#pushdStack.pop() 
+  pushd(dir) {
+    this.#pushdStack.unshift(this.cwd(dir))
     return this.cwd
   }
-  resolve() { 
-    return path.resolve(this.cwd, ...arguments) 
+  popd() {
+    if (this.#pushdStack.length > 1) 
+      this.#pushdStack.shift() 
+    return this.cwd
   }
 
-  get env() { return this.#env }
-  get alias() { return this.#alias }
-
-  get signal() { return this.#signal }
-  get loader() { return this.#loader }
-  get slots() { return this.#slots }
   get reader() { return this.#reader.value }
   get writer() { return this.#writer.value }
 
@@ -173,10 +173,6 @@ export class CliShell extends Functor {
   echoRecord(fields, separator = ' ') {
     return this.#builtin($ => $.writer.echoRecord(fields, separator))
   }
-
-  scope(vars) {
-    return new CliShell({ parent: this, vars })
-  }
   
   expand(cmd, ...rest) {
     const alias = this.#alias.get(cmd)
@@ -189,42 +185,65 @@ export class CliShell extends Functor {
     return CliSubshell.fromArgs(this, cmd$, args$)
   }
 
-  subshell(value) {
-    if (!value) return
+  call$(...args) {
+    // bash idioms mapped to overloads:
+    //  $ my-cmdOrFn arg0 arg1 arg2 ...
+    //  $ my-cmdOrFn | my-cmdOrFn | ...
+    //  $ MY_VAR=42 my-cmdOrFn
+    //  $ MY_VAR=42 (my-cmdOrFn | my-cmdOrFn | ...)
+
+    const [ arg0 ] = args
     
-    if (value instanceof CliSubshell) 
-      return value
-
-    if (value instanceof Function)
-      return CliSubshell.fromFn(this, value)
-
-    throw new Error([
-      `Invalid subshell type: ${value.constructor.name}.`,
-      `Expected string, function, or CliSubshell.`].join(' '))
-  }
-
-  pipeline(...stages) {
-    return this.#pipeline(stages.map(stage => this.subshell(stage)))
-  }
-
-  // command string: e.g. echo "hello"
-  $() {
-    const [ arg0 ] = arguments
-
-    if (arg0 == null) return
-
-    // ({ IFS=',' })(...); like private env var
-    if (arg0.constructor === Object) 
-      return this.scope(arg0)
-
-    // command string: e.g. echo $`my-cmd ${arg0} ${arg1}`
+    // $`my-cmd ${var0} ${var1}`
     if (Array.isArray(arg0)) {
-      const [strings, ...values] = arguments
+      const [strings, ...values] = args
       return this.spawn(...parseCommand(strings, values))
     }
+    
+    // overload examples without private variables:
+    //  $()
+    //  $($ => { })
+    //  $($`my-cmd`)
+    //  $($ => { }, $ => { }, ...)
+    //  $($`my-cmd`, $`my-cmd`, ...)
+    //  $($ => { }, $`my-cmd`, ...)
 
-    // pipeline: e.g. $($'a', ..., $ => { ... }, ...)
-    return this.pipeline(...arguments)
+    // overload examples with private variables:
+    //  $({ IFS=',' })
+    //  $({ IFS=',' }, $ => { })
+    //  $({ IFS=',' }, $`my-cmd`)
+    //  $({ IFS=',' }, $ => { }, $ => { }, ...)
+    //  $({ IFS=',' }, $`my-cmd`, $`my-cmd`, ...)
+    //  $({ IFS=',' }, $ => { }, $`my-cmd`, ...)
+    const hasVars = isPojo(arg0)
+    const vars = hasVars ? arg0 : null
+    const subshellOrFns = hasVars ? args.slice(1) : args
+    const subshells = subshellOrFns
+      .map(subshellOrFn => {
+        if (subshellOrFn instanceof SubShell) 
+          return subshellOrFn(vars)
+        
+        if (subshellOrFn instanceof Function)
+          return CliSubshell.fromFn(this, subshellOrFn, vars)
+
+        throw new Error('Invalid subshell type: '
+          + subshellOrFn?.constructor?.name)
+      })
+      .map(subshell => subshell(vars))
+
+    // $()
+    // $(vars)
+    if (subshells.length == 0)
+      return new CliShell({ parent: this, vars })
+
+    // $(subshellOrFn)
+    // $(vars, subshellOrFn)
+    if (subshells.length == 1) 
+      return subshells[0]
+
+    // $(subshellOrFn, subshellOrFn, ...)
+    // $(vars, subshellOrFn, subshellOrFn, ...)
+    return this.#pipeline(subshells)
   }
 
   async dispose() {

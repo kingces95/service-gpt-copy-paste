@@ -1,7 +1,7 @@
 export class Functor {
   constructor() {
     const self = function (...args) {
-      return self.$(...args)
+      return self.call$(...args)
     }
     const prototype = new.target.prototype
     Object.setPrototypeOf(self, prototype)
@@ -21,5 +21,5 @@ export class Functor {
     return self
   }
   
-  $() { }
+  call$() { }
 }

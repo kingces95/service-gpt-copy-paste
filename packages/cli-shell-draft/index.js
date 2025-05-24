@@ -17,8 +17,9 @@ import {
 export class CliShellDraft extends Draft {
 
   #__slots
+  #__vars
 
-  constructor(parent) {
+  constructor(parent, vars) {
     const slots = []
 
     function resourceFromInputRedirect(producer) {
@@ -101,13 +102,15 @@ export class CliShellDraft extends Draft {
             redirect(info, redirection)
       },
       publish() {
-        return new CliShell({ parent, redirects: slots })
+        return new CliShell({ parent, redirects: slots, vars })
       }
     })
 
     this.#__slots = slots
+    this.#__vars = vars
   }
 
+  get __vars() { return this.#__vars }
   get __slots() { 
     // convert from array to pojo with slot indices as keys
     return this.#__slots.reduce((o, resource, slot) => {

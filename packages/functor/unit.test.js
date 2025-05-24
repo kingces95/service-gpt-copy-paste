@@ -13,7 +13,7 @@ describe('functor', () => {
     get args() { return this.#args }
     get name() { return this.#name}
     
-    $() {
+    call$() {
       this.#args.push(...arguments)
       return this
     }

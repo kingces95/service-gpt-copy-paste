@@ -1,12 +1,17 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { CliShell } from '@kingjs/cli-shell'
+import { toBeEquals } from '@kingjs/vitest'
+import { CliShell, DISPOSE_TIMEOUT_MS } from '@kingjs/cli-shell'
 import { PassThrough } from 'stream'
-import path from 'path'
+import { Path } from '@kingjs/path'
+import { CliStdioLoader } from '@kingjs/cli-stdio-loader'
+import { CliResource } from '@kingjs/cli-resource'
 import { 
   compareStreams, 
   CliVitestPaths, 
   CliVitestPojo 
 } from '@kingjs/cli-test'
+
+expect.extend({ toBeEquals })
 
 const __paths = new CliVitestPaths(import.meta)
 const __pojo = new CliVitestPojo(__paths, { overwrite: true })
@@ -15,140 +20,281 @@ const NODE = process.execPath
 const HELLO_WORLD = 'hello world'
 const HELLO = 'hello'
 const WORLD = 'world'
+const processCwd = Path.create(process.cwd())
 
-describe('scope', () => {
-  let $
-  beforeEach(() => { $ = new CliShell() })
-
-  it('add', async () => {
-    await $.scope({ HELLO: HELLO })
-      .subshell($ => {
-        expect($.env.HELLO).toBe(HELLO)
-      })
-    expect($.env.HELLO).toBe(undefined)
+describe('The default shell', () => {
+  let shell
+  beforeEach(() => { 
+    const { signal } = new AbortController()
+    shell = new CliShell({ signal })
   })
-  
-  it('add', async () => {
-    $.env.HELLO = HELLO
-    await $.scope($ => {
-      expect($.env.HELLO).toBe(HELLO)
 
-      $.env.HELLO = WORLD
-      expect($.env.HELLO).toBe(WORLD)
+  it('should throw if no signal is provided.', async () => {
+    expect(() => new CliShell()).toThrow()
+  })
+  it('should be a CliShell.', async () => {
+    expect(shell).toBeInstanceOf(CliShell)
+  })
+  it('should have a signal', async () => {
+    expect(shell.signal).toBeInstanceOf(AbortSignal)
+  })
+  it('should have an env prototype of process.env.', async () => {
+    expect(Object.getPrototypeOf(shell.env)).toBe(process.env)
+  })
+  it('should have forzen slots.', async () => {
+    expect(Object.isFrozen(shell.slots)).toBe(true)
+  })
+  it('should have the default DISPOSE_TIMEOUT_MS.', async () => {
+    expect(shell.disposeTimeoutMs).toBe(DISPOSE_TIMEOUT_MS)
+  })
+  it('should have a loader of type CliStdioLoader.', async () => {
+    expect(shell.loader).toBeInstanceOf(CliStdioLoader)
+  })
+  it('should a pushd stack containing process.cwd.', async () => {
+    expect(shell.dirs[0]).toBeEquals(Path.create(process.cwd()))
+    expect(shell.dirs.length).toBe(1)
+  })
+  it('should have an empty alias map.', async () => {
+    expect(shell.alias).toBeInstanceOf(Map)
+    expect(shell.alias.size).toBe(0)
+  })
+  it('should thorw when and invlid slot is requested.', async () => {
+    expect(() => shell.getStream(3)).toThrow()
+    expect(() => shell.getStream(-1)).toThrow()
+    expect(() => shell.getStream('invalid')).toThrow()
+  })
+
+  describe('slot 0', () => {
+    let slot
+    beforeEach(() => { slot = shell.slots[0] })
+
+    it('should be a resource.', async () => {
+      expect(slot).toBeInstanceOf(CliResource)
     })
-    expect($.env.HELLO).toBe(HELLO)
-  })
-
-  it('remove', async () => {
-    $.env.HELLO = HELLO
-    await $.scope($ => {
-      expect($.env.HELLO).toBe(HELLO)
-
-      // unlike bash unset, delete exposes the inherited value
-      delete $.env.HELLO 
-      expect($.env.HELLO).toBe(HELLO)
+    it('should be input.', async () => {
+      expect(slot.isInput).toBe(true)
     })
-    expect($.env.HELLO).toBe(HELLO)
+    it('should have an fd of 0.', async () => {
+      expect(slot.fd).toBe(0)
+    })
+    it('should not be owned.', async () => {
+      expect(slot.isOwned).toBe(false)
+    })
+    it('should have a value equal to process.stdin.', () => {
+      expect(slot.value).toBe(process.stdin)
+    })
+    it('should have a value equal to stdin stream.', () => {
+      expect(slot.value).toBe(shell.stdin)
+      expect(slot.value).toBe(shell.getStream(0))
+      expect(slot.value).toBe(shell.getStream('stdin'))
+    })
   })
+  describe('slot 1', () => {
+    let slot
+    beforeEach(() => { slot = shell.slots[1] })
 
-  it('add-add', async () => {
-    await $.scope({ HELLO: HELLO })
-      .subshell(async $ => {
-        expect($.env.HELLO).toBe(HELLO)
+    it('should be a resource.', async () => {
+      expect(slot).toBeInstanceOf(CliResource)
+    })
+    it('should be output.', async () => {
+      expect(slot.isOutput).toBe(true)
+    })
+    it('should have an fd of 1.', async () => {
+      expect(slot.fd).toBe(1)
+    })
+    it('should not be owned.', async () => {
+      expect(slot.isOwned).toBe(false)
+    })
+    it('should have a value equal to process.stdout.', () => {
+      expect(slot.value).toBe(process.stdout)
+    })
+    it('should have a value equal to stdout stream.', () => {
+      expect(slot.value).toBe(shell.stdout)
+      expect(slot.value).toBe(shell.getStream(1))
+      expect(slot.value).toBe(shell.getStream('stdout'))
+    })
+  })
+  describe('slot 2', () => {
+    let slot
+    beforeEach(() => { slot = shell.slots[2] })
 
-        await $.scope({ WORLD: WORLD })
-          .subshell($ => {
-            expect($.env.HELLO).toBe(HELLO)
-            expect($.env.WORLD).toBe(WORLD)
-          })
-        expect($.env.HELLO).toBe(HELLO)
-        expect($.env.WORLD).toBe(undefined)
-      })
-    expect($.env.HELLO).toBe(undefined)
-    expect($.env.WORLD).toBe(undefined)
+    it('should be a resource.', async () => {
+      expect(slot).toBeInstanceOf(CliResource)
+    })
+    it('should be output.', async () => {
+      expect(slot.isOutput).toBe(true)
+    })
+    it('should have an fd of 2.', async () => {
+      expect(slot.fd).toBe(2)
+    })
+    it('should not be owned.', async () => {
+      expect(slot.isOwned).toBe(false)
+    })
+    it('should have a value equal to process.stderr.', () => {
+      expect(slot.value).toBe(process.stderr)
+    })
+    it('should have a value equal to stderr stream.', () => {
+      expect(slot.value).toBe(shell.stderr)
+      expect(slot.value).toBe(shell.getStream(2))
+      expect(slot.value).toBe(shell.getStream('stderr'))
+    })
   })
 })
 
-describe('cwd', () => {
-  let $
-  beforeEach(() => { $ = new CliShell() })
-
-  it('default', async () => {
-    expect($.cwd).toBe(process.cwd())
+describe('A subshell of the default shell', () => {
+  let shell
+  let subshell
+  beforeEach(() => { 
+    const { signal } = new AbortController()
+    shell = new CliShell({ signal })
+    subshell = shell.subshell() 
   })
 
-  it('pushd-self', async () => {
-    $.pushd('.')
-    expect($.cwd).toBe(process.cwd())
+  it('should be a CliShell.', async () => {
+    expect(subshell).toBeInstanceOf(CliShell)
   })
-
-  it('pushd-relative', async () => {
-    $.pushd(HELLO)
-    const hello = path.join(process.cwd(), HELLO)
-    expect($.cwd).toBe(hello)
+  it('should have an env prototype inherited from the parent.', async () => {
+    expect(Object.getPrototypeOf(subshell.env)).toBe(shell.env)
   })
-
-  it('pushd-absolute', async () => {
-    const hello = path.join(process.cwd(), HELLO)
-    $.pushd(hello)
-    expect($.cwd).toBe(hello)
+  it('should have a slots prototype inherited from the parent.', async () => {
+    expect(Object.getPrototypeOf(subshell.slots)).toBe(shell.slots)
   })
-
-  it('pushd-normalize', async () => {
-    const up = path.join(process.cwd(), '..')
-    $.pushd('..')
-    expect($.cwd).toBe(up)
+  it('should have forzen slots.', async () => {
+    expect(Object.isFrozen(subshell.slots)).toBe(true)
   })
-
-  it('dirs', async () => {
-    $.pushd(HELLO)
-    const hello = path.join(process.cwd(), HELLO)
-    const dirs = [hello, process.cwd()]
-    expect($.dirs).toEqual(dirs)
+  it('should have the same signal as the parent.', async () => {
+    expect(subshell.signal).toBe(shell.signal)
   })
-
-  it('dirs-is-a-copy', async () => {
-    expect($.dirs).not.toBe($.dirs)
+  it('should have the same dispose timeout as the parent.', async () => {
+    expect(subshell.disposeTimeoutMs).toBe(shell.disposeTimeoutMs)
   })
-
-  it('popd', async () => {
-    $.pushd(HELLO)
-    const hello = path.join(process.cwd(), HELLO)
-    expect($.cwd).toBe(hello)
-
-    $.popd()
-    expect($.cwd).toBe(process.cwd())
+  it('should have the same loader as the parent.', async () => {
+    expect(subshell.loader).toBe(shell.loader)
   })
-
-  it('popd-last', async () => {
-    $.popd()
-    expect($.cwd).toBe(process.cwd())
+  it('should have a copy of the parent pushd stack.', async () => {
+    expect(subshell.dirs).not.toBe(shell.dirs)
+    expect(subshell.dirs).toEqual(shell.dirs)
+  })
+  it('should have a copy of the parent alias map.', async () => {
+    expect(subshell.alias).not.toBe(shell.alias)
+    expect(subshell.alias).toEqual(shell.alias)
   })
 })
 
-describe('streams', () => {
-  let $
-  beforeEach(() => { $ = new CliShell() })
-
-  it('stdin', async () => {
-    expect($.stdin).toBe($.getStream(0))
-    expect($.stdin).toBe($.getStream('stdin'))
+describe('A subshell that declares new environment variables', () => {
+  let shell
+  let subshell
+  beforeEach(() => { 
+    const { signal } = new AbortController()
+    shell = new CliShell({ signal })
+    subshell = shell.subshell({ p0: HELLO, p1: WORLD })
   })
 
-  it('stdout', async () => {
-    expect($.stdout).toBe($.getStream(1))
-    expect($.stdout).toBe($.getStream('stdout'))
+  it('has an env with prototype equal to the parent env.', async () => {
+    expect(Object.getPrototypeOf(subshell.env)).toBe(shell.env)
+  })
+  it('inherits those env variables.', async () => {
+    expect(subshell.env.p0).toBe(HELLO)
+    expect(subshell.env.p1).toBe(WORLD)
+  })
+  it('does not affect parent environment.', async () => {
+    expect(shell.env.p0).toBe(undefined)
+    expect(shell.env.p1).toBe(undefined)
+  })
+})
+
+describe('A CliShell initialized with a pushd stack.', () => {
+  let shell
+  let pushdStack
+  beforeEach(() => {
+    pushdStack = [
+      Path.create('/foo/bar/baz/hello'),
+      Path.create('/foo/bar/baz'),
+    ]
+    const { signal } = new AbortController()
+    shell = new CliShell({ signal, pushdStack })
+  })
+  it('should return cwd as the first element.', async () => {
+    expect(shell.cwd).toBeEquals(pushdStack[0])
+  })
+  it('can create subshells that inherit the pushd stack.', async () => {
+    const subshell = new CliShell({ parent: shell })
+    expect(subshell.cwd).toBeEquals(shell.cwd)
+    expect(subshell.dirs).not.toBe(shell.dirs)
+    expect(subshell.dirs[0]).toEqual(shell.dirs[0])
+    expect(subshell.dirs[1]).toEqual(shell.dirs[1])
+  })
+})
+
+describe('A CliShell cwd initialized with a path.', () => {
+  let shell
+  let path
+  beforeEach(() => { 
+    path = Path.create('/foo/bar/baz')
+    const { signal } = new AbortController()
+    shell = new CliShell({ signal, pushdStack: [ path ] }) 
   })
 
-  it('stderr', async () => {
-    expect($.stderr).toBe($.getStream(2))
-    expect($.stderr).toBe($.getStream('stderr'))
+  it('should be the path.', async () => {
+    expect(shell.cwd).toBeEquals(path)
   })
 
-  it('invalid-slots', async () => {
-    expect(() => $.getStream(3)).toThrow()
-    expect(() => $.getStream(-1)).toThrow()
-    expect(() => $.getStream('invalid')).toThrow()
+  it ('should have dirs array containing just the path.', async () => {
+    expect(shell.dirs).toEqual([path])
+  })
+
+  it('should still be the path if dot is pushed.', async () => {
+    shell.pushd('.')
+    expect(shell.cwd).toBeEquals(path)
+  })
+
+  it('should still be the path if poped with one dir.', async () => {
+    shell.popd()
+    expect(shell.cwd).toBeEquals(path)
+  })
+
+  it('should still be the path if Path.current pushed.', async () => {
+    shell.pushd(Path.current)
+    expect(shell.cwd).toBeEquals(path)
+  })
+
+  it('should be a subdirectory of cwd if the name of a dir is pushed.', async () => {
+    shell.pushd(HELLO)
+    expect(shell.cwd).toBeEquals(path(HELLO))
+  })
+
+  it('should be dir if a subdir is pushed and popped.', async () => {
+    shell.pushd(HELLO)
+    shell.popd()
+    expect(shell.cwd).toBeEquals(path)
+  })
+
+  it('should resolve and path and return a pushed relative subdir.', async () => {
+    const subdir = shell.pushd(HELLO)
+    expect(subdir).toBeEquals(path(HELLO))
+    expect(shell.cwd).toBeEquals(path(HELLO))
+  })
+
+  it('should be an absolute path if an absolute path is pushed.', async () => {
+    const altPath = Path.create('/alt/absolute/path')
+    shell.pushd(altPath)
+    expect(shell.cwd).toBeEquals(altPath)
+  })
+
+  it('should have a .dirs of subdir then the path after pushing the subdir.', async () => {
+    const subdir = shell.pushd(HELLO)
+    expect(shell.dirs.length).toBe(2)
+    expect(shell.dirs[0]).toBeEquals(subdir)
+    expect(shell.dirs[1]).toBeEquals(path)
+  })
+
+  it('should be the parent of path if backtrack pushed.', async () => {
+    shell.pushd('..')
+    expect(shell.cwd).toBeEquals(path('..'))
+  })
+
+  it('should return copies of .dirs array.', async () => {
+    expect(shell.dirs).not.toBe(shell.dirs)
   })
 })
 
@@ -494,7 +640,7 @@ describe('stdin-consumption-problem', () => {
         // Uncomment out to observe issue with implicit inheritance of stdin
         // Only happens if stdin is not backed by an fd. In that case, stdin
         // is fetched as part of the piping process into the spawned process.
-        // If the process does nont consume stdin, then the fetched dats is lost.
+        // If the process does nont consume stdin, then the fetched data is lost.
         // stdin: $.stdin
       })
       await __pojo.expect(subshell, task)

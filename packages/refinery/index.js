@@ -1,7 +1,7 @@
 import { Functor } from '@kingjs/functor'
 
 export class Refinery extends Functor {
-  $() { return this.refine$(...arguments) }
+  call$() { return this.refine$(...arguments) }
 
   refine$() {
     // Abstract: to be implemented by subclasses

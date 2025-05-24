@@ -1,7 +1,7 @@
 {
-  "name": "@kingjs/temp-path",
+  "name": "@kingjs/pojo-test",
   "version": "1.0.0",
-  "description": "Temp path.",
+  "description": "Convert an tree of class instances into a pojo.",
   "main": "index.js",
   "type": "module",
   "exports": {

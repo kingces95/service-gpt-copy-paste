@@ -1,219 +1,55 @@
-import assert from 'assert'
-import Utf8CharReader from '@kingjs/utf8-char-reader'
-import { CliService } from '@kingjs/cli-service'
-import { AbortError } from '@kingjs/abort-error'
-import { macrotick } from '@kingjs/macrotick'
-import { Stream } from 'stream'
+import { sip } from '@kingjs/stream-sip'
+import { CliParser } from '@kingjs/cli-parser'
+import { CliProcess } from '@kingjs/cli-process'
 
 const NEW_LINE_BYTE = 0x0A
 const CARRAGE_RETURN_BYTE = 0x0D
-const DEFAULT_IFS = ' '
-
-export class CliParser extends CliService {
-  static parameters = {
-    ifs: 'Input field separator',
-  }
-  static { this.initialize(import.meta) }
-
-  #ifs
-
-  constructor({ ifs = DEFAULT_IFS, ...rest } = { }) {
-    if (CliParser.initializing(new.target, { ifs }))
-      return super()
-    super(rest)
-
-    this.#ifs = ifs
-  }
-
-  *#split(line, count) {
-    const ifs = this.#ifs
-    const regex = new RegExp(`([^${ifs}]+)[${ifs}]*`, 'g')
-    let lastIndex = 0
-  
-    for (let i = 0; i < count - 1; i++) {
-      const match = regex.exec(line)
-      if (match) {
-        yield match[1]
-        lastIndex = regex.lastIndex
-      } else {
-        return
-      }
-    }
-  
-    // Yield the rest of the line as the last field
-    yield line.slice(lastIndex)
-  }
-
-  async toArray(line) {
-    const iterator = this.#split(line, Infinity)
-    return Array.from(iterator)
-  }
-  
-  async toRecord(line, fields) {
-    let record = { }
-  
-    if (Array.isArray(fields)) {
-      const iterator = this.#split(line, fields.length)
-      fields.forEach((field, index) => {
-        record[field] = iterator.next().value
-      })
-    } else if (typeof fields === 'object') {
-      const fieldNames = Object.keys(fields)
-      const iterator = this.#split(line, fieldNames.length)
-  
-      fieldNames.forEach((field, index) => {
-        const value = iterator.next().value
-        if (value === undefined || value === null) 
-          return
-  
-        var type = fields[field]
-        if (type == '#') type = 'number'
-        if (type == '!') type = 'boolean'
-  
-        if (type === 'number') {
-          record[field] = Number(value)
-  
-        } else if (type === 'boolean') {
-          record[field] = !(
-            value === '' 
-            || value === 'false' 
-            || value === 'False' 
-            || value === '0')
-        } else {
-          record[field] = value
-        }
-      })
-    }
-  
-    return record
-  }
-}
 
 export class CliReader {
   #stream
-  #parser
 
-  constructor(stream, parser) {
-    if (!(stream instanceof Stream))
-      throw new Error('stream must be an instance of Stream')
-
+  constructor(stream) {
     this.#stream = stream
-    this.#parser = parser
+  }
+
+  async readString(charCount) {
+    if (!charCount) return ''
+
+    let buffer = null
+    const signal = CliProcess.signal
+    for await (buffer of sip(this.#stream, { signal }))
+      if (buffer.length == charCount) break
+    
+    return buffer.toString()
   }
   
-  async readByte(signal) {
-    const stream = this.#stream
-    // throw 'test'
-
-    // Attempt immediate read
-    const chunk = stream.read(1)
-    if (chunk) {
-      assert(chunk.length == 1, 'stream.read(1) must return a single byte')
-      return chunk[0]
-    }
-
-    // test if stream has ended
-    if (stream.readableEnded) {
-      return null
-    }
-  
-    return new Promise((resolve, reject) => {
-      const onReadable = (...args) => {
-        try {
-          const chunk = stream.read(1)
-          if (!chunk) {
-            stream.once('readable', onReadable)
-            return 
-          }
-          cleanup()
-          resolve(chunk[0])
-        } catch(err) {
-          try { cleanup() } 
-          catch(err) { reject(err) }
-          reject(err)
-        }
-      }
-  
-      const onEnd = () => {
-        cleanup()
-        resolve(null)
-      }
-  
-      const onError = (err) => {
-        cleanup()
-        reject(err)
-      }
-  
-      const onAbort = () => {
-        cleanup()
-        reject(new AbortError('CliReader'))
-      }
-  
-      const cleanup = () => {
-        stream.off('readable', onReadable)
-        stream.off('end', onEnd)
-        stream.off('error', onError)
-        signal?.removeEventListener('abort', onAbort)
-      }
-  
-      signal?.addEventListener('abort', onAbort)
-      stream.on('error', onError)
-      stream.on('end', onEnd)
-      stream.once('readable', onReadable)
-    })
+  async readChar() {
+    return await this.readString(1)
   }
   
-  async readString(charCount, signal) {
-    const charReader = new Utf8CharReader()
-  
-    while (charReader.charCount < charCount) {
-      const byte = await this.readByte(signal)
-      if (byte === null) break // Handle unexpected EOF
-      charReader.processByte(byte)
-    }
-  
-    return charReader.toString() // Convert the buffered bytes to a string
-  }
-  
-  async readChar(signal) {
-    return await this.readString(1, signal)
-  }
-  
-  async read(signal) {  
-    const charReader = new Utf8CharReader()
-  
-    while (true) {
-      const byte = await this.readByte(signal)
-
-      // gives tty a chance to send ctrl-c
-      // if (byte === null)
-      //   await macrotick(signal)
-
-      if (byte === null || byte === NEW_LINE_BYTE) 
+  async read() {  
+    let buffer = null
+    const signal = CliProcess.signal
+    for await (buffer of sip(this.#stream, { signal })) {
+      // if new line then break
+      if (buffer.peek() === NEW_LINE_BYTE) {
+        buffer.pop() // remove the new line byte
+        if (buffer.peek() === CARRAGE_RETURN_BYTE)
+          buffer.pop() // remove the carriage return byte
         break
-
-      if (byte === CARRAGE_RETURN_BYTE)
-        continue
-
-      charReader.processByte(byte)
+      }
     }
-  
-    const result = charReader.toString()
-    if (result === '') return null
-    return result
+    return buffer.toString()
   }
 
-  async readArray(signal) {
-    if (!this.#parser) throw new Error('Parser not set')
-    const line = await this.read(signal)
-    const lines = !line ? null : await this.#parser.toArray(line)
-    return lines
+  async readArray(count) {
+    const line = await this.read()
+    return CliParser.toArray(line, count)
   }
   
-  async readRecord(fields, signal) {
-    if (!this.#parser) throw new Error('Parser not set')
-    const line = await this.read(signal)
-    return this.#parser.toRecord(line, fields)
+  async readRecord(fields) {
+    const line = await this.read()
+    return CliParser.toRecord(line, fields)
   }
 
   // async iterator that yields lines

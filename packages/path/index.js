@@ -6,11 +6,11 @@ import { tmpdir, type } from 'os'
 import { randomUUID } from 'crypto'
 import { AsyncLocalStorage } from 'async_hooks'
 
-const CLI_CONTEXT_SYMBOL = Symbol.for('@kingjs/cli-context')
+const ASYNC_LOCAL_STORAGE_SYMBOL = Symbol.for('@kingjs/path/async-local-storage')
 
-if (process[CLI_CONTEXT_SYMBOL] == null) {
+if (process[ASYNC_LOCAL_STORAGE_SYMBOL] == null) {
   const storage = new AsyncLocalStorage()
-  process[CLI_CONTEXT_SYMBOL] = storage
+  process[ASYNC_LOCAL_STORAGE_SYMBOL] = storage
 }
 
 class TempPath {
@@ -44,14 +44,15 @@ export class Path extends Refinery {
   static parent = new Path('..')
 
   static cwd() { 
-    const context = process[CLI_CONTEXT_SYMBOL].getStore()
-    return Path.create(context?.cwd ?? process.cwd())
+    const context = process[ASYNC_LOCAL_STORAGE_SYMBOL].getStore()
+    const cwd = Path.create(context ? context.cwdFn() : process.cwd())
+    if (!cwd.isAbsolute) throw new Error('Cwd must be absolute.')
+    return arguments.length ? cwd(...arguments) : cwd
   }
-  static withCwd(cwd, callback) {
-    cwd = Path.create(cwd)
-    if (!cwd.isAbsolute) throw new Error('Path must be absolute.')
+  static withCwd(cwdOrFn, callback) {
+    const cwdFn = typeof cwdOrFn == 'function' ? cwdOrFn : () => cwdOrFn
     return new Promise((resolve, reject) => {
-      process[CLI_CONTEXT_SYMBOL].run({ cwd }, 
+      process[ASYNC_LOCAL_STORAGE_SYMBOL].run({ cwdFn }, 
         () => Promise.resolve().then(callback).catch(reject).then(resolve)
       )
     })
@@ -60,7 +61,13 @@ export class Path extends Refinery {
     if (pathOrStringOrUrl instanceof Path)
       return pathOrStringOrUrl
 
-    return new Path(Path.toString(pathOrStringOrUrl))
+    if (pathOrStringOrUrl instanceof URL)
+      return new Path(pathOrStringOrUrl.pathname)
+
+    if (typeof pathOrStringOrUrl == 'string')
+      return new Path(pathOrStringOrUrl)
+
+    throw new Error('Path must be a Path, string, or URL.')
   }
   static createRelative() {
     return Path.current(...arguments)
@@ -70,16 +77,7 @@ export class Path extends Refinery {
   }
 
   static toString(pathOrStringOrUrl) {
-    if (pathOrStringOrUrl instanceof Path)
-      return pathOrStringOrUrl()
-
-    if (pathOrStringOrUrl instanceof URL)
-      return pathOrStringOrUrl.pathname
-
-    if (typeof pathOrStringOrUrl == 'string')
-      return pathOrStringOrUrl
-
-    throw new Error('Path must be a Path, string, or URL.')
+    throw new Error('nyi.')
   }
 
   // ========== Temp Path ==========
@@ -103,13 +101,13 @@ export class Path extends Refinery {
 
   refine$() {
     if (arguments.length == 0)
-      return this.#path
+      return this
 
     return [...arguments].reduce((base, arg) => {
       const segment = Path.create(arg)
       if (segment.isAbsolute)
         return segment
-      return Path.create(join(base(), segment()))
+      return Path.create(join(base.$, segment.$))
     }, this)
   }
 
@@ -119,48 +117,48 @@ export class Path extends Refinery {
     if (!(path instanceof Path))
       return false
 
-    return this() == path()
+    return this.$ == path.$
   }
 
   // ========== Path parse ==========
 
   get name() {
-    return basename(this.value)
+    return basename(this.$)
   }
 
   get basename() {
-    return basename(this(), this.extension)
+    return basename(this.$, this.extension)
   }
 
   get extension() {
-    return extname(this())
+    return extname(this.$)
   }
 
   get parent() {
-    return Path.create(dirname(this()))
+    return Path.create(dirname(this.$))
   }
 
   get segments() {
-    return this().split(sep).filter(Boolean)
+    return this.$.split(sep).filter(Boolean)
   }
 
-  get value() {
-    return this()
+  get $() {
+    return this.#path
   }
 
   relativeTo(basePath) {
     const basePath$ = Path.create(basePath)
-    return Path.create(relative(basePath$(), this()))
+    return Path.create(relative(basePath$.$, this.$))
   }
 
   toString() {
-    return Path.toString(this)
+    return this.$
   }
 
   // ========== Path predicates ==========
 
   get isAbsolute() {
-    return isAbsolute(this())
+    return isAbsolute(this.$)
   }
 
   get isRelative() {
@@ -171,7 +169,7 @@ export class Path extends Refinery {
     if (this.isAbsolute && arguments.length == 0) return this
     const segments = [...arguments].map($ => Path.create($))
     const cwd = Path.cwd()
-    const result = resolve(cwd(), this(), ...segments.map($ => $()))
+    const result = resolve(cwd.$, this.$, ...segments.map(o => o.$))
     return Path.create(result)
   }
 
@@ -186,7 +184,7 @@ export class Path extends Refinery {
 
     // base case
     if (!await this.isLink()) {
-      return await access(this$(), mode).then(() => true).catch(() => false)
+      return await access(this$.$, mode).then(() => true).catch(() => false)
     }
 
     // recursive case
@@ -202,7 +200,7 @@ export class Path extends Refinery {
   
   stats({ ofLink = false } = {}) {
     const this$  = this.resolve()
-    return (ofLink ? lstat : stat)(this$()).catch(() => null)
+    return (ofLink ? lstat : stat)(this$.$).catch(() => null)
   }
 
   isFile() {
@@ -313,7 +311,7 @@ export class Path extends Refinery {
     }
 
     const { cp } = await import('fs/promises')
-    await cp(this$(), path$(), {
+    await cp(this$.$, path$.$, {
       recursive: false,
       dereference,
       preserveTimestamps,
@@ -330,7 +328,7 @@ export class Path extends Refinery {
     const this$ = this.resolve()
     const path$ = path.resolve()
     const { rename } = await import('fs/promises')
-    await rename(this$(), path$())
+    await rename(this$.$, path$.$)
     return path
   }
 
@@ -339,20 +337,20 @@ export class Path extends Refinery {
   async read() {
     const { readFile } = await import('fs/promises')
     const this$ = this.resolve()
-    return readFile(this$(), 'utf8')
+    return readFile(this$.$, 'utf8')
   }
 
   async write(data) {
     const { writeFile } = await import('fs/promises')
     const this$ = this.resolve()
-    await writeFile(this$(), data, { flush: true })
+    await writeFile(this$.$, data, { flush: true })
     return this
   }
 
   async append(data) {
     const { appendFile } = await import('fs/promises')
     const this$ = this.resolve()
-    await appendFile(this$(), data, { flush: true })
+    await appendFile(this$.$, data, { flush: true })
     return this
   }
 
@@ -360,7 +358,7 @@ export class Path extends Refinery {
     const { open } = await import('fs/promises')
     const path = name ? this(name) : this
     const path$ = path.resolve()
-    const fh = await open(path$(), 'a')
+    const fh = await open(path$.$, 'a')
     await fh.close()
     return path
   }
@@ -368,7 +366,7 @@ export class Path extends Refinery {
   async unlink() {
     const { unlink } = await import('fs/promises')
     const this$ = this.resolve()
-    await unlink(this$())
+    await unlink(this$.$)
     return this
   }
 
@@ -392,14 +390,14 @@ export class Path extends Refinery {
   async make() {
     const { mkdir } = await import('fs/promises')
     const this$ = this.resolve()
-    await mkdir(this$(), { recursive: true })
+    await mkdir(this$.$, { recursive: true })
     return this
   }
 
   async list(projector) {
     const { readdir } = await import('fs/promises')
     const this$ = this.resolve()
-    const entries = await readdir(this$())
+    const entries = await readdir(this$.$)
     const listing = entries.map(name => this(name))
     return projector ? listing.map(projector) : listing
   }
@@ -409,7 +407,7 @@ export class Path extends Refinery {
   async remove() {
     const { rm } = await import('fs/promises')
     const this$ = this.resolve()
-    await rm(this$(), { recursive: true, force: true })
+    await rm(this$.$, { recursive: true, force: true })
     return this
   }
 
@@ -422,7 +420,7 @@ export class Path extends Refinery {
   async realPath() {
     const { realpath } = await import('fs/promises')
     const this$ = this.resolve()
-    const result = await realpath(this$())
+    const result = await realpath(this$.$)
     return Path.create(result)
   }
   
@@ -431,7 +429,7 @@ export class Path extends Refinery {
   async readLink() {
     const { readlink } = await import('fs/promises')
     const this$ = this.resolve()
-    const result = await readlink(this$())
+    const result = await readlink(this$.$)
     return Path.create(result)
   }
 
@@ -439,7 +437,7 @@ export class Path extends Refinery {
     const { symlink } = await import('fs/promises')
     const value$ = Path.create(value)
     const this$ = this.resolve()
-    await symlink(value$(), this$())
+    await symlink(value$.$, this$.$)
     return this
   }
 
@@ -449,7 +447,7 @@ export class Path extends Refinery {
     const { link } = await import('fs/promises')
     const value$ = Path.create(value)
     const this$ = this.resolve()
-    const result = await link(this$(), value$())
+    const result = await link(this$.$, value$.$)
     return Path.create(result)
   }
 
