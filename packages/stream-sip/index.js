@@ -57,6 +57,12 @@ export class Utf8CharBuffer {
     return this.#bytesRemaining == 0 
   }
 
+  clear() {
+    this.#bytes = []
+    this.#length = 0
+    this.#bytesRemaining = 0
+  }
+
   toString() {
     this.#throwIfBytesRemaining()
     return Buffer.from(this.#bytes).toString('utf8')
@@ -89,10 +95,12 @@ export async function* sip(stream, { signal } = {}) {
       for (const byte of chunk) {
         buffer.push$(byte)
         if (buffer.canStringify) {
-          yield buffer
+          yield { eof: false, buffer }
         }
       }
     }
+
+    yield { eof: true, buffer }
   } finally {
     signal?.removeEventListener('abort', destroy)
   }

@@ -1,7 +1,7 @@
 {
-  "name": "@kingjs/stream-sip",
+  "name": "@kingjs/cli-field-type",
   "version": "1.0.0",
-  "description": "Class to emulate bash read and mapfile.",
+  "description": "Metadata describing data in unix file format.",
   "main": "index.js",
   "type": "module",
   "exports": {

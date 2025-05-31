@@ -193,6 +193,16 @@ describe('sip', () => {
     it('should not yield a buffer', async () => {
       const emptyReadable = Readable.from([])
       const asyncIterator = sip(emptyReadable)
+
+      const { done, value: { eof, buffer } } = await asyncIterator.next()
+      expect(done).toBe(false)
+      expect(eof).toBe(true)
+      expect(buffer.length).toBe(0)
+      expect(buffer.toString()).toBe('')
+      expect(buffer.canStringify).toBe(true)
+      expect(buffer.peek()).toBeNull()
+      expect(() => buffer.pop()).toThrow('Buffer is empty')
+
       expect(asyncIterator.next()).resolves.toEqual({
         done: true,
         value: undefined
@@ -203,32 +213,54 @@ describe('sip', () => {
     it('should yield a buffer with "hello world"', async () => {
       const readable = Readable.from([Buffer.from('hello world', 'utf8')])
       const asyncIterator = sip(readable)
-      let buffer = null
       let count = 0
-      for await (buffer of asyncIterator) {
-        count++
-        expect(buffer).toBeInstanceOf(Utf8CharBuffer)
-        expect(buffer.canStringify).toBe(true)
-        expect(buffer.length).toBe(count)
-        expect(buffer.toString()).toBe('hello world'.slice(0, count))
-      }
-      expect(count).toBe(11) // "hello world" has 11 characters
-      expect(buffer.toString()).toBe('hello world')
-    })
-  })
-  describe('simulating a shell', () => {
-    it('should yield the line without the new line character', async () => {
-      const readable = Readable.from([Buffer.from('hello world\nnext line\n', 'utf8')])
-      const asyncIterator = sip(readable)
-      let buffer = null
-      for await (buffer of asyncIterator) {
-        // if new line then break
-        if (buffer.peek() === NEW_LINE_BYTE) {
-          buffer.pop() // remove the new line byte
-          break
+      for await (const { eof, buffer } of asyncIterator) {
+        if (!eof) {
+          count++
+          expect(buffer).toBeInstanceOf(Utf8CharBuffer)
+          expect(buffer.canStringify).toBe(true)
+          expect(buffer.length).toBe(count)
+          expect(buffer.toString()).toBe('hello world'.slice(0, count))
+        } else {
+          expect(buffer.length).toBe(11) // "hello world" has 11 characters
+          expect(buffer.toString()).toBe('hello world')
         }
       }
-      expect(buffer.toString()).toBe('hello world')
+    })
+  })
+  describe('with a stream containing two lines', () => {
+    it('should yield the lines without the new line character', async () => {
+      const readable = Readable.from([Buffer.from('hello world\nnext line\n', 'utf8')])
+      
+      async function *lines() {
+        const asyncIterator = sip(readable)
+        for await (const { eof, buffer } of asyncIterator) {
+          // if end-of-file, yield the remaining buffer
+          if (eof && !buffer.length)
+            return
+
+          // if new line, then yield line and reset
+          if (buffer.peek() === NEW_LINE_BYTE) {
+            buffer.pop() // remove the new line byte
+            yield buffer.toString()
+            buffer.clear()
+          }
+        }
+      }
+
+      const iterator = lines()
+      expect(await iterator.next()).toEqual({
+        done: false,
+        value: 'hello world'
+      })
+      expect(await iterator.next()).toEqual({
+        done: false,
+        value: 'next line'
+      })
+      expect(await iterator.next()).toEqual({
+        done: true,
+        value: undefined
+      })
     })
   })
   describe('from this file', () => {
@@ -236,17 +268,17 @@ describe('sip', () => {
       // open this file as a readable stream using meta to get the path
       const readable = createReadStream(__filename)
       const asyncIterator = sip(readable)
-      let buffer = null
-      for await (buffer of asyncIterator) {
+      
+      for await (const { buffer } of asyncIterator) {
         // if new line then break
         if (buffer.peek() === NEW_LINE_BYTE) {
           buffer.pop() // remove the new line byte
           if (buffer.peek() === CARRAGE_RETURN_BYTE)
             buffer.pop() // remove the carriage return byte
+          expect(buffer.toString()).toBe('// hello world')
           break
         }
       }
-      expect(buffer.toString()).toBe('// hello world')
     })
   })
   describe('with a stream that hangs', () => {

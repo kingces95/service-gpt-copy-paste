@@ -1,63 +1,150 @@
 import { sip } from '@kingjs/stream-sip'
 import { CliParser } from '@kingjs/cli-parser'
 import { CliProcess } from '@kingjs/cli-process'
+import { CliRecordInfoLoader } from '@kingjs/cli-record-info'
 
-const NEW_LINE_BYTE = 0x0A
+const LINE_FEED_BYTE = 0x0A
 const CARRAGE_RETURN_BYTE = 0x0D
 
 export class CliReader {
-  #stream
+  #iterator
 
   constructor(stream) {
-    this.#stream = stream
+    const signal = CliProcess.signal
+    this.#iterator = sip(stream, { signal })
   }
 
-  async readString(charCount) {
-    if (!charCount) return ''
+  async readString(charCount = Infinity) {
+    while (true) {
+      const { done, value: { buffer, eof } = { } } = await this.#iterator.next()
+      if (done || (eof && !buffer.length)) return null
 
-    let buffer = null
-    const signal = CliProcess.signal
-    for await (buffer of sip(this.#stream, { signal }))
-      if (buffer.length == charCount) break
-    
-    return buffer.toString()
+      if (eof || buffer.length == charCount) {
+        const result = buffer.toString()
+        buffer.clear()
+        return result
+      }
+    }
   }
   
+  async readLine({
+    keepNewLines = false,
+    keepCarriageReturns = false
+  } = {}) {  
+    const stripNewLines = !keepNewLines
+    const stripCarriageReturns = !keepCarriageReturns
+
+    while (true) {
+      const { done, value: { buffer, eof } = { } } = await this.#iterator.next()
+      if (done || (eof && !buffer.length)) return null
+
+      if (buffer.peek() != LINE_FEED_BYTE && !eof)
+        continue
+
+      if (stripNewLines) {
+        if (buffer.peek() === LINE_FEED_BYTE)
+          buffer.pop() // remove the new line byte
+
+        if (stripCarriageReturns && buffer.peek() === CARRAGE_RETURN_BYTE)
+          buffer.pop() // remove the carriage return byte
+      }
+
+      const result = buffer.toString()
+      buffer.clear()
+      return result
+    }
+  }
+
   async readChar() {
     return await this.readString(1)
   }
-  
-  async read() {  
-    let buffer = null
-    const signal = CliProcess.signal
-    for await (buffer of sip(this.#stream, { signal })) {
-      // if new line then break
-      if (buffer.peek() === NEW_LINE_BYTE) {
-        buffer.pop() // remove the new line byte
-        if (buffer.peek() === CARRAGE_RETURN_BYTE)
-          buffer.pop() // remove the carriage return byte
-        break
-      }
+
+  // async iterator that yields lines
+  async *[Symbol.asyncIterator](options = { 
+    count: Infinity,
+    keepNewLines: false,
+    keepCarriageReturns: false
+  }) {
+    let count = options.count ?? Infinity
+
+    while (count-- > 0) {
+      const line = await this.readLine(options)
+      if (line === null) break
+      yield line
     }
-    return buffer.toString()
   }
 
-  async readArray(count) {
-    const line = await this.read()
-    return CliParser.toArray(line, count)
+  async mapLines(callback, options = { 
+    count: Infinity,
+    keepNewLines: false,
+    keepCarriageReturns: false,
+  }) {
+    for await (const line of this[Symbol.asyncIterator](options)) {
+      if (line === null) break
+      callback(line)
+    }
+  }
+
+  async readLines(options = { 
+    count: Infinity,
+    keepNewLines: false,
+    keepCarriageReturns: false,
+  }) {
+    const lines = []
+    await this.mapLines(line => {
+      if (line === null) return
+      lines.push(line)
+    }, options)
+    return lines
+  }
+
+  async readText() {
+    for await (const text of this.generateText())
+      return text
+    return null
+  }
+
+  async readFields(typesOrCount) {
+    for await (const fields of this.generateFields(typesOrCount))
+      return fields
+    return null
   }
   
   async readRecord(fields) {
-    const line = await this.read()
-    return CliParser.toRecord(line, fields)
+    for await (const record of this.generateRecords(fields))
+      return record
+    return null
   }
 
-  // async iterator that yields lines
-  async *[Symbol.asyncIterator]() {
+  async *generateText() {
     while (true) {
-      const line = await this.read()
+      const line = await this.readLine()
       if (line === null) break
-      yield line
+      yield CliParser.parse(line)
+    }
+  }
+
+  async *generateFields(typesOrCount = Infinity) {
+    const type = CliRecordInfoLoader.load(typesOrCount)
+    if (!type.isArray)
+      throw new Error('Fields must be array of types or count.')
+
+    while (true) {
+      const line = await this.readLine()
+      if (line === null) break
+      yield CliParser.parse(line, typesOrCount)
+    }
+  }
+
+  async *generateRecords(fields = {}) {
+    const type = CliRecordInfoLoader.load(fields)
+    if (!type.isObject)
+      throw new Error('Fields must be a pojo.')
+
+    while (true) {
+      const line = await this.readLine()
+      if (line === null) break
+      yield CliParser.parse(line, type)
     }
   }
 }
