@@ -39,6 +39,7 @@ function parseCommand(strings = [], values = []) {
 
 function createAndExtend(target, extension) {
   const result = Object.create(target)
+  if (!extension) return result
   for (const [key, value] of Object.entries(extension))
     result[key] = value
   return result
@@ -81,7 +82,7 @@ export class CliShell extends Functor {
     this.#alias = alias
     this.#env = env
     this.#disposeTimeoutMs = disposeTimeoutMs
-    this.#slots = slots
+    this.#slots = Object.freeze(slots)
     this.#reader = new Lazy(() => new CliReader(this.stdin))
     this.#writer = new Lazy(() => new CliWriter(this.stdout))
   }
@@ -107,7 +108,7 @@ export class CliShell extends Functor {
   get signal() { return this.#signal }
   get env() { return this.#env }
   get alias() { return this.#alias }
-  get slots() { return [...this.#slots] }
+  get slots() { return this.#slots }
   get disposeTimeoutMs() { return this.#disposeTimeoutMs }
 
   getStream(slotOrName) {
@@ -148,17 +149,14 @@ export class CliShell extends Functor {
     return this.reader[Symbol.asyncIterator]() 
   }
 
-  readByte() { 
-    return this.#builtin($ => $.reader.readByte($.signal))
-  }
   readString(charCount) { 
     return this.#builtin($ => $.reader.readString(charCount, $.signal))
   }
   readChar() { 
     return this.#builtin($ => $.reader.readChar($.signal))
   }
-  read() { 
-    return this.#builtin($ => $.reader.read($.signal))
+  readLine() { 
+    return this.#builtin($ => $.reader.readLine($.signal))
   }
   readArray() { 
     return this.#builtin($ => $.reader.readArray($.signal))
@@ -215,12 +213,14 @@ export class CliShell extends Functor {
     //  $({ IFS=',' }, $ => { }, $ => { }, ...)
     //  $({ IFS=',' }, $`my-cmd`, $`my-cmd`, ...)
     //  $({ IFS=',' }, $ => { }, $`my-cmd`, ...)
+
+    // split vars from command/pipeline
     const hasVars = isPojo(arg0)
-    const vars = hasVars ? arg0 : null
+    const vars = hasVars ? arg0 : { }
     const subshellOrFns = hasVars ? args.slice(1) : args
     const subshells = subshellOrFns
       .map(subshellOrFn => {
-        if (subshellOrFn instanceof SubShell) 
+        if (subshellOrFn instanceof CliSubshell) 
           return subshellOrFn(vars)
         
         if (subshellOrFn instanceof Function)
@@ -233,16 +233,19 @@ export class CliShell extends Functor {
 
     // $()
     // $(vars)
+    // no command, just variables => create a subshell with vars
     if (subshells.length == 0)
       return new CliShell({ parent: this, vars })
 
     // $(subshellOrFn)
     // $(vars, subshellOrFn)
+    // a single command (no pipeline) => return it
     if (subshells.length == 1) 
       return subshells[0]
 
     // $(subshellOrFn, subshellOrFn, ...)
     // $(vars, subshellOrFn, subshellOrFn, ...)
+    // multiple commands => create a pipeline
     return this.#pipeline(subshells)
   }
 

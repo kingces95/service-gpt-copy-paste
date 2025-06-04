@@ -182,6 +182,11 @@ export class CliSplitter {
 
 export class CliParser {
 
+  static parse(line, metadata) {
+    const parser = new this(metadata)
+    return parser.parse(line)
+  }
+
   static #parseNext(context, info, field, split) {
     // if there is context, the field must be untyped (any)
     assert(!context || field.isAny)
@@ -242,11 +247,6 @@ export class CliParser {
     return result    
   }
   
-  static parse(line, metadata) {
-    const parser = new this(metadata)
-    return parser.parse(line)
-  }
-
   #info
 
   constructor(metadata) {

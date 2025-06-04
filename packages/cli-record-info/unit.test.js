@@ -38,9 +38,6 @@ describe('A CliRecordInfo loaded with metadata', () => {
         it('should have no name', () => {
           expect(firstField.name).toBeNull()
         })
-        it('should have an index of 0', () => {
-          expect(firstField.index).toBe(0)
-        })
       })
     })
   })
@@ -83,9 +80,6 @@ describe('A CliRecordInfo loaded with metadata', () => {
         })
         it('should have an undefined name', () => {
           expect(firstField.name).toBeNull()
-        })
-        it('should have an index of 0', () => {
-          expect(firstField.index).toBe(0)
         })
       })
     })
@@ -130,9 +124,6 @@ describe('A CliRecordInfo loaded with metadata', () => {
         it('should have an undefined name', () => {
           expect(firstField.name).toBeNull()
         })
-        it('should have an index of 0', () => {
-          expect(firstField.index).toBe(0)
-        })
       })
     })
   })
@@ -173,9 +164,6 @@ describe('A CliRecordInfo loaded with metadata', () => {
         it('should be named $', () => {
           expect(firstField.name).toBe('$')
         })
-        it('should have an index of 0', () => {
-          expect(firstField.index).toBe(0)
-        })
       })
     })
   })
@@ -214,9 +202,6 @@ describe('A CliRecordInfo loaded with metadata', () => {
         it('should have an undefined name', () => {
           expect(firstField.name).toBeNull()
         })
-        it('should have an index of 0', () => {
-          expect(firstField.index).toBe(0)
-        })
       })
       describe('the second of which', () => {
         let secondField
@@ -232,9 +217,6 @@ describe('A CliRecordInfo loaded with metadata', () => {
         })
         it('should have an undefined name', () => {
           expect(secondField.name).toBeNull()
-        })
-        it('should have an index of 1', () => {
-          expect(secondField.index).toBe(1)
         })
       })
     })
@@ -273,9 +255,6 @@ describe('A CliRecordInfo loaded with metadata', () => {
         })
         it('should have an undefined name', () => {
           expect(firstField.name).toBeNull()
-        })
-        it('should have an index of 0', () => {
-          expect(firstField.index).toBe(0)
         })
       })
     })
@@ -316,9 +295,6 @@ describe('A CliRecordInfo loaded with metadata', () => {
         it('should have an undefined name', () => {
           expect(firstField.name).toBeNull()
         })
-        it('should have an index of 0', () => {
-          expect(firstField.index).toBe(0)
-        })
       })
       describe('the second of which', () => {
         let secondField
@@ -331,9 +307,6 @@ describe('A CliRecordInfo loaded with metadata', () => {
         })
         it('should have an undefined name', () => {
           expect(secondField.name).toBeNull()
-        })
-        it('should have an index of 1', () => {
-          expect(secondField.index).toBe(1)
         })
       })
       describe('the third of which', () => {
@@ -348,9 +321,6 @@ describe('A CliRecordInfo loaded with metadata', () => {
         })
         it('should have an undefined name', () => {
           expect(thirdField.name).toBeNull()
-        })
-        it('should have an index of 2', () => {
-          expect(thirdField.index).toBe(2)
         })
       })
       describe('the fourth of which', () => {
@@ -369,9 +339,6 @@ describe('A CliRecordInfo loaded with metadata', () => {
         })
         it('should have an undefined name', () => {
           expect(fourthField.name).toBeNull()
-        })
-        it('should have an index of 3', () => {
-          expect(fourthField.index).toBe(3)
         })
       })
     })
@@ -411,9 +378,6 @@ describe('A CliRecordInfo loaded with metadata', () => {
         it('should have name "a"', () => {
           expect(firstField.name).toBe('a')
         })
-        it('should have an index of 0', () => {
-          expect(firstField.index).toBe(0)
-        })
       })
       describe('the second of which', () => {
         let secondField
@@ -426,9 +390,6 @@ describe('A CliRecordInfo loaded with metadata', () => {
         })
         it('should have name "b"', () => {
           expect(secondField.name).toBe('b')
-        })
-        it('should have an index of 1', () => {
-          expect(secondField.index).toBe(1)
         })
       })
       describe('the third of which', () => {
@@ -443,9 +404,6 @@ describe('A CliRecordInfo loaded with metadata', () => {
         })
         it('should have name "c"', () => {
           expect(thirdField.name).toBe('c')
-        })
-        it('should have an index of 2', () => {
-          expect(thirdField.index).toBe(2)
         })
       })
       describe('the fourth of which', () => {
@@ -464,9 +422,6 @@ describe('A CliRecordInfo loaded with metadata', () => {
         })
         it('should have name "d"', () => {
           expect(fourthField.name).toBe('d')
-        })
-        it('should have an index of 3', () => {
-          expect(fourthField.index).toBe(3)
         })
       })
     })
@@ -510,9 +465,6 @@ describe('A CliRecordInfo loaded with metadata', () => {
           it('should have name "type"', () => {
             expect(firstField.name).toBe('type')
           })
-          it('should have an index of 0', () => {
-            expect(firstField.index).toBe(0)
-          })
           it('should be discriminated by "a" as number type', () => {
             expect(firstField.discriminate('a')).toBe(CliFieldType.number)
           })
@@ -532,9 +484,6 @@ describe('A CliRecordInfo loaded with metadata', () => {
           it('should have name "_"', () => {
             expect(secondField.name).toBe('_')
           })
-          it('should have an index of 1', () => {
-            expect(secondField.index).toBe(1)
-          })
         })
         describe('the third of which', () => {
           let thirdField
@@ -551,9 +500,6 @@ describe('A CliRecordInfo loaded with metadata', () => {
           })
           it('should have name "$"', () => {
             expect(thirdField.name).toBe('$')
-          })
-          it('should have an index of 2', () => {
-            expect(thirdField.index).toBe(2)
           })
         })
       })
@@ -593,9 +539,6 @@ describe('A CliRecordInfo loaded with metadata', () => {
           it('should have no name', () => {
             expect(firstField.name).toBeNull()
           })
-          it('should have an index of 0', () => {
-            expect(firstField.index).toBe(0)
-          })
           it('should be discriminated by "a" as number type', () => {
             const numberType = CliFieldType.getType('#')
             expect(firstField.discriminate('a')).toBeInstanceOf(CliFieldType)
@@ -617,9 +560,6 @@ describe('A CliRecordInfo loaded with metadata', () => {
           it('should have no name', () => {
             expect(secondField.name).toBeNull()
           })
-          it('should have an index of 1', () => {
-            expect(secondField.index).toBe(1)
-          })
         })
         describe('the third of which', () => {
           let thirdField
@@ -636,9 +576,6 @@ describe('A CliRecordInfo loaded with metadata', () => {
           })
           it('should have no name', () => {
             expect(thirdField.name).toBeNull()
-          })
-          it('should have an index of 2', () => {
-            expect(thirdField.index).toBe(2)
           })
         })
       })

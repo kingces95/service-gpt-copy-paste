@@ -1,7 +1,7 @@
 {
-  "name": "@kingjs/disposer",
+  "name": "@kingjs/cli-disposer",
   "version": "1.0.0",
-  "description": "Lazily asynchronously populate values.",
+  "description": "",
   "main": "index.js",
   "type": "module",
   "exports": {

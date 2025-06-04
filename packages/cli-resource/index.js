@@ -92,8 +92,8 @@ export class CliWritableResource extends CliResource {
   get disposedEvent() { return this.stream?.emitClose ? 'close' : 'finish' }
 
   connect(pipe) {
-    assert(this.stream instanceof Readable, 'stream must be a Readable')
-    assert(pipe instanceof Readable, 'pipe must be a Readable')
+    assert(this.stream instanceof Writable, 'stream must be a Writable')
+    assert(pipe instanceof Writable, 'pipe must be a Writable')
     if (pipe == this.stream) return
     pipe.pipe(this.stream, { end: this.isOwned })
   }
@@ -314,36 +314,3 @@ export class CliNullWritableResource extends CliWritableResource {
     super(new.target.Sink)
   }
 } 
-
-// --- Test case ---
-import { open } from 'fs/promises'
-
-async function testWritableResourceReuse() {
-  const fh = await open('test-output.txt', 'w+')
-
-  // Sanity check: write using native createWriteStream
-  const sanityStream = createWriteStream(null, { fd: fh.fd, autoClose: false })
-  sanityStream.write('sanity\n')
-  await new Promise(resolve => sanityStream.end(resolve))
-  
-  // First use
-  const writer1 = new CliFdWritableResource(fh.fd)
-  const stream1 = await writer1
-  stream1.write('first\n')
-  const stream11 = await writer1
-  stream11.write(stream1 == stream11 ? 'yes\n' : 'no\n')
-  await writer1.dispose()
-
-  // Second use with same fd
-  const writer2 = new CliFdWritableResource(fh.fd)
-  const stream2 = await writer2
-  stream2.write('second\n')
-  await writer2.dispose()
-
-  // Close the shared fd
-  await fh.close()
-
-  console.log('Test complete: fd was reused between writable streams')
-}
-
-// testWritableResourceReuse()

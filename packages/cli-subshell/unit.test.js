@@ -17,7 +17,10 @@ const WORLD = 'world'
 
 describe('spawn', () => {
   let $
-  beforeEach(() => { $ = new CliShell() })
+  beforeEach(() => { 
+    const { signal } = new AbortController()
+    $ = new CliShell({ signal }) 
+  })
 
   it('proc', async () => {
     const passThrough = new PassThrough()
@@ -51,7 +54,10 @@ describe('spawn', () => {
 
 describe('function', () => {
   let $
-  beforeEach(() => { $ = new CliShell() })
+  beforeEach(() => { 
+    const { signal } = new AbortController()
+    $ = new CliShell({ signal }) 
+  })
 
   it('func', async () => {
     const passThrough = new PassThrough()
@@ -91,7 +97,10 @@ describe('function', () => {
 
 describe('spawn-function', () => {
   let $
-  beforeEach(() => { $ = new CliShell() })
+  beforeEach(() => { 
+    const { signal } = new AbortController()
+    $ = new CliShell({ signal }) 
+  })
 
   it('proc-func', async () => {
     await $(
@@ -138,7 +147,10 @@ describe('normalize', () => {
   // $(...)('hello world') is equivalent to $(...)({ stdin: 'hello world' })
   let $
 
-  beforeEach(() => { $ = new CliShell() })
+  beforeEach(() => { 
+    const { signal } = new AbortController()
+    $ = new CliShell({ signal }) 
+  })
 
   // e.g. like reading fd 3; e.g. $ (...) 0<&3
   it('input', async () => {
@@ -168,7 +180,7 @@ describe('normalize', () => {
   // e.g. like here-string; e.g. $ (...) <<< "hello world"
   it('here-string', async () => {
     await $(async $ => {
-      const line = await $.read()
+      const line = await $.readLine()
       expect(line).toEqual(HELLO_WORLD)
     })(HELLO_WORLD)
   })

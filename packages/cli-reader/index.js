@@ -7,16 +7,16 @@ const LINE_FEED_BYTE = 0x0A
 const CARRAGE_RETURN_BYTE = 0x0D
 
 export class CliReader {
-  #iterator
+  #generator
 
   constructor(stream) {
     const signal = CliProcess.signal
-    this.#iterator = sip(stream, { signal })
+    this.#generator = sip(stream, { signal })
   }
 
   async readString(charCount = Infinity) {
     while (true) {
-      const { done, value: { buffer, eof } = { } } = await this.#iterator.next()
+      const { done, value: { buffer, eof } = { } } = await this.#generator.next()
       if (done || (eof && !buffer.length)) return null
 
       if (eof || buffer.length == charCount) {
@@ -35,7 +35,7 @@ export class CliReader {
     const stripCarriageReturns = !keepCarriageReturns
 
     while (true) {
-      const { done, value: { buffer, eof } = { } } = await this.#iterator.next()
+      const { done, value: { buffer, eof } = { } } = await this.#generator.next()
       if (done || (eof && !buffer.length)) return null
 
       if (buffer.peek() != LINE_FEED_BYTE && !eof)

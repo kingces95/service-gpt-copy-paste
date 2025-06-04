@@ -1,0 +1,16 @@
+{
+  "name": "@kingjs/pause",
+  "version": "1.0.0",
+  "description": "Sleep barely human perceptable period.",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "keywords": [
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+  }
+}

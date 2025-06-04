@@ -1,5 +1,4 @@
 import { once } from 'events'
-import { sleep } from '@kingjs/sleep'
 
 export class DisposableResource {
   #__name
@@ -8,7 +7,11 @@ export class DisposableResource {
   #disposeFn
   #end
 
-  constructor(valueOrFn, disposeFn = () => true, options = { end: true }) {
+  constructor(
+    valueOrFn, 
+    disposeFn = () => true, 
+    options = { end: true }) {
+
     const { end = true, __name } = options
     if (typeof valueOrFn !== 'function')
       this.#value = valueOrFn

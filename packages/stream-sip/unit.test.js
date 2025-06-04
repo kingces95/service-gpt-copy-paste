@@ -187,7 +187,7 @@ describe('Utf8CharBuffer', () => {
     })
   })
 })
-  
+
 describe('sip', () => {
   describe('with an empty stream', () => {
     it('should not yield a buffer', async () => {

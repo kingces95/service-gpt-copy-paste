@@ -1,5 +1,5 @@
 {
-  "name": "@kingjs/disposer",
+  "name": "@kingjs/dispose",
   "version": "1.0.0",
   "description": "Lazily asynchronously populate values.",
   "main": "index.js",

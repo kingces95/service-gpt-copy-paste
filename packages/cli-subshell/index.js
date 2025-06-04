@@ -193,7 +193,7 @@ export class CliSubshell extends DraftorPromise {
     }
 
     super({
-      revise(redirections) {
+      revise(redirections = { }) {
         // overload resolution; javascript primitive -> { [slot]: redirection }
         redirections = CliSubshell.#normalize(redirections)
 
@@ -365,8 +365,7 @@ export class CliProcessSubshell extends CliSubshell {
     this.#args = args
     this.#child = new Lazy(() => {
       const { shell } = this
-      const { cmd, args } = this
-      const { cwd, slots } = shell
+      const { slots } = shell
       const stdio = this.#__stdio = slots.map(resource => {
         if (resource.hasFd) 
           return resource.fd
@@ -381,6 +380,8 @@ export class CliProcessSubshell extends CliSubshell {
       for (const key in shell.env) 
         env[key] = shell.env[key]
 
+      const { cmd, args } = this
+      const { $: cwd } = shell.cwd()
       return spawn(cmd, args, { env, cwd, stdio })
     }, this)
 
@@ -403,7 +404,7 @@ export class CliProcessSubshell extends CliSubshell {
     // To prevent premature consumption, the stdin must be nulled. This nulling
     // could be done explictly by the user, or implicitly by the runtime. The
     // latter is chosen because hanging the spawned process for lack of stdin
-    // is a more explict failure  than siliently fetching and discarding input.
+    // is a more explict failure than siliently fetching and discarding input.
     this({ stdin: null })
   }
 

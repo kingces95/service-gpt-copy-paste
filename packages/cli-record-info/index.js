@@ -9,11 +9,10 @@ export class CliFieldInfo {
   #loader
   #type
   #name
-  #index
   #implicit
   #discriminations
 
-  constructor(loader, type, index, { 
+  constructor(loader, type, { 
     name, 
     discriminations,
     implicit = false
@@ -24,7 +23,6 @@ export class CliFieldInfo {
 
     this.#loader = loader
     this.#type = type
-    this.#index = index
     this.#name = name ?? null
     this.#implicit = implicit
 
@@ -44,7 +42,6 @@ export class CliFieldInfo {
 
   get loader() { return this.#loader }
   get type() { return this.#type }
-  get index() { return this.#index }
   get name() { return this.#name }
 
   get isImplicit() { return this.#implicit }
@@ -137,11 +134,11 @@ class CliUntypedFieldRecordInfo extends CliRecordInfo {
   *fields() { 
     // yield a count number of word fields
     for (let i = 0; i < this.count - 1; i++)
-      yield this.loader.loadField(CliFieldType.word, i)
+      yield this.loader.loadField(CliFieldType.word)
 
     // yield a comment field
     yield this.loader.loadField(
-      CliFieldType.comment, this.count - 1, { implicit: true })
+      CliFieldType.comment, { implicit: true })
   }
 }
 class CliTextFieldRecordInfo extends CliUntypedFieldRecordInfo {
@@ -190,7 +187,7 @@ class CliUserDefinedFieldRecordInfo extends CliRecordInfo {
         if (type.isEnum)
           options.discriminations = value
 
-        return loader.loadField(type, i, options)
+        return loader.loadField(type, options)
       })
 
     // upto the last field, all fields must be literal fields
@@ -200,7 +197,7 @@ class CliUserDefinedFieldRecordInfo extends CliRecordInfo {
     // if the last field is an enum, add a discriminated field
     if (fieldInfos.at(-1)?.isEnum) {
       fieldInfos.push(loader.loadField(
-        CliFieldType.any, fieldInfos.length, {
+        CliFieldType.any, {
           implicit: true, 
           name: this.isNamed ? DEFAULT_DISCRIMINATED_FIELD_NAME : undefined
         })
@@ -210,7 +207,7 @@ class CliUserDefinedFieldRecordInfo extends CliRecordInfo {
     // if the last field is not a comment, add a default comment field
     if (!(fieldInfos.at(-1)?.isComment)) {
       fieldInfos.push(loader.loadField(
-        CliFieldType.comment, fieldInfos.length, {
+        CliFieldType.comment, {
           implicit: true, 
           name: this.isNamed ? DEFAULT_COMMENT_FIELD_NAME : undefined
         })
@@ -246,42 +243,28 @@ class CliUnnamedFieldRecordInfo extends CliUserDefinedFieldRecordInfo {
 }
 
 export class CliRecordInfoLoader {
-  static #loadAnonymousField(type, index) {
-    assert(Number.isInteger(index), 'index must be an integer')
-    assert(index >= 0, 'index must be a non-negative number')
-
+  static #loadAnonymousField(type) {
     const cache = CliRecordInfoLoader.#annonymousFieldInfos
     if (!cache.has(type))
-      cache.set(type, new Map())
-
-    const infos = cache.get(type)
-    if (!infos.has(index))
-      infos.set(index, new CliFieldInfo(this, type, index))
-
-    return infos.get(index)
+      cache.set(type, new CliFieldInfo(this, type))
+    return cache.get(type)
   }
-  static #loadImplicitCommentField(index) {
-    assert(Number.isInteger(index), 'index must be an integer')
-    assert(index >= 0, 'index must be a non-negative number')
-    const cache = this.#implicitCommentFieldInfos
-    if (!cache.has(index)) {
+  static #loadImplicitCommentField() {
+    if (!this.#implicitCommentFieldInfo) {
       const options = { implicit: true }
-      const info = new CliFieldInfo(this, CliFieldType.comment, index, options)
-      cache.set(index, info)
+      this.#implicitCommentFieldInfo = 
+        new CliFieldInfo(this, CliFieldType.comment, options)
     }
-    return cache.get(index)
+    return this.#implicitCommentFieldInfo
   }
-  static #loadDefaultCommentField(index) {
-    assert(Number.isInteger(index), 'index must be an integer')
-    assert(index >= 0, 'index must be a non-negative number')
-    const cache = this.#defaultCommentFieldInfos
-    if (!cache.has(index)) {
+  static #loadDefaultCommentField() {
+    if (!this.#defaultCommentFieldInfo) {
       const name = DEFAULT_COMMENT_FIELD_NAME
       const options = { name, implicit: true }
-      const info = new CliFieldInfo(this, CliFieldType.comment, index, options)
-      cache.set(index, info)
+      this.#defaultCommentFieldInfo = 
+        new CliFieldInfo(this, CliFieldType.comment, options)
     }
-    return cache.get(index)
+    return this.#defaultCommentFieldInfo
   }
   static #loadWordsRecord(count) {
     assert(Number.isInteger(count), 'count must be an integer')
@@ -296,36 +279,34 @@ export class CliRecordInfoLoader {
   // cache when benifit of reuse expected to exceed memory cost
   static #textFieldRecordInfo
   static #listFieldRecordInfo
+  static #implicitCommentFieldInfo
+  static #defaultCommentFieldInfo
   static #untypedRecordInfos = new Map()
-  static #implicitCommentFieldInfos = new Map()
-  static #defaultCommentFieldInfos = new Map()
   static #annonymousFieldInfos = new Map()
   static {
     this.#textFieldRecordInfo = new CliTextFieldRecordInfo(this)
     this.#listFieldRecordInfo = new CliListFieldRecordInfo(this)
   }
 
-  static loadField(type, index, { 
+  static loadField(type, { 
     name, 
     discriminations, 
     implicit 
   } = { }) {
     assert(type instanceof CliFieldType, 'type must be an instance of CliFieldType')
-    assert(Number.isInteger(index), 'index must be an integer')
-    assert(index >= 0, 'index must be a non-negative number')
 
     // cache implicit comments
     if (type.isComment && implicit) {
       if (name == DEFAULT_COMMENT_FIELD_NAME)
-        return this.#loadDefaultCommentField(index)
-      return this.#loadImplicitCommentField(index)
+        return this.#loadDefaultCommentField()
+      return this.#loadImplicitCommentField()
     }
 
     // cache annonymous fields w/o any discriminations
     if (!name && !type.isEnum)
-      return this.#loadAnonymousField(type, index)
+      return this.#loadAnonymousField(type)
 
-    return new CliFieldInfo(this, type, index, { name, discriminations })
+    return new CliFieldInfo(this, type, { name, discriminations })
   }
 
   // A line is viewed as zero or more fields plus an optional comment.

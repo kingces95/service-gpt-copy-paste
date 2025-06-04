@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { PassThrough } from 'stream'
 import { CliShell } from '@kingjs/cli-shell'
-import { PassThrough } from 'stream'
 import { 
   compareStreams, 
   CliVitestPaths, 
@@ -22,7 +21,10 @@ const WORLD = 'world'
 describe('redirect-errors', () => {
   let $
 
-  beforeEach(() => { $ = new CliShell() })
+  beforeEach(() => { 
+    const { signal } = new AbortController()
+    $ = new CliShell({ signal }) 
+  })
 
   it('bad-name', async () => {
     expect(() => {
@@ -52,8 +54,11 @@ describe('redirect-errors', () => {
 describe('redirect', () => {
   let $
 
-  beforeEach(() => { $ = new CliShell() })
-
+  beforeEach(() => { 
+    const { signal } = new AbortController()
+    $ = new CliShell({ signal }) 
+  })
+  
   it('null', async () => {
     await $(async $ => {
       return
@@ -95,8 +100,11 @@ describe('redirect', () => {
 
 describe('supplant', () => {
   let $
-  beforeEach(() => { $ = new CliShell() })
-
+  beforeEach(() => { 
+    const { signal } = new AbortController()
+    $ = new CliShell({ signal }) 
+  })
+  
   it('path', async () => {
     const resultPath = join(`${__paths.rootDir}`, `supplanted.txt`)
     const passThrough = new PassThrough()
@@ -121,8 +129,11 @@ describe('supplant', () => {
 
 describe('redirect-copy', () => {
   let $
-  beforeEach(() => { $ = new CliShell() })
-
+  beforeEach(() => { 
+    const { signal } = new AbortController()
+    $ = new CliShell({ signal }) 
+  })
+  
   it('buffer', async () => {
     await $(async $ => {
       await compareStreams($.stdin, HELLO_WORLD)
@@ -136,7 +147,10 @@ describe('stdout-redirect-coercion', () => {
   // memory stream.
   let $
 
-  beforeEach(() => { $ = new CliShell() })
+  beforeEach(() => { 
+    const { signal } = new AbortController()
+    $ = new CliShell({ signal }) 
+  })
 
   it('stderr-to-stdout', async () => {
     const passThrough = new PassThrough()
@@ -175,7 +189,10 @@ describe('stdin-redirect-coercion', () => {
   // memory stream.
   let $
 
-  beforeEach(() => { $ = new CliShell() })
+  beforeEach(() => { 
+    const { signal } = new AbortController()
+    $ = new CliShell({ signal }) 
+  })
 
   it('buffer', async () => {
     await $(async $ => {
@@ -214,7 +231,10 @@ describe('stdin-redirect-coercion', () => {
 
 describe('debug', () => {
   let $
-  beforeEach(() => { $ = new CliShell() })
+  beforeEach(() => { 
+    const { signal } = new AbortController()
+    $ = new CliShell({ signal }) 
+  })
 
   it('slots', async ({ task }) => {
     const subshell = $(() => { })

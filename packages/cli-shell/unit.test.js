@@ -41,7 +41,7 @@ describe('The default shell', () => {
   it('should have an env prototype of process.env.', async () => {
     expect(Object.getPrototypeOf(shell.env)).toBe(process.env)
   })
-  it('should have forzen slots.', async () => {
+  it('should have frozen slots.', async () => {
     expect(Object.isFrozen(shell.slots)).toBe(true)
   })
   it('should have the default DISPOSE_TIMEOUT_MS.', async () => {
@@ -147,7 +147,7 @@ describe('A subshell of the default shell', () => {
   beforeEach(() => { 
     const { signal } = new AbortController()
     shell = new CliShell({ signal })
-    subshell = shell.subshell() 
+    subshell = shell() 
   })
 
   it('should be a CliShell.', async () => {
@@ -187,7 +187,7 @@ describe('A subshell that declares new environment variables', () => {
   beforeEach(() => { 
     const { signal } = new AbortController()
     shell = new CliShell({ signal })
-    subshell = shell.subshell({ p0: HELLO, p1: WORLD })
+    subshell = shell({ p0: HELLO, p1: WORLD })
   })
 
   it('has an env with prototype equal to the parent env.', async () => {
@@ -203,7 +203,7 @@ describe('A subshell that declares new environment variables', () => {
   })
 })
 
-describe('A CliShell initialized with a pushd stack.', () => {
+describe('A shell initialized with a pushd stack', () => {
   let shell
   let pushdStack
   beforeEach(() => {
@@ -226,7 +226,7 @@ describe('A CliShell initialized with a pushd stack.', () => {
   })
 })
 
-describe('A CliShell cwd initialized with a path.', () => {
+describe('A shell cwd initialized with a cwd', () => {
   let shell
   let path
   beforeEach(() => { 
@@ -235,195 +235,225 @@ describe('A CliShell cwd initialized with a path.', () => {
     shell = new CliShell({ signal, pushdStack: [ path ] }) 
   })
 
-  it('should be the path.', async () => {
+  it('should return that cwd.', async () => {
     expect(shell.cwd).toBeEquals(path)
   })
-
   it ('should have dirs array containing just the path.', async () => {
     expect(shell.dirs).toEqual([path])
   })
-
   it('should still be the path if dot is pushed.', async () => {
     shell.pushd('.')
     expect(shell.cwd).toBeEquals(path)
   })
-
-  it('should still be the path if poped with one dir.', async () => {
+  it('should still be the path if popped.', async () => {
     shell.popd()
     expect(shell.cwd).toBeEquals(path)
   })
-
   it('should still be the path if Path.current pushed.', async () => {
     shell.pushd(Path.current)
     expect(shell.cwd).toBeEquals(path)
   })
-
   it('should be a subdirectory of cwd if the name of a dir is pushed.', async () => {
     shell.pushd(HELLO)
     expect(shell.cwd).toBeEquals(path(HELLO))
   })
-
   it('should be dir if a subdir is pushed and popped.', async () => {
     shell.pushd(HELLO)
     shell.popd()
     expect(shell.cwd).toBeEquals(path)
   })
-
   it('should resolve and path and return a pushed relative subdir.', async () => {
     const subdir = shell.pushd(HELLO)
     expect(subdir).toBeEquals(path(HELLO))
     expect(shell.cwd).toBeEquals(path(HELLO))
   })
-
   it('should be an absolute path if an absolute path is pushed.', async () => {
     const altPath = Path.create('/alt/absolute/path')
     shell.pushd(altPath)
     expect(shell.cwd).toBeEquals(altPath)
   })
-
   it('should have a .dirs of subdir then the path after pushing the subdir.', async () => {
     const subdir = shell.pushd(HELLO)
     expect(shell.dirs.length).toBe(2)
     expect(shell.dirs[0]).toBeEquals(subdir)
     expect(shell.dirs[1]).toBeEquals(path)
   })
-
   it('should be the parent of path if backtrack pushed.', async () => {
     shell.pushd('..')
     expect(shell.cwd).toBeEquals(path('..'))
   })
-
   it('should return copies of .dirs array.', async () => {
     expect(shell.dirs).not.toBe(shell.dirs)
   })
 })
 
-describe('expand', () => {
+describe('A shell expansion of a command', () => {
   let $
-  beforeEach(() => { $ = new CliShell() })
-
-  it('expand', async () => {
-    const args = $.expand('bash', '-c', 'echo', HELLO_WORLD)
-    expect(args).toEqual(['bash', '-c', 'echo', HELLO_WORLD])
+  beforeEach(() => { 
+    const { signal } = new AbortController()
+    $ = new CliShell({ signal }) 
   })
 
-  it('alias', async () => {
-    $.alias.set('shell', (...args) => ['bash', ...args])
-    const args = $.expand('shell', '-c', 'echo', HELLO_WORLD)
-    expect(args).toEqual(['bash', '-c', 'echo', HELLO_WORLD])
-  })
-
-  it('alias-alias', async () => {
-    $.alias.set('shell', (...args) => ['bash', ...args])
-    const args = $.expand('shell', '-c', 'echo', HELLO_WORLD)
-    expect(args).toEqual(['bash', '-c', 'echo', HELLO_WORLD])
-
-    await $.subshell($ => {
-      const args = $.expand('shell', '-c', 'echo', HELLO_WORLD)
+  describe('without any aliases', () => {
+    it('should return the command without substitution.', async () => {
+      const args = $.expand('bash', '-c', 'echo', HELLO_WORLD)
       expect(args).toEqual(['bash', '-c', 'echo', HELLO_WORLD])
+    })
+  })
 
-      {
-        $.alias.set('shell', (...args) => ['sh', ...args])
-        const args = $.expand('shell', '-c', 'echo', HELLO_WORLD)
-        expect(args).toEqual(['sh', '-c', 'echo', HELLO_WORLD])
-      }
+  describe('with an alias that maps "shell" to "bash"', () => {
+    beforeEach(() => {
+      $.alias.set('shell', (...args) => ['bash', ...args])
     })
 
-    {
+    it('should return a command after mapping "shell" to "bash".', async () => {
       const args = $.expand('shell', '-c', 'echo', HELLO_WORLD)
       expect(args).toEqual(['bash', '-c', 'echo', HELLO_WORLD])
-    }
+    })
+
+    describe('which creates a subshell', () => {
+      describe('which expands the command', () => {
+        it('should return a command after mapping "shell" to "bash".', async () => {
+          await $($ => {
+            const args = $.expand('shell', '-c', 'echo', HELLO_WORLD)
+            expect(args).toEqual(['bash', '-c', 'echo', HELLO_WORLD])
+          })
+        })
+      })
+      describe('which overrides the alias to map "shell" to "sh"', () => {
+        it('should return a command after mapping "shell" to "sh".', async () => {
+          await $($ => {
+            $.alias.set('shell', (...args) => ['sh', ...args])
+            const args = $.expand('shell', '-c', 'echo', HELLO_WORLD)
+            expect(args).toEqual(['sh', '-c', 'echo', HELLO_WORLD])
+          })
+        })
+      })
+      describe('which exits and returns control to the parent shell', () => {
+        it('should return a command after mapping "shell" to "bash".', async () => {
+          await $($ => {
+            $.alias.set('shell', (...args) => ['sh', ...args])
+          })
+          const args = $.expand('shell', '-c', 'echo', HELLO_WORLD)
+          expect(args).toEqual(['bash', '-c', 'echo', HELLO_WORLD])
+        })
+      })
+    })
   })
 })
 
-describe('spawn', () => {
+describe('A shell launches a node process', () => {
   let $
-  beforeEach(() => { $ = new CliShell() })
-
-  it('node', async () => {
-    const passThrough = new PassThrough()
-    await $.spawn(
-      NODE, '-e', `process.stdout.write("${HELLO_WORLD}")`)
-      (passThrough)
-    passThrough.end()
-    await compareStreams(passThrough, HELLO_WORLD)
+  beforeEach(() => { 
+    const { signal } = new AbortController()
+    $ = new CliShell({ signal }) 
   })
-  
-  it('alias', async () => {
-    $.alias.set('node', (...args) => [NODE, '-e', ...args])
 
-    const passThrough = new PassThrough()
-    await $.spawn(
-      'node', `process.stdout.write("${HELLO_WORLD}")`)
-      (passThrough)
-    passThrough.end()
-    await compareStreams(passThrough, HELLO_WORLD)
+  describe('via tagged template literal syntax', () => {
+    it('should should work.', async () => {
+      const passThrough = new PassThrough()
+      await $`${NODE} -e ${`process.stdout.write("${HELLO_WORLD}")`}`(passThrough)
+      passThrough.end()
+      await compareStreams(passThrough, HELLO_WORLD)
+    })
+    describe('using an alias for "node"', () => {
+      it('should also work.', async () => {
+        const passThrough = new PassThrough()
+        await $`node -e ${`process.stdout.write("${HELLO_WORLD}")`}`(passThrough)
+        passThrough.end()
+        await compareStreams(passThrough, HELLO_WORLD)
+      })
+    })
+  })
+
+  describe('via spawn', () => {
+    it('should should work.', async () => {
+      const passThrough = new PassThrough()
+      await $.spawn(
+        NODE, '-e', `process.stdout.write("${HELLO_WORLD}")`)
+        (passThrough)
+      passThrough.end()
+      await compareStreams(passThrough, HELLO_WORLD)
+    })
+    describe('using an alias for "node"', () => {
+      it('should also work.', async () => {
+        $.alias.set('node', (...args) => [NODE, '-e', ...args])
+    
+        const passThrough = new PassThrough()
+        await $.spawn(
+          'node', `process.stdout.write("${HELLO_WORLD}")`)
+          (passThrough)
+        passThrough.end()
+        await compareStreams(passThrough, HELLO_WORLD)
+      })
+    })
   })
 })
 
-describe('subshell', () => {
+describe('A shell launches a subshell with a function', () => {
   let $
-  beforeEach(() => { $ = new CliShell() })
-
-  it('null', async () => {
-    const subshell = $.subshell()
-    expect(subshell).toBe(undefined)
+  beforeEach(() => { 
+    const { signal } = new AbortController()
+    $ = new CliShell({ signal }) 
   })
 
-  it('function', async ({ task }) => {
+  it('should call the function', async ({ task }) => {
     let called = false
-    const subshell = $.subshell(() => called = true)
+    const subshell = $(() => called = true)
     await __pojo.expect(subshell, task)
     await subshell
     expect(called).toBe(true)
   })
   
-  it('function-function', async ({ task }) => {
+  it('should call a function in another subshell', async ({ task }) => {
     let called = false
-    const subshell = $.subshell($.subshell(() => called = true))
+    const subshell = $($(() => called = true))
     await __pojo.expect(subshell, task)
     await subshell
     expect(called).toBe(true)
   })
 
   it('bad-subshell', async () => {
-    expect(() => $.subshell(1)).toThrow()
-    expect(() => $.subshell('hello')).toThrow()
+    expect(() => $(1)).toThrow()
+    expect(() => $('hello')).toThrow()
   })
 })
 
-describe('pipeline', () => {
+describe('A shell that is invoked with an array of subshells', () => {
   let $
-  beforeEach(() => { $ = new CliShell() })
+  beforeEach(() => { 
+    const { signal } = new AbortController()
+    $ = new CliShell({ signal }) 
+  })
 
-  it('one-stage', async ({ task }) => {
-    const stage = $.subshell(function one() { })
-    const pipeline = $.pipeline(stage)
+  it('of length one, should return the subshell', async ({ task }) => {
+    const stage = $(function one() { })
+    const pipeline = $(stage)
     expect(pipeline).toBe(stage)
     await __pojo.expect(stage, task)
   })
 
-  it('two-stage', async ({ task }) => {
+  it('of length two, should return the last subshell', async ({ task }) => {
     const passThrough = new PassThrough()
     const stages = [
-      $.subshell(function one() { }),
-      $.subshell(function two() { }),
+      $(function one() { }),
+      $(function two() { }),
     ]
-    const stage = $.pipeline(...stages)(passThrough)
+    const stage = $(...stages)(passThrough)
 
     const [ first, last ] = stages
     expect(stage).toBe(last)
     await __pojo.expect(stage, task)
   })
 
-  it('three-stage', async ({ task }) => {
+  it('of length three, should return the last subshell', async ({ task }) => {
     const passThrough = new PassThrough()
     const stages = [
-      $.subshell(function one() { }),
-      $.subshell(function two() { }),
-      $.subshell(function three() { }),
+      $(function one() { }),
+      $(function two() { }),
+      $(function three() { }),
     ]
-    const stage = $.pipeline(...stages)(passThrough)
+    const stage = $(...stages)(passThrough)
 
     const [ first, middle, last ] = stages
     expect(stage).toBe(last)
@@ -433,24 +463,16 @@ describe('pipeline', () => {
 
 describe('reader', () => {
   let $
-  beforeEach(() => { $ = new CliShell() })
-
-  it('read-byte', async () => {
-    const passThrough = new PassThrough()
-    passThrough.write(HELLO_WORLD)
-    passThrough.end()
-    await $.subshell(async $ => {
-      const result = await $.readByte()
-      const byte = HELLO_WORLD.charCodeAt(0)
-      expect(result).toBe(byte)
-    })({ stdin: passThrough })  
+  beforeEach(() => { 
+    const { signal } = new AbortController()
+    $ = new CliShell({ signal }) 
   })
 
   it('read-char', async () => {
     const passThrough = new PassThrough()
     passThrough.write(HELLO_WORLD)
     passThrough.end()
-    await $.subshell(async $ => {
+    await $(async $ => {
       const result = await $.readChar()
       expect(result).toBe(HELLO_WORLD.charAt(0))
     })({ stdin: passThrough })
@@ -460,20 +482,20 @@ describe('reader', () => {
     const passThrough = new PassThrough()
     passThrough.write(HELLO_WORLD)
     passThrough.end()
-    await $.subshell(async $ => {
+    await $(async $ => {
       const result = await $.readString(2)
       expect(result).toBe(HELLO_WORLD.substring(0, 2))
     })({ stdin: passThrough })
   })
 
-  it('read', async () => {
+  it('readLine', async () => {
     const passThrough = new PassThrough()
     passThrough.write(HELLO_WORLD + '\n' + HELLO)
     passThrough.end()
-    await $.subshell(async $ => {
-      const helloWorld = await $.read()
+    await $(async $ => {
+      const helloWorld = await $.readLine()
       expect(helloWorld).toBe(HELLO_WORLD)
-      const hello = await $.read()
+      const hello = await $.readLine()
       expect(hello).toBe(HELLO)
     })({ stdin: passThrough })
   })
@@ -482,7 +504,7 @@ describe('reader', () => {
     const passThrough = new PassThrough()
     passThrough.write(HELLO_WORLD + '\n' + HELLO)
     passThrough.end()
-    await $.subshell(async $ => {
+    await $(async $ => {
       let lines = []
       for await (const list of $) 
         lines.push(list)
@@ -496,7 +518,7 @@ describe('reader', () => {
     const passThrough = new PassThrough()
     passThrough.write(HELLO_WORLD + '\n' + HELLO)
     passThrough.end()
-    await $.subshell(async $ => {
+    await $(async $ => {
       const [ hello, world ] = await $.readArray()
       expect(hello).toBe(HELLO)
       expect(world).toBe(WORLD)
@@ -509,7 +531,7 @@ describe('reader', () => {
     const passThrough = new PassThrough()
     passThrough.write(HELLO_WORLD + '\n' + HELLO)
     passThrough.end()
-    await $.subshell(async $ => {
+    await $(async $ => {
       const record = await $.readRecord([ 'hello', 'world' ])
       expect(record.hello).toBe(HELLO)
       expect(record.world).toBe(WORLD)
@@ -522,7 +544,7 @@ describe('reader', () => {
     const passThrough = new PassThrough()
     passThrough.write(HELLO)
     passThrough.end()
-    await $.subshell(async $ => {
+    await $(async $ => {
       const record = await $.readRecord({ value: '' })
       expect(record.value).toBe(HELLO)
     })({ stdin: passThrough })
@@ -532,7 +554,7 @@ describe('reader', () => {
     const passThrough = new PassThrough()
     passThrough.write('1 true True')
     passThrough.end()
-    await $.subshell(async $ => {
+    await $(async $ => {
       const record = await $.readRecord({ p0: '!', p1: '!', p2: '!' })
       expect(record.p0).toBe(true)
       expect(record.p1).toBe(true)
@@ -544,7 +566,7 @@ describe('reader', () => {
     const passThrough = new PassThrough()
     passThrough.write('0 false False')
     passThrough.end()
-    await $.subshell(async $ => {
+    await $(async $ => {
       const record = await $.readRecord({ p0: '!', p1: '!', p2: '!' })
       expect(record.p0).toBe(false)
       expect(record.p1).toBe(false)
@@ -556,7 +578,7 @@ describe('reader', () => {
     const passThrough = new PassThrough()
     passThrough.write('0 1')
     passThrough.end()
-    await $.subshell(async $ => {
+    await $(async $ => {
       const record = await $.readRecord({ n0: '#', n1: '#' })
       expect(record.n0).toBe(0)
       expect(record.n1).toBe(1)
@@ -566,11 +588,14 @@ describe('reader', () => {
 
 describe('writer', () => {
   let $
-  beforeEach(() => { $ = new CliShell() })
+  beforeEach(() => { 
+    const { signal } = new AbortController()
+    $ = new CliShell({ signal }) 
+  })
 
   it('echo', async () => {
     const passThrough = new PassThrough()
-    await $.subshell(async $ => {
+    await $(async $ => {
       await $.echo(HELLO_WORLD)
     })(passThrough)
     passThrough.end()
@@ -579,7 +604,7 @@ describe('writer', () => {
   
   it('echo-record', async () => {
     const passThrough = new PassThrough()
-    await $.subshell(async $ => {
+    await $(async $ => {
       await $.echoRecord([HELLO, WORLD])
     })(passThrough)
     passThrough.end()
@@ -589,7 +614,10 @@ describe('writer', () => {
 
 describe('publish', () => {
   let $
-  beforeEach(() => { $ = new CliShell() })
+  beforeEach(() => { 
+    const { signal } = new AbortController()
+    $ = new CliShell({ signal }) 
+  })
 
   it('noop', async () => {
     const result = $()
@@ -623,14 +651,17 @@ describe('publish', () => {
 
 describe('stdin-consumption-problem', () => {
   let $
-  beforeEach(() => { $ = new CliShell() })
+  beforeEach(() => { 
+    const { signal } = new AbortController()
+    $ = new CliShell({ signal }) 
+  })
 
   it('implicit', async ({ task }) => {
     const producer = new PassThrough()
     producer.write(HELLO_WORLD)
     producer.end()
 
-    await $.subshell(async $ => {
+    await $(async $ => {
       const consumer = new PassThrough()
       const subshell = $.spawn(
         NODE, 

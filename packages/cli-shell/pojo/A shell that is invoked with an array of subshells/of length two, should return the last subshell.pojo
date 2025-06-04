@@ -1,0 +1,17 @@
+{
+  __id: 1,
+  __type: 'Function',
+  __name: 'two',
+  __slots: {
+    '0': { __type: 'ParentPiped', __flow: 'in', __from: 0 },
+    '1': { __type: 'Borrowed', __flow: 'out' }
+  },
+  __children: [
+    {
+      __id: 0,
+      __type: 'Function',
+      __name: 'one',
+      __slots: { '1': { __type: 'ChildPiped', __flow: 'out', __to: 1 } }
+    }
+  ]
+}

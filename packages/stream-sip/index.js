@@ -105,3 +105,7 @@ export async function* sip(stream, { signal } = {}) {
     signal?.removeEventListener('abort', destroy)
   }
 }
+
+// dispose
+// pipe
+// rest
