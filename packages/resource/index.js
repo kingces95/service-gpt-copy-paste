@@ -15,8 +15,9 @@ export class Resource {
   #state
   #disposer
   #owned
+  #__name
 
-  constructor(valueFn, disposer, { end = true } = { }) {
+  constructor(valueFn, disposer, { end = true, __name } = { }) {
     this.#state = Resource.Unactivated
     this.#owned = end
     this.#disposer = disposer
@@ -24,13 +25,17 @@ export class Resource {
       this.#state = Resource.Activated
       return valueFn()
     })
+    this.#__name = __name
   }
+
+  get __name() { return this.#__name }
 
   get state() { return this.#state }
   get isOwned() { return this.#owned }
   get isUnactivated() { return this.state === Resource.Unactivated }
   get isActivated() { return this.state === Resource.Activated }
   get isDisposed() { return this.state === Resource.Disposed }
+
   get value() { 
     if (this.isDisposed)
       throw new Error('Resource is disposed')
@@ -38,6 +43,7 @@ export class Resource {
   }
 
   async dispose({ signal, timeoutMs } = {}) {
+    // TODO: move timeoutMs to disposer
     try {
       if (!this.isActivated) return
       if (!this.isOwned) return

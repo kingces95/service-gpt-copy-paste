@@ -17,5 +17,6 @@ export default defineConfig({
       // exclude: ['**/test.js', '**/*.test.js', '**/node_modules/**'],
       // reportsDirectory: path.resolve(__dirname, 'coverage')
     },
+    timeout: 1000,
   },
 })

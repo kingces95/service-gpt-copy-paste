@@ -16,12 +16,12 @@ export class CliReader {
 
   async readString(charCount = Infinity) {
     while (true) {
-      const { done, value: { buffer, eof } = { } } = await this.#generator.next()
-      if (done || (eof && !buffer.length)) return null
+      const { done, value: { decoder, eof } = { } } = await this.#generator.next()
+      if (done || (eof && !decoder.length)) return null
 
-      if (eof || buffer.length == charCount) {
-        const result = buffer.toString()
-        buffer.clear()
+      if (eof || decoder.length == charCount) {
+        const result = decoder.toString()
+        decoder.clear()
         return result
       }
     }
@@ -35,22 +35,22 @@ export class CliReader {
     const stripCarriageReturns = !keepCarriageReturns
 
     while (true) {
-      const { done, value: { buffer, eof } = { } } = await this.#generator.next()
-      if (done || (eof && !buffer.length)) return null
+      const { done, value: { decoder, eof } = { } } = await this.#generator.next()
+      if (done || (eof && !decoder.length)) return null
 
-      if (buffer.peek() != LINE_FEED_BYTE && !eof)
+      if (decoder.peek() != LINE_FEED_BYTE && !eof)
         continue
 
       if (stripNewLines) {
-        if (buffer.peek() === LINE_FEED_BYTE)
-          buffer.pop() // remove the new line byte
+        if (decoder.peek() === LINE_FEED_BYTE)
+          decoder.pop() // remove the new line byte
 
-        if (stripCarriageReturns && buffer.peek() === CARRAGE_RETURN_BYTE)
-          buffer.pop() // remove the carriage return byte
+        if (stripCarriageReturns && decoder.peek() === CARRAGE_RETURN_BYTE)
+          decoder.pop() // remove the carriage return byte
       }
 
-      const result = buffer.toString()
-      buffer.clear()
+      const result = decoder.toString()
+      decoder.clear()
       return result
     }
   }

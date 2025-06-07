@@ -1,7 +1,7 @@
 {
-  "name": "@kingjs/disposable-resource",
+  "name": "@kingjs/char-decoder",
   "version": "1.0.0",
-  "description": "Lazily asynchronously populate values.",
+  "description": "Framework for developing command line tools.",
   "main": "index.js",
   "type": "module",
   "exports": {

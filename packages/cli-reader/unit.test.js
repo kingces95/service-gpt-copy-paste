@@ -1021,7 +1021,7 @@ describe('A cli reader', () => {
             await reader.readLine()
           })
   
-          expect(promise).rejects.toThrow('Aborted')
+          await expect(promise).rejects.toThrow('Aborted')
         })
       })
     })

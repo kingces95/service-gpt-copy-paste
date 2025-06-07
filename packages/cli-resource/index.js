@@ -1,20 +1,21 @@
 import assert from 'assert'
-import { DisposableResource } from '@kingjs/disposable-resource'
+import { Resource } from '@kingjs/resource'
 import { DEV_NULL } from '@kingjs/cli-readable'
 import { createReadStream } from 'fs'
 import { createWriteStream } from 'fs'
 import { CliReadable } from '@kingjs/cli-readable'
 import { CliWritable } from '@kingjs/cli-writable'
 import { Readable, Writable } from 'stream'
-import { once } from 'events'
-import { Lazy } from '@kingjs/lazy'
+import { Disposer } from '@kingjs/disposer'
 
-export class CliResource extends DisposableResource {
+export class CliResource extends Resource {
   #__from
   #__to
 
-  constructor(resource, dispose, { __from, __to, ...options } = {}) {
-    super(resource, dispose, options)
+  constructor(resource, disposer, { __from, __to, ...options } = {}) {
+    const resourceFn = resource instanceof Function 
+      ? resource : () => resource
+    super(resourceFn, disposer, options)
     this.#__from = __from
     this.#__to = __to
   }
@@ -52,22 +53,20 @@ export class CliResource extends DisposableResource {
 }
 
 export class CliReadableResource extends CliResource {
+  static disposer = new Disposer(
+    readable => new Promise(resolve => readable.destroy(null, resolve)), { 
+    disposedFn: readable => readable.closed,
+    event: 'close',
+  })
+
   #options
 
   constructor(stream, options) {
-    super(stream, 
-      readable => new Promise(resolve => readable.destroy(null, resolve)), 
-      options)
+    super(stream, new.target.disposer, options)
   }
 
   get options() { return this.#options }
   get isInput() { return true }
-  get isDisposed() { return super.isDisposed || this.stream?.readableEnded }
-  get disposedEvent() { 
-    return this.stream?.emitClose 
-    ? 'close' 
-    : null // .destroy() doesn't emit 'end'
-  }
 
   connect(pipe) {
     assert(this.stream instanceof Readable, 'stream must be a Readable')
@@ -78,18 +77,20 @@ export class CliReadableResource extends CliResource {
 }
 
 export class CliWritableResource extends CliResource {
+  static disposer = new Disposer(
+    writable => new Promise(resolve => writable.end(null, resolve)), { 
+    disposedFn: writable => writable.closed,
+    event: 'close',
+  })
+
   #options
 
   constructor(stream, options) {
-    super(stream, 
-      writable => new Promise(resolve => writable.end(null, resolve)), 
-      options)
+    super(stream, new.target.disposer, options)
   }
 
   get options() { return this.#options }
   get isOutput() { return true }
-  get isDisposed() { return super.isDisposed || this.stream?.writableEnded }
-  get disposedEvent() { return this.stream?.emitClose ? 'close' : 'finish' }
 
   connect(pipe) {
     assert(this.stream instanceof Writable, 'stream must be a Writable')
