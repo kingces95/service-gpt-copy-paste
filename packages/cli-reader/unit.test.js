@@ -1003,27 +1003,24 @@ describe('A cli reader', () => {
       expect(result).toEqual([{}, {}])
     })
   })
-
-  describe('in a CliProcess environment', () => {
-    describe('with an AbortController', () => {
-      describe('with a stream that hangs', () => {
-        let hangReadable, controller, signal
-        beforeEach(() => {
-          controller = new AbortController()
-          signal = controller.signal
-          hangReadable = new Readable({ read() { } })
-        })
-        
-        it('should be abortable with a signal', async () => {
-          const promise = CliProcess.create({ signal }, async () => {
-            const reader = new CliReader(hangReadable)
-            setTimeout(() => controller.abort(), 10)
-            await reader.readLine()
-          })
-  
-          await expect(promise).rejects.toThrow('Aborted')
-        })
-      })
+  describe('when operating with a hung stream', () => {
+    let hangReadable, reader
+    beforeEach(() => {
+      hangReadable = new Readable({ read() { } })
+      reader = new CliReader(hangReadable)
+      setTimeout(() => reader.dispose(), 10)
+    })
+    it('should throw an error when reading a line', async () => {
+      await expect(reader.readLine()).rejects.toThrow('Premature close')
+    })
+    it('should throw an error when reading text', async () => {
+      await expect(reader.readText()).rejects.toThrow('Premature close')
+    })
+    it('should throw an error when reading fields', async () => {
+      await expect(reader.readFields()).rejects.toThrow('Premature close')
+    })
+    it('should throw an error when reading a record', async () => {
+      await expect(reader.readRecord()).rejects.toThrow('Premature close')
     })
   })
 })

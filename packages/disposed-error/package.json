@@ -1,0 +1,15 @@
+{
+  "name": "@kingjs/disposed-error",
+  "version": "1.0.0",
+  "description": "Common error thrown when abort signal received.",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {
+    "rxjs": "^7.5.0"
+  },
+  "author": "Chris King",
+  "license": "MIT"
+}

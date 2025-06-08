@@ -2,7 +2,8 @@ import { AbortError } from "@kingjs/abort-error"
 import { Disposer } from '@kingjs/disposer'
 import { CharDecoder } from '@kingjs/char-decoder'
 import { StringDecoder } from 'string_decoder'
-import { Readable } from "stream"
+import { Readable, Writable } from "stream"
+import { sign } from "crypto"
 
 const disposer = new Disposer(
   readable => new Promise(resolve => readable.destroy(null, resolve)), { 
@@ -10,102 +11,114 @@ const disposer = new Disposer(
   event: 'close',
 })
 
-const devNull = Readable.from(Buffer.alloc(0))
+class Gulp extends Writable {
+  #chunks = []
 
-export function sip(source, { signal } = { }) {
-  const abort = async () => 
-    await source.destroy()
-  let chunkIterator = (async function*() {
+  _write(chunk, encoding, callback) {
+    this.#chunks.push(chunk)
+    callback()
+  }
+
+  toString(encoding) {
+    const decoder = new StringDecoder(encoding)
+    return decoder.end(Buffer.concat(this.#chunks))
+  }
+} 
+
+export function sip(source, { encoding = 'utf8' } = { }) {
+  const chunkIterator = source[Symbol.asyncIterator]()
+
+  const byteIterator = (async function*() {
+    let i = 0
+    let bytes = Buffer.alloc(0)
+    let unwinding = false
     try {
-      if (signal?.aborted) return await abort()
-      signal?.addEventListener('abort', abort, { once: true })
-
-      for await (const chunk of source) {
-        if (signal?.aborted) return
-        yield chunk
+      while (true) {
+        const { done, value: nextChunk } = await chunkIterator.next()
+        if (done) break
+        bytes = nextChunk
+        i = 0
+  
+        // yield the next byte
+        while (i < bytes.length)
+          yield bytes[i++]
       }
     } 
+    catch (error) { 
+      unwinding = true
+      throw error 
+    }
     finally {
-      signal?.removeEventListener('abort', abort)
-      if (signal?.aborted) throw new AbortError()
-    }
-  })()
-
-  let i = 0
-  let bytes = Buffer.alloc(0)
-  const byteIterator = (async function*() {
-    while (true) {
-      const { done, value: nextChunk } = await chunkIterator.next()
-      if (done) break
-      bytes = nextChunk
-      i = 0
-
-      // yield the next byte
-      while (i < bytes.length)
-        yield bytes[i++]
+      if (!unwinding) {
+        return { started: true, buffers: [ bytes.slice(i) ] }
+      }
     }
   })()
   
-  const decoder = new CharDecoder()
   let charIterator = (async function*() {
-    while (true) {
-      const { done, value: byte } = await byteIterator.next()
-      if (done) break
-      decoder.push(byte)
-      if (decoder.canStringify)
-        yield { eof: false, decoder }
-    }
+    const decoder = new CharDecoder(encoding)
 
-    if (!decoder.canStringify)
-      throw new Error(
-        'Stream ended before a character boundary was found.')
-    yield { eof: true, decoder }
-  })()
+    let unwinding = false
+    let done = false
+    try {
+      while (true) {
+        const { done, value: byte } = await byteIterator.next()
+        if (done) break
+
+        decoder.push(byte)
+        if (decoder.canStringify)
+          yield { eof: false, decoder }
+      }
   
-  const stopSipping = async () => {
-    const buffers = []
+      if (!decoder.canStringify)
+        throw new Error(
+          'Stream ended before a character boundary was found.')
 
-    await byteIterator.return()
-    buffers.push(decoder.buffer)
-    decoder.clear()
-    
-    await charIterator.return()
-    buffers.push(bytes.slice(i))
-    bytes = Buffer.alloc(0)
-    i = 0
+      yield { eof: true, decoder }
+      done = true
+    }
+    catch (error) { 
+      unwinding = true
+      decoder.clear() // clear the decoder
+      throw error 
+    }
+    finally {
+      const interrupted = !(unwinding || done) // e.g. .return() called
+      if (interrupted) {
+        const { 
+          value: { started, buffers = [] } = { } 
+        } = await byteIterator.return()
 
-    return buffers.filter(buffer => buffer.length > 0)
-  }
+        return { started, buffers: [ decoder.buffer, ...buffers ] }
+      }
+    }
+  })()
 
-  const restIterator = async function* () {
-    // stop sipping bytes
-    const buffers = await stopSipping()
+  charIterator.pipe = async (consumer, { end = true } = { }) => {
+    const { 
+      value: { started, buffers = [] } = { } 
+    } = await charIterator.return() ?? { }
 
-    // start gulping chunks
-    yield* buffers
-    yield* chunkIterator
-  }
+    const producer = started || source.closed
+      ? Readable.from((async function* () {
+          yield* buffers
+          yield* chunkIterator
+        })())
+      : source // optimization
 
-  charIterator.rest = async () => {
-    const chunks = []
-    for await (const buffer of restIterator())
-      chunks.push(buffer)
-    return new StringDecoder('utf8').end(Buffer.concat(chunks))
-  }
-
-  charIterator.pipe = async (target, { end = true } = { }) => {
     // return promise that throws if either stream errors
-    return new Promise((resolve, reject) => {
-      const source = Readable.from(restIterator())
-      source.on('error', reject)
-      target.on('error', reject)
-      source.on('end', resolve)
-      source.pipe(target, { end })
+    return await new Promise((resolve, reject) => {
+      producer.on('error', reject)
+      producer.on('close', () => resolve(consumer))
+      producer.pipe(consumer, { end })
     })
   }
 
-  charIterator.dispose = async () => {
-    await stopSipping()
+  charIterator.toString = async () => {
+    return (await charIterator.pipe(new Gulp())).toString(encoding)
+  }
+
+  charIterator.dispose = async ({ signal } = { }) => {
     await disposer.dispose(source, { signal })
   }
 

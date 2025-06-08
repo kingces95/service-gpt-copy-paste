@@ -1,3 +1,5 @@
+const ENCODING_UTF8 = 'utf8'
+
 // Helper for UTF-8 byte analysis
 const Utf8 = {
   bytesRemaining(byte) {
@@ -13,9 +15,15 @@ const Utf8 = {
 }
 
 export class CharDecoder {
-  #bytes = []
-  #length = 0
-  #bytesRemaining = 0
+  #bytes
+  #length
+  #bytesRemaining
+
+  constructor(encoding) {
+    if (encoding && encoding.toLowerCase() !== ENCODING_UTF8)
+      throw new Error(`Unsupported encoding: ${encoding}`)
+    this.clear()
+  }
 
   #throwIfBytesRemaining() {
     if (this.#bytesRemaining !== 0) 

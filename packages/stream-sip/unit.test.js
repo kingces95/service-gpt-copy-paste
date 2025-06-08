@@ -1,12 +1,11 @@
 // hello world
 import { sip } from './index.js'
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { toBeEquals, toBeDecodedAs, toText } from '@kingjs/vitest'
 import { Readable } from 'stream'
 import { PassThrough } from 'stream'
 import { AbortError } from '@kingjs/abort-error'
 import { sleep } from '@kingjs/sleep'
-import { sourceMapsEnabled } from 'process'
 
 expect.extend({ toBeEquals, toBeDecodedAs })
 
@@ -45,6 +44,16 @@ describe('A pass through stream', () => {
       it('should destroy the stream.', () => {
         expect(stream.destroyed).toBe(true)
       })
+      it('should hang if piping attempted.', () => {
+        const passThrough = new PassThrough()
+        const promise = new Promise((resolve, reject) => {
+          stream.on('error', reject)
+          stream.on('end', resolve)
+          stream.pipe(passThrough)
+        }).then(() => false)
+        const timeout = sleep(25).then(() => true)
+        return expect(Promise.any([promise, timeout])).resolves.toBe(true)
+      })
     })
   })
   describe('that is destroyed', () => {
@@ -65,19 +74,25 @@ describe('A pass through stream', () => {
     it('should no longer be readable.', () => {
       expect(stream.readable).toBe(false)
     })
+    it('should hang if piping attempted.', () => {
+      const passThrough = new PassThrough()
+      const promise = new Promise((resolve, reject) => {
+        stream.on('error', reject)
+        stream.on('end', resolve)
+        stream.pipe(passThrough)
+      }).then(() => false)
+      const timeout = sleep(25).then(() => true)
+      return expect(Promise.any([promise, timeout])).resolves.toBe(true)
+    })
   })
 })
 
 describe('A sip generator', () => {
   let stream
   let generator
-  let abortController
-  let signal
   beforeEach(() => {
-    abortController = new AbortController()
-    signal = abortController.signal
     stream = new PassThrough()
-    generator = sip(stream, { signal })
+    generator = sip(stream)
   })
 
   describe('that is disposed', () => {
@@ -97,115 +112,33 @@ describe('A sip generator', () => {
       await generator.dispose()
       expect(stream.destroyed).toBe(true)
     })
-    it('should generate done.', async () => {
-      await expect(generator.next()).resolves.toEqual({
-        done: true,
-        value: undefined
-      })
-    })
-    it('should throw premature close on call for rest.', async () => {
-      await expect(generator.rest())
-        .rejects.toThrow('Premature close')
-    })
-    it('should throw premature close on call for pipe.', async () => {
-      const passThrough = new PassThrough()
-      await expect(generator.pipe(passThrough))
-        .rejects.toThrow('Premature close')
-    })
-  })
-  describe('that is aborted', () => {
-    beforeEach(async () => {
-      abortController.abort()
-    })
-    describe('that is diposed', () => {
-      let error
-      beforeEach(async () => {
-        await generator.dispose({ signal }).catch(e => error = e)
-      })
-      it('should throw an AbortError.', async () => {
-        expect(error).toBeInstanceOf(AbortError)
-      })
-      it('should destroy the stream.', async () => {
-        expect(stream.destroyed).toBe(true)
-      })
-      it('should no longer be readable.', () => {
-        expect(stream.readable).toBe(false)
-      })
-      it('should *not* be readableEnded.', () => {
-        expect(stream.readableEnded).toBe(false)
-      })
-    })
-    describe('and attempts to generate a value', () => {
-      let error
-      beforeEach(async () => {
-        await generator.next().catch(e => error = e)
-      })
-      it('should throw an AbortError.', async () => {
-        expect(error).toBeInstanceOf(AbortError)
-      })
-      it('should destroy the stream.', async () => {
-        expect(stream.destroyed).toBe(true)
-      })
-      it('should no longer be readable.', () => {
-        expect(stream.readable).toBe(false)
-      })
-      it('should *not* be readableEnded.', () => {
-        expect(stream.readableEnded).toBe(false)
-      })
-    })
-    describe('and attempts to get the rest of the stream', async () => {
-      let error
-      beforeEach(async () => {
-        await generator.rest().catch(e => error = e)
-      })
-      it('should throw an AbortError.', async () => {
-        expect(error).toBeInstanceOf(AbortError)
-      })
-      it('should destroy the stream.', async () => {
-        expect(stream.destroyed).toBe(true)
-      })
-      it('should no longer be readable.', () => {
-        expect(stream.readable).toBe(false)
-      })
-      it('should *not* be readableEnded.', () => {
-        expect(stream.readableEnded).toBe(false)
-      })
-    })
-    describe('and attempts to pipe the stream', () => {
-      let error
-      beforeEach(async () => {
-        const passThrough = new PassThrough()
-        await generator.pipe(passThrough).catch(e => error = e)
-      })
-      it('should throw aborted.', async () => {
-        expect(error).toBeInstanceOf(AbortError)
-      })
-      it('should destroy the stream.', async () => {
-        expect(stream.destroyed).toBe(true)
-      })
-      it('should no longer be readable.', () => {
-        expect(stream.readable).toBe(false)
-      })
-      it('should *not* be readableEnded.', () => {
-        expect(stream.readableEnded).toBe(false)
-      })
-    })
-  })
-  describe('that is hung', () => {
-    let promise
-    beforeEach(() => {
-      promise = generator.next()
-    })
-    describe('and is then aborted', () => {
+    describe('that promises to generate a result', () => {
+      let promise
       beforeEach(() => {
-        abortController.abort()
+        promise = generator.next()
       })
-      it('should throw an AbortError.', async () => {
-        await expect(promise).rejects.toThrow(AbortError)
+      it('should throw an error.', async () => {
+        await expect(promise).rejects.toThrow('Premature close')
       })
-      it('should destroy the stream.', async () => {
-        await promise.catch(() => { /* ignore */ })
-        expect(stream.destroyed).toBe(true)
+    })
+    describe('that promises to pipe', () => {
+      let passThrough
+      let promise
+      beforeEach(() => {
+        passThrough = new PassThrough()
+        promise = generator.pipe(passThrough)
+      })
+      it('should throw.', async () => {
+        await expect(promise).rejects.toThrow('Premature close')
+      })
+    })
+    describe('that promises to return the toString of the stream', () => {
+      let promise
+      beforeEach(() => {
+        promise = generator.toString()
+      })
+      it('should throw.', async () => {
+        await expect(promise).rejects.toThrow('Premature close')
       })
     })
   })
@@ -274,13 +207,13 @@ describe('A sip generator', () => {
           })
         })
       })
-      describe('then returns the rest of the stream', async () => {
-        let rest
+      describe('then returns the toString of the stream', async () => {
+        let toString
         beforeEach(async () => {
-          rest = await generator.rest()
+          toString = await generator.toString()
         })
         it('should return an empty string.', async () => {
-          expect(rest).toBe('')
+          expect(toString).toBe('')
         })
       })
       describe('then pipes into a pass-through stream', () => {
@@ -294,13 +227,13 @@ describe('A sip generator', () => {
         })
       })
     })
-    describe('that returns the rest of the stream', async () => {
-      let rest
+    describe('that returns the toString of the stream', async () => {
+      let toString
       beforeEach(async () => {
-        rest = await generator.rest()
+        toString = await generator.toString()
       })
       it('should return an empty string.', async () => {
-        expect(rest).toBe('')
+        expect(toString).toBe('')
       })
       it('should destroy the stream.', async () => {
         expect(stream.destroyed).toBe(true)
@@ -382,6 +315,20 @@ describe('A sip generator', () => {
       it('should yield an empty decoder.', async () => {
         expect(decoder.toString()).toBe('')
       })
+      describe('then generates another result', () => {
+        let done, value
+        beforeEach(async () => {
+          const result = await generator.next()
+          done = result.done
+          value = result.value
+        })
+        it('should be done.', async () => {
+          expect(done).toBe(true)
+        })
+        it('should yield no value.', async () => {
+          expect(value).toBeUndefined()
+        })
+      })
     })
   })
   describe('consuming a stream with an empty string', () => {
@@ -392,7 +339,7 @@ describe('A sip generator', () => {
       // empty buffer (!) while enumerating the stream whereas the previous test
       // returns no buffer at all. 
       stream = Readable.from(Buffer.alloc(0), 'utf8')
-      generator = sip(stream, { signal })
+      generator = sip(stream)
     })
     describe('that generates a result', () => {
       let done, value, eof, decoder
@@ -410,6 +357,20 @@ describe('A sip generator', () => {
       })
       it('should yield an empty decoder.', async () => {
         expect(decoder.toString()).toBe('')
+      })
+      describe('then generates another result', () => {
+        let done, value
+        beforeEach(async () => {
+          const result = await generator.next()
+          done = result.done
+          value = result.value
+        })
+        it('should be done.', async () => {
+          expect(done).toBe(true)
+        })
+        it('should yield no value.', async () => {
+          expect(value).toBeUndefined()
+        })
       })
     })
   })
@@ -474,13 +435,13 @@ describe('A sip generator', () => {
         })
       })
     })
-    describe('that returns the rest of the stream', async () => {
-      let rest
+    describe('that returns the toString of the stream', async () => {
+      let toString
       beforeEach(async () => {
-        rest = await generator.rest()
+        toString = await generator.toString()
       })
       it('should return the char.', async () => {
-        expect(rest).toBe(char)
+        expect(toString).toBe(char)
       })
       describe('then generates a result', () => {
         let done, value
@@ -545,7 +506,7 @@ describe('A sip generator', () => {
       })
     })
   })
-  describe('consuming a stream with two characters', () => {
+  describe('consuming a stream when two characters written', () => {
     const chars = ['a', 'b', 'c']
     beforeEach(() => {
       stream.write(Buffer.from(chars[0], 'utf8'))
@@ -574,6 +535,54 @@ describe('A sip generator', () => {
       it('should not end the stream.', async () => {
         expect(stream.readableEnded).toBe(false)
       })
+      describe('then destroys the stream', () => {
+        beforeEach(() => {
+          stream.destroy()
+        })
+        it('should destroy the stream.', async () => {
+          expect(stream.destroyed).toBe(true)
+        })
+        it('should not be readableEnded.', async () => {
+          expect(stream.readableEnded).toBe(false)
+        })
+        describe('then generates another result', async () => {
+          let done, value, eof, decoder
+          beforeEach(async () => {
+            const result = await generator.next()
+            done = result.done
+            value = result.value
+            eof = value.eof
+            decoder = value.decoder
+          })
+          it('should not be done.', async () => {
+            expect(done).toBe(false)
+          })
+          it('should not report end-of-file.', async () => {
+            expect(eof).toBe(false)
+          })
+          it('should yield a decoder containing the second character.', async () => {
+            expect(decoder.toString()).toBe(chars[0] + chars[1])
+          })
+          describe('then promises to generate another result', () => {
+            let promise
+            beforeEach(() => {
+              promise = generator.next()
+            })
+            it('throw an error.', async () => {
+              await expect(promise).rejects.toThrow('Premature close')
+            })
+          })
+        })
+        describe('then promises to return toString', async () => {
+          let promise
+          beforeEach(async () => {
+            promise = generator.toString()
+          })
+          it('should throw an error.', async () => {
+            await expect(promise).rejects.toThrow('Premature close')
+          })
+        })
+      })
       describe('then generates another result', () => {
         beforeEach(async () => {
           const result = await generator.next()
@@ -587,11 +596,11 @@ describe('A sip generator', () => {
         it('should not report end-of-file.', async () => {
           expect(eof).toBe(false)
         })
-        it('should yield a decoder containing the both chunk.', async () => {
+        it('should yield a decoder containing the first two chars.', async () => {
           expect(decoder.toString()).toBe(chars[0] + chars[1])
         })
       })
-      describe('when another character is pushed into the stream', () => {
+      describe('then another character is written', () => {
         beforeEach(() => {
           stream.write(Buffer.from(chars[2], 'utf8'))
         })
@@ -613,13 +622,13 @@ describe('A sip generator', () => {
             it('should destroy the stream.', async () => {
               expect(stream.destroyed).toBe(true)
             })
-            describe('then reads the rest of the stream', () => {
-              let rest
+            describe('then reads the toString of the stream', () => {
+              let toString
               beforeEach(async () => {
-                rest = await generator.rest()
+                toString = await generator.toString()
               })
               it('should return an empty string.', async () => {
-                expect(rest).toBe('')
+                expect(toString).toBe('')
               })
             })
             describe('then generates a result', () => {
@@ -637,13 +646,13 @@ describe('A sip generator', () => {
               })
             })
           })
-          describe('and returns the rest of the stream', async () => {
-            let rest
+          describe('and returns the toString of the stream', async () => {
+            let toString
             beforeEach(async () => {
-              rest = await generator.rest()
+              toString = await generator.toString()
             })
             it('should return all three characters.', async () => {
-              expect(rest).toBe(chars[0] + chars[1] + chars[2])
+              expect(toString).toBe(chars[0] + chars[1] + chars[2])
             })
             describe('then pipes into a pass-through stream', () => {
               let passThrough
@@ -718,13 +727,13 @@ describe('A sip generator', () => {
             beforeEach(() => {
               stream.end()
             })
-            describe('then returns the rest of the stream', async () => {
-              let rest
+            describe('then returns the toString of the stream', async () => {
+              let toString
               beforeEach(async () => {
-                rest = await generator.rest()
+                toString = await generator.toString()
               })
               it('should return the second and third characters.', async () => {
-                expect(rest).toBe(chars[1] + chars[2])
+                expect(toString).toBe(chars[1] + chars[2])
               })
             })
             describe('then pipes into a pass-through stream', () => {
@@ -756,6 +765,21 @@ describe('A sip generator', () => {
       beforeEach(() => {
         stream.write(byte0)
       })
+      describe('then ends the stream', () => {
+        beforeEach(() => {
+          stream.end()
+        })
+        describe('then promises to generate a result', () => {
+          let promise
+          beforeEach(async () => {
+            promise = generator.next()
+          })
+          it('should throw an error.', async () => {
+            await expect(promise).rejects.toThrow(
+              'Stream ended before a character boundary was found.')
+          })
+        })
+      })
       describe('and generates a promise for the next value', () => {
         let promise
         beforeEach(() => {
@@ -765,10 +789,6 @@ describe('A sip generator', () => {
           const timeout = sleep(25).then(() => true)
           const timein = promise.then(() => false)
           expect(await Promise.any([timeout, timein])).toBe(true)
-        })
-        it('should be abortable.', async () => {
-          abortController.abort()
-          await expect(promise).rejects.toThrow('Aborted')
         })
       })
       describe('and then writes the second byte', () => {
@@ -812,6 +832,64 @@ describe('A sip generator', () => {
               })
             })
           })
+          describe('then returns the toString of the stream', async () => {
+            let toString
+            beforeEach(async () => {
+              toString = await generator.toString()
+            })
+            it('should return the character.', async () => {
+              expect(toString).toBe(twoByteUnicodeChar)
+            })
+          })
+          describe('then pipes into a pass-through stream', () => {
+            let passThrough
+            let text
+            beforeEach(async () => {
+              passThrough = new PassThrough()
+              generator.pipe(passThrough)
+              text = await toText(passThrough)
+            })
+            it('should pipe the character.', async () => {
+              expect(text).toBe(twoByteUnicodeChar)
+            })
+          })
+        })
+      })
+    })
+  })
+  describe('consuming a stream that is hung', () => {
+    beforeEach(() => {
+      stream = new Readable({ read() { } })
+      generator = sip(stream)
+    })
+    it('should hang for 25ms.', async () => {
+      const timeout = sleep(25).then(() => true)
+      const timein = generator.next().then(() => false)
+      expect(await Promise.any([timeout, timein])).toBe(true)
+    })
+    describe('that is disposed', () => {
+      beforeEach(async () => {
+        await generator.dispose()
+      })
+      it('should destroy the stream.', () => {
+        expect(stream.destroyed).toBe(true)
+      })
+      describe('that promises to generate a result', () => {
+        let promise
+        beforeEach(() => {
+          promise = generator.next()
+        })
+        it('should throw an error.', async () => {
+          await expect(promise).rejects.toThrow('Premature close')
+        })
+      })
+      describe('that promises to return the toString of the stream', () => {
+        let promise
+        beforeEach(() => {
+          promise = generator.toString()
+        })
+        it('should throw an error.', async () => {
+          await expect(promise).rejects.toThrow('Premature close')
         })
       })
     })

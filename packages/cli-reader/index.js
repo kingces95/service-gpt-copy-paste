@@ -10,8 +10,7 @@ export class CliReader {
   #generator
 
   constructor(stream) {
-    const signal = CliProcess.signal
-    this.#generator = sip(stream, { signal })
+    this.#generator = sip(stream)
   }
 
   async readString(charCount = Infinity) {
@@ -146,5 +145,9 @@ export class CliReader {
       if (line === null) break
       yield CliParser.parse(line, type)
     }
+  }
+
+  async dispose() {
+    await this.#generator.dispose()
   }
 }

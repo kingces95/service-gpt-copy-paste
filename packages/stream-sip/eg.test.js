@@ -90,20 +90,18 @@ describe('A code sample of sip', () => {
     })
   })
   describe('with a stream that hangs', () => {
-    it('should be abortable with a signal.', async () => {
-      const controller = new AbortController()
-      const { signal } = controller
-      setTimeout(() => 
-        controller.abort(), 10)
-
-      const stream = new Readable({ read() { } })
+    it('should be disposable.', async () => {
+      let generator = null
+      setTimeout(() => generator.dispose(), 10)
       
+      const stream = new Readable({ read() { } })
       await expect(async () => {
-        for await (const _ of sip(stream, { signal })) {
+        generator = sip(stream)
+        for await (const _ of generator) {
           // This should not be reached
           expect(true).toBe(false)
         }
-      }).rejects.toThrow('Aborted')
+      }).rejects.toThrow('Premature close')
     })
   })
 })
