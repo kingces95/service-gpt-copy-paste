@@ -132,10 +132,10 @@ describe('A sip generator', () => {
         await expect(promise).rejects.toThrow('Premature close')
       })
     })
-    describe('that promises to return the toString of the stream', () => {
+    describe('that promises to return the readAll of the stream', () => {
       let promise
       beforeEach(() => {
-        promise = generator.toString()
+        promise = generator.readAll()
       })
       it('should throw.', async () => {
         await expect(promise).rejects.toThrow('Premature close')
@@ -207,13 +207,13 @@ describe('A sip generator', () => {
           })
         })
       })
-      describe('then returns the toString of the stream', async () => {
-        let toString
+      describe('then returns the readAll of the stream', async () => {
+        let readAll
         beforeEach(async () => {
-          toString = await generator.toString()
+          readAll = await generator.readAll()
         })
         it('should return an empty string.', async () => {
-          expect(toString).toBe('')
+          expect(readAll).toBe('')
         })
       })
       describe('then pipes into a pass-through stream', () => {
@@ -227,13 +227,13 @@ describe('A sip generator', () => {
         })
       })
     })
-    describe('that returns the toString of the stream', async () => {
-      let toString
+    describe('that returns the readAll of the stream', async () => {
+      let readAll
       beforeEach(async () => {
-        toString = await generator.toString()
+        readAll = await generator.readAll()
       })
       it('should return an empty string.', async () => {
-        expect(toString).toBe('')
+        expect(readAll).toBe('')
       })
       it('should destroy the stream.', async () => {
         expect(stream.destroyed).toBe(true)
@@ -435,13 +435,13 @@ describe('A sip generator', () => {
         })
       })
     })
-    describe('that returns the toString of the stream', async () => {
-      let toString
+    describe('that returns the readAll of the stream', async () => {
+      let readAll
       beforeEach(async () => {
-        toString = await generator.toString()
+        readAll = await generator.readAll()
       })
       it('should return the char.', async () => {
-        expect(toString).toBe(char)
+        expect(readAll).toBe(char)
       })
       describe('then generates a result', () => {
         let done, value
@@ -573,10 +573,10 @@ describe('A sip generator', () => {
             })
           })
         })
-        describe('then promises to return toString', async () => {
+        describe('then promises to return readAll', async () => {
           let promise
           beforeEach(async () => {
-            promise = generator.toString()
+            promise = generator.readAll()
           })
           it('should throw an error.', async () => {
             await expect(promise).rejects.toThrow('Premature close')
@@ -622,13 +622,13 @@ describe('A sip generator', () => {
             it('should destroy the stream.', async () => {
               expect(stream.destroyed).toBe(true)
             })
-            describe('then reads the toString of the stream', () => {
-              let toString
+            describe('then reads the readAll of the stream', () => {
+              let readAll
               beforeEach(async () => {
-                toString = await generator.toString()
+                readAll = await generator.readAll()
               })
               it('should return an empty string.', async () => {
-                expect(toString).toBe('')
+                expect(readAll).toBe('')
               })
             })
             describe('then generates a result', () => {
@@ -646,13 +646,13 @@ describe('A sip generator', () => {
               })
             })
           })
-          describe('and returns the toString of the stream', async () => {
-            let toString
+          describe('and returns the readAll of the stream', async () => {
+            let readAll
             beforeEach(async () => {
-              toString = await generator.toString()
+              readAll = await generator.readAll()
             })
             it('should return all three characters.', async () => {
-              expect(toString).toBe(chars[0] + chars[1] + chars[2])
+              expect(readAll).toBe(chars[0] + chars[1] + chars[2])
             })
             describe('then pipes into a pass-through stream', () => {
               let passThrough
@@ -727,13 +727,13 @@ describe('A sip generator', () => {
             beforeEach(() => {
               stream.end()
             })
-            describe('then returns the toString of the stream', async () => {
-              let toString
+            describe('then returns the readAll of the stream', async () => {
+              let readAll
               beforeEach(async () => {
-                toString = await generator.toString()
+                readAll = await generator.readAll()
               })
               it('should return the second and third characters.', async () => {
-                expect(toString).toBe(chars[1] + chars[2])
+                expect(readAll).toBe(chars[1] + chars[2])
               })
             })
             describe('then pipes into a pass-through stream', () => {
@@ -832,13 +832,13 @@ describe('A sip generator', () => {
               })
             })
           })
-          describe('then returns the toString of the stream', async () => {
-            let toString
+          describe('then returns the readAll of the stream', async () => {
+            let readAll
             beforeEach(async () => {
-              toString = await generator.toString()
+              readAll = await generator.readAll()
             })
             it('should return the character.', async () => {
-              expect(toString).toBe(twoByteUnicodeChar)
+              expect(readAll).toBe(twoByteUnicodeChar)
             })
           })
           describe('then pipes into a pass-through stream', () => {
@@ -883,10 +883,10 @@ describe('A sip generator', () => {
           await expect(promise).rejects.toThrow('Premature close')
         })
       })
-      describe('that promises to return the toString of the stream', () => {
+      describe('that promises to return the readAll of the stream', () => {
         let promise
         beforeEach(() => {
-          promise = generator.toString()
+          promise = generator.readAll()
         })
         it('should throw an error.', async () => {
           await expect(promise).rejects.toThrow('Premature close')

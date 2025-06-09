@@ -28,7 +28,8 @@ export class CliReader {
 
   async readString(charCount = Infinity) {
     while (true) {
-      const { done, value: { decoder, eof } = { } } = await this.#generator.next()
+      const { done, value: { decoder, eof } = { } } 
+        = await this.#generator.next()
       if (done || (eof && !decoder.length)) return null
 
       if (eof || decoder.length == charCount) {
@@ -38,7 +39,6 @@ export class CliReader {
       }
     }
   }
-
   async readLine({
     keepNewLines = false,
     keepCarriageReturns = false
@@ -47,7 +47,8 @@ export class CliReader {
     const stripCarriageReturns = !keepCarriageReturns
 
     while (true) {
-      const { done, value: { decoder, eof } = { } } = await this.#generator.next()
+      const { done, value: { decoder, eof } = { } } 
+        = await this.#generator.next()
       if (done || (eof && !decoder.length)) return null
 
       if (decoder.peek() != LINE_FEED_BYTE && !eof)
@@ -151,9 +152,6 @@ export class CliReader {
   async readLines(options) {
     return this.#spread(this.lines(options))
   }
-  async readChars(charCount = Infinity) {
-    throw new Error('Not implemented yet.')
-  }
   async readLists() {
     return this.#spread(this.lists())
   }
@@ -165,6 +163,9 @@ export class CliReader {
   }
   async readRecords(metadata = {}) {
     return this.#spread(this.records(metadata))
+  }
+  async readAll() { 
+    return await this.#generator.readAll()
   }
 
   async dispose() {

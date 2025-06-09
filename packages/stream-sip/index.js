@@ -3,7 +3,6 @@ import { Disposer } from '@kingjs/disposer'
 import { CharDecoder } from '@kingjs/char-decoder'
 import { StringDecoder } from 'string_decoder'
 import { Readable, Writable } from "stream"
-import { sign } from "crypto"
 
 const disposer = new Disposer(
   readable => new Promise(resolve => readable.destroy(null, resolve)), { 
@@ -25,88 +24,95 @@ class Gulp extends Writable {
   }
 } 
 
-export function sip(source, { encoding = 'utf8' } = { }) {
-  const chunkIterator = source[Symbol.asyncIterator]()
+class Sipper {
+  #source
+  #encoding
+  #chunkIterator
+  #byteIterator
+  #charIterator
 
-  const byteIterator = (async function*() {
-    let i = 0
-    let bytes = Buffer.alloc(0)
-    let unwinding = false
-    try {
-      while (true) {
-        const { done, value: nextChunk } = await chunkIterator.next()
-        if (done) break
-        bytes = nextChunk
-        i = 0
-  
-        // yield the next byte
-        while (i < bytes.length)
-          yield bytes[i++]
+  constructor(source, { encoding = 'utf8' } = {}) {
+    this.#source = source
+    this.#encoding = encoding
+    this.#chunkIterator = source[Symbol.asyncIterator]()
+    this.#byteIterator = this.#createByteIterator()
+    this.#charIterator = this.#createCharIterator()
+  }
+
+  #createByteIterator() {
+    const chunkIterator = this.#chunkIterator
+    return (async function* () {
+      let i = 0
+      let bytes = Buffer.alloc(0)
+      let unwinding = false
+      try {
+        while (true) {
+          const { done, value: nextChunk } = await chunkIterator.next()
+          if (done) break
+          bytes = nextChunk
+          i = 0
+
+          while (i < bytes.length)
+            yield bytes[i++]
+        }
+      } catch (error) {
+        unwinding = true
+        throw error
+      } finally {
+        if (!unwinding) {
+          return { started: true, buffers: [bytes.slice(i)] }
+        }
       }
-    } 
-    catch (error) { 
-      unwinding = true
-      throw error 
-    }
-    finally {
-      if (!unwinding) {
-        return { started: true, buffers: [ bytes.slice(i) ] }
+    })()
+  }
+
+  #createCharIterator() {
+    const decoder = new CharDecoder(this.#encoding)
+    const byteIterator = this.#byteIterator
+
+    return (async function* () {
+      let unwinding = false
+      let done = false
+      try {
+        while (true) {
+          const { done, value: byte } = await byteIterator.next()
+          if (done) break
+
+          decoder.push(byte)
+          if (decoder.canStringify)
+            yield { eof: false, decoder }
+        }
+
+        if (!decoder.canStringify)
+          throw new Error('Stream ended before a character boundary was found.')
+
+        yield { eof: true, decoder }
+        done = true
+      } catch (error) {
+        unwinding = true
+        decoder.clear()
+        throw error
+      } finally {
+        const interrupted = !(unwinding || done)
+        if (interrupted) {
+          const { value: { started, buffers = [] } = {} } = await byteIterator.return()
+          return { started, buffers: [decoder.buffer, ...buffers] }
+        }
       }
-    }
-  })()
-  
-  let charIterator = (async function*() {
-    const decoder = new CharDecoder(encoding)
+    })()
+  }
 
-    let unwinding = false
-    let done = false
-    try {
-      while (true) {
-        const { done, value: byte } = await byteIterator.next()
-        if (done) break
+  async pipe(consumer, { end = true } = {}) {
+    const { value: { started, buffers = [] } = {} } 
+      = await this.#charIterator.return() ?? {}
 
-        decoder.push(byte)
-        if (decoder.canStringify)
-          yield { eof: false, decoder }
-      }
-  
-      if (!decoder.canStringify)
-        throw new Error(
-          'Stream ended before a character boundary was found.')
-
-      yield { eof: true, decoder }
-      done = true
-    }
-    catch (error) { 
-      unwinding = true
-      decoder.clear() // clear the decoder
-      throw error 
-    }
-    finally {
-      const interrupted = !(unwinding || done) // e.g. .return() called
-      if (interrupted) {
-        const { 
-          value: { started, buffers = [] } = { } 
-        } = await byteIterator.return()
-
-        return { started, buffers: [ decoder.buffer, ...buffers ] }
-      }
-    }
-  })()
-
-  charIterator.pipe = async (consumer, { end = true } = { }) => {
-    const { 
-      value: { started, buffers = [] } = { } 
-    } = await charIterator.return() ?? { }
-
-    const producer = started || source.closed
+    const producer = started || this.#source.closed
       ? Readable.from((async function* () {
           yield* buffers
-          yield* chunkIterator
-        })())
-      : source // optimization
+          yield* this.#chunkIterator
+        }).call(this))
+      : this.#source
 
-    // return promise that throws if either stream errors
     return await new Promise((resolve, reject) => {
       producer.on('error', reject)
       producer.on('close', () => resolve(consumer))
@@ -114,13 +120,31 @@ export function sip(source, { encoding = 'utf8' } = { }) {
     })
   }
 
-  charIterator.toString = async () => {
-    return (await charIterator.pipe(new Gulp())).toString(encoding)
+  async readAll() {
+    return (await this.pipe(new Gulp())).toString(this.#encoding)
   }
 
-  charIterator.dispose = async ({ signal } = { }) => {
-    await disposer.dispose(source, { signal })
+  async dispose({ signal } = {}) {
+    await disposer.dispose(this.#source, { signal })
   }
 
-  return charIterator
+  async next(...args) {
+    return this.#charIterator.next(...args)
+  }
+
+  async return(...args) {
+    return this.#charIterator.return(...args)
+  }
+
+  async throw(...args) {
+    return this.#charIterator.throw(...args)
+  }
+
+  [Symbol.asyncIterator]() {
+    return this;
+  }
+}
+
+export function sip(source, options) {
+  return new Sipper(source, options)
 }
