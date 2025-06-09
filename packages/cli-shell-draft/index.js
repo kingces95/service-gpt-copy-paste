@@ -34,7 +34,7 @@ export class CliShellDraft extends Draft {
       // path redirect; e.g. echo < file.txt
       if (typeof producer === 'string') 
         return new CliPathReadableResource(
-          parent.resolve(producer), null, producer)
+          parent.cwd.resolve(producer), null, producer)
 
       // here-string; e.g. echo <<< "hello world"
       if (Buffer.isBuffer(producer)) 
@@ -63,7 +63,7 @@ export class CliShellDraft extends Draft {
       // path redirect; e.g. echo > file.txt
       if (typeof consumer === 'string') 
         return new CliPathWritableResource(
-          parent.resolve(consumer), null, consumer)
+          parent.cwd.resolve(consumer), null, consumer)
 
       return null
     }

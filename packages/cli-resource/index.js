@@ -7,6 +7,7 @@ import { CliReadable } from '@kingjs/cli-readable'
 import { CliWritable } from '@kingjs/cli-writable'
 import { Readable, Writable } from 'stream'
 import { Disposer } from '@kingjs/disposer'
+import { Path } from '@kingjs/path'
 
 export class CliResource extends Resource {
   #__from
@@ -205,8 +206,9 @@ export class CliOsReadableResource extends CliReadableResource {
   #options
 
   constructor(path, osOptions = {}, options) {
-    super(createReadStream(path, { ...osOptions, emitClose: true }), options)
-    this.#path = path
+    const path$ = Path.create(path)
+    super(createReadStream(path$.$, { ...osOptions, emitClose: true }), options)
+    this.#path = path$
     this.#options = osOptions
   }
 
@@ -219,8 +221,9 @@ export class CliOsWritableResource extends CliWritableResource {
   #options
 
   constructor(path, osOptions = {}, options) {
-    super(createWriteStream(path, { ...osOptions, emitClose: true }), options)
-    this.#path = path
+    const path$ = Path.create(path)
+    super(createWriteStream(path$.$, { ...osOptions, emitClose: true }), options)
+    this.#path = path$
     this.#options = osOptions
   }
 

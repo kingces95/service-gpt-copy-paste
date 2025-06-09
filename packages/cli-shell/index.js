@@ -67,7 +67,7 @@ export class CliShell extends Functor {
     loader = parent?.loader ?? new CliStdioLoader(),
     alias = parent ? new Map(parent.alias) : new Map(),
     env = createAndExtend(parent?.env ?? process.env, vars), 
-    slots = createAndExtend(parent?.slots ?? [ 
+    slots = createAndExtend(parent?.slots$ ?? [ 
       new CliBorrowedReadableResource(process.stdin,  { __name: 'stdin' }), 
       new CliBorrowedWritableResource(process.stdout, { __name: 'stdout' }), 
       new CliBorrowedWritableResource(process.stderr, { __name: 'stderr' }), 
@@ -82,10 +82,12 @@ export class CliShell extends Functor {
     this.#alias = alias
     this.#env = env
     this.#disposeTimeoutMs = disposeTimeoutMs
-    this.#slots = Object.freeze(slots)
+    this.#slots = slots
     this.#reader = new Lazy(() => new CliReader(this.stdin))
     this.#writer = new Lazy(() => new CliWriter(this.stdout))
   }
+
+  __getSubshellId() { return this.#__subshellId++ }
 
   #pipeline(subshells) {
     const last = subshells.pop()
@@ -102,13 +104,13 @@ export class CliShell extends Functor {
     return CliSubshell.fromBuiltin(this, shell => fn(shell, ...args))
   }
 
-  __getSubshellId() { return this.#__subshellId++ }
+  get slots$() { return this.#slots }
 
   get loader() { return this.#loader }
   get signal() { return this.#signal }
   get env() { return this.#env }
   get alias() { return this.#alias }
-  get slots() { return this.#slots }
+  get slots() { return [...this.#slots] }
   get disposeTimeoutMs() { return this.#disposeTimeoutMs }
 
   getStream(slotOrName) {
@@ -152,17 +154,20 @@ export class CliShell extends Functor {
   readString(charCount) { 
     return this.#builtin($ => $.reader.readString(charCount, $.signal))
   }
+  readLine() { 
+    return this.#builtin($ => $.reader.readLine($.signal))
+  } 
   readChar() { 
     return this.#builtin($ => $.reader.readChar($.signal))
   }
-  readLine() { 
-    return this.#builtin($ => $.reader.readLine($.signal))
+  readList() {
+    return this.#builtin($ => $.reader.readList($.signal))
   }
-  readArray() { 
-    return this.#builtin($ => $.reader.readArray($.signal))
+  readTuple(metadata) { 
+    return this.#builtin($ => $.reader.readTuple(metadata, $.signal))
   }
-  readRecord(fields) { 
-    return this.#builtin($ => $.reader.readRecord(fields, $.signal))
+  readRecord(metadata) { 
+    return this.#builtin($ => $.reader.readRecord(metadata, $.signal))
   }
 
   echo(line) { 

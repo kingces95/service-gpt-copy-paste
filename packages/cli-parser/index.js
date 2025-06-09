@@ -183,8 +183,13 @@ export class CliSplitter {
 export class CliParser {
 
   static parse(line, metadata) {
-    const parser = new this(metadata)
+    const parser = this.create(metadata)
     return parser.parse(line)
+  }
+
+  static create(metadata) {
+    const info = CliRecordInfoLoader.load(metadata)
+    return new this(info)
   }
 
   static #parseNext(context, info, field, split) {
@@ -199,7 +204,7 @@ export class CliParser {
     const contextIsFieldType = context instanceof CliFieldType
     assert(!context || contextIsRecordInfo || contextIsFieldType)
     
-    // recursive case: context is compext type
+    // recursive case: context is complex type
     if (contextIsRecordInfo)
       return this.#parse(context, split)
     
@@ -249,8 +254,8 @@ export class CliParser {
   
   #info
 
-  constructor(metadata) {
-    this.#info = CliRecordInfoLoader.load(metadata)
+  constructor(info) {
+    this.#info = info
   }
 
   get info() { return this.#info }

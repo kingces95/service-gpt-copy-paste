@@ -372,11 +372,11 @@ export class CliRecordInfoLoader {
     if (metadata instanceof CliRecordInfo) 
       return metadata
 
-    if (metadata == null) 
-      return this.#textFieldRecordInfo
-
     if (metadata === Infinity)
       return this.#listFieldRecordInfo
+
+    if (metadata == null) 
+      return this.#textFieldRecordInfo
 
     if (typeof metadata === 'number') 
       return this.#loadWordsRecord(metadata)

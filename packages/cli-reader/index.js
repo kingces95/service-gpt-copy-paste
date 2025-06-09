@@ -1,7 +1,6 @@
 import { sip } from '@kingjs/stream-sip'
 import { CliParser } from '@kingjs/cli-parser'
-import { CliProcess } from '@kingjs/cli-process'
-import { CliRecordInfoLoader } from '@kingjs/cli-record-info'
+import { CliFieldType } from '@kingjs/cli-field-type'
 
 const LINE_FEED_BYTE = 0x0A
 const CARRAGE_RETURN_BYTE = 0x0D
@@ -11,6 +10,20 @@ export class CliReader {
 
   constructor(stream) {
     this.#generator = sip(stream)
+  }
+
+  async *#generate(parser) {
+    while (true) {
+      const line = await this.readLine()
+      if (line === null) break
+      yield parser.parse(line)
+    }
+  }
+  async #spread(iterator) {
+    const result = []
+    for await (const item of iterator)
+      result.push(item)
+    return result
   }
 
   async readString(charCount = Infinity) {
@@ -25,7 +38,7 @@ export class CliReader {
       }
     }
   }
-  
+
   async readLine({
     keepNewLines = false,
     keepCarriageReturns = false
@@ -53,9 +66,28 @@ export class CliReader {
       return result
     }
   }
-
   async readChar() {
     return await this.readString(1)
+  }
+  async readList() {
+    for await (const array of this.lists())
+      return array
+    return null
+  }
+  async readComment() {
+    for await (const text of this.comments())
+      return text
+    return null
+  }
+  async readTuple(metadata) {
+    for await (const tuple of this.tuples(metadata))
+      return tuple
+    return null
+  }
+  async readRecord(metadata) {
+    for await (const record of this.records(metadata))
+      return record
+    return null
   }
 
   // async iterator that yields lines
@@ -72,79 +104,67 @@ export class CliReader {
       yield line
     }
   }
-
-  async mapLines(callback, options = { 
+  async *lines(options = { 
     count: Infinity,
     keepNewLines: false,
     keepCarriageReturns: false,
   }) {
-    for await (const line of this[Symbol.asyncIterator](options)) {
-      if (line === null) break
-      callback(line)
+    yield* this[Symbol.asyncIterator](options)
+  }
+  async *chars(charCount = Infinity) {
+    while (charCount-- > 0) {
+      const char = await this.readChar()
+      if (char === null) break
+      yield char
     }
   }
-
-  async readLines(options = { 
-    count: Infinity,
-    keepNewLines: false,
-    keepCarriageReturns: false,
-  }) {
-    const lines = []
-    await this.mapLines(line => {
-      if (line === null) return
-      lines.push(line)
-    }, options)
-    return lines
+  async *lists() {
+    yield* this.#generate(CliParser.create(Infinity))
   }
-
-  async readText() {
-    for await (const text of this.generateText())
-      return text
-    return null
+  async *comments() {
+    yield* this.#generate(CliParser.create())
   }
+  async *tuples(metadata = 0) {
+    const parser = CliParser.create(metadata)
+    const { info } = parser
+    if (!info.isArray || info.isList)
+      throw new Error('Metadata must be array of types or a count.')
 
-  async readFields(typesOrCount) {
-    for await (const fields of this.generateFields(typesOrCount))
-      return fields
-    return null
+    yield* this.#generate(parser)
   }
-  
-  async readRecord(fields) {
-    for await (const record of this.generateRecords(fields))
-      return record
-    return null
-  }
-
-  async *generateText() {
-    while (true) {
-      const line = await this.readLine()
-      if (line === null) break
-      yield CliParser.parse(line)
+  async *records(metadata = {}) {
+    if (Array.isArray(metadata)) {
+      if (metadata.find(name => typeof name != 'string') != null)
+        throw new TypeError('Metadata must be an array of strings.')
+      metadata = Object.fromEntries(
+        metadata.map(name => [name, CliFieldType.word]))
     }
+
+    const parser = CliParser.create(metadata)
+    const { info } = parser
+    if (!info.isObject)
+      throw new Error('Metadata must be a POJO or an array of strings.')
+
+    yield* this.#generate(parser)
   }
 
-  async *generateFields(typesOrCount = Infinity) {
-    const type = CliRecordInfoLoader.load(typesOrCount)
-    if (!type.isArray)
-      throw new Error('Fields must be array of types or count.')
-
-    while (true) {
-      const line = await this.readLine()
-      if (line === null) break
-      yield CliParser.parse(line, typesOrCount)
-    }
+  async readLines(options) {
+    return this.#spread(this.lines(options))
   }
-
-  async *generateRecords(fields = {}) {
-    const type = CliRecordInfoLoader.load(fields)
-    if (!type.isObject)
-      throw new Error('Fields must be a pojo.')
-
-    while (true) {
-      const line = await this.readLine()
-      if (line === null) break
-      yield CliParser.parse(line, type)
-    }
+  async readChars(charCount = Infinity) {
+    throw new Error('Not implemented yet.')
+  }
+  async readLists() {
+    return this.#spread(this.lists())
+  }
+  async readComments() {
+    return this.#spread(this.comments())
+  }
+  async readTuples(metadata = 0) {
+    return this.#spread(this.tuples(metadata))
+  }
+  async readRecords(metadata = {}) {
+    return this.#spread(this.records(metadata))
   }
 
   async dispose() {

@@ -6,7 +6,7 @@ import { toBeEquals, toBeEmptyString } from '@kingjs/vitest'
 expect.extend({ toBeEquals, toBeEmptyString })
 
 describe('A CliRecordInfo loaded with metadata', () => {
-  describe('that is missing or zero', () => {
+  describe('that is missing', () => {
     let info
     beforeEach(() => {
       info = CliRecordInfoLoader.load()

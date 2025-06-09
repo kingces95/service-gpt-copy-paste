@@ -3,6 +3,9 @@ import { isPojo } from '@kingjs/pojo-test'
 
 export class CliFieldType {
   static getType(type) {
+    if (type instanceof CliFieldType)
+      return type
+    
     switch (type) {
       case 'word':
       case '?':

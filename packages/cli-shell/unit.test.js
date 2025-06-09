@@ -519,10 +519,10 @@ describe('reader', () => {
     passThrough.write(HELLO_WORLD + '\n' + HELLO)
     passThrough.end()
     await $(async $ => {
-      const [ hello, world ] = await $.readArray()
+      const [ hello, world ] = await $.readList()
       expect(hello).toBe(HELLO)
       expect(world).toBe(WORLD)
-      const [ hello$ ] = await $.readArray()
+      const [ hello$ ] = await $.readList()
       expect(hello$).toBe(HELLO)
     })({ stdin: passThrough })
   })
@@ -545,7 +545,7 @@ describe('reader', () => {
     passThrough.write(HELLO)
     passThrough.end()
     await $(async $ => {
-      const record = await $.readRecord({ value: '' })
+      const record = await $.readRecord({ value: '?' })
       expect(record.value).toBe(HELLO)
     })({ stdin: passThrough })
   })
@@ -619,9 +619,10 @@ describe('publish', () => {
     $ = new CliShell({ signal }) 
   })
 
-  it('noop', async () => {
+  it('a different instance of a CliShell', async () => {
     const result = $()
-    expect(result).toBe(undefined)
+    expect(result).toBeInstanceOf(CliShell)
+    expect(result).not.toBe($)
   })
 
   it('variable', async () => {
