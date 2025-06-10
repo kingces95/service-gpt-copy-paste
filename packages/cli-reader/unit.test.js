@@ -37,6 +37,14 @@ describe('A cli reader', () => {
       const result = await singleLineReader.readString()
       expect(result).toBe('\n')
     })
+    it('should throw for a stream with "hello world<nl> and count 0"', async () => {
+      const promise = helloWorldReaderNl.readString(0)
+      await expect(promise).rejects.toThrow('charCount must be a positive integer.')
+    })
+    it('should return "hello" for a stream with "hello world<nl> and count 5"', async () => {
+      const result = await helloWorldReaderNl.readString(5)
+      expect(result).toBe('hello')
+    })
     it('should return "hello world<nl>" for a stream with "hello world<nl>"', async () => {
       const result = await helloWorldReaderNl.readString()
       expect(result).toBe('hello world\n')

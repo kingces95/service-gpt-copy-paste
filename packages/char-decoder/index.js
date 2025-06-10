@@ -11,13 +11,16 @@ const Utf8 = {
   },
   isSingleByte(byte) {
     return (byte & 0b10000000) === 0
+  },
+  isStartByte(byte) {
+    return (byte & 0b11000000) !== 0b10000000
   }
 }
 
 export class CharDecoder {
-  #bytes
-  #length
-  #bytesRemaining
+  #bytes = []
+  #length = 0
+  #bytesRemaining = 0
 
   constructor(encoding) {
     if (encoding && encoding.toLowerCase() !== ENCODING_UTF8)
@@ -27,52 +30,14 @@ export class CharDecoder {
 
   #throwIfBytesRemaining() {
     if (this.#bytesRemaining !== 0) 
-      throw new Error('UTF-8 character incomplete')
+      throw new Error('UTF-8 character incomplete.')
   }
-
-  push(byte) {
-    this.#bytes.push(byte)
-
-    if (this.#bytesRemaining === 0) {
-      this.#bytesRemaining = Utf8.bytesRemaining(byte)
-    } else {
-      this.#bytesRemaining--
-    }
-
-    if (this.#bytesRemaining === 0) {
-      this.#length++
-    }
-  }
-
-  peek() {
-    this.#throwIfBytesRemaining()
-
-    if (this.#length === 0) 
-      return null
-
-    const byte = this.#bytes.at(-1)
-    if (!Utf8.isSingleByte(byte)) 
-      return null
-
-    return byte
-  }
-
-  pop() {
-    this.#throwIfBytesRemaining()
-
-    if (this.#length === 0) 
-      throw new Error('Buffer is empty')
-
-    this.#length--
-    return this.#bytes.pop()
-  }
-
+  
   get buffer() {
     return Buffer.from(this.#bytes)
   }
 
   get length() {
-    this.#throwIfBytesRemaining()
     return this.#length
   }
   
@@ -80,7 +45,34 @@ export class CharDecoder {
     return this.#bytesRemaining == 0 
   }
 
+  get isEmpty() {
+    return this.#bytes.length === 0
+  }
+
+  push(byte) {
+    this.#bytes.push(byte)
+    this.#bytesRemaining = !this.#bytesRemaining
+      ? Utf8.bytesRemaining(byte)
+      : this.#bytesRemaining - 1
+    this.#length += !this.#bytesRemaining ? 1 : 0
+  }
+
+  peek() {
+    if (this.isEmpty) return null
+    return this.#bytes.at(-1)
+  }
+
+  pop() {
+    this.#throwIfBytesRemaining()
+    if (this.isEmpty) 
+      throw new Error('No bytes to pop.')
+    else if (!Utf8.isSingleByte(this.peek()))
+      throw new Error('Cannot pop a multi-byte character as a byte.')
+    return this.#bytes.pop()
+  }
+
   clear() {
+    this.#throwIfBytesRemaining()
     this.#bytes = []
     this.#length = 0
     this.#bytesRemaining = 0

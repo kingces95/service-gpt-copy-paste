@@ -117,6 +117,15 @@ class Sipper {
     })()
   }
 
+  *#createIterator() {
+    while (true) {
+      const promise = this.#charIterator.next()
+    }
+    // for await (const { eof, decoder } of this.#charIterator) {
+    //   yield { eof, decoder }
+    // }
+  }
+
   async pipe(consumer, { end = true } = {}) {
     const { value: { started, buffers = [] } = {} } 
       = await this.#charIterator.return() ?? {}

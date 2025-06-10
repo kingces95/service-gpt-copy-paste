@@ -12,6 +12,10 @@ describe('CharDecoder', () => {
     const buffer = new CharDecoder()
     expect(() => buffer.push(0xFF)).toThrow('Invalid UTF-8 start byte')
   })
+  it('should throw if constructed with an unsupported encoding', () => {
+    expect(() => new CharDecoder('unsupported-encoding'))
+      .toThrow('Unsupported encoding: unsupported-encoding')
+  })
   describe('that is empty', () => {
     let buffer
 
@@ -22,11 +26,11 @@ describe('CharDecoder', () => {
     it('should have length 0', () => {
       expect(buffer.length).toBe(0)
     })
-    it('should return null for peek', () => {
+    it('should return null on peek', () => {
       expect(buffer.peek()).toBeNull()
     })
     it('should throw on pop', () => {
-      expect(() => buffer.pop()).toThrow('Buffer is empty')
+      expect(() => buffer.pop()).toThrow('No bytes to pop.')
     })
     it('should return empty string on toString', () => {
       expect(buffer.toString()).toBe('')
@@ -85,20 +89,20 @@ describe('CharDecoder', () => {
   })
   describe('that has a partial multi-byte character', () => {
     let buffer
+    const partialMultiByteCharBytes = Buffer.from([0xC3]) // Start of "é"
 
     beforeEach(() => {
       buffer = new CharDecoder()
-      const partialMultiByteCharBytes = Buffer.from([0xC3]) // Start of "é"
       for (const byte of partialMultiByteCharBytes) {
         buffer.push(byte)
       }
     })
 
-    it('should throw on length', () => {
-      expect(() => buffer.length).toThrow('UTF-8 character incomplete')
+    it('should have zero length', () => {
+      expect(buffer.length).toBe(0)
     })
-    it('should throw on peek', () => {
-      expect(() => buffer.peek()).toThrow('UTF-8 character incomplete')
+    it('should return last byte pushed on peek', () => {
+      expect(buffer.peek()).toBe(partialMultiByteCharBytes[0]) // 0xC3
     })
     it('should throw on pop', () => {
       expect(() => buffer.pop()).toThrow('UTF-8 character incomplete')
@@ -109,10 +113,10 @@ describe('CharDecoder', () => {
   })
   describe('that has a two byte character "é" in UTF-8', () => {
     let buffer
+    let multiByteCharBytes = Buffer.from('é', 'utf8') // U+00E9
 
     beforeEach(() => {
       buffer = new CharDecoder()
-      const multiByteCharBytes = Buffer.from('é', 'utf8')
       for (const byte of multiByteCharBytes) {
         buffer.push(byte)
       }
@@ -121,8 +125,12 @@ describe('CharDecoder', () => {
     it('should have length 1', () => {
       expect(buffer.length).toBe(1)
     })
-    it('should return null on peek', () => {
-      expect(buffer.peek()).toBeNull()
+    it('should return the second byte of the two byte char', () => {
+      expect(buffer.peek()).toBe(multiByteCharBytes[1]) // 'é' in UTF-8
+    })
+    it('should throw on pop', () => {
+      expect(() => buffer.pop())
+        .toThrow('Cannot pop a multi-byte character as a byte.')
     })
     it('should return "é" on toString', () => {
       expect(buffer.toString()).toBe('é')
@@ -133,10 +141,10 @@ describe('CharDecoder', () => {
   })
   describe('that has a three byte character "€" in UTF-8', () => {
     let buffer
+    const threeByteCharBytes = Buffer.from('€', 'utf8') // U+10300
 
     beforeEach(() => {
       buffer = new CharDecoder()
-      const threeByteCharBytes = Buffer.from('€', 'utf8') // U+10300
       for (const byte of threeByteCharBytes) {
         buffer.push(byte)
       }
@@ -145,8 +153,12 @@ describe('CharDecoder', () => {
     it('should have length 1', () => {
       expect(buffer.length).toBe(1)
     })
-    it('should return null on peek', () => {
-      expect(buffer.peek()).toBeNull()
+    it('should return last byte pushed on peek', () => {
+      expect(buffer.peek()).toBe(threeByteCharBytes[2]) // '€' in UTF-8
+    })
+    it('should throw on pop', () => {
+      expect(() => buffer.pop())
+        .toThrow('Cannot pop a multi-byte character as a byte.')
     })
     it('should return "€" on toString', () => {
       expect(buffer.toString()).toBe('€')
@@ -157,10 +169,10 @@ describe('CharDecoder', () => {
   })
   describe('that has a four byte character "𐍈" in UTF-8', () => {
     let buffer
+    const fourByteCharBytes = Buffer.from('𐍈', 'utf8') // U+10300
 
     beforeEach(() => {
       buffer = new CharDecoder()
-      const fourByteCharBytes = Buffer.from('𐍈', 'utf8') // U+10300
       for (const byte of fourByteCharBytes) {
         buffer.push(byte)
       }
@@ -169,8 +181,12 @@ describe('CharDecoder', () => {
     it('should have length 1', () => {
       expect(buffer.length).toBe(1)
     })
-    it('should return null on peek', () => {
-      expect(buffer.peek()).toBeNull()
+    it('should return last byte pushed on peek', () => {
+      expect(buffer.peek()).toBe(fourByteCharBytes[3]) // '𐍈' in UTF-8
+    })
+    it('should throw on pop', () => {
+      expect(() => buffer.pop())
+        .toThrow('Cannot pop a multi-byte character as a byte.')
     })
     it('should return "𐍈" on toString', () => {
       expect(buffer.toString()).toBe('𐍈')

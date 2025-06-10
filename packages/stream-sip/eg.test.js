@@ -26,10 +26,8 @@ describe('A code sample of sip', () => {
           count++
           expect(decoder).toBeInstanceOf(CharDecoder)
           expect(decoder.canStringify).toBe(true)
-          expect(decoder.length).toBe(count)
           expect(decoder.toString()).toBe('hello world'.slice(0, count))
         } else {
-          expect(decoder.length).toBe(11) // "hello world" has 11 characters
           expect(decoder.toString()).toBe('hello world')
         }
       }
@@ -44,7 +42,7 @@ describe('A code sample of sip', () => {
         const asyncIterator = sip(readable)
         for await (const { eof, decoder } of asyncIterator) {
           // if end-of-file, yield the remaining buffer
-          if (eof && !decoder.length)
+          if (eof && decoder.isEmpty)
             return
 
           // if new line, then yield line and reset

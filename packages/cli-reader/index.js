@@ -27,12 +27,18 @@ export class CliReader {
   }
 
   async readString(charCount = Infinity) {
+    if (!charCount) 
+      throw new TypeError('charCount must be a positive integer.')
+
+    let count = 0
     while (true) {
       const { done, value: { decoder, eof } = { } } 
         = await this.#generator.next()
-      if (done || (eof && !decoder.length)) return null
 
-      if (eof || decoder.length == charCount) {
+      if (done || (eof && decoder.isEmpty)) 
+        return null
+
+      if (eof || ++count == charCount) {
         const result = decoder.toString()
         decoder.clear()
         return result
@@ -49,7 +55,7 @@ export class CliReader {
     while (true) {
       const { done, value: { decoder, eof } = { } } 
         = await this.#generator.next()
-      if (done || (eof && !decoder.length)) return null
+      if (done || (eof && decoder.isEmpty)) return null
 
       if (decoder.peek() != LINE_FEED_BYTE && !eof)
         continue
