@@ -41,26 +41,34 @@ class Sipper {
 
   #createByteIterator() {
     const chunkIterator = this.#chunkIterator
+
+    let i
+    let chunk
+    async function next() {
+      const { done, value } = await chunkIterator.next()
+      if (done) return false
+      chunk = value; i = 0
+      return true
+    }
+
     return (async function* () {
-      let i = 0
-      let bytes = Buffer.alloc(0)
       let unwinding = false
       try {
-        while (true) {
-          const { done, value: nextChunk } = await chunkIterator.next()
-          if (done) break
-          bytes = nextChunk
-          i = 0
+        while (await next()) {
+          // potential interrupt point
 
-          while (i < bytes.length)
-            yield bytes[i++]
+          while (i < chunk.length) {
+            yield chunk[i++]
+            // potential interrupt point
+          }
         }
+        unwinding = true
       } catch (error) {
         unwinding = true
         throw error
       } finally {
         if (!unwinding) {
-          return { started: true, buffers: [bytes.slice(i)] }
+          return { started: true, buffers: [chunk.slice(i)] }
         }
       }
     })()
@@ -70,32 +78,39 @@ class Sipper {
     const decoder = new CharDecoder(this.#encoding)
     const byteIterator = this.#byteIterator
 
+    async function next() {
+      const { done, value } = await byteIterator.next()
+      if (done) return false
+      decoder.push(value)
+      return true
+    }
+
     return (async function* () {
       let unwinding = false
-      let done = false
       try {
-        while (true) {
-          const { done, value: byte } = await byteIterator.next()
-          if (done) break
-
-          decoder.push(byte)
-          if (decoder.canStringify)
+        while (await next()) {
+          // potential interrupt point
+  
+          if (decoder.canStringify) {
             yield { eof: false, decoder }
+            // potential interrupt point
+          }
         }
 
         if (!decoder.canStringify)
           throw new Error('Stream ended before a character boundary was found.')
 
         yield { eof: true, decoder }
-        done = true
+        // potential interrupt point
+
+        unwinding = true
       } catch (error) {
         unwinding = true
-        decoder.clear()
         throw error
       } finally {
-        const interrupted = !(unwinding || done)
-        if (interrupted) {
-          const { value: { started, buffers = [] } = {} } = await byteIterator.return()
+        if (!unwinding) {
+          const { value: { started, buffers = [] } = {} } 
+            = await byteIterator.return()
           return { started, buffers: [decoder.buffer, ...buffers] }
         }
       }
