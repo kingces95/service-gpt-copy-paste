@@ -1,3 +1,4 @@
+import assert from 'assert'
 const ENCODING_UTF8 = 'utf8'
 
 // Helper for UTF-8 byte analysis
@@ -17,10 +18,42 @@ const Utf8 = {
   }
 }
 
+// CharDecoder class for decoding UTF-8 characters from a byte stream
+// and managing the state of multi-byte characters. 
+//
+// CharDecoder maintains a view of a string over a buffer of bytes.
+// 
+// A producer pushes bytes into the decoder. This operation does not affect
+// the view the consumer has of the the string.
+//
+// A consumer initiates the decoding process by creating an iterator.
+// Each call to `next()` will decode one character and increment
+// `length` by one or report done if no more characters can be decoded. 
+//
+// A consumer can pause iterating at any time and peek at the last byte. 
+// 
+// A consumer pop the last byte, but only if the last byte is a single-byte 
+// character (e.g. new line or carrage return). This can be repeated so long 
+// as there are trailing single-byte characters. Popping a byte prevents 
+// further iteration.
+//
+// A consumer can call `toString()` at any time to decode the string upto
+// the last byte decoded less any single-byte characters that were popped. 
+// 
+// Calling `clear()` concludes the decoding process and indicates the bytes
+// comprising the string and any that were popped have been consumed.
+//
+// If the consumer times out before consuming a string, the consumer can 
+// create a new iterator to begin the decoding process again.
 export class CharDecoder {
   #bytes = []
+
+  // number of bytes remaining to complete a multi-byte character
+  // 0 <= #multiBytesRemaining <= 3
+  #multiBytesRemaining = 0
+  
+  // character length of the current trimmed string
   #length = 0
-  #bytesRemaining = 0
 
   constructor(encoding) {
     if (encoding && encoding.toLowerCase() !== ENCODING_UTF8)
@@ -29,7 +62,7 @@ export class CharDecoder {
   }
 
   #throwIfBytesRemaining() {
-    if (this.#bytesRemaining !== 0) 
+    if (this.#multiBytesRemaining !== 0) 
       throw new Error('UTF-8 character incomplete.')
   }
   
@@ -42,7 +75,7 @@ export class CharDecoder {
   }
   
   get canStringify() { 
-    return this.#bytesRemaining == 0 
+    return this.#multiBytesRemaining == 0 
   }
 
   get isEmpty() {
@@ -51,10 +84,10 @@ export class CharDecoder {
 
   push(byte) {
     this.#bytes.push(byte)
-    this.#bytesRemaining = !this.#bytesRemaining
+    this.#multiBytesRemaining = !this.#multiBytesRemaining
       ? Utf8.bytesRemaining(byte)
-      : this.#bytesRemaining - 1
-    this.#length += !this.#bytesRemaining ? 1 : 0
+      : this.#multiBytesRemaining - 1
+    this.#length += !this.#multiBytesRemaining ? 1 : 0
   }
 
   peek() {
@@ -75,9 +108,9 @@ export class CharDecoder {
     this.#throwIfBytesRemaining()
     this.#bytes = []
     this.#length = 0
-    this.#bytesRemaining = 0
+    this.#multiBytesRemaining = 0
   }
-
+  
   toString() {
     this.#throwIfBytesRemaining()
     return this.buffer.toString('utf8')
