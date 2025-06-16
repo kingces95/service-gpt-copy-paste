@@ -3,6 +3,7 @@ import { Disposer } from '@kingjs/disposer'
 import { CharDecoder } from '@kingjs/char-decoder'
 import { StringDecoder } from 'string_decoder'
 import { Readable, Writable } from "stream"
+import { CharBuffer, CharPointer } from '@kingjs/char-buffer'
 
 const disposer = new Disposer(
   readable => new Promise(resolve => readable.destroy(null, resolve)), { 
@@ -23,6 +24,35 @@ class Gulp extends Writable {
     return decoder.end(Buffer.concat(this.#chunks))
   }
 } 
+
+// Port of Sipper class but making use of CharBuffer and CharPointer
+class SipperEx {
+  #source
+  #charBuffer
+  #charPointer
+  #chunkIterator
+  #charIterator
+
+  constructor(source, { encoding = 'utf8' } = {}) {
+    this.#source = source
+    this.#charBuffer = new CharBuffer(encoding)
+    this.#charPointer = this.#charBuffer.begin()
+    this.#chunkIterator = source[Symbol.asyncIterator]()
+  }
+
+  async *#createCharIterator() {
+    const chunkIterator = this.#chunkIterator
+    const charBuffer = this.#charBuffer
+    const charPointer = this.#charPointer
+
+    for await (const chunk of chunkIterator) {
+      charBuffer.push(chunk)
+      while (charPointer.advance()) {
+        yield { eof: false, decoder: this.#charBuffer }
+      }
+    }
+  }
+}
 
 class Sipper {
   #source

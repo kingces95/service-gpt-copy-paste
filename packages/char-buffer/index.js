@@ -28,7 +28,10 @@ const Utf8 = {
 // start of the string in the buffer.
 export class CharBuffer {
   #chunks
-  constructor() {
+
+  constructor(encoding = ENCODING_UTF8) {
+    if (encoding && encoding.toLowerCase() !== ENCODING_UTF8)
+      throw new Error(`Unsupported encoding: ${encoding}`)
     this.#chunks = []
   }
 
@@ -232,7 +235,7 @@ export class CharPointer {
       return 0
     return this.#byteIndex < other.#byteIndex ? -1 : 1
   }
-  toString(end, { encoding = ENCODING_UTF8 } = {}) {
+  toString(end) {
     // To achive maximally memory efficient string decoding buffer copying 
     // must be avoided. Naive string decoding given bytes spanning multiple
     // chunks would require copying the bytes into a new buffer and then
@@ -255,7 +258,7 @@ export class CharPointer {
     // a waste of memory since the result would likely be interrogated
     // to interpret the string otherwise the client should pipe the bytes.
     if (!end)
-      return this.toString(this.#buffer.end(), { encoding })
+      return this.toString(this.#buffer.end())
 
     // trivial case: begin and end pointers are the same
     const comparison = this.compareTo(end)
@@ -272,7 +275,7 @@ export class CharPointer {
     if (chunkBegin === chunkEnd) {
       // if the begin and end pointers are in the same chunk, slice the chunk
       const chunk = chunks[chunkBegin]
-      return chunk.slice(byteBegin, byteEnd).toString(encoding)
+      return chunk.slice(byteBegin, byteEnd).toString(ENCODING_UTF8)
     }
 
     // general case: begin and end pointers are in different chunks
@@ -295,11 +298,15 @@ export class CharPointer {
     }
     
     // reduce the chunks into a single string
-    const decoder = new StringDecoder(encoding)
+    const decoder = new StringDecoder(ENCODING_UTF8)
     const [firstChunk, ...restChunks] = chunksSlice
     return restChunks.reduce((result, chunk) => {
       result += decoder.write(chunk)
       return result
     }, decoder.write(firstChunk))
   }
+}
+
+export class CharScanner {
+  
 }

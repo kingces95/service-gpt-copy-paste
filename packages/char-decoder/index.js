@@ -1,4 +1,5 @@
 import assert from 'assert'
+
 const ENCODING_UTF8 = 'utf8'
 
 // Helper for UTF-8 byte analysis
@@ -55,9 +56,7 @@ export class CharDecoder {
   // character length of the current trimmed string
   #length = 0
 
-  constructor(encoding) {
-    if (encoding && encoding.toLowerCase() !== ENCODING_UTF8)
-      throw new Error(`Unsupported encoding: ${encoding}`)
+  constructor(encoding = ENCODING_UTF8) {
     this.clear()
   }
 
