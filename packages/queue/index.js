@@ -2,6 +2,8 @@ import Denque from "denque"
 import { AbstractQueue, BidirectionalCursor } from "@kingjs/cursor"
 
 export class Queue extends AbstractQueue {
+  static get Cursor() { return QueueCursor }
+
   #denque
 
   constructor() {
@@ -14,8 +16,12 @@ export class Queue extends AbstractQueue {
   
   get isEmpty() { return this.count === 0 }
 
-  begin() { return new QueueCursor(this, 0) }
-  end() { return new QueueCursor(this, this.#denque.length) }
+  begin(recyclable) { 
+    return this.cursor$(recyclable, 0)
+  }
+  end(recyclable) {
+    return this.cursor$(recyclable, this.#denque.length)
+  }
 
   push(value) { 
     if (value === null) 
@@ -41,7 +47,17 @@ export class QueueCursor extends BidirectionalCursor {
   constructor(queue, innerIndex) {
     super(queue)
     this.#queue = queue
+    this.#initialize(innerIndex)
+  }
+
+  #initialize(innerIndex) {
     this.#innerIndex = innerIndex
+  }
+
+  recycle$(queue, innerIndex) {
+    super.recycle$(queue)
+    this.#initialize(innerIndex)
+    return this
   }
 
   get queue$() { return this.#queue }

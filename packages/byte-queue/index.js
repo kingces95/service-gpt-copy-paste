@@ -2,6 +2,8 @@ import { Queue } from "@kingjs/queue"
 import { AbstractQueue, BidirectionalCursor } from "@kingjs/cursor"
 
 export class ByteQueue extends AbstractQueue {
+  static get Cursor() { return ByteQueueCursor }
+
   #innerQueue
   #beginOffset
   #count
@@ -17,17 +19,17 @@ export class ByteQueue extends AbstractQueue {
 
   get count() { return this.#count }
 
-  begin() {
+  begin(recyclable) {
     const innerQueue = this.#innerQueue
     const innerCursor = innerQueue.begin()
     const beginOffset = this.#beginOffset
-    return new ByteQueueCursor(this, innerCursor, beginOffset)
+    return this.cursor$(recyclable, innerCursor, beginOffset)
   }
-  end() {
+  end(recyclable) {
     const innerQueue = this.#innerQueue
     const innerCursor = innerQueue.end()
     const endOffset = 0
-    return new ByteQueueCursor(this, innerCursor, endOffset)
+    return this.cursor$(recyclable, innerCursor, endOffset)
   }
 
   push(value) { 
@@ -55,8 +57,11 @@ export class ByteQueue extends AbstractQueue {
     if (beginOffset > 0)
       chunks[0] = firstChunk.subarray(beginOffset)
 
+    // this.#count -= chunks.reduce((sum, chunk) => sum + chunk.length, 0)
+    for (let i = 0; i < chunks.length; i++)
+      this.#count -= chunks[i].length
+    
     this.#beginOffset = endOffset
-    this.#count -= chunks.reduce((sum, chunk) => sum + chunk.length, 0)
     this.__bumpVersion$()
     return chunks
   }
@@ -70,8 +75,18 @@ export class ByteQueueCursor extends BidirectionalCursor {
   constructor(queue, innerCursor, offset = 0) {
     super(queue)
     this.#queue = queue
+    this.#initialize(innerCursor, offset)
+  }
+
+  #initialize(innerCursor, offset) {
     this.#innerCursor = innerCursor
     this.#offset = offset
+  }
+
+  recycle$(queue, innerCursor, offset = 0) {
+    super.recycle$(queue)
+    this.#initialize(innerCursor, offset)
+    return this
   }
 
   get queue$ () { return this.#queue }

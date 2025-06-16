@@ -249,6 +249,9 @@ describe.each([
         it('should return an array with the chunk.', () => {
           expect(result).toEqual([chunk])
         })
+        it('should not be active.', () => {
+          expect(begin.isActive).toBe(false)
+        })
         it('should throw when asked for a value.', () => {
           expect(() => begin.value).toThrow(
             'Container has been popped since cursor was created.')
@@ -277,10 +280,30 @@ describe.each([
           expect(() => begin.isEnd).toThrow(
             'Container has been popped since cursor was created.')
         })
-        describe('begin cursor', () => {
+        describe('recycled begin cursor', () => {
+          beforeEach(() => {
+            begin = queue.begin(begin)
+          })
+          it('should be the original.', () => {
+            expect(begin).toBe(begin)
+          })
+          it('should be active.', () => {
+            expect(begin.isActive).toBe(true)
+          })
+          it('should be at the beginning.', () => {
+            expect(begin.isBegin).toBe(true)
+          })
+          it('should return a null value.', () => {
+            expect(begin.value).toBe(null)
+          })
+        })
+        describe('new begin cursor', () => {
           let begin2
           beforeEach(() => {
             begin2 = queue.begin()
+          })
+          it('should be different from the original.', () => {
+            expect(begin2).not.toBe(begin)
           })
           it('should be at the beginning.', () => {
             expect(begin2.isBegin).toBe(true)
