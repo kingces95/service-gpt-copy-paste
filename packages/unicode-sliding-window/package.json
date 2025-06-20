@@ -1,5 +1,5 @@
 {
-  "name": "@kingjs/code-unit-queue",
+  "name": "@kingjs/unicode-sliding-window",
   "version": "1.0.0",
   "description": "Lazily populated value.",
   "main": "index.js",

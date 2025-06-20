@@ -11,6 +11,8 @@ export class Cursor {
     this.#__version = this.#container.__version$
   }
 
+  get container$() { return this.#container }
+
   recycle$(container) {
     if (container != this.#container) 
       throw new Error("Cursor cannot be recycled to a different container.")
@@ -22,7 +24,7 @@ export class Cursor {
     this.#initialize()
   }
 
-  __checkVersion$() {
+  __throwIfStale$() {
     if (!this.isActive) throw new Error(
       "Container has been popped since cursor was created.")
   }
@@ -36,8 +38,13 @@ export class Cursor {
   get isEnd() { throw new Error("Not implemented.") }
   get isBegin() { throw new Error("Not implemented.") }
   get value() { throw new Error("Not implemented.") }
-
   step() { throw new Error("Not implemented.") }
+  take() { 
+    if (this.isEnd) return undefined
+    const value = this.value
+    this.step()
+    return value
+  }
 
   equals(other) { throw new Error("Not implemented.") }
 }

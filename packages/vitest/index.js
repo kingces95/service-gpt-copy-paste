@@ -33,3 +33,33 @@ export async function toBeDecodedAs(stream, expected) {
     message: () => `Expected stream to decode as "${expected}" but got "${text}"`
   }
 }
+
+export function* starsAndBars(stars, bars, options = {}) {
+  const minStars = options.minStars ?? 0
+  const n = stars + bars
+  const indices = Array.from({ length: bars }, (_, i) => i)
+
+  function* combinations(start, depth, path) {
+    if (depth === 0) {
+      yield path
+      return
+    }
+    for (let i = start; i <= n - depth; i++) {
+      yield* combinations(i + 1, depth - 1, [...path, i])
+    }
+  }
+
+  for (const barPositions of combinations(0, bars, [])) {
+    const result = []
+    let prev = -1
+    for (const bar of barPositions) {
+      result.push(bar - prev - 1)
+      prev = bar
+    }
+    result.push(n - prev - 1)
+
+    if (result.every(starCount => starCount >= minStars)) {
+      yield result
+    }
+  }
+}
