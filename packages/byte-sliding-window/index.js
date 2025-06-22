@@ -1,19 +1,26 @@
 import { ObjectSlidingWindow } from "@kingjs/object-sliding-window"
-import { SlidingWindow, BidirectionalCursor } from "@kingjs/cursor"
+import { SlidingWindow, SlidingWindowCursor } from "@kingjs/cursor"
 
 export class ByteSlidingWindow extends SlidingWindow {
   static get Cursor() { return ByteSlidingWindowCursor }
 
   #innerWindow
   #firstChunkOffset
+  #count
 
   constructor() {
     super()
     this.#innerWindow = new ObjectSlidingWindow()
     this.#firstChunkOffset = 0
+    this.#count = 0
   }
 
   get firstChunkOffset$() { return this.#firstChunkOffset }
+
+  get count() { 
+    this.__throwIfDisposed$()
+    return this.#count
+  }
 
   begin(recyclable) {
     super.begin(recyclable)
@@ -37,6 +44,7 @@ export class ByteSlidingWindow extends SlidingWindow {
     if (chunk.length == 0) return
 
     this.#innerWindow.push(chunk)
+    this.#count += chunk.length
   }
   shift(cursor = this.end()) {
     super.shift(cursor)
@@ -75,7 +83,7 @@ export class ByteSlidingWindow extends SlidingWindow {
   }
 }
 
-export class ByteSlidingWindowCursor extends BidirectionalCursor {
+export class ByteSlidingWindowCursor extends SlidingWindowCursor {
   #window
   #offset
   #innerCursor
@@ -123,24 +131,24 @@ export class ByteSlidingWindowCursor extends BidirectionalCursor {
   get value() { return this.readUInt8() }
 
   readUInt8() { return this.read() }
-  readInt8() { return this.read(signed = true) }
+  readInt8() { return this.read(1, true) }
 
-  readUInt16BE() { return this.read(length = 2) }
-  readInt16BE() { return this.read(length = 2, signed = true) }
-  readUInt16LE() { return this.read(length = 2, bigEndian = false) }
-  readInt16LE() { return this.read(length = 2, signed = true, bigEndian = false) }
+  readUInt16BE() { return this.read(2) }
+  readInt16BE() { return this.read(2, true) }
+  readUInt16LE() { return this.read(2, false, true) }
+  readInt16LE() { return this.read(2, true, true) }
 
-  readUInt32BE() { return this.read(length = 4) }
-  readInt32BE() { return this.read(length = 4, signed = true) }
-  readUInt32LE() { return this.read(length = 4, bigEndian = false) }
-  readInt32LE() { return this.read(length = 4, signed = true, bigEndian = false) }
+  readUInt32BE() { return this.read(4) }
+  readInt32BE() { return this.read(4, true) }
+  readUInt32LE() { return this.read(4, false, true) }
+  readInt32LE() { return this.read(4, true, true) }
 
   read(length = 1, signed = false, littleEndian = false) {
     this.__throwIfStale$()
     if (length != 1 && length != 2 && length != 4) throw new Error(
       `Unsupported length: ${length}. Only 1, 2, or 4 bytes are supported.`)
 
-    if (this.isEnd) return null
+    if (this.isEnd) return
 
     const innerCursor = this.innerCursor$
     let offset = this.offset$
@@ -151,10 +159,11 @@ export class ByteSlidingWindowCursor extends BidirectionalCursor {
 
       // Copy bytes from accross chunks into one buffer.
       const buffer = Buffer.alloc(length)
-      let current = innerCursor.clone()
+      let current = this.clone()
       for (let i = 0; i < length; i++) {
-        buffer.writeUInt8(current.value, i)
-        if (!current.step()) return null // Not enough bytes to read.
+        const { value } = current
+        buffer.writeUInt8(value, i)
+        if (!current.step()) return // Not enough bytes to read.
       }
 
       offset = 0
@@ -164,15 +173,20 @@ export class ByteSlidingWindowCursor extends BidirectionalCursor {
     // Common case: Read bytes from the current chunk.
     switch (length) {
       case 1:
-        return signed ? chunk.readInt8(offset) : chunk.readUInt8(offset)
+        return signed ? 
+          chunk.readInt8(offset) : chunk.readUInt8(offset)
       case 2:
         return signed 
-          ? (littleEndian ? chunk.readInt16LE(offset) : chunk.readInt16BE(offset))
-          : (littleEndian ? chunk.readUInt16LE(offset) : chunk.readUInt16BE(offset))
+          ? (littleEndian ? 
+            chunk.readInt16LE(offset) : chunk.readInt16BE(offset))
+          : (littleEndian ? 
+            chunk.readUInt16LE(offset) : chunk.readUInt16BE(offset))
       case 4:
         return signed
-          ? (littleEndian ? chunk.readInt32LE(offset) : chunk.readInt32BE(offset))
-          : (littleEndian ? chunk.readUInt32LE(offset) : chunk.readUInt32BE(offset))
+          ? (littleEndian ? 
+            chunk.readInt32LE(offset) : chunk.readInt32BE(offset))
+          : (littleEndian ? 
+            chunk.readUInt32LE(offset) : chunk.readUInt32BE(offset))
     }
   }
 
@@ -232,8 +246,8 @@ export class ByteSlidingWindowCursor extends BidirectionalCursor {
     } = this
 
     if (window != otherWindow) return false
-    if (!innerCursor.equals(otherInnerCursor)) return false
     if (offset != otherOffset) return false
+    if (!innerCursor.equals(otherInnerCursor)) return false
     return true
   }
 }

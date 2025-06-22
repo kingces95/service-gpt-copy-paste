@@ -25,6 +25,10 @@ import { TrimmedSlidingWindow } from "./trimmed-sliding-window.js"
 //   function is called with the inner cursor of the inner window and should 
 //   return the code point value at the position of the inner cursor. The 
 //   function may assume the inner cursor is aligned to a code point boundary.
+//   The function should advance the inner cursor to the next code point
+//   boundary after reading the code point value. If the inner cursor is at the
+//   end of the inner window, the function should return undefined and not
+//   advance the cursor.
 export class CodePointSlidingWindow extends TrimmedSlidingWindow {
   constructor({
     unitLength = 1, 
@@ -36,7 +40,7 @@ export class CodePointSlidingWindow extends TrimmedSlidingWindow {
   decodeLength$(codeUnit) { throw new Error("Not implemented.") }
   decodeValue$(innerCursor) { throw new Error("Not implemented.") }
 
-  alignEndCursor$(innerCursor) {
+  trim$(innerCursor) {
 
     // search for the last aligned code unit
     if (!this.stepBack$(innerCursor))
@@ -47,14 +51,16 @@ export class CodePointSlidingWindow extends TrimmedSlidingWindow {
   }
 
   step$(innerCursor) {
-    return tryAdvance(innerCursor, this.decodeLength$(innerCursor.value))
+    const value = innerCursor.value
+    if (value == null) return false // end of inner window
+    return tryAdvance(innerCursor, this.decodeLength$(value))
   }
 
   stepBack$(innerCursor) {
     return stepBackUntil(innerCursor, o => this.decodeLength$(o) != null)
   }
 
-  getValue$(innerCursor) {
+  next$(innerCursor) {
     return this.decodeValue$(innerCursor)
   }
 }

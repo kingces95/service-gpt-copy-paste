@@ -1,4 +1,4 @@
-import { BidirectionalCursor } from "./cursor.js"
+import { BidirectionalCursor, SlidingWindowCursor } from "./cursor.js"
 
 export class Container {
   #__version = 0
@@ -69,7 +69,7 @@ export class Container {
 // after a push operation (assuming the chunk is not empty) otherwise
 // will return null. Cursors are required to be BidirectionalCursor.
 export class SlidingWindow extends Container {
-  static get Cursor() { return BidirectionalCursor }
+  static get Cursor() { return SlidingWindowCursor }
 
   constructor() {
     super()

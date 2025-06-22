@@ -1,5 +1,5 @@
 import { SlidingWindow } from "@kingjs/cursor"
-import { BidirectionalCursor } from "@kingjs/cursor"
+import { SlidingWindowCursor } from "@kingjs/cursor"
 
 // TrimmedSlidingWindow exposes an inner sliding window whose end cursor
 // is aligned to a higher-level abstraction. For example, a code-unit is
@@ -15,7 +15,7 @@ import { BidirectionalCursor } from "@kingjs/cursor"
 // - innerWindow$
 //   the inner window being trimmed.
 
-// - alignEndCursor$(innerCursor) 
+// - trim$(innerCursor) 
 //   used to align the end cursor of the inner window to a higher-level 
 //   abstraction. The function is called with the end inner cursor of the 
 //   inner window and should step back the cursor until it is aligned to the 
@@ -27,10 +27,12 @@ import { BidirectionalCursor } from "@kingjs/cursor"
 //   is a function of the cursor value (a continuation for utf-8 and a high
 //   surrogate for utf-16).
 
-// - getValue$(innerCursor) 
-//   used to read the value of the inner cursor. The function is called with the 
-//   inner cursor and should return the value of the higher-level abstraction at 
-//   the position of the innerCursor.
+// - next$(innerCursor) 
+//   used to read the value of the inner cursor and step. The function is called 
+//   with the inner cursor and should return the value of the higher-level abstraction 
+//   at the position of the innerCursor and advance the cursor one step of the
+//   higher-level abstraction. Implementation may assume the inner cursor is
+//   not at the end of the inner window.
 
 // - step$(innerCursor) 
 // - stepBack$(innerWindow) 
@@ -49,10 +51,10 @@ export class TrimmedSlidingWindow extends SlidingWindow {
     this.#innerWindow = innerWindow
   }
 
-  getValue$(innerCursor) { throw new Error("Not implemented.") }
+  next$(innerCursor) { throw new Error("Not implemented.") }
   step$(innerCursor) { throw new Error("Not implemented.") }
   stepBack$(innerCursor) { throw new Error("Not implemented.") }
-  alignEndCursor$(innerCursor) { throw new Error("Not implemented.") }
+  trim$(innerCursor) { throw new Error("Not implemented.") }
 
   get innerWindow$() { return this.#innerWindow }
 
@@ -64,12 +66,11 @@ export class TrimmedSlidingWindow extends SlidingWindow {
     }
     return this.#beginInnerCursor
   }
-
   get endInnerCursor$() {
     if (!this.#endInnerCursor) {
       const innerWindow = this.innerWindow$
       const innerCursor = innerWindow.end()
-      this.alignEndCursor$(innerCursor)
+      this.trim$(innerCursor)
       this.#endInnerCursor = innerCursor
     }
     return this.#endInnerCursor
@@ -89,8 +90,8 @@ export class TrimmedSlidingWindow extends SlidingWindow {
   push(chunk) {
     super.push(chunk)
     const innerWindow = this.innerWindow$
-    innerWindow.push(chunk)
     this.#endInnerCursor = null
+    innerWindow.push(chunk)
   }
 
   shift(cursor = this.end()) {
@@ -118,7 +119,7 @@ export class TrimmedSlidingWindow extends SlidingWindow {
   }
 }
 
-class TrimmedSlidingWindowCursor extends BidirectionalCursor {
+class TrimmedSlidingWindowCursor extends SlidingWindowCursor {
   #innerCursor
 
   constructor(window, innerCursor) {
@@ -132,13 +133,6 @@ class TrimmedSlidingWindowCursor extends BidirectionalCursor {
     super.recycle$(window)
     this.#innerCursor = innerCursor
     return this
-  }
-  
-  get value() {
-    this.__throwIfStale$()
-    const window = this.container$
-    const innerCursor = this.#innerCursor
-    return window.getValue$(innerCursor)
   }
 
   get isEnd() {
@@ -155,6 +149,14 @@ class TrimmedSlidingWindowCursor extends BidirectionalCursor {
     const beginInnerCursor = window.beginInnerCursor$
     const innerCursor = this.#innerCursor
     return innerCursor.equals(beginInnerCursor)
+  }
+  
+  next() {
+    this.__throwIfStale$()
+    if (this.isEnd) return
+    const window = this.container$
+    const innerCursor = this.#innerCursor
+    return window.next$(innerCursor)
   }
 
   step() {

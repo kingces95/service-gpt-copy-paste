@@ -1,5 +1,4 @@
 import { CodePointSlidingWindow } from "./code-point-sliding-window.js"
-import { CodeUnitSlidingWindow } from "./code-unit-sliding-window.js"
 
 // Utf32SlidingWindow is included for completeness, but it is not
 // commonly used in practice since UTF-32 is not space-efficient.
@@ -18,5 +17,9 @@ export class Utf32SlidingWindow extends CodePointSlidingWindow {
   }
 
   decodeLength$(codeUnit) { return 1 }
-  decodeValue$(cursor) { return cursor.value }
+  decodeValue$(cursor) { 
+    const result = cursor.value
+    cursor.step() // advance to the next code unit
+    return result
+  }
 }

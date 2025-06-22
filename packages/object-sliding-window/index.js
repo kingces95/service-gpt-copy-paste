@@ -1,5 +1,5 @@
 import Denque from "denque"
-import { SlidingWindow, BidirectionalCursor } from "@kingjs/cursor"
+import { SlidingWindow, SlidingWindowCursor } from "@kingjs/cursor"
 
 export class ObjectSlidingWindow extends SlidingWindow {
   static get Cursor() { return ObjectSlidingWindowCursor }
@@ -65,7 +65,7 @@ export class ObjectSlidingWindow extends SlidingWindow {
   }
 }
 
-export class ObjectSlidingWindowCursor extends BidirectionalCursor {
+export class ObjectSlidingWindowCursor extends SlidingWindowCursor {
   #window
   #innerIndex
 
@@ -105,7 +105,7 @@ export class ObjectSlidingWindowCursor extends BidirectionalCursor {
   }
   get value() {
     this.__throwIfStale$()
-    if (this.isEnd) return null
+    if (this.isEnd) return
     return this.#window.get$(this.#innerIndex)
   }
 

@@ -1,6 +1,4 @@
 import { CodePointSlidingWindow } from "./code-point-sliding-window.js"
-import { CodeUnitSlidingWindow } from "./code-unit-sliding-window.js"
-import { rewind } from "@kingjs/cursor"
 
 export class Utf8SlidingWindow extends CodePointSlidingWindow {
   static codeUnitByteLength = 1
@@ -22,15 +20,15 @@ export class Utf8SlidingWindow extends CodePointSlidingWindow {
   }
   decodeValue$(cursor) {
     let codeUnit = cursor.value
+    if (codeUnit == null) return // end of inner window
+
     const length = this.decodeLength$(codeUnit)
     if (length == null) throw new Error(
       "Invalid UTF-8 code unit: " + codeUnit.toString(16))
 
     let codePoint
     switch (length) {
-      case 1:
-        codePoint = codeUnit
-        return codePoint
+      case 1: codePoint = codeUnit; break
       case 2: codePoint = codeUnit & 0b00011111; break
       case 3: codePoint = codeUnit & 0b00001111; break
       case 4: codePoint = codeUnit & 0b00000111; break
@@ -43,7 +41,6 @@ export class Utf8SlidingWindow extends CodePointSlidingWindow {
       cursor.step()
     }
 
-    rewind(cursor, length - 1) // rewind to the first code unit of the code point
     return codePoint
   }
 } 

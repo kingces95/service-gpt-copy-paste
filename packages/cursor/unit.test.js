@@ -15,15 +15,23 @@ import {
 
 class TrivialTrimmedSlidingWindow extends TrimmedSlidingWindow {
   constructor() { super(new ObjectSlidingWindow()) }
-  getValue$(innerCursor) { return innerCursor.value }
+  next$(innerCursor) { 
+    const result = innerCursor.value 
+    innerCursor.step() // advance to the next item
+    return result
+  }
   step$(innerCursor) { return innerCursor.step() }
   stepBack$(innerCursor) { return innerCursor.stepBack() }
-  alignEndCursor$(innerCursor) { /* noop */ }
+  trim$(innerCursor) { /* noop */ }
 }
 
 class TrivialCodePointSlidingWindow extends CodePointSlidingWindow {
   decodeLength$(codeUnit) { return 1 }
-  decodeValue$(cursor) { return cursor.value }
+  decodeValue$(cursor) { 
+    const result = cursor.value 
+    cursor.step() // advance to the next code unit
+    return result
+  }
 }
 
 const WindowType = {
@@ -231,8 +239,12 @@ describe.each([
     it('should be at the end.', () => {
       expect(begin.isEnd).toBe(true)
     })
-    it('should return a null value.', () => {
-      expect(begin.value).toBe(null)
+    it('should return an undefined value.', () => {
+      // to be undefined, not null, as the window is empty.
+      expect(begin.value).toBe(undefined)
+    })
+    it('should next and undefined value.', () => {
+      expect(begin.next()).toBe(undefined)
     })
     it('should not step.', () => {
       expect(begin.step()).toBe(false)
@@ -267,8 +279,8 @@ describe.each([
       it('should be at the end.', () => {
         expect(clone.isEnd).toBe(true)
       })
-      it('should return a null value.', () => {
-        expect(clone.value).toBe(null)
+      it('should return an undefined value.', () => {
+        expect(clone.value).toBe(undefined)
       })
       it('should not step.', () => {
         expect(clone.step()).toBe(false)
@@ -295,8 +307,8 @@ describe.each([
     it('should be at the end.', () => {
       expect(current.isEnd).toBe(true)
     })
-    it('should return a null value.', () => {
-      expect(current.value).toBe(null)
+    it('should return an undefined value.', () => {
+      expect(current.value).toBe(undefined)
     })
     it('should not step.', () => {
       expect(current.step()).toBe(false)
@@ -353,6 +365,18 @@ describe.each([
       it('should not step back.', () => {
         expect(current.stepBack()).toBe(false)
       })
+      describe('then iterating with next', () => {
+        let value
+        beforeEach(() => {
+          value = current.next()
+        })
+        it('should return the value.', () => {
+          expect(value).toBe(value0)
+        })
+        it('should be at the end.', () => {
+          expect(current.isEnd).toBe(true)
+        })
+      })
       describe('and end cursor', () => {
         let end
         beforeEach(() => {
@@ -402,8 +426,8 @@ describe.each([
         it('should not be at the beginning.', () => {
           expect(current.isBegin).toBe(false)
         })
-        it('return a null value.', () => {
-          expect(current.value).toBe(null)
+        it('return an undefined value.', () => {
+          expect(current.value).toBe(undefined)
         })
         it('should not step.', () => {
           expect(current.step()).toBe(false)
@@ -444,6 +468,10 @@ describe.each([
           expect(() => current.value).toThrow(
             'Container has been popped since cursor was created.')
         })
+        it('should throw when trying to next.', () => {
+          expect(() => current.next()).toThrow(
+            'Container has been popped since cursor was created.')
+        })
         it('should throw when trying to step.', () => {
           expect(() => current.step()).toThrow(
             'Container has been popped since cursor was created.')
@@ -481,8 +509,8 @@ describe.each([
           it('should be at the beginning.', () => {
             expect(current.isBegin).toBe(true)
           })
-          it('should return a null value.', () => {
-            expect(current.value).toBe(null)
+          it('should return an undefined value.', () => {
+            expect(current.value).toBe(undefined)
           })
         })
         describe('new begin cursor', () => {
@@ -499,8 +527,8 @@ describe.each([
           it('should be at the end.', () => {
             expect(begin2.isEnd).toBe(true)
           })
-          it('should return a null value.', () => {
-            expect(begin2.value).toBe(null)
+          it('should return an undefined value.', () => {
+            expect(begin2.value).toBe(undefined)
           })
           it('should not step.', () => {
             expect(begin2.step()).toBe(false)
@@ -569,8 +597,8 @@ describe.each([
           it('should not be at the beginning.', () => {
             expect(end.isBegin).toBe(false)
           })
-          it('should return null.', () => {
-            expect(end.value).toBe(null)
+          it('should return undefined.', () => {
+            expect(end.value).toBe(undefined)
           })
         })
         describe('then shifting nothing', () => {

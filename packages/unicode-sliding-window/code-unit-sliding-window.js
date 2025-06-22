@@ -26,7 +26,6 @@ export class CodeUnitSlidingWindow extends TrimmedSlidingWindow {
   }
 
   #unitLength
-  #byteOrderMark
   #littleEndian
   #isLittleEndianDefault
   
@@ -34,31 +33,50 @@ export class CodeUnitSlidingWindow extends TrimmedSlidingWindow {
     super(new ByteSlidingWindow())
     this.#unitLength = unitLength
     this.#isLittleEndianDefault = littleEndian
-    this.#byteOrderMark = CodeUnitSlidingWindow.#getByteOrderMark(unitLength)
+
+    if (unitLength == 1)
+      // utf-8 byte order mark is handled (ignored) at the code point level
+      this.#littleEndian = false 
+    else if (unitLength == 2 || unitLength == 4) {
+      // initilization deferred until the first chunk is pushed
+      this.#littleEndian = undefined
+    } else throw new Error(
+      "Unsupported code unit length: " + unitLength)
   }
 
   #initialize() {
-    if (this.#littleEndian === undefined) {
-      const begin = this.begin()
-      const end = this.end()
-      if (begin.equals(end)) return // no data to initialize with
+    if (this.#littleEndian == null) {
+      const current = this.begin()
+      if (current.isEnd) return // no data to initialize with
 
+      const unitLength = this.#unitLength
       const innerWindow = this.innerWindow$
       const innerCursor = innerWindow.begin()
-      const byteOrderMarkLE = this.getValue$(innerCursor, true)
-      const byteOrderMarkBE = this.getValue$(innerCursor, false)
+      const byteOrderMarkLE = this.#value(innerCursor, true)
+      const byteOrderMarkBE = this.#value(innerCursor, false)
 
-      const byteOrderMark = this.#byteOrderMark
+      const byteOrderMark = CodeUnitSlidingWindow.#getByteOrderMark(unitLength)
       this.#littleEndian = byteOrderMarkLE == byteOrderMark
         ? true
         : byteOrderMarkBE == byteOrderMark
           ? false
-          : this.#isLittleEndianDefault
+          : null
 
       // throw of BOM is not recognized and no default endianess provided 
-      if (typeof this.#littleEndian !== 'boolean') throw new Error(
-        "Invalid byte order mark. Expected 0xEFBBBF, 0xFEFF, or 0x0000FEFF.")
+      if (typeof this.#littleEndian !== 'boolean') {
+        this.#littleEndian = this.#isLittleEndianDefault
+        return
+      }
+
+      current.next() // advance the begin cursor to skip the BOM
+      this.shift(current) // skip the BOM
     }
+  }
+
+  #value(innerCursor, littleEndian = this.isLittleEndian) {
+    const unitLength = this.#unitLength
+    const signed = false // code units are unsigned
+    return innerCursor.read(unitLength, signed, littleEndian)
   }
 
   // Activation of the end cursor is complicated becuase the position one 
@@ -67,17 +85,19 @@ export class CodeUnitSlidingWindow extends TrimmedSlidingWindow {
   // code unit in the last chunk. This adjustment is done by rewinding the
   // inner cursor by the remainder of the byte count divided by the
   // code unit length. 
-  alignEndCursor$(innerCursor) {
+  trim$(innerCursor) {
     const innerWindow = this.innerWindow$
     const byteCount = innerWindow.count
     const byteRemainder = byteCount % this.#unitLength
     rewind(innerCursor, byteRemainder)
   }
 
-  getValue$(innerCursor, littleEndian = this.isLittleEndian) {
-    const length = this.#unitLength
-    const signed = false // code units are unsigned
-    return innerCursor.read(length, signed, littleEndian)
+  next$(innerCursor, littleEndian = this.isLittleEndian) {
+    // assume the inner cursor is not at the end of the inner window
+    const result = this.#value(innerCursor, littleEndian)
+    if (result == null) return
+    this.step$(innerCursor) // advance the inner cursor
+    return result
   }
 
   step$(innerCursor) {
@@ -97,12 +117,6 @@ export class CodeUnitSlidingWindow extends TrimmedSlidingWindow {
   get unitLength() { 
     this.__throwIfDisposed$()
     return this.#unitLength 
-  }
-  get count() { 
-    const unitLength = this.#unitLength
-    const innerWindow = this.innerWindow$
-    const byteCount = innerWindow.count
-    return Math.floor(byteCount / unitLength)
   }
 
   push(chunk) {

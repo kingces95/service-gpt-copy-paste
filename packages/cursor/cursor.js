@@ -39,12 +39,6 @@ export class Cursor {
   get isBegin() { throw new Error("Not implemented.") }
   get value() { throw new Error("Not implemented.") }
   step() { throw new Error("Not implemented.") }
-  take() { 
-    if (this.isEnd) return undefined
-    const value = this.value
-    this.step()
-    return value
-  }
 
   equals(other) { throw new Error("Not implemented.") }
 }
@@ -59,10 +53,35 @@ export class ForwardCursor extends Cursor {
 } 
 
 export class BidirectionalCursor extends ForwardCursor {
-
   constructor(container) {
     super(container)
   }
 
   stepBack() { throw new Error("Not implemented.") }
 } 
+
+export class SlidingWindowCursor extends BidirectionalCursor {
+  constructor(window) {
+    super(window)
+  }
+
+  get value() {
+    const result = this.next()
+    if (result == null) return
+    this.stepBack()
+    return result
+  }
+
+  // In practice, sliding window cursors are layered such that decoding
+  // the value of one may require many steps of an inner cursor. For example,
+  // a utf-16 cursor may need to step through multiple code units to decode
+  // a single code point. This method allows for optimized reading in this
+  // case. Without this method, reading a value would require rewinding the
+  // inner cursor to the beginning of its decoding operation.
+  next() {
+    const result = this.value
+    if (result == null) return
+    this.step()
+    return result
+  }
+}

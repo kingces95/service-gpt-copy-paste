@@ -62,7 +62,7 @@ export function stepBackUntil(current, predicate) {
     "Cannot step back until: cursor is not a BidirectionalCursor.")
 
   if (!current.stepBack()) return false
-  
+
   return rewindUntil(current, predicate)
 }
 
