@@ -1,6 +1,5 @@
-import { stepBackUntil, tryAdvance } from "@kingjs/cursor"
-import { CodeUnitSlidingWindow } from "./code-unit-sliding-window.js"
 import { TrimmedSlidingWindow } from "./trimmed-sliding-window.js"
+import { stepBackUntil, tryAdvance } from "../../../algorithm/index.js"
 
 // A code point is a sequence of one or more code units that represents a
 // single unicode character. For example, in UTF-8, a code point can be
@@ -16,7 +15,7 @@ import { TrimmedSlidingWindow } from "./trimmed-sliding-window.js"
 
 // Extensions are expected to override the following functions:
 
-// - decodelength$(codeUnit): 
+// - decodeLength$(dataPoint): 
 //   returns the length in code-units of the code-point given an aligned 
 //   code-unit or null if the code-unit is not aligned.
 
@@ -29,18 +28,15 @@ import { TrimmedSlidingWindow } from "./trimmed-sliding-window.js"
 //   boundary after reading the code point value. If the inner cursor is at the
 //   end of the inner window, the function should return undefined and not
 //   advance the cursor.
-export class CodePointSlidingWindow extends TrimmedSlidingWindow {
-  constructor({
-    unitLength = 1, 
-    littleEndian = false, 
-  } = { }) {
-    super(new CodeUnitSlidingWindow({ unitLength, littleEndian }))
+export class DataPointSlidingWindow extends TrimmedSlidingWindow {
+  constructor(window) {
+    super(window)
   }
 
-  #canDecodeLength(codeUnit) { return this.decodeLength$(codeUnit) != null }
+  #canDecodeLength(dataPoint) { return this.decodeLength$(dataPoint) != null }
 
-  decodeLength$(codeUnit) { throw new Error("Not implemented.") }
-  decodeValue$(innerCursor) { throw new Error("Not implemented.") }
+  decodeLength$(dataPoint) { throw new Error("Not implemented.") }
+  next$(innerCursor) { throw new Error("Not implemented.") }
 
   trim$(innerCursor) {
 
@@ -53,16 +49,13 @@ export class CodePointSlidingWindow extends TrimmedSlidingWindow {
   }
 
   step$(innerCursor) {
-    const value = innerCursor.value
-    if (value == null) return false // end of inner window
-    return tryAdvance(innerCursor, this.decodeLength$(value))
+    const dataPoint = innerCursor.value
+    if (dataPoint == null) return false // end of inner window
+    return tryAdvance(innerCursor, this.decodeLength$(dataPoint))
   }
 
   stepBack$(innerCursor) {
-    return stepBackUntil(innerCursor, value => this.#canDecodeLength(value))
-  }
-
-  next$(innerCursor) {
-    return this.decodeValue$(innerCursor)
+    return stepBackUntil(innerCursor, 
+      dataPoint => this.#canDecodeLength(dataPoint))
   }
 }

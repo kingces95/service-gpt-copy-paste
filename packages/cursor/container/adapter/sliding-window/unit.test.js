@@ -462,7 +462,7 @@ describe.each([
           expect(result).toEqual([chunk1].flat())
         })
         it('should not be active.', () => {
-          expect(current.isActive).toBe(false)
+          expect(current.__isActive).toBe(false)
         })
         it('should throw when asked for a value.', () => {
           expect(() => current.value).toThrow(
@@ -504,7 +504,7 @@ describe.each([
             expect(current).toBe(current)
           })
           it('should be active.', () => {
-            expect(current.isActive).toBe(true)
+            expect(current.__isActive).toBe(true)
           })
           it('should be at the beginning.', () => {
             expect(current.isBegin).toBe(true)

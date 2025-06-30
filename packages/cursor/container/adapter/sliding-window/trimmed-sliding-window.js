@@ -1,5 +1,5 @@
-import { SlidingWindow } from "@kingjs/cursor"
-import { IterableCursor } from "@kingjs/cursor"
+import { SlidingWindow } from "./index.js"
+import { IterableCursor } from "../../../cursor/iterable-cursor.js"
 
 // TrimmedSlidingWindow exposes an inner sliding window whose end cursor
 // is aligned to a higher-level abstraction. For example, a code-unit is

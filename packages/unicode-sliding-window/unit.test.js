@@ -14,7 +14,10 @@ class TestTrimmedSlidingWindow extends TrimmedSlidingWindow {
     // no-op
   }
   next$(innerCursor) {
-    return innerCursor.value
+    const result = innerCursor.value
+    if (result == null) return false // end of inner window
+    innerCursor.step()
+    return result
   }
   step$(innerCursor) {
     return innerCursor.step()

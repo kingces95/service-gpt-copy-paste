@@ -1,5 +1,5 @@
 import Denque from "denque"
-import { SlidingWindow, SlidingWindowCursor } from "@kingjs/cursor"
+import { SlidingWindow, IterableCursor } from "@kingjs/cursor"
 
 export class ObjectSlidingWindow extends SlidingWindow {
   static get Cursor() { return ObjectSlidingWindowCursor }
@@ -65,7 +65,7 @@ export class ObjectSlidingWindow extends SlidingWindow {
   }
 }
 
-export class ObjectSlidingWindowCursor extends SlidingWindowCursor {
+export class ObjectSlidingWindowCursor extends IterableCursor {
   #window
   #innerIndex
 

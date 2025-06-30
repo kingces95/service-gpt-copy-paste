@@ -1,5 +1,5 @@
 import { ObjectSlidingWindow } from "@kingjs/object-sliding-window"
-import { SlidingWindow, SlidingWindowCursor } from "@kingjs/cursor"
+import { SlidingWindow, IterableCursor } from "@kingjs/cursor"
 
 export class ByteSlidingWindow extends SlidingWindow {
   static get Cursor() { return ByteSlidingWindowCursor }
@@ -83,7 +83,7 @@ export class ByteSlidingWindow extends SlidingWindow {
   }
 }
 
-export class ByteSlidingWindowCursor extends SlidingWindowCursor {
+export class ByteSlidingWindowCursor extends IterableCursor {
   #window
   #offset
   #innerCursor

@@ -1,37 +1,5 @@
-import { BidirectionalCursor, SlidingWindowCursor } from "./cursor.js"
-
-export class Container {
-  #__version = 0
-
-  constructor() { }
-
-  cursor$(recyclable, ...args) {
-    const Cursor = this.constructor.Cursor
-    return recyclable 
-      ? recyclable.recycle$(this, ...args) 
-      : new Cursor(this, ...args)
-  }
-
-  get __version$() { return this.#__version }
-  __bumpVersion$() { this.#__version++ }
-  __throwIfDisposed$() {
-    if (this.#__version === null) 
-      throw new Error("Container has been disposed.")
-  }
-
-  get isEmpty() { return this.begin().isEnd }
-  get isDisposed() { return this.#__version === null }
-
-  begin(recyclable, ...args) { this.__throwIfDisposed$() }
-  end(recyclable, ...args) { this.__throwIfDisposed$() }
-  push(value) { this.__throwIfDisposed$() }
-  shift(cursor) { this.__throwIfDisposed$() }
-  dispose() {
-    this.__throwIfDisposed$()
-    this.#__version = null
-    return this
-  }
-}
+import { IterableCursor } from "../../../cursor/iterable-cursor.js"
+import { Container } from "../../index.js"
 
 // A sliding window, as the name implies, is a container that provides
 // a sliding window of elements. 
@@ -69,21 +37,25 @@ export class Container {
 // after a push operation (assuming the chunk is not empty) otherwise
 // will return null. Cursors are required to be BidirectionalCursor.
 export class SlidingWindow extends Container {
-  static get Cursor() { return SlidingWindowCursor }
+  static get Cursor() { return IterableCursor }
+
+  // composes a SequenceContainer
+  // containers operate on chunks; push/shifted arrays/buffers
+  // iterators operate on elements; step/stepBack objects/bytes 
 
   constructor() {
     super()
   }
 
   push(value) { 
-    super.push(value)
+    this.__throwIfDisposed$()
     if (value === null) 
       throw new Error("Cannot push null to a SlidingWindow.")
     if (value === undefined)
       throw new Error("Cannot push undefined to a SlidingWindow.")
   }
   shift(cursor) { 
-    super.shift(cursor)
+    this.__throwIfDisposed$()
     this.__bumpVersion$()
   }
 }
