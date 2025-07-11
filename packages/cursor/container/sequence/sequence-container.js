@@ -1,51 +1,86 @@
 import { Container } from '../container.js'
-import { SequenceCursor } from '../sequence-cursor.js'
+import { SequenceCursor } from './sequence-cursor.js'
 
-// Sequence container is an abstract class (ala stl) that represents
-// a sequence of elements. It is the base class for all sequence containers
-// such as Vector, Deque, and List. It provides a common interface for
-// iterating over the elements in the sequence. It is not meant to be
-// instantiated directly, but rather to be extended by other classes.
-
-// Operations:
-// - begin: Returns a cursor pointing to the first element in the sequence.
-// - end: Returns a cursor pointing to one past the last element in the sequence.
-// - count: Returns the number of elements in the sequence.
-// - distance: Returns the number of elements between two cursors.
-// - at: Returns the element at a specified index in the sequence.
-// - isEmpty: Returns true if the sequence is empty, false otherwise.
-// - push/unshift: Add element to start/end of the sequence.
-// - pop/shift: Remove element from start/end of the sequence up to but
-//   excluding a specified cursor.
 export class SequenceContainer extends Container {
-  static get Cursor() { return SequenceCursor }
+
+  static get cursorType$() { return SequenceCursor }
 
   constructor() {
     super()
   }
 
-  get isEmpty() { return this.count === 0 }
-  get count() { throw new Error("Not implemented.") }
+  // cursor implementation
+  isEnd$$(token) { this.throwNotImplemented$() }
+  isBegin$$(token) { this.throwNotImplemented$() }
+  isBeforeBegin$$(token) { return false }
+  value$$(token) { this.throwNotImplemented$() }
+  setAt$$(token, value) { this.throwNotImplemented$() }
+  step$$(token) { this.throwNotImplemented$() }
+  equals$$(token, otherCursor) { this.throwNotImplemented$() }
+  
+  // cursor proxy
+  __isActive$(version, token) { return this.__isActive$$(version, token) } 
+  isEnd$(token) { 
+    if (this.isDisposed) this.throwDisposed$()
+    return this.isEnd$$(token) 
+  }
+  isBegin$(token) { 
+    if (this.isDisposed) this.throwDisposed$()
+    return this.isBegin$$(token) 
+  }
+  isBeforeBegin$(token) {
+    if (this.isDisposed) this.throwDisposed$()
+    return this.isBeforeBegin$$(token)
+  } 
+  step$(token) { 
+    if (this.isDisposed) this.throwDisposed$()
+    if (this.isEnd$(token)) return false
+    return this.step$$(token) 
+  }
+  value$(token) { 
+    if (this.isDisposed) this.throwDisposed$()
+    return this.value$$(token) 
+  }
+  setAt$(token, value) { 
+    if (this.isDisposed) this.throwDisposed$()
+    if (this.isEnd$(token)) this.throwWriteOutOfBounds$()
+    this.setAt$$(token, value) 
+  }
+  equals$(token, otherCursor) { 
+    if (this.isDisposed) this.throwDisposed$()
+    if (!this.equatableTo$(otherCursor)) this.throwUnequatable$()
+    return this.equals$$(token, otherCursor) 
+  }
 
-  at(index) { throw new Error("Not implemented.") }
-  push(value) { throw new Error("Not implemented.") }
-  unshift(value) { throw new Error("Not implemented.") }
-  pop(cursor) { throw new Error("Not implemented.") }
-  shift(cursor) { throw new Error("Not implemented.") }
-  set(index, value) { throw new Error("Not implemented.") }
+  throwFixedSize$() { throw new RangeError(
+    `Cannot modify a fixed size sequence container.`) }
 
-  begin(recyclable) {
-    return super.begin(recyclable, 0)
+  // container implementation
+  get front$() { this.throwNotImplemented$() }
+
+  unshift$(value) { this.throwNotImplemented$() }
+  shift$() { this.throwNotImplemented$() }
+
+  // container proxy
+  get isEmpty() {
+    if (this.isDisposed) this.throwDisposed$()
+    return this.isEmpty$
   }
-  end(recyclable) {
-    return super.end(recyclable, this.count)
+  get front() { 
+    if (this.isDisposed) this.throwDisposed$()
+    if (this.isEmpty$) this.throwEmpty$()
+    return this.front$ 
   }
-  distance(begin, end) {
-    this.__throwIfDisposed$()
-    return end.subtract(begin)
+
+  unshift(value) {
+    if (this.isDisposed) this.throwDisposed$()
+    if (this.isFixedSize) this.throwFixedSize$()
+    this.unshift$(value)
   }
-  dispose() {
-    this.__throwIfDisposed$()
-    super.dispose()
+  shift() {
+    if (this.isDisposed) this.throwDisposed$()
+    if (this.isFixedSize) this.throwFixedSize$()
+    if (this.isEmpty$) this.throwEmpty$()
+    return this.shift$()
   }
 }

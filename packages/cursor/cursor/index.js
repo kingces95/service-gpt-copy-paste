@@ -1,4 +1,7 @@
 export * from "./cursor.js"
+export * from "./debug-cursor.js"
 export * from "./output-iterator-adaptor.js"
 export * from "./front-inserter.js"
 export * from "./back-inserter.js"
+export * from "./cursor-factory.js"
+export * from "./cursor-ability.js"

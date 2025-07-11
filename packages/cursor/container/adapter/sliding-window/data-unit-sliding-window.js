@@ -39,7 +39,7 @@ export class DataUnitSlidingWindow extends TrimmedSlidingWindow {
   }
 
   get modulous() { 
-    this.__throwIfDisposed$()
+    if (this.isDisposed) this.throwDisposed$()
     return this.modulous$ 
   }
 

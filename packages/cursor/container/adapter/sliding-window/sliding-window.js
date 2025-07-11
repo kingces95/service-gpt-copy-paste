@@ -48,14 +48,14 @@ export class SlidingWindow extends Container {
   }
 
   push(value) { 
-    this.__throwIfDisposed$()
+    if (this.isDisposed) this.throwDisposed$()
     if (value === null) 
       throw new Error("Cannot push null to a SlidingWindow.")
     if (value === undefined)
       throw new Error("Cannot push undefined to a SlidingWindow.")
   }
   shift(cursor) { 
-    this.__throwIfDisposed$()
+    if (this.isDisposed) this.throwDisposed$()
     this.__bumpVersion$()
   }
 }

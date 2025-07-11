@@ -14,7 +14,7 @@ export class ObjectSlidingWindow extends SlidingWindow {
   get$(innerIndex) { return this.#denque.get(innerIndex) }
   
   get count() {
-    this.__throwIfDisposed$() 
+    if (this.isDisposed) this.throwDisposed$() 
     return this.#denque.length 
   }
   get isEmpty() { return this.count === 0 }
@@ -89,7 +89,7 @@ export class ObjectSlidingWindowCursor extends IterableCursor {
   get innerIndex$() { return this.#innerIndex }
 
   get isEnd() { 
-    this.__throwIfStale$()
+    if (!this.__isActive) this.__throwStale$()
     const { 
       window$: window, 
       innerIndex$: innerIndex 
@@ -97,34 +97,34 @@ export class ObjectSlidingWindowCursor extends IterableCursor {
     return innerIndex === window.count
   }
   get isBegin() { 
-    this.__throwIfStale$()
+    if (!this.__isActive) this.__throwStale$()
     const { 
       innerIndex$: innerIndex 
     } = this
     return innerIndex === 0 
   }
   get value() {
-    this.__throwIfStale$()
+    if (!this.__isActive) this.__throwStale$()
     if (this.isEnd) return
     return this.#window.get$(this.#innerIndex)
   }
 
   step() {
-    this.__throwIfStale$()
+    if (!this.__isActive) this.__throwStale$()
     if (this.isEnd) return false
     this.#innerIndex++
     return true
   }
 
   stepBack() {
-    this.__throwIfStale$()
+    if (!this.__isActive) this.__throwStale$()
     if (this.#innerIndex == 0) return false
     this.#innerIndex--
     return true
   }
 
   clone() {
-    this.__throwIfStale$()
+    if (!this.__isActive) this.__throwStale$()
     const { 
       window$: window, 
       innerIndex$: innerIndex 
@@ -133,7 +133,7 @@ export class ObjectSlidingWindowCursor extends IterableCursor {
   }
 
   equals(other) {
-    this.__throwIfStale$()
+    if (!this.__isActive) this.__throwStale$()
     const { 
       window$: window, 
       innerIndex$: index 

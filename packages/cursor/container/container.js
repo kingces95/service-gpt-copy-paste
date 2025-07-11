@@ -1,48 +1,74 @@
-export class Container {
+import { CursorFactory } from '../cursor/cursor-factory.js'
+
+export class Container extends CursorFactory {
   #__version = 0
-
-  constructor() { }
-
-  cursor$(recyclable, ...args) {
-    const Cursor = this.constructor.Cursor
-    return recyclable 
-      ? recyclable.recycle$(this, ...args) 
-      : new Cursor(this, ...args)
+  #disposed = false
+  
+  constructor(CursorType) { 
+    super(CursorType)
+    this.#disposed = false
   }
 
+  // cursor implementation
+  __isActive$$(version) { return this.#__version == version }
+
+  // cursor proxy
+  __isActive$(version) { return this.__isActive$$(version) } 
+
+  // A debug helper which detects when a cursor is invalidated. Typically,
+  // this happens during an unshift of shift operation as that operation
+  // invalidates all index cursors. Cursors that reference a node cannot be
+  // invalidated so those containers will not bump the version.
   get __version$() { return this.#__version }
   __bumpVersion$() { this.#__version++ }
-  __throwIfDisposed$() {
-    if (this.#__version === null) 
-      throw new Error("Container has been disposed.")
+  
+  throwEmpty$() { throw new Error(
+    "Container is empty.") }
+  throwDisposed$() { throw new Error(
+    "Container has been disposed.") }
+
+  // cursor implementation
+  equatableTo$$(otherCursor) { return this == otherCursor.container$ } 
+
+  // cursor proxy
+  equatableTo$(otherCursor) {
+    if (this.isDisposed) this.throwDisposed$()
+    return super.equatableTo$(otherCursor)
   }
 
-  get isEmpty() { return this.begin().isEnd }
-  get isDisposed() { return this.#__version === null }
+  // container implementation
+  get front$() { this.throwNotImplemented$() }
+  get back$() { this.throwNotImplemented$() }
+  isEmpty$() { this.throwNotImplemented$() }
+  dispose$() { }
+  
+  // dispose implementation
+  get isDisposed() { return this.#disposed }
 
-  begin(recyclable, ...args) {
-    this.__throwIfDisposed$()
-    return this.cursor$(recyclable, ...args)
+  dispose() {
+    if (this.isDisposed) this.throwDisposed$()
+    this.dispose$()
+    this.#disposed = true
+    return this
+  }
+
+  // container proxy
+  get isEmpty() {
+    if (this.isDisposed) this.throwDisposed$()
+    return this.isEmpty$
+  }
+
+  data(cursor) {
+    if (this.isDisposed) this.throwDisposed$()
+    return super.data(cursor)
+  }
+
+  begin(recyclable) {
+    if (this.isDisposed) this.throwDisposed$()
+    return super.begin(recyclable)
   }
   end(recyclable, ...args) {
-    this.__throwIfDisposed$()
-    return this.cursor$(recyclable, ...args)
-  }
-
-  cbegin(recyclable, ...args) {
-    const begin = this.begin(recyclable, ...args)
-    begin.isReadOnly = true
-    return begin
-  }
-  cend(recyclable, ...args) {
-    const end = this.end(recyclable, ...args)
-    end.isReadOnly = true
-    return end
-  }
-  
-  dispose() {
-    this.__throwIfDisposed$()
-    this.#__version = null
-    return this
+    if (this.isDisposed) this.throwDisposed$()
+    return super.end(recyclable)
   }
 }

@@ -1,25 +1,4 @@
-import { View } from './view.js'
 import { Cursor } from '../cursor/cursor.js'
-
-export class JoinView extends View {
-  #container
-
-  constructor(container) {
-    super()
-    this.#container = container
-  }
-
-  begin() {
-    const beginOutter = this.#container.begin()
-    const beginInner = beginOutter.value?.begin()
-    return new JoinViewCursor(this, beginOutter, beginInner)
-  }
-  end() {
-    const endOutter = this.#container.end()
-    const endInner = endOutter.value?.end()
-    return new JoinViewCursor(this, endOutter, endInner)
-  }
-}
 
 export class JoinViewCursor extends Cursor {
   #outterCursor
@@ -54,7 +33,6 @@ export class JoinViewCursor extends Cursor {
     return innerCursor.stepBack()
   }
 
-  get view$() { return this.container$ }
   get outterCursor$() { return this.#outterCursor }
   get innerCursor$() { return this.#innerCursor }
 
@@ -208,7 +186,7 @@ export class JoinViewCursor extends Cursor {
     return true
   }
 
-  compare(other) { 
+  compareTo(other) { 
     const { 
       outterCursor$: outterCursor, 
       innerCursor$: innerCursor 
@@ -218,9 +196,9 @@ export class JoinViewCursor extends Cursor {
       innerCursor$: otherInnerCursor 
     } = other
 
-    const outterComparison = outterCursor.compare(otherOutterCursor)
+    const outterComparison = outterCursor.compareTo(otherOutterCursor)
     if (!outterComparison) return outterComparison
-    return innerCursor.compare(otherInnerCursor)
+    return innerCursor.compareTo(otherInnerCursor)
   }
 
   subtract(other) { 
@@ -249,5 +227,16 @@ export class JoinViewCursor extends Cursor {
     difference += bigInnerCursor?.subtract(current.begin()) || 0
 
     return difference
+  }
+
+  equatableTo(other) {
+    const { 
+      outterCursor$: outterCursor, 
+    } = this
+    const { 
+      outterCursor$: otherOutterCursor, 
+    } = other
+
+    return outterCursor.equatableTo(otherOutterCursor)
   }
 }

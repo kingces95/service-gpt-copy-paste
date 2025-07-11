@@ -34,5 +34,5 @@ export class OutputIteratorAdaptor extends Iterator {
     this.#actionTaken = false
   }
 
-  equatable(other) { return false }
+  equatableTo(other) { return false }
 }

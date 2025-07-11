@@ -136,7 +136,7 @@ class TrimmedSlidingWindowCursor extends IterableCursor {
   }
 
   get isEnd() {
-    this.__throwIfStale$() 
+    if (!this.__isActive) this.__throwStale$() 
     const window = this.container$
     const endInnerCursor = window.endInnerCursor$
     const innerCursor = this.#innerCursor
@@ -144,7 +144,7 @@ class TrimmedSlidingWindowCursor extends IterableCursor {
   }
 
   get isBegin() {
-    this.__throwIfStale$()
+    if (!this.__isActive) this.__throwStale$()
     const window = this.container$
     const beginInnerCursor = window.beginInnerCursor$
     const innerCursor = this.#innerCursor
@@ -152,7 +152,7 @@ class TrimmedSlidingWindowCursor extends IterableCursor {
   }
   
   next() {
-    this.__throwIfStale$()
+    if (!this.__isActive) this.__throwStale$()
     if (this.isEnd) return
     const window = this.container$
     const innerCursor = this.#innerCursor
@@ -160,28 +160,28 @@ class TrimmedSlidingWindowCursor extends IterableCursor {
   }
 
   step() {
-    this.__throwIfStale$()
+    if (!this.__isActive) this.__throwStale$()
     const innerCursor = this.#innerCursor
     const window = this.container$
     return window.step$(innerCursor)
   }
 
   stepBack() {
-    this.__throwIfStale$()
+    if (!this.__isActive) this.__throwStale$()
     const innerCursor = this.#innerCursor
     const window = this.container$
     return window.stepBack$(innerCursor)
   }
 
   clone() {
-    this.__throwIfStale$()
+    if (!this.__isActive) this.__throwStale$()
     const window = this.container$
     const innerCursor = this.#innerCursor
     return new TrimmedSlidingWindowCursor(window, innerCursor.clone())
   }
 
   equals(other) {
-    this.__throwIfStale$()
+    if (!this.__isActive) this.__throwStale$()
     const window = this.container$
     const otherWindow = other.container$
     if (window != otherWindow) return false

@@ -111,11 +111,11 @@ export class CodeUnitSlidingWindow extends TrimmedSlidingWindow {
   }
 
   get isLittleEndian() { 
-    this.__throwIfDisposed$()
+    if (this.isDisposed) this.throwDisposed$()
     return this.#littleEndian 
   }
   get unitLength() { 
-    this.__throwIfDisposed$()
+    if (this.isDisposed) this.throwDisposed$()
     return this.#unitLength 
   }
 

@@ -18,7 +18,7 @@ export class ByteSlidingWindow extends SlidingWindow {
   get firstChunkOffset$() { return this.#firstChunkOffset }
 
   get count() { 
-    this.__throwIfDisposed$()
+    if (this.isDisposed) this.throwDisposed$()
     return this.#count
   }
 
@@ -110,7 +110,7 @@ export class ByteSlidingWindowCursor extends IterableCursor {
   get innerCursor$() { return this.#innerCursor }
 
   get isEnd() { 
-    this.__throwIfStale$()
+    if (!this.__isActive) this.__throwStale$()
     const { 
       innerCursor$: innerCursor 
     } = this
@@ -118,7 +118,7 @@ export class ByteSlidingWindowCursor extends IterableCursor {
     return innerCursor.isEnd
   }
   get isBegin() { 
-    this.__throwIfStale$()
+    if (!this.__isActive) this.__throwStale$()
     const { 
       window$: window, 
       innerCursor$: innerCursor, 
@@ -144,7 +144,7 @@ export class ByteSlidingWindowCursor extends IterableCursor {
   readInt32LE() { return this.read(4, true, true) }
 
   read(length = 1, signed = false, littleEndian = false) {
-    this.__throwIfStale$()
+    if (!this.__isActive) this.__throwStale$()
     if (length != 1 && length != 2 && length != 4) throw new Error(
       `Unsupported length: ${length}. Only 1, 2, or 4 bytes are supported.`)
 
@@ -191,7 +191,7 @@ export class ByteSlidingWindowCursor extends IterableCursor {
   }
 
   step() {
-    this.__throwIfStale$()
+    if (!this.__isActive) this.__throwStale$()
     if (this.isEnd) return false
     
     const { innerCursor$: innerCursor } = this
@@ -207,7 +207,7 @@ export class ByteSlidingWindowCursor extends IterableCursor {
   }
 
   stepBack() {
-    this.__throwIfStale$()
+    if (!this.__isActive) this.__throwStale$()
     if (this.isBegin) return false
     
     const { innerCursor$: innerCursor } = this
@@ -223,7 +223,7 @@ export class ByteSlidingWindowCursor extends IterableCursor {
   }
 
   clone() {
-    this.__throwIfStale$()
+    if (!this.__isActive) this.__throwStale$()
     const { 
       window$: window, 
       innerCursor$: innerCursor, 
@@ -233,7 +233,7 @@ export class ByteSlidingWindowCursor extends IterableCursor {
   }
 
   equals(other) {
-    this.__throwIfStale$()
+    if (!this.__isActive) this.__throwStale$()
     const { 
       window$: otherWindow, 
       innerCursor$: otherInnerCursor, 
