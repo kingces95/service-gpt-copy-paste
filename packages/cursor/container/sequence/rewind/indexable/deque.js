@@ -9,9 +9,9 @@ export class Deque extends IndexableContainer {
     this.#denque = new Denque()
   }
   
-  // cursor implementation
-  at$$(index) { return this.#denque.get(index) }
-  setAt$$(index, value) { this.#denque.set(index, value) }
+  // indexable cursor implementation
+  at$$$(index) { return this.#denque.get(index) }
+  setAt$$$(index, value) { this.#denque.set(index, value) }
 
   // container implementation
   get count$() { return this.#denque.length }

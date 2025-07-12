@@ -8,6 +8,10 @@ export class NodeBuffer extends ContiguousContainer {
     this.#buffer = Buffer.alloc(8)
   }
   
+  // indexable cursor implementation
+  at$$$(index) { return this.buffer$[index] }
+  setAt$$$(index, value) { this.buffer$[index] = value }
+
   // cursor implementation
   readAt$$(index, offset, length, signed, littleEndian) {
     const { buffer$: buffer } = this
@@ -41,8 +45,6 @@ export class NodeBuffer extends ContiguousContainer {
     const endIndex = cursor.index$
     return buffer.subarray(index, endIndex)
   }
-  at$$(index) { return this.buffer$[index] }
-  setAt$$(index, value) { this.buffer$[index] = value }
 
   get buffer$() { return this.#buffer }
   get capacity$() { return this.#buffer.length }

@@ -8,9 +8,9 @@ export class Vector extends IndexableContainer {
     this.#array = []
   }
 
-  // cursor implementation
-  at$$(index) { return this.#array[index] }
-  setAt$$(index, value) { this.#array[index] = value }
+  // indexable cursor implementation
+  at$$$(index) { return this.#array[index] }
+  setAt$$$(index, value) { this.#array[index] = value }
 
   // container implementation
   get count$() { return this.#array.length }

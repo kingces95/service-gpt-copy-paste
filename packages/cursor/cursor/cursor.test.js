@@ -2,6 +2,9 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Cursor } from './cursor.js'
 import { CursorAbility } from './cursor-abilitiy.js'
+import {
+  throwMoveOutOfBounds,
+} from '../throw.js'
 
 import { List } from '../container/sequence/list.js'
 import { Chain } from '../container/sequence/rewind/chain.js'
@@ -22,11 +25,9 @@ class TrivialCursor extends Cursor {
     super()
     this.id = id
   }
-  get isEnd$() { return true }
-  get isBegin$() { return true }
   get value$() { return undefined }
   set value$(value) { throw new RangeError() }
-  step$() { return false }
+  step$() { throwMoveOutOfBounds() }
   equals$(other) { return true }
   equatableTo$(other) { return this.id == other.id }
 }
@@ -46,14 +47,14 @@ class TrivialForwardCursor extends TrivialCursor {
 
 class TrivialBidirectionalCursor extends TrivialForwardCursor {
   static get abilities() { return inputOutput | Cursor.Ability.Bidirectional }
-  stepBack$() { return false }
+  stepBack$() { throwMoveOutOfBounds() }
 }
 
 class TrivialRandomAccessCursor extends TrivialBidirectionalCursor {
   static get abilities() { return inputOutput | Cursor.Ability.RandomAccess }
   move$(offset) { 
     if (offset === 0) return true
-    return false
+    throwMoveOutOfBounds()
   }
   at$(offset) { return undefined }
   setAt$(offset, value) { throw new RangeError() }
@@ -115,180 +116,193 @@ const ecmaBuffer0 = new EcmaBuffer(), ecmaBuffer1 = new EcmaBuffer()
 const cases = [
   ['TrivialCursor', CursorAbility.None,
     () => new TrivialCursor(), 
+    () => new TrivialCursor(), 
     () => new TrivialCursor(1)],
   ['TrivialInputCursor', CursorAbility.Input,
+    () => new TrivialInputCursor(), 
     () => new TrivialInputCursor(), 
     () => new TrivialInputCursor(1)],
   ['TrivialOutputCursor', CursorAbility.Output,
     () => new TrivialOutputCursor(), 
+    () => new TrivialOutputCursor(), 
     () => new TrivialOutputCursor(1)],
   ['TrivialForwardCursor', inputOutput | CursorAbility.Forward,
+    () => new TrivialForwardCursor(), 
     () => new TrivialForwardCursor(), 
     () => new TrivialForwardCursor(1)],
   ['TrivialBidirectionalCursor', inputOutput | CursorAbility.Bidirectional, 
     () => new TrivialBidirectionalCursor(), 
+    () => new TrivialBidirectionalCursor(), 
     () => new TrivialBidirectionalCursor(1)],
   ['TrivialRandomAccessCursor', inputOutput | CursorAbility.RandomAccess,
+    () => new TrivialRandomAccessCursor(), 
     () => new TrivialRandomAccessCursor(), 
     () => new TrivialRandomAccessCursor(1)],
   ['TrivialContiguousCursor', inputOutput | CursorAbility.Contiguous,
     () => new TrivialContiguousCursor(), 
+    () => new TrivialContiguousCursor(), 
     () => new TrivialContiguousCursor(1)],
 
   ['List', inputOutput | CursorAbility.Forward,
-    () => list0.end(), () => list1.end()],
+    () => list0.begin(), () => list0.end(), () => list1.begin()],
   ['Chain', inputOutput | CursorAbility.Bidirectional,
-    () => chain0.end(), () => chain1.end()],
+    () => chain0.beforeBegin(), () => chain0.end(), () => chain1.begin()],
   ['Vector', inputOutput | CursorAbility.RandomAccess,
-    () => vector0.end(), () => vector1.end()],
+    () => vector0.begin(), () => vector0.end(), () => vector1.begin()],
   ['Deque', inputOutput | CursorAbility.RandomAccess,
-    () => deque0.end(), () => deque1.end()],
+    () => deque0.begin(), () => deque0.end(), () => deque1.begin()],
   ['NodeBuffer', inputOutput | CursorAbility.Contiguous,
-    () => nodeBuffer0.end(), () => nodeBuffer1.end()],
+    () => nodeBuffer0.begin(), () => nodeBuffer0.end(), () => nodeBuffer1.begin()],
   ['EcmaBuffer', inputOutput | CursorAbility.Contiguous,
-    () => ecmaBuffer0.end(), () => ecmaBuffer1.end()],
+    () => ecmaBuffer0.begin(), () => ecmaBuffer0.end(), () => ecmaBuffer1.begin()],
 ]
 
-describe.each(cases)('A %s', (name, abilities, fn0, fn1) => {
-  let cursor
+describe.each(cases)('A %s', (name, abilities, begin0, end0, begin1) => {
+  let begin
+  let end
   beforeEach(() => {
-    cursor = fn0()
+    begin = begin0()
+    end = end0()
   })
   it('should be a cursor', () => {
-    expect(cursor).toBeInstanceOf(Cursor)
+    expect(begin).toBeInstanceOf(Cursor)
   })
   it('should have abilities', () => {
-    expect(cursor.abilities).toBe(abilities)
-  })
-  it('should be begin', () => {
-    expect(cursor.isBegin).toBe(true)
-  })
-  it('should be end', () => {
-    expect(cursor.isEnd).toBe(true)
+    expect(begin.abilities).toBe(abilities)
   })
   it('should not be read-only', () => {
-    expect(cursor.isReadOnly).toBe(false)
+    expect(begin.isReadOnly).toBe(false)
   })
-  it('should return false on step', () => {
-    expect(cursor.step()).toBe(false)
+  it('should throw on step', () => {
+    expect(() => end.step()).toThrow(
+      "Cannot move cursor out of bounds."
+    )
   })
   it('should be equatable to itself', () => {
-    expect(cursor.equatableTo(cursor)).toBe(true)
+    expect(begin.equatableTo(begin)).toBe(true)
   })
   it('should not be equatable to null', () => {
-    expect(cursor.equatableTo(null)).toBe(false)
+    expect(begin.equatableTo(null)).toBe(false)
   })
   it('should equal itself', () => {
-    expect(cursor.equals(cursor)).toBe(true)
+    expect(begin.equals(begin)).toBe(true)
   })
   it('should throw if compared to null', () => {
-    expect(() => cursor.equals(null)).toThrow(
+    expect(() => begin.equals(null)).toThrow(
       "Cursor cannot be null or undefined."
     )
   })
 
   // operations that throw if cursor does not support them
   it('should have undefined value', () => {
-    if (expectNotAnInputCursor(cursor, () => cursor.value)) return
-    expect(cursor.value).toBeUndefined()
+    if (expectNotAnInputCursor(begin, () => begin.value)) return
+    expect(begin.value).toBeUndefined()
   })
-  it('should return undefined on next', () => { 
-    if (expectNotAnInputCursor(cursor, () => cursor.value)) return
-    expect(cursor.next()).toBeUndefined()
+  it('should throw on next', () => { 
+    if (expectNotAnInputCursor(end, () => end.value)) return
+    expect(() => end.next()).toThrow(
+      "Cannot move cursor out of bounds."
+    )
   })
   it('should throw RangeError if set', () => {
-    if (expectNotAnOutputCursor(cursor, () => cursor.value = 42)) return
-    expect(() => cursor.value = 42).toThrow(RangeError)
+    if (expectNotAnOutputCursor(begin, () => begin.value = 42)) return
+    expect(() => begin.value = 42).toThrow(RangeError)
   })
   it('should be equal to its clone', () => {
-    if (expectNotAForwardCursor(cursor, () => cursor.clone())) return
-    const clone = cursor.clone()
-    expect(cursor.equals(clone)).toBe(true)
+    if (expectNotAForwardCursor(begin, () => begin.clone())) return
+    const clone = begin.clone()
+    expect(begin.equals(clone)).toBe(true)
   })
-  it('should return false on stepBack', () => {
-    if (expectNotABidirectionalCursor(cursor, () => cursor.stepBack())) return
-    expect(cursor.stepBack()).toBe(false)
+  it('should throw on stepBack', () => {
+    if (expectNotABidirectionalCursor(begin, () => begin.stepBack())) return
+    expect(() => begin.stepBack()).toThrow(
+      "Cannot move cursor out of bounds."
+    )
   })
-  it('should return false if moving forward', () => {
-    if (expectNotARandomAccessCursor(cursor, () => cursor.move(1))) return
-    expect(cursor.move(1)).toBe(false)
+  it('should throw if moving forward', () => {
+    if (expectNotARandomAccessCursor(begin, () => begin.move(1))) return
+    expect(() => begin.move(1)).toThrow(
+      "Cannot move cursor out of bounds."
+    )
   })
-  it('should return false if moving backward', () => {
-    if (expectNotARandomAccessCursor(cursor, () => cursor.move(-1))) return
-    expect(cursor.move(-1)).toBe(false)
+  it('should throw if moving backward', () => {
+    if (expectNotARandomAccessCursor(begin, () => begin.move(-1))) return
+    expect(() => begin.move(-1)).toThrow(
+      "Cannot move cursor out of bounds."
+    )
   })
   it('should return true if moving 0', () => {
-    if (expectNotARandomAccessCursor(cursor, () => cursor.move(0))) return
-    expect(cursor.move(0)).toBe(true)
+    if (expectNotARandomAccessCursor(begin, () => begin.move(0))) return
+    expect(begin.move(0)).toBe(true)
   })
   it('should return undefined on at', () => {
-    if (expectNotARandomAccessCursor(cursor, () => cursor.at(0))) return
-    expect(cursor.at(0)).toBeUndefined()
+    if (expectNotARandomAccessCursor(begin, () => begin.at(0))) return
+    expect(begin.at(0)).toBeUndefined()
   })
   it('should throw if set at offset', () => {
-    if (expectNotARandomAccessCursor(cursor, () => cursor.setAt(0, 42))) return
-    expect(() => cursor.setAt(0, 42)).toThrow(RangeError)
+    if (expectNotARandomAccessCursor(begin, () => begin.setAt(0, 42))) return
+    expect(() => begin.setAt(0, 42)).toThrow(RangeError)
   })
   it('should return 0 on subtract', () => {
-    if (expectNotARandomAccessCursor(cursor, () => cursor.subtract(cursor))) return
-    expect(cursor.subtract(cursor)).toBe(0)
+    if (expectNotARandomAccessCursor(begin, () => begin.subtract(begin))) return
+    expect(begin.subtract(begin)).toBe(0)
   })
   it('should throw if subtracting null', () => {
-    if (expectNotARandomAccessCursor(cursor, () => cursor.subtract(null))) return
-    expect(() => cursor.subtract(null)).toThrow(
+    if (expectNotARandomAccessCursor(begin, () => begin.subtract(null))) return
+    expect(() => begin.subtract(null)).toThrow(
       "Cursor cannot be null or undefined."
     )
   })
   it('should return 0 on compareTo', () => {
-    if (expectNotARandomAccessCursor(cursor, () => cursor.compareTo(cursor))) return
-    expect(cursor.compareTo(cursor)).toBe(0)
+    if (expectNotARandomAccessCursor(begin, () => begin.compareTo(begin))) return
+    expect(begin.compareTo(begin)).toBe(0)
   })
   it('should throw if compared to null', () => {
-    if (expectNotARandomAccessCursor(cursor, () => cursor.compareTo(null))) return
-    expect(() => cursor.compareTo(null)).toThrow(
+    if (expectNotARandomAccessCursor(begin, () => begin.compareTo(null))) return
+    expect(() => begin.compareTo(null)).toThrow(
       "Cursor cannot be null or undefined."
     )
   })
   it('should throw RangeError on read 1', () => {
-    if (expectNotAContiguousCursor(cursor, () => cursor.read())) return
-    expect(() => cursor.read(1)).toThrow(RangeError)
+    if (expectNotAContiguousCursor(begin, () => begin.read())) return
+    expect(() => begin.read(1)).toThrow(RangeError)
   })
   it('should throw RangeError on read 2', () => {
-    if (expectNotAContiguousCursor(cursor, () => cursor.read(2))) return
-    expect(() => cursor.read(2)).toThrow(RangeError)
+    if (expectNotAContiguousCursor(begin, () => begin.read(2))) return
+    expect(() => begin.read(2)).toThrow(RangeError)
   })
   it('should throw RangeError on read 4', () => {
-    if (expectNotAContiguousCursor(cursor, () => cursor.read(4))) return
-    expect(() => cursor.read(4)).toThrow(RangeError)
+    if (expectNotAContiguousCursor(begin, () => begin.read(4))) return
+    expect(() => begin.read(4)).toThrow(RangeError)
   })
   it('should throw on read 8', () => {
-    if (expectNotAContiguousCursor(cursor, () => cursor.read(8))) return
-    expect(() => cursor.read(8)).toThrow(Error)
+    if (expectNotAContiguousCursor(begin, () => begin.read(8))) return
+    expect(() => begin.read(8)).toThrow(Error)
   })
   it('should throw for named reads (e.g. readUInt8)', () => {
-    if (expectNotAContiguousCursor(cursor, () => cursor.readUInt8())) return
-    expect(() => cursor.readUInt8()).toThrow(RangeError)
-    expect(() => cursor.readInt8()).toThrow(RangeError)
+    if (expectNotAContiguousCursor(begin, () => begin.readUInt8())) return
+    expect(() => begin.readUInt8()).toThrow(RangeError)
+    expect(() => begin.readInt8()).toThrow(RangeError)
 
-    expect(() => cursor.readUInt16()).toThrow(RangeError)
-    expect(() => cursor.readUInt16BE()).toThrow(RangeError)
-    expect(() => cursor.readUInt16LE()).toThrow(RangeError)
+    expect(() => begin.readUInt16()).toThrow(RangeError)
+    expect(() => begin.readUInt16BE()).toThrow(RangeError)
+    expect(() => begin.readUInt16LE()).toThrow(RangeError)
 
-    expect(() => cursor.readInt16()).toThrow(RangeError)
-    expect(() => cursor.readInt16BE()).toThrow(RangeError)
-    expect(() => cursor.readInt16LE()).toThrow(RangeError)
+    expect(() => begin.readInt16()).toThrow(RangeError)
+    expect(() => begin.readInt16BE()).toThrow(RangeError)
+    expect(() => begin.readInt16LE()).toThrow(RangeError)
 
-    expect(() => cursor.readUInt32()).toThrow(RangeError)
-    expect(() => cursor.readUInt32BE()).toThrow(RangeError)
-    expect(() => cursor.readUInt32LE()).toThrow(RangeError)
+    expect(() => begin.readUInt32()).toThrow(RangeError)
+    expect(() => begin.readUInt32BE()).toThrow(RangeError)
+    expect(() => begin.readUInt32LE()).toThrow(RangeError)
 
-    expect(() => cursor.readInt32()).toThrow(RangeError)
-    expect(() => cursor.readInt32BE()).toThrow(RangeError)
-    expect(() => cursor.readInt32LE()).toThrow(RangeError)
+    expect(() => begin.readInt32()).toThrow(RangeError)
+    expect(() => begin.readInt32BE()).toThrow(RangeError)
+    expect(() => begin.readInt32LE()).toThrow(RangeError)
   })
   it('should return an empty buffer for data', () => {
-    if (expectNotAContiguousCursor(cursor, () => cursor.data())) return
-    const buffer = cursor.data(cursor)
+    if (expectNotAContiguousCursor(begin, () => begin.data())) return
+    const buffer = begin.data(begin)
 
     if (Buffer.isBuffer(buffer)) {
       expect(buffer.length).toBe(0)
@@ -300,8 +314,8 @@ describe.each(cases)('A %s', (name, abilities, fn0, fn1) => {
     }
   })
   it('should throw if data called with null cursor', () => {
-    if (expectNotAContiguousCursor(cursor, () => cursor.data(null))) return
-    expect(() => cursor.data(null)).toThrow(
+    if (expectNotAContiguousCursor(begin, () => begin.data(null))) return
+    expect(() => begin.data(null)).toThrow(
       "Cursor cannot be null or undefined."
     )
   })
@@ -309,34 +323,34 @@ describe.each(cases)('A %s', (name, abilities, fn0, fn1) => {
   describe('and another cursor from a different container', () => {
     let otherCursor
     beforeEach(() => {
-      otherCursor = fn1()
+      otherCursor = begin1()
     })
     it('should not be equatable', () => {
-      expect(cursor.equatableTo(otherCursor)).toBe(false)
+      expect(begin.equatableTo(otherCursor)).toBe(false)
     })
   })
   describe('and another cursor', () => {
     let otherCursor
     beforeEach(() => {
-      otherCursor = fn0()
+      otherCursor = begin0()
     })
     it('should be equal', () => {
-      expect(cursor.equals(otherCursor)).toBe(true)
+      expect(begin.equals(otherCursor)).toBe(true)
     })
     it('should be equatable', () => {
-      expect(cursor.equatableTo(otherCursor)).toBe(true)
+      expect(begin.equatableTo(otherCursor)).toBe(true)
     })
     it('should compare equal', () => {
-      if (expectNotARandomAccessCursor(cursor, () => cursor.compareTo(otherCursor))) return
-      expect(cursor.compareTo(otherCursor)).toBe(0)
+      if (expectNotARandomAccessCursor(begin, () => begin.compareTo(otherCursor))) return
+      expect(begin.compareTo(otherCursor)).toBe(0)
     })
     it('should subtract to zero', () => {
-      if (expectNotARandomAccessCursor(cursor, () => cursor.subtract(otherCursor))) return
-      expect(cursor.subtract(otherCursor)).toBe(0)
+      if (expectNotARandomAccessCursor(begin, () => begin.subtract(otherCursor))) return
+      expect(begin.subtract(otherCursor)).toBe(0)
     })
     it('should return an empty buffer for data', () => {
-      if (expectNotAContiguousCursor(cursor, () => cursor.data())) return
-      const buffer = cursor.data(otherCursor)
+      if (expectNotAContiguousCursor(begin, () => begin.data())) return
+      const buffer = begin.data(otherCursor)
 
       if (Buffer.isBuffer(buffer)) {
         expect(buffer.length).toBe(0)
@@ -349,13 +363,13 @@ describe.each(cases)('A %s', (name, abilities, fn0, fn1) => {
     })
     describe('made read-only', () => {
       beforeEach(() => {
-        cursor.isReadOnly = true
+        begin.isReadOnly = true
       })
       it('should not be equatable', () => {
-        expect(cursor.equatableTo(otherCursor)).toBe(false)
+        expect(begin.equatableTo(otherCursor)).toBe(false)
       })
       it('should throw not equatable on equals', () => {
-        expect(() => cursor.equals(otherCursor)).toThrow(
+        expect(() => begin.equals(otherCursor)).toThrow(
           "Cursor is not equatable to the other cursor."
         )
       })
@@ -367,60 +381,60 @@ describe.each(cases)('A %s', (name, abilities, fn0, fn1) => {
       otherCursor = new OtherTrivialCursor()
     })
     it('should not be equatable', () => {
-      expect(cursor.equatableTo(otherCursor)).toBe(false)
+      expect(begin.equatableTo(otherCursor)).toBe(false)
     })
     it('should throw testing equality', () => {
-      expect(() => cursor.equals(otherCursor)).toThrow(
+      expect(() => begin.equals(otherCursor)).toThrow(
         "Cursor is not equatable to the other cursor."
       )
     })
     it('should throw subtracting from other cursor', () => {
-      if (expectNotARandomAccessCursor(cursor, () => cursor.subtract(otherCursor))) return
-      expect(() => cursor.subtract(otherCursor)).toThrow(
+      if (expectNotARandomAccessCursor(begin, () => begin.subtract(otherCursor))) return
+      expect(() => begin.subtract(otherCursor)).toThrow(
         "Cursor is not equatable to the other cursor."
       )
     })
     it('should throw comparing to other cursor', () => {
-      if (expectNotARandomAccessCursor(cursor, () => cursor.compareTo(otherCursor))) return
-      expect(() => cursor.compareTo(otherCursor)).toThrow(
+      if (expectNotARandomAccessCursor(begin, () => begin.compareTo(otherCursor))) return
+      expect(() => begin.compareTo(otherCursor)).toThrow(
         "Cursor is not equatable to the other cursor."
       )
     })
     it('should throw data with other cursor', () => {
-      if (expectNotAContiguousCursor(cursor, () => cursor.data(otherCursor))) return
-      expect(() => cursor.data(otherCursor)).toThrow(
+      if (expectNotAContiguousCursor(begin, () => begin.data(otherCursor))) return
+      expect(() => begin.data(otherCursor)).toThrow(
         "Cursor is not equatable to the other cursor."
       )
     })
   })
   describe('made read-only', () => {
     beforeEach(() => {
-      cursor.isReadOnly = true
+      begin.isReadOnly = true
     })
     it('should be read-only', () => {
-      expect(cursor.isReadOnly).toBe(true)
+      expect(begin.isReadOnly).toBe(true)
     })
     it('should not have output ability', () => {
-      expect(cursor.abilities & Cursor.Ability.Output).toBe(0)
+      expect(begin.abilities & Cursor.Ability.Output).toBe(0)
     })
     it('should throw if isReadOnly set with non-boolean', () => {
-      expect(() => cursor.isReadOnly = 'true').toThrow(
+      expect(() => begin.isReadOnly = 'true').toThrow(
         "isReadOnly must be a boolean."
       )
     })
     it('should throw if isReadOnly set to true', () => {
-      expect(() => cursor.isReadOnly = false).toThrow(
+      expect(() => begin.isReadOnly = false).toThrow(
         "Cannot make read-only cursor writable."
       )
     })
     it('should not allow value to be set', () => {
-      expect(() => cursor.value = 42).toThrow(
+      expect(() => begin.value = 42).toThrow(
         "Cursor is read-only."
       )
     })
     it('should not be allowed to set value at offset', () => {
-      if (expectNotARandomAccessCursor(cursor, () => cursor.setAt(0, 42))) return
-      expect(() => cursor.setAt(0, 42)).toThrow(
+      if (expectNotARandomAccessCursor(begin, () => begin.setAt(0, 42))) return
+      expect(() => begin.setAt(0, 42)).toThrow(
         "Cursor is read-only."
       )
     })

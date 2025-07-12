@@ -1,5 +1,10 @@
 import { RewindContainer } from "./rewind-container.js"
 import { ChainNode } from "./chain-node.js"
+import {
+  throwUnequatable,
+  throwWriteOutOfBounds,
+  throwMoveOutOfBounds,
+} from '../../../throw.js'
 
 export class Chain extends RewindContainer {
   #count
@@ -26,26 +31,69 @@ export class Chain extends RewindContainer {
 
     // current = this.#root
     // for (let i = 0; i < count; i++)
-    //   current = current.previous$
+    //   current = current.previous
     // if (current != this.#root) throw new Error(
     //   'Chain is not properly linked in reverse')
   }
 
+  #isEnd(link) { return link == this.#end }
+  #isBeforeBegin(link) { return link == this.#root }
+  
   // cursor implementation
   __isActive$$(version, link) { return !!link.next }
-  isEnd$$(link) { return link == this.#end }
-  isBegin$$(link) { return link == this.#root.next }
-  isBeforeBegin$$(link) { return link == this.#root }
   value$$(link) { return link.value }
-  setAt$$(link, value) { link.value = value }
-  step$$(link) { return link.next }
-  stepBack$$(link) { return link.previous$ }
+  setAt$$(link, value) { 
+    if (this.#isEnd(link)) throwWriteOutOfBounds()
+    if (this.#isBeforeBegin(link)) throwWriteOutOfBounds()
+    link.value = value 
+  }
+  step$$(link) { 
+    if (this.#isEnd(link)) throwMoveOutOfBounds()
+    return link.next 
+  }
+  stepBack$$(link) { 
+    if (this.#isBeforeBegin(link)) throwMoveOutOfBounds()
+    return link.previous 
+  }
   equals$$(link, otherLink) { return link == otherLink.token$ }
 
   get isEmpty$() { return this.#end == this.#root.next }
   get front$() { return this.#root.next.value }
-  get back$() { return this.#root.previous$.previous$.value }
+  get back$() { return this.#root.previous.previous.value }
 
+  insertAfter$(cursor, value) {
+    if (this.#isEnd(cursor)) this.throwUpdateOutOfBounds$()
+    cursor.token$.insertAfter(value)
+    this.#count++
+    this.__check()
+  }
+  removeAfter$(cursor) {
+    if (this.#isEnd(cursor)) this.throwUpdateOutOfBounds$()
+    const result = cursor.token$.removeAfter()
+    this.#count--
+    this.__check()
+    return result
+  }
+  insertBefore$(cursor, value) {
+    if (this.#isBeforeBegin(cursor)) this.throwUpdateOutOfBounds$()
+    cursor = cursor.clone()
+    cursor.stepBack()
+    return this.insertAfter$(cursor, value)
+  }
+  remove$(cursor) {
+    if (this.#isEnd(cursor)) this.throwUpdateOutOfBounds$()
+    if (this.#isBeforeBegin(cursor)) this.throwUpdateOutOfBounds$()
+    cursor = cursor.clone()
+    cursor.stepBack()
+    return this.removeAfter$(cursor)
+  }
+  dispose$() { 
+    this.#root = null 
+    this.#end = null
+  }
+
+  hasBeforeBegin$() { return true }
+  beforeBegin$(recyclable) { return this.cursor$(recyclable, this.#root) }
   begin$(recyclable) { return this.cursor$(recyclable, this.#root.next) }
   end$(recyclable) { return this.cursor$(recyclable, this.#end) }
 
@@ -58,57 +106,25 @@ export class Chain extends RewindContainer {
   unshift$(value) { this.insertAfter$(this.beforeBegin(), value) }
   shift$() { return this.removeAfter$(this.beforeBegin()) }
 
-  insertAfter$(cursor, value) {
-    cursor.token$.insertAfter(value)
-    this.#count++
-    this.__check()
-  }
-  removeAfter$(cursor) {
-    const result = cursor.token$.removeAfter()
-    this.#count--
-    this.__check()
-    return result
-  }
-  insertBefore$(cursor, value) {
-    cursor.stepBack()
-    return this.insertAfter$(cursor, value)
-  }
-  remove$(cursor) {
-    cursor.stepBack()
-    return this.removeAfter$(cursor)
-  }
-  dispose$() { 
-    this.#root = null 
-    this.#end = null
-  }
-
-  beforeBegin(recyclable) { return this.cursor$(recyclable, this.#root) }
-
   insertAfter(cursor, value) {
     if (this.isDisposed) this.throwDisposed$()
-    if (!this.equatableTo$(cursor)) this.throwUnequatable$()
-    if (this.isEnd$(cursor)) this.throwWriteOutOfBounds$()
+    if (!this.equatableTo$(cursor)) throwUnequatable()
     return this.insertAfter$(cursor, value)
   }
   removeAfter(cursor) {
     if (this.isDisposed) this.throwDisposed$()
-    if (!this.equatableTo$(cursor)) this.throwUnequatable$()
-    if (this.isEnd$(cursor)) this.throwWriteOutOfBounds$()
+    if (!this.equatableTo$(cursor)) throwUnequatable()
     return this.removeAfter$(cursor)
   }
   
   insertBefore(cursor, value) {
     if (this.isDisposed) this.throwDisposed$()
-    if (!this.equatableTo$(cursor)) this.throwUnequatable$()
-    if (this.isBeforeBegin$(cursor)) this.throwWriteOutOfBounds$()
-    if (this.isBegin$(cursor)) return this.unshift(value)
-    return this.insertBefore$(cursor.clone(), value)
+    if (!this.equatableTo$(cursor)) throwUnequatable()
+    return this.insertBefore$(cursor, value)
   }
   remove(cursor) {
     if (this.isDisposed) this.throwDisposed$()
-    if (!this.equatableTo$(cursor)) this.throwUnequatable$()
-    if (this.isEnd$(cursor)) this.throwWriteOutOfBounds$()
-    if (this.isBeforeBegin$(cursor)) this.throwWriteOutOfBounds$()
-    return this.remove$(cursor.clone())
+    if (!this.equatableTo$(cursor)) throwUnequatable()
+    return this.remove$(cursor)
   }
 }

@@ -9,9 +9,9 @@ export class ChainNode extends ListNode {
   }
 
   activate$(value) { return new ChainNode(value) }
-
-  get previous$() { return this.#previous }
   setPrevious$(node) { this.#previous = node }
+
+  get previous() { return this.#previous }
 
   insertAfter(value) {
     const node = super.insertAfter(value)
@@ -28,6 +28,6 @@ export class ChainNode extends ListNode {
     return result
   }
 
-  insertBefore(value) { return this.previous$.insertAfter(value) }
-  remove() { return this.previous$.removeAfter() }
+  insertBefore(value) { return this.previous.insertAfter(value) }
+  remove() { return this.previous.removeAfter() }
 }

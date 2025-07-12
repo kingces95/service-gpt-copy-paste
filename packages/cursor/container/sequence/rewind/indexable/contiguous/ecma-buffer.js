@@ -9,6 +9,10 @@ export class EcmaBuffer extends ContiguousContainer {
     this.#dataView = new DataView(new ArrayBuffer(8))
   }
 
+  // indexable cursor implementation
+  at$$$(index) { return this.dataView$.getUint8(index) }
+  setAt$$$(index, value) { this.dataView$.setUint8(index, value) }
+
   // cursor implementation
   readAt$$(index, offset, length, signed, littleEndian) {
     const { dataView$: dataView } = this
@@ -39,8 +43,6 @@ export class EcmaBuffer extends ContiguousContainer {
 
     return new DataView(buffer, byteOffset + index, length);
   }
-  at$$(index) { return this.dataView$.getUint8(index) }
-  setAt$$(index, value) { this.dataView$.setUint8(index, value) }
 
   get dataView$() { return this.#dataView }
   get capacity$() { return this.dataView$.byteLength }

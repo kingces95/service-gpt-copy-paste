@@ -1,4 +1,7 @@
 import { CursorFactory } from '../cursor/cursor-factory.js'
+import {
+  throwNotImplemented
+} from '../throw.js'
 
 export class Container extends CursorFactory {
   #__version = 0
@@ -26,6 +29,8 @@ export class Container extends CursorFactory {
     "Container is empty.") }
   throwDisposed$() { throw new Error(
     "Container has been disposed.") }
+  throwUpdateOutOfBounds$() { throw new RangeError(
+    "Cannot update container at this location.") }
 
   // cursor implementation
   equatableTo$$(otherCursor) { return this == otherCursor.container$ } 
@@ -37,9 +42,9 @@ export class Container extends CursorFactory {
   }
 
   // container implementation
-  get front$() { this.throwNotImplemented$() }
-  get back$() { this.throwNotImplemented$() }
-  isEmpty$() { this.throwNotImplemented$() }
+  get front$() { throwNotImplemented() }
+  get back$() { throwNotImplemented() }
+  isEmpty$() { throwNotImplemented() }
   dispose$() { }
   
   // dispose implementation
@@ -55,14 +60,21 @@ export class Container extends CursorFactory {
   // container proxy
   get isEmpty() {
     if (this.isDisposed) this.throwDisposed$()
-    return this.isEmpty$
+    return super.isEmpty$
+  }
+  get hasBeforeBegin() {
+    if (this.isDisposed) this.throwDisposed$()
+    return super.hasBeforeBegin$
   }
 
   data(cursor) {
     if (this.isDisposed) this.throwDisposed$()
     return super.data(cursor)
   }
-
+  beforeBegin(recyclable) {
+    if (this.isDisposed) this.throwDisposed$()
+    return this.beforeBegin$(recyclable)
+  }
   begin(recyclable) {
     if (this.isDisposed) this.throwDisposed$()
     return super.begin(recyclable)

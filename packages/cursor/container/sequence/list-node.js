@@ -13,12 +13,11 @@ export class ListNode {
   get __id$() { return this.#__id }
 
   activate$(value) { return new ListNode(value) }
+  setNext$(node) { this.#next = node }
 
   get value() { return this.#value }
   set value(value) { this.#value = value }
-
   get next() { return this.#next }
-  setNext$(node) { this.#next = node }
 
   insertAfter(value) {
     const node = this.activate$(value)

@@ -1,4 +1,7 @@
 import { Interval } from "../interval.js"
+import {
+  throwNotEquatableTo,
+} from '../throw.js'
 
 export class Range extends Interval {
   #begin
@@ -9,7 +12,7 @@ export class Range extends Interval {
     this.#begin = begin
     this.#end = end
 
-    if (!begin.equatableTo(end)) this.throwNotEquatableTo$()
+    if (!begin.equatableTo(end)) throwNotEquatableTo()
   }
 
   toRange$() { return new Range(this.begin, this.end) }
@@ -40,7 +43,7 @@ export class Range extends Interval {
   }
 
   split(cursor) {
-    if (!this.mayContain(cursor)) cursor.throwNotEquatableTo$()
+    if (!this.mayContain(cursor)) throwNotEquatableTo()
     return this.split$(cursor)
   } 
 

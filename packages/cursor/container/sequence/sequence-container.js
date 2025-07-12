@@ -1,5 +1,9 @@
 import { Container } from '../container.js'
 import { SequenceCursor } from './sequence-cursor.js'
+import {
+  throwNotImplemented,
+  throwUnequatable
+} from '../../throw.js'
 
 export class SequenceContainer extends Container {
 
@@ -10,31 +14,15 @@ export class SequenceContainer extends Container {
   }
 
   // cursor implementation
-  isEnd$$(token) { this.throwNotImplemented$() }
-  isBegin$$(token) { this.throwNotImplemented$() }
-  isBeforeBegin$$(token) { return false }
-  value$$(token) { this.throwNotImplemented$() }
-  setAt$$(token, value) { this.throwNotImplemented$() }
-  step$$(token) { this.throwNotImplemented$() }
-  equals$$(token, otherCursor) { this.throwNotImplemented$() }
+  value$$(token) { throwNotImplemented() }
+  setAt$$(token, value) { throwNotImplemented() }
+  step$$(token) { throwNotImplemented() }
+  equals$$(token, otherCursor) { throwNotImplemented() }
   
   // cursor proxy
   __isActive$(version, token) { return this.__isActive$$(version, token) } 
-  isEnd$(token) { 
-    if (this.isDisposed) this.throwDisposed$()
-    return this.isEnd$$(token) 
-  }
-  isBegin$(token) { 
-    if (this.isDisposed) this.throwDisposed$()
-    return this.isBegin$$(token) 
-  }
-  isBeforeBegin$(token) {
-    if (this.isDisposed) this.throwDisposed$()
-    return this.isBeforeBegin$$(token)
-  } 
   step$(token) { 
     if (this.isDisposed) this.throwDisposed$()
-    if (this.isEnd$(token)) return false
     return this.step$$(token) 
   }
   value$(token) { 
@@ -43,12 +31,11 @@ export class SequenceContainer extends Container {
   }
   setAt$(token, value) { 
     if (this.isDisposed) this.throwDisposed$()
-    if (this.isEnd$(token)) this.throwWriteOutOfBounds$()
     this.setAt$$(token, value) 
   }
   equals$(token, otherCursor) { 
     if (this.isDisposed) this.throwDisposed$()
-    if (!this.equatableTo$(otherCursor)) this.throwUnequatable$()
+    if (!this.equatableTo$(otherCursor)) throwUnequatable()
     return this.equals$$(token, otherCursor) 
   }
 
@@ -56,10 +43,10 @@ export class SequenceContainer extends Container {
     `Cannot modify a fixed size sequence container.`) }
 
   // container implementation
-  get front$() { this.throwNotImplemented$() }
+  get front$() { throwNotImplemented() }
 
-  unshift$(value) { this.throwNotImplemented$() }
-  shift$() { this.throwNotImplemented$() }
+  unshift$(value) { throwNotImplemented() }
+  shift$() { throwNotImplemented() }
 
   // container proxy
   get isEmpty() {

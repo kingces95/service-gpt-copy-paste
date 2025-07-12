@@ -1,6 +1,9 @@
 import { Range } from "../range/range.js"
 import { Interval } from "../interval.js"
 import { CursorAbility as Ability } from "./cursor-abilitiy.js"
+import {
+  throwNotImplemented
+} from '../throw.js'
 
 export class CursorFactory extends Interval {
   
@@ -13,21 +16,14 @@ export class CursorFactory extends Interval {
   static get isRandomAccess() { return Ability.isRandomAccess(this.abilities) }
   static get isContiguous() { return Ability.isContiguous(this.abilities) }
 
-  static get cursorType$() { this.throwNotImplemented$() }
+  static get cursorType$() { throwNotImplemented() }
 
   constructor() { 
     super()
   }
 
-  throwNotImplemented$() { throw new Error("Not implemented.") }
-  throwNotSupported$() { throw new Error("Not supported.") }
-  throwUnequatable$() { throw new TypeError(
-    'Cannot compare cursors of a sequence container that is not equatable.') }
-  throwWriteOutOfBounds$() { throw new RangeError(
-    'Cannot write value out of bounds of cursor.') }
-
   // cursor implementation
-  equatableTo$$(otherCursor) { this.throwNotImplemented$() }
+  equatableTo$$(otherCursor) { throwNotImplemented() }
 
   // cursor proxy
   equatableTo$(otherCursor) {
@@ -38,6 +34,7 @@ export class CursorFactory extends Interval {
   } 
   
   get isEmpty$() { return this.begin().equals(this.end()) }
+  get hasBeforeBegin$() { return false }
   
   // A subclass can use this method to activate a cursor. If recyclable is 
   // provided, it will be recycled, otherwise a new cursor will be created.
@@ -48,8 +45,9 @@ export class CursorFactory extends Interval {
       : new Cursor(this, ...args)
   }
   
-  begin$(recyclable) { throwNotImplemented$() }
-  end$(recyclable) { throwNotImplemented$() }
+  beforeBegin$(recyclable) { throwNotImplemented() }
+  begin$(recyclable) { throwNotImplemented() }
+  end$(recyclable) { throwNotImplemented() }
   toRange$() { return new Range(this.begin(), this.end()) }
 
   // Unwrap a cursor to an array cursors or buffer plus index. For example,
@@ -61,6 +59,7 @@ export class CursorFactory extends Interval {
   data$(cursor) { return }
   
   get isEmpty() { return this.isEmpty$ }
+  get hasBeforeBegin() { return this.hasBeforeBegin$ }
   get cursorType() { return this.constructor.cursorType }
   get isInput() { return this.constructor.isInput }
   get isOutput() { return this.constructor.isOutput }
@@ -82,9 +81,15 @@ export class CursorFactory extends Interval {
     this.data$(cursor)
   }
 
+  beforeBegin(recyclable) { return this.beforeBegin$(recyclable) }
   begin(recyclable) { return this.begin$(recyclable) }
   end(recyclable) { return this.end$(recyclable) }
 
+  cbeforeBegin(recyclable) {
+    const beforeBegin = this.beforeBegin(recyclable)
+    beforeBegin.isReadOnly = true
+    return beforeBegin
+  }
   cbegin(recyclable) {
     const begin = this.begin(recyclable)
     begin.isReadOnly = true

@@ -1,5 +1,8 @@
 import { SequenceContainer } from '../sequence-container.js'
 import { RewindCursor } from './rewind-cursor.js'
+import {
+  throwNotImplemented
+} from '../../../throw.js'
 
 export class RewindContainer extends SequenceContainer {
   static get cursorType$() { return RewindCursor }
@@ -9,22 +12,21 @@ export class RewindContainer extends SequenceContainer {
   }
 
   // cursor implementation
-  stepBack$$(token) { this.throwNotImplemented$() }
+  stepBack$$(token) { throwNotImplemented() }
 
   // cursor proxy
   stepBack$(token) { 
     if (this.isDisposed) this.throwDisposed$()
-    if (this.isBegin$(token)) return false
     return this.stepBack$$(token) 
   }
 
   // container implementation
-  get count$() { this.throwNotImplemented$() }
-  get back$() { this.throwNotImplemented$() }
+  get count$() { throwNotImplemented() }
+  get back$() { throwNotImplemented() }
   get isEmpty$() { return this.count == 0 }
 
-  push$(value) { this.throwNotImplemented$() }
-  pop$() { this.throwNotImplemented$() }
+  push$(value) { throwNotImplemented() }
+  pop$() { throwNotImplemented() }
 
   // container proxy
   get count() {

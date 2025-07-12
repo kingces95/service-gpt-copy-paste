@@ -21,9 +21,6 @@ export class SequenceCursor extends ContainerCursor {
     const token = this.token$
     return this.container$.__isActive$(version, token) 
   }
-  get isEnd$() { return this.sequence$.isEnd$(this.token$) }
-  get isBegin$() { return this.sequence$.isBegin$(this.token$) }
-  get isBeforeBegin$() { return this.sequence$.isBegin$(this.token$) }
   get value$() { return this.sequence$.value$(this.token$) }
   set value$(value) { this.sequence$.setAt$(this.token$, value) }
   equals$(other) { return this.sequence$.equals$(this.token$, other) }

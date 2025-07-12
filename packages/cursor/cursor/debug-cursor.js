@@ -1,4 +1,7 @@
 import { Cursor } from './cursor.js'
+import {
+  throwNotImplemented
+} from '../throw.js'
 
 export class DebugCursor extends Cursor {
   #__version
@@ -8,7 +11,7 @@ export class DebugCursor extends Cursor {
     this.#__version = version
   }
 
-  get __isActive$() { this.throwNotImplemented$() }
+  get __isActive$() { throwNotImplemented() }
   get __version$() { return this.#__version }
 
   __throwStale$() { throw new Error(
@@ -25,14 +28,6 @@ export class DebugCursor extends Cursor {
   get abilities() {
     if (!this.__isActive) this.__throwStale$()
     return super.abilities
-  }
-  get isEnd() {
-    if (!this.__isActive) this.__throwStale$()
-    return super.isEnd
-  }
-  get isBegin() {
-    if (!this.__isActive) this.__throwStale$()
-    return super.isBegin
   }
   get value() {
     if (!this.__isActive) this.__throwStale$()

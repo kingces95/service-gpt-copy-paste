@@ -2,6 +2,9 @@ import { ContiguousCursor } from './contiguous-cursor.js'
 import { IndexableContainer } from "../indexable-container.js"
 import { copyBackward } from '../../../../../algorithm/bidirectional/copy-backward.js'
 import { copyForward } from '../../../../../algorithm/copy-forward.js'
+import {
+  throwNotImplemented
+} from '../../../../../throw.js'
 
 export class ContiguousContainer extends IndexableContainer {
 
@@ -15,9 +18,9 @@ export class ContiguousContainer extends IndexableContainer {
   }
 
   // cursor implementation
-  data$$(index, cursor) { this.throwNotImplemented$() }
+  data$$(index, cursor) { throwNotImplemented() }
   readAt$$(index, offset, length, signed, littleEndian) {
-    this.throwNotImplemented$()
+    throwNotImplemented()
   }
 
   // cursor proxy
@@ -44,10 +47,10 @@ export class ContiguousContainer extends IndexableContainer {
     }
   }
 
-  get capacity$() { this.throwNotImplemented$() }
+  get capacity$() { throwNotImplemented() }
   get count$() { return this.#length }
 
-  expand$(count) { this.throwNotImplemented$() }
+  expand$(count) { throwNotImplemented() }
   push$(value) {
     this.insert(this.end(), value)
   }

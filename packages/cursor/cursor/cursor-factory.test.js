@@ -83,10 +83,10 @@ describe.each(cases)('A %s', (name, abilities, type) => {
         cursor = f0.end()
       })
       it('should be at the end', () => {
-        expect(cursor.isEnd).toBe(true)
+        expect(cursor.equals(f0.end())).toBe(true)
       })
       it('should not be at the beginning', () => {
-        expect(cursor.isBegin).toBe(false)
+        expect(cursor.equals(f0.begin())).toBe(false)
       })
     })
     describe('begin', () => {
@@ -95,10 +95,10 @@ describe.each(cases)('A %s', (name, abilities, type) => {
         cursor = f0.begin()
       })
       it('should be at the beginning', () => {
-        expect(cursor.isBegin).toBe(true)
+        expect(cursor.equals(f0.begin())).toBe(true)
       })
       it('should not be at the end', () => {
-        expect(cursor.isEnd).toBe(false)
+        expect(cursor.equals(f0.end())).toBe(false)
       })
       it('should not be read-only', () => {
         expect(cursor.isReadOnly).toBe(false)
@@ -112,7 +112,7 @@ describe.each(cases)('A %s', (name, abilities, type) => {
           expect(didStep).toBe(true)
         })
         it('should be at the end', () => {
-          expect(cursor.isEnd).toBe(true)
+          expect(cursor.equals(f0.end())).toBe(true)
         })
       })
       describe('made read-only', () => {
@@ -202,8 +202,8 @@ describe.each(cases)('A %s', (name, abilities, type) => {
         it('should have shifted', () => {
           expect(shifted).toBe(value0)
         })
-        it('should throw when interrogated', () => {
-          expect(() => { cursor.isBegin }).toThrow(
+        it('should throw when accessed', () => {
+          expect(() => { cursor.step() }).toThrow(
             'Cursor is stale and cannot be used.')
         })
       })
@@ -216,7 +216,7 @@ describe.each(cases)('A %s', (name, abilities, type) => {
           expect(next).toBe(value0)
         })
         it('should advanced the cursor to the end', () => {
-          expect(cursor.isEnd).toBe(true)
+          expect(cursor.equals(f0[endFn]())).toBe(true)
         })
       })
       describe('and end', () => {
@@ -240,7 +240,7 @@ describe.each(cases)('A %s', (name, abilities, type) => {
           expect(didStep).toBe(true)
         })
         it('should be at the end', () => {
-          expect(cursor.isEnd).toBe(true)
+          expect(cursor.equals(f0[endFn]())).toBe(true)
         })
         describe.each([ type.isRandomAccess ].filter(Boolean))
           ('random access cursor', (isRandomAccess) => {
@@ -254,7 +254,7 @@ describe.each(cases)('A %s', (name, abilities, type) => {
               expect(moved).toBe(true)
             })
             it('should still be at the end', () => {
-              expect(cursor.isEnd).toBe(true)
+              expect(cursor.equals(f0[endFn]())).toBe(true)
             })
           })
           describe('moved back', () => {
@@ -266,7 +266,7 @@ describe.each(cases)('A %s', (name, abilities, type) => {
               expect(movedBack).toBe(true)
             })
             it('should be at the beginning', () => {
-              expect(cursor.isBegin).toBe(true)
+              expect(cursor.equals(f0[beginFn]())).toBe(true)
             })
             describe('then moved forward', () => {
               let movedForward
@@ -277,7 +277,7 @@ describe.each(cases)('A %s', (name, abilities, type) => {
                 expect(movedForward).toBe(true)
               })
               it('should be at the end', () => {
-                expect(cursor.isEnd).toBe(true)
+                expect(cursor.equals(f0[endFn]())).toBe(true)
               })
             })
           })
@@ -288,7 +288,7 @@ describe.each(cases)('A %s', (name, abilities, type) => {
           it('should be able to step back', () => {
             const didStepBack = cursor.stepBack()
             expect(didStepBack).toBe(true)
-            expect(cursor.isBegin).toBe(true)
+            expect(cursor.equals(f0[beginFn]())).toBe(true)
           })
         })
       })
