@@ -1,10 +1,15 @@
 import { IndexableCursor } from './../indexable-cursor.js'
 import { implement } from '../../../../../concept.js'
+import { Preconditions } from '../../../../../debug-proxy.js'
 import { 
   ContiguousCursorConcept,
 } from '../../../../../cursor/cursor-concepts.js'
 
 export class ContiguousCursor extends IndexableCursor {
+  static [Preconditions] = class extends IndexableCursor[Preconditions] {
+    static { implement(this, ContiguousCursorConcept[Preconditions]) }
+  }
+  
   static { implement(this, ContiguousCursorConcept) }
 
   constructor(contiguous, index) {

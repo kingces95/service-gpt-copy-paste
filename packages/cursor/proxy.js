@@ -1,4 +1,4 @@
-import { getPropertyDescriptor } from './get-property-descriptor.js'
+import { Reflection } from '@kingjs/reflection'
 
 function isPublic(property) {
   const type = typeof property
@@ -44,7 +44,9 @@ export function createProxy(target, {
       // precondition check
       if (filter(property)) globalPrecondition?.call(target)
 
-      const descriptor = getPropertyDescriptor(preconditions, property)
+      // ignore preconditions for symbol properties
+      const descriptor = typeof property === 'symbol' ? null :
+        Reflection.getDescriptor(preconditions, property)
       
       const precondition = descriptor?.value
       if (typeof precondition === 'function') {
@@ -69,7 +71,7 @@ export function createProxy(target, {
       if (filter(property)) globalPrecondition?.call(target)
 
       // if the property has a set thunk, use it
-      const descriptor = getPropertyDescriptor(preconditions, property)
+      const descriptor = Reflection.getDescriptor(preconditions, property)
       if (hasSetter(descriptor))
         Reflect.set(preconditions, property, value, target)
 

@@ -1,10 +1,21 @@
 import { RewindCursor } from '../rewind-cursor.js'
 import { implement } from '../../../../concept.js'
+import { Preconditions } from '../../../../debug-proxy.js'
+import { 
+  throwReadOnly,
+} from '../../../../throw.js'
 import { 
   RandomAccessCursorConcept,
 } from '../../../../cursor/cursor-concepts.js'
 
 export class IndexableCursor extends RewindCursor {
+  static [Preconditions] = class extends RewindCursor[Preconditions] {
+    static { implement(this, RandomAccessCursorConcept[Preconditions]) }
+    setAt(offset, value) {
+      if (this.isReadOnly) throwReadOnly()
+    }
+  }
+
   static { implement(this, RandomAccessCursorConcept) }
 
   constructor(indexable, index) {

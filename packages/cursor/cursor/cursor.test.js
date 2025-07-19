@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Cursor } from './cursor.js'
 import { implement } from '../concept.js'
+import { Preconditions } from '../debug-proxy.js'
 import { 
   CursorConcept,
   InputCursorConcept,
@@ -13,6 +14,7 @@ import {
 } from './cursor-concepts.js'
 import {
   throwMoveOutOfBounds,
+  throwReadOnly,
 } from '../throw.js'
 
 import { List } from '../container/sequence/list.js'
@@ -73,6 +75,12 @@ class TrivialBidirectionalCursor extends TrivialForwardCursor {
 }
 
 class TrivialRandomAccessCursor extends TrivialBidirectionalCursor {
+  static [Preconditions] = class extends TrivialBidirectionalCursor[Preconditions] {
+    static { implement(this, RandomAccessCursorConcept[Preconditions]) }
+    setAt(offset, value) {
+      if (this.isReadOnly) throwReadOnly()
+    }
+  }
   static { implement(this, RandomAccessCursorConcept) }
   move$(offset) { 
     if (offset === 0) return true
@@ -91,6 +99,9 @@ class TrivialRandomAccessCursor extends TrivialBidirectionalCursor {
 }
 
 class TrivialContiguousCursor extends TrivialRandomAccessCursor {
+  static [Preconditions] = class extends TrivialRandomAccessCursor[Preconditions] {
+    static { implement(this, ContiguousCursorConcept[Preconditions]) }
+  }
   static { implement(this, ContiguousCursorConcept) }
   readAt$(offset = 0, length = 1, signed = false, littleEndian = false) { 
     throw new RangeError()

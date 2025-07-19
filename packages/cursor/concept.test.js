@@ -1,12 +1,32 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Concept, implement } from "./concept.js"
+import { Concept, Stub, Bind, implement } from "./concept.js"
+import { DebugProxy, Preconditions } from "./debug-proxy.js"
 
 class MyGetterConcept extends Concept { get value() { } }
 class MySetterConcept extends Concept { set value(value) { } }
 class MyMethodConcept extends Concept { get isReadOnly() { } }
+class MyStubFunctionConcept extends Concept { 
+  backpatched() { return this[Stub](MyStubFunctionConcept, 'backpatched') } 
+}
+class MyPreconditionsConcept extends Concept {
+  static [Preconditions] = class extends Concept[Preconditions] {
+    get valueAWithPrecondition() { throw new Error(
+      'value from myPreconditionsConcept') }
+  }
 
-class MyExtensionGetterConcept extends MyGetterConcept { 
+  get valueAWithPrecondition() { }
+}
+class MyExtendedPreconditionsConcept extends MyPreconditionsConcept {
+  static [Preconditions] = class extends MyPreconditionsConcept[Preconditions] {
+    get valueBWithPrecondition() { throw new Error(
+      'value from myExtendedPreconditionsConcept') }
+  }
+
+  get valueBWithPrecondition() { }
+}
+
+class MyExtendedGetterConcept extends MyGetterConcept { 
   get valueAsString() { return this.value.toString() } 
 }
 
@@ -18,28 +38,47 @@ class MyOtherGetterConcept extends MyGetterConcept { get otherValue() { } }
 class MyOtherSetterConcept extends MySetterConcept { set otherValue(value) { } }
 class MyOtherMethodConcept extends MyMethodConcept { get isOtherReadOnly() { } }
 
-class MyType {
+class MyType extends DebugProxy {
+  static [Preconditions] = class {
+    static {
+      implement(this, MyExtendedPreconditionsConcept[Preconditions])
+    }
+  }
+
   static {
     implement(this, 
       Concept, 
-      MyExtensionGetterConcept,
-      MyExtensionGetterConcept,
+      MyExtendedGetterConcept,
+      MyExtendedGetterConcept,
+      MyExtendedPreconditionsConcept,
+      MyStubFunctionConcept
     )
   }
 
   constructor() {
+    super()
     this.value$ = 42
     this.readOnly$ = false
   }
   get value() { return this.value$ }
   set value(value) { this.value$ = value }
   get isReadOnly() { return this.readOnly$ }
+  get valueBWithPrecondition() { }
 }
 
 describe('An instance of a type', () => {
   let instance
   beforeEach(() => {
     instance = new MyType()
+  })
+
+  it('should throw when calling a stub function', () => {
+    instance[Bind] = function(type, name, ...args) {
+      expect(type).toBe(MyStubFunctionConcept)
+      expect(name).toBe('backpatched')
+      return () => 'backpatched'
+    }
+    expect(instance.backpatched()).toBe('backpatched')
   })
 
   it('should satisfy Concept', () => {
@@ -77,12 +116,29 @@ describe('An instance of a type', () => {
   })
 
   it('should satisfy MyExtensionGetterConcept', () => {
-    expect(instance).toBeInstanceOf(MyExtensionGetterConcept)
+    expect(instance).toBeInstanceOf(MyExtendedGetterConcept)
   })
   it('should have a value', () => {
     expect(instance.value).toBe(42)
   })
   it('should return value as a string', () => {
     expect(instance.valueAsString).toBe('42')
+  })
+
+  it('should satisfy MyPreconditionsConcept', () => {
+    expect(instance).toBeInstanceOf(MyPreconditionsConcept)
+  })
+  it('should satisfy MyExtendedPreconditionsConcept', () => {
+    expect(instance).toBeInstanceOf(MyExtendedPreconditionsConcept)
+  })
+  it('should throw accessing valueAWithPrecondition', () => {
+    expect(() => { instance.valueAWithPrecondition }).toThrow(
+      'value from myPreconditionsConcept'
+    )
+  })
+  it('should throw accessing valueBWithPrecondition', () => {
+    expect(() => { instance.valueBWithPrecondition }).toThrow(
+      'value from myExtendedPreconditionsConcept'
+    )
   })
 })

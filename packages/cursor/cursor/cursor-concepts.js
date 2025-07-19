@@ -1,34 +1,38 @@
-import { Concept, Dispatch } from '../concept.js'
+import { Concept, Stub } from '../concept.js'
 import { Preconditions } from '../debug-proxy.js'
+import {
+  throwNull,
+  throwNotEquatableTo,
+} from '../throw.js'
 
 export class CursorConcept extends Concept {
-  step() { return this[Dispatch](
+  step() { return this[Stub](
     CursorConcept, 'step') }
-  next() { return this[Dispatch](
+  next() { return this[Stub](
     CursorConcept, 'next') }
-  equals(other) { return this[Dispatch](
+  equals(other) { return this[Stub](
     CursorConcept, 'equals', other) }
-  equatableTo(other) { return this[Dispatch](
+  equatableTo(other) { return this[Stub](
     CursorConcept, 'equatableTo', other) }
 }
 
 export class InputCursorConcept extends CursorConcept {
-  get value() { return this[Dispatch](
+  get value() { return this[Stub](
     InputCursorConcept, 'value') }
 }
 
 export class OutputCursorConcept extends CursorConcept {
-  set value(value) { return this[Dispatch](
+  set value(value) { return this[Stub](
     OutputCursorConcept, 'value', value) }
 }
 
 export class ForwardCursorConcept extends CursorConcept {
-  clone() { return this[Dispatch](
+  clone() { return this[Stub](
     ForwardCursorConcept, 'clone') }
 }
 
 export class BidirectionalCursorConcept extends ForwardCursorConcept {
-  stepBack() { return this[Dispatch](
+  stepBack() { return this[Stub](
     BidirectionalCursorConcept, 'stepBack') }
 }
 
@@ -44,15 +48,15 @@ export class RandomAccessCursorConcept extends BidirectionalCursorConcept {
     }
   }
 
-  move(offset) { return this[Dispatch](
+  move(offset) { return this[Stub](
     RandomAccessCursorConcept, 'move', offset) }
-  at(offset) { return this[Dispatch](
+  at(offset) { return this[Stub](
     RandomAccessCursorConcept, 'at', offset) }
-  setAt(offset, value) { return this[Dispatch](
+  setAt(offset, value) { return this[Stub](
     RandomAccessCursorConcept, 'setAt', offset, value) }
-  compareTo(other) { return this[Dispatch](
+  compareTo(other) { return this[Stub](
     RandomAccessCursorConcept, 'compareTo', other) }
-  subtract(other) { return this[Dispatch](
+  subtract(other) { return this[Stub](
     RandomAccessCursorConcept, 'subtract', other) }
 }
 
@@ -64,10 +68,10 @@ export class ContiguousCursorConcept extends RandomAccessCursorConcept {
     }
   }
 
-  data(other) { return this[Dispatch](
+  data(other) { return this[Stub](
     ContiguousCursorConcept, 'data', other) }
   readAt(offset, length, signed, littleEndian) { 
-    return this[Dispatch](
+    return this[Stub](
       ContiguousCursorConcept, 'readAt', ...arguments) 
   }
   

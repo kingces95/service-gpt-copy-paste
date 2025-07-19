@@ -1,21 +1,10 @@
 import { DebugProxy, Preconditions } from '../debug-proxy.js'
 import {
   throwNotImplemented,
-  throwNull,
-  throwNotEquatableTo,
   throwReadOnly,
 } from '../throw.js'
 
 export class BaseCursor extends DebugProxy {
-  static [Preconditions] = class extends DebugProxy[Preconditions] {
-    set value(value) {
-      if (this.isReadOnly) throwReadOnly()
-    }
-    setAt(offset, value) {
-      if (this.isReadOnly) throwReadOnly()
-    }
-  }
-
   __readOnly
 
   constructor() {
@@ -37,17 +26,8 @@ export class BaseCursor extends DebugProxy {
 
 export class Cursor extends BaseCursor {
   static [Preconditions] = class extends BaseCursor[Preconditions] {
-    compareTo(other) {
-      if (!other) throwNull()
-      if (!this.equatableTo(other)) throwNotEquatableTo(other)
-    }
-    subtract(other) {
-      if (!other) throwNull()
-      if (!this.equatableTo(other)) throwNotEquatableTo(other)
-    }
-    data(other) {
-      if (!other) throwNull()
-      if (!this.equatableTo(other)) throwNotEquatableTo(other)
+    set value(value) {
+      if (this.isReadOnly) throwReadOnly()
     }
   }
 
