@@ -1,5 +1,7 @@
 import { IterableCursor } from "../../../cursor/iterable-cursor.js"
 import { Container } from "../../index.js"
+import {
+} from '../../../throw.js'
 
 // A sliding window, as the name implies, is a container that provides
 // a sliding window of elements. 
@@ -48,14 +50,12 @@ export class SlidingWindow extends Container {
   }
 
   push(value) { 
-    if (this.isDisposed) this.throwDisposed$()
     if (value === null) 
       throw new Error("Cannot push null to a SlidingWindow.")
     if (value === undefined)
       throw new Error("Cannot push undefined to a SlidingWindow.")
   }
   shift(cursor) { 
-    if (this.isDisposed) this.throwDisposed$()
     this.__bumpVersion$()
   }
 }

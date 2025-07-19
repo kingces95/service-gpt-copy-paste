@@ -1,21 +1,27 @@
 import { SequenceCursor } from '../sequence-cursor.js'
-
+import { implement } from '../../../concept.js'
+import { 
+  BidirectionalCursorConcept,
+} from '../../../cursor/cursor-concepts.js'
 
 export class RewindCursor extends SequenceCursor {
-  static get abilities() { 
-    return SequenceCursor.abilities
-      | SequenceCursor.Ability.Bidirectional
-  }
+  static { implement(this, BidirectionalCursorConcept) }
   
-  constructor(container, token) {
-    super(container, token)
+  constructor(reversible, token) {
+    super(reversible, token)
   }
 
-  // bidirectional rewind cursor implementation
+  // rewind cursor
+  get reversible$() { return this.sequence$ }
+
+  // bidirectional rewind cursor concept implementation
   stepBack$() {
-    const result = this.container$.stepBack$(this.token$)
+    const result = this.reversible$.stepBack$(this.token$)
     if (result === false) return false
     this.token$ = result
     return true
   }
+
+  // bidirectional rewind cursor concept
+  stepBack() { return this.stepBack$() }
 }

@@ -1,12 +1,12 @@
 import { ContiguousContainer } from "./contiguous-container.js"
 
 export class EcmaBuffer extends ContiguousContainer {
-  #dataView 
+  __dataView 
 
   constructor() {
     super()
 
-    this.#dataView = new DataView(new ArrayBuffer(8))
+    this.__dataView = new DataView(new ArrayBuffer(8))
   }
 
   // indexable cursor implementation
@@ -44,7 +44,7 @@ export class EcmaBuffer extends ContiguousContainer {
     return new DataView(buffer, byteOffset + index, length);
   }
 
-  get dataView$() { return this.#dataView }
+  get dataView$() { return this.__dataView }
   get capacity$() { return this.dataView$.byteLength }
 
   expand$(capacity) {
@@ -52,8 +52,8 @@ export class EcmaBuffer extends ContiguousContainer {
     const newBuffer = new ArrayBuffer(capacity)
     const newDataView = new DataView(newBuffer)
     new Uint8Array(newBuffer).set(new Uint8Array(dataView.buffer))
-    this.#dataView = newDataView
+    this.__dataView = newDataView
   }
 
-  dispose$() { this.#dataView = null }
+  dispose$() { this.__dataView = null }
 }

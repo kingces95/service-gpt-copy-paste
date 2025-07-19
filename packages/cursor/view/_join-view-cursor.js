@@ -43,12 +43,6 @@ export class JoinViewCursor extends Cursor {
     return this
   }
 
-  get isForward() { return this.innerCursor$.isForward }
-  get isBidirectional() { return this.innerCursor$.isBidirectional }
-  get isIterable() { return this.innerCursor$.isIterable }
-  get isRandomAccess() { return this.innerCursor$.isRandomAccess }
-  get isContiguous() { return this.innerCursor$.isContiguous }
-
   get isEnd() { 
     const { innerCursor$: innerCursor } = this
     return !innerCursor

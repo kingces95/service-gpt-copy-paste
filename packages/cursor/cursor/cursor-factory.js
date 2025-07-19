@@ -1,20 +1,11 @@
 import { Range } from "../range/range.js"
 import { Interval } from "../interval.js"
-import { CursorAbility as Ability } from "./cursor-abilitiy.js"
 import {
   throwNotImplemented
 } from '../throw.js'
 
-export class CursorFactory extends Interval {
-  
+export class CursorFactory extends Interval {  
   static get cursorType() { return this.cursorType$ }
-  static get abilities() { return this.cursorType.abilities }
-  static get isInput() { return Ability.isInput(this.abilities) }
-  static get isOutput() { return Ability.isOutput(this.abilities) }
-  static get isForward() { return Ability.isForward(this.abilities) }
-  static get isBidirectional() { return Ability.isBidirectional(this.abilities) }
-  static get isRandomAccess() { return Ability.isRandomAccess(this.abilities) }
-  static get isContiguous() { return Ability.isContiguous(this.abilities) }
 
   static get cursorType$() { throwNotImplemented() }
 
@@ -27,22 +18,23 @@ export class CursorFactory extends Interval {
 
   // cursor proxy
   equatableTo$(otherCursor) {
-    const type = this.cursorType
+    const type = this.constructor.cursorType
     const otherType = otherCursor?.constructor
     if (type !== otherType) return false
     return this.equatableTo$$(otherCursor)
   } 
   
   get isEmpty$() { return this.begin().equals(this.end()) }
-  get hasBeforeBegin$() { return false }
   
   // A subclass can use this method to activate a cursor. If recyclable is 
   // provided, it will be recycled, otherwise a new cursor will be created.
   cursor$(recyclable, ...args) {
-    const Cursor = this.constructor.cursorType$
-    return recyclable 
+    const type = this.constructor.cursorType$
+    let cursor = recyclable 
       ? recyclable.recycle$(this, ...args) 
-      : new Cursor(this, ...args)
+      : new type(this, ...args)
+
+    return cursor
   }
   
   beforeBegin$(recyclable) { throwNotImplemented() }
@@ -59,14 +51,6 @@ export class CursorFactory extends Interval {
   data$(cursor) { return }
   
   get isEmpty() { return this.isEmpty$ }
-  get hasBeforeBegin() { return this.hasBeforeBegin$ }
-  get cursorType() { return this.constructor.cursorType }
-  get isInput() { return this.constructor.isInput }
-  get isOutput() { return this.constructor.isOutput }
-  get isForward() { return this.constructor.isForward }
-  get isBidirectional() { return this.constructor.isBidirectional }
-  get isRandomAccess() { return this.constructor.isRandomAccess }
-  get isContiguous() { return this.constructor.isContiguous }
   
   // Deconstruct a cursor to its underlying components. The STL version only
   // returns a buffer and index if the container is contiguous, but this version
@@ -75,7 +59,7 @@ export class CursorFactory extends Interval {
     if (cursor == undefined) 
       return
 
-    if (!(cursor instanceof this.cursorType))
+    if (!(cursor instanceof this.constructor.cursorType))
       throw new Error("Cursor is not a valid cursor for this view.")
 
     this.data$(cursor)

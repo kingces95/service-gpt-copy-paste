@@ -1,9 +1,10 @@
 import { SequenceContainer } from "./sequence-container.js"
 import { ListNode } from "./list-node.js"
 import {
-  throwUnequatable,
+  throwNotEquatableTo,
   throwWriteOutOfBounds,
   throwMoveOutOfBounds,
+  throwUpdateOutOfBounds,
 } from '../../throw.js'
 
 export class List extends SequenceContainer {
@@ -19,9 +20,9 @@ export class List extends SequenceContainer {
   #isEnd(link) { return link == this.#end }
 
   // cursor implementation
-  __isActive$$(version, link) { return !!link.next }
+  __isActive$$(link) { return !!link.next }
   value$$(link) { return link.value }
-  setAt$$(link, value) { 
+  setValue$$(link, value) { 
     if (this.#isEnd(link)) throwWriteOutOfBounds()
     link.value = value 
   }
@@ -34,7 +35,6 @@ export class List extends SequenceContainer {
   get isEmpty$() { return this.#end == this.#root.next }
   get front$() { return this.#root.next.value }
 
-  hasBeforeBegin$() { return true }
   beforeBegin$(recyclable) { return this.cursor$(recyclable, this.#root) }
   begin$(recyclable) { return this.cursor$(recyclable, this.#root.next) }
   end$(recyclable) { return this.cursor$(recyclable, this.#end) }
@@ -44,15 +44,13 @@ export class List extends SequenceContainer {
   }
 
   insertAfter(cursor, value) {
-    if (this.isDisposed) this.throwDisposed$()
-    if (!this.equatableTo$(cursor)) throwUnequatable()
-    if (this.#isEnd(cursor.token$)) this.throwUpdateOutOfBounds$()
+    if (!this.equatableTo$(cursor)) throwNotEquatableTo()
+    if (this.#isEnd(cursor.token$)) throwUpdateOutOfBounds()
     cursor.token$.insertAfter(value)
   }
   removeAfter(cursor) {
-    if (this.isDisposed) this.throwDisposed$()
-    if (!this.equatableTo$(cursor)) throwUnequatable()
-    if (this.#isEnd(cursor.token$)) this.throwUpdateOutOfBounds$()
+    if (!this.equatableTo$(cursor)) throwNotEquatableTo()
+    if (this.#isEnd(cursor.token$)) throwUpdateOutOfBounds()
     return cursor.token$.removeAfter()
   }
   unshift(value) {

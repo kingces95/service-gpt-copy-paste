@@ -1,8 +1,14 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Cursor } from './cursor.js'
-import { CursorAbility } from './cursor-abilitiy.js'
-import { iterate } from '../algorithm/iterate.js'
+import { 
+  InputCursorConcept,
+  OutputCursorConcept,
+  ForwardCursorConcept,
+  BidirectionalCursorConcept,
+  RandomAccessCursorConcept,
+  ContiguousCursorConcept,
+} from './cursor-concepts.js'
 
 import { List } from '../container/sequence/list.js'
 import { Chain } from '../container/sequence/rewind/chain.js'
@@ -11,58 +17,37 @@ import { Deque } from '../container/sequence/rewind/indexable/deque.js'
 import { NodeBuffer } from '../container/sequence/rewind/indexable/contiguous/node-buffer.js'
 import { EcmaBuffer } from '../container/sequence/rewind/indexable/contiguous/ecma-buffer.js' 
 
-const inputOutput = CursorAbility.Input | CursorAbility.Output
-
 const value0 = 0
 const value1 = 1
 
 const cases = [
-  ['List', inputOutput | CursorAbility.Forward, List],
-  ['Chain', inputOutput | CursorAbility.Bidirectional, Chain],
-  ['Vector', inputOutput | CursorAbility.RandomAccess, Vector],
-  ['Deque', inputOutput | CursorAbility.RandomAccess, Deque],
-  ['NodeBuffer', inputOutput | CursorAbility.Contiguous, NodeBuffer],
-  ['EcmaBuffer', inputOutput | CursorAbility.Contiguous, EcmaBuffer],
+  ['List', List, List.cursorType.prototype,
+    [InputCursorConcept, OutputCursorConcept, ForwardCursorConcept]],
+  ['Chain', Chain, Chain.cursorType.prototype,
+    [InputCursorConcept, OutputCursorConcept, BidirectionalCursorConcept]],
+  ['Vector', Vector, Vector.cursorType.prototype, 
+    [InputCursorConcept, OutputCursorConcept, RandomAccessCursorConcept]],
+  ['Deque', Deque, Deque.cursorType.prototype, 
+    [InputCursorConcept, OutputCursorConcept, RandomAccessCursorConcept]],
+  ['NodeBuffer', NodeBuffer, NodeBuffer.cursorType.prototype,
+    [InputCursorConcept, OutputCursorConcept, ContiguousCursorConcept]],
+  ['EcmaBuffer', EcmaBuffer, EcmaBuffer.cursorType.prototype,
+    [InputCursorConcept, OutputCursorConcept, ContiguousCursorConcept]],
 ]
 
 // test the functionality of the cursor container
-describe.each(cases)('A %s', (name, abilities, type) => {
+describe.each(cases)('A %s', (name, type, cursorPrototype, concepts) => {
   let f0
   beforeEach(() => {
     f0 = new type()
   })
-  it('is input iff it reports it is input', () => {
-    const isInput = CursorAbility.isInput(abilities)
-    expect(f0.isInput).toBe(isInput)
-    expect(type.isInput).toBe(isInput)
-  })
-  it('is output iff it reports it is output', () => {
-    const isOutput = CursorAbility.isOutput(abilities)
-    expect(f0.isOutput).toBe(isOutput)
-    expect(type.isOutput).toBe(isOutput)
-  })
-  it('is forward iff it reports it is forward', () => {
-    const isForward = CursorAbility.isForward(abilities)
-    expect(f0.isForward).toBe(isForward)
-    expect(type.isForward).toBe(isForward)
-  })
-  it('is bidirectional iff it reports it is bidirectional', () => {
-    const isBidirectional = CursorAbility.isBidirectional(abilities)
-    expect(f0.isBidirectional).toBe(isBidirectional)
-    expect(type.isBidirectional).toBe(isBidirectional)
-  })
-  it('is random access iff it reports it is random access', () => {
-    const isRandomAccess = CursorAbility.isRandomAccess(abilities)
-    expect(f0.isRandomAccess).toBe(isRandomAccess)
-    expect(type.isRandomAccess).toBe(isRandomAccess)
-  })
-  it('is contiguous iff it reports it is contiguous', () => {
-    const isContiguous = CursorAbility.isContiguous(abilities)
-    expect(f0.isContiguous).toBe(isContiguous)
-    expect(type.isContiguous).toBe(isContiguous)
+  it('should satisfy the concepts', () => {
+    for (const concept of concepts) {
+      expect(cursorPrototype).toBeInstanceOf(concept)
+    }
   })
   it('has a cursor type whose prototype extends Cursor', () => {
-    expect(f0.cursorType.prototype).toBeInstanceOf(Cursor)
+    expect(f0.constructor.cursorType.prototype).toBeInstanceOf(Cursor)
   })
   it('should be empty', () => {
     expect(f0.isEmpty).toBe(true)
@@ -102,6 +87,20 @@ describe.each(cases)('A %s', (name, abilities, type) => {
       })
       it('should not be read-only', () => {
         expect(cursor.isReadOnly).toBe(false)
+      })
+      describe.each([ 
+        // Node Deque do not support random access writes
+        type != Deque
+      ].filter(Boolean))('then set a value', () => {
+        beforeEach(() => {
+          cursor.value = value1
+        })
+        it('should have the new value', () => {
+          expect(cursor.value).toBe(value1)
+        })
+        it('should have the new front value', () => {
+          expect(f0.front).toBe(value1)
+        })
       })
       describe('then step', () => {
         let didStep
@@ -165,7 +164,9 @@ describe.each(cases)('A %s', (name, abilities, type) => {
         expect(range.begin.equals(f0.cbegin())).toBe(true)
       })
     })
-    describe.each([ type.isBidirectional ].filter(Boolean))
+    describe.each([ 
+      cursorPrototype instanceof BidirectionalCursorConcept 
+    ].filter(Boolean))
     ('bidirectional container', (isBidirectional) => {
       it('should have a back value', () => {
         expect(f0.back).toBe(value0)
@@ -242,7 +243,9 @@ describe.each(cases)('A %s', (name, abilities, type) => {
         it('should be at the end', () => {
           expect(cursor.equals(f0[endFn]())).toBe(true)
         })
-        describe.each([ type.isRandomAccess ].filter(Boolean))
+        describe.each([ 
+          cursorPrototype instanceof RandomAccessCursorConcept
+        ].filter(Boolean))
           ('random access cursor', (isRandomAccess) => {
           
           describe('moved nowhere', () => {
@@ -282,7 +285,9 @@ describe.each(cases)('A %s', (name, abilities, type) => {
             })
           })
         })
-        describe.each([ type.isBidirectional ].filter(Boolean))
+        describe.each([ 
+          cursorPrototype instanceof BidirectionalCursorConcept
+        ].filter(Boolean))
           ('bidirectional cursor', (isBidirectional) => {
 
           it('should be able to step back', () => {

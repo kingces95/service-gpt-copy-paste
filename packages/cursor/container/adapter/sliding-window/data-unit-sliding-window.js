@@ -1,5 +1,7 @@
 import { TrimmedSlidingWindow } from "./trimmed-sliding-window.js"
 import { tryAdvance, tryRewind, rewind } from "../../../algorithm/index.js"
+import {
+} from '../../../throw.js'
 
 // DataUnitSlidingWindow is a TrimmedSlidingWindow that defines its
 // end cursor position as the position of its inner cursor less the remainder
@@ -39,8 +41,6 @@ export class DataUnitSlidingWindow extends TrimmedSlidingWindow {
   }
 
   get modulous() { 
-    if (this.isDisposed) this.throwDisposed$()
     return this.modulous$ 
   }
-
 }

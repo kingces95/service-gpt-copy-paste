@@ -2,7 +2,7 @@ import { RewindContainer } from '../rewind-container.js'
 import { IndexableCursor } from './indexable-cursor.js'
 import {
   throwNotImplemented,
-  throwUnequatable,
+  throwNotEquatableTo,
   throwWriteOutOfBounds,
   throwMoveOutOfBounds,
 } from '../../../../throw.js'
@@ -26,11 +26,10 @@ export class IndexableContainer extends RewindContainer {
   }
 
   // indexable cursor implementation
-  at$$$(index, offset) { throwNotImplemented() }
-  setAt$$$(value, index, offset) { throwNotImplemented() }
+  at$$$(index) { throwNotImplemented() }
+  setAt$$$(index, value) { throwNotImplemented() }
 
   // cursor implementation
-  value$$(index) { return this.at$$(index, 0) }
   step$$(index) { return this.move$$(index, 1) }
   stepBack$$(index) { return this.move$$(index, -1) }
   move$$(index, offset) { 
@@ -45,51 +44,54 @@ export class IndexableContainer extends RewindContainer {
   equals$$(index, otherCursor) { return index === otherCursor.index$ }
   subtract$$(index, otherCursor) { return index - otherCursor.index$ }
 
-  // indexable cursor proxy
+  // input cursor concept implementation
+  value$$(index) { return this.at$$(index, 0) }
+
+  // output cursor concept implementation
+  setValue$$(index, value) {
+    this.setAt$$(index, 0, value)
+    return true
+  }
+
+  // random access cursor concept implementation
   at$$(index, offset) { 
     if (!this.isInBounds$(index, offset)) return
-    return this.at$$$(index, offset)
+    return this.at$$$(index + offset)
   }
-  setAt$$(value, index, offset) { 
+  setAt$$(index, offset, value) { 
     if (!this.isInBounds$(index, offset)) throwWriteOutOfBounds()
-    this.setAt$$$(value, index, offset)
+    this.setAt$$$(index + offset, value)
   }
 
   // cursor proxy
   move$(index, offset) {
-    if (this.isDisposed) this.throwDisposed$()
     return this.move$$(index, offset)
   }
   compareTo$(index, otherCursor) {
-    if (this.isDisposed) this.throwDisposed$()
-    if (!this.equatableTo$(otherCursor)) throwUnequatable()
+    if (!this.equatableTo$(otherCursor)) throwNotEquatableTo()
     return this.compareTo$$(index, otherCursor)
   }
   equals$(index, otherCursor) {
-    if (this.isDisposed) this.throwDisposed$()
-    if (!this.equatableTo$(otherCursor)) throwUnequatable()
+    if (!this.equatableTo$(otherCursor)) throwNotEquatableTo()
     return this.equals$$(index, otherCursor)
   }
   at$(index, offset) { 
-    if (this.isDisposed) this.throwDisposed$()
     if (!this.isInBounds$(index, offset)) return
     return this.at$$(index, offset)
   }
   setAt$(index, offset, value) { 
-    if (this.isDisposed) this.throwDisposed$()
     if (!this.isInBounds$(index, offset)) throwWriteOutOfBounds()
     this.setAt$$(index, offset, value)
     return true
   }
   subtract$(index, otherCursor) {
-    if (this.isDisposed) this.throwDisposed$()
-    if (!this.equatableTo$(otherCursor)) throwUnequatable()
+    if (!this.equatableTo$(otherCursor)) throwNotEquatableTo()
     return this.subtract$$(index, otherCursor)
   }
 
   // container implementation
-  get front$() { return this.at(0) }
-  get back$() { return this.at(this.count - 1) }
+  get front$() { return this.at$(0, 0) }
+  get back$() { return this.at$(this.count - 1, 0) }
 
   begin$(recyclable) { return this.cursor$(recyclable, 0) }
   end$(recyclable) { return this.cursor$(recyclable, this.count) }
@@ -105,13 +107,9 @@ export class IndexableContainer extends RewindContainer {
     this.__bumpVersion$()
   }    
 
-  at(index) {
-    if (this.isDisposed) this.throwDisposed$()
-    return this.at$(index)
-  }
+  at(index) { return this.at$(index, 0) }
   setAt(index, value) {
-    if (this.isDisposed) this.throwDisposed$()
-    this.setAt$(index, value)
+    this.setAt$(index, 0, value)
     return true
   }
 }

@@ -1,24 +1,27 @@
 import Denque from "denque"
 import { IndexableContainer } from "./indexable-container.js"
+import {
+  throwNotSupported,
+} from '../../../../throw.js'
 
 export class Deque extends IndexableContainer {
-  #denque
+  __denque
 
   constructor() { 
     super()
-    this.#denque = new Denque()
+    this.__denque = new Denque()
   }
   
   // indexable cursor implementation
-  at$$$(index) { return this.#denque.get(index) }
-  setAt$$$(index, value) { this.#denque.set(index, value) }
+  at$$$(index) { return this.__denque.get(index) }
+  setAt$$$(index, value) { throwNotSupported() }
 
   // container implementation
-  get count$() { return this.#denque.length }
+  get count$() { return this.__denque.length }
 
-  push$(value) { this.#denque.push(value) }
-  pop$() { return this.#denque.pop() }
-  unshift$(value) { this.#denque.unshift(value) }
-  shift$() { return this.#denque.shift() }
-  dispose$() { this.#denque.clear() }
+  push$(value) { this.__denque.push(value) }
+  pop$() { return this.__denque.pop() }
+  unshift$(value) { this.__denque.unshift(value) }
+  shift$() { return this.__denque.shift() }
+  dispose$() { this.__denque.clear() }
 }

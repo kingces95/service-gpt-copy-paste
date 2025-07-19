@@ -18,7 +18,7 @@ export class ByteSlidingWindow extends SlidingWindow {
   get firstChunkOffset$() { return this.#firstChunkOffset }
 
   get count() { 
-    if (this.isDisposed) this.throwDisposed$()
+    if (this.__isDisposed$) throwDisposed()
     return this.#count
   }
 

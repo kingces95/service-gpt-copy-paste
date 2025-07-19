@@ -1,11 +1,18 @@
 import { SequenceContainer } from '../sequence-container.js'
 import { RewindCursor } from './rewind-cursor.js'
 import {
-  throwNotImplemented
+  throwNotImplemented,
+  throwEmpty,
 } from '../../../throw.js'
 
 export class RewindContainer extends SequenceContainer {
   static get cursorType$() { return RewindCursor }
+  static get thunks$() {
+    return Object.setPrototypeOf({
+      get back() { if (this.isEmpty$) throwEmpty() },
+      pop() { if (this.isEmpty$) throwEmpty() }
+    }, super.thunks$)
+  }
 
   constructor() {
     super()
@@ -16,7 +23,6 @@ export class RewindContainer extends SequenceContainer {
 
   // cursor proxy
   stepBack$(token) { 
-    if (this.isDisposed) this.throwDisposed$()
     return this.stepBack$$(token) 
   }
 
@@ -29,25 +35,15 @@ export class RewindContainer extends SequenceContainer {
   pop$() { throwNotImplemented() }
 
   // container proxy
-  get count() {
-    if (this.isDisposed) this.throwDisposed$()
-    return this.count$
-  }
+  get count() { return this.count$ }
   get back() {
-    if (this.isDisposed) this.throwDisposed$()
-    if (this.isEmpty$) this.throwEmpty$()
+    if (this.isEmpty$) throwEmpty()
     return this.back$
   }
 
-  push(value) {
-    if (this.isDisposed) this.throwDisposed$()
-    if (this.isFixedSize) this.throwFixedSize$()
-    this.push$(value)
-  }
+  push(value) { this.push$(value) }
   pop() {
-    if (this.isDisposed) this.throwDisposed$()
-    if (this.isFixedSize) this.throwFixedSize$()
-    if (this.isEmpty$) this.throwEmpty$()
+    if (this.isEmpty$) throwEmpty()
     return this.pop$()
   }
 }

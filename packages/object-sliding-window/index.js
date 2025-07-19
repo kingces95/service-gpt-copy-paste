@@ -13,10 +13,7 @@ export class ObjectSlidingWindow extends SlidingWindow {
 
   get$(innerIndex) { return this.#denque.get(innerIndex) }
   
-  get count() {
-    if (this.isDisposed) this.throwDisposed$() 
-    return this.#denque.length 
-  }
+  get count() { return this.#denque.length }
   get isEmpty() { return this.count === 0 }
 
   begin(recyclable) {

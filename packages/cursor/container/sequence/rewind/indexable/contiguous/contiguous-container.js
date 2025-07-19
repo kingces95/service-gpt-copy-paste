@@ -3,18 +3,18 @@ import { IndexableContainer } from "../indexable-container.js"
 import { copyBackward } from '../../../../../algorithm/bidirectional/copy-backward.js'
 import { copyForward } from '../../../../../algorithm/copy-forward.js'
 import {
-  throwNotImplemented
+  throwNotImplemented,
 } from '../../../../../throw.js'
 
 export class ContiguousContainer extends IndexableContainer {
 
   static get cursorType$() { return ContiguousCursor }
 
-  #length
+  __length
 
   constructor(buffer) {
     super()
-    this.#length = 0
+    this.__length = 0
   }
 
   // cursor implementation
@@ -25,12 +25,9 @@ export class ContiguousContainer extends IndexableContainer {
 
   // cursor proxy
   data$(index, cursor) {
-    if (this.isDisposed) this.throwDisposed$()
     return this.data$$(index, cursor)
   }
   readAt$(index, offset, length, signed, littleEndian) {
-    if (this.isDisposed) this.throwDisposed$()
-
     switch (length) {
       case 2: 
       case 4:
@@ -48,47 +45,38 @@ export class ContiguousContainer extends IndexableContainer {
   }
 
   get capacity$() { throwNotImplemented() }
-  get count$() { return this.#length }
+  get count$() { return this.__length }
 
   expand$(count) { throwNotImplemented() }
-  push$(value) {
-    this.insert(this.end(), value)
-  }
-  unshift$(value) {
-    this.insert(this.begin(), value)
-  }
+  push$(value) { this.insert(this.end(), value) }
+  unshift$(value) { this.insert(this.begin(), value) }
   pop$() { 
     const end = this.end()
     end.stepBack()
     return this.erase(end)
   }
-  shift$() { 
-    return this.erase(this.begin())
-  }
+  shift$() { return this.erase(this.begin()) }
 
   get capacity() { return this.capacity$ }
 
   expand() {
-    if (this.isDisposed) this.throwDisposed$()
-    this.#length = this.expand$(this.capacity * 2)
+    this.__length = this.expand$(this.capacity * 2)
   }
   insert(cursor, value) {
-    if (this.isDisposed) this.throwDisposed$()
-    if (this.#length >= this.capacity$) this.expand()
+    if (this.__length >= this.capacity$) this.expand()
     const end = this.end()
-    this.#length++
+    this.__length++
     const result = this.end()
     copyBackward(cursor, end, result)
     cursor.value = value    
   }
   erase(cursor) {
-    if (this.isDisposed) this.throwDisposed$()
     const value = cursor.value
     const end = this.end()
     const after = cursor.clone()
     after.step()
     copyForward(after, end, cursor)
-    this.#length--
+    this.__length--
     return value
   }
 }

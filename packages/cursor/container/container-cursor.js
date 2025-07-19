@@ -1,19 +1,30 @@
-import { DebugCursor } from '../cursor/debug-cursor.js'
+import { Cursor } from '../cursor/cursor.js'
+import { implement } from '../concept.js'
+import { 
+  InputCursorConcept,
+  OutputCursorConcept,
+} from '../cursor/cursor-concepts.js'
 
-export class ContainerCursor extends DebugCursor {
-  #container
+export class ContainerCursor extends Cursor {
+  static { 
+    implement(this, 
+      InputCursorConcept, 
+      OutputCursorConcept,
+    ) 
+  }
+  
+  __container
+  __version
 
   constructor(container) {
-    super(container.__version$)
-    this.#container = container
+    super()
+    this.__container = container
+    this.__version = container.__version$
   }
 
-  get __isActive$() { 
-    const version = this.__version$
-    return this.container$.__isActive$(version) 
-  }
-  get container$() { return this.#container }
+  get __version$() { return this.__version }
 
+  // cursor lifecycle
   recycle$(container) {
     if (container != this.container$) throw new Error(
       "Cursor cannot be recycled to a different container.")
@@ -21,10 +32,19 @@ export class ContainerCursor extends DebugCursor {
     super.recycle$()
   }
 
+  // container cursor
+  get container$() { return this.__container }
+
+  // universal cursor concept implementation
   equatableTo$(other) { 
     return this.container$.equatableTo$(other) 
   }
 
-  // forward container cursor proxy
-  clone$() { return this.clone$$() }
+  // input/output cursor concept implementation
+  get value$() { throwNotImplemented() }
+  set value$(value) { throwNotImplemented() }
+
+  // input/output cursor concept
+  get value() { return this.value$ }
+  set value(value) { this.value$ = value }
 }

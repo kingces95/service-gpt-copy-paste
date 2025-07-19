@@ -1,11 +1,11 @@
 import { ContiguousContainer } from "./contiguous-container.js"
 
 export class NodeBuffer extends ContiguousContainer {
-  #buffer
+  __buffer
 
   constructor() {
     super()
-    this.#buffer = Buffer.alloc(8)
+    this.__buffer = Buffer.alloc(8)
   }
   
   // indexable cursor implementation
@@ -46,15 +46,15 @@ export class NodeBuffer extends ContiguousContainer {
     return buffer.subarray(index, endIndex)
   }
 
-  get buffer$() { return this.#buffer }
-  get capacity$() { return this.#buffer.length }
+  get buffer$() { return this.__buffer }
+  get capacity$() { return this.__buffer.length }
 
   expand$(capacity) {
     const { buffer$: buffer } = this
     const newBuffer = Buffer.alloc(capacity)
     buffer.copy(newBuffer)
-    this.#buffer = newBuffer
+    this.__buffer = newBuffer
     return capacity
   }
-  dispose$() { this.#buffer = null }
+  dispose$() { this.__buffer = null }
 }

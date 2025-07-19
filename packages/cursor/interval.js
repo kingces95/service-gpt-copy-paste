@@ -1,3 +1,5 @@
+import { DebugProxy } from './debug-proxy.js'
+
 // Interval is the base class for Container, View, and Range. Strictly
 // speaking, Container and View both extend CursorFactory, but that
 // is an implementation detail.
@@ -7,7 +9,7 @@
 // Range. Interval allows any of those abstractions to be easily converted
 // to a Range which can then be stored internally by the SegmentContainer.
 
-export class Interval {  
+export class Interval extends DebugProxy {  
   toRange$() { throw new Error("Not implemented.") }
   
   toRange() { return this.toRange$() }

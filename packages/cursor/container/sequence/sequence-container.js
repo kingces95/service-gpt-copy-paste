@@ -2,11 +2,10 @@ import { Container } from '../container.js'
 import { SequenceCursor } from './sequence-cursor.js'
 import {
   throwNotImplemented,
-  throwUnequatable
+  throwEmpty,
 } from '../../throw.js'
 
 export class SequenceContainer extends Container {
-
   static get cursorType$() { return SequenceCursor }
 
   constructor() {
@@ -14,33 +13,20 @@ export class SequenceContainer extends Container {
   }
 
   // cursor implementation
+  __isActive$$(token) { return true }
   value$$(token) { throwNotImplemented() }
-  setAt$$(token, value) { throwNotImplemented() }
+  setValue$$(token, value) { throwNotImplemented() }
   step$$(token) { throwNotImplemented() }
   equals$$(token, otherCursor) { throwNotImplemented() }
   
   // cursor proxy
-  __isActive$(version, token) { return this.__isActive$$(version, token) } 
-  step$(token) { 
-    if (this.isDisposed) this.throwDisposed$()
-    return this.step$$(token) 
-  }
-  value$(token) { 
-    if (this.isDisposed) this.throwDisposed$()
-    return this.value$$(token) 
-  }
-  setAt$(token, value) { 
-    if (this.isDisposed) this.throwDisposed$()
-    this.setAt$$(token, value) 
-  }
+  __isActive$(token) { return this.__isActive$$(token) } 
+  step$(token) { return this.step$$(token) }
+  value$(token) { return this.value$$(token) }
+  setValue$(token, value) { this.setValue$$(token, value) }
   equals$(token, otherCursor) { 
-    if (this.isDisposed) this.throwDisposed$()
-    if (!this.equatableTo$(otherCursor)) throwUnequatable()
     return this.equals$$(token, otherCursor) 
   }
-
-  throwFixedSize$() { throw new RangeError(
-    `Cannot modify a fixed size sequence container.`) }
 
   // container implementation
   get front$() { throwNotImplemented() }
@@ -49,25 +35,15 @@ export class SequenceContainer extends Container {
   shift$() { throwNotImplemented() }
 
   // container proxy
-  get isEmpty() {
-    if (this.isDisposed) this.throwDisposed$()
-    return this.isEmpty$
-  }
+  get isEmpty() { return this.isEmpty$ }
   get front() { 
-    if (this.isDisposed) this.throwDisposed$()
-    if (this.isEmpty$) this.throwEmpty$()
+    if (this.isEmpty$) throwEmpty()
     return this.front$ 
   }
 
-  unshift(value) {
-    if (this.isDisposed) this.throwDisposed$()
-    if (this.isFixedSize) this.throwFixedSize$()
-    this.unshift$(value)
-  }
+  unshift(value) { this.unshift$(value) }
   shift() {
-    if (this.isDisposed) this.throwDisposed$()
-    if (this.isFixedSize) this.throwFixedSize$()
-    if (this.isEmpty$) this.throwEmpty$()
+    if (this.isEmpty$) throwEmpty()
     return this.shift$()
   }
 }

@@ -28,10 +28,6 @@ export class Range extends Interval {
     this.begin.isReadOnly = value
     this.end.isReadOnly = value 
   }
-  get isForward() { return this.begin.isForward }
-  get isBidirectional() { return this.begin.isBidirectional }
-  get isRandomAccess() { return this.begin.isRandomAccess }
-  get isContiguous() { return this.begin.isContiguous }
 
   get begin() { return this.#begin }
   get end() { return this.#end }

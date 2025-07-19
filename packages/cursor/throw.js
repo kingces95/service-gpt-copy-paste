@@ -1,5 +1,5 @@
-export function throwUnsupported() { throw new Error(
-  'Operation requires advanced cursor type.') }
+export function throwNotSupported() { throw new Error(
+  'Operation is not supported.') }
 export function throwNotImplemented() { throw new Error(
   'Not implemented.') }
 
@@ -8,25 +8,19 @@ export function throwNull() { throw new TypeError(
 export function throwNotEquatableTo() { throw new TypeError(
   'Cursor is not equatable to the other cursor.') }
 
+export function throwStale() { throw new Error(
+  'Cursor is stale and cannot be used.') }
 export function throwReadOnly() { throw new Error(
   'Cursor is read-only.') }
 
-export function throwNotInput() { throw new Error(
-  'Operation requires an input cursor.') }
-export function throwNotOutput() { throw new Error(
-  'Operation requires an output cursor.') }
-export function throwNotForward() { throw new Error(
-  'Operation requires a forward cursor.') }
-export function throwNotBidirectional() { throw new Error(
-  'Operation requires a bidirectional cursor.') }
-export function throwNotRandomAccess() { throw new Error(
-  'Operation requires a random access cursor.') }
-export function throwNotContiguous() { throw new Error(
-  'Operation requires a contiguous cursor.') }
-
-export function throwUnequatable() { throw new TypeError(
-  'Cannot compare cursors of a sequence container that is not equatable.') }
 export function throwWriteOutOfBounds() { throw new RangeError(
   'Cannot write value out of bounds of cursor.') }
 export function throwMoveOutOfBounds() { throw new RangeError(
   'Cannot move cursor out of bounds.') }
+
+export function throwEmpty() { throw new Error(
+    "Container is empty.") }
+export function throwDisposed() { throw new Error(
+    "Container has been disposed.") }
+export function throwUpdateOutOfBounds() { throw new RangeError(
+    "Cannot update container at this location.") }

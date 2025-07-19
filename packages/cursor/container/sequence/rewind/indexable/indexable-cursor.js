@@ -1,24 +1,28 @@
 import { RewindCursor } from '../rewind-cursor.js'
-import { CursorAbility } from '../../../../cursor/cursor-abilitiy.js'
+import { implement } from '../../../../concept.js'
+import { 
+  RandomAccessCursorConcept,
+} from '../../../../cursor/cursor-concepts.js'
 
 export class IndexableCursor extends RewindCursor {
-  static get abilities() { 
-    return RewindCursor.abilities
-      | CursorAbility.RandomAccess
+  static { implement(this, RandomAccessCursorConcept) }
+
+  constructor(indexable, index) {
+    super(indexable, index)
   }
 
-  constructor(sequence, index) {
-    super(sequence, index)
-  }
-
-  get indexable$() { return this.sequence$ }
+  // random access cursor 
+  get indexable$() { return this.reversible$ }
   get index$() { return this.token$ }
   set index$(index) { this.token$ = index }
 
-  recycle$(indexable, index) {
-    super.recycle$(indexable, index)
-    return this
+  // universal cursor concept implementation
+  equals$(other) {
+    const { indexable$: indexable, index$: index } = this
+    return indexable.equals$(index, other)
   }
+
+  // random access cursor concept implementation
   move$(offset) {
     const { indexable$: indexable, index$: index } = this
     const result = indexable.move$(index, offset)
@@ -42,8 +46,14 @@ export class IndexableCursor extends RewindCursor {
     const { indexable$: indexable, index$: index } = this
     return indexable.subtract$(index, other)
   }
-  equals$(other) {
-    const { indexable$: indexable, index$: index } = this
-    return indexable.equals$(index, other)
+
+  // random access cursor concept
+  move(offset) {
+    if (offset == 0) return true
+    return this.move$(offset)
   }
+  at(offset) { return this.at$(offset) }
+  setAt(offset, value) { this.setAt$(value, offset) }
+  subtract(other) { return this.subtract$(other) }
+  compareTo(other) { return this.compareTo$(other) }
 }
