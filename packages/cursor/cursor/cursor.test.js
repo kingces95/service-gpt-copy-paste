@@ -1,8 +1,8 @@
+import { implement } from '@kingjs/concept'
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Cursor } from './cursor.js'
-import { implement } from '../concept.js'
-import { Preconditions } from '../debug-proxy.js'
+import { Preconditions } from '@kingjs/debug-proxy'
 import { 
   CursorConcept,
   InputCursorConcept,

@@ -1,11 +1,13 @@
-import { Concept, Stub } from '../concept.js'
-import { Preconditions } from '../debug-proxy.js'
+import { Concept, Stub } from '@kingjs/concept'
+import { Preconditions } from '@kingjs/debug-proxy'
 import {
   throwNull,
   throwNotEquatableTo,
 } from '../throw.js'
 
 export class CursorConcept extends Concept {
+  static [Preconditions] = Concept
+
   step() { return this[Stub](
     CursorConcept, 'step') }
   next() { return this[Stub](

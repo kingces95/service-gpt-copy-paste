@@ -1,4 +1,4 @@
-import { DebugProxy, Preconditions } from '../debug-proxy.js'
+import { DebugProxy, Preconditions } from '@kingjs/debug-proxy'
 import {
   throwNotImplemented,
   throwReadOnly,
@@ -40,7 +40,7 @@ export class Cursor extends BaseCursor {
     if (!this.step()) return
     return value
   }
-  
+
   // universal cursor concept
   next() { return this.next$() }
   step() { return this.step$() }

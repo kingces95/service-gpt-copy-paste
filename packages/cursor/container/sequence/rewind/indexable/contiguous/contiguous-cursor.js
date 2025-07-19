@@ -1,6 +1,6 @@
 import { IndexableCursor } from './../indexable-cursor.js'
-import { implement } from '../../../../../concept.js'
-import { Preconditions } from '../../../../../debug-proxy.js'
+import { implement } from '@kingjs/concept'
+import { Preconditions } from '@kingjs/debug-proxy'
 import { 
   ContiguousCursorConcept,
 } from '../../../../../cursor/cursor-concepts.js'

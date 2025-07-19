@@ -1,4 +1,4 @@
-import { createProxy } from './proxy.js'
+import { createProxy } from '@kingjs/proxy'
 import { Reflection } from '@kingjs/reflection'
 import { getOwn } from '@kingjs/get-own'
 

@@ -1,7 +1,7 @@
 import { ContainerCursor } from '../container-cursor.js'
-import { implement } from '../../concept.js'
-import { GlobalPrecondition } from '../../proxy.js'
-import { Preconditions } from '../../debug-proxy.js'
+import { implement } from '@kingjs/concept'
+import { GlobalPrecondition } from '@kingjs/proxy'
+import { Preconditions } from '@kingjs/debug-proxy'
 import { 
   ForwardCursorConcept,
 } from '../../cursor/cursor-concepts.js'

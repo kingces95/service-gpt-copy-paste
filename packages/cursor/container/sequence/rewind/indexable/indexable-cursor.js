@@ -1,6 +1,6 @@
 import { RewindCursor } from '../rewind-cursor.js'
-import { implement } from '../../../../concept.js'
-import { Preconditions } from '../../../../debug-proxy.js'
+import { implement } from '@kingjs/concept'
+import { Preconditions } from '@kingjs/debug-proxy'
 import { 
   throwReadOnly,
 } from '../../../../throw.js'

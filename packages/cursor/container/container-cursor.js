@@ -1,5 +1,5 @@
 import { Cursor } from '../cursor/cursor.js'
-import { implement } from '../concept.js'
+import { implement } from '@kingjs/concept'
 import { 
   InputCursorConcept,
   OutputCursorConcept,

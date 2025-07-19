@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { DebugProxy, Preconditions } from "./debug-proxy.js"
+import { DebugProxy, Preconditions } from '@kingjs/debug-proxy'
 
 class MyProxy extends DebugProxy {
   static [Preconditions] = class extends DebugProxy[Preconditions] {

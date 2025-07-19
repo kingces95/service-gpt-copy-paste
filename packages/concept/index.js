@@ -1,6 +1,4 @@
 import { getOwn } from '@kingjs/get-own'
-import { Preconditions } from './debug-proxy.js'
-import { getOwn } from '@kingjs/get-own'
 import { Reflection } from '@kingjs/reflection'
 
 const {
@@ -19,8 +17,6 @@ export const Stub = Symbol('Stub')
 export const Bind = Symbol('Bind')
 
 export class Concept { 
-  static [Preconditions] = Concept
-
   static [Symbol.hasInstance](instance) {
     const constructor = instance?.constructor
     if (!constructor) return false

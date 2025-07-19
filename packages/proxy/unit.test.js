@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { createProxy, GlobalPrecondition } from "./proxy.js"
+import { createProxy, GlobalPrecondition } from "@kingjs/proxy"
 
 describe('A disposable freezable class', () => {
   let type

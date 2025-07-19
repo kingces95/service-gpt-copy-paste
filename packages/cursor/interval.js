@@ -1,4 +1,4 @@
-import { DebugProxy } from './debug-proxy.js'
+import { DebugProxy } from '@kingjs/debug-proxy'
 
 // Interval is the base class for Container, View, and Range. Strictly
 // speaking, Container and View both extend CursorFactory, but that

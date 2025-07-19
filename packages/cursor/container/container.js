@@ -1,6 +1,6 @@
 import { CursorFactory } from '../cursor/cursor-factory.js'
-import { GlobalPrecondition } from '../proxy.js'
-import { Preconditions } from '../debug-proxy.js'
+import { GlobalPrecondition } from '@kingjs/proxy'
+import { Preconditions } from '@kingjs/debug-proxy'
 import {
   throwNotImplemented,
   throwDisposed,
