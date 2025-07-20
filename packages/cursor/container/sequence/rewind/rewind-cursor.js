@@ -12,16 +12,8 @@ export class RewindCursor extends SequenceCursor {
   }
 
   // rewind cursor
-  get reversible$() { return this.sequence$ }
-
-  // bidirectional rewind cursor concept implementation
-  stepBack$() {
-    const result = this.reversible$.stepBack$(this.token$)
-    if (result === false) return false
-    this.token$ = result
-    return true
+  stepBack() {
+    this.token$ = this.container$.stepBack$(this.token$)
+    return this
   }
-
-  // bidirectional rewind cursor concept
-  stepBack() { return this.stepBack$() }
 }

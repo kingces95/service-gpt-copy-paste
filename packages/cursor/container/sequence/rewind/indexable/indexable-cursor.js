@@ -23,48 +23,35 @@ export class IndexableCursor extends RewindCursor {
   }
 
   // random access cursor 
-  get indexable$() { return this.reversible$ }
   get index$() { return this.token$ }
   set index$(index) { this.token$ = index }
 
-  // universal cursor concept implementation
+  // basic cursor
   equals$(other) {
-    const { indexable$: indexable, index$: index } = this
+    const { container$: indexable, index$: index } = this
     return indexable.equals$(index, other)
   }
 
-  // random access cursor concept implementation
-  move$(offset) {
-    const { indexable$: indexable, index$: index } = this
-    const result = indexable.move$(index, offset)
-    if (result === false) return false
-    this.index$ = result
-    return true
+  // random access cursor
+  move(offset) {
+    const { container$: indexable, index$: index } = this
+    this.index$ = indexable.move$(index, offset)
+    return this
   }
-  at$(offset) {
-    const { indexable$: indexable, index$: index } = this
+  at(offset) {
+    const { container$: indexable, index$: index } = this
     return indexable.at$(index, offset)
   }
-  setAt$(offset, value) {
-    const { indexable$: indexable, index$: index } = this
+  setAt(offset, value) {
+    const { container$: indexable, index$: index } = this
     return indexable.setAt$(index, offset, value)
   }
-  compareTo$(other) {
-    const { indexable$: indexable, index$: index } = this
-    return indexable.compareTo$(index, other)
-  }
-  subtract$(other) {
-    const { indexable$: indexable, index$: index } = this
+  subtract(other) {
+    const { container$: indexable, index$: index } = this
     return indexable.subtract$(index, other)
   }
-
-  // random access cursor concept
-  move(offset) {
-    if (offset == 0) return true
-    return this.move$(offset)
+  compareTo(other) {
+    const { container$: indexable, index$: index } = this
+    return indexable.compareTo$(index, other)
   }
-  at(offset) { return this.at$(offset) }
-  setAt(offset, value) { this.setAt$(value, offset) }
-  subtract(other) { return this.subtract$(other) }
-  compareTo(other) { return this.compareTo$(other) }
 }

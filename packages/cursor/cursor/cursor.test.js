@@ -15,6 +15,8 @@ import {
 import {
   throwMoveOutOfBounds,
   throwReadOnly,
+  throwReadOutOfBounds,
+  throwWriteOutOfBounds,
 } from '../throw.js'
 
 import { List } from '../container/sequence/list.js'
@@ -32,29 +34,55 @@ import { InputCursorConcept } from './cursor-concepts.js'
 class TrivialCursor extends Cursor {
   static { implement(this, CursorConcept) }
   
+  #id
+
   constructor(id) {
     super()
-    this.id = id
+    this.#id = id
   }
   get __isActive$() { return true }
+  get id$() { return this.#id }
   step$() { throwMoveOutOfBounds() }
   equals$(other) { return true }
-  equatableTo$(other) { return this.id == other.id }
+  equatableTo$(other) { return this.#id == other.id$ }
 }
 
 class TrivialInputCursor extends TrivialCursor {
+  static [Preconditions] = class extends TrivialCursor[Preconditions] {
+    get value() {
+      throwReadOutOfBounds()
+    }
+  }
+
   static { implement(this, InputCursorConcept) }
   get value$() { return undefined }
   get value() { return this.value$ }
 }
 
 class TrivialOutputCursor extends TrivialCursor {
+  static [Preconditions] = class extends TrivialCursor[Preconditions] {
+    set value(value) {
+      if (this.isReadOnly) throwReadOnly()
+      throwWriteOutOfBounds()
+    }
+  }
+
   static { implement(this, OutputCursorConcept) }
   set value$(value) { throw new RangeError() }
   set value(value) { this.value$ = value }
 }
 
 class TrivialMutableCursor extends TrivialCursor {
+  static [Preconditions] = class extends TrivialCursor[Preconditions] {
+    get value() {
+      throwReadOutOfBounds()
+    }
+    set value(value) {
+      if (this.isReadOnly) throwReadOnly()
+      throwWriteOutOfBounds()
+    }
+  }
+
   static { implement(this, TrivialInputCursor, TrivialOutputCursor) }
   get value$() { return undefined }
   get value() { return this.value$ }
@@ -79,11 +107,15 @@ class TrivialRandomAccessCursor extends TrivialBidirectionalCursor {
     static { implement(this, RandomAccessCursorConcept[Preconditions]) }
     setAt(offset, value) {
       if (this.isReadOnly) throwReadOnly()
+      throwWriteOutOfBounds()
+    }
+    at(offset) {
+      throwReadOutOfBounds()
     }
   }
   static { implement(this, RandomAccessCursorConcept) }
   move$(offset) { 
-    if (offset === 0) return true
+    if (offset === 0) return this
     throwMoveOutOfBounds()
   }
   at$(offset) { return undefined }
@@ -210,14 +242,16 @@ describe.each(cases)('%s', (_, concepts, begin0, end0, begin1) => {
   })
 
   // operations that throw if cursor does not support them
-  it('should have undefined value', () => {
+  it('should throw read out of bounds', () => {
     if (!(begin instanceof InputCursorConcept)) return
-    expect(begin.value).toBeUndefined()
+    expect(() => begin.value).toThrow(
+      'Cannot read value out of bounds of cursor.'
+    )
   })
   it('should throw on next', () => { 
     if (!(begin instanceof InputCursorConcept)) return
     expect(() => end.next()).toThrow(
-      "Cannot move cursor out of bounds."
+      "Cannot read value out of bounds of cursor."
     )
   })
   it('should throw RangeError if set', () => {
@@ -249,11 +283,13 @@ describe.each(cases)('%s', (_, concepts, begin0, end0, begin1) => {
   })
   it('should return true if moving 0', () => {
     if (!(begin instanceof RandomAccessCursorConcept)) return
-    expect(begin.move(0)).toBe(true)
+    expect(begin.move(0)).toBe(begin)
   })
-  it('should return undefined on at', () => {
+  it('should throw at 0', () => {
     if (!(begin instanceof RandomAccessCursorConcept)) return
-    expect(begin.at(0)).toBeUndefined()
+    expect(() => begin.at(0)).toThrow(
+      "Cannot read value out of bounds of cursor."
+    )
   })
   it('should throw if set at offset', () => {
     if (!(begin instanceof RandomAccessCursorConcept)) return
@@ -455,6 +491,7 @@ describe.each(cases)('%s', (_, concepts, begin0, end0, begin1) => {
       )
     })
     it('should not allow value to be set', () => {
+      if (!(begin instanceof OutputCursorConcept)) return
       expect(() => begin.value = 42).toThrow(
         "Cursor is read-only."
       )

@@ -7,24 +7,18 @@ import {
 export class CursorFactory extends Interval {  
   static get cursorType() { return this.cursorType$ }
 
-  static get cursorType$() { throwNotImplemented() }
-
   constructor() { 
     super()
   }
 
-  // cursor implementation
+  // cursor
   equatableTo$$(otherCursor) { throwNotImplemented() }
-
-  // cursor proxy
   equatableTo$(otherCursor) {
     const type = this.constructor.cursorType
     const otherType = otherCursor?.constructor
     if (type !== otherType) return false
     return this.equatableTo$$(otherCursor)
   } 
-  
-  get isEmpty$() { return this.begin().equals(this.end()) }
   
   // A subclass can use this method to activate a cursor. If recyclable is 
   // provided, it will be recycled, otherwise a new cursor will be created.
@@ -37,11 +31,19 @@ export class CursorFactory extends Interval {
     return cursor
   }
   
-  beforeBegin$(recyclable) { throwNotImplemented() }
-  begin$(recyclable) { throwNotImplemented() }
-  end$(recyclable) { throwNotImplemented() }
-  toRange$() { return new Range(this.begin(), this.end()) }
+  // interval
+  toRange() { return new Range(this.begin(), this.end()) }
+  toCRange() { return super.toCRange() }
 
+  // cursor factory
+  get isEmpty() { return this.begin().equals(this.end()) }
+  beforeBegin(recyclable) { throwNotImplemented() }
+  begin(recyclable) { throwNotImplemented() }
+  end(recyclable) { throwNotImplemented() }
+  
+  // Deconstruct a cursor to its underlying components. The STL version only
+  // returns a buffer and index if the container is contiguous, but this version
+  // will also return a set of inner cursors of composit view cursors.
   // Unwrap a cursor to an array cursors or buffer plus index. For example,
   // - JoinView returns [outterCursor, innerCursor]
   // - ComposedView returns [cursor] 
@@ -49,12 +51,6 @@ export class CursorFactory extends Interval {
   // - Vector return null because it's neither a composition of other cursors
   //   nor does it have an underlying buffer
   data$(cursor) { return }
-  
-  get isEmpty() { return this.isEmpty$ }
-  
-  // Deconstruct a cursor to its underlying components. The STL version only
-  // returns a buffer and index if the container is contiguous, but this version
-  // will also return a set of inner cursors of composit view cursors.
   data(cursor) {
     if (cursor == undefined) 
       return
@@ -65,10 +61,7 @@ export class CursorFactory extends Interval {
     this.data$(cursor)
   }
 
-  beforeBegin(recyclable) { return this.beforeBegin$(recyclable) }
-  begin(recyclable) { return this.begin$(recyclable) }
-  end(recyclable) { return this.end$(recyclable) }
-
+  // cursor factory
   cbeforeBegin(recyclable) {
     const beforeBegin = this.beforeBegin(recyclable)
     beforeBegin.isReadOnly = true

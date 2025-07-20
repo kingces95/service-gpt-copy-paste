@@ -3,7 +3,9 @@ import { Reflection } from '@kingjs/reflection'
 function isPublic(property) {
   const type = typeof property
   if (type === 'symbol') return true
-  return !property.endsWith('$')
+  if (property.endsWith('$')) return false
+  if (property.startsWith('_')) return false
+  return true
 }
 
 function hasGetter(descriptor) {
@@ -42,7 +44,7 @@ export function createProxy(target, {
       if (property === 'constructor') return target.constructor
 
       // precondition check
-      if (filter(property)) globalPrecondition?.call(target)
+      if (filter(property)) globalPrecondition?.call(receiver)
 
       // ignore preconditions for symbol properties
       const descriptor = typeof property === 'symbol' ? null :
@@ -52,14 +54,14 @@ export function createProxy(target, {
       if (typeof precondition === 'function') {
         // property is a function with a precondition
         return (...args) => {
-          precondition.call(target, ...args)
+          precondition.call(receiver, ...args)
           return target[property].call(receiver, ...args)
         }
       }
 
       if (hasGetter(descriptor))
         // property is a getter with a precondition, execute the precondition
-        Reflect.get(preconditions, property, target)
+        Reflect.get(preconditions, property, receiver)
       
       // transparently return the property value or function
       let value = Reflect.get(target, property, receiver)
@@ -68,14 +70,15 @@ export function createProxy(target, {
       return value
     },
     set(target, property, value, receiver) {
-      if (filter(property)) globalPrecondition?.call(target)
+      if (filter(property)) globalPrecondition?.call(receiver)
 
       // if the property has a set thunk, use it
       const descriptor = Reflection.getDescriptor(preconditions, property)
       if (hasSetter(descriptor))
-        Reflect.set(preconditions, property, value, target)
+        Reflect.set(preconditions, property, value, receiver)
 
-      return Reflect.set(target, property, value, receiver)
+      Reflect.set(target, property, value, receiver)
+      return true
     }
   })
 }

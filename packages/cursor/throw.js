@@ -13,6 +13,8 @@ export function throwStale() { throw new Error(
 export function throwReadOnly() { throw new Error(
   'Cursor is read-only.') }
 
+export function throwReadOutOfBounds() { throw new RangeError(
+  'Cannot read value out of bounds of cursor.') }
 export function throwWriteOutOfBounds() { throw new RangeError(
   'Cannot write value out of bounds of cursor.') }
 export function throwMoveOutOfBounds() { throw new RangeError(

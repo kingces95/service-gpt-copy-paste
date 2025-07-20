@@ -10,11 +10,9 @@ import { DebugProxy } from '@kingjs/debug-proxy'
 // to a Range which can then be stored internally by the SegmentContainer.
 
 export class Interval extends DebugProxy {  
-  toRange$() { throw new Error("Not implemented.") }
-  
-  toRange() { return this.toRange$() }
+  toRange() { throw new Error("Not implemented.") }
   toCRange() {
-    const range = this.toRange$()
+    const range = this.toRange()
     range.begin.isReadOnly = true
     range.end.isReadOnly = true
     return range

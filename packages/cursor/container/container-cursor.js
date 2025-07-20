@@ -1,11 +1,22 @@
 import { Cursor } from '../cursor/cursor.js'
 import { implement } from '@kingjs/concept'
+import { Preconditions } from '@kingjs/debug-proxy'
+import {
+  throwNotImplemented,
+  throwReadOnly,
+} from '../throw.js'
 import { 
   InputCursorConcept,
   OutputCursorConcept,
 } from '../cursor/cursor-concepts.js'
 
 export class ContainerCursor extends Cursor {
+  static [Preconditions] = class extends Cursor[Preconditions] {
+    set value(value) {
+      if (this.isReadOnly) throwReadOnly()
+    }
+  }
+
   static { 
     implement(this, 
       InputCursorConcept, 
@@ -13,16 +24,16 @@ export class ContainerCursor extends Cursor {
     ) 
   }
   
-  __container
-  __version
+  #container
+  #version
 
   constructor(container) {
     super()
-    this.__container = container
-    this.__version = container.__version$
+    this.#container = container
+    this.#version = container.__version$
   }
 
-  get __version$() { return this.__version }
+  get __version$() { return this.#version }
 
   // cursor lifecycle
   recycle$(container) {
@@ -33,18 +44,10 @@ export class ContainerCursor extends Cursor {
   }
 
   // container cursor
-  get container$() { return this.__container }
+  get container$() { return this.#container }
 
-  // universal cursor concept implementation
+  // basic cursor
   equatableTo$(other) { 
     return this.container$.equatableTo$(other) 
   }
-
-  // input/output cursor concept implementation
-  get value$() { throwNotImplemented() }
-  set value$(value) { throwNotImplemented() }
-
-  // input/output cursor concept
-  get value() { return this.value$ }
-  set value(value) { this.value$ = value }
 }

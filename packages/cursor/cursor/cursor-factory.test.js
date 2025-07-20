@@ -38,8 +38,10 @@ const cases = [
 // test the functionality of the cursor container
 describe.each(cases)('A %s', (name, type, cursorPrototype, concepts) => {
   let f0
+  let begin
   beforeEach(() => {
     f0 = new type()
+    begin = f0.begin()
   })
   it('should satisfy the concepts', () => {
     for (const concept of concepts) {
@@ -55,6 +57,11 @@ describe.each(cases)('A %s', (name, type, cursorPrototype, concepts) => {
   describe('unshift a value', () => {
     beforeEach(() => {
       f0.unshift(value0)
+    })
+    it('should throw when accessed stale cursors', () => {
+      if (f0 instanceof RandomAccessCursorConcept)
+        expect(() => { begin.step() }).toThrow(
+          'Cursor is stale and cannot be used.')
     })
     it('should have a front value', () => {
       expect(f0.front).toBe(value0)
@@ -108,7 +115,7 @@ describe.each(cases)('A %s', (name, type, cursorPrototype, concepts) => {
           didStep = cursor.step()
         })
         it('should have stepped', () => {
-          expect(didStep).toBe(true)
+          expect(didStep).toBe(cursor)
         })
         it('should be at the end', () => {
           expect(cursor.equals(f0.end())).toBe(true)
@@ -238,7 +245,7 @@ describe.each(cases)('A %s', (name, type, cursorPrototype, concepts) => {
           didStep = cursor.step()
         })
         it('should have stepped', () => {
-          expect(didStep).toBe(true)
+          expect(didStep).toBe(cursor)
         })
         it('should be at the end', () => {
           expect(cursor.equals(f0[endFn]())).toBe(true)
@@ -254,7 +261,7 @@ describe.each(cases)('A %s', (name, type, cursorPrototype, concepts) => {
               moved = cursor.move(0)
             })
             it('should have "moved"', () => {
-              expect(moved).toBe(true)
+              expect(moved).toBe(cursor)
             })
             it('should still be at the end', () => {
               expect(cursor.equals(f0[endFn]())).toBe(true)
@@ -266,7 +273,7 @@ describe.each(cases)('A %s', (name, type, cursorPrototype, concepts) => {
               movedBack = cursor.move(-1)
             })
             it('should have moved', () => {
-              expect(movedBack).toBe(true)
+              expect(movedBack).toBe(cursor)
             })
             it('should be at the beginning', () => {
               expect(cursor.equals(f0[beginFn]())).toBe(true)
@@ -277,7 +284,7 @@ describe.each(cases)('A %s', (name, type, cursorPrototype, concepts) => {
                 movedForward = cursor.move(1)
               })
               it('should have moved forward', () => {
-                expect(movedForward).toBe(true)
+                expect(movedForward).toBe(cursor)
               })
               it('should be at the end', () => {
                 expect(cursor.equals(f0[endFn]())).toBe(true)
@@ -292,7 +299,7 @@ describe.each(cases)('A %s', (name, type, cursorPrototype, concepts) => {
 
           it('should be able to step back', () => {
             const didStepBack = cursor.stepBack()
-            expect(didStepBack).toBe(true)
+            expect(didStepBack).toBe(cursor)
             expect(cursor.equals(f0[beginFn]())).toBe(true)
           })
         })

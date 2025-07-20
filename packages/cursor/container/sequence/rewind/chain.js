@@ -1,22 +1,59 @@
 import { RewindContainer } from "./rewind-container.js"
 import { ChainNode } from "./chain-node.js"
+import { Preconditions } from '@kingjs/debug-proxy'
 import {
   throwNotEquatableTo,
   throwWriteOutOfBounds,
   throwMoveOutOfBounds,
   throwUpdateOutOfBounds,
+  throwReadOutOfBounds,
 } from '../../../throw.js'
 
 export class Chain extends RewindContainer {
-  __count
-  __root
-  __end
+  static [Preconditions] = class extends RewindContainer[Preconditions] {
+    setValue$(link, value) {
+      if (this.isEnd$(link)) throwWriteOutOfBounds()
+      if (this.isBeforeBegin$(link)) throwWriteOutOfBounds()
+    }
+    value$(link) {
+      if (this.isEnd$(link)) throwReadOutOfBounds()
+      if (this.isBeforeBegin$(link)) throwReadOutOfBounds()
+    }
+    step$(link) {
+      if (this.isEnd$(link)) throwMoveOutOfBounds()
+    }
+    stepBack$(link) {
+      if (this.isBeforeBegin$(link)) throwMoveOutOfBounds()
+    }
+
+    insertAfter(cursor, value) {
+      if (!this.equatableTo$(cursor)) throwNotEquatableTo()
+      if (this.isEnd$(cursor.token$)) throwUpdateOutOfBounds()
+    }
+    removeAfter(cursor) {
+      if (!this.equatableTo$(cursor)) throwNotEquatableTo()
+      if (this.isEnd$(cursor.token$)) throwUpdateOutOfBounds()
+    }
+    insertBefore(cursor, value) {
+      if (!this.equatableTo$(cursor)) throwNotEquatableTo()
+      if (this.isBeforeBegin$(cursor.token$)) throwUpdateOutOfBounds()
+    }
+    remove(cursor) {
+      if (!this.equatableTo$(cursor)) throwNotEquatableTo()
+      if (this.isEnd$(cursor.token$)) throwUpdateOutOfBounds()
+      if (this.isBeforeBegin$(cursor.token$)) throwUpdateOutOfBounds()
+    }
+  }
+
+  #count
+  #root
+  #end
 
   constructor() { 
     super()
-    this.__root = new ChainNode()
-    this.__end = this.__root.insertAfter() 
-    this.__count = 0
+    this.#root = new ChainNode()
+    this.#end = this.#root.insertAfter() 
+    this.#count = 0
     this.__check()
   }
 
@@ -37,90 +74,72 @@ export class Chain extends RewindContainer {
     //   'Chain is not properly linked in reverse')
   }
 
-  #isEnd(link) { return link == this.__end }
-  #isBeforeBegin(link) { return link == this.__root }
+  isEnd$(link) { return link == this.#end }
+  isBeforeBegin$(link) { return link == this.#root }
   
-  // cursor implementation
-  __isActive$$(link) { return !!link.next }
-  value$$(link) { return link.value }
-  setValue$$(link, value) { 
-    if (this.#isEnd(link)) throwWriteOutOfBounds()
-    if (this.#isBeforeBegin(link)) throwWriteOutOfBounds()
-    link.value = value 
-  }
-  step$$(link) { 
-    if (this.#isEnd(link)) throwMoveOutOfBounds()
-    return link.next 
-  }
-  stepBack$$(link) { 
-    if (this.#isBeforeBegin(link)) throwMoveOutOfBounds()
-    return link.previous 
-  }
-  equals$$(link, otherLink) { return link == otherLink.token$ }
+  __isActive$(link) { return !!link.next }
 
-  get isEmpty$() { return this.__end == this.__root.next }
-  get front$() { return this.__root.next.value }
-  get back$() { return this.__root.previous.previous.value }
+  // basic cursor
+  equals$(link, otherLink) { return link == otherLink.token$ }
 
-  insertAfter$(cursor, value) {
-    if (this.#isEnd(cursor)) throwUpdateOutOfBounds()
+  // step cursor
+  step$(link) { return link.next }
+
+  // input cursor
+  value$(link) { return link.value }
+
+  // output cursor
+  setValue$(link, value) { link.value = value }
+
+  // rewind cursor
+  stepBack$(link) { return link.previous }
+
+  // cursor factory
+  get isEmpty() { return this.#end == this.#root.next }
+  beforeBegin(recyclable) { return this.cursor$(recyclable, this.#root) }
+  begin(recyclable) { return this.cursor$(recyclable, this.#root.next) }
+  end(recyclable) { return this.cursor$(recyclable, this.#end) }
+
+  // container
+  dispose$() { 
+    this.#root = null 
+    this.#end = null
+  }
+
+  // sequence container
+  get front() { return this.#root.next.value }
+  unshift(value) { this.insertAfter(this.beforeBegin(), value) }
+  shift() { return this.removeAfter(this.beforeBegin()) }
+
+  // rewind container
+  get back() { return this.#root.previous.previous.value }
+  push(value) { this.insertBefore(this.end(), value) }
+  pop() { 
+    const cursor = this.end()
+    cursor.stepBack()
+    return this.remove(cursor) 
+  }
+
+  // chain
+  insertAfter(cursor, value) {
     cursor.token$.insertAfter(value)
-    this.__count++
+    this.#count++
     this.__check()
   }
-  removeAfter$(cursor) {
-    if (this.#isEnd(cursor)) throwUpdateOutOfBounds()
+  removeAfter(cursor) {
     const result = cursor.token$.removeAfter()
-    this.__count--
+    this.#count--
     this.__check()
     return result
   }
-  insertBefore$(cursor, value) {
-    if (this.#isBeforeBegin(cursor)) throwUpdateOutOfBounds()
-    cursor = cursor.clone()
-    cursor.stepBack()
-    return this.insertAfter$(cursor, value)
-  }
-  remove$(cursor) {
-    if (this.#isEnd(cursor)) throwUpdateOutOfBounds()
-    if (this.#isBeforeBegin(cursor)) throwUpdateOutOfBounds()
-    cursor = cursor.clone()
-    cursor.stepBack()
-    return this.removeAfter$(cursor)
-  }
-  dispose$() { 
-    this.__root = null 
-    this.__end = null
-  }
 
-  beforeBegin$(recyclable) { return this.cursor$(recyclable, this.__root) }
-  begin$(recyclable) { return this.cursor$(recyclable, this.__root.next) }
-  end$(recyclable) { return this.cursor$(recyclable, this.__end) }
-
-  push$(value) { this.insertBefore$(this.end(), value) }
-  pop$() { 
-    const cursor = this.end()
-    cursor.stepBack()
-    return this.remove$(cursor) 
-  }
-  unshift$(value) { this.insertAfter$(this.beforeBegin(), value) }
-  shift$() { return this.removeAfter$(this.beforeBegin()) }
-
-  insertAfter(cursor, value) {
-    if (!this.equatableTo$(cursor)) throwNotEquatableTo()
-    return this.insertAfter$(cursor, value)
-  }
-  removeAfter(cursor) {
-    if (!this.equatableTo$(cursor)) throwNotEquatableTo()
-    return this.removeAfter$(cursor)
-  }
-  
   insertBefore(cursor, value) {
-    if (!this.equatableTo$(cursor)) throwNotEquatableTo()
-    return this.insertBefore$(cursor, value)
+    cursor = cursor.clone()
+    cursor.stepBack()
+    return this.insertAfter(cursor, value)
   }
   remove(cursor) {
-    if (!this.equatableTo$(cursor)) throwNotEquatableTo()
-    return this.remove$(cursor)
-  }
-}
+    cursor = cursor.clone()
+    cursor.stepBack()
+    return this.removeAfter(cursor)
+  }}

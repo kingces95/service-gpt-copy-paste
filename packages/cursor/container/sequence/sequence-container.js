@@ -1,49 +1,43 @@
 import { Container } from '../container.js'
 import { SequenceCursor } from './sequence-cursor.js'
+import { Preconditions } from '@kingjs/debug-proxy'
 import {
   throwNotImplemented,
   throwEmpty,
 } from '../../throw.js'
 
 export class SequenceContainer extends Container {
+  static [Preconditions] = class extends Container[Preconditions] {
+    shift() {
+      if (this.isEmpty) throwEmpty()
+    }
+    get front() {
+      if (this.isEmpty) throwEmpty()
+    }
+  }
+
   static get cursorType$() { return SequenceCursor }
 
   constructor() {
     super()
   }
-
-  // cursor implementation
-  __isActive$$(token) { return true }
-  value$$(token) { throwNotImplemented() }
-  setValue$$(token, value) { throwNotImplemented() }
-  step$$(token) { throwNotImplemented() }
-  equals$$(token, otherCursor) { throwNotImplemented() }
   
-  // cursor proxy
-  __isActive$(token) { return this.__isActive$$(token) } 
-  step$(token) { return this.step$$(token) }
-  value$(token) { return this.value$$(token) }
-  setValue$(token, value) { this.setValue$$(token, value) }
-  equals$(token, otherCursor) { 
-    return this.equals$$(token, otherCursor) 
-  }
+  __isActive$(token) { return true } 
 
-  // container implementation
-  get front$() { throwNotImplemented() }
+  // basic cursor
+  equals$(token, other) { throwNotImplemented() }
 
-  unshift$(value) { throwNotImplemented() }
-  shift$() { throwNotImplemented() }
+  // step cursor
+  step$(token) { throwNotImplemented() }
 
-  // container proxy
-  get isEmpty() { return this.isEmpty$ }
-  get front() { 
-    if (this.isEmpty$) throwEmpty()
-    return this.front$ 
-  }
+  // input cursor
+  value$(token) { throwNotImplemented() }
 
-  unshift(value) { this.unshift$(value) }
-  shift() {
-    if (this.isEmpty$) throwEmpty()
-    return this.shift$()
-  }
+  // output cursor
+  setValue$(token, value) { throwNotImplemented() }
+
+  // sequence container
+  get front() { throwNotImplemented() }
+  unshift(value) { throwNotImplemented() }
+  shift() { throwNotImplemented() }
 }

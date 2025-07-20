@@ -2,52 +2,46 @@ import { CursorFactory } from '../cursor/cursor-factory.js'
 import { GlobalPrecondition } from '@kingjs/proxy'
 import { Preconditions } from '@kingjs/debug-proxy'
 import {
-  throwNotImplemented,
   throwDisposed,
 } from '../throw.js'
+import { RewindCursor } from './sequence/rewind/rewind-cursor.js'
 
 export class Container extends CursorFactory {
   static [Preconditions] = class extends CursorFactory[Preconditions] { 
     [GlobalPrecondition]() {
       const container = this
-      if (container.__isDisposed$) throwDisposed()
+      if (container.isDisposed$) throwDisposed()
     }
   }
 
-  __version
-  __disposed
+  #version
+  #disposed
 
   constructor() { 
     super()
-    this.__version = 0
-    this.__disposed = false
+    this.#version = 0
+    this.#disposed = false
   }
 
-  get __isDisposed$() { return this.__disposed }
+  get isDisposed$() { return this.#disposed }
 
   // A debug helper which detects when a cursor is invalidated. Typically,
   // this happens during an unshift of shift operation as that operation
   // invalidates all index cursors. Cursors that reference a node cannot be
   // invalidated so those containers will not bump the version.
-  get __version$() { return this.__version }
-  __bumpVersion$() { this.__version++ }
+  get __version$() { return this.#version }
+  __bumpVersion$() { this.#version++ }
   
-  // cursor implementation
-  equatableTo$$(otherCursor) { return this == otherCursor.container$ } 
-
-  // cursor proxy
+  // cursor
   equatableTo$(otherCursor) {
-    return super.equatableTo$(otherCursor)
+    return this == otherCursor.container$
   }
 
-  // container implementation
-  isEmpty$() { throwNotImplemented() }
+  // container methods
   dispose$() { }
-  
-  // dispose implementation
   dispose() {
     this.dispose$()
-    this.__disposed = true
+    this.#disposed = true
     return this
   }
 }

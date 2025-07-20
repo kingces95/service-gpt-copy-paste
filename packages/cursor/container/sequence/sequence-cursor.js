@@ -12,9 +12,6 @@ import {
 export class SequenceCursor extends ContainerCursor {
   static [Preconditions] = class extends ContainerCursor[Preconditions] {
     [GlobalPrecondition]() {
-      // skip precondition while instance is being activated
-      if (!this.__activated) return
-
       const { container$, __version$, __isActive$ } = this
       if (!__isActive$) throwStale()
       if (container$.__version$ !== __version$) throwStale()
@@ -23,46 +20,42 @@ export class SequenceCursor extends ContainerCursor {
 
   static { implement(this, ForwardCursorConcept) }
 
-  __token
-  __activated
+  #token
 
   constructor(container, token) {
     super(container)
-    this.__token = token
-    this.__activated = true
+    this.#token = token
   }
 
   get __isActive$() { return this.container$.__isActive$(this.token$) }
 
   // sequence cursor
-  get sequence$() { return this.container$ }
-  get token$() { return this.__token }
-  set token$(token) { this.__token = token }
+  get token$() { return this.#token }
+  set token$(token) { this.#token = token }
 
-  // universal cursor concept implementation
-  equals$(other) { return this.sequence$.equals$(this.token$, other) }
+  // basic cursor
+  equals$(other) { return this.container$.equals$(this.token$, other) }
+  
+  // step cursor
   step$() { 
-    const result = this.sequence$.step$(this.token$)
-    if (result === false) return false
-    this.token$ = result
-    return true
+    this.token$ = this.container$.step$(this.token$)
+    return this
   }
 
-  // input/output cursor concept implementation
-  get value$() { return this.sequence$.value$(this.token$) }
-  set value$(value) { this.sequence$.setValue$(this.token$, value) }
+  // input cursor
+  get value() { return this.container$.value$(this.token$) }
 
-  // forward cursor concept implementation
-  clone$() {
+  // output cursor
+  set value(value) { this.container$.setValue$(this.token$, value) }
+
+  // forward cursor
+  clone() {
     const {
       constructor, 
-      sequence$: sequence, 
+      container$: sequence, 
       token$: token 
     } = this
 
     return new constructor(sequence, token)
   }
-
-  // forward cursor concept
-  clone() { return this.clone$() }
 }

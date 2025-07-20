@@ -1,5 +1,6 @@
 import { ContiguousCursor } from './contiguous-cursor.js'
 import { IndexableContainer } from "../indexable-container.js"
+import { Preconditions } from '@kingjs/debug-proxy'
 import { copyBackward } from '../../../../../algorithm/bidirectional/copy-backward.js'
 import { copyForward } from '../../../../../algorithm/copy-forward.js'
 import {
@@ -7,76 +8,73 @@ import {
 } from '../../../../../throw.js'
 
 export class ContiguousContainer extends IndexableContainer {
+  static [Preconditions] = class extends IndexableContainer[Preconditions] {
+    readAt$(index, offset, length, signed, littleEndian) {
+      switch (length) {
+        case 2: 
+        case 4:
+          if (!this.isInBounds$(index, offset + length)) throw new RangeError(
+            `Cannot read ${length} byte(s) at index ${index + offset + length}.`)
+        case 1:
+          if (!this.isInBounds$(index, offset)) throw new RangeError(
+            `Cannot read ${length} byte(s) at index ${index + offset}.`)
+          break
 
-  static get cursorType$() { return ContiguousCursor }
-
-  __length
-
-  constructor(buffer) {
-    super()
-    this.__length = 0
-  }
-
-  // cursor implementation
-  data$$(index, cursor) { throwNotImplemented() }
-  readAt$$(index, offset, length, signed, littleEndian) {
-    throwNotImplemented()
-  }
-
-  // cursor proxy
-  data$(index, cursor) {
-    return this.data$$(index, cursor)
-  }
-  readAt$(index, offset, length, signed, littleEndian) {
-    switch (length) {
-      case 2: 
-      case 4:
-        if (!this.isInBounds$(index, offset + length)) throw new RangeError(
-          `Cannot read ${length} byte(s) at index ${index + offset + length}.`)
-      case 1:
-        if (!this.isInBounds$(index, offset)) throw new RangeError(
-          `Cannot read ${length} byte(s) at index ${index + offset}.`)
-        return this.readAt$$(index, offset, length, signed, littleEndian)
-
-      default:
-        throw new Error(
-          `Unsupported length: ${length}. Only 1, 2, or 4 bytes are supported.`)
+        default:
+          throw new Error(
+            `Unsupported length: ${length}. Only 1, 2, or 4 bytes are supported.`)
+      }
     }
   }
 
-  get capacity$() { throwNotImplemented() }
-  get count$() { return this.__length }
+  static get cursorType$() { return ContiguousCursor }
 
-  expand$(count) { throwNotImplemented() }
-  push$(value) { this.insert(this.end(), value) }
-  unshift$(value) { this.insert(this.begin(), value) }
-  pop$() { 
+  #length
+
+  constructor(buffer) {
+    super()
+    this.#length = 0
+  }
+
+  get capacity() { throwNotImplemented() }
+
+  // contiguous cursor
+  readAt$(index, offset, length, signed, littleEndian) { throwNotImplemented() }
+
+  // forward container
+  unshift(value) { this.insert(this.begin(), value) }
+  shift() { return this.remove(this.begin()) }
+
+  // rewind container
+  get count() { return this.#length }
+  push(value) { this.insert(this.end(), value) }
+  pop() { 
     const end = this.end()
     end.stepBack()
-    return this.erase(end)
+    return this.remove(end)
   }
-  shift$() { return this.erase(this.begin()) }
-
-  get capacity() { return this.capacity$ }
-
+  
+  // contiguous container
+  expand$(count) { throwNotImplemented() }
   expand() {
-    this.__length = this.expand$(this.capacity * 2)
+    this.#length = this.expand$(this.capacity * 2)
   }
+
   insert(cursor, value) {
-    if (this.__length >= this.capacity$) this.expand()
+    if (this.#length >= this.capacity$) this.expand()
     const end = this.end()
-    this.__length++
+    this.#length++
     const result = this.end()
     copyBackward(cursor, end, result)
     cursor.value = value    
   }
-  erase(cursor) {
+  remove(cursor) {
     const value = cursor.value
     const end = this.end()
     const after = cursor.clone()
     after.step()
     copyForward(after, end, cursor)
-    this.__length--
+    this.#length--
     return value
   }
 }

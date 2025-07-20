@@ -1,6 +1,6 @@
 import { createProxy } from '@kingjs/proxy'
-import { Reflection } from '@kingjs/reflection'
-import { getOwn } from '@kingjs/get-own'
+// import { Reflection } from '@kingjs/reflection'
+// import { getOwn } from '@kingjs/get-own'
 
 // DebugProxy is a class that clients can extend which will build a
 // prototype chain of preconditions exposed as static getters and
@@ -12,14 +12,14 @@ import { getOwn } from '@kingjs/get-own'
 // once the code is stable and deployed. 
 export const Preconditions = Symbol('Preconditions')
 
-function activatePrototypeChain(type, name) {
-  return Reflection.link(
-    [...Reflection.hierarchy(type)]
-      .map(o => getOwn(o, name))
-      .filter(o => typeof o === 'function')
-      .map(o => o.prototype)
-  )
-}
+// function activatePrototypeChain(type, name) {
+//   return Reflection.link(
+//     [...Reflection.hierarchy(type)]
+//       .map(o => getOwn(o, name))
+//       .filter(o => typeof o === 'function')
+//       .map(o => o.prototype)
+//   )
+// }
 
 export class DebugProxy {
   static [Preconditions] = class { }

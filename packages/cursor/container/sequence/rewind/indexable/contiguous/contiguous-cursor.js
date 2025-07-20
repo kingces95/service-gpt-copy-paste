@@ -17,23 +17,12 @@ export class ContiguousCursor extends IndexableCursor {
   }
 
   // contiguous cursor
-  get contiguous$() { return this.indexable$ }
-
-  // contiguous cursor concept implementation
-  readAt$(offset = 0, length = 1, signed = false, littleEndian = false) {
-    const { contiguous$: contiguous, index$: index } = this
+  readAt(offset = 0, length = 1, signed = false, littleEndian = false) {
+    const { container$: contiguous, index$: index } = this
     return contiguous.readAt$(index, offset, length, signed, littleEndian)
   }
-  data$(other) {
-    const { contiguous$: contiguous, index$: index } = this
+  data(other) {
+    const { container$: contiguous, index$: index } = this
     return contiguous.data$(index, other)
-  }
-
-  // contiguous cursor concept
-  readAt(offset = 0, length = 1, signed = false, littleEndian = false) { 
-    return this.readAt$(offset, length, signed, littleEndian)
-  }
-  data(other) { 
-    return this.data$(other)
   }
 }
