@@ -28,6 +28,7 @@ export class IndexableContainer extends RewindContainer {
     }
 
     shift() {
+      super.shift()
       this.__bumpVersion$()
     }
     unshift(value) {

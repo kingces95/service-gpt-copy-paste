@@ -38,7 +38,7 @@ export class Container extends CursorFactory {
   }
 
   // container methods
-  dispose$() { }
+  // dispose$() { }
   dispose() {
     this.dispose$()
     this.#disposed = true

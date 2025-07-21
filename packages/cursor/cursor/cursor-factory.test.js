@@ -54,6 +54,14 @@ describe.each(cases)('A %s', (name, type, cursorPrototype, concepts) => {
   it('should be empty', () => {
     expect(f0.isEmpty).toBe(true)
   })
+  it('should throw if shifted', () => {
+    expect(() => { f0.shift() }).toThrow(
+      'Container is empty.')
+  })
+  it('should throw accessing front', () => {
+    expect(() => { f0.front }).toThrow(
+      'Container is empty.')
+  })
   describe('unshift a value', () => {
     beforeEach(() => {
       f0.unshift(value0)
@@ -303,6 +311,119 @@ describe.each(cases)('A %s', (name, type, cursorPrototype, concepts) => {
             expect(cursor.equals(f0[beginFn]())).toBe(true)
           })
         })
+      })
+    })
+  })
+  describe('disposed', () => {
+    beforeEach(() => {
+      f0.dispose()
+    })
+
+    it('should throw if disposed again', () => {
+      expect(() => { f0.dispose() }).toThrow(
+        'Container is disposed and cannot be used.')
+    })
+
+    describe('accessing cursor factory', () => {
+      it('should throw testing if empty', () => {
+        expect(() => { f0.isEmpty }).toThrow(
+          'Container is disposed and cannot be used.')
+      })
+      it('should throw if data is accessed', () => {
+        expect(() => { f0.data }).toThrow(
+          'Container is disposed and cannot be used.')
+      })
+      it('should not have a begin cursor', () => {
+        expect(() => { f0.begin() }).toThrow(
+          'Container is disposed and cannot be used.')
+      })
+      it('should not have an end cursor', () => {
+        expect(() => { f0.end() }).toThrow(
+          'Container is disposed and cannot be used.')
+      })
+      it('should not have a cbegin cursor', () => {
+        expect(() => { f0.cbegin() }).toThrow(
+          'Container is disposed and cannot be used.')
+      })
+      it('should not have a cend cursor', () => {
+        expect(() => { f0.cend() }).toThrow(
+          'Container is disposed and cannot be used.')
+      })
+      it('should not have a beforeBegin cursor', () => {
+        expect(() => { f0.beforeBegin() }).toThrow(
+          'Container is disposed and cannot be used.')
+      })
+      it('should not have a afterEnd cursor', () => {
+        expect(() => { f0.afterEnd() }).toThrow(
+          'Container is disposed and cannot be used.')
+      })
+      it('should not have a range', () => {
+        expect(() => { f0.toRange() }).toThrow(
+          'Container is disposed and cannot be used.')
+      })
+      it('should not have a cRange', () => {
+        expect(() => { f0.toCRange() }).toThrow(
+          'Container is disposed and cannot be used.')
+      })
+    })
+
+    describe('accessing a sequence container', () => {
+      it('should not have a front value', () => {
+        expect(() => { f0.front }).toThrow(
+          'Container is disposed and cannot be used.')
+      })
+      it('should throw when unshifted', () => {
+        expect(() => { f0.unshift(value0) }).toThrow(
+          'Container is disposed and cannot be used.')
+      })
+      it('should throw when shifted', () => {
+        expect(() => { f0.shift() }).toThrow(
+          'Container is disposed and cannot be used.')
+      })  
+    })
+
+    describe('accessing a rewind container', () => {
+      it('should throw on count', () => {
+        expect(() => { f0.count }).toThrow(
+          'Container is disposed and cannot be used.')
+      })
+      it('should not have a back value', () => {
+        expect(() => { f0.back }).toThrow(
+          'Container is disposed and cannot be used.')
+      })
+      it('should throw when pushed', () => {
+        expect(() => { f0.push(value0) }).toThrow(
+          'Container is disposed and cannot be used.')
+      })
+      it('should throw when popped', () => {
+        expect(() => { f0.pop() }).toThrow(
+          'Container is disposed and cannot be used.')
+      })
+    })
+
+    describe('accessing an indexable container', () => {
+      it('should throw when at', () => {
+        expect(() => { f0.at(0) }).toThrow(
+          'Container is disposed and cannot be used.')
+      })
+      it('should throw when setAt', () => {
+        expect(() => { f0.setAt(0, 0, value0) }).toThrow(
+          'Container is disposed and cannot be used.')
+      })
+    })
+
+    describe('accessing a contiguous container', () => {
+      it('should throw if expanded', () => {
+        expect(() => { f0.expand(1) }).toThrow(
+          'Container is disposed and cannot be used.')
+      })
+      if('should throw if inserted', () => {
+        expect(() => { f0.insert(f0.begin(), value0) }).toThrow(
+          'Container is disposed and cannot be used.')
+      })
+      it('should throw if removed', () => {
+        expect(() => { f0.remove(f0.begin()) }).toThrow(
+          'Container is disposed and cannot be used.')
       })
     })
   })

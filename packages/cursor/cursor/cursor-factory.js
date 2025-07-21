@@ -33,7 +33,6 @@ export class CursorFactory extends Interval {
   
   // interval
   toRange() { return new Range(this.begin(), this.end()) }
-  toCRange() { return super.toCRange() }
 
   // cursor factory
   get isEmpty() { return this.begin().equals(this.end()) }

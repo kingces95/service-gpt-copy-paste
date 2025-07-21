@@ -23,6 +23,6 @@ export function throwMoveOutOfBounds() { throw new RangeError(
 export function throwEmpty() { throw new Error(
     "Container is empty.") }
 export function throwDisposed() { throw new Error(
-    "Container has been disposed.") }
+    "Container is disposed and cannot be used.") }
 export function throwUpdateOutOfBounds() { throw new RangeError(
     "Cannot update container at this location.") }
