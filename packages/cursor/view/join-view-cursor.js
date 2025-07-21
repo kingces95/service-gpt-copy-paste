@@ -78,8 +78,8 @@ export class JoinViewCursor extends ComposedViewCursor {
     return current.value
   }
 
-  step(offset) { 
-    if (offset == 1) return this.#step()
+  move(offset) { 
+    if (offset == 1) return this.step()
     if (offset < 0) return this.stepBack(-offset)
     if (!this.isRandomAccess) throw new Error(
       "Cannot step by offset on a non-random access cursor.")
@@ -90,7 +90,7 @@ export class JoinViewCursor extends ComposedViewCursor {
 
     while (offset) {
       // step by 1
-      if (offset == 1) return this.#step()
+      if (offset == 1) return this.step()
 
       const end = chunk.value.end()
       const difference = end.subtract(current)
@@ -109,13 +109,15 @@ export class JoinViewCursor extends ComposedViewCursor {
       current = chunk.begin()
     }
 
-    this.#outterCursor = chunk
+    throw 'nyi'
+    // this.#outterCursor = chunk
     this.#innerCursor = current
     return true
   }
 
   stepBack(offset) { 
-    if (offset == 1) return this.#stepBack()
+    throw 'nyi'
+    // if (offset == 1) return this.#stepBack()
     if (offset < 0) return this.step(offset)
     if (!this.isRandomAccess) throw new Error(
       "Cannot step back by offset on a non-random access cursor.")
@@ -130,7 +132,7 @@ export class JoinViewCursor extends ComposedViewCursor {
 
     while (offset) {
       // step back by 1
-      if (offset == 1) return this.#stepBack()
+      // if (offset == 1) return this.#stepBack()
      
       const begin = chunk.value.begin()
       const difference = current.subtract(begin)
@@ -149,7 +151,7 @@ export class JoinViewCursor extends ComposedViewCursor {
       current = chunk.end()
     }
 
-    this.#outterCursor = chunk
+    // this.#outterCursor = chunk
     this.#innerCursor = current
     return true
   }

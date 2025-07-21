@@ -1,4 +1,4 @@
-import { CursorFactory } from "../cursor/cursor-factory.js"
+import { CursorFactory } from "../cursor-factory.js"
 
 export class View extends CursorFactory {
   constructor() { }
