@@ -1,4 +1,4 @@
-import { implement } from '@kingjs/concept'
+import { implement } from '@kingjs/partial-class'
 import { Preconditions } from '@kingjs/debug-proxy'
 import { SequenceContainer } from "./sequence-container.js"
 import {
@@ -9,7 +9,7 @@ import {
   throwReadOutOfBounds,
 } from '@kingjs/cursor'
 import { ListNode } from "./list-node.js"
-import { PrologContainer } from "../concepts.js"
+import { PrologContainerConcept } from "../container-concepts.js"
 
 export class List extends SequenceContainer {
   static [Preconditions] = class extends SequenceContainer[Preconditions] {
@@ -36,7 +36,7 @@ export class List extends SequenceContainer {
   }
 
   static {
-    implement(this, PrologContainer)
+    implement(this, PrologContainerConcept)
   }
   
   #root

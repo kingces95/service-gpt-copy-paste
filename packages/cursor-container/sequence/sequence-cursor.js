@@ -1,5 +1,5 @@
 import { ContainerCursor } from '../container-cursor.js'
-import { implement } from '@kingjs/concept'
+import { implement } from '@kingjs/partial-class'
 import { GlobalPrecondition } from '@kingjs/proxy'
 import { Preconditions } from '@kingjs/debug-proxy'
 import {

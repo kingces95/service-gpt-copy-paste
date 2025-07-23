@@ -1,5 +1,5 @@
 {
-  "name": "@kingjs/cursor-container",
+  "name": "@kingjs/partial-class",
   "version": "1.0.0",
   "description": ".",
   "main": "index.js",
@@ -7,9 +7,9 @@
   "exports": {
     ".": "./index.js"
   },
-  "dependencies": { },
-  "devDependencies": { },
-  "peerDependencies": { },
+  "dependencies": {},
+  "devDependencies": {},
+  "peerDependencies": {},
   "author": "Chris King",
   "license": "MIT"
 }

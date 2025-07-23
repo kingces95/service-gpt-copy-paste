@@ -23,22 +23,22 @@ const value0 = 0
 const value1 = 1
 
 const cases = [
-  ['List', List, List.cursorType.prototype,
+  ['List', List, List.cursorType,
     [InputCursorConcept, OutputCursorConcept, ForwardCursorConcept]],
-  ['Chain', Chain, Chain.cursorType.prototype,
+  ['Chain', Chain, Chain.cursorType,
     [InputCursorConcept, OutputCursorConcept, BidirectionalCursorConcept]],
-  ['Vector', Vector, Vector.cursorType.prototype, 
+  ['Vector', Vector, Vector.cursorType, 
     [InputCursorConcept, OutputCursorConcept, RandomAccessCursorConcept]],
-  ['Deque', Deque, Deque.cursorType.prototype, 
+  ['Deque', Deque, Deque.cursorType, 
     [InputCursorConcept, OutputCursorConcept, RandomAccessCursorConcept]],
-  ['NodeBuffer', NodeBuffer, NodeBuffer.cursorType.prototype,
+  ['NodeBuffer', NodeBuffer, NodeBuffer.cursorType,
     [InputCursorConcept, OutputCursorConcept, ContiguousCursorConcept]],
-  ['EcmaBuffer', EcmaBuffer, EcmaBuffer.cursorType.prototype,
+  ['EcmaBuffer', EcmaBuffer, EcmaBuffer.cursorType,
     [InputCursorConcept, OutputCursorConcept, ContiguousCursorConcept]],
 ]
 
 // test the functionality of the cursor container
-describe.each(cases)('A %s', (name, type, cursorPrototype, concepts) => {
+describe.each(cases)('A %s', (name, type, cursorType, concepts) => {
   let f0
   let begin
   beforeEach(() => {
@@ -47,7 +47,7 @@ describe.each(cases)('A %s', (name, type, cursorPrototype, concepts) => {
   })
   it('should satisfy the concepts', () => {
     for (const concept of concepts) {
-      expect(cursorPrototype).toBeInstanceOf(concept)
+      expect(cursorType.prototype).toBeInstanceOf(concept)
     }
   })
   it('has a cursor type whose prototype extends Cursor', () => {
@@ -65,7 +65,7 @@ describe.each(cases)('A %s', (name, type, cursorPrototype, concepts) => {
       'Container is empty.')
   })
   describe.each([ 
-    cursorPrototype instanceof BidirectionalCursorConcept 
+    cursorType.prototype instanceof BidirectionalCursorConcept 
   ].filter(Boolean))
   ('bidirectional container', (isBidirectional) => {
     it('should throw if popped', () => {
@@ -195,7 +195,7 @@ describe.each(cases)('A %s', (name, type, cursorPrototype, concepts) => {
       })
     })
     describe.each([ 
-      cursorPrototype instanceof BidirectionalCursorConcept 
+      cursorType.prototype instanceof BidirectionalCursorConcept 
     ].filter(Boolean))
     ('bidirectional container', (isBidirectional) => {
       it('should have a back value', () => {
@@ -274,7 +274,7 @@ describe.each(cases)('A %s', (name, type, cursorPrototype, concepts) => {
           expect(cursor.equals(f0[endFn]())).toBe(true)
         })
         describe.each([ 
-          cursorPrototype instanceof RandomAccessCursorConcept
+          cursorType.prototype instanceof RandomAccessCursorConcept
         ].filter(Boolean))
           ('random access cursor', (isRandomAccess) => {
           
@@ -316,7 +316,7 @@ describe.each(cases)('A %s', (name, type, cursorPrototype, concepts) => {
           })
         })
         describe.each([ 
-          cursorPrototype instanceof BidirectionalCursorConcept
+          cursorType.prototype instanceof BidirectionalCursorConcept
         ].filter(Boolean))
           ('bidirectional cursor', (isBidirectional) => {
 

@@ -1,5 +1,5 @@
 import { RewindCursor } from '../rewind-cursor.js'
-import { implement } from '@kingjs/concept'
+import { implement } from '@kingjs/partial-class'
 import { Preconditions } from '@kingjs/debug-proxy'
 import { 
   RandomAccessCursorConcept,

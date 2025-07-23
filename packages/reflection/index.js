@@ -15,7 +15,8 @@ export class Reflection {
   }
 
   static *names(prototype, root = Object) {
-    while (prototype != root.prototype) {
+    const rootPrototype = root.prototype
+    while (prototype != rootPrototype) {
       for (const name of Object.getOwnPropertyNames(prototype))
         yield name
       prototype = Object.getPrototypeOf(prototype)
@@ -42,5 +43,36 @@ export class Reflection {
       prototype = Object.getPrototypeOf(prototype)
     }
     return undefined
+  }
+
+  static isDataDescriptor(descriptor) {
+    if (!descriptor) return false
+    return descriptor.hasOwnProperty('value') || 
+          descriptor.hasOwnProperty('writable')
+  }
+
+  static toDescriptor(descriptorOrFunction) {
+
+    // return a descriptor with properties matching those of a function
+    // declared in source code (e.g. enumerable, configurable, writable)
+    if (typeof descriptorOrFunction === 'function') {
+      descriptorOrFunction = {
+        value: descriptorOrFunction,
+      }
+    }
+
+    // defaults for data descriptors and accessors are the same
+    if (!('enumerable' in descriptorOrFunction))
+      descriptorOrFunction.enumerable = false
+    if (!('configurable' in descriptorOrFunction))
+      descriptorOrFunction.configurable = true
+
+    // if the descriptor is a data descriptor, ensure it is writable
+    if ('value' in descriptorOrFunction) {
+      if (!('writable' in descriptorOrFunction))
+        descriptorOrFunction.writable = true
+    }
+
+    return descriptorOrFunction
   }
 }

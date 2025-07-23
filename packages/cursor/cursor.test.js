@@ -1,4 +1,4 @@
-import { implement } from '@kingjs/concept'
+import { implement } from '@kingjs/partial-class'
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Cursor } from './cursor.js'
@@ -85,7 +85,6 @@ class TrivialMutableCursor extends TrivialCursor {
     }
   }
 
-  static { implement(this, TrivialInputCursor, TrivialOutputCursor) }
   get value$() { return undefined }
   get value() { return this.value$ }
   set value$(value) { throw new RangeError() }
@@ -144,8 +143,8 @@ class TrivialContiguousCursor extends TrivialRandomAccessCursor {
     return Buffer.alloc(0)
   }
 
-  read(length = 1, signed = false, littleEndian = false) {
-    return this.readAt$(0, length, signed, littleEndian)
+  readAt(offset, length = 1, signed = false, littleEndian = false) {
+    return this.readAt$(offset, length, signed, littleEndian)
   }
   data(other) { return this.data$(other) }
 }

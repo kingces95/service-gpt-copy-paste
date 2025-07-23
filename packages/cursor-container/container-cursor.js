@@ -1,11 +1,13 @@
-import { implement } from '@kingjs/concept'
+import { implement } from '@kingjs/partial-class'
 import { Preconditions } from '@kingjs/debug-proxy'
 import {
   Cursor,
-  InputCursorConcept,
-  OutputCursorConcept,
   throwReadOnly,
 } from '@kingjs/cursor'
+import {
+  InputContainerConcept,
+  OutputContainerConcept,
+} from './container-concepts.js'
 
 export class ContainerCursor extends Cursor {
   static [Preconditions] = class extends Cursor[Preconditions] {
@@ -16,8 +18,8 @@ export class ContainerCursor extends Cursor {
 
   static { 
     implement(this, 
-      InputCursorConcept, 
-      OutputCursorConcept,
+      InputContainerConcept, 
+      OutputContainerConcept,
     ) 
   }
   
