@@ -16,11 +16,6 @@ export class OutputIteratorAdaptor extends Cursor {
     this.#actionTaken = false
   }
 
-  set isReadOnly(value) {
-    throw new Error(
-      "OutputIteratorAdaptor cannot be made read-only.")
-  }
-
   set(value) {
     if (this.#actionTaken) throw new Error(
       "Action already taken, step must be called before set.")

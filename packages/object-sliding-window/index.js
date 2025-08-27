@@ -16,13 +16,13 @@ export class ObjectSlidingWindow extends SlidingWindow {
   get count() { return this.#denque.length }
   get isEmpty() { return this.count === 0 }
 
-  begin(recyclable) {
-    super.begin(recyclable)
-    return this.cursor$(recyclable, 0)
+  begin() {
+    super.begin()
+    return this.cursor$(0)
   }
-  end(recyclable) {
-    super.end(recyclable)
-    return this.cursor$(recyclable, this.#denque.length)
+  end() {
+    super.end()
+    return this.cursor$(this.#denque.length)
   }
 
   push(chunk) { 

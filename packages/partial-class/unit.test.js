@@ -1,280 +1,229 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { PartialClass, Bind, Extensions, implement } from '@kingjs/partial-class'
+import { abstract } from '@kingjs/abstract'
+import { 
+  Compile,
+  Bind, 
+  Mark,
+  PostCondition,
+  Extensions, 
+  extend,
+  PartialClass, 
+} from '@kingjs/partial-class'
 
-describe('A partial type', () => {
-  let partialType
+describe('PartialClass', () => {
+  it('cannot be instantiated', () => {
+    expect(() => new PartialClass()).toThrow()
+  })
+})
+
+describe('A type', () => {
+  let type
   beforeEach(() => {
-    partialType = class extends PartialClass { }
+    type = class { }
   })
-
-  describe.each([
-    ['directly on the type', true],
-    ['indirectly via an extension', false],
-  ])('when implemented %s', (_, directly) => {
-    let partialTypePrototype
-    beforeEach(() => {
-      partialTypePrototype = directly ? partialType.prototype
-        : (partialType[Extensions] = class extends PartialClass { }).prototype
-    })
-
-    describe('with a member function', () => {
-      let member = function() { return this } 
-      beforeEach(() => {
-        Object.defineProperty(partialTypePrototype, 'member', {
-          value: member,
-          enumerable: false,
-          configurable: true,
-          writable: true,
-        })
-      })
-
-      describe('when implemented', () => {
-        describe('on a class without the member', () => {
-          let type
-          beforeEach(() => {
-            type = class {
-              static { implement(this, partialType) }
-            }
-          })
-          describe('the prototype', () => {
-            let prototype
-            beforeEach(() => {
-              prototype = type.prototype
-            })
-
-            describe('descriptor for the member', () => {
-              let descriptor
-              beforeEach(() => {
-                descriptor = Object.getOwnPropertyDescriptor(prototype, 'member')
-              })
-
-              it('should be defined', () => {
-                expect(descriptor).toBeDefined()
-              })
-              it('should be the member function', () => {
-                expect(descriptor.value).toBe(member)
-              })
-              it('should not be enumerable', () => {
-                expect(descriptor.enumerable).toBe(false)
-              })
-              it('should be configurable', () => {
-                expect(descriptor.configurable).toBe(true)
-              })
-              it('should be writable', () => {
-                expect(descriptor.writable).toBe(true)
-              })
-            })
-          })
-        })
-        describe('on a class with the member', () => {
-          let type
-          let existingDescriptor
-          beforeEach(() => {
-            type = class {
-              member() { return this }
-            }
-            existingDescriptor = Object.getOwnPropertyDescriptor(
-              type.prototype, 'member')
-          })
-          
-          describe('the prototype', () => {
-            let prototype
-            beforeEach(() => {
-              prototype = type.prototype
-            })
-
-            describe('descriptor for the member', () => {
-              let descriptor
-              beforeEach(() => {
-                descriptor = Object.getOwnPropertyDescriptor(prototype, 'member')
-              })
-
-              it('should be defined', () => {
-                expect(descriptor).toBeDefined()
-              })
-              it('should be the existing member function', () => {
-                expect(descriptor.value).toBe(existingDescriptor.value)
-              })
-              it('should not be enumerable', () => {
-                expect(descriptor.enumerable).toBe(false)
-              })
-              it('should be configurable', () => {
-                expect(descriptor.configurable).toBe(true)
-              })
-            })
-          })
-        })
-      })
-    })
-
-    describe('with a member accessor', () => {
-      const getter = function() { return this }
-      const setter = function(value) { this.value = value }
-      beforeEach(() => {
-        Object.defineProperty(partialTypePrototype, 'member', {
-          get: getter,
-          set: setter,
-          enumerable: false,
-          configurable: true,
-        })
-      })
-
-      describe('when implemented', () => {
-        describe('on a class without the member', () => {
-          let type
-          beforeEach(() => {
-            type = class {
-              static { implement(this, partialType) }
-            }
-          })
-
-          describe('the prototype', () => {
-            let prototype
-            beforeEach(() => {
-              prototype = type.prototype
-            })
-
-            describe('descriptor for the member', () => {
-              let descriptor
-              beforeEach(() => {
-                descriptor = Object.getOwnPropertyDescriptor(prototype, 'member')
-              })
-
-              it('should be defined', () => {
-                expect(descriptor).toBeDefined()
-              })
-              it('should have a getter', () => {
-                expect(descriptor.get).toBe(getter)
-              })
-              it('should have a setter', () => {
-                expect(descriptor.set).toBe(setter)
-              })
-              it('should not be enumerable', () => {
-                expect(descriptor.enumerable).toBe(false)
-              })
-              it('should be configurable', () => {
-                expect(descriptor.configurable).toBe(true)
-              })
-            })
-          })
-        })
-        describe('on a class with the member', () => {
-          let type
-          let existingDescriptor
-          beforeEach(() => {
-            type = class {
-              get member() { return this }
-              set member(value) { this.value = value }
-            }
-            existingDescriptor = Object.getOwnPropertyDescriptor(
-              type.prototype, 'member')
-          })
-
-          describe('the prototype', () => {
-            let prototype
-            beforeEach(() => {
-              prototype = type.prototype
-            })
-
-            describe('descriptor for the member', () => {
-              let descriptor
-              beforeEach(() => {
-                descriptor = Object.getOwnPropertyDescriptor(prototype, 'member')
-              })
-
-              it('should be defined', () => {
-                expect(descriptor).toBeDefined()
-              })
-              it('should be the existing getter', () => {
-                expect(descriptor.get).toBe(existingDescriptor.get)
-              })
-              it('should be the existing setter', () => {
-                expect(descriptor.set).toBe(existingDescriptor.set)
-              })
-              it('should not be enumerable', () => {
-                expect(descriptor.enumerable).toBe(false)
-              })
-              it('should be configurable', () => {
-                expect(descriptor.configurable).toBe(true)
-              })
-            })
-          })
-        })
-      })
-    })
-
+  it('can extend nothing', () => {
+    expect(() => extend(type)).not.toThrow()
   })
-
-  describe('as a base class for a class with custom binding', () => {
-    const member = function() { return this } 
-    let type
-    let didBind
+  it('can extend null', () => {
+    expect(() => extend(type, null)).not.toThrow()
+  })
+  it('throws extending a non-partial type', () => {
+    expect(() => extend(type, class { })).toThrow()
+  })
+  describe('and a partial type as an object', () => {
+    let partialType
     beforeEach(() => {
-      didBind = false
-      partialType[Bind] = function(type$, partialType$, name, descriptor) {
-        expect(type$).toBe(type)
-        expect(partialType$).toBe(partialType)
-        expect(name).toBe('member')
-        expect(descriptor.value).toBe(member)
-        didBind = true
-
-        // defaults should be assigned to the descriptor
-        return PartialClass[Bind](
-          type$, partialType$, name, { value: descriptor.value })
+      partialType = { member: { value: () => 'member' } }
+    })
+    it('can extend the member', () => {
+      extend(type, partialType)
+      expect(type.prototype.member).toBe(partialType.member.value)
+    })
+  })
+  describe('and a partial type with an abstract method', () => {
+    let partialType
+    beforeEach(() => {
+      partialType = { method: { value: abstract } }
+    })
+    it('can extend the method', () => {
+      // integration test
+      extend(type, partialType)
+      expect(type.prototype.method).toBe(abstract)
+    })
+  })
+  describe('and a partial type with an abstract method', () => {
+    let partialType
+    beforeEach(() => {
+      partialType = { method: abstract }
+    })
+    it('can extend the method', () => {
+      // integration test
+      extend(type, partialType)
+      expect(type.prototype.method).toBe(abstract)
+    })
+  })
+  describe('and a partial type with an abstract accessor', () => {
+    let partialType
+    beforeEach(() => {
+      partialType = {
+        accessor: {
+          get: abstract,
+          set: abstract,
+        },
       }
     })
-
-    describe('with a member function', () => {
+    it('can extend the accessor', () => {
+      extend(type, partialType)
+      const descriptor = Object.getOwnPropertyDescriptor(
+        type.prototype, 'accessor')
+      // an integration test
+      expect(descriptor.get).toBe(abstract)
+      expect(descriptor.set).toBe(abstract)
+    })
+  })
+  describe('and a partial type with a member function', () => {
+    let partialType
+    beforeEach(() => {
+      partialType = class extends PartialClass { 
+        member() { return 'member' } }
+    })
+    it('can extend the member', () => {
+      extend(type, partialType)
+      expect(type.prototype.member).toBe(partialType.prototype.member)
+    })
+    describe('and another partial type with a member function', () => {
+      let anotherPartialType
       beforeEach(() => {
-        Object.defineProperty(partialType.prototype, 'member', {
-          value: member,
-          enumerable: false,
-          configurable: true,
-          writable: true,
+        anotherPartialType = class extends PartialClass { 
+          member() { return 'override' } }
+      })
+      it('can extend both partial types', () => {
+        extend(type, partialType, anotherPartialType)
+        expect(type.prototype.member).toBe(anotherPartialType.prototype.member)
+      })
+    })
+    describe('as an extension', () => {
+      let extendedPartialType
+      beforeEach(() => {
+        extendedPartialType = class extends PartialClass {
+          static [Extensions] = partialType }
+      })
+      it('can extend the member', () => {
+        extend(type, extendedPartialType)
+        expect(type.prototype.member).toBe(partialType.prototype.member)
+      })
+      describe('as an extension', () => {
+        let extendedExtendedPartialType
+        beforeEach(() => {
+          extendedExtendedPartialType = class extends PartialClass {
+            static [Extensions] = extendedPartialType }
+        })
+        it('can extend the member', () => {
+          extend(type, extendedExtendedPartialType)
+          expect(type.prototype.member).toBe(partialType.prototype.member)
         })
       })
-      
-      describe('when implemented', () => {
-        describe('on a class without the member', () => {
+    })
+    describe('and a Compile function', () => {
+      let didCompile
+      let compiledMember = function() { return 'compiled' }
+      beforeEach(() => {
+        didCompile = false
+        partialType[Compile] = function(descriptor) {
+          expect(this).toBe(partialType)
+          expect(descriptor.value).toBe(partialType.prototype.member)
+          descriptor.value = compiledMember
+          // remove metadata and check that defaults are false which
+          // indicates Compile is a post compilation hook.
+          delete descriptor.writable
+          delete descriptor.enumerable
+          delete descriptor.configurable
+          didCompile = true
+          return descriptor
+        }
+      })
+      describe('when extended', () => {
+        let compiledDescriptor
+        beforeEach(() => {
+          extend(type, partialType)
+          compiledDescriptor = Object.getOwnPropertyDescriptor(
+            type.prototype, 'member')
+        })
+        it('should have called the Compile function', () => {
+          expect(didCompile).toBe(true)
+        })
+        it('should have defaults applied', () => {
+          expect(compiledDescriptor.value).toBe(compiledMember)
+          expect(compiledDescriptor.enumerable).toBe(false)
+          expect(compiledDescriptor.writable).toBe(false)
+          expect(compiledDescriptor.configurable).toBe(false)
+        })
+      })
+      describe('and a bind function the returns null', () => {
+        beforeEach(() => {
+          partialType[Bind] = function(
+            type$, name, descriptor) {
+              expect(this).toBe(partialType)
+            expect(type$).toBe(type)
+            expect(name).toBe('member')
+            expect(descriptor.value).toBe(compiledMember)
+            return null
+          }
+        })
+        it('should skip the member', () => {
+          extend(type, partialType)
+          expect(type.prototype.member).toBeUndefined()
+        })
+      })
+      describe('and a bind function', () => {
+        let didBind
+        let boundMember = function() { return 'bound' }
+        beforeEach(() => {
+          didBind = false
+          partialType[Bind] = function(
+            type$, name, descriptor) {
+              expect(this).toBe(partialType)
+            expect(type$).toBe(type)
+            expect(name).toBe('member')
+            expect(descriptor.value).toBe(compiledMember)
+            descriptor.value = boundMember
+            didBind = true
+            return descriptor
+          }
+        })
+        it('should call the bind function', () => {
+          extend(type, partialType)
+          expect(didBind).toBe(true)
+          expect(type.prototype.member).toBe(boundMember)
+        })
+        describe('and a Mark function', () => {
           beforeEach(() => {
-            type = class {
-              static { 
-                type = this
-                implement(this, partialType) 
-              }
+            partialType[Extensions] = class extends PartialClass { }
+            partialType[Mark] = function(type$) {
+              expect(this).toBe(partialType)
+              expect(type$).toBe(type)
+              type$.mark = true
             }
           })
-          it('should call the Bind method', () => {
-            expect(didBind).toBe(true)
+          it('should call the Mark function', () => {
+            extend(type, partialType)
+            expect(type.mark).toBe(true)
           })
-          describe('the prototype', () => {
-            let prototype
+          describe('and a PostCondition function', () => {
+            let didPostCondition
             beforeEach(() => {
-              prototype = type.prototype
+              partialType[PostCondition] = function(type$) {
+                expect(this).toBe(partialType)
+                expect(type$).toBe(type)
+                expect(type$.mark).toBe(true)
+                expect(type$.prototype.member).toBe(boundMember)
+                didPostCondition = true
+              }
             })
-  
-            describe('descriptor for the member', () => {
-              let descriptor
-              beforeEach(() => {
-                descriptor = Object.getOwnPropertyDescriptor(prototype, 'member')
-              })
-  
-              it('should be defined', () => {
-                expect(descriptor).toBeDefined()
-              })
-              it('should be the member function', () => {
-                expect(descriptor.value).toBe(member)
-              })
-              it('should not be enumerable', () => {
-                expect(descriptor.enumerable).toBe(false)
-              })
-              it('should be configurable', () => {
-                expect(descriptor.configurable).toBe(true)
-              })
-              it('should be writable', () => {
-                expect(descriptor.writable).toBe(true)
-              })
+            it('should call the PostCondition function', () => {
+              extend(type, partialType)
+              expect(didPostCondition).toBe(true)
             })
           })
         })
@@ -282,3 +231,4 @@ describe('A partial type', () => {
     })
   })
 })
+

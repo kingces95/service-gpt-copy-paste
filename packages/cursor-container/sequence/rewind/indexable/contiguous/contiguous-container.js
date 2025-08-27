@@ -26,7 +26,7 @@ export class ContiguousContainer extends IndexableContainer {
     }
   }
 
-  static get cursorType$() { return ContiguousCursor }
+  static get cursorType() { return ContiguousCursor }
 
   #length
 

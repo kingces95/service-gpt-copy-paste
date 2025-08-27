@@ -1,0 +1,15 @@
+{
+  "name": "@kingjs/pojo-pivot",
+  "version": "1.0.0",
+  "description": "Pivot an arra of pojos.",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "peerDependencies": {},
+  "author": "Chris King",
+  "license": "MIT"
+}

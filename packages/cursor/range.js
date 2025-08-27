@@ -23,12 +23,6 @@ export class Range extends Interval {
     ]
   }
 
-  get isReadOnly() { return this.begin.isReadOnly }
-  set isReadOnly(value) { 
-    this.begin.isReadOnly = value
-    this.end.isReadOnly = value 
-  }
-
   get begin() { return this.#begin }
   get end() { return this.#end }
 

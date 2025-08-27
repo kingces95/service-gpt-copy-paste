@@ -28,10 +28,8 @@ class MyType extends DebugProxy {
   }
 
   static {
-    implement(this, 
-      Concept, 
-      MyExtendedPreconditionsConcept,
-    )
+    implement(this, Concept)
+    implement(this, MyExtendedPreconditionsConcept)
   }
 
   constructor() {

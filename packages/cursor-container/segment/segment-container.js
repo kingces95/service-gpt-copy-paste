@@ -61,9 +61,8 @@ export class SegmentContainer extends Container {
     this.#joinView = joinView
   }
 
-  begin$(recyclable) { return this.#joinView.begin$(recyclable) }
-  end$(recyclable) { return this.#joinView.end$(recyclable) }
-  data$(cursor) { return this.#joinView.data$(cursor) }
+  begin$() { return this.#joinView.begin$() }
+  end$() { return this.#joinView.end$() }
 
   push(segment) { this.#sequence.push(segment.toRange()) }
   unshift(segment) { this.#sequence.unshift(segment.toRange()) }

@@ -16,7 +16,7 @@ export class SequenceContainer extends Container {
     }
   }
 
-  static get cursorType$() { return SequenceCursor }
+  static get cursorType() { return SequenceCursor }
 
   constructor() {
     super()

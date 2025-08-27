@@ -45,8 +45,6 @@ export class EcmaBuffer extends ContiguousContainer {
           : dataView.getUint32(indexOffset, littleEndian)
     }
   }
-
-  // cursor factory
   data$(index, cursor) {
     const dataView = this.dataView$;
     const { buffer, byteOffset } = dataView;

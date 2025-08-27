@@ -22,19 +22,19 @@ export class ByteSlidingWindow extends SlidingWindow {
     return this.#count
   }
 
-  begin(recyclable) {
-    super.begin(recyclable)
+  begin() {
+    super.begin()
     const innerWindow = this.#innerWindow
     const innerCursor = innerWindow.begin()
     const beginOffset = this.#firstChunkOffset
-    return this.cursor$(recyclable, innerCursor, beginOffset)
+    return this.cursor$(innerCursor, beginOffset)
   }
-  end(recyclable) {
-    super.end(recyclable)
+  end() {
+    super.end()
     const innerWindow = this.#innerWindow
     const innerCursor = innerWindow.end()
     const endOffset = 0
-    return this.cursor$(recyclable, innerCursor, endOffset)
+    return this.cursor$(innerCursor, endOffset)
   }
 
   push(chunk) { 

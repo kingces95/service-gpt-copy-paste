@@ -35,7 +35,7 @@ export class SequenceCursor extends ContainerCursor {
   equals$(other) { return this.container$.equals$(this.token$, other) }
   
   // step cursor
-  step$() { 
+  step() { 
     this.token$ = this.container$.step$(this.token$)
     return this
   }

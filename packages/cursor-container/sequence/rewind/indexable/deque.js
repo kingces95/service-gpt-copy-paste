@@ -1,10 +1,20 @@
 import Denque from "denque"
-import { IndexableContainer } from "./indexable-container.js"
+import { implement } from '@kingjs/partial-class'
 import {
   throwNotSupported,
 } from '@kingjs/cursor'
+import { 
+  IndexableContainer 
+} from "./indexable-container.js"
+import {
+  IndexableContainerConcept,
+} from "../../../container-concepts.js"
 
 export class Deque extends IndexableContainer {
+  static {
+    implement(this, IndexableContainerConcept)
+  }
+  
   #denque
 
   constructor() { 
@@ -23,7 +33,7 @@ export class Deque extends IndexableContainer {
   unshift(value) { this.#denque.unshift(value) }
   shift() { return this.#denque.shift() }
 
-  // container implementation
+  // rewind container
   get count() { return this.#denque.length }
   push(value) { this.#denque.push(value) }
   pop() { return this.#denque.pop() }

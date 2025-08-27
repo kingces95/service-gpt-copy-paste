@@ -28,6 +28,6 @@ export class ChainNode extends ListNode {
     return result
   }
 
-  insertBefore(value) { return this.previous.insertAfter(value) }
+  insert(value) { return this.previous.insertAfter(value) }
   remove() { return this.previous.removeAfter() }
 }

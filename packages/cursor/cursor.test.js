@@ -15,7 +15,6 @@ import {
 
 import {
   throwMoveOutOfBounds,
-  throwReadOnly,
   throwReadOutOfBounds,
   throwWriteOutOfBounds,
 } from './throw.js'
@@ -36,17 +35,12 @@ import {
 class TrivialCursor extends Cursor {
   static { implement(this, CursorConcept) }
   
-  #id
-
-  constructor(id) {
-    super()
-    this.#id = id
+  constructor(scope) {
+    super(scope)
   }
   get __isActive$() { return true }
-  get id$() { return this.#id }
   step$() { throwMoveOutOfBounds() }
   equals$(other) { return true }
-  equatableTo$(other) { return this.#id == other.id$ }
 }
 
 class TrivialInputCursor extends TrivialCursor {
@@ -64,7 +58,6 @@ class TrivialInputCursor extends TrivialCursor {
 class TrivialOutputCursor extends TrivialCursor {
   static [Preconditions] = class extends TrivialCursor[Preconditions] {
     set value(value) {
-      if (this.isReadOnly) throwReadOnly()
       throwWriteOutOfBounds()
     }
   }
@@ -80,7 +73,6 @@ class TrivialMutableCursor extends TrivialCursor {
       throwReadOutOfBounds()
     }
     set value(value) {
-      if (this.isReadOnly) throwReadOnly()
       throwWriteOutOfBounds()
     }
   }
@@ -107,7 +99,6 @@ class TrivialRandomAccessCursor extends TrivialBidirectionalCursor {
   static [Preconditions] = class extends TrivialBidirectionalCursor[Preconditions] {
     static { implement(this, RandomAccessCursorConcept[Preconditions]) }
     setAt(offset, value) {
-      if (this.isReadOnly) throwReadOnly()
       throwWriteOutOfBounds()
     }
     at(offset) {
@@ -221,9 +212,6 @@ describe.each(cases)('%s', (_, concepts, begin0, end0, begin1) => {
       expect(begin).toBeInstanceOf(concept)
     }
   })
-  it('should not be read-only', () => {
-    expect(begin.isReadOnly).toBe(false)
-  })
   it('should throw on step', () => {
     expect(() => end.step()).toThrow(
       "Cannot move cursor out of bounds."
@@ -243,7 +231,7 @@ describe.each(cases)('%s', (_, concepts, begin0, end0, begin1) => {
   })
 
   // operations that throw if cursor does not support them
-  it('should throw read out of bounds', () => {
+  it('should throw read out of bounds if read', () => {
     if (!(begin instanceof InputCursorConcept)) return
     expect(() => begin.value).toThrow(
       'Cannot read value out of bounds of cursor.'
@@ -303,7 +291,7 @@ describe.each(cases)('%s', (_, concepts, begin0, end0, begin1) => {
   it('should throw if subtracting null', () => {
     if (!(begin instanceof RandomAccessCursorConcept)) return
     expect(() => begin.subtract(null)).toThrow(
-      "Cursor cannot be null or undefined."
+      "Cursor is not an equatable cursor in this context."
     )
   })
   it('should return 0 on compareTo', () => {
@@ -313,7 +301,7 @@ describe.each(cases)('%s', (_, concepts, begin0, end0, begin1) => {
   it('should throw if compared to null', () => {
     if (!(begin instanceof RandomAccessCursorConcept)) return
     expect(() => begin.compareTo(null)).toThrow(
-      "Cursor cannot be null or undefined."
+      "Cursor is not an equatable cursor in this context."
     )
   })
   it('should throw RangeError on read 1', () => {
@@ -369,7 +357,7 @@ describe.each(cases)('%s', (_, concepts, begin0, end0, begin1) => {
   it('should throw if data called with null cursor', () => {
     if (!(begin instanceof ContiguousCursorConcept)) return
     expect(() => begin.data(null)).toThrow(
-      "Cursor cannot be null or undefined."
+      "Cursor is not an equatable cursor in this context."
     )
   })
 
@@ -432,17 +420,6 @@ describe.each(cases)('%s', (_, concepts, begin0, end0, begin1) => {
         throw new Error("data() did not return a Buffer or DataView.")
       }
     })
-    describe('made read-only', () => {
-      beforeEach(() => {
-        begin.isReadOnly = true
-      })
-      it('should not be equatable', () => {
-        expect(begin.equatableTo(otherCursor)).toBe(false)
-      })
-      it('should not be equal', () => {
-        expect(begin.equals(otherCursor)).toBe(false)
-      })
-    })
   })
   describe('and another cursor of different type', () => {
     let otherCursor
@@ -458,49 +435,19 @@ describe.each(cases)('%s', (_, concepts, begin0, end0, begin1) => {
     it('should throw subtracting from other cursor', () => {
       if (!(begin instanceof RandomAccessCursorConcept)) return
       expect(() => begin.subtract(otherCursor)).toThrow(
-        "Cursor is not equatable to the other cursor."
+        "Cursor is not an equatable cursor in this context."
       )
     })
     it('should throw comparing to other cursor', () => {
       if (!(begin instanceof RandomAccessCursorConcept)) return
       expect(() => begin.compareTo(otherCursor)).toThrow(
-        "Cursor is not equatable to the other cursor."
+        "Cursor is not an equatable cursor in this context."
       )
     })
     it('should throw data with other cursor', () => {
       if (!(begin instanceof ContiguousCursorConcept)) return
       expect(() => begin.data(otherCursor)).toThrow(
-        "Cursor is not equatable to the other cursor."
-      )
-    })
-  })
-  describe('made read-only', () => {
-    beforeEach(() => {
-      begin.isReadOnly = true
-    })
-    it('should be read-only', () => {
-      expect(begin.isReadOnly).toBe(true)
-    })
-    it('should throw if isReadOnly set with non-boolean', () => {
-      expect(() => begin.isReadOnly = 'true').toThrow(
-        "isReadOnly must be a boolean."
-      )
-    })
-    it('should throw if isReadOnly set to true', () => {
-      expect(() => begin.isReadOnly = false).toThrow(
-        "Cannot make read-only cursor writable."
-      )
-    })
-    it('should not allow value to be set', () => {
-      if (!(begin instanceof OutputCursorConcept)) return
-      expect(() => begin.value = 42).toThrow(
-        "Cursor is read-only."
-      )
-    })
-    it('should not be allowed to set value at offset', () => {
-      if (!(begin instanceof RandomAccessCursorConcept)) return
-      expect(() => begin.setAt(0, 42)).toThrow(
-        "Cursor is read-only."
+        "Cursor is not an equatable cursor in this context."
       )
     })
   })

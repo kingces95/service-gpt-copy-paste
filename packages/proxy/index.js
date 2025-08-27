@@ -1,4 +1,4 @@
-import { Reflection } from '@kingjs/reflection'
+import { Descriptor } from '@kingjs/descriptor'
 
 function isPublic(property) {
   const type = typeof property
@@ -6,14 +6,6 @@ function isPublic(property) {
   if (property.endsWith('$')) return false
   if (property.startsWith('_')) return false
   return true
-}
-
-function hasGetter(descriptor) {
-  return descriptor && typeof descriptor.get === 'function'
-}
-
-function hasSetter(descriptor) {
-  return descriptor && typeof descriptor.set === 'function'
 }
 
 // a global precondition function that is called when a public property 
@@ -48,7 +40,7 @@ export function createProxy(target, {
 
       // ignore preconditions for symbol properties
       const descriptor = typeof property === 'symbol' ? null :
-        Reflection.getDescriptor(preconditions, property)
+        Descriptor.get(preconditions, property)
       
       const precondition = descriptor?.value
       if (typeof precondition === 'function') {
@@ -59,8 +51,8 @@ export function createProxy(target, {
         }
       }
 
-      if (hasGetter(descriptor))
-        // property is a getter with a precondition, execute the precondition
+      // property is a getter with a precondition, execute the precondition
+      if (Descriptor.hasGetter(descriptor))
         Reflect.get(preconditions, property, receiver)
       
       // transparently return the property value or function
@@ -73,8 +65,8 @@ export function createProxy(target, {
       if (filter(property)) globalPrecondition?.call(receiver)
 
       // if the property has a set thunk, use it
-      const descriptor = Reflection.getDescriptor(preconditions, property)
-      if (hasSetter(descriptor))
+      const descriptor = Descriptor.get(preconditions, property)
+      if (Descriptor.hasSetter(descriptor))
         Reflect.set(preconditions, property, value, receiver)
 
       Reflect.set(target, property, value, receiver)

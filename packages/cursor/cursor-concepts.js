@@ -2,15 +2,20 @@ import { Concept } from '@kingjs/concept'
 import { PartialClass, Extensions } from '@kingjs/partial-class'
 import { Preconditions } from '@kingjs/debug-proxy'
 import {
-  throwNull,
   throwNotEquatableTo,
 } from './throw.js'
 
 export class CursorConcept extends Concept {
   static [Preconditions] = PartialClass
+  static [Extensions] = class extends PartialClass[Extensions] {
+    next() {
+      const value = this.value 
+      if (!this.step()) return
+      return value
+    }
+  }
 
   step() { }
-  next() { }
   equals(other) { }
   equatableTo(other) { }
 }
@@ -34,11 +39,9 @@ export class BidirectionalCursorConcept extends ForwardCursorConcept {
 export class RandomAccessCursorConcept extends BidirectionalCursorConcept {
   static [Preconditions] = class extends BidirectionalCursorConcept[Preconditions] {
     compareTo(other) {
-      if (!other) throwNull()
       if (!this.equatableTo(other)) throwNotEquatableTo(other)
     }
     subtract(other) {
-      if (!other) throwNull()
       if (!this.equatableTo(other)) throwNotEquatableTo(other)
     }
   }
@@ -53,7 +56,6 @@ export class RandomAccessCursorConcept extends BidirectionalCursorConcept {
 export class ContiguousCursorConcept extends RandomAccessCursorConcept {
   static [Preconditions] = class extends RandomAccessCursorConcept[Preconditions] {
     data(other) {
-      if (!other) throwNull()
       if (!this.equatableTo(other)) throwNotEquatableTo(other)
     }
   }
@@ -83,6 +85,15 @@ export class ContiguousCursorConcept extends RandomAccessCursorConcept {
     readInt32LE() { return this.readInt32(true) }
   }
 
+  // Deconstruct a cursor to its underlying components. The STL version only
+  // returns a buffer and index if the container is contiguous, but this version
+  // will also return a set of inner cursors of composit view cursors.
+  // Unwrap a cursor to an array cursors or buffer plus index. For example,
+  // - JoinView returns [outterCursor, innerCursor]
+  // - ComposedView returns [cursor] 
+  // - ContiguousContainer returns [buffer, index]
+  // - Vector return null because it's neither a composition of other cursors
+  //   nor does it have an underlying buffer
   data(other) { }
   readAt(offset, length, signed, littleEndian) { }
 }

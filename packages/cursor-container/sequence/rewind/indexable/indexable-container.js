@@ -12,13 +12,13 @@ import {
 export class IndexableContainer extends RewindContainer {
   static [Preconditions] = class extends RewindContainer[Preconditions] {
     subtract$(index, otherCursor) {
-      if (!this.equatableTo$(otherCursor)) throwNotEquatableTo()
+      if (otherCursor.scope$ != this) throwNotEquatableTo()
     }
     move$(index, offset) {
       if (!this.isInBoundsOrEnd$(index, offset)) throwMoveOutOfBounds()
     }
-    compareTo$(index, other) {
-      if (!this.equatableTo$(other)) throwNotEquatableTo()
+    compareTo$(index, otherCursor) {
+      if (otherCursor.scope$ != this) throwNotEquatableTo()
     }
     at$(index, offset) {
       if (!this.isInBounds$(index, offset)) throwReadOutOfBounds()
@@ -36,7 +36,7 @@ export class IndexableContainer extends RewindContainer {
     }
   }
 
-  static get cursorType$() { return IndexableCursor }
+  static get cursorType() { return IndexableCursor }
 
   constructor() {
     super()
@@ -82,8 +82,8 @@ export class IndexableContainer extends RewindContainer {
   setAt$(index, offset, value) { throwNotImplemented() }
 
   // cursor factor
-  begin(recyclable) { return this.cursor$(recyclable, 0) }
-  end(recyclable) { return this.cursor$(recyclable, this.count) }
+  begin() { return this.cursor$(0) }
+  end() { return this.cursor$(this.count) }
 
   // sequence container
   get front() { return this.at$(0, 0) }

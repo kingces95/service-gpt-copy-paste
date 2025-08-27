@@ -38,8 +38,8 @@ export class MulitPass extends Container {
     this.#view = new ComposedViewType(this.#segmentedContainer)
   }
 
-  begin$(recyclable) { return this.#view.begin$(recyclable) }
-  end$(recyclable) { return this.#view.end$(recyclable) }
+  begin$() { return this.#view.begin$() }
+  end$() { return this.#view.end$() }
 
   get count() { return this.#segmentedContainer.count }
   get isEmpty() { return this.count === 0 }

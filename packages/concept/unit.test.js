@@ -1,403 +1,171 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Concept  } from '@kingjs/concept'
-import { PartialClass, implement, Extensions, Bind } from '@kingjs/partial-class'
+import { Concept, InstanceOf, conceptOf, implement } from '@kingjs/concept'
+import { abstract } from '@kingjs/abstract'
 
-describe('A concept', () => {
-  let concept
+describe('A type', () => {
+  it('not passed to implement should throw', () => {
+    expect(() => implement(null, class extends Concept { })).toThrow()
+  })
+  let type
   beforeEach(() => {
-    concept = class extends Concept { }
+    type = class { }
   })
-
-  describe('with a member function', () => {
-    let member = function() { return this } 
+  describe('and a concept', () => {
+    let concept
     beforeEach(() => {
-      concept.prototype.member = member
+      concept = class extends Concept { }
     })
+    it('not passed to implement should throw', () => {
+      expect(() => implement(type, null)).toThrow()
+    })
+    it('should satisfy the concept', () => {
+      expect(null).not.toBeInstanceOf(concept)
+      expect(type.prototype).toBeInstanceOf(concept)
+    })
+    it('can implement and satisfy the concept', () => {
+      implement(type, concept)
+      expect(type.prototype).toBeInstanceOf(concept)
+    })
+    describe('with a data property', () => {
+      beforeEach(() => {
+        concept.prototype.data = 42
+      })
+      it('should throw when implemented', () => {
+        expect(() => {
+          implement(type, concept)
+        }).toThrow(
+          'Concept members cannot be data properties. Use accessor or method instead.'
+        )
+      })    
+    })
+    describe('with a method', () => {
+      beforeEach(() => {
+        concept.prototype.method = abstract
+      })
+      it('should not satisfy the concept', () => {
+        expect(conceptOf(type, concept)).toBe(false)
+      })
 
-    describe('when implemented', () => {
-      describe('on a class without the member', () => {
-        let type
+      describe('when implemented', () => {
         beforeEach(() => {
-          type = class {
-            static [Bind](concept, name) { 
-              expect(concept).toBe(concept)
-              expect(name).toBe('member')
-              return member
-            }
-            static { implement(this, concept) }
-          }
+          implement(type, concept)
         })
-        it('should be an instance of the concept', () => {
-          expect(type.prototype).toBeInstanceOf(concept)
+        it('should satisfy the concept', () => {
+          expect(conceptOf(type.prototype, concept)).toBe(true)
         })
-        describe('the prototype', () => {
-          let prototype
+        it('should have an abstract method', () => {
+          expect(type.prototype.method).toBe(abstract)
+        })
+        describe('and the method becomes a getter', () => {
           beforeEach(() => {
-            prototype = type.prototype
-          })
-
-          describe('descriptor for the member', () => {
-            let descriptor
-            beforeEach(() => {
-              descriptor = Object.getOwnPropertyDescriptor(prototype, 'member')
+            Object.defineProperty(type.prototype, 'method', {
+              get: abstract,
             })
-
-            it('should be defined', () => {
-              expect(descriptor).toBeDefined()
-            })
-            it('should be the member function', () => {
-              expect(descriptor.value).toBe(member)
-            })
-            it('should not be enumerable', () => {
-              expect(descriptor.enumerable).toBe(false)
-            })
-            it('should be configurable', () => {
-              expect(descriptor.configurable).toBe(true)
-            })
-            it('should be writable', () => {
-              expect(descriptor.writable).toBe(true)
-            })
+          }) 
+          it('should still satisfy the concept', () => {
+            expect(conceptOf(type.prototype, concept)).toBe(true)
+            expect(type.prototype instanceof concept).toBe(true)
           })
         })
       })
-      describe('on a class with the member', () => {
-        let type
-        let existingDescriptor
+      describe('when implemented with a definition', () => {
+        const emptyMethod = () => { }
         beforeEach(() => {
-          type = class {
-            static [Bind](concept, name) { throw new Error(
-              'Should not be called.')
-            }
-            member() { return this }
-          }
-          existingDescriptor = Object.getOwnPropertyDescriptor(
-            type.prototype, 'member')
+          implement(type, concept, { method: emptyMethod })
         })
-        
-        it('should be an instance of the concept', () => {
-          expect(type.prototype).toBeInstanceOf(concept)
+        it('should satisfy the concept', () => {
+          expect(conceptOf(type.prototype, concept)).toBe(true)
         })
-        describe('the prototype', () => {
-          let prototype
+        it('should have the defined method', () => {
+          expect(type.prototype.method).toBe(emptyMethod)
+        })
+      })
+      describe('when implemented with a definition not matching the concept', () => {
+        const emptyMethod = () => { }
+        it('should throw', () => {
+          expect(() => implement(type, concept, { other: emptyMethod }))
+            .toThrow()
+        })
+      })
+    })
+    describe('with an accessor', () => {
+      beforeEach(() => {
+        Object.defineProperty(concept.prototype, 'accessor', {
+          get: abstract,
+          set: abstract,
+          configurable: true,
+        })
+        const descriptor = Object.getOwnPropertyDescriptor(
+          concept.prototype, 'accessor')
+        expect(descriptor.get).toBe(abstract)
+        expect(descriptor.set).toBe(abstract)
+      })
+      it('should not satisfy the concept', () => {
+        expect(conceptOf(type.prototype, concept)).toBe(false)
+      })
+      describe('when implemented', () => {
+        beforeEach(() => {
+          implement(type, concept)
+        })
+        it('should satisfy the concept', () => {
+          expect(conceptOf(type.prototype, concept)).toBe(true)
+        })
+        it('should have an abstract accessor', () => {
+          const descriptor = Object.getOwnPropertyDescriptor(
+            type.prototype, 'accessor')
+          expect(descriptor.get).toBe(abstract)
+          expect(descriptor.set).toBe(abstract)
+        })
+        describe('and removes the getter', () => {
           beforeEach(() => {
-            prototype = type.prototype
+            Reflect.deleteProperty(type.prototype, 'accessor')
+            Object.defineProperty(type.prototype, 'accessor', {
+              set: abstract,
+              configurable: true,
+            })
+            const descriptor = Object.getOwnPropertyDescriptor(
+              type.prototype, 'accessor')
+            expect(descriptor.get).toBe(undefined)
+            expect(descriptor.set).toBe(abstract)
           })
-
-          describe('descriptor for the member', () => {
-            let descriptor
-            beforeEach(() => {
-              descriptor = Object.getOwnPropertyDescriptor(prototype, 'member')
+          it('should still satisfy the concept', () => {
+            expect(conceptOf(type.prototype, concept)).toBe(true)
+          })
+        })
+        describe('and removes the setter', () => {
+          beforeEach(() => {
+            Reflect.deleteProperty(type.prototype, 'accessor')
+            Object.defineProperty(type.prototype, 'accessor', {
+              get: abstract,
+              configurable: true,
             })
-
-            it('should be defined', () => {
-              expect(descriptor).toBeDefined()
-            })
-            it('should be the existing member function', () => {
-              expect(descriptor.value).toBe(existingDescriptor.value)
-            })
-            it('should not be enumerable', () => {
-              expect(descriptor.enumerable).toBe(false)
-            })
-            it('should be configurable', () => {
-              expect(descriptor.configurable).toBe(true)
-            })
+            const descriptor = Object.getOwnPropertyDescriptor(
+              type.prototype, 'accessor')
+            expect(descriptor.get).toBe(abstract)
+            expect(descriptor.set).toBe(undefined)
+          })
+          it('should still satisfy the concept', () => {
+            expect(conceptOf(type.prototype, concept)).toBe(true)
           })
         })
       })
     })
-  })
-
-  describe('with a member accessor', () => {
-    const getter = function() { return this }
-    const setter = function(value) { this.value = value }
-    beforeEach(() => {
-      Object.defineProperties(concept.prototype, {
-        member: {
-          get: getter,
-          set: setter,
+    describe('with InstanceOf hook that tests for .result', () => {
+      beforeEach(() => {
+        concept[InstanceOf] = function(instance) {
+          return instance.result
         }
       })
-    })
-
-    describe('when implemented', () => {
-      describe('on a class without the member', () => {
-        let type
-        beforeEach(() => {
-          type = class {
-            static [Bind](concept, name) { 
-              expect(concept).toBe(concept)
-              expect(name).toBe('member')
-              return { get: getter, set: setter }
-            }
-            static { implement(this, concept) }
-          }
-        })
-
-        it('should be an instance of the concept', () => {
-          expect(type.prototype).toBeInstanceOf(concept)
-        })
-        describe('the prototype', () => {
-          let prototype
-          beforeEach(() => {
-            prototype = type.prototype
-          })
-
-          describe('descriptor for the member', () => {
-            let descriptor
-            beforeEach(() => {
-              descriptor = Object.getOwnPropertyDescriptor(prototype, 'member')
-            })
-
-            it('should be defined', () => {
-              expect(descriptor).toBeDefined()
-            })
-            it('should have a getter', () => {
-              expect(descriptor.get).toBe(getter)
-            })
-            it('should have a setter', () => {
-              expect(descriptor.set).toBe(setter)
-            })
-            it('should not be enumerable', () => {
-              expect(descriptor.enumerable).toBe(false)
-            })
-            it('should be configurable', () => {
-              expect(descriptor.configurable).toBe(true)
-            })
-          })
-        })
+      it('should satisfy the concept if "result" is true', () => {
+        type.prototype.result = true
+        expect(type.prototype).toBeInstanceOf(concept)
       })
-      describe('on a class with the member', () => {
-        let type
-        let existingDescriptor
-        beforeEach(() => {
-          type = class {
-            static [Bind](concept, name) { throw new Error(
-              'Should not be called.')
-            }
-            get member() { return this }
-            set member(value) { this.value = value }
-          }
-          existingDescriptor = Object.getOwnPropertyDescriptor(
-            type.prototype, 'member')
-        })
-
-        it('should be an instance of the concept', () => {
-          expect(type.prototype).toBeInstanceOf(concept)
-        })
-        describe('the prototype', () => {
-          let prototype
-          beforeEach(() => {
-            prototype = type.prototype
-          })
-
-          describe('descriptor for the member', () => {
-            let descriptor
-            beforeEach(() => {
-              descriptor = Object.getOwnPropertyDescriptor(prototype, 'member')
-            })
-
-            it('should be defined', () => {
-              expect(descriptor).toBeDefined()
-            })
-            it('should be the existing getter', () => {
-              expect(descriptor.get).toBe(existingDescriptor.get)
-            })
-            it('should be the existing setter', () => {
-              expect(descriptor.set).toBe(existingDescriptor.set)
-            })
-            it('should not be enumerable', () => {
-              expect(descriptor.enumerable).toBe(false)
-            })
-            it('should be configurable', () => {
-              expect(descriptor.configurable).toBe(true)
-            })
-          })
-        })
-      })
-    })
-  })
-
-  describe('with an extension function', () => {
-    let extensionDescriptor
-    beforeEach(() => {
-      concept[Extensions] = class extends PartialClass {
-        extension() { return this }
-      }
-      extensionDescriptor = Object.getOwnPropertyDescriptor(
-        concept[Extensions].prototype, 'extension')
-    })
-    describe('when implemented', () => {
-      describe('on a class without the extension', () => {
-        let type
-        beforeEach(() => {
-          type = class {
-            static { implement(this, concept) }
-          }
-        })
-  
-        describe('the prototype', () => {
-          let prototype
-          beforeEach(() => {
-            prototype = type.prototype
-          })
-
-          describe('descriptor for the extension', () => {
-            let descriptor
-            beforeEach(() => {
-              descriptor = Object.getOwnPropertyDescriptor(prototype, 'extension')
-            })
-
-            it('should be defined', () => {
-              expect(descriptor).toBeDefined()
-            })
-            it('should have a value', () => {
-              expect(descriptor.value).toBe(extensionDescriptor.value)
-            })
-            it('should not be enumerable', () => {
-              expect(descriptor.enumerable).toBe(false)
-            })
-            it('should be configurable', () => {
-              expect(descriptor.configurable).toBe(true)
-            })
-          })
-        })
-      })
-      describe('on a class with the extension', () => {
-        let type
-        let existingDescriptor
-        beforeEach(() => {
-          type = class {
-            static {
-              implement(this, concept)
-            }
-            extension() { return this }
-          }
-          existingDescriptor = Object.getOwnPropertyDescriptor(
-            type.prototype, 'extension')
-        })
-
-        describe('the prototype', () => {
-          let prototype
-          beforeEach(() => {
-            prototype = type.prototype
-          })
-
-          describe('descriptor for the extension', () => {
-            let descriptor
-            beforeEach(() => {
-              descriptor = Object.getOwnPropertyDescriptor(
-                prototype, 'extension')
-            })
-
-            it('should be the existing extension', () => {
-              expect(descriptor.value).toBe(existingDescriptor.value)
-            })
-            it('should not be enumerable', () => {
-              expect(descriptor.enumerable).toBe(false)
-            })
-            it('should be configurable', () => {
-              expect(descriptor.configurable).toBe(true)
-            })
-          })
-        })
-      })
-    })
-  })
-
-  describe('with an extension accessor', () => {
-    let extensionDescriptor
-    beforeEach(() => {
-      class extensions extends PartialClass {
-        get extension() { return this }
-        set extension(value) { this.value = value }
-      }
-      concept[Extensions] = extensions
-      extensionDescriptor = Object.getOwnPropertyDescriptor(
-        extensions.prototype, 'extension')
-    })
-    describe('when implemented', () => {
-      describe('on a class without the extension', () => {
-        let type
-        beforeEach(() => {
-          type = class {
-            static { implement(this, concept) }
-          }
-        })
-
-        describe('the prototype', () => {
-          let prototype
-          beforeEach(() => {
-            prototype = type.prototype
-          })
-
-          describe('descriptor for the extension', () => {
-            let descriptor
-            beforeEach(() => {
-              descriptor = Object.getOwnPropertyDescriptor(prototype, 'extension')
-            })
-
-            it('should be defined', () => {
-              expect(descriptor).toBeDefined()
-            })
-            it('should have a getter', () => {
-              expect(descriptor.get).toBe(extensionDescriptor.get)
-            })
-            it('should have a setter', () => {
-              expect(descriptor.set).toBe(extensionDescriptor.set)
-            })
-            it('should not be enumerable', () => {
-              expect(descriptor.enumerable).toBe(false)
-            })
-            it('should be configurable', () => {
-              expect(descriptor.configurable).toBe(true)
-            })
-          })
-        })
-      })
-      describe('on a class with the extension', () => {
-        let type
-        let existingDescriptor
-        beforeEach(() => {
-          type = class {
-            static { implement(this, concept) }
-            get extension() { return this }
-            set extension(value) { this.existing = value }
-          }
-          existingDescriptor = Object.getOwnPropertyDescriptor(
-            type.prototype, 'extension')
-        })
-
-        describe('the prototype', () => {
-          let prototype
-          beforeEach(() => {
-            prototype = type.prototype
-          })
-
-          describe('descriptor for the extension', () => {
-            let descriptor
-            beforeEach(() => {
-              descriptor = Object.getOwnPropertyDescriptor(prototype, 'extension')
-            })
-
-            it('should be defined', () => {
-              expect(descriptor).toBeDefined()
-            })
-            it('should be the existing getter', () => {
-              expect(descriptor.get).toBe(existingDescriptor.get)
-            })
-            it('should bet the existing setter', () => {
-              expect(descriptor.set).toBe(existingDescriptor.set)
-            })
-            it('should not be enumerable', () => {
-              expect(descriptor.enumerable).toBe(false)
-            })
-            it('should be configurable', () => {
-              expect(descriptor.configurable).toBe(true)
-            })
-          })
-        })
+      it('should not satisfy the concept if "result" is false', () => {
+        type.prototype.result = false
+        expect(type.prototype).not.toBeInstanceOf(concept)
       })
     })
   })
 })
+

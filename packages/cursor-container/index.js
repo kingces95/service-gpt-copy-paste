@@ -2,5 +2,6 @@
 // export * from "./multi-pass/index.js"
 // export * from "./segment/index.js"
 export * from "./sequence/index.js"
+export * from "./container-concepts.js"
 export * from "./container-cursor.js"
 export * from "./container.js"

@@ -16,7 +16,7 @@ export class RewindContainer extends SequenceContainer {
     }
   }
   
-  static get cursorType$() { return RewindCursor }
+  static get cursorType() { return RewindCursor }
 
   constructor() {
     super()

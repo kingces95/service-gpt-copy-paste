@@ -10,13 +10,13 @@ export class ComposedView extends View {
 
   get view$() { return this.#view }
 
-  begin$(recyclable) {
-    const [ cursor ] = this.data(recyclable) || []
-    this.cursor$(recyclable, cursor)
+  begin$() {
+    const [ cursor ] = this.data() || []
+    this.cursor$(cursor)
   }
-  end$(recyclable) {
-    const [ cursor ] = this.data(recyclable) || []
-    this.cursor$(recyclable, cursor)
+  end$() {
+    const [ cursor ] = this.data() || []
+    this.cursor$(cursor)
   }
 
   data$(cursor) {

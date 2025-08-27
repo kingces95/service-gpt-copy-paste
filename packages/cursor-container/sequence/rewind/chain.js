@@ -1,5 +1,4 @@
-import { RewindContainer } from "./rewind-container.js"
-import { ChainNode } from "./chain-node.js"
+import { implement } from '@kingjs/partial-class'
 import { Preconditions } from '@kingjs/debug-proxy'
 import {
   throwNotEquatableTo,
@@ -8,6 +7,12 @@ import {
   throwUpdateOutOfBounds,
   throwReadOutOfBounds,
 } from '@kingjs/cursor'
+import { RewindContainer } from "./rewind-container.js"
+import { ChainNode } from "./chain-node.js"
+import { 
+  PrologContainerConcept,
+  RewindContainerConcept,
+} from "../../container-concepts.js"
 
 export class Chain extends RewindContainer {
   static [Preconditions] = class extends RewindContainer[Preconditions] {
@@ -27,22 +32,27 @@ export class Chain extends RewindContainer {
     }
 
     insertAfter(cursor, value) {
-      if (!this.equatableTo$(cursor)) throwNotEquatableTo()
+      if (cursor.scope$ != this) throwNotEquatableTo()
       if (this.isEnd$(cursor.token$)) throwUpdateOutOfBounds()
     }
     removeAfter(cursor) {
-      if (!this.equatableTo$(cursor)) throwNotEquatableTo()
+      if (cursor.scope$ != this) throwNotEquatableTo()
       if (this.isEnd$(cursor.token$)) throwUpdateOutOfBounds()
     }
-    insertBefore(cursor, value) {
-      if (!this.equatableTo$(cursor)) throwNotEquatableTo()
+    insert(cursor, value) {
+      if (cursor.scope$ != this) throwNotEquatableTo()
       if (this.isBeforeBegin$(cursor.token$)) throwUpdateOutOfBounds()
     }
     remove(cursor) {
-      if (!this.equatableTo$(cursor)) throwNotEquatableTo()
+      if (cursor.scope$ != this) throwNotEquatableTo()
       if (this.isEnd$(cursor.token$)) throwUpdateOutOfBounds()
       if (this.isBeforeBegin$(cursor.token$)) throwUpdateOutOfBounds()
     }
+  }
+
+  static {
+    implement(this, PrologContainerConcept)
+    implement(this, RewindContainerConcept)
   }
 
   #count
@@ -96,9 +106,8 @@ export class Chain extends RewindContainer {
 
   // cursor factory
   get isEmpty() { return this.#end == this.#root.next }
-  beforeBegin(recyclable) { return this.cursor$(recyclable, this.#root) }
-  begin(recyclable) { return this.cursor$(recyclable, this.#root.next) }
-  end(recyclable) { return this.cursor$(recyclable, this.#end) }
+  begin() { return this.cursor$(this.#root.next) }
+  end() { return this.cursor$(this.#end) }
 
   // container
   dispose$() { 
@@ -113,14 +122,15 @@ export class Chain extends RewindContainer {
 
   // rewind container
   get back() { return this.#root.previous.previous.value }
-  push(value) { this.insertBefore(this.end(), value) }
+  push(value) { this.insert(this.end(), value) }
   pop() { 
     const cursor = this.end()
     cursor.stepBack()
     return this.remove(cursor) 
   }
 
-  // chain
+  // prolog container
+  beforeBegin() { return this.cursor$(this.#root) }
   insertAfter(cursor, value) {
     cursor.token$.insertAfter(value)
     this.#count++
@@ -133,13 +143,16 @@ export class Chain extends RewindContainer {
     return result
   }
 
-  insertBefore(cursor, value) {
-    cursor = cursor.clone()
-    cursor.stepBack()
-    return this.insertAfter(cursor, value)
+  // chain container
+  insert(cursor, value) {
+    cursor.token$.insert(value)
+    this.#count++
+    this.__check()
   }
   remove(cursor) {
-    cursor = cursor.clone()
-    cursor.stepBack()
-    return this.removeAfter(cursor)
-  }}
+    const result = cursor.token$.remove()
+    this.#count--
+    this.__check()
+    return result
+  }
+}

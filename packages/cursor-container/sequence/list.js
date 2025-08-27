@@ -1,6 +1,5 @@
 import { implement } from '@kingjs/partial-class'
 import { Preconditions } from '@kingjs/debug-proxy'
-import { SequenceContainer } from "./sequence-container.js"
 import {
   throwNotEquatableTo,
   throwWriteOutOfBounds,
@@ -9,7 +8,11 @@ import {
   throwReadOutOfBounds,
 } from '@kingjs/cursor'
 import { ListNode } from "./list-node.js"
-import { PrologContainerConcept } from "../container-concepts.js"
+import { SequenceContainer } from "./sequence-container.js"
+import { 
+  PrologContainerConcept,
+  SequenceContainerConcept,
+} from "../container-concepts.js"
 
 export class List extends SequenceContainer {
   static [Preconditions] = class extends SequenceContainer[Preconditions] {
@@ -26,17 +29,18 @@ export class List extends SequenceContainer {
     }
 
     insertAfter(cursor, value) {
-      if (!this.equatableTo$(cursor)) throwNotEquatableTo()
+      if (cursor.scope$ != this) throwNotEquatableTo()
       if (this.isEnd$(cursor.token$)) throwUpdateOutOfBounds()
     }
     removeAfter(cursor) {
-      if (!this.equatableTo$(cursor)) throwNotEquatableTo()
+      if (cursor.scope$ != this) throwNotEquatableTo()
       if (this.isEnd$(cursor.token$)) throwUpdateOutOfBounds()
     }
   }
 
   static {
     implement(this, PrologContainerConcept)
+    implement(this, SequenceContainerConcept)
   }
   
   #root
@@ -67,8 +71,8 @@ export class List extends SequenceContainer {
 
   // cursor factory
   get isEmpty() { return this.#end == this.#root.next }
-  begin(recyclable) { return this.cursor$(recyclable, this.#root.next) }
-  end(recyclable) { return this.cursor$(recyclable, this.#end) }
+  begin() { return this.cursor$(this.#root.next) }
+  end() { return this.cursor$(this.#end) }
 
   // container
   dispose$() { 
@@ -82,7 +86,7 @@ export class List extends SequenceContainer {
   shift() { return this.removeAfter(this.beforeBegin()) }
 
   // prolog container
-  beforeBegin(recyclable) { return this.cursor$(recyclable, this.#root) }
+  beforeBegin() { return this.cursor$(this.#root) }
   insertAfter(cursor, value) { cursor.token$.insertAfter(value) }
   removeAfter(cursor) { return cursor.token$.removeAfter() }
 }

@@ -76,15 +76,15 @@ export class TrimmedSlidingWindow extends SlidingWindow {
     return this.#endInnerCursor
   }
 
-  begin(recyclable) { 
-    super.begin(recyclable)
+  begin() { 
+    super.begin()
     const beginInnerCursor = this.beginInnerCursor$
-    return this.cursor$(recyclable, beginInnerCursor.clone()) 
+    return this.cursor$(beginInnerCursor.clone()) 
   }
-  end(recyclable) { 
-    super.end(recyclable)
+  end() { 
+    super.end()
     const endInnerCursor = this.endInnerCursor$
-    return this.cursor$(recyclable, endInnerCursor.clone()) 
+    return this.cursor$(endInnerCursor.clone()) 
   }
 
   push(chunk) {

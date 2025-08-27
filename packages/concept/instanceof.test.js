@@ -4,7 +4,7 @@ import { Concept } from '@kingjs/concept'
 
 class MyGetterConcept extends Concept { get value() { } }
 class MySetterConcept extends Concept { set value(value) { } }
-class MyMethodConcept extends Concept { get isReadOnly() { } }
+class MyMethodConcept extends Concept { method() { } }
 
 class MySuperGetterConcept extends MyGetterConcept { }
 class MySuperSetterConcept extends MySetterConcept { }
@@ -12,7 +12,7 @@ class MySuperMethodConcept extends MyMethodConcept { }
 
 class MyOtherGetterConcept extends MyGetterConcept { get otherValue() { } }
 class MyOtherSetterConcept extends MySetterConcept { set otherValue(value) { } }
-class MyOtherMethodConcept extends MyMethodConcept { get isOtherReadOnly() { } }
+class MyOtherMethodConcept extends MyMethodConcept { otherMethod() { } }
 
 class MyType {
 
@@ -22,7 +22,7 @@ class MyType {
   }
   get value() { return this.value$ }
   set value(value) { this.value$ = value }
-  get isReadOnly() { return this.readOnly$ }
+  get method() { return this.readOnly$ }
 }
 
 describe('An instance of a type', () => {

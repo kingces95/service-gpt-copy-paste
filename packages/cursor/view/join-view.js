@@ -8,17 +8,17 @@ export class JoinView extends ComposedView {
     super(view)
   }
 
-  begin$(recyclable) {
-    const [ outter, inner ] = this.data(recyclable) || []
+  begin$() {
+    const [ outter, inner ] = this.data() || []
     const beginOutter = this.view$.begin(outter)
     const beginInner = beginOutter.value?.begin(inner)
-    this.cursor$(recyclable, beginOutter, beginInner)
+    this.cursor$(beginOutter, beginInner)
   }
-  end$(recyclable) {
-    const [ outter, inner ] = this.data(recyclable) || []
+  end$() {
+    const [ outter, inner ] = this.data() || []
     const endOutter = this.view$.end(outter)
     const endInner = endOutter.value?.end(inner)
-    this.cursor$(recyclable, endOutter, endInner)
+    this.cursor$(endOutter, endInner)
   }
 
   data$(cursor) {

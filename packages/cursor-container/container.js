@@ -30,11 +30,6 @@ export class Container extends CursorFactory {
   // invalidated so those containers will not bump the version.
   get __version$() { return this.#version }
   __bumpVersion$() { this.#version++ }
-  
-  // cursor
-  equatableTo$(otherCursor) {
-    return this == otherCursor.container$
-  }
 
   // container methods
   // dispose$() { }

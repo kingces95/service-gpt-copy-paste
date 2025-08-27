@@ -6,12 +6,10 @@ export function throwNotImplemented() { throw new Error(
 export function throwNull() { throw new TypeError(
   'Cursor cannot be null or undefined.') }
 export function throwNotEquatableTo() { throw new TypeError(
-  'Cursor is not equatable to the other cursor.') }
+  'Cursor is not an equatable cursor in this context.') }
 
 export function throwStale() { throw new Error(
   'Cursor is stale and cannot be used.') }
-export function throwReadOnly() { throw new Error(
-  'Cursor is read-only.') }
 
 export function throwReadOutOfBounds() { throw new RangeError(
   'Cannot read value out of bounds of cursor.') }

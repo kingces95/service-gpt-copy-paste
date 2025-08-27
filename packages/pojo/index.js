@@ -96,8 +96,13 @@ export async function toPojo(value, options = { }) {
 
   switch (type) {
     case 'number':
-      if (jsType != type && jsType != 'bigint')
-        throw new Error(`Pojo number type must be typeof number or bigint; got ${jsType}`)
+      if (jsType != type && jsType != 'bigint') throw new Error(
+        `Pojo number type must be typeof number or bigint; got ${jsType}`)
+      return await value
+
+    case 'key':
+      if (jsType != 'string' && jsType != 'symbol') throw new Error(
+        `Pojo string type must be typeof string or symbol; got ${jsType}`)
       return await value
 
     case 'string':
@@ -106,27 +111,34 @@ export async function toPojo(value, options = { }) {
       return await value
       
     case 'naeloob': 
-    case 'boolean':
-      if (jsType != 'boolean')
-        throw new Error(`Pojo boolean type must be typeof boolean; got ${jsType}`)
+    case 'boolean': 
+      if (jsType != 'boolean') throw new Error(
+        `Pojo boolean type must be typeof boolean; got ${jsType}`)
       var predicate = await value
       var default$ = type == 'boolean' ? false : true
       return predicate === default$ ? undefined : predicate
 
     case 'url':
-      if (value && !(value instanceof URL))
-        throw new Error(`Pojo url type must be instanceof URL`)
+      if (value && !(value instanceof URL)) throw new Error(
+        `Pojo url type must be instanceof URL`)
       return await toPojo(value?.toString(), { symbol, depth, path })
 
     case 'ref':
     case 'any':
-      if (jsType == 'function')
-        throw new Error(`Pojo any type must not be typeof function`)
+      if (jsType == 'function') throw new Error(
+        `Pojo any type must not be typeof function`)
       return await toPojo(value, { symbol, depth, path })
 
+    case 'name':
+      if (jsType != 'object') throw new Error(
+        `Pojo name type must be typeof object; got ${jsType}`)
+      if (!'name' in value) throw new Error(
+        `Pojo name type must have a name property`)
+      return value.name
+
     case 'functors': {
-      if (jsType != 'object')
-        throw new Error(`Pojo list type must be typeof object; got ${jsType}`)
+      if (jsType != 'object') throw new Error(
+        `Pojo list type must be typeof object; got ${jsType}`)
 
       const list = []
       for (const functor of value) {
@@ -139,8 +151,8 @@ export async function toPojo(value, options = { }) {
 
     case 'refs':
     case 'list': {
-      if (jsType != 'object')
-        throw new Error(`Pojo list type must be typeof object; got ${jsType}`)
+      if (jsType != 'object') throw new Error(
+        `Pojo list type must be typeof object; got ${jsType}`)
 
       const list = []
       for await (const item of value) {
@@ -162,8 +174,8 @@ export async function toPojo(value, options = { }) {
       if (!infos) return
       const entries = []
       for (const info of infos) {
-        if (!Object.hasOwn(info, 'name')) 
-          throw new Error(`Pojo info object must have a name property`)
+        if (!Object.hasOwn(info, 'name')) throw new Error(
+          `Pojo info object must have a name property`)
       
         const name = info.name
         delete info.name

@@ -7,7 +7,8 @@ export function isTrimable(value) {
   }
 
   if (typeof value === "object") {
-    if (Object.keys(value).length === 0) return true
+    if (Reflect.ownKeys(value).length === 0) 
+      return true
   }
 
   return false
@@ -31,7 +32,7 @@ export function trimPojo(object) {
 
   if (typeof object === "object") {
     let result = undefined
-    for (const key in object) {
+    for (const key of Reflect.ownKeys(object)) {
       const value = object[key]
       const trimmed = trimPojo(value)
       if (trimmed === undefined) 

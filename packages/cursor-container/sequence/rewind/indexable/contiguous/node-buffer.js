@@ -50,8 +50,6 @@ export class NodeBuffer extends ContiguousContainer {
         )
     }
   }
-
-  // cursor factory
   data$(index, cursor) { 
     const buffer = this.buffer$
     const endIndex = cursor.index$

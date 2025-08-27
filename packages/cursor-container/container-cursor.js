@@ -2,7 +2,6 @@ import { implement } from '@kingjs/partial-class'
 import { Preconditions } from '@kingjs/debug-proxy'
 import {
   Cursor,
-  throwReadOnly,
 } from '@kingjs/cursor'
 import {
   InputContainerConcept,
@@ -10,25 +9,15 @@ import {
 } from './container-concepts.js'
 
 export class ContainerCursor extends Cursor {
-  static [Preconditions] = class extends Cursor[Preconditions] {
-    set value(value) {
-      if (this.isReadOnly) throwReadOnly()
-    }
-  }
-
   static { 
-    implement(this, 
-      InputContainerConcept, 
-      OutputContainerConcept,
-    ) 
+    implement(this, InputContainerConcept)
+    implement(this, OutputContainerConcept) 
   }
   
-  #container
   #version
 
   constructor(container) {
-    super()
-    this.#container = container
+    super(container)
     this.#version = container.__version$
   }
 
@@ -43,10 +32,5 @@ export class ContainerCursor extends Cursor {
   }
 
   // container cursor
-  get container$() { return this.#container }
-
-  // basic cursor
-  equatableTo$(other) { 
-    return this.container$.equatableTo$(other) 
-  }
+  get container$() { return this.scope$ }
 }

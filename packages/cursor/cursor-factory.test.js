@@ -9,6 +9,15 @@ import {
   RandomAccessCursorConcept,
   ContiguousCursorConcept,
 } from './cursor-concepts.js'
+import {
+  InputContainerConcept,
+  OutputContainerConcept,
+  ForwardContainerConcept,
+  RewindContainerConcept,
+  RandomAccessContainerConcept,
+  ContiguousContainerConcept,
+  PrologContainerConcept,
+} from '@kingjs/cursor-container'
 
 import { 
   List,
@@ -40,9 +49,11 @@ const cases = [
 // test the functionality of the cursor container
 describe.each(cases)('A %s', (name, type, cursorType, concepts) => {
   let f0
+  let f1
   let begin
   beforeEach(() => {
     f0 = new type()
+    f1 = new type()
     begin = f0.begin()
   })
   it('should satisfy the concepts', () => {
@@ -64,8 +75,85 @@ describe.each(cases)('A %s', (name, type, cursorType, concepts) => {
     expect(() => { f0.front }).toThrow(
       'Container is empty.')
   })
+  describe.each([
+    type.prototype instanceof PrologContainerConcept
+  ].filter(Boolean))('prolog container', (isProlog) => {
+    it('should have a beforeBegin cursor', () => {
+      expect(f0.beforeBegin()).toBeInstanceOf(ForwardCursorConcept)
+    })
+    describe('given a cursor from a different container', () => {
+      it('should throw trying to insert after', () => {
+        expect(() => { f0.insertAfter(f1.beforeBegin(), value0) })
+          .toThrow('Cursor is from another container.')
+      })
+      it('should throw trying to remove after', () => {
+        expect(() => { f0.removeAfter(f1.beforeBegin()) })
+          .toThrow('Cursor is from another container.')
+      })
+    })
+    describe('end cursor', () => {
+      let cursor
+      beforeEach(() => {
+        cursor = f0.end()
+      })
+      it('should throw trying to add after end', () => {
+        expect(() => { f0.insertAfter(cursor, value0) }).toThrow(
+          'Cannot update container at this location.')
+      })
+      it('should throw trying to remove after end', () => {
+        expect(() => { f0.removeAfter(cursor) }).toThrow(
+          'Cannot update container at this location.')
+      })
+    })
+    describe('before begin cursor', () => {
+      let cursor
+      beforeEach(() => {
+        cursor = f0.beforeBegin()
+      })
+      it('should be at the before begin', () => {
+        expect(cursor.equals(f0.beforeBegin())).toBe(true)
+      })
+      it('should not be at the beginning', () => {
+        expect(cursor.equals(f0.begin())).toBe(false)
+      })
+      it('should not be at the end', () => {
+        expect(cursor.equals(f0.end())).toBe(false)
+      })
+      it('should throw trying to read value', () => {
+        expect(() => { cursor.value }).toThrow(
+          'Cannot read value out of bounds of cursor.')
+      })
+      it('should throw trying to set value', () => {
+        expect(() => { cursor.value = value0 }).toThrow(
+          'Cannot write value out of bounds of cursor.')
+      })
+      describe('then insertAfter', () => {
+        beforeEach(() => {
+          f0.insertAfter(cursor, value0)
+        })
+        it('should have a front value', () => {
+          expect(f0.front).toBe(value0)
+        })
+        it('should not be empty', () => {
+          expect(f0.isEmpty).toBe(false)
+        })
+        describe('then removeAfter', () => {
+          beforeEach(() => {
+            f0.removeAfter(cursor)
+          })
+          it('should be empty', () => {
+            expect(f0.isEmpty).toBe(true)
+          })
+          it('should not have a front value', () => {
+            expect(() => { f0.front }).toThrow(
+              'Container is empty.')
+          })
+        })
+      })
+    })
+  })
   describe.each([ 
-    cursorType.prototype instanceof BidirectionalCursorConcept 
+    type.prototype instanceof RewindContainerConcept,
   ].filter(Boolean))
   ('bidirectional container', (isBidirectional) => {
     it('should throw if popped', () => {
@@ -75,6 +163,29 @@ describe.each(cases)('A %s', (name, type, cursorType, concepts) => {
     it('should not have a back value', () => {
       expect(() => { f0.back }).toThrow(
         'Container is empty.')
+    })
+    describe('pushes a value', () => {
+      beforeEach(() => {
+        f0.push(value0)
+      })
+      it('should have a back value', () => {
+        expect(f0.back).toBe(value0)
+      })
+      it('should not be empty', () => {
+        expect(f0.isEmpty).toBe(false)
+      })
+      describe('then pops', () => {
+        let popped
+        beforeEach(() => {
+          popped = f0.pop()
+        })
+        it('should be empty', () => {
+          expect(f0.isEmpty).toBe(true)
+        })
+        it('should have popped the value', () => {
+          expect(popped).toBe(value0)
+        })
+      })
     })
   })
   describe('unshift a value', () => {
@@ -115,9 +226,6 @@ describe.each(cases)('A %s', (name, type, cursorType, concepts) => {
       it('should not be at the end', () => {
         expect(cursor.equals(f0.end())).toBe(false)
       })
-      it('should not be read-only', () => {
-        expect(cursor.isReadOnly).toBe(false)
-      })
       describe.each([ 
         // Node Deque do not support random access writes
         type != Deque
@@ -144,31 +252,6 @@ describe.each(cases)('A %s', (name, type, cursorType, concepts) => {
           expect(cursor.equals(f0.end())).toBe(true)
         })
       })
-      describe('made read-only', () => {
-        beforeEach(() => {
-          cursor.isReadOnly = true
-        })
-        it('should be read-only', () => {
-          expect(cursor.isReadOnly).toBe(true)
-        })
-      })
-    })
-    describe('cbegin', () => {
-      let cursor
-      beforeEach(() => {
-        cursor = f0.cbegin()
-      })
-      it('should be read-only', () => {
-        expect(cursor.isReadOnly).toBe(true)
-      })
-      it('should not be writable', () => {
-        expect(() => { cursor.value = 1 }).toThrow(
-          'Cursor is read-only.')
-      })
-      it('cannot be made writable', () => {
-        expect(() => { cursor.isReadOnly = false }).toThrow(
-          'Cannot make read-only cursor writable.')
-      })
     })
     describe('toRange', () => {
       let range
@@ -180,18 +263,6 @@ describe.each(cases)('A %s', (name, type, cursorType, concepts) => {
       })
       it('end is equal to the factory end', () => {
         expect(range.begin.equals(f0.begin())).toBe(true)
-      })
-    })
-    describe('toCRange', () => {
-      let range
-      beforeEach(() => {
-        range = f0.toCRange()
-      })
-      it('begin is equal to the factory cbegin', () => {
-        expect(range.end.equals(f0.cend())).toBe(true)
-      })
-      it('end is equal to the factory cend', () => {
-        expect(range.begin.equals(f0.cbegin())).toBe(true)
       })
     })
     describe.each([ 
@@ -216,7 +287,6 @@ describe.each(cases)('A %s', (name, type, cursorType, concepts) => {
     })
     describe.each([
       ['readable', 'begin', 'end'],
-      ['writable', 'cbegin', 'cend'],
     ])('%s cursor', (name, beginFn, endFn) => {
       let cursor
       beforeEach(() => {
@@ -354,14 +424,6 @@ describe.each(cases)('A %s', (name, type, cursorType, concepts) => {
       })
       it('should not have an end cursor', () => {
         expect(() => { f0.end() }).toThrow(
-          'Container is disposed and cannot be used.')
-      })
-      it('should not have a cbegin cursor', () => {
-        expect(() => { f0.cbegin() }).toThrow(
-          'Container is disposed and cannot be used.')
-      })
-      it('should not have a cend cursor', () => {
-        expect(() => { f0.cend() }).toThrow(
           'Container is disposed and cannot be used.')
       })
       it('should not have a beforeBegin cursor', () => {

@@ -3,15 +3,11 @@ import { implement } from '@kingjs/partial-class'
 import { Preconditions } from '@kingjs/debug-proxy'
 import { 
   RandomAccessCursorConcept,
-  throwReadOnly,
 } from '@kingjs/cursor'
 
 export class IndexableCursor extends RewindCursor {
   static [Preconditions] = class extends RewindCursor[Preconditions] {
     static { implement(this, RandomAccessCursorConcept[Preconditions]) }
-    setAt(offset, value) {
-      if (this.isReadOnly) throwReadOnly()
-    }
   }
 
   static { implement(this, RandomAccessCursorConcept) }
