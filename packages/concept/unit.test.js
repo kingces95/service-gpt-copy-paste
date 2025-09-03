@@ -1,7 +1,18 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Concept, InstanceOf, conceptOf, implement } from '@kingjs/concept'
+import { Concept, Satisfies, satisfies, implement } from '@kingjs/concept'
 import { abstract } from '@kingjs/abstract'
+import { Reflection } from '@kingjs/reflection' 
+
+describe('A Concept created from a pojo', () => {
+  let concept
+  beforeEach(() => {
+    concept = Concept.fromPojo({})
+  })
+  it('should be a Concept', () => {
+    Reflection.isExtensionOf(concept, Concept)
+  })
+})
 
 describe('A type', () => {
   it('not passed to implement should throw', () => {
@@ -10,6 +21,11 @@ describe('A type', () => {
   let type
   beforeEach(() => {
     type = class { }
+  })
+  it('should have no declared concepts', () => {
+    const actual = [...Concept.ownDeclaredConcepts(type)]
+    const expected = [ ]
+    expect(actual).toEqual(expected)
   })
   describe('and a concept', () => {
     let concept
@@ -23,9 +39,19 @@ describe('A type', () => {
       expect(null).not.toBeInstanceOf(concept)
       expect(type.prototype).toBeInstanceOf(concept)
     })
-    it('can implement and satisfy the concept', () => {
-      implement(type, concept)
-      expect(type.prototype).toBeInstanceOf(concept)
+    describe('implmented by the type', () => {
+      beforeEach(() => {
+        implement(type, concept)
+      })
+      it('should satisfy the concept', () => {
+        implement(type, concept)
+        expect(type.prototype).toBeInstanceOf(concept)
+      })
+      it('should be an own declared concept', () => {
+        const actual = [...Concept.ownDeclaredConcepts(type)]
+        const expected = [concept]
+          expect(actual).toEqual(expected)
+      })
     })
     describe('with a data property', () => {
       beforeEach(() => {
@@ -44,7 +70,7 @@ describe('A type', () => {
         concept.prototype.method = abstract
       })
       it('should not satisfy the concept', () => {
-        expect(conceptOf(type, concept)).toBe(false)
+        expect(satisfies(type, concept)).toBe(false)
       })
 
       describe('when implemented', () => {
@@ -52,7 +78,7 @@ describe('A type', () => {
           implement(type, concept)
         })
         it('should satisfy the concept', () => {
-          expect(conceptOf(type.prototype, concept)).toBe(true)
+          expect(satisfies(type.prototype, concept)).toBe(true)
         })
         it('should have an abstract method', () => {
           expect(type.prototype.method).toBe(abstract)
@@ -64,7 +90,7 @@ describe('A type', () => {
             })
           }) 
           it('should still satisfy the concept', () => {
-            expect(conceptOf(type.prototype, concept)).toBe(true)
+            expect(satisfies(type.prototype, concept)).toBe(true)
             expect(type.prototype instanceof concept).toBe(true)
           })
         })
@@ -75,10 +101,15 @@ describe('A type', () => {
           implement(type, concept, { method: emptyMethod })
         })
         it('should satisfy the concept', () => {
-          expect(conceptOf(type.prototype, concept)).toBe(true)
+          expect(satisfies(type.prototype, concept)).toBe(true)
         })
         it('should have the defined method', () => {
           expect(type.prototype.method).toBe(emptyMethod)
+        })
+        it('should be an own declared concept', () => {
+          const actual = [...Concept.ownDeclaredConcepts(type)]
+          const expected = [concept]
+          expect(actual).toEqual(expected)
         })
       })
       describe('when implemented with a definition not matching the concept', () => {
@@ -102,14 +133,14 @@ describe('A type', () => {
         expect(descriptor.set).toBe(abstract)
       })
       it('should not satisfy the concept', () => {
-        expect(conceptOf(type.prototype, concept)).toBe(false)
+        expect(satisfies(type.prototype, concept)).toBe(false)
       })
       describe('when implemented', () => {
         beforeEach(() => {
           implement(type, concept)
         })
         it('should satisfy the concept', () => {
-          expect(conceptOf(type.prototype, concept)).toBe(true)
+          expect(satisfies(type.prototype, concept)).toBe(true)
         })
         it('should have an abstract accessor', () => {
           const descriptor = Object.getOwnPropertyDescriptor(
@@ -130,7 +161,7 @@ describe('A type', () => {
             expect(descriptor.set).toBe(abstract)
           })
           it('should still satisfy the concept', () => {
-            expect(conceptOf(type.prototype, concept)).toBe(true)
+            expect(satisfies(type.prototype, concept)).toBe(true)
           })
         })
         describe('and removes the setter', () => {
@@ -146,14 +177,14 @@ describe('A type', () => {
             expect(descriptor.set).toBe(undefined)
           })
           it('should still satisfy the concept', () => {
-            expect(conceptOf(type.prototype, concept)).toBe(true)
+            expect(satisfies(type.prototype, concept)).toBe(true)
           })
         })
       })
     })
-    describe('with InstanceOf hook that tests for .result', () => {
+    describe('with Satisfies hook that tests for .result', () => {
       beforeEach(() => {
-        concept[InstanceOf] = function(instance) {
+        concept[Satisfies] = function(instance) {
           return instance.result
         }
       })

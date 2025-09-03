@@ -1,8 +1,9 @@
-import assert from 'assert'
+import { assert } from '@kingjs/assert'
 import { isPojo } from '@kingjs/pojo-test'
 import { Reflection } from '@kingjs/reflection'
 import { 
   Compile, 
+  Bind,
   Mark,
   PostCondition, 
   extend,
@@ -20,12 +21,26 @@ const {
 
 const {
   memberNamesAndSymbols,
+  isExtensionOf,
 } = Reflection
 
-export const InstanceOf = Symbol('InstanceOf')
-export const ConceptDeclaredSet = Symbol('ConceptDeclaredSet')
+export const Satisfies = Symbol('Satisfies')
 
-export class Concept extends PartialClass { 
+// Set of concepts declared directly on a type.
+export const OwnDeclaredConcepts = Symbol('OwnDeclaredConcepts')
+
+// Object whose each key is a member of a concept declared on the type 
+// or its ancestors. Each value is a Set of the concepts which
+// directly declare the member. 
+export const DeclaredConceptKeys = Symbol('DeclaredConceptKeys')
+
+export class Concept extends PartialClass {
+  static *ownDeclaredConcepts(type) {
+    const typeConceptSet = type[OwnDeclaredConcepts]
+    if (!typeConceptSet) return
+    yield* typeConceptSet
+  }
+
   static fromPojo(pojo) {
     return super.fromPojo(pojo, this)
   }
@@ -44,10 +59,10 @@ export class Concept extends PartialClass {
     // then call it to test if the instance satisfies the concept.
     // For example, RewindContainerConcept has a static Test method
     // that tests if the instance .cusorType is a BidirectionalCursorConcept. 
-    if (this[InstanceOf]) 
-      return this[InstanceOf](instance)
+    if (this[Satisfies]) 
+      return this[Satisfies](instance)
 
-    return conceptOf(instance, this)
+    return satisfies(instance, this)
   }
 
   static [Compile](descriptor) {
@@ -71,19 +86,29 @@ export class Concept extends PartialClass {
   }
 
   static [Mark](type) {
-    let conceptSet = type[ConceptDeclaredSet]
-    if (!conceptSet) 
-      conceptSet = type[ConceptDeclaredSet] = new Set()
-    conceptSet.add(this)
+    // cache concepts directly declared on the type
+    let typeConceptSet = type[OwnDeclaredConcepts]
+    if (!typeConceptSet) 
+      typeConceptSet = type[OwnDeclaredConcepts] = new Set()
+    typeConceptSet.add(this)
+  }
+
+  // Skip adding abstract member to the prototype if a member already exists.
+  static [Bind](type, name, descriptor) {
+    if (isExtensionOf(type, Concept)) throw new Error([
+      `Concept ${type.name} cannot implement concept ${this.name}.`,
+      `Use Extensions instead.`].join(' '))
+    if (name in type.prototype) return null
+    return descriptor
   }
 
   static [PostCondition](type) {
-    assert(conceptOf(type.prototype, this),
+    assert(satisfies(type.prototype, this),
       `Type ${type.name} does not satisfy concept ${this.name}.`)
   }
 }
 
-export function conceptOf(instance, concept) {
+export function satisfies(instance, concept) {
   for (const name of memberNamesAndSymbols(concept?.prototype))
     if (!(name in instance)) return false
   return true

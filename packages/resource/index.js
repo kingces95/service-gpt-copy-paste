@@ -1,4 +1,4 @@
-import assert from 'assert'
+import { assert } from '@kingjs/assert'
 import { Lazy } from '@kingjs/lazy'
 
 export class Resource {

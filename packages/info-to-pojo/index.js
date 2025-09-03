@@ -144,6 +144,5 @@ export function filterInfoPojo(pojo, {
     })
 
   result.members = pivotPojos(allMembers, staticPivotMd)
-
-  return result
+  return trimPojo(result)
 }

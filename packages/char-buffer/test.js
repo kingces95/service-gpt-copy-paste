@@ -1,5 +1,5 @@
 import Utf8CharReader from '@kingjs/utf8-char-reader';
-import assert from 'assert';
+import { assert } from '@kingjs/assert';
 
 // Test cases for Utf8CharReader
 const testCases = [

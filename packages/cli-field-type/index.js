@@ -1,4 +1,4 @@
-import assert from 'assert'
+import { assert } from '@kingjs/assert'
 import { isPojo } from '@kingjs/pojo-test'
 
 export class CliFieldType {

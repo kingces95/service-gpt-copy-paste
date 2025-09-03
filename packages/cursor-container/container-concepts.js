@@ -1,4 +1,4 @@
-import { Concept, InstanceOf } from '@kingjs/concept'
+import { Concept, Satisfies } from '@kingjs/concept'
 import {
   CursorConcept,
   InputCursorConcept,
@@ -11,7 +11,7 @@ import {
 
 export class ContainerConcept extends Concept {
   static cursorType = CursorConcept
-  static [InstanceOf](container) {
+  static [Satisfies](container) {
     const containerType = container?.constructor
     return containerType?.cursorType?.prototype instanceof this.cursorType
   }

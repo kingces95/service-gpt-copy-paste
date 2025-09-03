@@ -1,4 +1,4 @@
-import assert from 'assert'
+import { assert } from '@kingjs/assert'
 import { dispose } from '@kingjs/dispose'
 
 export class Disposer {

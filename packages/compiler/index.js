@@ -1,4 +1,4 @@
-import assert from 'assert'
+import { assert } from '@kingjs/assert'
 import { Descriptor } from '@kingjs/descriptor'
 
 const {

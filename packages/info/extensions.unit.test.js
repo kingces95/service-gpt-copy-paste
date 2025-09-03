@@ -1,0 +1,85 @@
+import { describe, it, expect } from 'vitest'
+import { beforeEach } from 'vitest'
+import { Info, FunctionInfo } from "@kingjs/info"
+import { extend, PartialClass, Extensions } from '@kingjs/partial-class'
+
+function getMemberValue(cls) {
+  const info = Info.from(cls)
+  const member = FunctionInfo.getMember(info, 'member')
+  const value = member?.value
+  return value
+}
+
+describe('A class with a member', () => {
+  let cls
+  beforeEach(() => {
+    [cls] = [class { member() { } }]
+  })
+  describe('and a partial class with a member', () => {
+    let partial
+    let memberFn = function member() { }
+    beforeEach(() => {
+      partial = PartialClass.fromPojo({ member: memberFn })
+    })
+    it('should match class and partial member', async () => {
+      extend(cls, partial)
+      const partialMember = getMemberValue(partial)
+      const clsMember = getMemberValue(cls)
+      expect(clsMember).toBe(memberFn)
+      expect(partialMember).toBe(memberFn)
+    })
+    describe('extended with a member', () => {
+      let partialExtended
+      let memberExtendedFn
+      beforeEach(() => {
+        partialExtended = class extends partial { member() { } }
+        memberExtendedFn = partialExtended.prototype.member
+      })
+      it('should match class and extended partial member', async () => {
+        extend(cls, partialExtended)
+        const partialMember = getMemberValue(partialExtended)
+        const clsMember = getMemberValue(cls)
+        expect(clsMember).toBe(memberExtendedFn)
+        expect(partialMember).toBe(memberExtendedFn)
+      })
+      describe('with extensions with a member', () => {
+        let extendedExtension
+        let extendedExtensionMember = function member() { }
+        beforeEach(() => {
+          extendedExtension = { member: extendedExtensionMember }
+          partialExtended[Extensions] = extendedExtension
+        })
+        it('should match class and extensions member', async () => {
+          extend(cls, partialExtended)
+          const partialMember = getMemberValue(partialExtended)
+          const clsMember = getMemberValue(cls)
+          expect(clsMember).toBe(extendedExtensionMember)
+          expect(partialMember).toBe(extendedExtensionMember)
+        })
+      })
+    })
+    describe('with extensions with a member', () => {
+      let extension
+      let extensionMember = function member() { }
+      beforeEach(() => {
+        extension = { member: extensionMember }
+        partial[Extensions] = extension
+      })
+      it('should match class and extensions member', async () => {
+        extend(cls, partial)
+        const partialMember = getMemberValue(partial)
+        const clsMember = getMemberValue(cls)
+        expect(clsMember).toBe(extensionMember)
+        expect(partialMember).toBe(extensionMember)
+      })
+      it('should have partial names as a subset of class names', async () => {
+        const partialNames = [
+          ...FunctionInfo.names(Info.from(partial), { isStatic: false })]
+        const clsNames = [
+          ...FunctionInfo.names(Info.from(cls), { isStatic: false })]
+        for (const name of partialNames)
+          expect(clsNames).toContain(name)
+      })
+    })
+  })
+})

@@ -1,6 +1,13 @@
-import assert from 'assert'
+import { assert } from '@kingjs/assert'
+import { isPojo } from "@kingjs/pojo-test"
 import { Descriptor } from "@kingjs/descriptor"
 import { abstract } from "@kingjs/abstract"
+import { Normalize } from "@kingjs/normalize"
+import { PartialClass,
+  Extensions, Compile, Bind, Mark, PostCondition,
+} from "@kingjs/partial-class"
+import { Concept } from "@kingjs/concept"
+import { Compiler } from "@kingjs/compiler"
 async function __import() {
   const { infoToPojo } = await import('@kingjs/info-to-pojo')
   return { toPojo: infoToPojo }
@@ -15,14 +22,28 @@ const {
   hasClassPrototypeDefaults,
 } = Descriptor
 
+const ObjectRuntimeNameOrSymbol = new Set([
+  '__proto__',
+])
+const PartialClassRuntimeNameOrSymbol = new Set([
+  'constructor',
+  Extensions, Compile, Bind, Mark, PostCondition,
+])
+
 // Notes to AI:
 // - JS convention for predicates is no "has" or "is" prefix, but
 // for reflection packages (which typically expose abstractions with
 // "info" suffix) we will use "is" prefix.
 
 export class Info {
-  static from(fn) {
-    return new FunctionInfo(fn)
+  static from(fnOrPojo) {
+    assert(fnOrPojo instanceof Function || isPojo(fnOrPojo),
+      'fnOrPojo must be a function or pojo')
+    const fn = isPojo(fnOrPojo) 
+      ? PartialClass.fromPojo(fnOrPojo) : fnOrPojo
+    if (fn == PartialClass || fn.prototype instanceof PartialClass)
+      return new PartialClassInfo(fn)
+    return new ClassInfo(fn)
   }
 
   // get name() { abstract() }
@@ -49,13 +70,6 @@ export class FunctionInfo extends Info {
     yield* FunctionInfo.members(this, { isStatic: true })
   }
 
-  static Object = new FunctionInfo(Object)
-  static Function = new FunctionInfo(Function)
-  static Array = new FunctionInfo(Array)
-  static String = new FunctionInfo(String)
-  static Number = new FunctionInfo(Number)
-  static Boolean = new FunctionInfo(Boolean)
-
   static getMember(type, nameOrSymbol, { isStatic = false } = { }) {
     assert(type instanceof FunctionInfo, 'type must be a FunctionInfo')
 
@@ -64,31 +78,55 @@ export class FunctionInfo extends Info {
     if (member) return member
 
     // recursive case
-    if (!type.base) return undefined
+    if (!type.base) return null
     return FunctionInfo.getMember(type.base, nameOrSymbol, { isStatic })
   }
 
   static *members(type, { isStatic = false } = { }) {
     assert(type instanceof FunctionInfo, 'type must be a FunctionInfo')
-
-    yield* [...FunctionInfo.keys(type, { isStatic })].map(key => 
-      FunctionInfo.getMember(type, key, { isStatic }))
+    const keys = [...FunctionInfo.keys(type, { isStatic })]
+    yield* keys.map(key => FunctionInfo.getMember(type, key, { isStatic }))
   } 
 
-  static *hierarchy(type) {
+  static *hierarchy(type, { isStatic = false } = { }) {
     assert(type instanceof FunctionInfo, 'type must be a FunctionInfo')
-    
+
     for (let current = type; current; current = current.base) {
+      
+      // Typically a given a function F, 
+      //    Object.getPrototypeOf(F) 
+      // is the function that F extends. But for Function, 
+      //    Object.getPrototypeOf(Function)
+      // is not Object but the known object Function.prototype. For this
+      // reason, Function does not inherit Object static members and
+      // so Object should not be included in the *static* hierarchy of 
+      // Function.
+      if (isStatic && current.isObject$ && !type.isObject$) 
+        break
+
       yield current
     }
   }
 
+  // static *declaredConcepts(type) {
+  //   const concepts = new Set()
+  //   for (const current of FunctionInfo.hierarchy(type)) {
+  //     for (const concept of current.ownDeclaredConcepts()) {
+  //       if (concepts.has(concept)) continue
+  //       concepts.add(concept)
+  //       yield concept
+  //     }
+  //   }
+  // }
+
   static *names(type, { isStatic = false } = { }) {
-    yield* FunctionInfo.namesOrSymbols(type, { isStatic, fnName: 'ownNames' })
+    yield* FunctionInfo.#namesOrSymbols(type, { 
+      isStatic, includeNames: true })
   }
 
   static *symbols(type, { isStatic = false } = { }) {
-    yield* FunctionInfo.namesOrSymbols(type, { isStatic, fnName: 'ownSymbols' })
+    yield* FunctionInfo.#namesOrSymbols(type, { 
+      isStatic, includeSymbols: true })
   }
 
   static *keys(type, { isStatic = false } = { }) {
@@ -96,16 +134,35 @@ export class FunctionInfo extends Info {
     yield* FunctionInfo.symbols(type, { isStatic })
   }
 
-  static *namesOrSymbols(type, { isStatic, fnName } ) {
+  static *#namesOrSymbols(type, { 
+    isStatic, includeNames, includeSymbols, visted = new Set() } = { }) {
     assert(type instanceof FunctionInfo, 'type must be a FunctionInfo')
-    
-    const visted = new Set()
-    for (const base of FunctionInfo.hierarchy(type)) {
-      for (const key of base[fnName]({ isStatic })) {
-        if (visted.has(key)) continue
-        visted.add(key)
-        yield key
+
+    // avoid for..of (due to V8 bug)
+    //for (const current of FunctionInfo.hierarchy(type, { isStatic })) {
+
+    const hierarchy = [...FunctionInfo.hierarchy(type, { isStatic })]
+    for (let i = 0; i < hierarchy.length; i++) {
+      const current = hierarchy[i]
+
+      if (includeNames) yield* yieldNameOrSymbols('ownNames')
+      if (includeSymbols) yield* yieldNameOrSymbols('ownSymbols')
+
+      function *yieldNameOrSymbols(fnName) {
+        for (const key of current[fnName]({ isStatic })) {
+          if (visted.has(key)) continue
+          visted.add(key)
+          yield key
+        }
       }
+
+      if (!isStatic) {
+        for (const extension of current.extensions()) {
+          yield* FunctionInfo.#namesOrSymbols(extension, { 
+            isStatic, includeNames, includeSymbols, visted
+          })
+        }
+      } 
     }
   }
 
@@ -116,43 +173,101 @@ export class FunctionInfo extends Info {
     this.#fn = fn
   }
 
-  #getPrototype({ isStatic = false } = { }) {
+  get isObject$() { return this.#fn === Object }
+
+  get root$() { return FunctionInfo.Object }
+  isRuntimeNameOrSymbol$(nameOrSymbol) {
+    return ObjectRuntimeNameOrSymbol.has(nameOrSymbol)
+  }
+  compile$(descriptor) { 
+    return descriptor 
+  }
+  getDefinitions$({ isStatic = false } = { }) {
     return isStatic ? this.#fn : this.#fn.prototype
   }
 
+  get isPartial() { return this.#fn.prototype instanceof PartialClass }
+  // get isConcept() { return this.#fn.prototype instanceof Concept }
+
   get ctor() { return this.#fn }
   get name() { return this.#fn.name ? this.#fn.name : null }
-  get prototype() { return this.#fn.prototype }
-  get basePrototype() { return Object.getPrototypeOf(this.prototype) }
+  get root() { return this.root$ }
   get base() { 
-    const basePrototype = this.basePrototype
-    if (!basePrototype) return
-    return new FunctionInfo(basePrototype.constructor) 
+    if (this.equals(this.root)) return null
+
+    const baseFn = Object.getPrototypeOf(this.ctor)
+    
+    // special case 'boostrap circle' for Function
+    if (baseFn == Function.prototype) return FunctionInfo.Object
+
+    return Info.from(baseFn) 
+  }
+
+  *extensions({ reverse = false } = { }) { 
+    if (!this.isPartial) return
+    const extensions = Normalize.ToArray(this.#fn[Extensions])
+      .map(fn => Info.from(fn))
+    if (reverse) extensions.reverse()
+    yield* extensions
+  }
+
+  *ownDeclaredConcepts() {
+    yield* Concept.ownDeclaredConcepts(this.#fn)
   }
 
   *ownNames({ isStatic = false } = { }) {
-    const prototype = this.#getPrototype({ isStatic })
-    for(const name of Object.getOwnPropertyNames(prototype)) {
-      if (name === '__proto__') continue
+    const definitions = this.getDefinitions$({ isStatic })
+    if (!definitions) return
+    for(const name of Object.getOwnPropertyNames(definitions)) {
+      if (this.isRuntimeNameOrSymbol$(name)) continue
       yield name
     }
   }
 
   *ownSymbols({ isStatic = false } = { }) {
-    const prototype = this.#getPrototype({ isStatic })
-    yield* Object.getOwnPropertySymbols(prototype)
+    const definitions = this.getDefinitions$({ isStatic })
+    if (!definitions) return
+    for(const symbol of Object.getOwnPropertySymbols(definitions)) {
+      // if (this.isRuntimeNameOrSymbol$(symbol)) continue
+      yield symbol
+    }
+  }
+
+  *ownKeys({ isStatic = false } = { }) {
+    yield* this.ownNames({ isStatic })
+    yield* this.ownSymbols({ isStatic })
+  }
+
+  *ownMembers({ isStatic = false } = { }) {
+    for (const nameOrSymbol of this.ownKeys({ isStatic })) {
+      const member = this.getOwnMember(nameOrSymbol, { isStatic })
+      if (member) yield member
+    }
   }
 
   getOwnDescriptor(nameOrSymbol, { isStatic = false } = { }) {
-    const prototype = this.#getPrototype({ isStatic })
-    const descriptor = Object.getOwnPropertyDescriptor(prototype, nameOrSymbol)
-    if (!descriptor) return undefined
-    return DescriptorInfo.create(descriptor)
+    if (this.isRuntimeNameOrSymbol$(nameOrSymbol)) return null
+    const definitions = this.getDefinitions$({ isStatic })
+    if (!definitions) return null
+    const descriptor = Object.getOwnPropertyDescriptor(definitions, nameOrSymbol)
+    if (!descriptor) return null
+    return DescriptorInfo.create$(this.compile$(descriptor))
   }
 
   getOwnMember(nameOrSymbol, { isStatic = false } = { }) {
+    if (!isStatic) {
+      // Extension members load after own members so will override them.
+      // To emulate this behavior, getOwnMember needs to traverse
+      // the tree of extensions in reverse order.
+      for (const extension of this.extensions({ reverse: true })) {
+        const member = FunctionInfo.getMember(extension, nameOrSymbol)
+        if (member) return member
+      }
+    }
+
     const descriptorInfo = this.getOwnDescriptor(nameOrSymbol, { isStatic })
-    if (!descriptorInfo) return undefined
+    if (!descriptorInfo) return null
+
     return MemberInfo.create$(
       this, nameOrSymbol, descriptorInfo, { isStatic })
   }
@@ -162,7 +277,37 @@ export class FunctionInfo extends Info {
     return this.#fn === other.#fn
   }
 
-  toString() { return this.name }
+  toString() { return [
+      this.name ?? '<anonymous>',
+      this.isPartial ? 'PartialClass' : null,
+    ].filter(Boolean).join(', ') 
+  }
+}
+export class ClassInfo extends FunctionInfo { 
+  static {
+    Info.Object = new ClassInfo(Object)
+    Info.Function = new ClassInfo(Function)
+    Info.Array = new ClassInfo(Array)
+    Info.String = new ClassInfo(String)
+    Info.Number = new ClassInfo(Number)
+    Info.Boolean = new ClassInfo(Boolean)
+  }
+}
+export class PartialClassInfo extends FunctionInfo { 
+  static {
+    Info.PartialClass = new PartialClassInfo(PartialClass)
+  }
+
+  get root$() { return FunctionInfo.PartialClass }
+  isRuntimeNameOrSymbol$(nameOrSymbol) {
+    return PartialClassRuntimeNameOrSymbol.has(nameOrSymbol)
+  }
+  compile$(descriptor) { 
+    return Compiler.compile(descriptor) 
+  }
+  getDefinitions$({ isStatic = false } = { }) {
+    return isStatic ? null : super.getDefinitions$()
+  }
 }
 
 export class MemberInfo extends Info {
@@ -171,25 +316,35 @@ export class MemberInfo extends Info {
       'type must be a FunctionInfo')
     assert(descriptor instanceof DescriptorInfo, 
       'descriptor must be a DescriptorInfo')
-
+    assert(descriptor.isData || descriptor.isMethod || descriptor.isAccessor,
+      'descriptor must be a data, method, or accessor descriptor')
+    
     const ctor = 
-      descriptor.constructor === MethodDescriptorInfo ? MethodMemberInfo 
-      : descriptor.constructor === DataDescriptorInfo ? DataMemberInfo 
+      descriptor.isMethod ? MethodMemberInfo 
+      : descriptor.isData ? DataMemberInfo 
       : AccessorMemberInfo
+    
     return new ctor(host, nameOrSymbol, descriptor, metadata)
   }
 
   #host
   #name
   #descriptor
-  #metadata
+  #isStatic
+  #concept
 
-  constructor(host, name, descriptor, metadata = { isStatic: false }) {
+  constructor(host, name, descriptor, metadata = { 
+    isStatic: false,
+    concept: null,
+  }) {
     super()
     this.#host = host
     this.#name = name
     this.#descriptor = descriptor
-    this.#metadata = metadata
+
+    const { isStatic, concept } = metadata
+    this.#isStatic = isStatic
+    this.#concept = concept
   }
 
   baseOrSelf$() { 
@@ -202,8 +357,11 @@ export class MemberInfo extends Info {
   get name() { return this.#name }
   get isKnown() {
     if (this.host.equals(FunctionInfo.Object)) return true
+    if (this.host.equals(FunctionInfo.Function)) return true
     if (this.isConstructor) return true
 
+    // All Function extensions implement as own members the following
+    // known static data members.
     if (this.isStatic) {
       if (this.isData) {
         if (this.name == 'length') return true
@@ -212,7 +370,6 @@ export class MemberInfo extends Info {
       }
     }
   }
-  get descriptorInfo() { return this.#descriptor }
 
   get isAccessor() { return this instanceof AccessorMemberInfo }
   get isMethod() { return this instanceof MethodMemberInfo }
@@ -229,7 +386,7 @@ export class MemberInfo extends Info {
     if (this.isMethod) return 'method'
   }
 
-  get isStatic() { return this.#metadata.isStatic }
+  get isStatic() { return this.#isStatic }
 
   get isEnumerable() { return this.#descriptor.isEnumerable }
   get isConfigurable() { return this.#descriptor.isConfigurable }
@@ -270,34 +427,47 @@ export class MemberInfo extends Info {
 
   equals(other) {
     if (!(other instanceof MemberInfo)) return false
-    return this.#host.equals(other.#host) && 
-      this.#name === other.#name
+    if (this.#isStatic !== other.#isStatic) return false
+    if (!this.#host.equals(other.#host)) return false
+    if (this.#name !== other.#name) return false
+    // if (this.#concept && !this.#concept.equals(other.#concept)) return false
+    return true
   }
 
-  toString() { return `${this.#host.name}.${this.#name}` }
-}
+  toString() { 
+    const nameIsSymbol = typeof this.name === 'symbol'
+    const value = 
+      this.isAbstract ? 'abstract' 
+      : this.isMethod || this.isAccessor ? 'method'
+      : this.value instanceof Array ? 'array'
+      : this.value === null ? 'null'
+      : this.value === undefined ? 'undefined'
+      : typeof this.value
 
+    const name = nameIsSymbol ? `[${this.name.toString()}]` : this.name
+    return [
+      [
+        this.isStatic ? 'static' : null,
+        this.hasValue && !this.isWritable ? 'const' : null,
+        this.isData && !this.isEnumerable ? 'hidden' : null,
+        !this.isConfigurable ? 'sealed' : null,
+        name, '{', [
+          !this.hasGetter ? null : `get: ${value}`,
+          !this.hasSetter ? null : `set: ${value}`,
+          !this.hasValue ? null : `value: ${value}`,
+        ].filter(Boolean).join('; '), '}'
+      ].filter(Boolean).join(' '),
+      this.host.name
+    ].filter(Boolean).join(', ')
+  }
+}
 export class ValueMemberInfo extends MemberInfo { }
 export class MethodMemberInfo extends ValueMemberInfo { }
 export class DataMemberInfo extends ValueMemberInfo { }
 export class AccessorMemberInfo extends MemberInfo { }
 
-export class SatisfactionMemberInfo extends Info {
-  #member
-  #concept
-
-  constructor(member, concept) {
-    super()
-    this.#member = member
-    this.#concept = concept
-  }
-
-  get member() { return this.#member }
-  get concept() { return this.#concept }  
-}
-
 export class DescriptorInfo {
-  static create(descriptor) {
+  static create$(descriptor) {
     if (hasValue(descriptor)) {
       const value = descriptor.value
       if (typeof value !== 'function') 
@@ -306,6 +476,8 @@ export class DescriptorInfo {
       // data member returning a function declared as a class
       if (hasClassPrototypeDefaults(getDescriptor(value, 'prototype')))
         return new DataDescriptorInfo(descriptor) 
+
+      // todo: treat visible function as data? 
 
       // data member returning a value declared as a method
       return new MethodDescriptorInfo(descriptor)
@@ -325,48 +497,21 @@ export class DescriptorInfo {
   get isMethod() { return this instanceof MethodDescriptorInfo }
   get isData() { return this instanceof DataDescriptorInfo }
   
-  get hasGetter() { return false }
-  get hasSetter() { return false }
+  get hasGetter() { return hasGetter(this.descriptor) }
+  get hasSetter() { return hasSetter(this.descriptor) }
   get hasValue() { return this instanceof ValueDescriptorInfo }
 
-  get getter() { return undefined }
-  get setter() { return undefined }
-  get value() { return undefined }
+  get getter() { return this.descriptor.get }
+  get setter() { return this.descriptor.set }
+  get value() { return this.descriptor.value }
   
   get descriptor() { return this.#descriptor }
   get isEnumerable() { return this.descriptor.enumerable }
   get isConfigurable() { return this.descriptor.configurable }
-}
-
-export class ValueDescriptorInfo extends DescriptorInfo {
-  constructor(descriptor) {
-    super(descriptor)
-  }
-
   get isWritable() { return this.descriptor.writable }
-  get value() { return this.descriptor.value }
 }
+export class AccessorDescriptorInfo extends DescriptorInfo { }
+export class ValueDescriptorInfo extends DescriptorInfo { }
+export class DataDescriptorInfo extends ValueDescriptorInfo { }
+export class MethodDescriptorInfo extends ValueDescriptorInfo { }
 
-export class DataDescriptorInfo extends ValueDescriptorInfo {
-  constructor(descriptor) {
-    super(descriptor)
-  }
-}
-
-export class MethodDescriptorInfo extends ValueDescriptorInfo {
-  constructor(descriptor) {
-    super(descriptor)
-  }
-}
-
-export class AccessorDescriptorInfo extends DescriptorInfo {
-  constructor(descriptor) {
-    super(descriptor)
-  }
-
-  get hasGetter() { return hasGetter(this.descriptor) }
-  get hasSetter() { return hasSetter(this.descriptor) }
-
-  get getter() { return this.descriptor.get }
-  get setter() { return this.descriptor.set }
-}

@@ -1,119 +1,102 @@
-
-#!/clipboard/throw
-
-#!/clipboard/shell/cmd.exe wsl bash
-git ls-files | grep "packages/.*/package.json"
-
-#!/clipboard/shell/wsl bash
-git ls-files | grep "packages/.*/package.json"
-
-#!/clipboard/shell/bash
-git ls-files | grep "packages/.*/package.json"
-
-#!/clipboard/shell/wsl cat
-Hello World
-
-#!/clipboard/shell/wsl bash
-git ls-files | grep "packages/.*/package.json" | xargs zip my-packages.zip
-
-#!/clipboard/shell/cmd for %f in ("my-packages.zip") do @echo %~dpnxf
-#!/clipboard/shell/cmd cmd /c "for %f in ("my-packages.zip") do @echo %~dpnxf"
-
-#!/clipboard/shell/cmd cmd
-echo hi
-for %f in ("my-packages.zip") do @echo %~dpnxf
-
-#!/clipboard/shell/cmd powershell -Command -
-Write-Output (Resolve-Path 'my-packages.zip').Path
-
-#!/clipboard/shell/ps
-Write-Output (Resolve-Path 'my-packages.zip').Path
-
-#!/clipboard/shell/wsl sleep 20
-#!/clipboard/shell/wsl sleep 2
-
-#!/clipboard/shell/wsl bash 
-sleep 2
-
-#!/clipboard/shell/badroute 
-
-#!/clipboard/shell/wsl bash
-unzip -o /mnt/c/Users/chris/Downloads/my-packages-updated.zip -d .
-
-#!/clipboard/shell/bash
-for i in {1..5}; do
-  echo "Line $i"
-  sleep 1
-done
-
-#!/clipboard/shell/bash
-echo "Hello World"
-
-#!/clipboard/shell/bash
-echo "Hello World" >&2
-exit 1
-
-#!/clipboard/shell/bash
-for i in {1..500}; do
-  echo "Line $i" >&2
-done
-
-#!/clipboard/shell/bash
-for i in {1..500}; do
-  echo "Line $i"
-done
-
-#!/clipboard/shell/bash
-for i in {1..3}; do
-  echo "Standard output line $i"
-  echo "Error output line $i" >&2
-  sleep 1
-done
-
-#!/clipboard/rest/bad https://jsonplaceholder.typicode.com/todos/1
-#!/clipboard/rest/get https://jsonplaceholder.typicode.com/todos/1
-#!/clipboard/rest/post https://jsonplaceholder.typicode.com/posts
+{ name: 'Concept', base: 'PartialClass' }
+{ name: 'PartialClass' }
 {
-  "title": "foo",
-  "body": "bar",
-  "userId": 1
+  name: 'MyExtensionClass',
+  base: 'PartialClass',
+  members: {
+    instance: {
+      methods: {
+        myExtensionMethod: { type: 'method', host: 'MyExtensionClass' }
+      }
+    }
+  }
 }
-#!/clipboard/rest/put https://jsonplaceholder.typicode.com/posts/1
 {
-  "title": "updated title",
-  "body": "updated body",
-  "userId": 1
+  name: 'MyPartialClass',
+  base: 'PartialClass',
+  members: {
+    instance: {
+      methods: {
+        myPartialMethod: { type: 'method', host: 'MyPartialClass' },
+        myExtensionMethod: { type: 'method', host: 'MyExtensionClass' }
+      }
+    }
+  }
 }
-#!/clipboard/rest/delete https://jsonplaceholder.typicode.com/posts/1
-#!/clipboard/rest/patch https://jsonplaceholder.typicode.com/posts/1
 {
-  "title": "updated only the title"
+  name: 'MyConcept',
+  base: 'Concept',
+  members: {
+    instance: {
+      methods: {
+        myConceptMethod: { type: 'method', host: 'MyConcept' },
+        myLeftConceptMethod: { type: 'method', host: 'MyLeftConcept' },
+        myBaseConceptMethod: { type: 'method', host: 'MyBaseConcept' },
+        myRightConceptMethod: { type: 'method', host: 'MyRightConcept' }
+      }
+    }
+  }
 }
-#!/clipboard/rest/head https://jsonplaceholder.typicode.com/posts/1
-#!/clipboard/rest/options https://jsonplaceholder.typicode.com/posts
-
-404
-#!/clipboard/rest/get https://jsonplaceholder.typicode.com/posts/9999999
-
-500
-#!/clipboard/rest/post https://jsonplaceholder.typicode.com/posts
+{ name: 'Function', base: 'Object' }
 {
-  "invalidField": true
+  name: 'MyBase',
+  base: 'Object',
+  members: {
+    static: {
+      methods: { myStaticBaseMethod: { type: 'method', host: 'MyBase' } }
+    },
+    instance: {
+      methods: {
+        myBaseMethod: { type: 'method', host: 'MyBase' },
+        myConceptMethod: { type: 'method', host: 'MyBase', isAbstract: true },
+        myLeftConceptMethod: { type: 'method', host: 'MyBase', isAbstract: true },
+        myBaseConceptMethod: { type: 'method', host: 'MyBase', isAbstract: true },
+        myRightConceptMethod: { type: 'method', host: 'MyBase', isAbstract: true },
+        myAbstractMethod: { type: 'method', host: 'MyBase', isAbstract: true }
+      }
+    }
+  }
 }
-
-node src\clippy\index.js http get https://jsonplaceholder.typicode.com/todos/1
-./src/clippy/index.js http get https://jsonplaceholder.typicode.com/todos/1
-rlwrap node --inspect ./src/clippy/index.js http post https://jsonplaceholder.typicode.com/posts <<EOF
 {
-  "title": "foo",
-  "body": "bar",
-  "userId": 1
+  name: 'MyClass',
+  base: 'MyBase',
+  members: {
+    static: {
+      methods: {
+        myStaticMethod: { type: 'method', host: 'MyClass' },
+        myStaticBaseMethod: { type: 'method', host: 'MyBase' }
+      },
+      accessors: {
+        myStaticAccessor: {
+          type: 'accessor',
+          host: 'MyClass',
+          hasGetter: true,
+          hasSetter: true
+        }
+      }
+    },
+    instance: {
+      methods: {
+        myMethod: { type: 'method', host: 'MyClass' },
+        myAbstractMethod: { type: 'method', host: 'MyClass', rootHost: 'MyBase' },
+        myConceptMethod: { type: 'method', host: 'MyClass', rootHost: 'MyBase' },
+        myPartialMethod: { type: 'method', host: 'MyClass' },
+        myExtensionMethod: { type: 'method', host: 'MyClass' },
+        myBaseMethod: { type: 'method', host: 'MyBase' },
+        myLeftConceptMethod: { type: 'method', host: 'MyBase', isAbstract: true },
+        myBaseConceptMethod: { type: 'method', host: 'MyBase', isAbstract: true },
+        myRightConceptMethod: { type: 'method', host: 'MyBase', isAbstract: true },
+        [Symbol(my-symbol)]: { type: 'method', host: 'MyClass' }
+      },
+      accessors: {
+        myAccessor: {
+          type: 'accessor',
+          host: 'MyClass',
+          hasGetter: true,
+          hasSetter: true
+        }
+      }
+    }
+  }
 }
-EOF
-./src/clippy/index.js http post https://jsonplaceholder.typicode.com/posts <<EOF | cat
-{
-  "title": "foo",
-  "body": "bar",
-  "userId": 1
-}
-EOF
+{ name: 'Object' }

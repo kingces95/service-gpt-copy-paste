@@ -1,4 +1,4 @@
-import assert from 'assert'
+import { assert } from '@kingjs/assert'
 import { CliFieldType } from '@kingjs/cli-field-type'
 import { Lazy } from '@kingjs/lazy'
 

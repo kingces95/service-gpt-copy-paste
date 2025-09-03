@@ -1,4 +1,4 @@
-import assert from 'assert'
+import { assert } from '@kingjs/assert'
 import { CliProcess } from '@kingjs/cli-process'
 import { CliFieldType } from '@kingjs/cli-field-type'
 import { CliRecordInfo, CliRecordInfoLoader } from '@kingjs/cli-record-info'

@@ -1,4 +1,4 @@
-import assert from 'assert'
+import { assert } from '@kingjs/assert'
 import { StringDecoder } from 'string_decoder'
 
 const ENCODING_UTF8 = 'utf8'

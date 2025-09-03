@@ -1,4 +1,4 @@
-import assert from 'assert'
+import { assert } from '@kingjs/assert'
 import { once } from 'events'
 import { sleep } from '@kingjs/sleep'
 import { pause } from '@kingjs/pause'

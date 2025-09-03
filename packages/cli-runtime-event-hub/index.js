@@ -1,6 +1,6 @@
 import { EventHub } from '@kingjs/event-hub'
 import { Cli } from '@kingjs/cli'
-import assert from 'assert'
+import { assert } from '@kingjs/assert'
 
 export class CliRuntimeEventHub {
   #eventHub

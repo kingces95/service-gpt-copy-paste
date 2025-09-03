@@ -1,4 +1,4 @@
-import assert from 'assert'
+import { assert } from '@kingjs/assert'
 import { AbortError } from '@kingjs/abort-error'
 import { CliShellDraft } from '@kingjs/cli-shell-draft'
 import { Lazy, LazyFn } from '@kingjs/lazy'

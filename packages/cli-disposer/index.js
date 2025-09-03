@@ -1,4 +1,4 @@
-import assert from 'assert'
+import { assert } from '@kingjs/assert'
 import { Readable, Writable } from 'stream'
 import { Resource } from '@kingjs/disposer'
 

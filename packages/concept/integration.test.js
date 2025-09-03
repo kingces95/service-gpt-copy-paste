@@ -12,9 +12,6 @@ function filter(pojo) {
       isSymbol: true,
       isSatisfaction: false, // exclude Concept members
     },
-    includeStatic: {
-      isInherited: true,
-    },
     // select many members for each satisfaction and tag each member
     // with it's the concept is satisfies (useful for pivoting).
     includeConcepts: true,
@@ -64,7 +61,6 @@ describe('A kitchen sink definition', () => {
               isAbstract: true },
           }
         } },
-        base: 'Object',
       })
     })
   })

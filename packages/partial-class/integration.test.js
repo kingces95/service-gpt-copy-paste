@@ -74,16 +74,11 @@ describe('PartialClass', () => {
         member2: () => 42,
       }]
     ])('defined using %s syntax', (_, partialClass) => {
-      let cls
+      let expectedMembers
       beforeEach(() => {
-        [cls] = [class { }]
-        extend(cls, partialClass)
-      })
-  
-      it('should have and info pojo', async () => {
-        const pojo = filter(await Info.from(cls).__toPojo())
-        expect(pojo).toEqual({
-          members: { instance: { 
+        expectedMembers = 
+        { 
+          instance: { 
             accessors: {
               getter0: { type: 'accessor', hasGetter: true },
               getter1: { type: 'accessor', hasGetter: true },
@@ -95,8 +90,31 @@ describe('PartialClass', () => {
               member1: { type: 'method' },
               member2: { type: 'method' },
             }
-          } },
-          base: 'Object',
+          },
+        }
+      })
+
+      it('should have expected info pojo', async () => {
+        const pojo = filter(await Info.from(partialClass).__toPojo())
+        expect(pojo).toEqual({
+          members: expectedMembers,
+          base: 'PartialClass',
+        })
+      })
+
+      describe('defined on a class', () => {
+        let cls
+        beforeEach(() => {
+          [cls] = [class { }]
+          extend(cls, partialClass)
+        })
+        
+        it('should have expected info pojo', async () => {
+          const pojo = filter(await Info.from(cls).__toPojo())
+          expect(pojo).toEqual({
+            members: expectedMembers,
+            base: 'Object',
+          })
         })
       })
     })

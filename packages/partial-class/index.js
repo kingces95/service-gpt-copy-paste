@@ -1,4 +1,4 @@
-import assert from 'assert'
+import { assert } from '@kingjs/assert'
 import { isPojo } from '@kingjs/pojo-test'
 import { Reflection } from '@kingjs/reflection'
 import { Descriptor } from '@kingjs/descriptor'
@@ -12,18 +12,19 @@ const {
   memberNamesAndSymbols,
 } = Reflection
 
-export const Extensions = Symbol('Extensions')
-export const Compile = Symbol('Compile')
-export const Bind = Symbol('Bind')
-export const Mark = Symbol('Mark')
-export const PostCondition = Symbol('PostCondition')
+export const Extensions = Symbol('PartialClassExtensions')
+export const Compile = Symbol('PartialClassCompile')
+export const Bind = Symbol('PartialClassBind')
+export const Mark = Symbol('PartialClassMark')
+export const PostCondition = Symbol('PartialClassPostCondition')
+export const Keys = Symbol('PartialClassKeys')
 
 export class PartialClass {
   static fromPojo(pojo, ExtendedClass = PartialClass) {
     assert(isPojo(pojo))
 
     // define an anonymous partial class
-    const anonymousPartialClass = class extends ExtendedClass { }
+    const [anonymousPartialClass] = [class extends ExtendedClass { }]
     const prototype = anonymousPartialClass.prototype
     
     // copy descriptors from pojo to anonymous partial class prototype
@@ -44,6 +45,7 @@ export class PartialClass {
   static [Bind](type, name, descriptor) { return descriptor }
   static [Mark](type) { }
   static [PostCondition](type) { }
+  static *[Keys](prototype) { yield* memberNamesAndSymbols(prototype) }
 }
 
 // Extend copies members from one or more partial types to a type prototype.
@@ -64,9 +66,17 @@ export class PartialClass {
 // A partial type can also define a number of static hooks. Each hook has its 
 // own symbol: Extensions, Compile, Bind, Mark, and PostCondition.  
 
-// Extensions is a getter that returns another partial type or null. In this
-// way, a partial type can be the head of a chain of partial types all of
-// which are implemented on the type prototype.
+// Extensions is a static member that returns another an array of partial
+// types (or a single partial type or null). In this way, a partial type 
+// can be the head of a tree of partial types all of which are implemented 
+// on the type prototype. Specifically, if Concept is a partial type, then
+// Concept[Extensions] can contain other concepts and so provide a way for
+// a concept to be composed from other concepts.
+
+// Keys is a generator that returns the names and symbols of the members
+// to be copied to the target type prototype. The default implementation
+// returns all names and symbols. A partial type can override this behavior
+// to filter and/or extend the list of members to be copied.
 
 // Compile allows the client to apply custom policy to the descriptors
 // after they have been compiled by Compiler. For example, a concept
@@ -102,18 +112,17 @@ export function extend(type, ...partialTypes) {
     // fetch, compile, bind, and define properties on the type prototype
     const typePrototype = type.prototype
     const partialTypePrototype = partialType.prototype
-    const names = memberNamesAndSymbols(partialTypePrototype)
-    for (const name of names) {
-      const definition = getDescriptor(partialTypePrototype, name)
+    for (const key of partialType[Keys](partialTypePrototype)) {
+      const definition = getDescriptor(partialTypePrototype, key)
       const descriptor = partialType[Compile](Compiler.compile(definition))
-      const boundDescriptor = partialType[Bind](type, name, descriptor)
+      const boundDescriptor = partialType[Bind](type, key, descriptor)
       if (!boundDescriptor) continue
-      Object.defineProperty(typePrototype, name, boundDescriptor)
+      Object.defineProperty(typePrototype, key, boundDescriptor)
     }
 
+    // extend with tree of extensions
     const extensions = partialType[Extensions]
-    if (extensions) 
-      extend(type, extensions)
+    extend(type, ...(Array.isArray(extensions) ? extensions : [extensions]))
 
     if (partialType[Mark]) partialType[Mark](type)
     if (partialType[PostCondition]) partialType[PostCondition](type)

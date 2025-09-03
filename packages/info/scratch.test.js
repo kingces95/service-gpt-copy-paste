@@ -2,16 +2,37 @@ import { Info } from "@kingjs/info"
 import { filterInfoPojo } from "@kingjs/info-to-pojo"
 import { dumpPojo } from "@kingjs/pojo-dump"
 import { abstract } from "@kingjs/abstract"
+import { PartialClass, Extensions, extend } from "@kingjs/partial-class"
+import { Concept } from "@kingjs/concept"
 
 const MySymbol = Symbol('my-symbol')
 const MyStaticSymbol = Symbol('my-static-symbol')
 
+class MyBaseConcept extends Concept { myBaseConceptMethod() { } }
+class MyLeftConcept extends MyBaseConcept { myLeftConceptMethod() { } }
+class MyRightConcept extends MyBaseConcept { myRightConceptMethod() { } }
+class MyConcept extends Concept {
+  static [Extensions] = [MyLeftConcept, MyRightConcept]
+  myConceptMethod() { }
+}
+
+class MyExtensionClass extends PartialClass {
+  myExtensionMethod() { }
+}
+
+class MyPartialClass extends PartialClass {
+  static [Extensions] = MyExtensionClass
+  myPartialMethod() { }
+}
+
 class MyBase {
-  static myStaticInheritedMethod() { }
-  myInheritedMethod() { }
+  static { extend(this, MyConcept) }
+  static myStaticBaseMethod() { }
+  myBaseMethod() { }
 }
 
 class MyClass extends MyBase {
+  static { extend(this, MyPartialClass) }
   static get myStaticAccessor() { }
   static set myStaticAccessor(value) { }
   static myStaticMethod() { }
@@ -22,6 +43,7 @@ class MyClass extends MyBase {
   myMethod() { }
   _myMethod() { }
   myAbstractMethod() { }
+  myConceptMethod() { }
 
   [MySymbol]() { }
   static [MyStaticSymbol]() { }
@@ -35,21 +57,35 @@ Object.defineProperty(MyBase.prototype, 'myAbstractMethod', {
   configurable: true,
 })
 
-const fnInfo = Info.from(MyClass)
-// fnInfo.__dump()
-
-fnInfo.__toPojo().then(pojo => { 
-  pojo = filterInfoPojo(pojo, {
+function filter(pojo) {
+  return filterInfoPojo(pojo, {
     includeInstance: {
       isInherited: true,
       isSymbol: true,
+      isKnown: true,
     },
     includeStatic: {
       isInherited: true,
+      // isKnown: true,
       // isSymbol: true,
     }
   })
-  //pojo = filterInfoPojo(pojo)
-  
-  dumpPojo(pojo)
-})
+}
+
+function dump(fn) {
+  const fnInfo = Info.from(fn)
+  fnInfo.__toPojo().then(pojo => { 
+    pojo = filter(pojo)
+    dumpPojo(pojo)
+  })
+}
+
+// dump(Function)
+// dump(Object)
+dump(Concept)
+dump(PartialClass)
+// dump(MyConcept)
+// dump(MyPartialClass)
+// dump(MyExtensionClass)
+// dump(MyBase)
+// dump(MyClass)

@@ -113,6 +113,15 @@ describe('A type', () => {
         extend(type, extendedPartialType)
         expect(type.prototype.member).toBe(partialType.prototype.member)
       })
+      describe('that is an array of extensions', () => {
+        beforeEach(() => {
+          extendedPartialType[Extensions] = [partialType]
+        })
+        it('can extend the member', () => {
+          extend(type, extendedPartialType)
+          expect(type.prototype.member).toBe(partialType.prototype.member)
+        })
+      })
       describe('as an extension', () => {
         let extendedExtendedPartialType
         beforeEach(() => {
@@ -199,7 +208,6 @@ describe('A type', () => {
         })
         describe('and a Mark function', () => {
           beforeEach(() => {
-            partialType[Extensions] = class extends PartialClass { }
             partialType[Mark] = function(type$) {
               expect(this).toBe(partialType)
               expect(type$).toBe(type)

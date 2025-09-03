@@ -1,4 +1,4 @@
-import assert from 'assert'
+import { assert } from '@kingjs/assert'
 import { Resource } from '@kingjs/resource'
 import { DEV_NULL } from '@kingjs/cli-readable'
 import { createReadStream } from 'fs'

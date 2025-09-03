@@ -1,5 +1,5 @@
 // hello world
-import assert from 'assert'
+import { assert } from '@kingjs/assert'
 import { CliStreamDisposer } from './index.js'
 import { AbortError } from '@kingjs/abort-error'
 import { TimeoutError } from '@kingjs/timeout-error'
