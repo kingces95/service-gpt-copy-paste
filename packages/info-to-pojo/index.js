@@ -26,6 +26,8 @@ FunctionInfo[symbol] = {
 MemberInfo[symbol] = {
   name: 'key',
   type: 'string',
+  isConceptual: 'boolean',
+  concepts: 'names',
   //isConstructor: 'boolean',
   //isAccessor: 'boolean',
   //isMethod: 'boolean',
@@ -77,12 +79,20 @@ const typePivotMd = {
   data: { type: 'data' },
   accessors: { type: 'accessor' },      
 }
+const conceptualPivotMd = {
+  conceptual: { 
+    predicate: 'isConceptual',
+    //pivot: typePivotMd,
+    unpivot: [ 'concepts', typePivotMd ] 
+  },
+  ...typePivotMd
+}
 const nonPublicPivotMd = {
   __nonPublic: {
     predicate: 'isNonPublic', 
-    pivot: typePivotMd,
+    pivot: conceptualPivotMd,
   },
-  ...typePivotMd
+  ...conceptualPivotMd
 }
 const knownPivotMd = {
   __known: { 

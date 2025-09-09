@@ -47,6 +47,7 @@ describe('A kitchen sink definition', () => {
     it('should have and info pojo', async () => {
       const pojo = filter(await Info.from(cls).__toPojo())
       expect(pojo).toEqual({
+        base: 'Object',
         members: { instance: { 
           accessors: {
             getter: { type: 'accessor', 

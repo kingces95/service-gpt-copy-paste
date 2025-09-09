@@ -16,6 +16,7 @@ export const Extensions = Symbol('PartialClassExtensions')
 export const Compile = Symbol('PartialClassCompile')
 export const Bind = Symbol('PartialClassBind')
 export const Mark = Symbol('PartialClassMark')
+export const PreCondition = Symbol('PartialClassPreCondition')
 export const PostCondition = Symbol('PartialClassPostCondition')
 export const Keys = Symbol('PartialClassKeys')
 
@@ -41,9 +42,10 @@ export class PartialClass {
   }
 
   static [Extensions] = null
-  static [Compile](descriptor) { return descriptor }
+  static [Compile](descriptor) { return Compiler.compile(descriptor) }
   static [Bind](type, name, descriptor) { return descriptor }
   static [Mark](type) { }
+  static [PreCondition](type) { }
   static [PostCondition](type) { }
   static *[Keys](prototype) { yield* memberNamesAndSymbols(prototype) }
 }
@@ -85,8 +87,7 @@ export class PartialClass {
 // called with the descriptor and returns a descriptor.
 
 // Bind allows the client to apply custom policy to the compiled descriptors. 
-// Bind is called with the type, name, and descriptor and returns a descriptor 
-// or null to skip the descriptor. 
+// Bind is called with the type, name, and descriptor and returns a descriptor. 
 
 // Mark allows the client apply custom policy to the type after all members
 // have been defined. For example, a concept partial type can add itself
@@ -107,14 +108,16 @@ export function extend(type, ...partialTypes) {
       partialType = PartialClass.fromPojo(partialType)
 
     if (!(partialType.prototype instanceof PartialClass)) throw new TypeError(
-    'Expected partial type to extend PartialClass.')
+      'Expected partial type to extend PartialClass.')
+
+    partialType[PreCondition](type)
 
     // fetch, compile, bind, and define properties on the type prototype
     const typePrototype = type.prototype
     const partialTypePrototype = partialType.prototype
     for (const key of partialType[Keys](partialTypePrototype)) {
       const definition = getDescriptor(partialTypePrototype, key)
-      const descriptor = partialType[Compile](Compiler.compile(definition))
+      const descriptor = partialType[Compile](definition)
       const boundDescriptor = partialType[Bind](type, key, descriptor)
       if (!boundDescriptor) continue
       Object.defineProperty(typePrototype, key, boundDescriptor)
@@ -124,7 +127,7 @@ export function extend(type, ...partialTypes) {
     const extensions = partialType[Extensions]
     extend(type, ...(Array.isArray(extensions) ? extensions : [extensions]))
 
-    if (partialType[Mark]) partialType[Mark](type)
-    if (partialType[PostCondition]) partialType[PostCondition](type)
+    partialType[Mark](type)
+    partialType[PostCondition](type)
   }
 }

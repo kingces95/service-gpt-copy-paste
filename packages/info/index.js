@@ -3,6 +3,7 @@ import { isPojo } from "@kingjs/pojo-test"
 import { Descriptor } from "@kingjs/descriptor"
 import { abstract } from "@kingjs/abstract"
 import { Normalize } from "@kingjs/normalize"
+import { Reflection } from '@kingjs/reflection'
 import { PartialClass,
   Extensions, Compile, Bind, Mark, PostCondition,
 } from "@kingjs/partial-class"
@@ -12,6 +13,8 @@ async function __import() {
   const { infoToPojo } = await import('@kingjs/info-to-pojo')
   return { toPojo: infoToPojo }
 }
+
+const DeclaredConceptMap = Symbol('DeclaredConceptMap')
 
 const {  
   get: getDescriptor,
@@ -41,8 +44,13 @@ export class Info {
       'fnOrPojo must be a function or pojo')
     const fn = isPojo(fnOrPojo) 
       ? PartialClass.fromPojo(fnOrPojo) : fnOrPojo
-    if (fn == PartialClass || fn.prototype instanceof PartialClass)
+
+    if (fn == Concept || Reflection.isExtensionOf(fn, Concept))
+      return new ConceptInfo(fn)
+
+    if (fn == PartialClass || Reflection.isExtensionOf(fn, PartialClass))
       return new PartialClassInfo(fn)
+    
     return new ClassInfo(fn)
   }
 
@@ -108,25 +116,50 @@ export class FunctionInfo extends Info {
     }
   }
 
-  // static *declaredConcepts(type) {
-  //   const concepts = new Set()
-  //   for (const current of FunctionInfo.hierarchy(type)) {
-  //     for (const concept of current.ownDeclaredConcepts()) {
-  //       if (concepts.has(concept)) continue
-  //       concepts.add(concept)
-  //       yield concept
-  //     }
-  //   }
-  // }
+  static *concepts(type) {
+    yield* this.concepts$(type, {
+      includeInherited: true,
+    })
+  }
+
+  static conceptMap(type) {
+    // map of member names to set of concepts with that name
+    assert(type instanceof FunctionInfo, 'type must be a FunctionInfo')
+    if (type[DeclaredConceptMap])
+      return type[DeclaredConceptMap]
+
+    const map = new Map()
+    for (const concept of this.concepts(type)) {
+      for (const name of this.keys(concept)) {
+        let set = map.get(name)
+        if (!set) {
+          set = new Set()
+          map.set(name, set)
+        }
+        set.add(concept)
+      }
+    }
+
+    type[DeclaredConceptMap] = map
+    return map
+  }
 
   static *names(type, { isStatic = false } = { }) {
-    yield* FunctionInfo.#namesOrSymbols(type, { 
-      isStatic, includeNames: true })
+    yield* FunctionInfo.namesOrSymbols$(type, { 
+      isStatic, 
+      includeExtensions: true, 
+      includeInherited: true, 
+      includeNames: true 
+    })
   }
 
   static *symbols(type, { isStatic = false } = { }) {
-    yield* FunctionInfo.#namesOrSymbols(type, { 
-      isStatic, includeSymbols: true })
+    yield* FunctionInfo.namesOrSymbols$(type, { 
+      isStatic,
+      includeExtensions: true,
+      includeInherited: true, 
+      includeSymbols: true 
+    })
   }
 
   static *keys(type, { isStatic = false } = { }) {
@@ -134,9 +167,45 @@ export class FunctionInfo extends Info {
     yield* FunctionInfo.symbols(type, { isStatic })
   }
 
-  static *#namesOrSymbols(type, { 
-    isStatic, includeNames, includeSymbols, visted = new Set() } = { }) {
+  static *concepts$(type, {
+    includeInherited,
+    visited
+  } = { }) {
+    if (!visited) visited = new Set()
+
+    for (const current of FunctionInfo.hierarchy(type)) {
+      for (const concept of current.ownConcepts$()) {
+        if (visited.has(concept.#fn)) continue
+        visited.add(concept.#fn)
+        yield concept
+      }
+
+      if (!includeInherited) break
+
+      // Partial types "inherit" via the Extensions mechanism whereas
+      // non-partial types inherit via the prototype chain. The same
+      // code path can be used by both (without checking .isPartial) 
+      // because, by construction, partial types inherit no members via 
+      // their prototype chain, and non-partial types have no extensions.
+      for (const extension of current.extensions()) {
+        yield* FunctionInfo.concepts$(extension, {
+          includeInherited,
+          visited
+        })
+      }
+    }
+  }
+
+  static *namesOrSymbols$(type, { 
+    isStatic, 
+    includeNames, 
+    includeSymbols,
+    includeExtensions,
+    includeInherited, 
+    visited
+  } = { }) {
     assert(type instanceof FunctionInfo, 'type must be a FunctionInfo')
+    if (!visited) visited = new Set()
 
     // avoid for..of (due to V8 bug)
     //for (const current of FunctionInfo.hierarchy(type, { isStatic })) {
@@ -145,24 +214,34 @@ export class FunctionInfo extends Info {
     for (let i = 0; i < hierarchy.length; i++) {
       const current = hierarchy[i]
 
-      if (includeNames) yield* yieldNameOrSymbols('ownNames')
-      if (includeSymbols) yield* yieldNameOrSymbols('ownSymbols')
-
       function *yieldNameOrSymbols(fnName) {
         for (const key of current[fnName]({ isStatic })) {
-          if (visted.has(key)) continue
-          visted.add(key)
+          if (visited.has(key)) continue
+          visited.add(key)
           yield key
         }
       }
 
-      if (!isStatic) {
+      if (includeNames) yield* yieldNameOrSymbols('ownNames$')
+      if (includeSymbols) yield* yieldNameOrSymbols('ownSymbols$')
+
+      if (!isStatic && includeExtensions) {
         for (const extension of current.extensions()) {
-          yield* FunctionInfo.#namesOrSymbols(extension, { 
-            isStatic, includeNames, includeSymbols, visted
+          yield* FunctionInfo.namesOrSymbols$(extension, { 
+            isStatic, 
+            includeNames, 
+            includeSymbols, 
+            includeExtensions,
+            // Partial classes are restricted such that they only have members 
+            // on the most extended type so there is no need to traverse the 
+            // hierarchy of extensions.
+            // includeInherited: true,
+            visted: visited
           })
         }
-      } 
+      }
+
+      if (!includeInherited) break
     }
   }
 
@@ -185,9 +264,33 @@ export class FunctionInfo extends Info {
   getDefinitions$({ isStatic = false } = { }) {
     return isStatic ? this.#fn : this.#fn.prototype
   }
+  get includeExtensions$() { return true }
 
-  get isPartial() { return this.#fn.prototype instanceof PartialClass }
-  // get isConcept() { return this.#fn.prototype instanceof Concept }
+  *ownConcepts$() {
+    for (const concept of Concept.ownConcepts(this.#fn))
+      yield Info.from(concept)
+  }
+  *ownNames$({ isStatic = false } = { }) {
+    const definitions = this.getDefinitions$({ isStatic })
+    if (definitions) {
+      for(const name of Object.getOwnPropertyNames(definitions)) {
+        if (this.isRuntimeNameOrSymbol$(name)) continue
+        yield name
+      }
+    }
+  }
+  *ownSymbols$({ isStatic = false } = { }) {
+    const definitions = this.getDefinitions$({ isStatic })
+    if (definitions) {
+      for(const symbol of Object.getOwnPropertySymbols(definitions)) {
+        // if (this.isRuntimeNameOrSymbol$(symbol)) continue
+        yield symbol
+      }
+    }
+  }
+
+  get isPartial() { return Reflection.isExtensionOf(this.#fn, PartialClass) }
+  get isConcept() { return Reflection.isExtensionOf(this.#fn, Concept) }
 
   get ctor() { return this.#fn }
   get name() { return this.#fn.name ? this.#fn.name : null }
@@ -211,26 +314,20 @@ export class FunctionInfo extends Info {
     yield* extensions
   }
 
-  *ownDeclaredConcepts() {
-    yield* Concept.ownDeclaredConcepts(this.#fn)
+  *ownConcepts() {
+    yield* FunctionInfo.concepts$(this)
   }
 
-  *ownNames({ isStatic = false } = { }) {
-    const definitions = this.getDefinitions$({ isStatic })
-    if (!definitions) return
-    for(const name of Object.getOwnPropertyNames(definitions)) {
-      if (this.isRuntimeNameOrSymbol$(name)) continue
-      yield name
-    }
+  *ownNames({ isStatic = false } = { }) { 
+    const options = { isStatic, includeNames: true }
+    options.includeExtensions = this.includeExtensions$
+    yield* FunctionInfo.namesOrSymbols$(this, options)
   }
 
-  *ownSymbols({ isStatic = false } = { }) {
-    const definitions = this.getDefinitions$({ isStatic })
-    if (!definitions) return
-    for(const symbol of Object.getOwnPropertySymbols(definitions)) {
-      // if (this.isRuntimeNameOrSymbol$(symbol)) continue
-      yield symbol
-    }
+  *ownSymbols({ isStatic = false } = { }) { 
+    const options = { isStatic, includeSymbols: true }
+    options.includeExtensions = this.includeExtensions$
+    yield* FunctionInfo.namesOrSymbols$(this, options)
   }
 
   *ownKeys({ isStatic = false } = { }) {
@@ -279,7 +376,8 @@ export class FunctionInfo extends Info {
 
   toString() { return [
       this.name ?? '<anonymous>',
-      this.isPartial ? 'PartialClass' : null,
+      this.isConcept ? 'Concept' :
+        this.isPartial ? 'PartialClass' : null,
     ].filter(Boolean).join(', ') 
   }
 }
@@ -298,7 +396,16 @@ export class PartialClassInfo extends FunctionInfo {
     Info.PartialClass = new PartialClassInfo(PartialClass)
   }
 
+  constructor(fn) {
+    // assert(fn == PartialClass
+    //   || Object.getPrototypeOf(fn) == Concept
+    //   || Object.getPrototypeOf(fn) == PartialClass,
+    //   `PartialClass ${fn.name} must directly extend PartialClass.`
+    // )
+    super(fn)
+  }
   get root$() { return FunctionInfo.PartialClass }
+  get includeExtensions$() { return false }
   isRuntimeNameOrSymbol$(nameOrSymbol) {
     return PartialClassRuntimeNameOrSymbol.has(nameOrSymbol)
   }
@@ -307,6 +414,27 @@ export class PartialClassInfo extends FunctionInfo {
   }
   getDefinitions$({ isStatic = false } = { }) {
     return isStatic ? null : super.getDefinitions$()
+  }
+  *ownConcepts$() {
+    for (const extension of this.extensions()) {
+      if (extension.isConcept)
+        yield extension
+    }
+  }
+}
+export class ConceptInfo extends PartialClassInfo {
+  static {
+    Info.Concept = new ConceptInfo(Concept)
+  }
+  constructor(fn) {
+    assert(fn == Concept
+      || Object.getPrototypeOf(fn) == Concept,
+      `Concept ${fn.name} must directly extend Concept.`
+    )
+    super(fn)
+  }
+  compile$(descriptor) { 
+    return Concept[Compile](descriptor) 
   }
 }
 
@@ -331,20 +459,22 @@ export class MemberInfo extends Info {
   #name
   #descriptor
   #isStatic
-  #concept
 
   constructor(host, name, descriptor, metadata = { 
     isStatic: false,
-    concept: null,
   }) {
     super()
     this.#host = host
     this.#name = name
     this.#descriptor = descriptor
 
-    const { isStatic, concept } = metadata
+    const { isStatic } = metadata
     this.#isStatic = isStatic
-    this.#concept = concept
+  }
+
+  get #concepts() { 
+    return FunctionInfo.conceptMap(this.host)?.get(this.name) 
+      ?? new Set()
   }
 
   baseOrSelf$() { 
@@ -385,6 +515,9 @@ export class MemberInfo extends Info {
     if (this.isData) return 'data'
     if (this.isMethod) return 'method'
   }
+
+  get isConceptual() { return this.#concepts.size > 0 }
+  *concepts() { yield* this.#concepts }
 
   get isStatic() { return this.#isStatic }
 
@@ -430,7 +563,6 @@ export class MemberInfo extends Info {
     if (this.#isStatic !== other.#isStatic) return false
     if (!this.#host.equals(other.#host)) return false
     if (this.#name !== other.#name) return false
-    // if (this.#concept && !this.#concept.equals(other.#concept)) return false
     return true
   }
 

@@ -149,14 +149,17 @@ export async function toPojo(value, options = { }) {
       return list
     }
 
+    case 'names':
     case 'refs':
     case 'list': {
+      const listType = type == 'names' ? 'name' : null
+
       if (jsType != 'object') throw new Error(
         `Pojo list type must be typeof object; got ${jsType}`)
 
       const list = []
       for await (const item of value) {
-        list.push(await toPojo(item, { symbol, depth, path }))
+        list.push(await toPojo(item, { symbol, type: listType, depth, path }))
       }
       if (!list.length)
         return

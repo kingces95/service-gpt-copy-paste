@@ -2,10 +2,11 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { FunctionInfo, Info } from "@kingjs/info"
 import { filterInfoPojo } from "@kingjs/info-to-pojo"
-import { PartialClass } from '@kingjs/partial-class'
-import { Concept } from '@kingjs/concept'
+import { PartialClass, Extensions, extend } from '@kingjs/partial-class'
+import { Concept, implement } from '@kingjs/concept'
+import { Reflection } from '@kingjs/reflection'
 
-import { abstract } from '@kingjs/abstract'
+import { abstract, isAbstract } from '@kingjs/abstract'
 
 describe('FunctionInfo for Concept', () => {
   let fnInfo
@@ -21,6 +22,16 @@ describe('FunctionInfo for Concept', () => {
   it('should have a ctor which is Concept', () => {
     expect(fnInfo.ctor).toBe(Concept)
   })
+  it('is a partail class', () => {
+    expect(fnInfo.isPartial).toBe(true)
+  })
+  it('is a concept', () => {
+    expect(fnInfo.isConcept).toBe(true)
+  })
+  it('has no declared or inherited concepts', () => {
+    const concepts = FunctionInfo.concepts(fnInfo)
+    expect(Array.from(concepts)).toEqual([])
+  })
   describe.each([
     'toString',
     'constructor',  
@@ -32,7 +43,7 @@ describe('FunctionInfo for Concept', () => {
       expect(descriptor).toBeNull()
     })
   })
-  it('has Concept base', () => {
+  it('has PartialClassInfo base', () => {
     const PartialClassInfo = FunctionInfo.PartialClass
     expect(fnInfo.base).toEqual(PartialClassInfo)
   })
@@ -52,19 +63,16 @@ describe('FunctionInfo for Concept', () => {
     const symbols = Array.from(fnInfo.ownSymbols({ isStatic: true }))
     expect(symbols).toEqual([])
   })
-  it('has no own declared concepts', () => {
-    const concepts = Array.from(fnInfo.ownDeclaredConcepts())
-    expect(concepts).toEqual([])
-  })
 })
 
 const MySymbol = Symbol('test-symbol')
 
-function filter(pojo) {
+function filter(pojo, { isNonPublic } = { }) {
   return filterInfoPojo(pojo, {
     includeInstance: {
       isInherited: true,
       isSymbol: true,
+      isNonPublic,
     },
     includeStatic: {
       isInherited: true,
@@ -73,15 +81,15 @@ function filter(pojo) {
   })
 }
 
-describe('A partial class', () => {
+describe('A concept', () => {
   describe('with a name', () => {
     let cls
     beforeEach(() => {
-      cls = class MyClass extends PartialClass { }
+      cls = class MyClass extends Concept { }
     })
     it('has a toString of MyClass', () => {
       const fnInfo = Info.from(cls)
-      expect(fnInfo.toString()).toBe('MyClass, PartialClass')
+      expect(fnInfo.toString()).toBe('MyClass, Concept')
     })
   })
   describe('without a name', () => {
@@ -96,84 +104,57 @@ describe('A partial class', () => {
   })
 
   describe.each([
-    ['no members', class extends PartialClass { }, { }],
-    ['static data', class extends PartialClass { 
+    ['no members', class extends Concept { }, { }],
+    ['static data', class extends Concept { 
       static myStaticMember = 1 }, {
       // static members are ignored by the DSL
       }],
-    ['static getter', class extends PartialClass {
+    ['static getter', class extends Concept {
       static get myStaticAccessor() { return 1 } 
     }, { 
       // static members are ignored by the DSL
     }],
-    ['instance setter', class extends PartialClass {
+    ['instance setter', class extends Concept {
       set myInstanceAccessor(value) { }
-    }, {
+    }, 
+    {
       members: { instance: { accessors: {
-        myInstanceAccessor: { type: 'accessor', hasSetter: true }
+        myInstanceAccessor: { 
+          type: 'accessor', 
+          hasSetter: true,
+          isAbstract: true
+        }
       } } },
     }],
-    ['data', { myData: 1 }, { 
-      members: { instance: { data: {
-        myData: { type: 'data' } 
-      } } },
+    ['method', { myMethod: () => {} }, { 
+      members: { instance: { methods: {
+        myMethod: { type: 'method', isAbstract: true } 
+      } } }
     }],
     ['abstract method', { myMethod: abstract }, { 
       members: { instance: { methods: {
         myMethod: { type: 'method', isAbstract: true } 
       } } }
     }],
-    ['descriptor member', { myMethod: { value: 1 } }, {
-      members: { instance: { data: {
-        myMethod: { type: 'data' } 
-      } } },
-    }],
-    ['const field', { myField: { value: 3.141, writable: false } }, {
-      members: { instance: { data: {
-        myField: { type: 'data', isWritable: false } 
-      } } },
-    }],
   ])('with %s', (_, cls, expected) => {
     it('has a pojo', async () => {
+      if (!Reflection.isExtensionOf(cls, Concept))
+        cls = Concept.fromPojo(cls)
       const fnInfo = Info.from(cls)
       expect(filter(await fnInfo.__toPojo())).toEqual({
         ...expected,
-        base: 'PartialClass'
+        base: 'Concept'
       })
     })
   })
 })
 
-
 describe('A member', () => {
   describe.each([
     ['abstract member', 'member', { member: abstract },
       'member { value: abstract }' ],
-    ['data member', 'member', { member: 1 },
-      'member { value: number }' ],
-    ['null member', 'member', { member: null },
-      'member { value: null }' ],
-    ['undefined member', 'member', { member: undefined },
-      'member { value: undefined }' ],
-    ['boolean member', 'member', { member: true },
-      'member { value: boolean }' ],
-    ['bigint member', 'member', { member: 10n },
-      'member { value: bigint }' ],
-    ['symbol member', 'member', { member: MySymbol },
-      'member { value: symbol }' ],
-    ['array member', 'member', { member: { value: [] } },
-      'member { value: array }' ],
-    ['const data member', 'member', { 
-      member: { value: 1, writable: false } },
-      'const member { value: number }' ],
-    ['sealed data member', 'member', { 
-      member: { value: 1, configurable: false } },
-      'sealed member { value: number }' ],
-    ['hidden data member', 'member', { 
-      member: { value: 1, enumerable: false } },
-      'hidden member { value: number }' ],
-    ['prototype', 'prototype', class { },
-      'static const hidden sealed prototype { value: object }' ],
+    ['abstract getter', 'member', { member: { get: abstract } },
+      'member { get: abstract }' ],
     ])('%s', (_, name, cls, expected) => {
     it('has a toString', async () => {
       const fnInfo = Info.from(cls)
@@ -182,6 +163,7 @@ describe('A member', () => {
       expect(member.toString()).toBe(expected) 
     })
     it('does not equal Object.toString member', async () => {
+      cls = Concept.fromPojo(cls)
       const fnInfo = Info.from(cls)
       const member = fnInfo.getOwnMember(name) 
         ?? fnInfo.getOwnMember(name, { isStatic: true })
@@ -192,10 +174,132 @@ describe('A member', () => {
   })
 })
 
-describe('A bespoke partial class', () => {
+describe('A concept with a member', () => {
+  let myConcept
+  let myConceptInfo
+  let mySymbol = Symbol('mySymbol')
+  beforeEach(() => {
+    myConcept = class MyConcept extends Concept { 
+      member() { }
+      [mySymbol]() { }
+    }
+    myConceptInfo = Info.from(myConcept)
+  })
+  it('should have own names including the member', () => {
+    const actual = [...myConceptInfo.ownNames()]
+    const expected = ['member']
+    expect(actual).toEqual(expected)
+  })
+  it('should have own symbols including the symbol member', () => {
+    const actual = [...myConceptInfo.ownSymbols()]
+    const expected = [mySymbol]
+    expect(actual).toEqual(expected)
+  })
+  describe('added as an extension to partial class', () => {
+    let type
+    let typeInfo
+    beforeEach(() => {
+      type = class MyClass extends PartialClass { }
+      type[Extensions] = myConcept
+      typeInfo = Info.from(type)
+    })
+    it('should have own names excluding the member', () => {
+      const actual = [...typeInfo.ownNames()]
+      const expected = [ ]
+      expect(actual).toEqual(expected)
+    })
+    it('should have own symbols excluding the symbol member', () => {
+      const actual = [...typeInfo.ownSymbols()]
+      const expected = [ ]
+      expect(actual).toEqual(expected)
+    })
+    describe('used to extend a class', () => {
+      let cls
+      let clsInfo
+      beforeEach(() => {
+        cls = class MyClass { }
+        extend(cls, type)
+        clsInfo = Info.from(cls)
+      })
+      it('should have own names including the member', () => {
+        const ownNames = [...clsInfo.ownNames()]
+        expect(ownNames.includes('member')).toBe(true)
+      })
+      it('should have own symbols including the symbol member', () => {
+        const ownSymbols = [...clsInfo.ownSymbols()]
+        expect(ownSymbols.includes(mySymbol)).toBe(true)
+      })
+      it('should be instance of the concept', () => {
+        expect(cls.prototype).toBeInstanceOf(myConcept)
+      })
+      it('should declare the concept as its own', () => {
+        const actual = [...clsInfo.ownConcepts(cls)]
+        const expected = [myConceptInfo]
+        expect(actual).toEqual(expected)
+      })
+    })
+  })
+  describe('implemented on a class', () => {
+    let cls
+    let clsInfo
+    beforeEach(() => {
+      cls = class MyClass {
+        static { implement(this, myConcept) }
+      }
+      clsInfo = Info.from(cls)
+    })
+    it('declares the concept as its own', () => {
+      const actual = [...clsInfo.ownConcepts(cls)]
+      const expected = [myConceptInfo]
+      expect(actual).toEqual(expected)
+    })
+    describe('from which a class is extended', () => {
+      let subCls
+      let subClsInfo
+      beforeEach(() => {
+        subCls = class MySubClass extends cls { }
+        subClsInfo = Info.from(subCls)
+      })
+      describe('and implemented again on the subclass', () => {
+        let fn = () => { }
+        beforeEach(() => {
+          implement(subCls, myConcept, { member: fn })
+          subClsInfo = Info.from(subCls)
+        })
+        it('claims to declare the concept as its own', () => {
+          const actual = [...subClsInfo.ownConcepts(subCls)]
+          const expected = [myConceptInfo]
+          expect(actual).toEqual(expected)
+        })
+        it('still only has one concept', () => {
+          const actual = [...FunctionInfo.concepts(subClsInfo)]
+          const expected = [myConceptInfo]
+          expect(actual).toEqual(expected)
+        })
+        it('implements member with the function passed', () => {
+          const member = subClsInfo.getOwnMember('member')
+          expect(member?.value).toBe(fn)
+          expect(subCls.prototype.member).toBe(fn)
+        })
+      })
+      it('has no own declared concepts', () => {
+        const actual = [...subClsInfo.ownConcepts(subCls)]
+        const expected = [ ]
+        expect(actual).toEqual(expected)
+      })
+      it('inherits the concept', () => {
+        const actual = [...FunctionInfo.concepts(subClsInfo)]
+        const expected = [myConceptInfo]
+        expect(actual).toEqual(expected)
+      })
+    })
+  })
+})
+
+describe('A bespoke concept', () => {
   let myClass
   beforeEach(() => {
-    [myClass] = [class MyClass extends PartialClass { }]
+    [myClass] = [class MyConcept extends Concept { }]
   })
   describe('that implements MySymbol', () => {
     beforeEach(() => {
@@ -206,49 +310,72 @@ describe('A bespoke partial class', () => {
         members: { instance: { methods: {
           [MySymbol]: { 
             type: 'method',
-            host: 'MyClass',
+            host: 'MyConcept',
+            isAbstract: true,
           },
         } } },
-        name: 'MyClass',
-        base: 'PartialClass'
+        name: 'MyConcept',
+        base: 'Concept'
       }
       const fnInfo = Info.from(myClass)
       const actual = await fnInfo.__toPojo()
       const actualPojo = filter(actual)
       expect(actualPojo).toEqual(pojo)
     })
-  })  
-  describe('extended by an extended class', () => {
-    let myExtendedClass
-    beforeEach(() => {
-      myExtendedClass = class MyExtendedClass extends myClass { }
-    })
-    describe('which overrides toString on both the base and extended class', () => {
+    describe('implemented on a class', () => {
+      let cls
       beforeEach(() => {
-        myClass.prototype.toString = function() { 
-          return 'myClass' }
-        myExtendedClass.prototype.toString = function() { 
-          return 'myExtendedClass' }
+        cls = class MyClass {
+          static { implement(this, myClass) }
+        }
       })
-
-      it('should have MyClass as root of toString', async () => {
-        const fnInfo = Info.from(myExtendedClass)
-        const toStringMember = fnInfo.getOwnMember('toString')
-        const rootHost = toStringMember.rootHost()
-        expect(rootHost.name).toBe('MyClass')
-        expect(rootHost.equals(Info.from(myClass))).toBe(true)
+      it('has a pojo', async () => {
+        const pojo = {
+          base: 'Object',
+          members: { instance: { conceptual: { MyConcept: { methods: {
+            [MySymbol]: { 
+              type: 'method',
+              isAbstract: true,
+              host: 'MyClass',
+            },
+          } } } } },
+          name: 'MyClass'
+        }
+        const fnInfo = Info.from(cls)
+        expect(filter(await fnInfo.__toPojo())).toEqual(pojo)
+      })
+    })  
+  })  
+  describe('extended by an extended concept', () => {
+    let myExtendedConcept
+    beforeEach(() => {
+      myExtendedConcept = class MyExtendedConcept extends myClass { }
+    })
+    describe('which overrides toString on both the base and extended concept', () => {
+      beforeEach(() => {
+        myClass.prototype.toString = function() { }
+        myExtendedConcept.prototype.toString = function() { }
+      })
+      it('should throw while loading', async () => {
+        expect(() => Info.from(myExtendedConcept)).toThrow([
+          `Assertion failed:`,
+          `Concept MyExtendedConcept must directly extend Concept.`
+        ].join(' '))
       })
     })
   }) 
-  describe('with static and explicit constructor members', () => {
+  describe('with static and instance members', () => {
     beforeEach(() => {
-      myClass.constructor = function() { }
-      myClass.prototype.constructor = function() { }
+      myClass.method = function() { }
+      myClass.prototype.method = function() { }
     })
-    it('has a pojo', async () => {
+    it('has a pojo that ignores the static member', async () => {
       const pojo = {
-        name: 'MyClass',
-        base: 'PartialClass'
+        name: 'MyConcept',
+        base: 'Concept',
+        members: { instance: { methods: {
+          method: { host: 'MyConcept', type: 'method', isAbstract: true }
+        } } },
       }
 
       // Constructors are ignored by the DSL
@@ -256,60 +383,21 @@ describe('A bespoke partial class', () => {
       expect(filter(await fnInfo.__toPojo())).toEqual(pojo)
     })
   })
-  describe('with static const member', () => {
+  describe('with instance data members', () => {
     beforeEach(() => {
-      [myClass] = [class {
-        static myStaticConst = 1
-      }]
-      // clear configurable and writable
-      Object.defineProperty(myClass, 'myStaticConst', {
-        configurable: false,
-        writable: false,
-      })
-    })
-    it('has a pojo', async () => {
-      const pojo = {
-        members: { static: { data: {
-          myStaticConst: { 
-            type: 'data',
-            isConfigurable: false,
-            isWritable: false,
-          }
-        } } },
-        base: 'Object'
-      }
-      const fnInfo = Info.from(myClass)
-      expect(filter(await fnInfo.__toPojo())).toEqual(pojo)
-    })
-  })
-  describe('with static and instance data members', () => {
-    beforeEach(() => {
-      [myClass] = [class { 
-        static myStaticData = 1
-      }]
       myClass.prototype.myInstanceData = 2
     })
-    it('has a pojo', async () => {
-      const pojo = {
-        members: { 
-          instance: { data: {
-            myInstanceData: { 
-              type: 'data', 
-          } } },
-          static: { data: {
-            myStaticData: { 
-              type: 'data', 
-          } } },
-        },
-        base: 'Object'
-      }
-      const fnInfo = Info.from(myClass)
-      expect(filter(await fnInfo.__toPojo())).toEqual(pojo)
+    it('will throw getting that own member', async () => {
+      const info = Info.from(myClass)
+      expect(() => info.getOwnMember('myInstanceData')).toThrow([
+        `Assertion failed:`,
+        `Concept members cannot be data properties.`,
+        `Use accessor or method instead.`].join(' '))
     })
   })
   describe('with private members', () => {
     beforeEach(() => {
-      [myClass] = [class { 
+      [myClass] = [class extends Concept { 
         myPrivateMethod$() { }
         $myPrivateMethod() { }
         myPrivateMethod_() { }
@@ -317,18 +405,20 @@ describe('A bespoke partial class', () => {
       }]
     })
   
-    it('has a pojo', async () => {
-      const pojo = {
-        base: 'Object'
-      }
-  
+    it('returns private members as keys', async () => {
       const fnInfo = Info.from(myClass)
-      expect(filter(await fnInfo.__toPojo())).toEqual(pojo)
+      const names = [...FunctionInfo.keys(fnInfo)]
+      expect(names).toEqual([
+        'myPrivateMethod$',
+        '$myPrivateMethod',
+        'myPrivateMethod_',
+        '_myPrivateMethod'
+      ])
     })
   })
-  describe('with a static and instance accessor and method members', () => {
+  describe('with a instance accessor and method members', () => {
     beforeEach(() => {
-      [myClass] = [class { 
+      [myClass] = [class extends Concept { 
         static get myAccessor() { }
         static set myAccessor(value) { }
         static myMethod() { }
@@ -344,65 +434,21 @@ describe('A bespoke partial class', () => {
         members: {
           instance: {
             accessors: {
-              myAccessor: { type: 'accessor', hasGetter: true, hasSetter: true }
-            },
-            methods: {
-              myMethod: { type: 'method' }
-            }
-          },
-          static: {
-            accessors: {
-              myAccessor: { type: 'accessor', hasGetter: true, hasSetter: true }
-            },
-            methods: {
-              myMethod: { type: 'method' }
-            }
-          }
-        },
-        base: 'Object'
-      }
-  
-      const fnInfo = Info.from(myClass)
-      expect(filter(await fnInfo.__toPojo())).toEqual(pojo)
-    })
-  })
-  describe('with an abstract method and accessor', () => {
-    beforeEach(() => {
-      // assign abstract to method and accessor
-      Object.defineProperties(myClass.prototype, {
-        myAccessor: {
-          get: abstract,
-          set: abstract,
-          configurable: true,
-        },
-        myMethod: {
-          value: abstract,
-          configurable: true,
-          writable: true,
-        },
-      })
-    })
-    it('has a pojo', async () => {
-      const pojo = {
-        members: {
-          instance: {
-            accessors: {
               myAccessor: { 
                 type: 'accessor', 
-                host: 'MyClass',
                 hasGetter: true, 
                 hasSetter: true, 
-                isAbstract: true 
+                isAbstract: true,
               }
             },
             methods: {
-              myMethod: { type: 'method', host: 'MyClass', isAbstract: true }
+              myMethod: { type: 'method', isAbstract: true}
             }
-          }
+          },
         },
-        name: 'MyClass',
-        base: 'PartialClass'
+        base: 'Concept',
       }
+  
       const fnInfo = Info.from(myClass)
       expect(filter(await fnInfo.__toPojo())).toEqual(pojo)
     })

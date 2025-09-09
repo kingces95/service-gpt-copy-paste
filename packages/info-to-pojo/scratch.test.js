@@ -3,20 +3,35 @@ import { filterInfoPojo } from "@kingjs/info-to-pojo"
 import { dumpPojo } from "@kingjs/pojo-dump"
 import { abstract } from "@kingjs/abstract"
 import { PartialClass, Extensions, extend } from "@kingjs/partial-class"
-import { Concept } from "@kingjs/concept"
+import { Concept, implement } from "@kingjs/concept"
 
 const MySymbol = Symbol('my-symbol')
 const MyStaticSymbol = Symbol('my-static-symbol')
 
 class MyBaseConcept extends Concept { myBaseConceptMethod() { } }
-class MyLeftConcept extends MyBaseConcept { myLeftConceptMethod() { } }
-class MyRightConcept extends MyBaseConcept { myRightConceptMethod() { } }
+class MyLeftConcept extends Concept { 
+  static [Extensions] = MyBaseConcept
+  myLeftConceptMethod() { } 
+  myAmbidextrousMethod() { }
+}
+class MyRightConcept extends Concept {
+  static [Extensions] = MyBaseConcept
+  myRightConceptMethod() { } 
+  myAmbidextrousMethod() { }
+}
 class MyConcept extends Concept {
   static [Extensions] = [MyLeftConcept, MyRightConcept]
   myConceptMethod() { }
 }
 
+class MyBaseExtensionClass extends PartialClass {
+  myBaseExtensionMethod() { }
+  myNewExtensionMethod() { }
+}
+
 class MyExtensionClass extends PartialClass {
+  static [Extensions] = MyBaseExtensionClass
+  myNewExtensionMethod() { }
   myExtensionMethod() { }
 }
 
@@ -26,7 +41,12 @@ class MyPartialClass extends PartialClass {
 }
 
 class MyBase {
-  static { extend(this, MyConcept) }
+  static { 
+    implement(this, MyConcept, { 
+      myConceptMethod() { },
+      myBaseConceptMethod() { }
+    }) 
+  }
   static myStaticBaseMethod() { }
   myBaseMethod() { }
 }
@@ -62,7 +82,7 @@ function filter(pojo) {
     includeInstance: {
       isInherited: true,
       isSymbol: true,
-      isKnown: true,
+      // isKnown: true,
     },
     includeStatic: {
       isInherited: true,
@@ -80,12 +100,12 @@ function dump(fn) {
   })
 }
 
-// dump(Function)
-// dump(Object)
+dump(Function)
+dump(Object)
 dump(Concept)
 dump(PartialClass)
-// dump(MyConcept)
-// dump(MyPartialClass)
-// dump(MyExtensionClass)
-// dump(MyBase)
-// dump(MyClass)
+dump(MyConcept)
+dump(MyPartialClass)
+dump(MyExtensionClass)
+dump(MyBase)
+dump(MyClass)

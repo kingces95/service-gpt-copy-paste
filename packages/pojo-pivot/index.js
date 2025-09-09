@@ -1,31 +1,47 @@
+import { assert } from "@kingjs/assert"
 import { trimPojo } from "@kingjs/pojo-trim"
 
-function pivotPojo(pojo, pivotsMd, pivot) {
+function pivotPojo(pojoRow, pivotsMd, pivot) {
 
   for (const key of Reflect.ownKeys(pivotsMd)) {
     const pivotMd = pivotsMd[key]
     const { predicate, type } = pivotMd
     if (predicate) {
-      if (!pojo[predicate]) continue
-      delete pojo[predicate]
+      if (!pojoRow[predicate]) continue
+      delete pojoRow[predicate]
     }
     if (type) {
-      if (pojo.type != type) continue
+      if (pojoRow.type != type) continue
       // delete pojo.type
     }
     
-    const nextPivot = pivot[key] ??= { }
+    // pivotSkeleton ensures this exists
+    const nextPivot = pivot[key]
+    assert(nextPivot, `Pivot key ${String(key)} missing.`)
+
+    if ('unpivot' in pivotMd) {
+      const [ pojoRowKey, unpivotMd ] = pivotMd.unpivot
+      const unpivotKeys = pojoRow[pojoRowKey]
+      delete pojoRow[pojoRowKey]
+      for (const unpivotKey of unpivotKeys) {
+        if (!(unpivotKey in nextPivot))
+          nextPivot[unpivotKey] = pivotSkeleton(unpivotMd)
+        const unpivot = nextPivot[unpivotKey]
+        pivotPojo({ ...pojoRow }, unpivotMd, unpivot)
+      }
+      return
+    }
 
     // base case
     if (!('pivot' in pivotMd)) {
-      const { name } = pojo
-      nextPivot[name] = pojo
-      delete pojo.name
+      const { name } = pojoRow
+      nextPivot[name] = pojoRow
+      delete pojoRow.name
       return
     }
 
     // recursive case
-    return pivotPojo(pojo, pivotMd.pivot, nextPivot)
+    return pivotPojo(pojoRow, pivotMd.pivot, nextPivot)
   }
 }
 
@@ -41,9 +57,9 @@ function pivotSkeleton(pivotsMd, pivot = { }) {
   return pivot
 }
 
-export function pivotPojos(pojos, metadata) {
+export function pivotPojos(pojoRows, metadata) {
   const pivot = pivotSkeleton(metadata)
-  for (const pojo of pojos)
-    pivotPojo({ ...pojo }, metadata, pivot)
+  for (const pojoRow of pojoRows)
+    pivotPojo({ ...pojoRow }, metadata, pivot)
   return trimPojo(pivot)
 }

@@ -250,52 +250,59 @@ describe('A bespoke partial class', () => {
       expect(filter(await fnInfo.__toPojo())).toEqual(pojo)
     })
   })
+  describe('with static and instance members', () => {
+    beforeEach(() => {
+      myClass.method = function() { }
+      myClass.prototype.method = function() { }
+    })
+    it('has a pojo that ignores the static member', async () => {
+      const pojo = {
+        name: 'MyClass',
+        base: 'PartialClass',
+        members: { instance: { methods: {
+          method: { host: 'MyClass', type: 'method' }
+        } } },
+      }
+
+      // Constructors are ignored by the DSL
+      const fnInfo = Info.from(myClass)
+      expect(filter(await fnInfo.__toPojo())).toEqual(pojo)
+    })
+  })
   describe('with static const member', () => {
     beforeEach(() => {
-      [myClass] = [class {
-        static myStaticConst = 1
-      }]
+      myClass.myStaticConst = 1
+
       // clear configurable and writable
       Object.defineProperty(myClass, 'myStaticConst', {
         configurable: false,
         writable: false,
       })
     })
-    it('has a pojo', async () => {
+    it('has a pojo that ignores the static data member', async () => {
       const pojo = {
-        members: { static: { data: {
-          myStaticConst: { 
-            type: 'data',
-            isConfigurable: false,
-            isWritable: false,
-          }
-        } } },
-        base: 'Object'
+        name: 'MyClass',
+        base: 'PartialClass'
       }
       const fnInfo = Info.from(myClass)
       expect(filter(await fnInfo.__toPojo())).toEqual(pojo)
     })
   })
-  describe('with static and instance data members', () => {
+  describe('with instance data members', () => {
     beforeEach(() => {
-      [myClass] = [class { 
-        static myStaticData = 1
-      }]
       myClass.prototype.myInstanceData = 2
     })
     it('has a pojo', async () => {
       const pojo = {
         members: { 
           instance: { data: {
-            myInstanceData: { 
-              type: 'data', 
-          } } },
-          static: { data: {
-            myStaticData: { 
+            myInstanceData: {
+              host: 'MyClass',
               type: 'data', 
           } } },
         },
-        base: 'Object'
+        name: 'MyClass',
+        base: 'PartialClass'
       }
       const fnInfo = Info.from(myClass)
       expect(filter(await fnInfo.__toPojo())).toEqual(pojo)
@@ -303,7 +310,7 @@ describe('A bespoke partial class', () => {
   })
   describe('with private members', () => {
     beforeEach(() => {
-      [myClass] = [class { 
+      [myClass] = [class extends PartialClass { 
         myPrivateMethod$() { }
         $myPrivateMethod() { }
         myPrivateMethod_() { }
@@ -313,7 +320,7 @@ describe('A bespoke partial class', () => {
   
     it('has a pojo', async () => {
       const pojo = {
-        base: 'Object'
+        base: 'PartialClass'
       }
   
       const fnInfo = Info.from(myClass)
@@ -322,7 +329,7 @@ describe('A bespoke partial class', () => {
   })
   describe('with a static and instance accessor and method members', () => {
     beforeEach(() => {
-      [myClass] = [class { 
+      [myClass] = [class extends PartialClass { 
         static get myAccessor() { }
         static set myAccessor(value) { }
         static myMethod() { }
@@ -344,16 +351,8 @@ describe('A bespoke partial class', () => {
               myMethod: { type: 'method' }
             }
           },
-          static: {
-            accessors: {
-              myAccessor: { type: 'accessor', hasGetter: true, hasSetter: true }
-            },
-            methods: {
-              myMethod: { type: 'method' }
-            }
-          }
         },
-        base: 'Object'
+        base: 'PartialClass'
       }
   
       const fnInfo = Info.from(myClass)

@@ -1,10 +1,12 @@
 import { assert } from '@kingjs/assert'
 import { isPojo } from '@kingjs/pojo-test'
 import { Reflection } from '@kingjs/reflection'
+import { getOwn } from '@kingjs/get-own'
 import { 
   Compile, 
   Bind,
   Mark,
+  PreCondition,
   PostCondition, 
   extend,
   PartialClass,
@@ -35,8 +37,8 @@ export const OwnDeclaredConcepts = Symbol('OwnDeclaredConcepts')
 export const DeclaredConceptKeys = Symbol('DeclaredConceptKeys')
 
 export class Concept extends PartialClass {
-  static *ownDeclaredConcepts(type) {
-    const typeConceptSet = type[OwnDeclaredConcepts]
+  static *ownConcepts(type) {
+    const typeConceptSet = getOwn(type, OwnDeclaredConcepts)
     if (!typeConceptSet) return
     yield* typeConceptSet
   }
@@ -65,12 +67,25 @@ export class Concept extends PartialClass {
     return satisfies(instance, this)
   }
 
-  static [Compile](descriptor) {
-    const result = { ...descriptor }
+  static [PreCondition](type) {
 
-    if (hasData(result)) 
-      throw new Error(
-        `Concept members cannot be data properties. Use accessor or method instead.`)
+    // Concept cannot be implemented by another concept.
+    assert(!isExtensionOf(type, Concept), [
+      `Concept ${type.name} cannot implement concept ${this.name}.`,
+      `Use Extensions instead.`].join(' '))
+    
+    // Concept cannot indirectly extend Concept.
+    const baseType = Object.getPrototypeOf(this)
+    assert(baseType == Concept, 
+      `Concept ${this.name} must directly extend Concept.`)
+  }
+
+  static [Compile](descriptor) {
+    const result = super[Compile](descriptor)
+
+    assert(!hasData(result), [
+      `Concept members cannot be data properties.`,
+      `Use accessor or method instead.`].join(' '))
 
     // make all concept members abstract
     if (hasGetter(result)) 
@@ -87,7 +102,7 @@ export class Concept extends PartialClass {
 
   static [Mark](type) {
     // cache concepts directly declared on the type
-    let typeConceptSet = type[OwnDeclaredConcepts]
+    let typeConceptSet = getOwn(type, OwnDeclaredConcepts)
     if (!typeConceptSet) 
       typeConceptSet = type[OwnDeclaredConcepts] = new Set()
     typeConceptSet.add(this)
@@ -128,7 +143,7 @@ export function implement(type, concept, definitions = { }) {
   const conceptMembers = new Set(memberNamesAndSymbols(concept.prototype))
   for (const name of memberNamesAndSymbols(definitions)) {
     if (conceptMembers.has(name)) continue
-    throw new Error(`Concept ${concept.name} does not define member ${name}.`)
+    // throw new Error(`Concept ${concept.name} does not define member ${name}.`)
   }
   
   extend(type, concept, definitions)

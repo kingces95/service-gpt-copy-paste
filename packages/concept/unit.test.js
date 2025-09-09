@@ -23,7 +23,7 @@ describe('A type', () => {
     type = class { }
   })
   it('should have no declared concepts', () => {
-    const actual = [...Concept.ownDeclaredConcepts(type)]
+    const actual = [...Concept.ownConcepts(type)]
     const expected = [ ]
     expect(actual).toEqual(expected)
   })
@@ -39,6 +39,25 @@ describe('A type', () => {
       expect(null).not.toBeInstanceOf(concept)
       expect(type.prototype).toBeInstanceOf(concept)
     })
+    it('should throw implementing itself', () => {
+      expect(() => implement(concept, concept)).toThrow([
+        'Assertion failed: Concept concept cannot implement concept concept.',
+        'Use Extensions instead.'
+      ].join(' '))
+    })
+    describe('and a type that extends the concept', () => {
+      let extendedConcept
+      beforeEach(() => {
+        extendedConcept = class ExtendedConcept extends concept { }
+      })
+      it('should throw when implemented', () => {
+        const cls = class { }
+        expect(() => implement(cls, extendedConcept)).toThrow([
+          `Assertion failed:`,
+          `Concept ExtendedConcept must directly extend Concept.`,
+        ].join(' '))
+      })
+    })
     describe('implmented by the type', () => {
       beforeEach(() => {
         implement(type, concept)
@@ -48,7 +67,7 @@ describe('A type', () => {
         expect(type.prototype).toBeInstanceOf(concept)
       })
       it('should be an own declared concept', () => {
-        const actual = [...Concept.ownDeclaredConcepts(type)]
+        const actual = [...Concept.ownConcepts(type)]
         const expected = [concept]
           expect(actual).toEqual(expected)
       })
@@ -107,7 +126,7 @@ describe('A type', () => {
           expect(type.prototype.method).toBe(emptyMethod)
         })
         it('should be an own declared concept', () => {
-          const actual = [...Concept.ownDeclaredConcepts(type)]
+          const actual = [...Concept.ownConcepts(type)]
           const expected = [concept]
           expect(actual).toEqual(expected)
         })
