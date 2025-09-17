@@ -1,4 +1,4 @@
-import { implement } from '@kingjs/partial-class'
+import { implement } from '@kingjs/concept'
 import { IndexableContainer } from "./indexable-container.js"
 import {
   IndexableContainerConcept

@@ -1,8 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Descriptor, defineProperties } from "@kingjs/descriptor"
-import { Info } from "@kingjs/info"
-import { filterInfoPojo } from "@kingjs/info-to-pojo"
+import { Descriptor } from "@kingjs/descriptor"
 
 const {
   get,

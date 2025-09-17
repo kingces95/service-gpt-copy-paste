@@ -2,8 +2,8 @@ import { Info } from "@kingjs/info"
 import { filterInfoPojo } from "@kingjs/info-to-pojo"
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { extend, PartialClass } from '@kingjs/partial-class'
-import { Info } from "@kingjs/info"
+import { PartialClass } from '@kingjs/partial-class'
+import { extend } from '@kingjs/extend'
 import { filterInfoPojo } from "@kingjs/info-to-pojo"
 
 function filter(pojo) {
@@ -120,60 +120,3 @@ describe('PartialClass', () => {
     })
   })
 })
-
-
-// describe('A kitchen sink concise definition', () => {
-//   let conciseDefinition
-//   beforeEach(() => {
-//     conciseDefinition = {
-//       getter0: { get: () => { } },
-//       get getter1() { },
-
-//       setter0: { set: (value) => { } },
-//       set setter1(value) { },
-
-//       member0: { value: () => { } },
-//       member1() { return 42 },
-//       member2: () => 42,
-
-//       const: { 
-//         value: 42, 
-//         enumerable: true, 
-//         configurable: true, 
-//         writable: false 
-//       },
-//     }
-//   })
-
-//   describe('defined on a class', () => {
-//     let cls
-//     beforeEach(() => {
-//       [cls] = [class { }]
-//       defineProperties(cls.prototype, conciseDefinition)
-//     })
-
-//     it('should have and info pojo', async () => {
-//       const pojo = filterInfoPojo(await Info.from(cls).__toPojo())
-//       expect(pojo).toEqual({
-//         __members: {
-//           const: { 
-//             isData: true,
-//             isEnumerable: true,
-//             isWritable: false,
-//           },
-          
-//           getter0: { hasGetter: true },
-//           getter1: { hasGetter: true },
-
-//           setter0: { hasSetter: true },
-//           setter1: { hasSetter: true },
-
-//           member0: { isMethod: true },
-//           member1: { isMethod: true },
-//           member2: { isMethod: true },
-//         },
-//         base: 'Object',
-//       })
-//     })
-//   })
-// })

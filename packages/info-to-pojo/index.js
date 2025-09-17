@@ -83,7 +83,7 @@ const conceptualPivotMd = {
   conceptual: { 
     predicate: 'isConceptual',
     //pivot: typePivotMd,
-    unpivot: [ 'concepts', typePivotMd ] 
+    copyPivot: [ 'concepts', typePivotMd ] 
   },
   ...typePivotMd
 }

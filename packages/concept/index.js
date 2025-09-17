@@ -1,16 +1,19 @@
 import { assert } from '@kingjs/assert'
-import { isPojo } from '@kingjs/pojo-test'
 import { Reflection } from '@kingjs/reflection'
 import { getOwn } from '@kingjs/get-own'
+import { asArray } from '@kingjs/as-array'
+
 import { 
+  Extension,
+  Extensions,
   Compile, 
   Bind,
   Mark,
   PreCondition,
   PostCondition, 
-  extend,
-  PartialClass,
-} from '@kingjs/partial-class'
+} from '@kingjs/extension'
+import { getParts } from '@kingjs/partial-class'
+import { extend } from '@kingjs/extend'
 import { abstract } from '@kingjs/abstract'
 import { Descriptor } from '@kingjs/descriptor'
 
@@ -26,30 +29,43 @@ const {
   isExtensionOf,
 } = Reflection
 
-export const Satisfies = Symbol('Satisfies')
+export const Concepts = Symbol('ConceptConcepts')
+export function getConcepts(type) {
+  const concepts = asArray(type[Concepts])
+
+  concepts.forEach(concept => assert(isExtensionOf(concept, Concept),
+    `Concepts must be Concept extensions.`))
+
+  const extensions = [
+    ...concepts,
+    ...getParts(type)
+  ]
+  
+  return extensions
+}
+
+export const Satisfies = Symbol('ConceptSatisfies')
 
 // Set of concepts declared directly on a type.
-export const OwnDeclaredConcepts = Symbol('OwnDeclaredConcepts')
+export const OwnDeclaredConcepts = Symbol('ConceptOwnDeclaredConcepts')
 
 // Object whose each key is a member of a concept declared on the type 
 // or its ancestors. Each value is a Set of the concepts which
 // directly declare the member. 
-export const DeclaredConceptKeys = Symbol('DeclaredConceptKeys')
+export const DeclaredConceptKeys = Symbol('ConceptDeclaredConceptKeys')
 
-export class Concept extends PartialClass {
+export class Concept extends Extension {
   static *ownConcepts(type) {
     const typeConceptSet = getOwn(type, OwnDeclaredConcepts)
     if (!typeConceptSet) return
     yield* typeConceptSet
   }
 
-  static fromPojo(pojo) {
-    return super.fromPojo(pojo, this)
-  }
+  static get [Extensions]() { return getConcepts(this) }
 
   // `myInstance instanceof myConcept` tests if an instance satsifies a concept.
   // Justification to override Symbol.hasInstance: There should never exist an
-  // instance of a PartialClass much less a Concept (except for the prototype of
+  // instance of a Extension much less a Concept (except for the prototype of
   // the class itself). So it is reasonable to override the behavior of
   // instanceof to test if an instance satisfies the concept. For reflection, use
   // Reflection.isExtensionOf(type, concept).
@@ -68,6 +84,9 @@ export class Concept extends PartialClass {
   }
 
   static [PreCondition](type) {
+    // Concept must have a name.
+    assert(typeof this.name == 'string' && this.name.length,
+      `Concept must have a name.`)
 
     // Concept cannot be implemented by another concept.
     assert(!isExtensionOf(type, Concept), [
@@ -123,6 +142,15 @@ export class Concept extends PartialClass {
   }
 }
 
+export function conceptNamesAndSymbols(type) {
+  assert(isExtensionOf(type, Concept),
+    `Argument type must extend Concept.`)
+
+  const concepts = new Set()
+  for (const concept of getConcepts(type))
+    concepts.add(concept)
+}
+
 export function satisfies(instance, concept) {
   for (const name of memberNamesAndSymbols(concept?.prototype))
     if (!(name in instance)) return false
@@ -132,11 +160,8 @@ export function satisfies(instance, concept) {
 export function implement(type, concept, definitions = { }) {
   if (!(typeof type === 'function')) throw Error(
     'Type must be a function (e.g. class or function).')
-
-  if (isPojo(concept))
-    concept = Concept.fromPojo(concept)
   
-  if (!Reflection.isExtensionOf(concept, Concept)) throw Error(
+  if (!isExtensionOf(concept, Concept)) throw Error(
     'Argument concept must extend Concept.')
 
   // restrict implementation to members defined by the concept.

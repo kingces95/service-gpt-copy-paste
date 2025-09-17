@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { implement } from '@kingjs/partial-class'
+import { implement } from '@kingjs/concept'
 import { Preconditions } from '@kingjs/debug-proxy'
 import { Cursor } from './cursor.js'
 import { CursorFactory } from './cursor-factory.js'

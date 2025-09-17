@@ -2,17 +2,6 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Concept, Satisfies, satisfies, implement } from '@kingjs/concept'
 import { abstract } from '@kingjs/abstract'
-import { Reflection } from '@kingjs/reflection' 
-
-describe('A Concept created from a pojo', () => {
-  let concept
-  beforeEach(() => {
-    concept = Concept.fromPojo({})
-  })
-  it('should be a Concept', () => {
-    Reflection.isExtensionOf(concept, Concept)
-  })
-})
 
 describe('A type', () => {
   it('not passed to implement should throw', () => {

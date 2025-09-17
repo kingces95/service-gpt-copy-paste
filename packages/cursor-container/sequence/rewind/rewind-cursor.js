@@ -1,5 +1,5 @@
 import { SequenceCursor } from '../sequence-cursor.js'
-import { implement } from '@kingjs/partial-class'
+import { implement } from '@kingjs/concept'
 import { 
   BidirectionalCursorConcept,
 } from '@kingjs/cursor'

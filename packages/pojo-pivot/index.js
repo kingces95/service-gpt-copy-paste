@@ -19,15 +19,15 @@ function pivotPojo(pojoRow, pivotsMd, pivot) {
     const nextPivot = pivot[key]
     assert(nextPivot, `Pivot key ${String(key)} missing.`)
 
-    if ('unpivot' in pivotMd) {
-      const [ pojoRowKey, unpivotMd ] = pivotMd.unpivot
-      const unpivotKeys = pojoRow[pojoRowKey]
+    if ('copyPivot' in pivotMd) {
+      const [ pojoRowKey, copyPivotMd ] = pivotMd.copyPivot
+      const copyPivotKeys = pojoRow[pojoRowKey] || []
       delete pojoRow[pojoRowKey]
-      for (const unpivotKey of unpivotKeys) {
-        if (!(unpivotKey in nextPivot))
-          nextPivot[unpivotKey] = pivotSkeleton(unpivotMd)
-        const unpivot = nextPivot[unpivotKey]
-        pivotPojo({ ...pojoRow }, unpivotMd, unpivot)
+      for (const copyPivotKey of copyPivotKeys) {
+        if (!(copyPivotKey in nextPivot))
+          nextPivot[copyPivotKey] = pivotSkeleton(copyPivotMd)
+        const copyPivot = nextPivot[copyPivotKey]
+        pivotPojo({ ...pojoRow }, copyPivotMd, copyPivot)
       }
       return
     }

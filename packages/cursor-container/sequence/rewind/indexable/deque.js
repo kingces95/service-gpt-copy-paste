@@ -1,5 +1,5 @@
 import Denque from "denque"
-import { implement } from '@kingjs/partial-class'
+import { implement } from '@kingjs/concept'
 import {
   throwNotSupported,
 } from '@kingjs/cursor'

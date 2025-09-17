@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Info, FunctionInfo } from "@kingjs/info"
-import { extend, PartialClass, Extensions } from '@kingjs/partial-class'
+import { PartialClass, Parts } from '@kingjs/partial-class'
+import { extend } from '@kingjs/extend'
+import { Extensions } from '@kingjs/extension'
 
 function getMemberValue(cls) {
   const info = Info.from(cls)
@@ -28,42 +30,12 @@ describe('A class with a member', () => {
       expect(clsMember).toBe(memberFn)
       expect(partialMember).toBe(memberFn)
     })
-    describe('extended with a member', () => {
-      let partialExtended
-      let memberExtendedFn
-      beforeEach(() => {
-        partialExtended = class extends partial { member() { } }
-        memberExtendedFn = partialExtended.prototype.member
-      })
-      it('should match class and extended partial member', async () => {
-        extend(cls, partialExtended)
-        const partialMember = getMemberValue(partialExtended)
-        const clsMember = getMemberValue(cls)
-        expect(clsMember).toBe(memberExtendedFn)
-        expect(partialMember).toBe(memberExtendedFn)
-      })
-      describe('with extensions with a member', () => {
-        let extendedExtension
-        let extendedExtensionMember = function member() { }
-        beforeEach(() => {
-          extendedExtension = { member: extendedExtensionMember }
-          partialExtended[Extensions] = extendedExtension
-        })
-        it('should match class and extensions member', async () => {
-          extend(cls, partialExtended)
-          const partialMember = getMemberValue(partialExtended)
-          const clsMember = getMemberValue(cls)
-          expect(clsMember).toBe(extendedExtensionMember)
-          expect(partialMember).toBe(extendedExtensionMember)
-        })
-      })
-    })
     describe('with extensions with a member', () => {
       let extension
       let extensionMember = function member() { }
       beforeEach(() => {
         extension = { member: extensionMember }
-        partial[Extensions] = extension
+        partial[Parts] = extension
       })
       it('should match class and extensions member', async () => {
         extend(cls, partial)

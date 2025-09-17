@@ -1,4 +1,4 @@
-import { implement } from '@kingjs/partial-class'
+import { implement } from '@kingjs/concept'
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Cursor } from './cursor.js'

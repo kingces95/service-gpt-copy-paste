@@ -2,25 +2,27 @@ import { Info } from "@kingjs/info"
 import { filterInfoPojo } from "@kingjs/info-to-pojo"
 import { dumpPojo } from "@kingjs/pojo-dump"
 import { abstract } from "@kingjs/abstract"
-import { PartialClass, Extensions, extend } from "@kingjs/partial-class"
-import { Concept, implement } from "@kingjs/concept"
+import { PartialClass, Parts } from "@kingjs/partial-class"
+import { load } from "@kingjs/loader"
+import { extend } from "@kingjs/extend"
+import { Concept, Concepts, implement } from "@kingjs/concept"
 
 const MySymbol = Symbol('my-symbol')
 const MyStaticSymbol = Symbol('my-static-symbol')
 
 class MyBaseConcept extends Concept { myBaseConceptMethod() { } }
 class MyLeftConcept extends Concept { 
-  static [Extensions] = MyBaseConcept
+  static [Parts] = MyBaseConcept
   myLeftConceptMethod() { } 
   myAmbidextrousMethod() { }
 }
 class MyRightConcept extends Concept {
-  static [Extensions] = MyBaseConcept
+  static [Parts] = MyBaseConcept
   myRightConceptMethod() { } 
   myAmbidextrousMethod() { }
 }
 class MyConcept extends Concept {
-  static [Extensions] = [MyLeftConcept, MyRightConcept]
+  static [Parts] = [MyLeftConcept, MyRightConcept]
   myConceptMethod() { }
 }
 
@@ -30,17 +32,20 @@ class MyBaseExtensionClass extends PartialClass {
 }
 
 class MyExtensionClass extends PartialClass {
-  static [Extensions] = MyBaseExtensionClass
+  static [Parts] = MyBaseExtensionClass
   myNewExtensionMethod() { }
   myExtensionMethod() { }
 }
 
 class MyPartialClass extends PartialClass {
-  static [Extensions] = MyExtensionClass
+  static [Parts] = MyExtensionClass
   myPartialMethod() { }
 }
 
 class MyBase {
+  [Concepts] = MyConcept
+  static { load(this) }
+
   static { 
     implement(this, MyConcept, { 
       myConceptMethod() { },

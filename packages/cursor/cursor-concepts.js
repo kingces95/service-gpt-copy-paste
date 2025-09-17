@@ -1,5 +1,6 @@
 import { Concept } from '@kingjs/concept'
-import { PartialClass, Extensions } from '@kingjs/partial-class'
+import { PartialClass } from '@kingjs/partial-class'
+import { Extensions } from '@kingjs/extension'
 import { Preconditions } from '@kingjs/debug-proxy'
 import {
   throwNotEquatableTo,
@@ -7,7 +8,7 @@ import {
 
 export class CursorConcept extends Concept {
   static [Preconditions] = PartialClass
-  static [Extensions] = class extends PartialClass[Extensions] {
+  static [Extensions] = {
     next() {
       const value = this.value 
       if (!this.step()) return
@@ -60,29 +61,29 @@ export class ContiguousCursorConcept extends RandomAccessCursorConcept {
     }
   }
 
-  static [Extensions] = class extends RandomAccessCursorConcept[Extensions] {
+  static [Extensions] = {
     read(length = 1, signed = false, littleEndian = false) {
       return this.readAt(0, length, signed, littleEndian)
-    }
+    },
 
-    readUInt8() { return this.read() }
-    readInt8() { return this.read(1, true) }
+    readUInt8() { return this.read() },
+    readInt8() { return this.read(1, true) },
   
-    readUInt16(littleEndian = false) { return this.read(2, false, littleEndian) }
-    readUInt16BE() { return this.readUInt16() }
-    readUInt16LE() { return this.readUInt16(true) }
+    readUInt16(littleEndian = false) { return this.read(2, false, littleEndian) },
+    readUInt16BE() { return this.readUInt16() },
+    readUInt16LE() { return this.readUInt16(true) },
     
-    readInt16(littleEndian = false) { return this.read(2, true, littleEndian) }
-    readInt16BE() { return this.readInt16() }
-    readInt16LE() { return this.readInt16(true) }
+    readInt16(littleEndian = false) { return this.read(2, true, littleEndian) },
+    readInt16BE() { return this.readInt16() },
+    readInt16LE() { return this.readInt16(true) },
   
-    readUInt32(littleEndian = false) { return this.read(4, false, littleEndian) }
-    readUInt32BE() { return this.readUInt32() }
-    readUInt32LE() { return this.readUInt32(true) }
+    readUInt32(littleEndian = false) { return this.read(4, false, littleEndian) },
+    readUInt32BE() { return this.readUInt32() },
+    readUInt32LE() { return this.readUInt32(true) },
   
-    readInt32(littleEndian = false) { return this.read(4, true, littleEndian) }
-    readInt32BE() { return this.readInt32() }
-    readInt32LE() { return this.readInt32(true) }
+    readInt32(littleEndian = false) { return this.read(4, true, littleEndian) },
+    readInt32BE() { return this.readInt32() },
+    readInt32LE() { return this.readInt32(true) },
   }
 
   // Deconstruct a cursor to its underlying components. The STL version only

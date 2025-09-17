@@ -4,11 +4,13 @@ import { Descriptor } from "@kingjs/descriptor"
 import { abstract } from "@kingjs/abstract"
 import { Normalize } from "@kingjs/normalize"
 import { Reflection } from '@kingjs/reflection'
-import { PartialClass,
-  Extensions, Compile, Bind, Mark, PostCondition,
-} from "@kingjs/partial-class"
+import { Extension } from '@kingjs/extension'
+import { PartialClass } from '@kingjs/partial-class'
 import { Concept } from "@kingjs/concept"
 import { Compiler } from "@kingjs/compiler"
+import {
+  Extensions, Compile, Bind, Mark, PostCondition,
+} from "@kingjs/extension"
 async function __import() {
   const { infoToPojo } = await import('@kingjs/info-to-pojo')
   return { toPojo: infoToPojo }
@@ -28,7 +30,7 @@ const {
 const ObjectRuntimeNameOrSymbol = new Set([
   '__proto__',
 ])
-const PartialClassRuntimeNameOrSymbol = new Set([
+const ExtensionRuntimeNameOrSymbol = new Set([
   'constructor',
   Extensions, Compile, Bind, Mark, PostCondition,
 ])
@@ -44,6 +46,9 @@ export class Info {
       'fnOrPojo must be a function or pojo')
     const fn = isPojo(fnOrPojo) 
       ? PartialClass.fromPojo(fnOrPojo) : fnOrPojo
+
+    if (fn == Extension)
+      return new ExtensionInfo(fn)
 
     if (fn == Concept || Reflection.isExtensionOf(fn, Concept))
       return new ConceptInfo(fn)
@@ -289,6 +294,7 @@ export class FunctionInfo extends Info {
     }
   }
 
+  get isExtension() { return Reflection.isExtensionOf(this.#fn, Extension) }
   get isPartial() { return Reflection.isExtensionOf(this.#fn, PartialClass) }
   get isConcept() { return Reflection.isExtensionOf(this.#fn, Concept) }
 
@@ -391,38 +397,37 @@ export class ClassInfo extends FunctionInfo {
     Info.Boolean = new ClassInfo(Boolean)
   }
 }
-export class PartialClassInfo extends FunctionInfo { 
+export class ExtensionInfo extends FunctionInfo { 
+  static {
+    Info.Extension = new ExtensionInfo(Extension)
+  }
+  get root$() { return Info.Extension }
+  get includeExtensions$() { return false }
+  isRuntimeNameOrSymbol$(nameOrSymbol) {
+    return ExtensionRuntimeNameOrSymbol.has(nameOrSymbol)
+  }
+  getDefinitions$({ isStatic = false } = { }) {
+    return isStatic ? null : super.getDefinitions$()
+  }
+}
+export class PartialClassInfo extends ExtensionInfo {
   static {
     Info.PartialClass = new PartialClassInfo(PartialClass)
   }
 
   constructor(fn) {
-    // assert(fn == PartialClass
-    //   || Object.getPrototypeOf(fn) == Concept
-    //   || Object.getPrototypeOf(fn) == PartialClass,
-    //   `PartialClass ${fn.name} must directly extend PartialClass.`
-    // )
+    assert(fn == PartialClass
+      || Object.getPrototypeOf(fn) == PartialClass,
+      `Partial class ${fn.name} must directly extend PartialClass.`
+    )
     super(fn)
   }
-  get root$() { return FunctionInfo.PartialClass }
-  get includeExtensions$() { return false }
-  isRuntimeNameOrSymbol$(nameOrSymbol) {
-    return PartialClassRuntimeNameOrSymbol.has(nameOrSymbol)
-  }
+
   compile$(descriptor) { 
     return Compiler.compile(descriptor) 
   }
-  getDefinitions$({ isStatic = false } = { }) {
-    return isStatic ? null : super.getDefinitions$()
-  }
-  *ownConcepts$() {
-    for (const extension of this.extensions()) {
-      if (extension.isConcept)
-        yield extension
-    }
-  }
 }
-export class ConceptInfo extends PartialClassInfo {
+export class ConceptInfo extends ExtensionInfo {
   static {
     Info.Concept = new ConceptInfo(Concept)
   }
@@ -433,8 +438,15 @@ export class ConceptInfo extends PartialClassInfo {
     )
     super(fn)
   }
+
   compile$(descriptor) { 
     return Concept[Compile](descriptor) 
+  }
+  *ownConcepts$() {
+    for (const extension of this.extensions()) {
+      if (extension.isConcept)
+        yield extension
+    }
   }
 }
 
@@ -517,7 +529,10 @@ export class MemberInfo extends Info {
   }
 
   get isConceptual() { return this.#concepts.size > 0 }
-  *concepts() { yield* this.#concepts }
+  *concepts() { 
+    const concepts = this.#concepts
+    yield* concepts
+  }
 
   get isStatic() { return this.#isStatic }
 

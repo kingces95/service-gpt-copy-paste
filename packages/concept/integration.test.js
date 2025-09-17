@@ -20,35 +20,34 @@ function filter(pojo) {
 
 describe('A kitchen sink definition', () => {
   describe.each([
-    ['class', class extends Concept {
+    ['class', class MyConcept extends Concept {
       get getter() { }
       set setter(value) { }
       get accessor() { }
       set accessor(value) { }
       method() { }
     }],
-    ['concise', {
-      getter: { get },
-      setter: { set },
-      accessor: { get, set },
-      method: { value },
-    }]
+    // Decided against annonymous concepts
+    // ['concise', {
+    //   getter: { get },
+    //   setter: { set },
+    //   accessor: { get, set },
+    //   method: { value },
+    // }]
   ])('defined using %s syntax', (_, concept) => {
     let cls
+    let clsInfo
     beforeEach(() => {
       [cls] = [class { }]
       implement(cls, concept)
+      clsInfo = Info.from(cls)
     })
-    it('should be instance of the concept', () => {
-      concept = typeof concept == 'function' ? 
-        concept : Concept.fromPojo(concept)
-      expect(cls.prototype).toBeInstanceOf(concept)
-    })
-    it('should have and info pojo', async () => {
-      const pojo = filter(await Info.from(cls).__toPojo())
+    it('should have an info pojo', async () => {
+      const unfilteredPojo = await clsInfo.__toPojo()  
+      const pojo = filter(unfilteredPojo)
       expect(pojo).toEqual({
         base: 'Object',
-        members: { instance: { 
+        members: { instance: { conceptual: { MyConcept: {
           accessors: {
             getter: { type: 'accessor', 
               hasGetter: true, isAbstract: true },
@@ -61,7 +60,7 @@ describe('A kitchen sink definition', () => {
             method: { type: 'method', 
               isAbstract: true },
           }
-        } },
+        } } } },
       })
     })
   })
