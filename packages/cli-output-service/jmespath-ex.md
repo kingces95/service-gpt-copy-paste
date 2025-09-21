@@ -1,4 +1,4 @@
-# JMESPath Extensions in Azure CLI (`az.exe`)
+# JMESPath in Azure CLI (`az.exe`)
 
 Azure CLI (`az.exe`) extends standard JMESPath functionality by adding several functions for sorting, filtering, and transforming JSON output. Below is a comprehensive list of these **Azure CLI-specific** JMESPath extensions.
 

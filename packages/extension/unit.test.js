@@ -2,10 +2,10 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { abstract } from '@kingjs/abstract'
 import { 
-  Compile, Bind, Mark, PostCondition, 
+  Compile, Bind, PostCondition, 
 } from '@kingjs/partial-class'
 import { extend } from '@kingjs/extend'
-import { Extension, Parts } from '@kingjs/extension'
+import { Extension, Extensions } from '@kingjs/extension'
 
 describe('Extension', () => {
   it('cannot be instantiated', () => {
@@ -22,7 +22,7 @@ describe('A type', () => {
     expect(() => extend(type)).not.toThrow()
   })
   it('can extend null', () => {
-    expect(() => extend(type, null)).not.toThrow()
+    expect(() => extend(type, null)).toThrow()
   })
   it('throws extending a non-partial type', () => {
     expect(() => extend(type, class { })).toThrow()
@@ -103,7 +103,7 @@ describe('A type', () => {
       let extendedPartialType
       beforeEach(() => {
         extendedPartialType = class extends Extension {
-          static [Parts] = partialType }
+          static [Extensions] = partialType }
       })
       it('can extend the member', () => {
         extend(type, extendedPartialType)
@@ -111,7 +111,7 @@ describe('A type', () => {
       })
       describe('that is an array of extensions', () => {
         beforeEach(() => {
-          extendedPartialType[Parts] = [partialType]
+          extendedPartialType[Extensions] = [partialType]
         })
         it('can extend the member', () => {
           extend(type, extendedPartialType)
@@ -122,7 +122,7 @@ describe('A type', () => {
         let extendedExtendedPartialType
         beforeEach(() => {
           extendedExtendedPartialType = class extends Extension {
-            static [Parts] = extendedPartialType }
+            static [Extensions] = extendedPartialType }
         })
         it('can extend the member', () => {
           extend(type, extendedExtendedPartialType)
@@ -186,9 +186,8 @@ describe('A type', () => {
         let boundMember = function() { return 'bound' }
         beforeEach(() => {
           didBind = false
-          partialType[Bind] = function(
-            type$, name, descriptor) {
-              expect(this).toBe(partialType)
+          partialType[Bind] = function(type$, name, descriptor) {
+            expect(this).toBe(partialType)
             expect(type$).toBe(type)
             expect(name).toBe('member')
             expect(descriptor.value).toBe(compiledMember)
@@ -202,33 +201,19 @@ describe('A type', () => {
           expect(didBind).toBe(true)
           expect(type.prototype.member).toBe(boundMember)
         })
-        describe('and a Mark function', () => {
+        describe('and a PostCondition function', () => {
+          let didPostCondition
           beforeEach(() => {
-            partialType[Mark] = function(type$) {
+            partialType[PostCondition] = function(type$) {
               expect(this).toBe(partialType)
               expect(type$).toBe(type)
-              type$.mark = true
+              expect(type$.prototype.member).toBe(boundMember)
+              didPostCondition = true
             }
           })
-          it('should call the Mark function', () => {
+          it('should call the PostCondition function', () => {
             extend(type, partialType)
-            expect(type.mark).toBe(true)
-          })
-          describe('and a PostCondition function', () => {
-            let didPostCondition
-            beforeEach(() => {
-              partialType[PostCondition] = function(type$) {
-                expect(this).toBe(partialType)
-                expect(type$).toBe(type)
-                expect(type$.mark).toBe(true)
-                expect(type$.prototype.member).toBe(boundMember)
-                didPostCondition = true
-              }
-            })
-            it('should call the PostCondition function', () => {
-              extend(type, partialType)
-              expect(didPostCondition).toBe(true)
-            })
+            expect(didPostCondition).toBe(true)
           })
         })
       })

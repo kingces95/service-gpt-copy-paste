@@ -2,23 +2,23 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Info } from "@kingjs/info"
 import { filterInfoPojo } from "@kingjs/info-to-pojo"
-import { PartialClass } from '@kingjs/partial-class'
+import { Extension } from '@kingjs/extension'
 
 import { abstract } from '@kingjs/abstract'
 
-describe('FunctionInfo for PartialClass', () => {
+describe('FunctionInfo for Extension', () => {
   let fnInfo
   beforeEach(() => {
-    fnInfo = Info.from(PartialClass)
+    fnInfo = Info.from(Extension)
   })
   it('equals itself', () => {
     expect(fnInfo.equals(fnInfo)).toBe(true)
   })
   it('eqauls a different instance of itself', () => {
-    expect(fnInfo.equals(Info.from(PartialClass))).toBe(true)
+    expect(fnInfo.equals(Info.from(Extension))).toBe(true)
   })
-  it('should have a ctor which is PartialClass', () => {
-    expect(fnInfo.ctor).toBe(PartialClass)
+  it('should have a ctor which is Extension', () => {
+    expect(fnInfo.ctor).toBe(Extension)
   })
   describe.each([
     'toString',
@@ -32,7 +32,7 @@ describe('FunctionInfo for PartialClass', () => {
     })
   })
   it('has ExtensionsInfo as base', () => {
-    const ExtensionInfo = Info.Extension
+    const ExtensionInfo = Info.PartialClass
     expect(fnInfo.base).toEqual(ExtensionInfo)
   })
   it('has no static descriptor for missing', () => {
@@ -72,36 +72,36 @@ describe('A partial class', () => {
   describe('with a name', () => {
     let cls
     beforeEach(() => {
-      cls = class MyClass extends PartialClass { }
+      cls = class MyClass extends Extension { }
     })
     it('has a toString of MyClass', () => {
       const fnInfo = Info.from(cls)
-      expect(fnInfo.toString()).toBe('MyClass, PartialClass')
+      expect(fnInfo.toString()).toBe('MyClass, Extension')
     })
   })
   describe('without a name', () => {
     let cls
     beforeEach(() => {
-      [cls] = [class extends PartialClass { }]
+      [cls] = [class extends Extension { }]
     })
     it('has a toString of <anonymous>', () => {
       const fnInfo = Info.from(cls)
-      expect(fnInfo.toString()).toBe('<anonymous>, PartialClass')
+      expect(fnInfo.toString()).toBe('<anonymous>, Extension')
     })
   })
 
   describe.each([
-    ['no members', class extends PartialClass { }, { }],
-    ['static data', class extends PartialClass { 
+    ['no members', class extends Extension { }, { }],
+    ['static data', class extends Extension { 
       static myStaticMember = 1 }, {
       // static members are ignored by the DSL
       }],
-    ['static getter', class extends PartialClass {
+    ['static getter', class extends Extension {
       static get myStaticAccessor() { return 1 } 
     }, { 
       // static members are ignored by the DSL
     }],
-    ['instance setter', class extends PartialClass {
+    ['instance setter', class extends Extension {
       set myInstanceAccessor(value) { }
     }, {
       members: { instance: { accessors: {
@@ -133,7 +133,7 @@ describe('A partial class', () => {
       const fnInfo = Info.from(cls)
       expect(filter(await fnInfo.__toPojo())).toEqual({
         ...expected,
-        base: 'PartialClass'
+        base: 'Extension'
       })
     })
   })
@@ -190,7 +190,7 @@ describe('A member', () => {
 describe('A bespoke partial class', () => {
   let myPartialClass
   beforeEach(() => {
-    [myPartialClass] = [class MyClass extends PartialClass { }]
+    [myPartialClass] = [class MyClass extends Extension { }]
   })
   describe('that implements MySymbol', () => {
     beforeEach(() => {
@@ -205,7 +205,7 @@ describe('A bespoke partial class', () => {
           },
         } } },
         name: 'MyClass',
-        base: 'PartialClass'
+        base: 'Extension'
       }
       const fnInfo = Info.from(myPartialClass)
       const actual = await fnInfo.__toPojo()
@@ -221,7 +221,7 @@ describe('A bespoke partial class', () => {
     it('has a pojo', async () => {
       const pojo = {
         name: 'MyClass',
-        base: 'PartialClass'
+        base: 'Extension'
       }
 
       // Constructors are ignored by the DSL
@@ -237,7 +237,7 @@ describe('A bespoke partial class', () => {
     it('has a pojo that ignores the static member', async () => {
       const pojo = {
         name: 'MyClass',
-        base: 'PartialClass',
+        base: 'Extension',
         members: { instance: { methods: {
           method: { host: 'MyClass', type: 'method' }
         } } },
@@ -261,7 +261,7 @@ describe('A bespoke partial class', () => {
     it('has a pojo that ignores the static data member', async () => {
       const pojo = {
         name: 'MyClass',
-        base: 'PartialClass'
+        base: 'Extension'
       }
       const fnInfo = Info.from(myPartialClass)
       expect(filter(await fnInfo.__toPojo())).toEqual(pojo)
@@ -281,7 +281,7 @@ describe('A bespoke partial class', () => {
           } } },
         },
         name: 'MyClass',
-        base: 'PartialClass'
+        base: 'Extension'
       }
       const fnInfo = Info.from(myPartialClass)
       expect(filter(await fnInfo.__toPojo())).toEqual(pojo)
@@ -289,7 +289,7 @@ describe('A bespoke partial class', () => {
   })
   describe('with private members', () => {
     beforeEach(() => {
-      [myPartialClass] = [class extends PartialClass { 
+      [myPartialClass] = [class extends Extension { 
         myPrivateMethod$() { }
         $myPrivateMethod() { }
         myPrivateMethod_() { }
@@ -299,7 +299,7 @@ describe('A bespoke partial class', () => {
   
     it('has a pojo', async () => {
       const pojo = {
-        base: 'PartialClass'
+        base: 'Extension'
       }
   
       const fnInfo = Info.from(myPartialClass)
@@ -308,7 +308,7 @@ describe('A bespoke partial class', () => {
   })
   describe('with a static and instance accessor and method members', () => {
     beforeEach(() => {
-      [myPartialClass] = [class extends PartialClass { 
+      [myPartialClass] = [class extends Extension { 
         static get myAccessor() { }
         static set myAccessor(value) { }
         static myMethod() { }
@@ -331,7 +331,7 @@ describe('A bespoke partial class', () => {
             }
           },
         },
-        base: 'PartialClass'
+        base: 'Extension'
       }
   
       const fnInfo = Info.from(myPartialClass)
@@ -373,7 +373,7 @@ describe('A bespoke partial class', () => {
           }
         },
         name: 'MyClass',
-        base: 'PartialClass'
+        base: 'Extension'
       }
       const fnInfo = Info.from(myPartialClass)
       expect(filter(await fnInfo.__toPojo())).toEqual(pojo)

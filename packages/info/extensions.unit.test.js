@@ -1,9 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Info, FunctionInfo } from "@kingjs/info"
-import { PartialClass, Parts } from '@kingjs/partial-class'
+import { Extension, Extensions } from '@kingjs/extension'
 import { extend } from '@kingjs/extend'
-import { Extensions } from '@kingjs/extension'
 
 function getMemberValue(cls) {
   const info = Info.from(cls)
@@ -21,7 +20,7 @@ describe('A class with a member', () => {
     let partial
     let memberFn = function member() { }
     beforeEach(() => {
-      partial = PartialClass.fromPojo({ member: memberFn })
+      partial = Extension.fromPojo({ member: memberFn })
     })
     it('should match class and partial member', async () => {
       extend(cls, partial)
@@ -35,13 +34,17 @@ describe('A class with a member', () => {
       let extensionMember = function member() { }
       beforeEach(() => {
         extension = { member: extensionMember }
-        partial[Parts] = extension
+        partial[Extensions] = extension
       })
       it('should match class and extensions member', async () => {
+        // check runtime behavior
         extend(cls, partial)
-        const partialMember = getMemberValue(partial)
         const clsMember = getMemberValue(cls)
         expect(clsMember).toBe(extensionMember)
+        
+        // check reflection behavior
+        const partialMember = getMemberValue(partial)
+        expect(partialMember).not.toBe(memberFn)
         expect(partialMember).toBe(extensionMember)
       })
       it('should have partial names as a subset of class names', async () => {

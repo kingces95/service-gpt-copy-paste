@@ -2,7 +2,7 @@ import { Info } from "@kingjs/info"
 import { filterInfoPojo } from "@kingjs/info-to-pojo"
 import { dumpPojo } from "@kingjs/pojo-dump"
 import { abstract } from "@kingjs/abstract"
-import { PartialClass, Parts } from "@kingjs/partial-class"
+import { Extension, Extensions } from "@kingjs/extension"
 import { load } from "@kingjs/loader"
 import { extend } from "@kingjs/extend"
 import { Concept, Concepts, implement } from "@kingjs/concept"
@@ -10,42 +10,41 @@ import { Concept, Concepts, implement } from "@kingjs/concept"
 const MySymbol = Symbol('my-symbol')
 const MyStaticSymbol = Symbol('my-static-symbol')
 
-class MyBaseConcept extends Concept { myBaseConceptMethod() { } }
+class MyBaseConcept extends Concept { 
+  myBaseConceptMethod() { } 
+}
 class MyLeftConcept extends Concept { 
-  static [Parts] = MyBaseConcept
+  static [Concepts] = MyBaseConcept
   myLeftConceptMethod() { } 
   myAmbidextrousMethod() { }
 }
 class MyRightConcept extends Concept {
-  static [Parts] = MyBaseConcept
+  static [Concepts] = MyBaseConcept
   myRightConceptMethod() { } 
   myAmbidextrousMethod() { }
 }
 class MyConcept extends Concept {
-  static [Parts] = [MyLeftConcept, MyRightConcept]
+  static [Concepts] = [ MyLeftConcept, MyRightConcept ]
   myConceptMethod() { }
 }
 
-class MyBaseExtensionClass extends PartialClass {
+class MyBaseExtensionClass extends Extension {
   myBaseExtensionMethod() { }
   myNewExtensionMethod() { }
 }
 
-class MyExtensionClass extends PartialClass {
-  static [Parts] = MyBaseExtensionClass
+class MyExtensionClass extends Extension {
+  static [Extensions] = MyBaseExtensionClass
   myNewExtensionMethod() { }
   myExtensionMethod() { }
 }
 
-class MyPartialClass extends PartialClass {
-  static [Parts] = MyExtensionClass
+class MyPartialClass extends Extension {
+  static [Extensions] = MyExtensionClass
   myPartialMethod() { }
 }
 
 class MyBase {
-  [Concepts] = MyConcept
-  static { load(this) }
-
   static { 
     implement(this, MyConcept, { 
       myConceptMethod() { },
@@ -57,7 +56,10 @@ class MyBase {
 }
 
 class MyClass extends MyBase {
-  static { extend(this, MyPartialClass) }
+  static { 
+    extend(this, MyPartialClass) 
+  }
+
   static get myStaticAccessor() { }
   static set myStaticAccessor(value) { }
   static myStaticMethod() { }
@@ -108,7 +110,7 @@ function dump(fn) {
 dump(Function)
 dump(Object)
 dump(Concept)
-dump(PartialClass)
+dump(Extension)
 dump(MyConcept)
 dump(MyPartialClass)
 dump(MyExtensionClass)

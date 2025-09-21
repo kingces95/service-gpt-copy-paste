@@ -12,7 +12,7 @@ describe('A type', () => {
     type = class { }
   })
   it('should have no declared concepts', () => {
-    const actual = [...Concept.ownConcepts(type)]
+    const actual = [...Concept.getOwnDeclarations(type)]
     const expected = [ ]
     expect(actual).toEqual(expected)
   })
@@ -30,8 +30,7 @@ describe('A type', () => {
     })
     it('should throw implementing itself', () => {
       expect(() => implement(concept, concept)).toThrow([
-        'Assertion failed: Concept concept cannot implement concept concept.',
-        'Use Extensions instead.'
+        "Assertion failed: Expected type 'concept' not to be a PartialClass."
       ].join(' '))
     })
     describe('and a type that extends the concept', () => {
@@ -56,7 +55,7 @@ describe('A type', () => {
         expect(type.prototype).toBeInstanceOf(concept)
       })
       it('should be an own declared concept', () => {
-        const actual = [...Concept.ownConcepts(type)]
+        const actual = [...Concept.getOwnDeclarations(type)]
         const expected = [concept]
           expect(actual).toEqual(expected)
       })
@@ -115,7 +114,7 @@ describe('A type', () => {
           expect(type.prototype.method).toBe(emptyMethod)
         })
         it('should be an own declared concept', () => {
-          const actual = [...Concept.ownConcepts(type)]
+          const actual = [...Concept.getOwnDeclarations(type)]
           const expected = [concept]
           expect(actual).toEqual(expected)
         })
@@ -124,7 +123,7 @@ describe('A type', () => {
         const emptyMethod = () => { }
         it('should throw', () => {
           expect(() => implement(type, concept, { other: emptyMethod }))
-            .toThrow()
+            .toThrow("Concept 'concept' does not define member 'other'.")
         })
       })
     })

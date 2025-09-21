@@ -1,5 +1,5 @@
 import { Concept } from '@kingjs/concept'
-import { PartialClass } from '@kingjs/partial-class'
+import { Extension } from '@kingjs/extension'
 import { Extensions } from '@kingjs/extension'
 import { Preconditions } from '@kingjs/debug-proxy'
 import {
@@ -7,7 +7,7 @@ import {
 } from './throw.js'
 
 export class CursorConcept extends Concept {
-  static [Preconditions] = PartialClass
+  static [Preconditions] = Extension
   static [Extensions] = {
     next() {
       const value = this.value 

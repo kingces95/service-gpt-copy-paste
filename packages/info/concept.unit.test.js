@@ -2,8 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { FunctionInfo, Info } from "@kingjs/info"
 import { filterInfoPojo } from "@kingjs/info-to-pojo"
-import { PartialClass, Parts } from '@kingjs/partial-class'
-import { Extensions } from '@kingjs/extension'
+import { Extension, Extensions } from '@kingjs/extension'
 import { extend } from '@kingjs/extend'
 import { Concept, Concepts, implement } from '@kingjs/concept'
 
@@ -43,7 +42,7 @@ describe('FunctionInfo for Concept', () => {
     })
   })
   it('has PartialClassInfo base', () => {
-    const ExtensionInfo = Info.Extension
+    const ExtensionInfo = Info.PartialClass
     expect(fnInfo.base).toEqual(ExtensionInfo)
   })
   it('has no static descriptor for missing', () => {
@@ -94,11 +93,11 @@ describe('A concept', () => {
   describe('without a name', () => {
     let cls
     beforeEach(() => {
-      [cls] = [class extends PartialClass { }]
+      [cls] = [class extends Extension { }]
     })
     it('has a toString of <anonymous>', () => {
       const fnInfo = Info.from(cls)
-      expect(fnInfo.toString()).toBe('<anonymous>, PartialClass')
+      expect(fnInfo.toString()).toBe('<anonymous>, Extension')
     })
   })
 
@@ -189,7 +188,7 @@ describe('A concept with a member', () => {
     let type
     let typeInfo
     beforeEach(() => {
-      type = class MyClass extends PartialClass { }
+      type = class MyClass extends Extension { }
       type[Concepts] = myConcept
       typeInfo = Info.from(type)
     })
@@ -224,7 +223,7 @@ describe('A concept with a member', () => {
         expect(cls.prototype).not.toBeInstanceOf(myConcept)
       })
       it('should not declare the concept as its own', () => {
-        const actual = [...clsInfo.ownConcepts(cls)]
+        const actual = [...clsInfo.getOwnConcepts(cls)]
         const expected = [myConceptInfo]
         expect(actual).not.toEqual(expected)
       })
@@ -240,7 +239,7 @@ describe('A concept with a member', () => {
       clsInfo = Info.from(cls)
     })
     it('declares the concept as its own', () => {
-      const actual = [...clsInfo.ownConcepts(cls)]
+      const actual = [...clsInfo.getOwnConcepts(cls)]
       const expected = [myConceptInfo]
       expect(actual).toEqual(expected)
     })
@@ -258,7 +257,7 @@ describe('A concept with a member', () => {
           subClsInfo = Info.from(subCls)
         })
         it('claims to declare the concept as its own', () => {
-          const actual = [...subClsInfo.ownConcepts(subCls)]
+          const actual = [...subClsInfo.getOwnConcepts(subCls)]
           const expected = [myConceptInfo]
           expect(actual).toEqual(expected)
         })
@@ -274,7 +273,7 @@ describe('A concept with a member', () => {
         })
       })
       it('has no own declared concepts', () => {
-        const actual = [...subClsInfo.ownConcepts(subCls)]
+        const actual = [...subClsInfo.getOwnConcepts(subCls)]
         const expected = [ ]
         expect(actual).toEqual(expected)
       })

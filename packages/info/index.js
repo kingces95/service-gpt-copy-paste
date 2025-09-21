@@ -4,13 +4,13 @@ import { Descriptor } from "@kingjs/descriptor"
 import { abstract } from "@kingjs/abstract"
 import { Normalize } from "@kingjs/normalize"
 import { Reflection } from '@kingjs/reflection'
-import { Extension } from '@kingjs/extension'
 import { PartialClass } from '@kingjs/partial-class'
+import { Extension, Extensions } from '@kingjs/extension'
 import { Concept } from "@kingjs/concept"
 import { Compiler } from "@kingjs/compiler"
 import {
-  Extensions, Compile, Bind, Mark, PostCondition,
-} from "@kingjs/extension"
+  Compile, Bind, PreCondition, PostCondition,
+} from "@kingjs/partial-class"
 async function __import() {
   const { infoToPojo } = await import('@kingjs/info-to-pojo')
   return { toPojo: infoToPojo }
@@ -32,7 +32,7 @@ const ObjectRuntimeNameOrSymbol = new Set([
 ])
 const ExtensionRuntimeNameOrSymbol = new Set([
   'constructor',
-  Extensions, Compile, Bind, Mark, PostCondition,
+  Compile, Bind, PreCondition, PostCondition,
 ])
 
 // Notes to AI:
@@ -45,15 +45,15 @@ export class Info {
     assert(fnOrPojo instanceof Function || isPojo(fnOrPojo),
       'fnOrPojo must be a function or pojo')
     const fn = isPojo(fnOrPojo) 
-      ? PartialClass.fromPojo(fnOrPojo) : fnOrPojo
+      ? Extension.fromPojo(fnOrPojo) : fnOrPojo
 
-    if (fn == Extension)
+    if (fn == PartialClass)
       return new ExtensionInfo(fn)
 
     if (fn == Concept || Reflection.isExtensionOf(fn, Concept))
       return new ConceptInfo(fn)
 
-    if (fn == PartialClass || Reflection.isExtensionOf(fn, PartialClass))
+    if (fn == Extension || Reflection.isExtensionOf(fn, Extension))
       return new PartialClassInfo(fn)
     
     return new ClassInfo(fn)
@@ -272,7 +272,7 @@ export class FunctionInfo extends Info {
   get includeExtensions$() { return true }
 
   *ownConcepts$() {
-    for (const concept of Concept.ownConcepts(this.#fn))
+    for (const concept of Concept.getOwnDeclarations(this.#fn))
       yield Info.from(concept)
   }
   *ownNames$({ isStatic = false } = { }) {
@@ -294,8 +294,8 @@ export class FunctionInfo extends Info {
     }
   }
 
-  get isExtension() { return Reflection.isExtensionOf(this.#fn, Extension) }
-  get isPartial() { return Reflection.isExtensionOf(this.#fn, PartialClass) }
+  get isExtension() { return Reflection.isExtensionOf(this.#fn, PartialClass) }
+  get isPartial() { return Reflection.isExtensionOf(this.#fn, Extension) }
   get isConcept() { return Reflection.isExtensionOf(this.#fn, Concept) }
 
   get ctor() { return this.#fn }
@@ -320,7 +320,7 @@ export class FunctionInfo extends Info {
     yield* extensions
   }
 
-  *ownConcepts() {
+  *getOwnConcepts() {
     yield* FunctionInfo.concepts$(this)
   }
 
@@ -359,7 +359,7 @@ export class FunctionInfo extends Info {
 
   getOwnMember(nameOrSymbol, { isStatic = false } = { }) {
     if (!isStatic) {
-      // Extension members load after own members so will override them.
+      // PartialClass members load after own members so will override them.
       // To emulate this behavior, getOwnMember needs to traverse
       // the tree of extensions in reverse order.
       for (const extension of this.extensions({ reverse: true })) {
@@ -383,7 +383,7 @@ export class FunctionInfo extends Info {
   toString() { return [
       this.name ?? '<anonymous>',
       this.isConcept ? 'Concept' :
-        this.isPartial ? 'PartialClass' : null,
+        this.isPartial ? 'Extension' : null,
     ].filter(Boolean).join(', ') 
   }
 }
@@ -399,9 +399,9 @@ export class ClassInfo extends FunctionInfo {
 }
 export class ExtensionInfo extends FunctionInfo { 
   static {
-    Info.Extension = new ExtensionInfo(Extension)
+    Info.PartialClass = new ExtensionInfo(PartialClass)
   }
-  get root$() { return Info.Extension }
+  get root$() { return Info.PartialClass }
   get includeExtensions$() { return false }
   isRuntimeNameOrSymbol$(nameOrSymbol) {
     return ExtensionRuntimeNameOrSymbol.has(nameOrSymbol)
@@ -412,13 +412,13 @@ export class ExtensionInfo extends FunctionInfo {
 }
 export class PartialClassInfo extends ExtensionInfo {
   static {
-    Info.PartialClass = new PartialClassInfo(PartialClass)
+    Info.Extension = new PartialClassInfo(Extension)
   }
 
   constructor(fn) {
-    assert(fn == PartialClass
-      || Object.getPrototypeOf(fn) == PartialClass,
-      `Partial class ${fn.name} must directly extend PartialClass.`
+    assert(fn == Extension
+      || Object.getPrototypeOf(fn) == Extension,
+      `Partial class ${fn.name} must directly extend Extension.`
     )
     super(fn)
   }
