@@ -8,9 +8,7 @@ import { PartialClass } from '@kingjs/partial-class'
 import { Extension, Extensions } from '@kingjs/extension'
 import { Concept } from "@kingjs/concept"
 import { Compiler } from "@kingjs/compiler"
-import {
-  Compile, Bind, PreCondition, PostCondition,
-} from "@kingjs/partial-class"
+
 async function __import() {
   const { infoToPojo } = await import('@kingjs/info-to-pojo')
   return { toPojo: infoToPojo }
@@ -32,7 +30,6 @@ const ObjectRuntimeNameOrSymbol = new Set([
 ])
 const ExtensionRuntimeNameOrSymbol = new Set([
   'constructor',
-  Compile, Bind, PreCondition, PostCondition,
 ])
 
 // Notes to AI:
@@ -440,7 +437,7 @@ export class ConceptInfo extends ExtensionInfo {
   }
 
   compile$(descriptor) { 
-    return Concept[Compile](descriptor) 
+    return Concept[PartialClass.Symbol.compile](descriptor) 
   }
   *ownConcepts$() {
     for (const extension of this.extensions()) {

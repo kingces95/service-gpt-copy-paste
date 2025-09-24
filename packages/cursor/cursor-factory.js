@@ -1,6 +1,8 @@
 import { Range } from "./range.js"
 import { Interval } from "./interval.js"
 import { Member } from '@kingjs/reflection'
+import { get } from '@kingjs/abstract'
+
 const { define } = Member
 
 export class CursorFactory extends Interval {  

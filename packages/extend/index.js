@@ -19,5 +19,5 @@ export function extend(type, ...partials) {
 
   // for each partial type, compile and bind its members to the type prototype
   for (const partial of partials)
-    PartialClass.fromArg(partial).define(type)
+    PartialClass.fromArg(partial).defineOn(type)
 }

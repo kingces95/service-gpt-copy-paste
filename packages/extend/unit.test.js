@@ -1,17 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { abstract } from '@kingjs/abstract'
-import { 
-  Compile, Bind, PostCondition, 
-} from '@kingjs/partial-class'
+import { PartialClass } from '@kingjs/partial-class'
 import { extend } from '@kingjs/extend'
 import { Extension, Extensions } from '@kingjs/extension'
-
-describe('Extension', () => {
-  it('cannot be instantiated', () => {
-    expect(() => new Extension()).toThrow()
-  })
-})
 
 describe('A type', () => {
   let type
@@ -135,7 +127,7 @@ describe('A type', () => {
       let compiledMember = function() { return 'compiled' }
       beforeEach(() => {
         didCompile = false
-        partialType[Compile] = function(descriptor) {
+        partialType[PartialClass.Symbol.compile] = function(descriptor) {
           expect(this).toBe(partialType)
           expect(descriptor.value).toBe(partialType.prototype.member)
           descriptor.value = compiledMember
@@ -167,7 +159,7 @@ describe('A type', () => {
       })
       describe('and a bind function the returns null', () => {
         beforeEach(() => {
-          partialType[Bind] = function(
+          partialType[PartialClass.Symbol.bind] = function(
             type$, name, descriptor) {
               expect(this).toBe(partialType)
             expect(type$).toBe(type)
@@ -186,15 +178,16 @@ describe('A type', () => {
         let boundMember = function() { return 'bound' }
         beforeEach(() => {
           didBind = false
-          partialType[Bind] = function(type$, name, descriptor) {
-            expect(this).toBe(partialType)
-            expect(type$).toBe(type)
-            expect(name).toBe('member')
-            expect(descriptor.value).toBe(compiledMember)
-            descriptor.value = boundMember
-            didBind = true
-            return descriptor
-          }
+          partialType[PartialClass.Symbol.bind] = 
+            function(type$, name, descriptor) {
+              expect(this).toBe(partialType)
+              expect(type$).toBe(type)
+              expect(name).toBe('member')
+              expect(descriptor.value).toBe(compiledMember)
+              descriptor.value = boundMember
+              didBind = true
+              return descriptor
+            }
         })
         it('should call the bind function', () => {
           extend(type, partialType)
@@ -204,7 +197,7 @@ describe('A type', () => {
         describe('and a PostCondition function', () => {
           let didPostCondition
           beforeEach(() => {
-            partialType[PostCondition] = function(type$) {
+            partialType[PartialClass.Symbol.postCondition] = function(type$) {
               expect(this).toBe(partialType)
               expect(type$).toBe(type)
               expect(type$.prototype.member).toBe(boundMember)

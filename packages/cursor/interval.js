@@ -1,5 +1,6 @@
 import { DebugProxy } from '@kingjs/debug-proxy'
 import { define } from '@kingjs/member'
+import { abstract as toRange } from '@kingjs/abstract'
 
 // Interval is the base class for Container, View, and Range. Strictly
 // speaking, Container and View both extend CursorFactory, but that

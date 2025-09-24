@@ -1,18 +1,22 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Concept } from '@kingjs/concept'
+import { Concept, Concepts } from '@kingjs/concept'
 
+class MyEmptyConcept extends Concept { }
 class MyGetterConcept extends Concept { get value() { } }
 class MySetterConcept extends Concept { set value(value) { } }
 class MyMethodConcept extends Concept { method() { } }
+class MyKitchenSinkConcept extends Concept {
+  [Concepts] = [
+    MyGetterConcept,
+    MySetterConcept,
+    MyMethodConcept
+  ]
+}
 
-class MySuperGetterConcept extends MyGetterConcept { }
-class MySuperSetterConcept extends MySetterConcept { }
-class MySuperMethodConcept extends MyMethodConcept { }
-
-class MyOtherGetterConcept extends MyGetterConcept { get otherValue() { } }
-class MyOtherSetterConcept extends MySetterConcept { set otherValue(value) { } }
-class MyOtherMethodConcept extends MyMethodConcept { otherMethod() { } }
+class MyOtherGetterConcept extends Concept { get otherValue() { } }
+class MyOtherSetterConcept extends Concept { set otherValue(value) { } }
+class MyOtherMethodConcept extends Concept { otherMethod() { } }
 
 class MyType {
 
@@ -31,8 +35,8 @@ describe('An instance of a type', () => {
     instance = new MyType()
   })
 
-  it('should satisfy Concept', () => {
-    expect(instance).toBeInstanceOf(Concept)
+  it('should satisfy MyEmptyConcept', () => {
+    expect(instance).toBeInstanceOf(MyEmptyConcept)
   })
 
   it('should satisfy MyGetterConcept', () => {
@@ -44,15 +48,8 @@ describe('An instance of a type', () => {
   it('should satisfy MyMethodConcept', () => {
     expect(instance).toBeInstanceOf(MyMethodConcept)
   })
-
-  it('should satisfy MySuperGetterConcept', () => {
-    expect(instance).toBeInstanceOf(MySuperGetterConcept)
-  })
-  it('should satisfy MySuperSetterConcept', () => {
-    expect(instance).toBeInstanceOf(MySuperSetterConcept)
-  })
-  it('should satisfy MySuperMethodConcept', () => {
-    expect(instance).toBeInstanceOf(MySuperMethodConcept)
+  it('should satisfy MyKitchenSinkConcept', () => {
+    expect(instance).toBeInstanceOf(MyKitchenSinkConcept)
   })
 
   it('should not satisfy MyOtherGetterConcept', () => {

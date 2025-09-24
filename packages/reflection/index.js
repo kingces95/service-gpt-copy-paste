@@ -1,3 +1,6 @@
+const KnownInstanceMembers = new Set([ 'constructor'])
+const KnownStaticMembers = new Set([ 'length', 'name', 'prototype'])
+
 export class Reflection {
   static isExtensionOf(childClass, parentClass) {
     let prototype = childClass
@@ -8,28 +11,24 @@ export class Reflection {
     return false;
   }
 
-  static *names(prototype, root = Object) {
-    const names = new Set()
+  static *#keys(prototype, root, ownKeysFn) {
+    const keys = new Set()
     while (prototype != root.prototype) {
-      for (const name of Object.getOwnPropertyNames(prototype)) {
-        if (names.has(name)) continue
-        yield name
-        names.add(name)
+      for (const key of ownKeysFn(prototype)) {
+        if (keys.has(key)) continue
+        yield key
+        keys.add(key)
       }
       prototype = Object.getPrototypeOf(prototype)
     }
   }
 
+  static *names(prototype, root = Object) {
+    yield *Reflection.#keys(prototype, root, Object.getOwnPropertyNames)
+  }
+
   static *symbols(prototype, root = Object) {
-    const symbols = new Set()
-    while (prototype != root.prototype) {
-      for (const symbol of Object.getOwnPropertySymbols(prototype)) {
-        if (symbols.has(symbol)) continue
-        yield symbol
-        symbols.add(symbol)
-      } 
-      prototype = Object.getPrototypeOf(prototype)
-    }
+    yield *Reflection.#keys(prototype, root, Object.getOwnPropertySymbols)
   }
 
   static *namesAndSymbols(prototype, root = Object) {
@@ -38,9 +37,23 @@ export class Reflection {
   }
 
   static *memberNamesAndSymbols(prototype, root = Object) {
-    // names and symbols of members only (exclude constructor)
-    for (const name of Reflection.namesAndSymbols(prototype, root)) {
-      if (name === 'constructor') continue
+    yield *Reflection.#keys(prototype, root, Reflection.ownMemberNamesAndSymbols)
+  }
+
+  static *ownNamesAndSymbols(prototype) {
+    yield *Reflect.ownKeys(prototype)
+  }
+
+  static *ownMemberNamesAndSymbols(prototype) {
+    for (const name of Reflection.ownNamesAndSymbols(prototype)) {
+      if (KnownInstanceMembers.has(name)) continue
+      yield name
+    }
+  }
+
+  static *ownStaticMemberNamesAndSymbols(type) {
+    for (const name of Reflection.ownNamesAndSymbols(type)) {
+      if (KnownStaticMembers.has(name)) continue
       yield name
     }
   }

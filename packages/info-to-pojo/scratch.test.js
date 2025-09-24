@@ -3,7 +3,6 @@ import { filterInfoPojo } from "@kingjs/info-to-pojo"
 import { dumpPojo } from "@kingjs/pojo-dump"
 import { abstract } from "@kingjs/abstract"
 import { Extension, Extensions } from "@kingjs/extension"
-import { load } from "@kingjs/loader"
 import { extend } from "@kingjs/extend"
 import { Concept, Concepts, implement } from "@kingjs/concept"
 

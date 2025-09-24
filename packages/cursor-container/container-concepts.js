@@ -1,4 +1,4 @@
-import { Concept, Satisfies } from '@kingjs/concept'
+import { Concept, Concepts } from '@kingjs/concept'
 import {
   CursorConcept,
   InputCursorConcept,
@@ -9,29 +9,42 @@ import {
   ContiguousCursorConcept,
 } from '@kingjs/cursor'
 
-export class ContainerConcept extends Concept {
-  static cursorType = CursorConcept
-  static [Satisfies](container) {
-    const containerType = container?.constructor
-    return containerType?.cursorType?.prototype instanceof this.cursorType
-  }
+export class RangeConcept extends Concept {
+  toRange() { }
 }
-export class InputContainerConcept extends ContainerConcept {
+export class ContainerConcept extends Concept {
+  static [Extensions] = {
+    toRange() { return new Range(this.begin(), this.end()) },
+    get isEmpty() { return this.begin().equals(this.end()) }
+  }
+  static [Concepts] = [ RangeConcept ]
+  static cursorType = CursorConcept
+
+  get begin() { }
+  get end() { }
+}
+export class InputContainerConcept extends Concept {
+  static [Concepts] = [ ContainerConcept ]
   static cursorType = InputCursorConcept
 }
-export class OutputContainerConcept extends ContainerConcept {
+export class OutputContainerConcept extends Concept {
+  static [Concepts] = [ ContainerConcept ]
   static cursorType = OutputCursorConcept
 }
-export class ForwardContainerConcept extends ContainerConcept {
+export class ForwardContainerConcept extends Concept {
+  static [Concepts] = [ InputContainerConcept ]
   static cursorType = ForwardCursorConcept
 }
-export class BidirectionalContainerConcept extends ContainerConcept {
+export class BidirectionalContainerConcept extends Concept {
+  static [Concepts] = [ ForwardContainerConcept ]
   static cursorType = BidirectionalCursorConcept
 }
-export class RandomAccessContainerConcept extends ContainerConcept {
+export class RandomAccessContainerConcept extends Concept {
+  static [Concepts] = [ BidirectionalContainerConcept ]
   static cursorType = RandomAccessCursorConcept
 }
-export class ContiguousContainerConcept extends ContainerConcept {
+export class ContiguousContainerConcept extends Concept {
+  static [Concepts] = [ RandomAccessContainerConcept ]
   static cursorType = ContiguousCursorConcept
 }
 

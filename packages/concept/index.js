@@ -8,10 +8,6 @@ import { isPojo } from '@kingjs/pojo-test'
 
 import { 
   PartialClass,
-  Compile, 
-  Bind,
-  PreCondition,
-  PostCondition, 
 } from '@kingjs/partial-class'
 
 const {
@@ -22,18 +18,18 @@ const {
 } = Descriptor
 
 const {
-  memberNamesAndSymbols,
+  ownMemberNamesAndSymbols,
   isExtensionOf,
 } = Reflection
 
+const Static = { static: true }
+
 export const Concepts = Symbol('ConceptConcepts')
 
-export const Satisfies = Symbol('ConceptSatisfies')
-
 export class Concept extends PartialClass {
-  static *[OwnDeclarations]() { 
-    yield *this.fromDeclaration$(Concepts, Concept)
-    yield *this.fromDeclaration$(Extensions)
+  static *[PartialClass.Symbol.ownDeclarations]() { 
+    yield *this[PartialClass.Private.fromDeclaration](Concepts, Concept)
+    yield *this[PartialClass.Private.fromDeclaration](Extensions)
   }
 
   // `myInstance instanceof myConcept` tests if an instance satsifies a concept.
@@ -46,33 +42,17 @@ export class Concept extends PartialClass {
     if (!instance) 
       return false
 
-    // if concept exposes procedural test by exposing a static Test method,
-    // then call it to test if the instance satisfies the concept.
-    // For example, RewindContainerConcept has a static Test method
-    // that tests if the instance .cusorType is a BidirectionalCursorConcept. 
-    if (this[Satisfies]) 
-      return this[Satisfies](instance)
-
     return satisfies(instance, this)
   }
 
-  static [PreCondition](type) {
+  static [PartialClass.Symbol.preCondition](type) {
     // Concept must have a name.
     assert(typeof this.name == 'string' && this.name.length,
       `Concept must have a name.`)
-
-    // Concept cannot be implemented by another concept.
-    assert(!isExtensionOf(type, Concept),
-      `Concept ${type.name} cannot implement concept ${this.name}.`)
-
-    // Concept cannot indirectly extend Concept.
-    const baseType = Object.getPrototypeOf(this)
-    assert(baseType == Concept, 
-      `Concept ${this.name} must directly extend Concept.`)
   }
 
-  static [Compile](descriptor) {
-    const result = super[Compile](descriptor)
+  static [PartialClass.Symbol.compile](descriptor) {
+    const result = super[PartialClass.Symbol.compile](descriptor)
 
     assert(!hasData(result), [
       `Concept members cannot be data properties.`,
@@ -92,14 +72,14 @@ export class Concept extends PartialClass {
   }
 
   // Skip adding abstract member to the prototype if a member already exists.
-  static [Bind](type, name, descriptor) {
+  static [PartialClass.Symbol.bind](type, name, descriptor) {
     assert(!isExtensionOf(type, Concept),
       `Concept ${type.name} cannot implement concept ${this.name}.`)
     if (name in type.prototype) return null
     return descriptor
   }
 
-  static [PostCondition](type) {
+  static [PartialClass.Symbol.postCondition](type) {
     assert(satisfies(type.prototype, this),
       `Type ${type.name} does not satisfy concept ${this.name}.`)
   }
@@ -108,6 +88,27 @@ export class Concept extends PartialClass {
 export function satisfies(instance, concept) {
   assert(isExtensionOf(concept, Concept),
     `Argument concept must extend Concept.`)
+
+  for (const name of concept.namesAndSymbols(Static)) {
+    const associatedConcept = concept[name]
+
+    const type = instance?.constructor
+    if (!(name in type)) return false
+    
+    const associatedType = type?.[name]
+    assert(typeof associatedType == 'function', [
+      `Static member '${name.toString()}'`,
+      `of type '${type?.name}' must be a type.`
+    ].join(' '))
+
+    // For example, allows for 
+    //   myContainer instanceof InputContainerConcept
+    // where MyContainer declares associated type as
+    //   static cursorType = InputCursor
+    // and InputContainerConcept declares associated concept as
+    //   static cursorType = InputCursorConcept
+    if (!(associatedType.prototype instanceof associatedConcept)) return false 
+  }
 
   for (const name of concept.namesAndSymbols()) 
     if (!(name in instance)) return false
@@ -126,9 +127,9 @@ export function implement(type, concept, definitions = { }) {
 
   // restrict implementation to members defined by the concept.
   const conceptMembers = new Set(concept.namesAndSymbols())
-  for (const name of memberNamesAndSymbols(definitions.prototype)) {
+  for (const name of ownMemberNamesAndSymbols(definitions.prototype)) {
     if (conceptMembers.has(name)) continue
-      throw new Error(`Concept '${concept.name}' does not define member '${name}'.`)
+    throw new Error(`Concept '${concept.name}' does not define member '${name}'.`)
   }
 
   extend(type, concept, definitions)
