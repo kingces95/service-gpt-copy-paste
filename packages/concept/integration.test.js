@@ -5,11 +5,7 @@ import { Info } from "@kingjs/info"
 import { filterInfoPojo } from "@kingjs/info-to-pojo"
 
 function filter(pojo) {
-  return filterInfoPojo(pojo, {
-    includeInstance: {
-      isInherited: true,
-    },
-  })
+  return filterInfoPojo(pojo)
 }
 
 describe('A kitchen sink definition', () => {
@@ -37,11 +33,15 @@ describe('A kitchen sink definition', () => {
       members: { instance: { conceptual: { MyConcept: {
         accessors: {
           getter: { type: 'accessor', 
-            hasGetter: true, isAbstract: true },
+            hasGetter: true, 
+            isAbstract: true },
           setter: { type: 'accessor', 
-            hasSetter: true, isAbstract: true },
+            hasSetter: true, 
+            isAbstract: true },
           accessor: { type: 'accessor', 
-            hasGetter: true, hasSetter: true, isAbstract: true },
+            hasGetter: true, 
+            hasSetter: true, 
+            isAbstract: true },
         },
         methods: {
           method: { type: 'method', 

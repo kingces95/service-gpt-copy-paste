@@ -18,13 +18,17 @@ const {
 } = Descriptor
 
 const {
+  ownStaticMemberNamesAndSymbols,
   ownMemberNamesAndSymbols,
   isExtensionOf,
 } = Reflection
 
-const Static = { static: true }
-
 export const Concepts = Symbol('ConceptConcepts')
+
+const KnownStaticMembers = new Set([
+  Extensions,
+  Concepts,
+])
 
 export class Concept extends PartialClass {
   static *[PartialClass.Symbol.ownDeclarations]() { 
@@ -83,18 +87,31 @@ export class Concept extends PartialClass {
     assert(satisfies(type.prototype, this),
       `Type ${type.name} does not satisfy concept ${this.name}.`)
   }
+
+  static *associatedConcepts() {
+    yield* this.ownAssociatedConcepts()
+    for (const concept of this.declarations())
+      yield *concept.associatedConcepts()
+  }
+  static *ownAssociatedConcepts() {
+    for (const name of ownStaticMemberNamesAndSymbols(this)) {
+      if (KnownStaticMembers.has(name)) continue
+      for (const associatedConcept of 
+        this[PartialClass.Private.fromDeclaration](name, Concept)) {
+        yield [name, associatedConcept]
+      }
+    }
+  }
 }
 
 export function satisfies(instance, concept) {
   assert(isExtensionOf(concept, Concept),
     `Argument concept must extend Concept.`)
 
-  for (const name of concept.namesAndSymbols(Static)) {
-    const associatedConcept = concept[name]
-
+  for (const [name, associatedConcept] of concept.associatedConcepts()) {
     const type = instance?.constructor
     if (!(name in type)) return false
-    
+
     const associatedType = type?.[name]
     assert(typeof associatedType == 'function', [
       `Static member '${name.toString()}'`,

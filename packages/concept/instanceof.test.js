@@ -18,7 +18,26 @@ class MyOtherGetterConcept extends Concept { get otherValue() { } }
 class MyOtherSetterConcept extends Concept { set otherValue(value) { } }
 class MyOtherMethodConcept extends Concept { otherMethod() { } }
 
+class MyTagConcept extends Concept {
+  typeTagMethod() { }
+}
+class MyTaggedConcept extends Concept {
+  static TypeTag = MyTagConcept
+}
+class MyTaggedConceptWithFoo extends Concept {
+  static TypeTag = MyTagConcept
+  foo() { }
+}
+class MyTaggedConceptWithMethod extends Concept {
+  static TypeTag = MyTagConcept
+  method() { }
+}
+class MyInheritedTaggedConcept extends Concept {
+  static [Concepts] = MyTaggedConcept
+}
+
 class MyType {
+  static TypeTag = class { typeTagMethod() { } }
 
   constructor() {
     this.value$ = 42
@@ -37,6 +56,18 @@ describe('An instance of a type', () => {
 
   it('should satisfy MyEmptyConcept', () => {
     expect(instance).toBeInstanceOf(MyEmptyConcept)
+  })
+  it('should satisfy MyTaggedConcept', () => {
+    expect(instance).toBeInstanceOf(MyTaggedConcept)
+  })
+  it('should satisfy MyTaggedConceptWithMethod', () => {
+    expect(instance).toBeInstanceOf(MyTaggedConceptWithMethod)
+  })
+  it('should satisfy MyInheritedTaggedConcept', () => {
+    expect(instance).toBeInstanceOf(MyInheritedTaggedConcept)
+  })
+  it('should not satisfy MyTaggedConceptWithFoo', () => {
+    expect(instance).not.toBeInstanceOf(MyTaggedConceptWithFoo)
   })
 
   it('should satisfy MyGetterConcept', () => {

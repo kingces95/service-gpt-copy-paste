@@ -12,7 +12,6 @@ const {
 
 const {
   isExtensionOf,
-  ownStaticMemberNamesAndSymbols,
   ownMemberNamesAndSymbols,
 } = Reflection
 
@@ -126,25 +125,26 @@ export class PartialClass {
   static [PreCondition](type, host) { }
   static [PostCondition](type) { }
 
-  static *declarations$(visited = new Set()) {
+  static *declarations$(type, visited = new Set()) {
     for (const child of this.ownDeclarations()) {
+      if (!isExtensionOf(child, type)) continue
       if (visited.has(child)) continue
       visited.add(child)
       
       yield child
-      yield* child.declarations$(visited)
+      yield* child.declarations$(type, visited)
     }
   }
-  static *declarations() {
-    yield* this.declarations$()
+  static *declarations(type = PartialClass) {
+    yield* this.declarations$(type)
   }
-  static *ownDeclarations() {
+  static *ownDeclarations(type = PartialClass) {
     this[Check]()
-    yield* this[OwnDeclarations]()
+    yield* this[OwnDeclarations](type)
   }
 
-  static *namesAndSymbols$(options, visited = new Set()) { 
-    for (const name of this.ownNamesAndSymbols(options)) {
+  static *namesAndSymbols$(visited = new Set()) { 
+    for (const name of this.ownNamesAndSymbols()) {
       if (visited.has(name)) continue
       visited.add(name)
       yield name
@@ -156,19 +156,15 @@ export class PartialClass {
       // this PartialClass indirectly (by one level) extends PartialClass.
       const baseType = Object.getPrototypeOf(this)
       if (!isExtensionOf(declaration, baseType)) continue
-      yield* declaration.namesAndSymbols$(options, visited)
+      yield* declaration.namesAndSymbols$(visited)
     }
   }
-  static *namesAndSymbols(options = { static: false }) { 
-    yield* this.namesAndSymbols$(options)
+  static *namesAndSymbols() { 
+    yield* this.namesAndSymbols$()
   }
-  static *ownNamesAndSymbols(options = { static: false }) { 
+  static *ownNamesAndSymbols() { 
     this[Check]()
-    const { static: isStatic } = options
-    if (isStatic)
-      yield* ownStaticMemberNamesAndSymbols(this)
-    else
-      yield* ownMemberNamesAndSymbols(this.prototype) 
+    yield* ownMemberNamesAndSymbols(this.prototype) 
   }
 
   static defineOn(type) {
@@ -210,7 +206,7 @@ export const Extensions = Symbol('Extensions')
 export class Extension extends PartialClass {
   static *[PartialClass.Symbol.ownDeclarations]() { 
     yield *this[PartialClass.Private.fromDeclaration](Extensions)
-  }
+  }  
 
   static fromPojo(pojo) {
     assert(isPojo(pojo))

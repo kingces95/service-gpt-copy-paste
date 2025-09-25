@@ -139,7 +139,7 @@ export function filterInfoPojo(pojo, {
     if (!isNonPublic && member.isNonPublic) return false
     if (!isKnown && member.isKnown) return false
     if (!isSymbol && typeof name == 'symbol') return false
-    if (!isInherited && (member.type != pojo.name)) return false
+    if (!isInherited && (member.host != pojo.name)) return false
     return true
   }
 
