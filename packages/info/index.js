@@ -1,6 +1,5 @@
 import { assert } from '@kingjs/assert'
 import { isPojo } from "@kingjs/pojo-test"
-import { Descriptor } from "@kingjs/descriptor"
 import { abstract } from "@kingjs/abstract"
 import { Normalize } from "@kingjs/normalize"
 import { Reflection } from '@kingjs/reflection'
@@ -9,21 +8,14 @@ import { Extension, Extensions } from '@kingjs/extension'
 import { Concept } from "@kingjs/concept"
 import { Compiler } from "@kingjs/compiler"
 
+import { Es6DescriptorInfo } from './es6-descriptor-info.js'
+
 async function __import() {
   const { infoToPojo } = await import('@kingjs/info-to-pojo')
   return { toPojo: infoToPojo }
 }
 
 const DeclaredConceptMap = Symbol('DeclaredConceptMap')
-
-const {  
-  get: getDescriptor,
-  hasValue,
-  hasAccessor,
-  hasGetter,
-  hasSetter,
-  hasClassPrototypeDefaults,
-} = Descriptor
 
 const ObjectRuntimeNameOrSymbol = new Set([
   '__proto__',
@@ -351,7 +343,7 @@ export class FunctionInfo extends Info {
     if (!definitions) return null
     const descriptor = Object.getOwnPropertyDescriptor(definitions, nameOrSymbol)
     if (!descriptor) return null
-    return DescriptorInfo.create$(this.compile$(descriptor))
+    return Es6DescriptorInfo.create(this.compile$(descriptor))
   }
 
   getOwnMember(nameOrSymbol, { isStatic = false } = { }) {
@@ -451,7 +443,7 @@ export class MemberInfo extends Info {
   static create$(host, nameOrSymbol, descriptor, metadata) {
     assert(host instanceof FunctionInfo, 
       'type must be a FunctionInfo')
-    assert(descriptor instanceof DescriptorInfo, 
+    assert(descriptor instanceof Es6DescriptorInfo, 
       'descriptor must be a DescriptorInfo')
     assert(descriptor.isData || descriptor.isMethod || descriptor.isAccessor,
       'descriptor must be a data, method, or accessor descriptor')
@@ -609,53 +601,3 @@ export class ValueMemberInfo extends MemberInfo { }
 export class MethodMemberInfo extends ValueMemberInfo { }
 export class DataMemberInfo extends ValueMemberInfo { }
 export class AccessorMemberInfo extends MemberInfo { }
-
-export class DescriptorInfo {
-  static create$(descriptor) {
-    if (hasValue(descriptor)) {
-      const value = descriptor.value
-      if (typeof value !== 'function') 
-        return new DataDescriptorInfo(descriptor)
-
-      // data member returning a function declared as a class
-      if (hasClassPrototypeDefaults(getDescriptor(value, 'prototype')))
-        return new DataDescriptorInfo(descriptor) 
-
-      // todo: treat visible function as data? 
-
-      // data member returning a value declared as a method
-      return new MethodDescriptorInfo(descriptor)
-    }
-    assert(hasAccessor(descriptor))
-    return new AccessorDescriptorInfo(descriptor)
-  }
-
-  #descriptor
-
-  constructor(descriptor) {
-    this.#descriptor = descriptor
-  }
-
-  // type of descriptor
-  get isAccessor() { return this instanceof AccessorDescriptorInfo }
-  get isMethod() { return this instanceof MethodDescriptorInfo }
-  get isData() { return this instanceof DataDescriptorInfo }
-  
-  get hasGetter() { return hasGetter(this.descriptor) }
-  get hasSetter() { return hasSetter(this.descriptor) }
-  get hasValue() { return this instanceof ValueDescriptorInfo }
-
-  get getter() { return this.descriptor.get }
-  get setter() { return this.descriptor.set }
-  get value() { return this.descriptor.value }
-  
-  get descriptor() { return this.#descriptor }
-  get isEnumerable() { return this.descriptor.enumerable }
-  get isConfigurable() { return this.descriptor.configurable }
-  get isWritable() { return this.descriptor.writable }
-}
-export class AccessorDescriptorInfo extends DescriptorInfo { }
-export class ValueDescriptorInfo extends DescriptorInfo { }
-export class DataDescriptorInfo extends ValueDescriptorInfo { }
-export class MethodDescriptorInfo extends ValueDescriptorInfo { }
-

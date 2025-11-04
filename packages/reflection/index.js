@@ -13,7 +13,7 @@ export class Reflection {
 
   static *#keys(prototype, root, ownKeysFn) {
     const keys = new Set()
-    while (prototype != root.prototype) {
+    while (prototype != root?.prototype) {
       for (const key of ownKeysFn(prototype)) {
         if (keys.has(key)) continue
         yield key

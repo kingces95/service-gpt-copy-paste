@@ -223,14 +223,20 @@ describe('A bespoke class', () => {
   })
   describe('that implements MySymbol', () => {
     beforeEach(() => {
-      myClass.prototype[MySymbol] = function* () { }
+      // myClass.prototype[MySymbol] = function* () { }, but not enumerable
+      Object.defineProperty(myClass.prototype, MySymbol, {
+        value: function* () { },
+        writable: true,
+        configurable: true,
+        enumerable: false,
+      })
     })  
     it('has a pojo', async () => {
       const pojo = {
         members: { instance: { methods: {
           [MySymbol]: { 
             type: 'method',
-            isEnumerable: true
+            // isEnumerable: true
           },
         } } },
         base: 'Object'
@@ -274,8 +280,8 @@ describe('A bespoke class', () => {
           instance: { methods: {
             constructor: { type: 'method', rootHost: 'Object' } 
           } },
-          static: { methods: {
-            constructor: { type: 'method', isEnumerable: true }
+          static: { data: {
+            constructor: { type: 'data' }
           } }
         },
         base: 'Object'
