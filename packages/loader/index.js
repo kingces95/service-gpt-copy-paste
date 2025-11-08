@@ -1,14 +1,14 @@
 // import { assert } from '@kingjs/assert'
 // import { extend } from '@kingjs/extend'
-// import { getExtensions } from '@kingjs/extension'
-// import { getConcepts } from '@kingjs/concept'
+// import { extensions } from '@kingjs/extension'
+// import { concepts } from '@kingjs/concept'
 
 // export function load(type) {
 //   assert(typeof type == 'function', 'type must be a function.')
 
 //   const extensions = [
-//     ...getConcepts(type),
-//     ...getExtensions(type)
+//     ...concepts(type),
+//     ...extensions(type)
 //   ]
 
 //   extend(type, ...extensions)

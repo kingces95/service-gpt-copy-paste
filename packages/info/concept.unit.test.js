@@ -223,7 +223,7 @@ describe('A concept with a member', () => {
         expect(cls.prototype).not.toBeInstanceOf(myConcept)
       })
       it('should not declare the concept as its own', () => {
-        const actual = [...clsInfo.getOwnConcepts(cls)]
+        const actual = [...clsInfo.ownConcepts(cls)]
         const expected = [myConceptInfo]
         expect(actual).not.toEqual(expected)
       })
@@ -239,7 +239,7 @@ describe('A concept with a member', () => {
       clsInfo = Info.from(cls)
     })
     it('declares the concept as its own', () => {
-      const actual = [...clsInfo.getOwnConcepts(cls)]
+      const actual = [...clsInfo.ownConcepts(cls)]
       const expected = [myConceptInfo]
       expect(actual).toEqual(expected)
     })
@@ -257,7 +257,7 @@ describe('A concept with a member', () => {
           subClsInfo = Info.from(subCls)
         })
         it('claims to declare the concept as its own', () => {
-          const actual = [...subClsInfo.getOwnConcepts(subCls)]
+          const actual = [...subClsInfo.ownConcepts(subCls)]
           const expected = [myConceptInfo]
           expect(actual).toEqual(expected)
         })
@@ -273,7 +273,7 @@ describe('A concept with a member', () => {
         })
       })
       it('has no own declared concepts', () => {
-        const actual = [...subClsInfo.getOwnConcepts(subCls)]
+        const actual = [...subClsInfo.ownConcepts(subCls)]
         const expected = [ ]
         expect(actual).toEqual(expected)
       })

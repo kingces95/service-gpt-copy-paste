@@ -1,21 +1,15 @@
 import { assert } from '@kingjs/assert'
 import { Reflection } from '@kingjs/reflection'
-import { Descriptor } from '@kingjs/descriptor'
 import { Compiler } from '@kingjs/compiler'
-import { isPojo } from '@kingjs/pojo-test'
-import { asArray } from '@kingjs/as-array'
-import { getOwn } from '@kingjs/get-own'
 
 const {
-  get: getDescriptor,
-} = Descriptor
-
-const {
-  isExtensionOf,
   ownMemberNamesAndSymbols,
+  associatedTypes,
+  addAssociatedType,
+  associatedKeys,
 } = Reflection
 
-// An PartialClass can define a number of static hooks. Each hook has its 
+// A PartialClass can define a number of static hooks. Each hook has its 
 // own symbol: Compile, Bind, PreCondition, and PostCondition.  
 
 // Compile transforms a descriptor before being copied to the target type. 
@@ -32,195 +26,132 @@ const Compile = Symbol('PartialClass.compile')
 // is already defined on the type prototype.
 const Bind = Symbol('PartialClass.bind')
 
-// PreCondition allows the PartialClass to enforce a pre condition before any
+// PreCondition allows the PartialClass to enforce a pre-condition before any
 // members are applied. This is not guaranteed to be called if a non-debug 
 // version of the code is used. PreCondition is called with the type 
 // and returns void.
 const PreCondition = Symbol('PartialClass.preCondition')
 
-// PostCondition allows the PartialClass to enforce a post condition after the
+// PostCondition allows the PartialClass to enforce a post-condition after the
 // partial type as been applied. This is not guaranteed to be called if
 // a non-debug version of the code is used. PostCondition is called with
 // the type and returns void.
 const PostCondition = Symbol('PartialClass.postCondition')
 
-const FromDeclaration = Symbol('PartialClass.fromDeclaration')
-const OwnDeclarations = Symbol('PartialClass.ownDeclarations')
-const Check = Symbol('PartialClass.check')
+// OwnDeclarationSymbols describes how types are associated with the
+// PartialClass. PartialClass defines its own sense of hierarchy this way.
+const OwnDeclarationSymbols = Symbol('PartialClass.ownDeclaraitionSymbols')
 
-// Declarations is a map set on a client type to track which partial types
-// have been applied to it via PartialClass.define indirectly via
+// Declarations is a set on a client type to track which partial types
+// have been applied to it via PartialClass.define or indirectly via
 // calls to either extend() or implement(). 
 const Declarations = Symbol('PartialClass.declarations')
 
 export class PartialClass {
   static Symbol = {
-    ownDeclarations: OwnDeclarations,
     preCondition: PreCondition,
+    ownDeclaraitionSymbols: OwnDeclarationSymbols,
     compile: Compile,
     bind: Bind,
     postCondition: PostCondition,
-  }
-  static Private = {
-    fromDeclaration: FromDeclaration,
-    check: Check,
-  }
-
-  static *getDeclarations(type, visited = new Set()) {
-    for (const declaration of this.getOwnDeclarations(type)) {
-      if (visited.has(declaration)) continue
-      visited.add(declaration)
-      yield declaration
-    }
-
-    const baseType = Object.getPrototypeOf(type)
-    if (!baseType) return
-    yield* this.getDeclarations(baseType, visited)
-  }
-  static *getOwnDeclarations(type) {
-    const declarations = getOwn(type, Declarations)
-    if (!declarations) return
-    for (const definition of declarations) {
-      if (!isExtensionOf(definition, this))
-        continue
-      yield definition
-    }
-  }
-
-  static fromArg(arg) {
-    if (isPojo(arg))
-      arg = Extension.fromPojo(arg)
-
-    assert(isExtensionOf(arg, PartialClass),
-      `Expected arg to be a PartialClass.`)
-
-    return arg
   }
 
   constructor() {
     throw new TypeError('PartialClass cannot be instantiated.')
   }
 
-  static *[FromDeclaration](symbol, expectedType = PartialClass) {
-    const declarations = asArray(getOwn(this, symbol))
-
-    for (const declaration of declarations.map(PartialClass.fromArg)) {
-      assert(isExtensionOf(declaration, expectedType),
-        `Expected declaration to be a ${expectedType.name} extension.`)
-
-      yield declaration
-    }
-  }
-
-  static [Check]() {
-    // this PartialClass must indirectly extend PartialClass.
-    const baseType = Object.getPrototypeOf(this)
-    assert(Object.getPrototypeOf(baseType) == PartialClass, 
-      `PartialClass ${this.name} must indirectly extend PartialClass.`)
-  }
-
-  static *[OwnDeclarations]() { }
+  static [OwnDeclarationSymbols] = { }
   static [Compile](descriptor) { return Compiler.compile(descriptor) }
   static [Bind](type, name, descriptor) { return descriptor }
   static [PreCondition](type, host) { }
   static [PostCondition](type) { }
 
-  static *declarations$(type, visited = new Set()) {
-    for (const child of this.ownDeclarations()) {
-      if (!isExtensionOf(child, type)) continue
-      if (visited.has(child)) continue
-      visited.add(child)
-      
-      yield child
-      yield* child.declarations$(type, visited)
-    }
-  }
-  static *declarations(type = PartialClass) {
-    yield* this.declarations$(type)
-  }
-  static *ownDeclarations(type = PartialClass) {
-    this[Check]()
-    yield* this[OwnDeclarations](type)
-  }
-
-  static *namesAndSymbols$(visited = new Set()) { 
-    for (const name of this.ownNamesAndSymbols()) {
-      if (visited.has(name)) continue
-      visited.add(name)
-      yield name
-    }
-
-    for (const declaration of this.declarations()) {
-      // direct base class is the type of the PartialClass (eg Extension or
-      // Concept). This is enforced by the assert in defineOn which tests if 
-      // this PartialClass indirectly (by one level) extends PartialClass.
-      const baseType = Object.getPrototypeOf(this)
-      if (!isExtensionOf(declaration, baseType)) continue
-      yield* declaration.namesAndSymbols$(visited)
-    }
-  }
-  static *namesAndSymbols() { 
-    yield* this.namesAndSymbols$()
-  }
-  static *ownNamesAndSymbols() { 
-    this[Check]()
-    yield* ownMemberNamesAndSymbols(this.prototype) 
-  }
-
   static defineOn(type) {
-    this[Check]()
+    assert(PartialClassReflect.isPartialClass(this), 
+      `PartialClass ${this.name} must indirectly extend PartialClass.`)
 
-    assert(!(isExtensionOf(type, PartialClass)),
+    assert(!PartialClassReflect.isPartialClass(type),
       `Expected type '${type.name}' not to be a PartialClass.`)
 
     this[PreCondition](type)
 
+    for (const declaration of PartialClassReflect.declarations(this))
+      declaration.defineOn(type)
+
     // fetch, compile, bind, and define properties on the type prototype
-    const typePrototype = type.prototype
-    const partialTypePrototype = this.prototype
-    for (const key of ownMemberNamesAndSymbols(partialTypePrototype)) {
-      const definition = getDescriptor(partialTypePrototype, key)
+    const targetPrototype = type.prototype
+    const sourcePrototype = this.prototype
+    for (const key of ownMemberNamesAndSymbols(sourcePrototype)) {
+      const definition = Object.getOwnPropertyDescriptor(sourcePrototype, key)
       const descriptor = this[Compile](definition)
       const boundDescriptor = this[Bind](type, key, descriptor)
       if (!boundDescriptor) continue
-      Object.defineProperty(typePrototype, key, boundDescriptor)
+      Object.defineProperty(targetPrototype, key, boundDescriptor)
     }
 
-    for (const declaration of this.declarations())
-      declaration.defineOn(type)
-
-    // record that this partial type has been applied to the type
-    const declarations = getOwn(type, Declarations) || new Set()
-    declarations.add(this)
-    Object.defineProperty(type, Declarations, {
-      value: declarations,
-      configurable: true,
-    })
+    // add non-annonymous partial type has been applied to the type
+    if (this.name) addAssociatedType(type, Declarations, this)
 
     this[PostCondition](type)
   }
 }
 
-export const Extensions = Symbol('Extensions')
+export class PartialClassReflect {
+  static isPartialClass(type) {
+    return !!PartialClassReflect.getPartialClass(type)
+  }
+  static getPartialClass(type) {
+    const partialClass = Object.getPrototypeOf(type)
 
-export class Extension extends PartialClass {
-  static *[PartialClass.Symbol.ownDeclarations]() { 
-    yield *this[PartialClass.Private.fromDeclaration](Extensions)
-  }  
+    // Extension or Concept must extend PartialClass indirectly 
+    // by exactly one level
+    if (Object.getPrototypeOf(partialClass) != PartialClass)
+      return null
 
-  static fromPojo(pojo) {
-    assert(isPojo(pojo))
+    return partialClass
+  }
 
-    // define an anonymous extension
-    const [anonymousExtension] = [class extends Extension { }]
-    const prototype = anonymousExtension.prototype
-    
-    // copy descriptors from pojo to anonymous extension prototype
-    for (const name of ownMemberNamesAndSymbols(pojo)) {
-      const descriptor = getDescriptor(pojo, name)
-      Object.defineProperty(prototype, name, descriptor)
+  static *declarations(type, { filterType } = { }) {
+    if (PartialClassReflect.isPartialClass(type)) {
+      yield* associatedTypes(type, 
+        type[OwnDeclarationSymbols], 
+        { filterType, traverse: true })
     }
+    else {
+      yield* associatedTypes(type, 
+        { [Declarations]: { filterType } }, 
+        { inherit: true })
+    }
+  }
+  static *ownDeclarations(type, { filterType } = { }) {
+    if (PartialClassReflect.isPartialClass(type)) {
+      yield* associatedTypes(type, 
+        type[OwnDeclarationSymbols],
+        { filterType })
+    }
+    else {
+      yield* associatedTypes(type, 
+        { [Declarations]: { filterType } }, 
+        { inherit: false })
+    }
+  }
 
-    return anonymousExtension
+  static *memberKeys(type) { 
+    assert(PartialClassReflect.isPartialClass(type),
+      `Argument type must be a PartialClass.`)
+
+    const filterType = PartialClassReflect.getPartialClass(type)
+
+    yield* associatedKeys(type, 
+      type => PartialClassReflect.declarations(type, { filterType }),
+      type => PartialClassReflect.ownMemberKeys(type)
+    )
+  }
+  static *ownMemberKeys(type) { 
+    assert(PartialClassReflect.isPartialClass(type),
+      `Argument type must be a PartialClass.`)
+
+    yield* ownMemberNamesAndSymbols(type.prototype) 
   }
 }
+

@@ -5,21 +5,17 @@ import { Normalize } from "@kingjs/normalize"
 import { Reflection } from '@kingjs/reflection'
 import { PartialClass } from '@kingjs/partial-class'
 import { Extension, Extensions } from '@kingjs/extension'
-import { Concept } from "@kingjs/concept"
+import { Concept, ConceptReflect } from "@kingjs/concept"
 import { Compiler } from "@kingjs/compiler"
+import { Es6Info } from "@kingjs/es6-info"
 
-import { Es6DescriptorInfo } from './es6-descriptor-info.js'
-
-async function __import() {
-  const { infoToPojo } = await import('@kingjs/info-to-pojo')
-  return { toPojo: infoToPojo }
-}
+// import { Es6DescriptorInfo } from './es6-descriptor-info.js'
 
 const DeclaredConceptMap = Symbol('DeclaredConceptMap')
 
-const ObjectRuntimeNameOrSymbol = new Set([
-  '__proto__',
-])
+// const ObjectRuntimeNameOrSymbol = new Set([
+//   '__proto__',
+// ])
 const ExtensionRuntimeNameOrSymbol = new Set([
   'constructor',
 ])
@@ -30,47 +26,46 @@ const ExtensionRuntimeNameOrSymbol = new Set([
 // "info" suffix) we will use "is" prefix.
 
 export class Info {
-  static from(fnOrPojo) {
-    assert(fnOrPojo instanceof Function || isPojo(fnOrPojo),
-      'fnOrPojo must be a function or pojo')
-    const fn = isPojo(fnOrPojo) 
-      ? Extension.fromPojo(fnOrPojo) : fnOrPojo
+  static from(fnOrPojoOrEs6ClassInfo) {
+    assert(fnOrPojoOrEs6ClassInfo instanceof Function 
+      || isPojo(fnOrPojoOrEs6ClassInfo)
+      || fnOrPojo instanceof Es6ClassInfo,
+      'fnOrPojoOrEs6ClassInfo must be a function or pojo or Es6ClassInfo')
+
+    const es6FnInfo = fnOrPojoOrEs6ClassInfo instanceof Es6ClassInfo
+      ? fnOrPojoOrEs6ClassInfo
+      : Es6Info.from(
+        isPojo(fnOrPojo) ? Extension.fromPojo(fnOrPojo) : fnOrPojo
+      )
+
+    const fn = es6FnInfo.ctor
 
     if (fn == PartialClass)
-      return new ExtensionInfo(fn)
+      return new PartialClassInfo(es6FnInfo)
 
     if (fn == Concept || Reflection.isExtensionOf(fn, Concept))
-      return new ConceptInfo(fn)
+      return new ConceptInfo(es6FnInfo)
 
     if (fn == Extension || Reflection.isExtensionOf(fn, Extension))
-      return new PartialClassInfo(fn)
+      return new ExtensionInfo(es6FnInfo)
     
-    return new ClassInfo(fn)
+    return new ClassInfo(es6FnInfo)
   }
 
   // get name() { abstract() }
-  get isNonPublic() { 
-    if (typeof this.name === 'symbol') return false
+  // get isNonPublic() { 
+  //   if (typeof this.name === 'symbol') return false
 
-    const name = this.name
-    if (name.startsWith('_')) return true
-    if (name.endsWith('_')) return true
-    if (name.startsWith('$')) return true
-    if (name.endsWith('$')) return true
-    return false
-  }
+  //   const name = this.name
+  //   if (name.startsWith('_')) return true
+  //   if (name.endsWith('_')) return true
+  //   if (name.startsWith('$')) return true
+  //   if (name.endsWith('$')) return true
+  //   return false
+  // }
 }
 
 export class FunctionInfo extends Info {
-  async __toPojo() {
-    const { toPojo } = await __import()
-    const pojo = await toPojo(this)
-    return pojo
-  }
-  *__allMembers() {
-    yield* FunctionInfo.members(this)
-    yield* FunctionInfo.members(this, { isStatic: true })
-  }
 
   static getMember(type, nameOrSymbol, { isStatic = false } = { }) {
     assert(type instanceof FunctionInfo, 'type must be a FunctionInfo')
@@ -169,8 +164,8 @@ export class FunctionInfo extends Info {
 
     for (const current of FunctionInfo.hierarchy(type)) {
       for (const concept of current.ownConcepts$()) {
-        if (visited.has(concept.#fn)) continue
-        visited.add(concept.#fn)
+        if (visited.has(concept.ctor)) continue
+        visited.add(concept.ctor)
         yield concept
       }
 
@@ -239,14 +234,16 @@ export class FunctionInfo extends Info {
     }
   }
 
-  #fn
+  #_
+  #es6FnInfo
 
-  constructor(fn) {
+  constructor(es6FnInfo) {
     super()
-    this.#fn = fn
+    this.#es6FnInfo = es6FnInfo
+    this.#_ = this.toString()
   }
 
-  get isObject$() { return this.#fn === Object }
+  get isObject$() { return this.#es6FnInfo.isObject$ }
 
   get root$() { return FunctionInfo.Object }
   isRuntimeNameOrSymbol$(nameOrSymbol) {
@@ -256,12 +253,12 @@ export class FunctionInfo extends Info {
     return descriptor 
   }
   getDefinitions$({ isStatic = false } = { }) {
-    return isStatic ? this.#fn : this.#fn.prototype
+    return isStatic ? this.#es6FnInfo : this.#es6FnInfo.prototype
   }
   get includeExtensions$() { return true }
 
   *ownConcepts$() {
-    for (const concept of Concept.getOwnDeclarations(this.#fn))
+    for (const concept of ConceptReflect.ownConcepts(this.#es6FnInfo))
       yield Info.from(concept)
   }
   *ownNames$({ isStatic = false } = { }) {
@@ -283,33 +280,24 @@ export class FunctionInfo extends Info {
     }
   }
 
-  get isExtension() { return Reflection.isExtensionOf(this.#fn, PartialClass) }
-  get isPartial() { return Reflection.isExtensionOf(this.#fn, Extension) }
-  get isConcept() { return Reflection.isExtensionOf(this.#fn, Concept) }
+  get isExtension() { return this instanceof PartialClassInfo }
+  get isPartial() { return this instanceof ExtensionInfo }
+  get isConcept() { return this instanceof ConceptInfo }
 
-  get ctor() { return this.#fn }
-  get name() { return this.#fn.name ? this.#fn.name : null }
+  get ctor() { return this.#es6FnInfo.ctor }
+  get name() { return this.#es6FnInfo.name }
+  get base() { return Es6Info.from(this.#es6FnInfo.base) }
   get root() { return this.root$ }
-  get base() { 
-    if (this.equals(this.root)) return null
-
-    const baseFn = Object.getPrototypeOf(this.ctor)
-    
-    // special case 'boostrap circle' for Function
-    if (baseFn == Function.prototype) return FunctionInfo.Object
-
-    return Info.from(baseFn) 
-  }
 
   *extensions({ reverse = false } = { }) { 
     if (!this.isPartial) return
-    const extensions = Normalize.ToArray(this.#fn[Extensions])
+    const extensions = Normalize.ToArray(this.#es6FnInfo[Extensions])
       .map(fn => Info.from(fn))
     if (reverse) extensions.reverse()
     yield* extensions
   }
 
-  *getOwnConcepts() {
+  *ownConcepts() {
     yield* FunctionInfo.concepts$(this)
   }
 
@@ -366,29 +354,29 @@ export class FunctionInfo extends Info {
 
   equals(other) {
     if (!(other instanceof FunctionInfo)) return false
-    return this.#fn === other.#fn
+    return this.#es6FnInfo === other.#es6FnInfo
   }
 
   toString() { return [
       this.name ?? '<anonymous>',
       this.isConcept ? 'Concept' :
-        this.isPartial ? 'Extension' : null,
+        this.isPartial ? 'Partial' : null,
     ].filter(Boolean).join(', ') 
   }
 }
 export class ClassInfo extends FunctionInfo { 
   static {
-    Info.Object = new ClassInfo(Object)
-    Info.Function = new ClassInfo(Function)
-    Info.Array = new ClassInfo(Array)
-    Info.String = new ClassInfo(String)
-    Info.Number = new ClassInfo(Number)
-    Info.Boolean = new ClassInfo(Boolean)
+    Info.Object = Info.from(Object)
+    Info.Function = Info.from(Function)
+    Info.Array = Info.from(Array)
+    Info.String = Info.from(String)
+    Info.Number = Info.from(Number)
+    Info.Boolean = Info.from(Boolean)
   }
 }
-export class ExtensionInfo extends FunctionInfo { 
+export class PartialClassInfo extends FunctionInfo { 
   static {
-    Info.PartialClass = new ExtensionInfo(PartialClass)
+    Info.PartialClass = new PartialClassInfo(PartialClass)
   }
   get root$() { return Info.PartialClass }
   get includeExtensions$() { return false }
@@ -399,9 +387,9 @@ export class ExtensionInfo extends FunctionInfo {
     return isStatic ? null : super.getDefinitions$()
   }
 }
-export class PartialClassInfo extends ExtensionInfo {
+export class ExtensionInfo extends PartialClassInfo {
   static {
-    Info.Extension = new PartialClassInfo(Extension)
+    Info.Extension = new ExtensionInfo(Extension)
   }
 
   constructor(fn) {
@@ -416,7 +404,7 @@ export class PartialClassInfo extends ExtensionInfo {
     return Compiler.compile(descriptor) 
   }
 }
-export class ConceptInfo extends ExtensionInfo {
+export class ConceptInfo extends PartialClassInfo {
   static {
     Info.Concept = new ConceptInfo(Concept)
   }
@@ -440,37 +428,22 @@ export class ConceptInfo extends ExtensionInfo {
 }
 
 export class MemberInfo extends Info {
-  static create$(host, nameOrSymbol, descriptor, metadata) {
-    assert(host instanceof FunctionInfo, 
-      'type must be a FunctionInfo')
-    assert(descriptor instanceof Es6DescriptorInfo, 
+  static create$(es6MemberInfo, host = null) {
+    assert(es6MemberInfo instanceof Es6DescriptorInfo, 
       'descriptor must be a DescriptorInfo')
-    assert(descriptor.isData || descriptor.isMethod || descriptor.isAccessor,
-      'descriptor must be a data, method, or accessor descriptor')
+    assert(!host || host instanceof FunctionInfo, 
+      'type must be a FunctionInfo')
     
-    const ctor = 
-      descriptor.isMethod ? MethodMemberInfo 
-      : descriptor.isData ? DataMemberInfo 
-      : AccessorMemberInfo
-    
-    return new ctor(host, nameOrSymbol, descriptor, metadata)
+    return new MemberInfo(es6MemberInfo, host)
   }
 
   #host
-  #name
-  #descriptor
-  #isStatic
+  #es6MemberInfo
 
-  constructor(host, name, descriptor, metadata = { 
-    isStatic: false,
-  }) {
+  constructor(es6MemberInfo) {
     super()
-    this.#host = host
-    this.#name = name
-    this.#descriptor = descriptor
-
-    const { isStatic } = metadata
-    this.#isStatic = isStatic
+    this.#host = host ? host : Info.from(es6MemberInfo.host)
+    this.#es6MemberInfo = es6MemberInfo
   }
 
   get #concepts() { 
@@ -478,43 +451,42 @@ export class MemberInfo extends Info {
       ?? new Set()
   }
 
-  baseOrSelf$() { 
-    const parent = this.parent()
-    if (!parent) return this
-    return parent.baseOrSelf$() 
-  }
-
   get host() { return this.#host }
-  get name() { return this.#name }
-  get isKnown() {
-    if (this.host.equals(FunctionInfo.Object)) return true
-    if (this.host.equals(FunctionInfo.Function)) return true
-    if (this.isConstructor) return true
+  get name() { return this.#es6MemberInfo.name }
+  get isKnown() { this.#es6MemberInfo.isKnown }
 
-    // All Function extensions implement as own members the following
-    // known static data members.
-    if (this.isStatic) {
-      if (this.isData) {
-        if (this.name == 'length') return true
-        if (this.name == 'name') return true
-        if (this.name == 'prototype') return true
-      }
+  get isAccessor() { return this.#es6MemberInfo.isAccessor }
+  get isMethod() { return this.#es6MemberInfo.isMethod }
+  get isData() { return this.#es6MemberInfo.isData }
+  get isConstructor() { return this.#es6MemberInfo.isConstructor }
+  get type() { return this.#es6MemberInfo.type }
+
+  get isStatic() { return this.#es6MemberInfo.isStatic }
+
+  get isEnumerable() { return this.#es6MemberInfo.isEnumerable }
+  get isConfigurable() { return this.#es6MemberInfo.isConfigurable }
+  get isWritable() { return this.#es6MemberInfo.isWritable }
+
+  get hasGetter() { return this.#es6MemberInfo.hasGetter }
+  get hasSetter() { return this.#es6MemberInfo.hasSetter }
+  get hasValue() { return this.#es6MemberInfo.hasValue }
+
+  get getter() { return this.#es6MemberInfo.getter }
+  get setter() { return this.#es6MemberInfo.setter }
+  get value() { return this.#es6MemberInfo.value }
+
+  get isAbstract() { 
+    if (this.isMethod) {
+      if (this.value == abstract)
+        return true
     }
-  }
 
-  get isAccessor() { return this instanceof AccessorMemberInfo }
-  get isMethod() { return this instanceof MethodMemberInfo }
-  get isData() { return this instanceof DataMemberInfo }
-  get isConstructor() {
-    if (this.name !== 'constructor') return false
-    if (this.isStatic) return false
-    if (!this.isData) return false
-    return true
-  }
-  get type() {
-    if (this.isAccessor) return 'accessor'
-    if (this.isData) return 'data'
-    if (this.isMethod) return 'method'
+    if (this.isAccessor) {
+      if (this.getter == abstract || this.setter == abstract)
+        return true
+    }
+
+    return false
   }
 
   get isConceptual() { return this.#concepts.size > 0 }
@@ -523,81 +495,24 @@ export class MemberInfo extends Info {
     yield* concepts
   }
 
-  get isStatic() { return this.#isStatic }
-
-  get isEnumerable() { return this.#descriptor.isEnumerable }
-  get isConfigurable() { return this.#descriptor.isConfigurable }
-  get isWritable() { return this.#descriptor.isWritable }
-
-  get hasGetter() { return this.#descriptor.hasGetter }
-  get hasSetter() { return this.#descriptor.hasSetter }
-  get hasValue() { return this.#descriptor.hasValue }
-
-  get getter() { return this.#descriptor.getter }
-  get setter() { return this.#descriptor.setter }
-  get value() { return this.#descriptor.value }
-
-  get isAbstract() { 
-    if (this.isMethod && this.value === abstract) 
-      return true
-    if (this.isAccessor && 
-      (this.getter === abstract || this.setter === abstract))
-      return true
-    return false
-  }
-
   parent() {
-    // get member from the parent type
-    const parent = this.host.base
-    if (!parent) return null
-    const isStatic = this.isStatic
-    return parent.getOwnMember(this.name, { isStatic })
+    return MemberInfo.create$(this.#es6MemberInfo.parent())
   }
   root() {
-    let parent = this.parent()
-    if (!parent) return null
-    return parent.baseOrSelf$()
+    return MemberInfo.create$(this.#es6MemberInfo.root())
   }
   rootHost() {
-    return this.root()?.host ?? null
+    return FunctionInfo.from(this.#es6MemberInfo.rootHost())
   }
 
   equals(other) {
     if (!(other instanceof MemberInfo)) return false
-    if (this.#isStatic !== other.#isStatic) return false
-    if (!this.#host.equals(other.#host)) return false
-    if (this.#name !== other.#name) return false
-    return true
+    return this.#es6MemberInfo.equals(other.#es6MemberInfo)
   }
 
   toString() { 
-    const nameIsSymbol = typeof this.name === 'symbol'
-    const value = 
-      this.isAbstract ? 'abstract' 
-      : this.isMethod || this.isAccessor ? 'method'
-      : this.value instanceof Array ? 'array'
-      : this.value === null ? 'null'
-      : this.value === undefined ? 'undefined'
-      : typeof this.value
-
-    const name = nameIsSymbol ? `[${this.name.toString()}]` : this.name
-    return [
-      [
-        this.isStatic ? 'static' : null,
-        this.hasValue && !this.isWritable ? 'const' : null,
-        this.isData && !this.isEnumerable ? 'hidden' : null,
-        !this.isConfigurable ? 'sealed' : null,
-        name, '{', [
-          !this.hasGetter ? null : `get: ${value}`,
-          !this.hasSetter ? null : `set: ${value}`,
-          !this.hasValue ? null : `value: ${value}`,
-        ].filter(Boolean).join('; '), '}'
-      ].filter(Boolean).join(' '),
-      this.host.name
-    ].filter(Boolean).join(', ')
+    return this.#es6MemberInfo.toString({
+      modifiers: [ this.isAbstract ? 'abstract' : null ]
+    })
   }
 }
-export class ValueMemberInfo extends MemberInfo { }
-export class MethodMemberInfo extends ValueMemberInfo { }
-export class DataMemberInfo extends ValueMemberInfo { }
-export class AccessorMemberInfo extends MemberInfo { }

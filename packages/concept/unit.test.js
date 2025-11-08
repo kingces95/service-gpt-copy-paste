@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Concept, satisfies, implement } from '@kingjs/concept'
+import { Concept, ConceptReflect, satisfies, implement } from '@kingjs/concept'
 import { abstract } from '@kingjs/abstract'
 
 describe('A type', () => {
@@ -12,7 +12,7 @@ describe('A type', () => {
     type = class { }
   })
   it('should have no declared concepts', () => {
-    const actual = [...Concept.getOwnDeclarations(type)]
+    const actual = [...ConceptReflect.ownConcepts(type)]
     const expected = [ ]
     expect(actual).toEqual(expected)
   })
@@ -59,7 +59,7 @@ describe('A type', () => {
         const cls = class { }
         expect(() => implement(cls, extendedConcept)).toThrow([
           'Assertion failed:',
-          'PartialClass ExtendedConcept must indirectly extend PartialClass.',
+          'Argument type "ExtendedConcept" extend directly from Concept.',
         ].join(' '))
       })
     })
@@ -72,9 +72,9 @@ describe('A type', () => {
         expect(type.prototype).toBeInstanceOf(concept)
       })
       it('should be an own declared concept', () => {
-        const actual = [...Concept.getOwnDeclarations(type)]
+        const actual = [...ConceptReflect.ownConcepts(type)]
         const expected = [concept]
-          expect(actual).toEqual(expected)
+        expect(actual).toEqual(expected)
       })
     })
     describe('with a data property', () => {
@@ -193,7 +193,7 @@ describe('A type', () => {
           expect(type.prototype.method).toBe(emptyMethod)
         })
         it('should be an own declared concept', () => {
-          const actual = [...Concept.getOwnDeclarations(type)]
+          const actual = [...ConceptReflect.ownConcepts(type)]
           const expected = [concept]
           expect(actual).toEqual(expected)
         })

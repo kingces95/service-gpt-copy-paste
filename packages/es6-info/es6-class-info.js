@@ -2,6 +2,7 @@ import { assert } from '@kingjs/assert'
 import { Es6DescriptorInfo } from './es6-descriptor-info.js'
 import { Es6IdInfo } from './es6-id-info.js'
 import { Es6KeyInfo } from './es6-key-info.js'
+import { Reflection } from '@kingjs/reflection'
 import util from 'util'
 
 // Es6MemberInfo = Es6DescriptorInfo + name + host + isStatic
@@ -207,21 +208,18 @@ export class Es6MemberInfo extends Es6Info {
     if (this.host.equals(Es6ClassInfo.Object)) return true
     if (this.host.equals(Es6ClassInfo.Function)) return true
 
-    // All Function extensions implement as own members the following
-    // known static data members.
     if (this.isStatic) {
-      if (this.isData) {
-        if (this.name == 'length') return true
-        if (this.name == 'name') return true
-        if (this.name == 'prototype') return true
-      }
-    } 
+      if (Reflection.isKnownStaticMember(this.name)) return true
+    } else {
+      if (Reflection.isKnownInstanceMember(this.name)) return true
+    }
   }
   get type() {
     // useful for pivoting
     if (this.isAccessor) return 'accessor'
     if (this.isData) return 'data'
     if (this.isMethod) return 'method'
+    assert(false, 'unreachable')
   }
 
   get isAccessor() { return this instanceof Es6AccessorMemberInfo }
@@ -268,12 +266,13 @@ export class Es6MemberInfo extends Es6Info {
     return true
   }
 
-  toString() {
+  toString({ modifiers = [] } = { }) {
     const keyInfo = this.keyInfo$
 
     return [
       keyInfo.toString(), [
         this.isStatic ? 'static' : null,
+        ...modifiers,
         this.#descriptorInfo.toString(),
       ].filter(Boolean).join(' '),
       this.host.name

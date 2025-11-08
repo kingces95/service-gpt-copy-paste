@@ -1,13 +1,13 @@
 import { assert } from '@kingjs/assert'
 import { Reflection } from '@kingjs/reflection'
-import { Extension, Extensions } from '@kingjs/extension'
+import { Extension, Extensions, ExtensionReflect } from '@kingjs/extension'
 import { extend } from '@kingjs/extend'
 import { abstract } from '@kingjs/abstract'
 import { Descriptor } from '@kingjs/descriptor'
 import { isPojo } from '@kingjs/pojo-test'
 
 import { 
-  PartialClass,
+  PartialClass, PartialClassReflect
 } from '@kingjs/partial-class'
 
 const {
@@ -19,11 +19,11 @@ const {
 
 const {
   ownStaticMemberNamesAndSymbols,
-  ownMemberNamesAndSymbols,
   isExtensionOf,
+  associatedKeyMap,
 } = Reflection
 
-export const Concepts = Symbol('ConceptConcepts')
+export const Concepts = Symbol('Concept.Concepts')
 
 const KnownStaticMembers = new Set([
   Extensions,
@@ -31,9 +31,9 @@ const KnownStaticMembers = new Set([
 ])
 
 export class Concept extends PartialClass {
-  static *[PartialClass.Symbol.ownDeclarations]() { 
-    yield *this[PartialClass.Private.fromDeclaration](Concepts, Concept)
-    yield *this[PartialClass.Private.fromDeclaration](Extensions)
+  static [PartialClass.Symbol.ownDeclaraitionSymbols] = {
+    ...Extension[PartialClass.Symbol.ownDeclaraitionSymbols],
+    [Concepts]: { expectedType: Concept },
   }
 
   // `myInstance instanceof myConcept` tests if an instance satsifies a concept.
@@ -90,17 +90,55 @@ export class Concept extends PartialClass {
 
   static *associatedConcepts() {
     yield* this.ownAssociatedConcepts()
-    for (const concept of this.declarations())
+    for (const concept of ConceptReflect.concepts(this))
       yield *concept.associatedConcepts()
   }
   static *ownAssociatedConcepts() {
     for (const name of ownStaticMemberNamesAndSymbols(this)) {
       if (KnownStaticMembers.has(name)) continue
-      for (const associatedConcept of 
-        this[PartialClass.Private.fromDeclaration](name, Concept)) {
-        yield [name, associatedConcept]
-      }
+      const concept = this[name]
+
+      assert(typeof concept == 'function' && 
+        isExtensionOf(concept, Concept), [
+        `Static member '${name.toString()}' of concept '${this.name}'`,
+        `must be a concept (i.e. extend Concept).`,
+      ].join(' '))
+
+      yield [name, concept]
     }
+  }
+}
+
+export class ConceptReflect {
+  static isConcept(type) {
+    return PartialClassReflect.getPartialClass(type) == Concept
+  }
+
+  static *concepts(type) {
+    yield* PartialClassReflect.declarations(type, 
+      { filterType: Concept })
+  }
+  static *ownConcepts(type) {
+    yield* PartialClassReflect.ownDeclarations(type, 
+      { filterType: Concept })
+  }
+
+  static *memberKeys(type) { 
+    assert(ConceptReflect.isConcept(type),
+      `Argument type "${type.name}" extend directly from Concept.`)
+    yield* PartialClassReflect.memberKeys(type) 
+  }
+  static *ownMemberKeys(type) { 
+    assert(ConceptReflect.isConcept(type),
+      `Argument type "${type.name}" extend directly from Concept.`)
+    yield* PartialClassReflect.ownMemberKeys(type) 
+  }
+  static memberMap(type) {
+    assert(ConceptReflect.isConcept(type),
+      `Argument type "${type.name}" extend directly from Concept.`)
+    return associatedKeyMap(type, 
+      ConceptReflect.concepts, 
+      ConceptReflect.ownMemberKeys)
   }
 }
 
@@ -127,27 +165,27 @@ export function satisfies(instance, concept) {
     if (!(associatedType.prototype instanceof associatedConcept)) return false 
   }
 
-  for (const name of concept.namesAndSymbols()) 
+  for (const name of ConceptReflect.memberKeys(concept)) 
     if (!(name in instance)) return false
   return true
 }
 
-export function implement(type, concept, definitions = { }) {
+export function implement(type, concept, implementation = { }) {
   assert(typeof type == 'function',
     'Type must be a function (e.g. class or function).')
   assert(isExtensionOf(concept, Concept),
     'Argument concept must extend Concept.')
 
   // if pojo, create anonymous partial class from pojo
-  if (isPojo(definitions))
-    definitions = Extension.fromPojo(definitions)
+  if (isPojo(implementation))
+    implementation = Extension.fromPojo(implementation)
 
   // restrict implementation to members defined by the concept.
-  const conceptMembers = new Set(concept.namesAndSymbols())
-  for (const name of ownMemberNamesAndSymbols(definitions.prototype)) {
+  const conceptMembers = new Set(ConceptReflect.memberKeys(concept))
+  for (const name of ExtensionReflect.memberKeys(implementation)) {
     if (conceptMembers.has(name)) continue
     throw new Error(`Concept '${concept.name}' does not define member '${name}'.`)
   }
 
-  extend(type, concept, definitions)
+  extend(type, concept, implementation)
 }
