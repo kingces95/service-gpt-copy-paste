@@ -5,8 +5,11 @@ import { Compiler } from '@kingjs/compiler'
 const {
   ownMemberNamesAndSymbols,
   associatedTypes,
-  addAssociatedType,
   associatedKeys,
+  isExtensionOf,
+  associatedArray,
+  associatedMap,
+  associatedLookup,
 } = Reflection
 
 // A PartialClass can define a number of static hooks. Each hook has its 
@@ -47,6 +50,10 @@ const OwnDeclarationSymbols = Symbol('PartialClass.ownDeclaraitionSymbols')
 // calls to either extend() or implement(). 
 const Declarations = Symbol('PartialClass.declarations')
 
+const MemberLookup = Symbol('PartialClassReflect.memberLookup')
+const MemberMap = Symbol('PartialClassReflect.memberMap')
+const PrototypicalType = Symbol('PartialClassReflect.prototype')
+
 export class PartialClass {
   static Symbol = {
     preCondition: PreCondition,
@@ -82,24 +89,32 @@ export class PartialClass {
     const targetPrototype = type.prototype
     const sourcePrototype = this.prototype
     for (const key of ownMemberNamesAndSymbols(sourcePrototype)) {
+      associatedLookup(type, MemberLookup, key).add(this)
+
       const definition = Object.getOwnPropertyDescriptor(sourcePrototype, key)
       const descriptor = this[Compile](definition)
       const boundDescriptor = this[Bind](type, key, descriptor)
       if (!boundDescriptor) continue
+
+      
       Object.defineProperty(targetPrototype, key, boundDescriptor)
+      associatedMap(type, MemberMap).set(key, this)
     }
 
     // add non-annonymous partial type has been applied to the type
-    if (this.name) addAssociatedType(type, Declarations, this)
+    if (this.name) associatedArray(type, Declarations).push(this)
 
     this[PostCondition](type)
   }
 }
 
+export class PrototypicalPartialType { }
+
 export class PartialClassReflect {
-  static isPartialClass(type) {
-    return !!PartialClassReflect.getPartialClass(type)
-  }
+  // getPartialClass returns the type's PartialClass, or null if the type
+  // does not extend PartialClass indirectly by exactly one level.
+  // For example, if type extends Extension, which extends PartialClass,
+  // then getPartialClass(type) returns Extension.
   static getPartialClass(type) {
     const partialClass = Object.getPrototypeOf(type)
 
@@ -110,11 +125,26 @@ export class PartialClassReflect {
 
     return partialClass
   }
+  static isPartialClass(type) {
+    return !!PartialClassReflect.getPartialClass(type)
+  }
+  static getPrototypicalType(type) {
+    if (!PartialClassReflect.isPartialClass(type)) 
+      return type
+
+    return associatedCache(type, PrototypicalType, () => {
+      let prototypicalType = class extends PrototypicalPartialType { }
+      type.defineOn(prototypicalType)
+      return prototypicalType
+    })
+  }
 
   static *declarations(type, { filterType } = { }) {
     if (PartialClassReflect.isPartialClass(type)) {
       yield* associatedTypes(type, 
-        type[OwnDeclarationSymbols], 
+        // TODO: allow traversal to reflect on metadata describing how
+        // to traverse the edges of the poset for any PartialClass node.
+        type[OwnDeclarationSymbols], // -> OwnDeclarationSymbols
         { filterType, traverse: true })
     }
     else {
@@ -135,23 +165,38 @@ export class PartialClassReflect {
         { inherit: false })
     }
   }
-
-  static *memberKeys(type) { 
-    assert(PartialClassReflect.isPartialClass(type),
-      `Argument type must be a PartialClass.`)
-
-    const filterType = PartialClassReflect.getPartialClass(type)
-
+  static *memberKeys(type, { filterType } = { }) { 
     yield* associatedKeys(type, 
       type => PartialClassReflect.declarations(type, { filterType }),
-      type => PartialClassReflect.ownMemberKeys(type)
+      type => PartialClassReflect.ownMemberKeys(type, { filterType })
     )
   }
-  static *ownMemberKeys(type) { 
-    assert(PartialClassReflect.isPartialClass(type),
-      `Argument type must be a PartialClass.`)
-
+  static *ownMemberKeys(type, { filterType } = { }) { 
+    if (!PartialClassReflect.isPartialClass(type)) return
+    if (filterType && !isExtensionOf(type, filterType)) return
     yield* ownMemberNamesAndSymbols(type.prototype) 
   }
-}
+  static *keyLookup(type, key, { filterType } = { }) {
+    // returns map: key => concepts that define the key
+    const prototypicalType = PartialClassReflect.getPrototypicalType(type)
+    const lookup = prototypicalType[MemberLookup]
+    if (!lookup) return null
+    yield* lookup.get(key)
+    // return associatedCache(type, MemberLookup, () =>
+    //   associatedKeyLookup(type,
+    //     () => PartialClassReflect.declarations(type, { filterType } ),
+    //     () => PartialClassReflect.ownMemberKeys(type, { filterType })))
+  }
 
+  static keyMap(type, key, { filterType } = { }) {
+    // returns map: key => partial class that defined the key
+    const prototypicalType = PartialClassReflect.getPrototypicalType(type)
+    const map = prototypicalType[MemberMap]
+    if (!map) return null
+    return map.get(key)
+    // return associatedCache(type, MemberMap, () =>
+    //   associatedKeyMap(type,
+    //     () => PartialClassReflect.declarations(type, { filterType } ),
+    //     () => PartialClassReflect.ownMemberKeys(type, { filterType })))
+  }
+}

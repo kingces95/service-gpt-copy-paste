@@ -65,28 +65,25 @@ export class Extension extends PartialClass {
   }
 }
 
+const Filter = { filterType: Extension }
+
 export class ExtensionReflect {
   static isExtension(type) {
     return PartialClassReflect.getPartialClass(type) == Extension
   }
-
   static *extensions(type) {
-    yield* PartialClassReflect.declarations(type, 
-      { filterType: Extension })
+    yield* PartialClassReflect.declarations(type, Filter)
   }
   static *ownExtensions(type) {
-    yield* PartialClassReflect.ownDeclarations(type, 
-      { filterType: Extension })
+    yield* PartialClassReflect.ownDeclarations(type, Filter)
   }
-
   static *memberKeys(type) { 
-    assert(ExtensionReflect.isExtension(type),
-      `Argument type "${type.name}" extend directly from Extension.`)
-    yield* PartialClassReflect.memberKeys(type) 
+    yield* PartialClassReflect.memberKeys(type, Filter) 
   }
   static *ownMemberKeys(type) { 
-    assert(ExtensionReflect.isExtension(type),
-      `Argument type "${type.name}" extend directly from Extension.`)
-    yield* PartialClassReflect.ownMemberKeys(type) 
+    yield* PartialClassReflect.ownMemberKeys(type, Filter) 
+  }
+  static keyLookup(type) {
+    return PartialClassReflect.keyLookup(type, Filter)
   }
 }

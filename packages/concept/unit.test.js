@@ -59,7 +59,7 @@ describe('A type', () => {
         const cls = class { }
         expect(() => implement(cls, extendedConcept)).toThrow([
           'Assertion failed:',
-          'Argument type "ExtendedConcept" extend directly from Concept.',
+          'PartialClass ExtendedConcept must indirectly extend PartialClass.',
         ].join(' '))
       })
     })

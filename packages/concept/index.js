@@ -20,7 +20,6 @@ const {
 const {
   ownStaticMemberNamesAndSymbols,
   isExtensionOf,
-  associatedKeyMap,
 } = Reflection
 
 export const Concepts = Symbol('Concept.Concepts')
@@ -109,36 +108,27 @@ export class Concept extends PartialClass {
   }
 }
 
+// ConceptReflect.memberLookup
+const Filter = { filterType: Concept }
+
 export class ConceptReflect {
   static isConcept(type) {
     return PartialClassReflect.getPartialClass(type) == Concept
   }
-
   static *concepts(type) {
-    yield* PartialClassReflect.declarations(type, 
-      { filterType: Concept })
+    yield* PartialClassReflect.declarations(type, Filter)
   }
   static *ownConcepts(type) {
-    yield* PartialClassReflect.ownDeclarations(type, 
-      { filterType: Concept })
+    yield* PartialClassReflect.ownDeclarations(type, Filter)
   }
-
   static *memberKeys(type) { 
-    assert(ConceptReflect.isConcept(type),
-      `Argument type "${type.name}" extend directly from Concept.`)
-    yield* PartialClassReflect.memberKeys(type) 
+    yield* PartialClassReflect.memberKeys(type, Filter) 
   }
   static *ownMemberKeys(type) { 
-    assert(ConceptReflect.isConcept(type),
-      `Argument type "${type.name}" extend directly from Concept.`)
-    yield* PartialClassReflect.ownMemberKeys(type) 
+    yield* PartialClassReflect.ownMemberKeys(type, Filter) 
   }
-  static memberMap(type) {
-    assert(ConceptReflect.isConcept(type),
-      `Argument type "${type.name}" extend directly from Concept.`)
-    return associatedKeyMap(type, 
-      ConceptReflect.concepts, 
-      ConceptReflect.ownMemberKeys)
+  static keyLookup(type) {
+    return PartialClassReflect.keyLookup(type, Filter)
   }
 }
 

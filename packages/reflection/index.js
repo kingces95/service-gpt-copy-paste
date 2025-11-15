@@ -161,8 +161,7 @@ export class Reflection {
     }
   }
 
-  static associatedKeyMap(type, associatedTypesFn, keysFn) {
-    // map of key to set of associated types defining the key
+  static associatedKeyReduce(type, associatedTypesFn, keysFn, fn) {
     const map = new Map()
 
     function *types() {
@@ -172,12 +171,63 @@ export class Reflection {
 
     for (const associatedType of types()) {
       for (const key of keysFn(associatedType)) {
-        let set = map.get(key)
-        if (!set) map.set(key, set = new Set())
-        set.add(associatedType)
+        map.set(key, fn(map.get(key), associatedType))
       }
     }
 
     return map
+  }
+
+  static associatedKeyMap(type, associatedTypesFn, keysFn) {
+    // map of key to an associated types
+    return Reflection.associatedKeyReduce(
+      type, associatedTypesFn, keysFn,
+      (existing, associatedType) => existing || associatedType)
+  }
+
+  static associatedKeyLookup(type, associatedTypesFn, keysFn) {
+    // map of key to set of associated types defining the key
+    return Reflection.associatedKeyReduce(
+      type, associatedTypesFn, keysFn,
+      (existing = new Set(), associatedType) => {
+        existing.add(associatedType)
+        return existing
+      })
+  }
+
+  static associatedCache(type, symbol, fn) {
+
+    // try cache
+    let cache = getOwn(type, symbol)
+    if (cache) return cache
+
+    // create and cache
+    cache = fn()
+
+    // cache
+    Object.defineProperty(type, symbol, {
+      value: cache,
+      configurable: true,
+      enumerable: false,
+      writable: false,
+    })
+
+    return cache
+  }
+  static associatedArray(type, symbol) {
+    return Reflection.associatedCache(type, symbol, () => [])
+  }
+  static associatedMap(type, symbol) {
+    return Reflection.associatedCache(type, symbol, () => new Map())
+  }
+  static associatedLookup(type, symbol, key) {
+    // returns set of associated types for key
+    const map = Reflection.associatedMap(type, symbol)
+    let set = map.get(key)
+    if (!set) {
+      set = new Set()
+      map.set(key, set)
+    }
+    return set
   }
 }

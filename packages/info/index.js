@@ -7,7 +7,7 @@ import { PartialClass } from '@kingjs/partial-class'
 import { Extension, Extensions } from '@kingjs/extension'
 import { Concept, ConceptReflect } from "@kingjs/concept"
 import { Compiler } from "@kingjs/compiler"
-import { Es6Info } from "@kingjs/es6-info"
+import { Es6Info, Es6ClassInfo } from "@kingjs/es6-info"
 
 // import { Es6DescriptorInfo } from './es6-descriptor-info.js'
 
@@ -51,38 +51,19 @@ export class Info {
     
     return new ClassInfo(es6FnInfo)
   }
-
-  // get name() { abstract() }
-  // get isNonPublic() { 
-  //   if (typeof this.name === 'symbol') return false
-
-  //   const name = this.name
-  //   if (name.startsWith('_')) return true
-  //   if (name.endsWith('_')) return true
-  //   if (name.startsWith('$')) return true
-  //   if (name.endsWith('$')) return true
-  //   return false
-  // }
 }
 
 export class FunctionInfo extends Info {
 
-  static getMember(type, nameOrSymbol, { isStatic = false } = { }) {
-    assert(type instanceof FunctionInfo, 'type must be a FunctionInfo')
-
-    // base case
-    const member = type.getOwnMember(nameOrSymbol, { isStatic })
-    if (member) return member
-
-    // recursive case
-    if (!type.base) return null
-    return FunctionInfo.getMember(type.base, nameOrSymbol, { isStatic })
+  static getMember(type, key, { isStatic = false } = { }) {
+    const es6MemberInfo = Es6ClassInfo.getMember(type, key, { isStatic })
+    if (!es6MemberInfo) return null
+    return MemberInfo.from(es6MemberInfo)  
   }
 
   static *members(type, { isStatic = false } = { }) {
-    assert(type instanceof FunctionInfo, 'type must be a FunctionInfo')
-    const keys = [...FunctionInfo.keys(type, { isStatic })]
-    yield* keys.map(key => FunctionInfo.getMember(type, key, { isStatic }))
+    yield * Es6ClassInfo.members(type, { isStatic })
+      .map(es6MemberInfo => MemberInfo.from(es6MemberInfo, type))
   } 
 
   static *hierarchy(type, { isStatic = false } = { }) {
@@ -348,7 +329,7 @@ export class FunctionInfo extends Info {
     const descriptorInfo = this.getOwnDescriptor(nameOrSymbol, { isStatic })
     if (!descriptorInfo) return null
 
-    return MemberInfo.create$(
+    return MemberInfo.from(
       this, nameOrSymbol, descriptorInfo, { isStatic })
   }
 
@@ -428,7 +409,7 @@ export class ConceptInfo extends PartialClassInfo {
 }
 
 export class MemberInfo extends Info {
-  static create$(es6MemberInfo, host = null) {
+  static from(es6MemberInfo, host = null) {
     assert(es6MemberInfo instanceof Es6DescriptorInfo, 
       'descriptor must be a DescriptorInfo')
     assert(!host || host instanceof FunctionInfo, 
@@ -496,10 +477,10 @@ export class MemberInfo extends Info {
   }
 
   parent() {
-    return MemberInfo.create$(this.#es6MemberInfo.parent())
+    return MemberInfo.from(this.#es6MemberInfo.parent())
   }
   root() {
-    return MemberInfo.create$(this.#es6MemberInfo.root())
+    return MemberInfo.from(this.#es6MemberInfo.root())
   }
   rootHost() {
     return FunctionInfo.from(this.#es6MemberInfo.rootHost())
