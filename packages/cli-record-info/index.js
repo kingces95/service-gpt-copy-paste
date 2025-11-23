@@ -302,7 +302,7 @@ export class CliRecordInfoLoader {
       return this.#loadImplicitCommentField()
     }
 
-    // cache annonymous fields w/o any discriminations
+    // cache anonymous fields w/o any discriminations
     if (!name && !type.isEnum)
       return this.#loadAnonymousField(type)
 

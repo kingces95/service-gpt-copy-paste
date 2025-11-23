@@ -3,8 +3,8 @@ import { isPojo } from "@kingjs/pojo-test"
 import { abstract } from "@kingjs/abstract"
 import { Normalize } from "@kingjs/normalize"
 import { Reflection } from '@kingjs/reflection'
-import { PartialClass } from '@kingjs/partial-class'
-import { Extension, Extensions } from '@kingjs/extension'
+import { PartialClass, PartialClassReflect } from '@kingjs/partial-class'
+import { Extension, Extensions, ExtensionReflect } from '@kingjs/extension'
 import { Concept, ConceptReflect } from "@kingjs/concept"
 import { Compiler } from "@kingjs/compiler"
 import { Es6Info, Es6ClassInfo } from "@kingjs/es6-info"
@@ -26,30 +26,23 @@ const ExtensionRuntimeNameOrSymbol = new Set([
 // "info" suffix) we will use "is" prefix.
 
 export class Info {
-  static from(fnOrPojoOrEs6ClassInfo) {
-    assert(fnOrPojoOrEs6ClassInfo instanceof Function 
-      || isPojo(fnOrPojoOrEs6ClassInfo)
-      || fnOrPojo instanceof Es6ClassInfo,
-      'fnOrPojoOrEs6ClassInfo must be a function or pojo or Es6ClassInfo')
-
-    const es6FnInfo = fnOrPojoOrEs6ClassInfo instanceof Es6ClassInfo
-      ? fnOrPojoOrEs6ClassInfo
-      : Es6Info.from(
-        isPojo(fnOrPojo) ? Extension.fromPojo(fnOrPojo) : fnOrPojo
-      )
-
-    const fn = es6FnInfo.ctor
+  static from(type) {
+    if (isPojo(type))
+      type = Extension.fromPojo(es6ClassInfo)
+      
+    const es6ClassInfo = PartialClassReflect.getClassInfo(type)
+    const fn = es6ClassInfo.ctor
 
     if (fn == PartialClass)
-      return new PartialClassInfo(es6FnInfo)
+      return new PartialClassInfo(es6ClassInfo)
 
     if (fn == Concept || Reflection.isExtensionOf(fn, Concept))
-      return new ConceptInfo(es6FnInfo)
+      return new ConceptInfo(es6ClassInfo)
 
     if (fn == Extension || Reflection.isExtensionOf(fn, Extension))
-      return new ExtensionInfo(es6FnInfo)
+      return new ExtensionInfo(es6ClassInfo)
     
-    return new ClassInfo(es6FnInfo)
+    return new ClassInfo(es6ClassInfo)
   }
 }
 
@@ -58,12 +51,11 @@ export class FunctionInfo extends Info {
   static getMember(type, key, { isStatic = false } = { }) {
     const es6MemberInfo = Es6ClassInfo.getMember(type, key, { isStatic })
     if (!es6MemberInfo) return null
-    return MemberInfo.from(es6MemberInfo)  
+    return MemberInfo.from$(es6MemberInfo)  
   }
 
   static *members(type, { isStatic = false } = { }) {
-    yield * Es6ClassInfo.members(type, { isStatic })
-      .map(es6MemberInfo => MemberInfo.from(es6MemberInfo, type))
+    
   } 
 
   static *hierarchy(type, { isStatic = false } = { }) {
@@ -329,7 +321,7 @@ export class FunctionInfo extends Info {
     const descriptorInfo = this.getOwnDescriptor(nameOrSymbol, { isStatic })
     if (!descriptorInfo) return null
 
-    return MemberInfo.from(
+    return MemberInfo.from$(
       this, nameOrSymbol, descriptorInfo, { isStatic })
   }
 
@@ -409,11 +401,12 @@ export class ConceptInfo extends PartialClassInfo {
 }
 
 export class MemberInfo extends Info {
-  static from(es6MemberInfo, host = null) {
+  static from$(es6MemberInfo, host = null) {
     assert(es6MemberInfo instanceof Es6DescriptorInfo, 
-      'descriptor must be a DescriptorInfo')
-    assert(!host || host instanceof FunctionInfo, 
-      'type must be a FunctionInfo')
+      'descriptor must be a Es6MemberInfo')
+      
+    assert(host instanceof ClassInfo, 
+      'type must be a ClassInfo')
     
     return new MemberInfo(es6MemberInfo, host)
   }
@@ -421,15 +414,10 @@ export class MemberInfo extends Info {
   #host
   #es6MemberInfo
 
-  constructor(es6MemberInfo) {
+  constructor(es6MemberInfo, host) {
     super()
-    this.#host = host ? host : Info.from(es6MemberInfo.host)
+    this.#host = host
     this.#es6MemberInfo = es6MemberInfo
-  }
-
-  get #concepts() { 
-    return FunctionInfo.conceptMap(this.host)?.get(this.name) 
-      ?? new Set()
   }
 
   get host() { return this.#host }
@@ -470,21 +458,23 @@ export class MemberInfo extends Info {
     return false
   }
 
-  get isConceptual() { return this.#concepts.size > 0 }
+  get isConceptual() { 
+    return this.concepts().next().done == false
+  }
   *concepts() { 
-    const concepts = this.#concepts
-    yield* concepts
+    const hosts = [...ConceptReflect.memberHosts(this.host.ctor, this.name)]
+    yield* hosts.map(fn => Info.from(fn))
   }
 
-  parent() {
-    return MemberInfo.from(this.#es6MemberInfo.parent())
-  }
-  root() {
-    return MemberInfo.from(this.#es6MemberInfo.root())
-  }
-  rootHost() {
-    return FunctionInfo.from(this.#es6MemberInfo.rootHost())
-  }
+  // parent() {
+  //   return MemberInfo.from$(this.#es6MemberInfo.parent())
+  // }
+  // root() {
+  //   return MemberInfo.from$(this.#es6MemberInfo.root())
+  // }
+  // rootHost() {
+  //   return FunctionInfo.from(this.#es6MemberInfo.rootHost())
+  // }
 
   equals(other) {
     if (!(other instanceof MemberInfo)) return false

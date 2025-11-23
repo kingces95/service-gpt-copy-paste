@@ -78,12 +78,9 @@ export class ExtensionReflect {
     yield* PartialClassReflect.ownDeclarations(type, Filter)
   }
   static *memberKeys(type) { 
-    yield* PartialClassReflect.memberKeys(type, Filter) 
+    yield* PartialClassReflect.memberKeys(type) 
   }
   static *ownMemberKeys(type) { 
-    yield* PartialClassReflect.ownMemberKeys(type, Filter) 
-  }
-  static keyLookup(type) {
-    return PartialClassReflect.keyLookup(type, Filter)
+    yield* PartialClassReflect.ownMemberKeys(type) 
   }
 }

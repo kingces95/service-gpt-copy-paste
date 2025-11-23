@@ -74,19 +74,6 @@ export class Concept extends PartialClass {
     return result
   }
 
-  // Skip adding abstract member to the prototype if a member already exists.
-  static [PartialClass.Symbol.bind](type, name, descriptor) {
-    assert(!isExtensionOf(type, Concept),
-      `Concept ${type.name} cannot implement concept ${this.name}.`)
-    if (name in type.prototype) return null
-    return descriptor
-  }
-
-  static [PartialClass.Symbol.postCondition](type) {
-    assert(satisfies(type.prototype, this),
-      `Type ${type.name} does not satisfy concept ${this.name}.`)
-  }
-
   static *associatedConcepts() {
     yield* this.ownAssociatedConcepts()
     for (const concept of ConceptReflect.concepts(this))
@@ -95,13 +82,13 @@ export class Concept extends PartialClass {
   static *ownAssociatedConcepts() {
     for (const name of ownStaticMemberNamesAndSymbols(this)) {
       if (KnownStaticMembers.has(name)) continue
-      const concept = this[name]
 
-      assert(typeof concept == 'function' && 
-        isExtensionOf(concept, Concept), [
-        `Static member '${name.toString()}' of concept '${this.name}'`,
-        `must be a concept (i.e. extend Concept).`,
-      ].join(' '))
+      const concept = this[name]
+      if (typeof concept != 'function') continue
+      if (!isExtensionOf(concept, Concept)) continue
+      
+      const descriptor = Object.getOwnPropertyDescriptor(this, name)
+      if (!descriptor?.enumerable) continue
 
       yield [name, concept]
     }
@@ -122,13 +109,17 @@ export class ConceptReflect {
     yield* PartialClassReflect.ownDeclarations(type, Filter)
   }
   static *memberKeys(type) { 
-    yield* PartialClassReflect.memberKeys(type, Filter) 
+    yield* PartialClassReflect.memberKeys(type) 
   }
   static *ownMemberKeys(type) { 
-    yield* PartialClassReflect.ownMemberKeys(type, Filter) 
+    yield* PartialClassReflect.ownMemberKeys(type) 
   }
-  static keyLookup(type) {
-    return PartialClassReflect.keyLookup(type, Filter)
+  static *memberHosts(type, key) {
+    // filter to only those hosts that are concepts
+    for (const host of PartialClassReflect.memberHosts(type, key)) {
+      if (ConceptReflect.isConcept(host))
+        yield host
+    }
   }
 }
 
@@ -136,27 +127,30 @@ export function satisfies(instance, concept) {
   assert(isExtensionOf(concept, Concept),
     `Argument concept must extend Concept.`)
 
+  // Associated concepts allow for 
+  //   myContainer instanceof InputContainerConcept
+  // where MyContainer declares associated type as
+  //   static cursorType = InputCursor
+  // and InputContainerConcept declares associated concept as
+  //   static cursorType = InputCursorConcept
   for (const [name, associatedConcept] of concept.associatedConcepts()) {
     const type = instance?.constructor
-    if (!(name in type)) return false
+    if (!(name in type)) 
+      return false
 
     const associatedType = type?.[name]
-    assert(typeof associatedType == 'function', [
-      `Static member '${name.toString()}'`,
-      `of type '${type?.name}' must be a type.`
-    ].join(' '))
+    if (!(typeof associatedType == 'function')) 
+      return false
 
-    // For example, allows for 
-    //   myContainer instanceof InputContainerConcept
-    // where MyContainer declares associated type as
-    //   static cursorType = InputCursor
-    // and InputContainerConcept declares associated concept as
-    //   static cursorType = InputCursorConcept
-    if (!(associatedType.prototype instanceof associatedConcept)) return false 
+    if (!(associatedType.prototype instanceof associatedConcept)) 
+      return false 
   }
 
-  for (const name of ConceptReflect.memberKeys(concept)) 
-    if (!(name in instance)) return false
+  for (const name of ConceptReflect.memberKeys(concept)) {
+    if (name in instance) continue 
+    return false
+  }
+
   return true
 }
 

@@ -15,13 +15,13 @@ const {
 //    methods declared in source code have enumerable: false, configurable: 
 //    true, and writable: true. 
 //  - data descriptors which are not methods are assumed to be indirect 
-//    descriptors are are "transformed" by "dereferencing" the descriptor. 
+//    descriptors and are "transformed" by "dereferencing" the descriptor. 
 // These design decision allow DSL to represent:
 //  - procedural descriptors using concise syntax and lambdas 
 //  - non-standard data descriptors (e.g. non-writable). 
 // For example, descriptors of the follow members can be "compiled" into 
 // descriptors as though they were declared in source code (e.g. methodAsLambda 
-// and methodAsDescriptor descriptors could compiled to look like method's 
+// and methodAsDescriptor descriptors are compiled to look like method's 
 // descriptor).
 //  {
 //    method() { return 42 },

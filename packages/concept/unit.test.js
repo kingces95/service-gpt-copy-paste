@@ -36,7 +36,7 @@ describe('A type', () => {
     describe('already implemented by the type', () => {
       let methodFn
       beforeEach(() => {
-        concept.prototype.method = abstract
+        concept.prototype.method = function() { }
         methodFn = () => { }
         type.prototype.method = methodFn
       })

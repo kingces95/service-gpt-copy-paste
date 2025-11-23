@@ -47,5 +47,5 @@ export class Es6AnnonymousIdInfo extends Es6IdInfo {
 
   get isAnnonymous() { return true }
   get isNonPublic() { return true }
-  toString() { return '<annonymous>' }
+  toString() { return '<anonymous>' }
 }

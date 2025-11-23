@@ -157,59 +157,6 @@ describe('A type', () => {
           expect(compiledDescriptor.configurable).toBe(false)
         })
       })
-      describe('and a bind function the returns null', () => {
-        beforeEach(() => {
-          partialType[PartialClass.Symbol.bind] = function(
-            type$, name, descriptor) {
-              expect(this).toBe(partialType)
-            expect(type$).toBe(type)
-            expect(name).toBe('member')
-            expect(descriptor.value).toBe(compiledMember)
-            return null
-          }
-        })
-        it('should skip the member', () => {
-          extend(type, partialType)
-          expect(type.prototype.member).toBeUndefined()
-        })
-      })
-      describe('and a bind function', () => {
-        let didBind
-        let boundMember = function() { return 'bound' }
-        beforeEach(() => {
-          didBind = false
-          partialType[PartialClass.Symbol.bind] = 
-            function(type$, name, descriptor) {
-              expect(this).toBe(partialType)
-              expect(type$).toBe(type)
-              expect(name).toBe('member')
-              expect(descriptor.value).toBe(compiledMember)
-              descriptor.value = boundMember
-              didBind = true
-              return descriptor
-            }
-        })
-        it('should call the bind function', () => {
-          extend(type, partialType)
-          expect(didBind).toBe(true)
-          expect(type.prototype.member).toBe(boundMember)
-        })
-        describe('and a PostCondition function', () => {
-          let didPostCondition
-          beforeEach(() => {
-            partialType[PartialClass.Symbol.postCondition] = function(type$) {
-              expect(this).toBe(partialType)
-              expect(type$).toBe(type)
-              expect(type$.prototype.member).toBe(boundMember)
-              didPostCondition = true
-            }
-          })
-          it('should call the PostCondition function', () => {
-            extend(type, partialType)
-            expect(didPostCondition).toBe(true)
-          })
-        })
-      })
     })
   })
 })

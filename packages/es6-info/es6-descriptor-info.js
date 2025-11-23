@@ -42,8 +42,8 @@ const {
 // The modifier hidden is used to indicate that enumerable is false for data descriptors.
 
 // The id of the descriptor is included in the string when it can be inferred from
-// the function name of the getter, setter, or value. If the id is annonymous (null 
-// or undefined), then the string '<annonymous>' is used. Otherwise, the id is converted 
+// the function name of the getter, setter, or value. If the id is anonymous (null 
+// or undefined), then the string '<anonymous>' is used. Otherwise, the id is converted 
 // to a string. If the id is a symbol, it is enclosed in brackets. 
 
 // Typical Examples:
@@ -56,9 +56,9 @@ const {
 
 // Annonymous Examples:
 // - Accessor descriptor: 
-//      "<annonymous> { get; set }"
+//      "<anonymous> { get; set }"
 // - Method descriptor: 
-//      "<annonymous>()"
+//      "<anonymous>()"
 
 // Kitchen Sink Examples:
 // - Accessor descriptor: 

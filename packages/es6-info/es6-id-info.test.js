@@ -8,7 +8,7 @@ describe('Es6IdInfo', () => {
     beforeEach(() => {
       idInfo = Es6IdInfo.create(42)
     })
-    it('is not an annonymous id', () => {
+    it('is not an anonymous id', () => {
       expect(idInfo.isAnnonymous).toBe(false)
     })
     it('is a number id', () => {
@@ -29,7 +29,7 @@ describe('Es6IdInfo', () => {
     beforeEach(() => {
       idInfo = Es6IdInfo.create('myId')
     })
-    it('is not an annonymous id', () => {
+    it('is not an anonymous id', () => {
       expect(idInfo.isAnnonymous).toBe(false)
     })
     it('is a string id', () => {
@@ -59,7 +59,7 @@ describe('Es6IdInfo', () => {
     beforeEach(() => {
       idInfo = Es6IdInfo.create(sym)
     })
-    it('is not an annonymous id', () => {
+    it('is not an anonymous id', () => {
       expect(idInfo.isAnnonymous).toBe(false)
     })
     it('is a symbol id', () => {
@@ -80,7 +80,7 @@ describe('Es6IdInfo', () => {
     beforeEach(() => {
       idInfo = Es6IdInfo.create(null)
     })
-    it('is an annonymous id', () => {
+    it('is an anonymous id', () => {
       expect(idInfo.isAnnonymous).toBe(true)
       expect(idInfo.isString).toBe(false)
       expect(idInfo.isSymbol).toBe(false)
@@ -88,8 +88,8 @@ describe('Es6IdInfo', () => {
     it('has no value', () => {
       expect(idInfo.value).toBe(null)
     })
-    it('toString is <annonymous>', () => {
-      expect(idInfo.toString()).toBe('<annonymous>')
+    it('toString is <anonymous>', () => {
+      expect(idInfo.toString()).toBe('<anonymous>')
     })
     it('is non-public', () => {
       expect(idInfo.isNonPublic).toBe(true)

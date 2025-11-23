@@ -1,9 +1,12 @@
 import { getOwn } from '@kingjs/get-own'
-import { asArray } from '@kingjs/as-array'
+import { asIterable } from '@kingjs/as-iterable'
 import { assert } from '@kingjs/assert'
 
 const KnownInstanceMembers = new Set([ 'constructor'])
 const KnownStaticMembers = new Set([ 'length', 'name', 'prototype'])
+
+// A general purpose global map of type to associated metadata
+const Associations = new Map()
 
 export class Reflection {
   static isExtensionOf(childClass, parentClass) {
@@ -63,8 +66,8 @@ export class Reflection {
     }
   }
 
-  static *ownStaticMemberNamesAndSymbols(type) {
-    for (const name of Reflection.ownNamesAndSymbols(type)) {
+  static *ownStaticMemberNamesAndSymbols(prototype) {
+    for (const name of Reflection.ownNamesAndSymbols(prototype)) {
       if (Reflection.isKnownStaticMember(name)) continue
       yield name
     }
@@ -82,45 +85,40 @@ export class Reflection {
     yield* Reflection.prototypes(target)
   }
 
-  static addAssociatedType(type, symbol, associatedType) {
-    const associatedTypes = getOwn(type, symbol) || []
-    associatedTypes.push(associatedType)
-    Object.defineProperty(type, symbol, {
-      value: associatedTypes,
-      configurable: true,
-    })
-  }
   static *ownAssociatedTypes(type, symbols, options = { }) {
     const { filterType: globalFilterType } = options
+
+    // if symbols typeof symbol, pull metadata off of type
+    if (typeof symbols == 'symbol') symbols = type[symbols] || { }
     
     // symbols like { [TheSymbol]: { filterType, expectedType, map } }
     for (const symbol of Object.getOwnPropertySymbols(symbols)) {
       const options = symbols[symbol]
-      const { filterType, expectedType, map } = options
+      const { filterType: localFilterType, expectedType, map } = options
 
       if (globalFilterType && expectedType &&
         !Reflection.isExtensionOf(expectedType, globalFilterType))
         continue
 
-      const types = asArray(getOwn(type, symbol))
-      if (!types) return
-  
-      for (let type of types) {
-        if (map) type = map(type)
+      const metadata = Reflection.associatedIterable(type, symbol)
+      for (let associatedType of asIterable(metadata)) {
+        if (map) associatedType = map(associatedType)
   
         assert(!expectedType || 
-          Reflection.isExtensionOf(type, expectedType), [
-            `Expected associated type "${type.name}"`,
+          Reflection.isExtensionOf(associatedType, expectedType), [
+            `Expected associated type "${associatedType.name}"`,
             `to be a ${expectedType?.name}.`
           ].join(' '))
   
-        if (filterType && !Reflection.isExtensionOf(type, filterType)) 
+        if (localFilterType 
+          && !Reflection.isExtensionOf(associatedType, localFilterType)) 
           continue
 
-        if (globalFilterType && !Reflection.isExtensionOf(type, globalFilterType))
+        if (globalFilterType 
+          && !Reflection.isExtensionOf(associatedType, globalFilterType))
           continue
        
-        yield type
+        yield associatedType
       }
     }
   }
@@ -195,30 +193,41 @@ export class Reflection {
       })
   }
 
-  static associatedCache(type, symbol, fn) {
+  static associatedObject(type, symbol, fn) {
 
-    // try cache
-    let cache = getOwn(type, symbol)
-    if (cache) return cache
+    // get type cache
+    let typeCache = Associations.get(type)
+    if (!typeCache) {
 
-    // create and cache
-    cache = fn()
+      // create type cache
+      typeCache = new Map()
+      Associations.set(type, typeCache)
+    }
 
-    // cache
-    Object.defineProperty(type, symbol, {
-      value: cache,
-      configurable: true,
-      enumerable: false,
-      writable: false,
-    })
+    // try declared cache
+    const declaredCache = getOwn(type, symbol)
+    if (declaredCache) return declaredCache
+
+    // get runtime cache
+    let cache = typeCache.get(symbol)
+    if (!cache) {
+
+      // no fn, no cache
+      if (!fn) return null
+
+      // create and cache
+      cache = fn()
+      typeCache.set(symbol, cache)
+    }
 
     return cache
   }
-  static associatedArray(type, symbol) {
-    return Reflection.associatedCache(type, symbol, () => [])
+
+  static associatedSet(type, symbol) {
+    return Reflection.associatedObject(type, symbol, () => new Set())
   }
   static associatedMap(type, symbol) {
-    return Reflection.associatedCache(type, symbol, () => new Map())
+    return Reflection.associatedObject(type, symbol, () => new Map())
   }
   static associatedLookup(type, symbol, key) {
     // returns set of associated types for key
@@ -229,5 +238,53 @@ export class Reflection {
       map.set(key, set)
     }
     return set
+  }
+
+  static associatedMapSet(type, symbol, key, value) {
+    assert(value != null, 'value must be non-null')
+    assert(key != null, 'key must be non-null')
+
+    const map = Reflection.associatedMap(type, symbol)
+    map.set(key, value)
+  }
+  static associatedSetAdd(type, symbol, ...values) {
+    const set = Reflection.associatedSet(type, symbol)
+    for (const value of values) {
+      assert(value != null, 'value must be non-null')
+      set.add(value)
+    }
+  }
+  static associatedLookupAdd(type, symbol, key, ...values) {
+    const set = Reflection.associatedLookup(type, symbol, key)
+    for (const value of values) {
+      assert(value != null, 'value must be non-null')
+      set.add(value)
+    }
+  }
+
+  static associatedMapCopy(type, sourceType, symbol, key) {
+    const value = Reflection.associatedMapGet(sourceType, symbol, key)
+    if (!value) return
+    Reflection.associatedMapSet(type, symbol, key, value)
+  }
+  static associatedSetCopy(type, sourceType, symbol) {
+    const values = Reflection.associatedSet(sourceType, symbol)
+    Reflection.associatedSetAdd(type, symbol, ...values)
+  }
+  static associatedLookupCopy(type, sourceType, symbol, key) {
+    const values = Reflection.associatedLookup(sourceType, symbol, key)
+    Reflection.associatedLookupAdd(type, symbol, key, ...values)
+  }
+
+  static associatedIterable(type, symbol) {
+    return Reflection.associatedObject(type, symbol) || []
+  }
+  static associatedMapGet(type, symbol, key) {
+    const map = Reflection.associatedObject(type, symbol)
+    return map?.get(key)
+  }
+  static associatedLookupGet(type, symbol, key) {
+    const map = Reflection.associatedObject(type, symbol)
+    return map?.get(key)
   }
 }

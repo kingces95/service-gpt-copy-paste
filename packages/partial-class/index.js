@@ -1,19 +1,29 @@
 import { assert } from '@kingjs/assert'
 import { Reflection } from '@kingjs/reflection'
 import { Compiler } from '@kingjs/compiler'
+import { Es6ClassInfo } from '@kingjs/es6-info'
+import { isPojo } from '@kingjs/pojo-test'
+import { isAbstract } from '@kingjs/abstract'
+import { Descriptor } from '@kingjs/descriptor'
 
 const {
+  memberNamesAndSymbols,
   ownMemberNamesAndSymbols,
   associatedTypes,
-  associatedKeys,
-  isExtensionOf,
-  associatedArray,
-  associatedMap,
-  associatedLookup,
+  ownAssociatedTypes,
+  associatedSetAdd,
+  associatedSetCopy,
+  associatedMapSet,
+  associatedMapGet,
+  associatedMapCopy,
+  associatedLookupGet,
+  associatedLookupAdd,
+  associatedLookupCopy,
+  associatedObject,
 } = Reflection
 
 // A PartialClass can define a number of static hooks. Each hook has its 
-// own symbol: Compile, Bind, PreCondition, and PostCondition.  
+// own symbol: Compile, PreCondition, and PostCondition.  
 
 // Compile transforms a descriptor before being copied to the target type. 
 // For example, a concept partial type can apply a policy that all its 
@@ -21,13 +31,6 @@ const {
 // non-data members. Compile is called with the descriptor and returns 
 // a descriptor.
 const Compile = Symbol('PartialClass.compile')
-
-// Bind allows the PartialClass to apply custom policy to the compiled 
-// descriptors. Bind is called with the type, name, and descriptor and 
-// returns a descriptor. If Bind returns null, then the member is not 
-// defined on the type prototype. Concept will return null if the member 
-// is already defined on the type prototype.
-const Bind = Symbol('PartialClass.bind')
 
 // PreCondition allows the PartialClass to enforce a pre-condition before any
 // members are applied. This is not guaranteed to be called if a non-debug 
@@ -50,16 +53,16 @@ const OwnDeclarationSymbols = Symbol('PartialClass.ownDeclaraitionSymbols')
 // calls to either extend() or implement(). 
 const Declarations = Symbol('PartialClass.declarations')
 
-const MemberLookup = Symbol('PartialClassReflect.memberLookup')
-const MemberMap = Symbol('PartialClassReflect.memberMap')
-const PrototypicalType = Symbol('PartialClassReflect.prototype')
+const MemberHostLookup = Symbol('PartialClassReflect.memberHostLookup')
+const MemberHostMap = Symbol('PartialClassReflect.memberHostMap')
+const PrototypicalType = Symbol('PartialClassReflect.prototypicalType')
+const Descriptors = Symbol('PartialClassReflect.descriptors')
 
 export class PartialClass {
   static Symbol = {
     preCondition: PreCondition,
     ownDeclaraitionSymbols: OwnDeclarationSymbols,
     compile: Compile,
-    bind: Bind,
     postCondition: PostCondition,
   }
 
@@ -69,48 +72,40 @@ export class PartialClass {
 
   static [OwnDeclarationSymbols] = { }
   static [Compile](descriptor) { return Compiler.compile(descriptor) }
-  static [Bind](type, name, descriptor) { return descriptor }
   static [PreCondition](type, host) { }
   static [PostCondition](type) { }
-
-  static defineOn(type) {
-    assert(PartialClassReflect.isPartialClass(this), 
-      `PartialClass ${this.name} must indirectly extend PartialClass.`)
-
-    assert(!PartialClassReflect.isPartialClass(type),
-      `Expected type '${type.name}' not to be a PartialClass.`)
-
-    this[PreCondition](type)
-
-    for (const declaration of PartialClassReflect.declarations(this))
-      declaration.defineOn(type)
-
-    // fetch, compile, bind, and define properties on the type prototype
-    const targetPrototype = type.prototype
-    const sourcePrototype = this.prototype
-    for (const key of ownMemberNamesAndSymbols(sourcePrototype)) {
-      associatedLookup(type, MemberLookup, key).add(this)
-
-      const definition = Object.getOwnPropertyDescriptor(sourcePrototype, key)
-      const descriptor = this[Compile](definition)
-      const boundDescriptor = this[Bind](type, key, descriptor)
-      if (!boundDescriptor) continue
-
-      
-      Object.defineProperty(targetPrototype, key, boundDescriptor)
-      associatedMap(type, MemberMap).set(key, this)
-    }
-
-    // add non-annonymous partial type has been applied to the type
-    if (this.name) associatedArray(type, Declarations).push(this)
-
-    this[PostCondition](type)
-  }
 }
 
-export class PrototypicalPartialType { }
+class PrototypicalPartialType { }
+
+class AnonnymousPartialClass extends PartialClass { }
 
 export class PartialClassReflect {
+
+  static #getPrototypicalType(type) {
+    if (!this.isPartialClass(type)) return type
+
+    return associatedObject(type, PrototypicalType, () => {
+      let prototypicalType = class extends PrototypicalPartialType { }
+      Object.defineProperties(prototypicalType, {
+        name: {
+          value: '$prototypical_' + type.name,
+          configurable: true,
+          enumerable: false,
+          writable: false,
+        }
+      })
+      this.extend(prototypicalType, type)
+      return prototypicalType
+    })
+  }  
+
+  static getClassInfo(type) {
+    if (!type) return null
+    if (type instanceof Es6ClassInfo) return type
+    return Es6ClassInfo.from(type)
+  }
+  
   // getPartialClass returns the type's PartialClass, or null if the type
   // does not extend PartialClass indirectly by exactly one level.
   // For example, if type extends Extension, which extends PartialClass,
@@ -126,37 +121,13 @@ export class PartialClassReflect {
     return partialClass
   }
   static isPartialClass(type) {
-    return !!PartialClassReflect.getPartialClass(type)
-  }
-  static getPrototypicalType(type) {
-    if (!PartialClassReflect.isPartialClass(type)) 
-      return type
-
-    return associatedCache(type, PrototypicalType, () => {
-      let prototypicalType = class extends PrototypicalPartialType { }
-      type.defineOn(prototypicalType)
-      return prototypicalType
-    })
+    return !!this.getPartialClass(type)
   }
 
-  static *declarations(type, { filterType } = { }) {
-    if (PartialClassReflect.isPartialClass(type)) {
-      yield* associatedTypes(type, 
-        // TODO: allow traversal to reflect on metadata describing how
-        // to traverse the edges of the poset for any PartialClass node.
-        type[OwnDeclarationSymbols], // -> OwnDeclarationSymbols
-        { filterType, traverse: true })
-    }
-    else {
-      yield* associatedTypes(type, 
-        { [Declarations]: { filterType } }, 
-        { inherit: true })
-    }
-  }
   static *ownDeclarations(type, { filterType } = { }) {
-    if (PartialClassReflect.isPartialClass(type)) {
-      yield* associatedTypes(type, 
-        type[OwnDeclarationSymbols],
+    if (this.isPartialClass(type)) {
+      yield* ownAssociatedTypes(type, 
+        OwnDeclarationSymbols,
         { filterType })
     }
     else {
@@ -165,38 +136,168 @@ export class PartialClassReflect {
         { inherit: false })
     }
   }
-  static *memberKeys(type, { filterType } = { }) { 
-    yield* associatedKeys(type, 
-      type => PartialClassReflect.declarations(type, { filterType }),
-      type => PartialClassReflect.ownMemberKeys(type, { filterType })
-    )
-  }
-  static *ownMemberKeys(type, { filterType } = { }) { 
-    if (!PartialClassReflect.isPartialClass(type)) return
-    if (filterType && !isExtensionOf(type, filterType)) return
-    yield* ownMemberNamesAndSymbols(type.prototype) 
-  }
-  static *keyLookup(type, key, { filterType } = { }) {
-    // returns map: key => concepts that define the key
-    const prototypicalType = PartialClassReflect.getPrototypicalType(type)
-    const lookup = prototypicalType[MemberLookup]
-    if (!lookup) return null
-    yield* lookup.get(key)
-    // return associatedCache(type, MemberLookup, () =>
-    //   associatedKeyLookup(type,
-    //     () => PartialClassReflect.declarations(type, { filterType } ),
-    //     () => PartialClassReflect.ownMemberKeys(type, { filterType })))
+  static *declarations(type, { filterType } = { }) {
+    if (this.isPartialClass(type)) {
+      const prototypicalType = this.#getPrototypicalType(type)
+      yield* [...this.declarations(prototypicalType, 
+        { filterType })].filter(declaration => declaration != type)
+    }
+    else {
+      yield* associatedTypes(type, 
+        { [Declarations]: { filterType } }, 
+        { inherit: true })
+    }
   }
 
-  static keyMap(type, key, { filterType } = { }) {
+  static *ownMemberKeys(type) { 
+    if (this.isPartialClass(type)) {
+      yield * [...this.memberKeys(type)].filter(key => 
+        this.getMemberHost(type, key) == type)
+    }
+    else {
+      yield* ownMemberNamesAndSymbols(type.prototype) 
+    }
+  }
+  static *memberKeys(type) { 
+    if (this.isPartialClass(type)) {
+      const prototypicalType = this.#getPrototypicalType(type)
+      yield* this.memberKeys(prototypicalType)    
+    } 
+    else {
+      yield* memberNamesAndSymbols(type.prototype)
+    }
+  }
+
+  static getOwnMemberDescriptor(type, key) {
+    const prototype = type.prototype
+    const descriptor = Object.getOwnPropertyDescriptor(prototype, key)
+    if (!this.isPartialClass(type)) return descriptor
+    return type[Compile](descriptor) 
+  }
+  static getMemberDescriptor(type, key) {
+    const prototypicalType = this.#getPrototypicalType(type)
+    return Object.getOwnPropertyDescriptor(prototypicalType.prototype, key)
+  }
+
+  static getOwnMemberDescriptors(type) {
+    const descriptors = { }
+    for (const key of ownMemberNamesAndSymbols(type.prototype))
+      descriptors[key] = this.getOwnMemberDescriptor(type, key)
+    return descriptors
+  }
+  static getMemberDescriptors(type) {
+    if (this.isPartialClass(type)) {
+      const prototypicalType = this.#getPrototypicalType(type)
+      return associatedObject(type, Descriptors, () => 
+        PartialClassReflect.getMemberDescriptors(prototypicalType))
+    }
+    else {
+      const descriptors = { }
+      for (const key of this.memberKeys(type))
+        descriptors[key] = this.getMemberDescriptor(type, key)
+      return descriptors
+    }
+  }
+
+  static defineMember(type, key, descriptor) {
+    const prototype = type.prototype
+    // Skip adding abstract member to the prototype if a member already exists.
+    if (key in prototype && isAbstract(descriptor)) return false
+    Object.defineProperty(prototype, key, descriptor)
+    return true
+  }
+  static defineMembers(type, descriptors) {
+    const keys = []
+    for (const key of Reflect.ownKeys(descriptors)) {
+      const defined = this.defineMember(type, key, descriptors[key])
+      keys.push([key, defined])
+    }
+    return keys
+  }
+
+  static associate$(type, partialType, keys) {
+    assert(partialType.name) 
+
+    associatedSetAdd(type, Declarations, partialType)
+    for (const [key, defined] of keys) {
+      associatedLookupAdd(type, MemberHostLookup, key, partialType)
+      if (!defined) continue
+      associatedMapSet(type, MemberHostMap, key, partialType)
+    }
+  }
+  static inheritAssociations$(type, partialType, keys) {
+    assert(partialType.name) 
+    
+    associatedSetAdd(type, Declarations, partialType)
+    const prototypicalType = this.#getPrototypicalType(partialType)
+    associatedSetCopy(type, prototypicalType, Declarations)
+    for (const [key, defined] of keys) {
+      associatedLookupCopy(type, prototypicalType, MemberHostLookup, key)
+      if (!defined) continue
+      associatedMapCopy(type, prototypicalType, MemberHostMap, key)
+    }
+  }
+  static extend(type, partialType) {
+    assert(!this.isPartialClass(type),
+      `Expected type '${type.name}' not to be a PartialClass.`)
+
+    assert(this.isPartialClass(partialType), 
+      `PartialClass ${partialType.name} must indirectly extend PartialClass.`)
+
+    partialType[PreCondition](type)
+
+    for (const extension of this.ownDeclarations(partialType)) {
+      const descriptors = this.getMemberDescriptors(extension)
+      const keys = this.defineMembers(type, descriptors)
+      if (extension.name)
+        this.inheritAssociations$(type, extension, keys)
+      else
+        this.associate$(type, partialType, keys)
+    }
+
+    const descriptors = this.getOwnMemberDescriptors(partialType)
+    const keys = this.defineMembers(type, descriptors)
+    if (partialType.name)
+      this.associate$(type, partialType, keys)
+
+    partialType[PostCondition](type)
+  }
+
+  static fromPojo(pojo) {
+    const [type] = [class extends AnonnymousPartialClass { }]
+    const prototype = type.prototype
+    
+    for (const key of ownMemberNamesAndSymbols(pojo)) {
+      const descriptor = Object.getOwnPropertyDescriptor(pojo, key)
+      Object.defineProperty(prototype, key, descriptor)
+    }
+
+    return type
+  }
+
+  static *memberHosts(type, key) {
+    // returns map: key => concepts that define the key
+    const prototypicalType = this.#getPrototypicalType(type)
+    if (!(key in prototypicalType.prototype)) return null
+    yield* associatedLookupGet(
+      prototypicalType, MemberHostLookup, key) ?? [ type ]
+  }
+  
+  static getMemberHost(type, key) {
     // returns map: key => partial class that defined the key
-    const prototypicalType = PartialClassReflect.getPrototypicalType(type)
-    const map = prototypicalType[MemberMap]
-    if (!map) return null
-    return map.get(key)
-    // return associatedCache(type, MemberMap, () =>
-    //   associatedKeyMap(type,
-    //     () => PartialClassReflect.declarations(type, { filterType } ),
-    //     () => PartialClassReflect.ownMemberKeys(type, { filterType })))
+    const prototypicalType = this.#getPrototypicalType(type)
+    if (!(key in prototypicalType.prototype)) return null
+    return associatedMapGet(
+      prototypicalType, MemberHostMap, key) || type
   }
 }
+
+// Design Goals:
+// Partial classes are an extension of Object.defineProperties where the
+// descriptors can be a pojo as usual but also as a pojo that contains
+// lambdas or as classes that form trees of partial classes. To verify 
+// the shape of the resulting class a reflection API is provided. That API
+// can choose to reconstruct the loader or the loader can leave artifacts
+// that the loader consumes. The former is more isolated but the latter is
+// more accurate because it captures exactly what the loader did instead of
+// trying to simulate it. 

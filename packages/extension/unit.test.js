@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { PartialClass } from '@kingjs/partial-class'
+import { PartialClass, PartialClassReflect } from '@kingjs/partial-class'
 import { Extension, ExtensionReflect, Extensions } from '@kingjs/extension'
 
 describe('A method', () => {
@@ -72,7 +72,7 @@ describe('A type', () => {
       extension = class MyExtension extends Extension { 
         static [Extensions] = [ subExtension, subExtension ]
       }
-      extension.defineOn(type)
+      PartialClassReflect.extend(type, extension)
     })
     it('should yield the extensions', () => {
       const declarations = [...ExtensionReflect.ownExtensions(type)]
@@ -87,7 +87,7 @@ describe('A type', () => {
       member = function member() { }
       extension = class MyExtension extends Extension { }
       extension.prototype.member = member
-      extension.defineOn(type)
+      PartialClassReflect.extend(type, extension)
     })
     it('should have the member', () => {
       expect(type.prototype.member).toBe(member)
@@ -97,7 +97,7 @@ describe('A type', () => {
     let extension
     beforeEach(() => {
       extension = class MyExtension extends Extension { }
-      extension.defineOn(type)
+      PartialClassReflect.extend(type, extension)
     })
     it('should yield the extension as an own Extension declaration', () => {
       const declarations = [...ExtensionReflect.ownExtensions(type)]
@@ -116,7 +116,7 @@ describe('A type', () => {
       })
       describe('which is also extended by an Extension', () => {
         beforeEach(() => {
-          extension.defineOn(derived)
+          PartialClassReflect.extend(derived, extension)
         })
         it('should yield the extension as own', () => {
           const declarations = [...ExtensionReflect.ownExtensions(derived)]
@@ -137,6 +137,9 @@ describe('An extension', () => {
   let extension
   beforeEach(() => {
     extension = class MyExtension extends Extension { }
+  })
+  it('should be an extension', () => {
+    expect(ExtensionReflect.isExtension(extension)).toBe(true)
   })
   it('should have no own declarations', () => {
     const declarations = [...ExtensionReflect.ownExtensions(extension)]
@@ -180,10 +183,9 @@ describe('An extension', () => {
         expect(declarations[0]).toBe(subExtension)
       })
       it('should have the sub sub extension as a declaration', () => {
-        const declarations = [...ExtensionReflect.extensions(extension)]
-        expect(declarations).toHaveLength(2)
-        expect(declarations[0]).toBe(subExtension)
-        expect(declarations[1]).toBe(subSubExtension)
+        const actual = new Set(ExtensionReflect.extensions(extension))
+        const expected = new Set([ subExtension, subSubExtension ])
+        expect(actual).toEqual(expected)
       })
       it('should not have the member as an own name or symbol', () => {
         const namesAndSymbols = [...ExtensionReflect.ownMemberKeys(extension)]
