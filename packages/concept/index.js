@@ -162,7 +162,7 @@ export function implement(type, concept, implementation = { }) {
 
   // if pojo, create anonymous partial class from pojo
   if (isPojo(implementation))
-    implementation = Extension.fromPojo(implementation)
+    implementation = PartialClassReflect.fromPojo(implementation)
 
   // restrict implementation to members defined by the concept.
   const conceptMembers = new Set(ConceptReflect.memberKeys(concept))

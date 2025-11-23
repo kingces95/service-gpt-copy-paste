@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { PartialClass, PartialClassReflect } from '@kingjs/partial-class'
+import { 
+  PartialClass, 
+  PartialClassReflect,
+  AnonymousPartialClass,
+} from '@kingjs/partial-class'
 import { Extension, ExtensionReflect, Extensions } from '@kingjs/extension'
 
 describe('A method', () => {
@@ -35,19 +39,19 @@ describe('A method', () => {
         arg = Extension.fromArg(pojo)
       })
       it('should be a type that extends Extension', () => {
-        expect(arg.prototype).toBeInstanceOf(Extension)
+        expect(arg.prototype).toBeInstanceOf(AnonymousPartialClass)
       })
       it('should have the method', () => {
         expect(arg.prototype.method).toBe(method)
       })
     })
-    describe('converted by Extension.fromPojo', () => {
+    describe('converted by PartialClassReflect.fromPojo', () => {
       let extension
       beforeEach(() => {
-        extension = Extension.fromPojo(pojo)
+        extension = PartialClassReflect.fromPojo(pojo)
       })
       it('should be a type that extends Extension', () => {
-        expect(extension.prototype).toBeInstanceOf(Extension)
+        expect(extension.prototype).toBeInstanceOf(AnonymousPartialClass)
       })
       it('should have the method', () => {
         expect(extension.prototype.method).toBe(method)
@@ -72,7 +76,7 @@ describe('A type', () => {
       extension = class MyExtension extends Extension { 
         static [Extensions] = [ subExtension, subExtension ]
       }
-      PartialClassReflect.extend(type, extension)
+      PartialClassReflect.mergeMembers(type, extension)
     })
     it('should yield the extensions', () => {
       const declarations = [...ExtensionReflect.ownExtensions(type)]
@@ -87,7 +91,7 @@ describe('A type', () => {
       member = function member() { }
       extension = class MyExtension extends Extension { }
       extension.prototype.member = member
-      PartialClassReflect.extend(type, extension)
+      PartialClassReflect.mergeMembers(type, extension)
     })
     it('should have the member', () => {
       expect(type.prototype.member).toBe(member)
@@ -97,7 +101,7 @@ describe('A type', () => {
     let extension
     beforeEach(() => {
       extension = class MyExtension extends Extension { }
-      PartialClassReflect.extend(type, extension)
+      PartialClassReflect.mergeMembers(type, extension)
     })
     it('should yield the extension as an own Extension declaration', () => {
       const declarations = [...ExtensionReflect.ownExtensions(type)]
@@ -116,7 +120,7 @@ describe('A type', () => {
       })
       describe('which is also extended by an Extension', () => {
         beforeEach(() => {
-          PartialClassReflect.extend(derived, extension)
+          PartialClassReflect.mergeMembers(derived, extension)
         })
         it('should yield the extension as own', () => {
           const declarations = [...ExtensionReflect.ownExtensions(derived)]
@@ -208,7 +212,7 @@ describe('An extension', () => {
         it('should assert that MyPartialClass is not an Extension', () => {
           expect(() => {
             [...ExtensionReflect.extensions(extension)]
-          }).toThrow(`Expected associated type "myPartialClass" to be a Extension.`)
+          }).toThrow(`Associated type "myPartialClass" is of an unexpected type.`)
         })
       })
     })

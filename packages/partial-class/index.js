@@ -7,6 +7,7 @@ import { isAbstract } from '@kingjs/abstract'
 import { Descriptor } from '@kingjs/descriptor'
 
 const {
+  isExtensionOf,
   memberNamesAndSymbols,
   ownMemberNamesAndSymbols,
   associatedTypes,
@@ -78,7 +79,7 @@ export class PartialClass {
 
 class PrototypicalPartialType { }
 
-class AnonnymousPartialClass extends PartialClass { }
+export class AnonymousPartialClass extends PartialClass { }
 
 export class PartialClassReflect {
 
@@ -95,7 +96,7 @@ export class PartialClassReflect {
           writable: false,
         }
       })
-      this.extend(prototypicalType, type)
+      this.mergeMembers(prototypicalType, type)
       return prototypicalType
     })
   }  
@@ -215,8 +216,16 @@ export class PartialClassReflect {
     return keys
   }
 
+  static verifyPartialClass(partialType) {
+    if (!this.isPartialClass(partialType))
+      throw `PartialClass must indirectly extend PartialClass.`
+
+    if (!isExtensionOf(partialType, AnonymousPartialClass) && !partialType.name)
+      throw `PartialClass must have a name.`
+  }
+
   static associate$(type, partialType, keys) {
-    assert(partialType.name) 
+    assert(!(partialType.prototype instanceof AnonymousPartialClass)) 
 
     associatedSetAdd(type, Declarations, partialType)
     for (const [key, defined] of keys) {
@@ -225,10 +234,11 @@ export class PartialClassReflect {
       associatedMapSet(type, MemberHostMap, key, partialType)
     }
   }
-  static inheritAssociations$(type, partialType, keys) {
-    assert(partialType.name) 
+  static mergeAssociations$(type, partialType, keys) {
+    assert(!(partialType.prototype instanceof AnonymousPartialClass)) 
     
     associatedSetAdd(type, Declarations, partialType)
+
     const prototypicalType = this.#getPrototypicalType(partialType)
     associatedSetCopy(type, prototypicalType, Declarations)
     for (const [key, defined] of keys) {
@@ -237,36 +247,35 @@ export class PartialClassReflect {
       associatedMapCopy(type, prototypicalType, MemberHostMap, key)
     }
   }
-  static extend(type, partialType) {
-    assert(!this.isPartialClass(type),
-      `Expected type '${type.name}' not to be a PartialClass.`)
+  static mergeMembers(type, partialType) {
+    this.verifyPartialClass(partialType)
 
-    assert(this.isPartialClass(partialType), 
-      `PartialClass ${partialType.name} must indirectly extend PartialClass.`)
+    if(this.isPartialClass(type)) 
+      throw `Expected type '${type.name}' not to be a PartialClass.`
 
     partialType[PreCondition](type)
 
-    for (const extension of this.ownDeclarations(partialType)) {
-      const descriptors = this.getMemberDescriptors(extension)
+    for (const declaration of this.ownDeclarations(partialType)) {
+      const descriptors = this.getMemberDescriptors(declaration)
       const keys = this.defineMembers(type, descriptors)
-      if (extension.name)
-        this.inheritAssociations$(type, extension, keys)
+      if (!(declaration.prototype instanceof AnonymousPartialClass))
+        this.mergeAssociations$(type, declaration, keys)
       else
         this.associate$(type, partialType, keys)
     }
 
     const descriptors = this.getOwnMemberDescriptors(partialType)
     const keys = this.defineMembers(type, descriptors)
-    if (partialType.name)
+    if (!(partialType.prototype instanceof AnonymousPartialClass))
       this.associate$(type, partialType, keys)
 
     partialType[PostCondition](type)
   }
 
   static fromPojo(pojo) {
-    const [type] = [class extends AnonnymousPartialClass { }]
+    const [type] = [class extends AnonymousPartialClass { }]
     const prototype = type.prototype
-    
+
     for (const key of ownMemberNamesAndSymbols(pojo)) {
       const descriptor = Object.getOwnPropertyDescriptor(pojo, key)
       Object.defineProperty(prototype, key, descriptor)

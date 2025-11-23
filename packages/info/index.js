@@ -28,7 +28,7 @@ const ExtensionRuntimeNameOrSymbol = new Set([
 export class Info {
   static from(type) {
     if (isPojo(type))
-      type = Extension.fromPojo(es6ClassInfo)
+      type = PartialClassReflect.fromPojo(es6ClassInfo)
       
     const es6ClassInfo = PartialClassReflect.getClassInfo(type)
     const fn = es6ClassInfo.ctor

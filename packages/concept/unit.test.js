@@ -19,7 +19,7 @@ describe('A type', () => {
   describe('and a concept', () => {
     let concept
     beforeEach(() => {
-      concept = class extends Concept { }
+      concept = class MyConcept extends Concept { }
     })
     it('not passed to implement should throw', () => {
       expect(() => implement(type, null)).toThrow()
@@ -30,7 +30,7 @@ describe('A type', () => {
     })
     it('should throw implementing itself', () => {
       expect(() => implement(concept, concept)).toThrow([
-        "Assertion failed: Expected type 'concept' not to be a PartialClass."
+        "Expected type 'MyConcept' not to be a PartialClass."
       ].join(' '))
     })
     describe('already implemented by the type', () => {
@@ -58,8 +58,7 @@ describe('A type', () => {
       it('should throw when implemented', () => {
         const cls = class { }
         expect(() => implement(cls, extendedConcept)).toThrow([
-          'Assertion failed:',
-          'PartialClass ExtendedConcept must indirectly extend PartialClass.',
+          'PartialClass must indirectly extend PartialClass.',
         ].join(' '))
       })
     })
@@ -202,7 +201,7 @@ describe('A type', () => {
         const emptyMethod = () => { }
         it('should throw', () => {
           expect(() => implement(type, concept, { other: emptyMethod }))
-            .toThrow("Concept 'concept' does not define member 'other'.")
+            .toThrow("Concept 'MyConcept' does not define member 'other'.")
         })
       })
     })

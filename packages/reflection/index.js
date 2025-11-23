@@ -95,20 +95,20 @@ export class Reflection {
     for (const symbol of Object.getOwnPropertySymbols(symbols)) {
       const options = symbols[symbol]
       const { filterType: localFilterType, expectedType, map } = options
-
-      if (globalFilterType && expectedType &&
-        !Reflection.isExtensionOf(expectedType, globalFilterType))
-        continue
+      const expectedTypes = [...asIterable(expectedType)]
 
       const metadata = Reflection.associatedIterable(type, symbol)
       for (let associatedType of asIterable(metadata)) {
         if (map) associatedType = map(associatedType)
   
-        assert(!expectedType || 
-          Reflection.isExtensionOf(associatedType, expectedType), [
-            `Expected associated type "${associatedType.name}"`,
-            `to be a ${expectedType?.name}.`
-          ].join(' '))
+        // assert if associated type fails to extend any expected type
+        const isValid = !expectedTypes.length || 
+          expectedTypes.filter(
+            expectedType => Reflection.isExtensionOf(associatedType, expectedType)
+          ).length > 0
+          
+        if (!isValid)
+          throw `Associated type "${associatedType.name}" is of an unexpected type.`
   
         if (localFilterType 
           && !Reflection.isExtensionOf(associatedType, localFilterType)) 

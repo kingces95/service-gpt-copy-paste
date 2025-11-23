@@ -1,5 +1,9 @@
 import { assert } from '@kingjs/assert'
-import { PartialClass, PartialClassReflect } from '@kingjs/partial-class'
+import { 
+  PartialClass, 
+  PartialClassReflect,
+  AnonymousPartialClass, 
+} from '@kingjs/partial-class'
 import { isPojo } from '@kingjs/pojo-test'
 import { Descriptor } from '@kingjs/descriptor'
 import { Reflection } from '@kingjs/reflection'
@@ -33,14 +37,14 @@ const {
 export class Extension extends PartialClass {
   static [PartialClass.Symbol.ownDeclaraitionSymbols] = {
     [Extensions]: { 
-      expectedType: Extension,
+      expectedType: [Extension, AnonymousPartialClass],
       map: Extension.fromArg,
     }
   }
 
   static fromArg(arg) {
     if (isPojo(arg))
-      arg = Extension.fromPojo(arg)
+      arg = PartialClassReflect.fromPojo(arg)
 
     assert(isExtensionOf(arg, PartialClass),
       `Expected arg to be a PartialClass.`)

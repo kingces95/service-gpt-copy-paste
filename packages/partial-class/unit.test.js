@@ -3,7 +3,8 @@ import { beforeEach } from 'vitest'
 import { abstract } from '@kingjs/abstract'
 import { 
   PartialClass, 
-  PartialClassReflect 
+  PartialClassReflect,
+  AnonymousPartialClass
 } from '@kingjs/partial-class'
 
 describe('PartialClass', () => {
@@ -57,14 +58,61 @@ describe('A type', () => {
   })
 })
 
+describe('MyAnonymousExtension', () => {
+  let MyAnonymousExtension
+  beforeEach(() => {
+    MyAnonymousExtension = PartialClassReflect.fromPojo({ })
+  })
+
+  describe('with method', () => {
+    let method
+    beforeEach(() => {
+      method = function() { }
+      MyAnonymousExtension.prototype.method = method
+    })
+
+    describe('defined on myType', () => {
+      let myType
+      beforeEach(() => {
+        myType = class { }
+        PartialClassReflect.mergeMembers(myType, MyAnonymousExtension)
+      })
+
+      it('should have the method on type', () => {
+        expect(myType.prototype.method).toBe(method)
+      })
+      it('should have myType as the host of the method', () => {
+        const host = PartialClassReflect.getMemberHost(myType, 'method')
+        expect(host).toBe(myType)
+      })
+      it('should have myType as the only host for the method', () => {
+        const lookup = [...PartialClassReflect.memberHosts(myType, 'method')]
+        expect(lookup).toContain(myType)
+        expect(lookup).toHaveLength(1)
+      })
+      it('should have no own declarations', () => {
+        const declarations = [...PartialClassReflect.ownDeclarations(myType)]
+        expect(declarations).toHaveLength(0)
+      })
+      it('should have method as member name or symbol', () => {
+        const namesAndSymbols = [...PartialClassReflect.memberKeys(myType)]
+        expect(namesAndSymbols).toContain('method')
+      })
+    })
+  })
+})
+
 describe('Extension', () => {
   let ExtensionSymbol = Symbol('ExtensionSymbol')
   let Extension
   
   beforeEach(() => {
     Extension = class Extension extends PartialClass { 
-      static [PartialClass.Symbol.ownDeclaraitionSymbols] = 
-        { [ExtensionSymbol]: { expectedType: Extension } }
+      static [PartialClass.Symbol.ownDeclaraitionSymbols] = { 
+        [ExtensionSymbol]: { 
+          expectedType: [Extension, AnonymousPartialClass] 
+        } 
+      }
     }
   })
 
@@ -80,42 +128,10 @@ describe('Extension', () => {
     beforeEach(() => {
       [MyNamelessExtension] = [class extends Extension { }]
     })
-
-    describe('with method', () => {
-      let method
-      beforeEach(() => {
-        method = function() { }
-        MyNamelessExtension.prototype.method = method
-      })
-
-      describe('defined on myType', () => {
-        let myType
-        beforeEach(() => {
-          myType = class { }
-          PartialClassReflect.extend(myType, MyNamelessExtension)
-        })
-
-        it('should have the method on type', () => {
-          expect(myType.prototype.method).toBe(method)
-        })
-        it('should have myType as the host of the method', () => {
-          const host = PartialClassReflect.getMemberHost(myType, 'method')
-          expect(host).toBe(myType)
-        })
-        it('should have myType as the only host for the method', () => {
-          const lookup = [...PartialClassReflect.memberHosts(myType, 'method')]
-          expect(lookup).toContain(myType)
-          expect(lookup).toHaveLength(1)
-        })
-        it('should have no own declarations', () => {
-          const declarations = [...PartialClassReflect.ownDeclarations(myType)]
-          expect(declarations).toHaveLength(0)
-        })
-        it('should have method as member name or symbol', () => {
-          const namesAndSymbols = [...PartialClassReflect.memberKeys(myType)]
-          expect(namesAndSymbols).toContain('method')
-        })
-      })
+    it('should throw when verified as a PartialClass', () => {
+      expect(() => {
+        PartialClassReflect.verifyPartialClass(MyNamelessExtension)
+      }).toThrow(`PartialClass must have a name.`)
     })
   })
 
@@ -176,7 +192,7 @@ describe('Extension', () => {
           type = class { }
           method = function() { }
           type.prototype.method = method
-          PartialClassReflect.extend(type, MyExtension)
+          PartialClassReflect.mergeMembers(type, MyExtension)
         })
 
         it('should have have the concrete method on type', () => {
@@ -185,25 +201,25 @@ describe('Extension', () => {
       })
     })
 
-    describe('with MyNamelessSubExtension', () => {
-      let MyNamelessSubExtension
+    describe('with MyAnonymousSubExtension', () => {
+      let MyAnonymousSubExtension
       beforeEach(() => {
-        [ MyNamelessSubExtension ] = [ class extends Extension { } ]
-        MyExtension[ExtensionSymbol] = [ MyNamelessSubExtension ]
+        MyAnonymousSubExtension = PartialClassReflect.fromPojo({ })
+        MyExtension[ExtensionSymbol] = [ MyAnonymousSubExtension ]
       })
 
       describe('with method', () => {
         let method
         beforeEach(() => {
           method = function() { }
-          MyNamelessSubExtension.prototype.method = method
+          MyAnonymousSubExtension.prototype.method = method
         })
 
         describe('defined on myType', () => {
           let myType
           beforeEach(() => {
             myType = class { }
-            PartialClassReflect.extend(myType, MyExtension)
+            PartialClassReflect.mergeMembers(myType, MyExtension)
           })
   
           it('should have method as own member name or symbol', () => {
@@ -338,7 +354,7 @@ describe('Extension', () => {
 
                   describe('after defining on myType', () => {
                     beforeEach(() => {
-                      PartialClassReflect.extend(myType, MyExtension)
+                      PartialClassReflect.mergeMembers(myType, MyExtension)
                     })
                     it('should have MySubSubExtension as member host for subSubMethod', () => {
                       const host = 
@@ -356,7 +372,7 @@ describe('Extension', () => {
 
               describe('after defining on myType', () => {
                 beforeEach(() => {
-                  PartialClassReflect.extend(myType, MyExtension)
+                  PartialClassReflect.mergeMembers(myType, MyExtension)
                 })
 
                 it('should have MySubExtension as member host for subMethod', () => {
@@ -375,7 +391,7 @@ describe('Extension', () => {
       
           describe('after defining on myType', () => {
             beforeEach(() => {
-              PartialClassReflect.extend(myType, MyExtension)
+              PartialClassReflect.mergeMembers(myType, MyExtension)
             })
 
             describe('method', () => {
@@ -485,7 +501,7 @@ describe('Extension', () => {
               }
             }
         
-            PartialClassReflect.extend(myType, MyExtension)
+            PartialClassReflect.mergeMembers(myType, MyExtension)
           })
           it('should have the method', () => {
             expect(myType.prototype.method).toBe(mySubExtensionMethod)
@@ -510,7 +526,7 @@ describe('Extension', () => {
             type = class { }
             method = function() { }
             type.prototype.method = method
-            PartialClassReflect.extend(type, MyExtension)
+            PartialClassReflect.mergeMembers(type, MyExtension)
           })
           
           it('should have have the concrete method on type', () => {
