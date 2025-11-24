@@ -48,12 +48,6 @@ export class Concept extends PartialClass {
     return satisfies(instance, this)
   }
 
-  static [PartialClass.Symbol.preCondition](type) {
-    // Concept must have a name.
-    assert(typeof this.name == 'string' && this.name.length,
-      `Concept must have a name.`)
-  }
-
   static [PartialClass.Symbol.compile](descriptor) {
     const result = super[PartialClass.Symbol.compile](descriptor)
 

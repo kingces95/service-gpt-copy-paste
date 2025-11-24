@@ -11,6 +11,10 @@ describe('PartialClass', () => {
   it('cannot be instantiated', () => {
     expect(() => new PartialClass()).toThrow()
   })
+  it('cannot be the target of mergeMembers', () => {
+    expect(() => PartialClassReflect.mergeMembers(PartialClass)).toThrow(
+      `Expected type to not be a PartialClass.`)
+  })
 })
 
 describe('A type', () => {
@@ -25,6 +29,23 @@ describe('A type', () => {
   it('should yield no declarations', () => {
     const declarations = [...PartialClassReflect.declarations(type)]
     expect(declarations).toHaveLength(0)
+  })
+  it('should throw if verified as a PartialClass', () => {
+    expect(() => {
+      PartialClassReflect.verifyPartialClass(type)
+    }).toThrow(`Partial class must indirectly extend PartialClass.`)
+  })
+
+  describe('after merging a method', () => {
+    let method
+    beforeEach(() => {
+      method = function method() { }
+      PartialClassReflect.mergeMembers(type, { method })
+    })
+
+    it('should have the method', () => {
+      expect(type.prototype.method).toBe(method)
+    })
   })
 
   describe('with a method', () => {
@@ -462,43 +483,20 @@ describe('Extension', () => {
         })
       
         describe('with kitchen sink callbacks', () => { 
-          let preConditionCalled
           let compileCalled
-          let postConditionCalled
       
           beforeEach(() => {
-            preConditionCalled = false
             compileCalled = false
-            postConditionCalled = false
-      
-            Extension[PartialClass.Symbol.preCondition] = function(type) {
-              if (!preConditionCalled) {
-                preConditionCalled = true
-                expect(compileCalled).toBeFalsy()
-                expect(postConditionCalled).toBeFalsy() 
-                expect(type).toBe(myType)
-              }
-            }
       
             Extension[PartialClass.Symbol.compile] = function(descriptor) {
               if (!compileCalled) {
                 compileCalled = true
-                expect(preConditionCalled).toBeTruthy()
-                expect(postConditionCalled).toBeFalsy() 
                 expect(descriptor.value).toBe(mySubExtensionMethod)
               }
         
               expect(descriptor.enumerable).toBe(true)
               descriptor.enumerable = false
               return descriptor 
-            }
-      
-            Extension[PartialClass.Symbol.postCondition] = function(type) {
-              if (!postConditionCalled) {
-                postConditionCalled = true
-                expect(preConditionCalled).toBeTruthy()
-                expect(compileCalled).toBeTruthy()
-              }
             }
         
             PartialClassReflect.mergeMembers(myType, MyExtension)
@@ -507,9 +505,7 @@ describe('Extension', () => {
             expect(myType.prototype.method).toBe(mySubExtensionMethod)
           })
           it('should call all PartialClass callbacks', () => {
-            expect(preConditionCalled).toBe(true)
             expect(compileCalled).toBe(true)
-            expect(postConditionCalled).toBe(true)
           })
         })
       })

@@ -30,7 +30,7 @@ describe('A type', () => {
     })
     it('should throw implementing itself', () => {
       expect(() => implement(concept, concept)).toThrow([
-        "Expected type 'MyConcept' not to be a PartialClass."
+        "Expected type to not be a PartialClass."
       ].join(' '))
     })
     describe('already implemented by the type', () => {
@@ -58,7 +58,7 @@ describe('A type', () => {
       it('should throw when implemented', () => {
         const cls = class { }
         expect(() => implement(cls, extendedConcept)).toThrow([
-          'PartialClass must indirectly extend PartialClass.',
+          'Partial class must indirectly extend PartialClass.',
         ].join(' '))
       })
     })
