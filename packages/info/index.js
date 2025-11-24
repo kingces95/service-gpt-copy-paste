@@ -3,7 +3,11 @@ import { isPojo } from "@kingjs/pojo-test"
 import { abstract } from "@kingjs/abstract"
 import { Normalize } from "@kingjs/normalize"
 import { Reflection } from '@kingjs/reflection'
-import { PartialClass, PartialClassReflect } from '@kingjs/partial-class'
+import { 
+  PartialClass, 
+  PartialClassReflect, 
+  AnonymousPartialClass,
+} from '@kingjs/partial-class'
 import { Extension, Extensions, ExtensionReflect } from '@kingjs/extension'
 import { Concept, ConceptReflect } from "@kingjs/concept"
 import { Compiler } from "@kingjs/compiler"
@@ -28,7 +32,7 @@ const ExtensionRuntimeNameOrSymbol = new Set([
 export class Info {
   static from(type) {
     if (isPojo(type))
-      type = PartialClassReflect.fromPojo(es6ClassInfo)
+      type = AnonymousPartialClass.create(es6ClassInfo)
       
     const es6ClassInfo = PartialClassReflect.getClassInfo(type)
     const fn = es6ClassInfo.ctor

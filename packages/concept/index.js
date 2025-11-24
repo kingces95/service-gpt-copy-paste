@@ -7,7 +7,9 @@ import { Descriptor } from '@kingjs/descriptor'
 import { isPojo } from '@kingjs/pojo-test'
 
 import { 
-  PartialClass, PartialClassReflect
+  PartialClass, 
+  PartialClassReflect,
+  AnonymousPartialClass,
 } from '@kingjs/partial-class'
 
 const {
@@ -156,7 +158,7 @@ export function implement(type, concept, implementation = { }) {
 
   // if pojo, create anonymous partial class from pojo
   if (isPojo(implementation))
-    implementation = PartialClassReflect.fromPojo(implementation)
+    implementation = AnonymousPartialClass.create(implementation)
 
   // restrict implementation to members defined by the concept.
   const conceptMembers = new Set(ConceptReflect.memberKeys(concept))

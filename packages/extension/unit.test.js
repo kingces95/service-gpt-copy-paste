@@ -45,10 +45,10 @@ describe('A method', () => {
         expect(arg.prototype.method).toBe(method)
       })
     })
-    describe('converted by PartialClassReflect.fromPojo', () => {
+    describe('converted by AnonymousPartialClass.create', () => {
       let extension
       beforeEach(() => {
-        extension = PartialClassReflect.fromPojo(pojo)
+        extension = AnonymousPartialClass.create(pojo)
       })
       it('should be a type that extends Extension', () => {
         expect(extension.prototype).toBeInstanceOf(AnonymousPartialClass)

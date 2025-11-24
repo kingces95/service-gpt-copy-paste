@@ -3,7 +3,10 @@ import { beforeEach } from 'vitest'
 import { Info, FunctionInfo } from "@kingjs/info"
 import { Extension, Extensions } from '@kingjs/extension'
 import { extend } from '@kingjs/extend'
-import { PartialClassReflect } from '@kingjs/partial-class'
+import { 
+  AnonymousPartialClass,
+  PartialClassReflect 
+} from '@kingjs/partial-class'
 
 function getMemberValue(cls) {
   const info = Info.from(cls)
@@ -21,7 +24,7 @@ describe('A class with a member', () => {
     let partial
     let memberFn = function member() { }
     beforeEach(() => {
-      partial = PartialClassReflect.fromPojo({ member: memberFn })
+      partial = AnonymousPartialClass.create({ member: memberFn })
     })
     it('should match class and partial member', async () => {
       extend(cls, partial)

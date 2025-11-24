@@ -85,7 +85,7 @@ export class Reflection {
     yield* Reflection.prototypes(target)
   }
 
-  static *ownAssociatedTypes(type, symbols, options = { }) {
+  static *associatedOwnTypes(type, symbols, options = { }) {
     const { filterType: globalFilterType } = options
 
     // if symbols typeof symbol, pull metadata off of type
@@ -127,7 +127,7 @@ export class Reflection {
     const { inherit, traverse, visited } = options
     
     for (const prototype of Reflection.prototypeHierarchy(type)) {
-      for (const associatedType of Reflection.ownAssociatedTypes(
+      for (const associatedType of Reflection.associatedOwnTypes(
         prototype, symbols, options)) {
 
         if (visited.has(associatedType)) continue

@@ -40,7 +40,8 @@ describe('A type', () => {
     let method
     beforeEach(() => {
       method = function method() { }
-      PartialClassReflect.mergeMembers(type, { method })
+      PartialClassReflect.mergeMembers(type, 
+        AnonymousPartialClass.create({ method }))
     })
 
     it('should have the method', () => {
@@ -82,7 +83,7 @@ describe('A type', () => {
 describe('MyAnonymousExtension', () => {
   let MyAnonymousExtension
   beforeEach(() => {
-    MyAnonymousExtension = PartialClassReflect.fromPojo({ })
+    MyAnonymousExtension = AnonymousPartialClass.create({ })
   })
 
   describe('with method', () => {
@@ -225,7 +226,7 @@ describe('Extension', () => {
     describe('with MyAnonymousSubExtension', () => {
       let MyAnonymousSubExtension
       beforeEach(() => {
-        MyAnonymousSubExtension = PartialClassReflect.fromPojo({ })
+        MyAnonymousSubExtension = AnonymousPartialClass.create({ })
         MyExtension[ExtensionSymbol] = [ MyAnonymousSubExtension ]
       })
 

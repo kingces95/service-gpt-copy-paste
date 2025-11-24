@@ -11,7 +11,7 @@ const {
   memberNamesAndSymbols,
   ownMemberNamesAndSymbols,
   associatedTypes,
-  ownAssociatedTypes,
+  associatedOwnTypes,
   associatedSetAdd,
   associatedSetCopy,
   associatedMapSet,
@@ -23,8 +23,88 @@ const {
   associatedObject,
 } = Reflection
 
-// A PartialClass can define a number of static hooks. Each hook has its 
-// own symbol: Compile.  
+// The PartialClass abstraction is like Object.defineProperties but the
+// descriptors are provided as members of an extension of an extension of
+// PartialClass where the first extension represents the type of partial
+// class and the second extension hosts the user defined members.
+
+// AnonymousPartialClass which extends PartialClass is provided out-of-
+// the-box to define partial anonymous partial types from POJOs. For example:
+//    const MyPartial = AnonymousPartialClass.create({
+//      myMethod() { ... }
+//    }) 
+
+// The PartialClassReflect API provides reflection over PartialTypes. For
+// example, to verify that a type is a PartialClass use:
+//    PartialClassReflect.isPartialClass(type)
+
+// To get the type of the partial class use:
+//    PartialClassReflect.getPartialClass(type)
+// For example, given the partial type defined above:
+//    PartialClassReflect.getPartialClass(MyPartial) === AnonymousPartialClass
+
+// To get the member keys defined on the partial type use:
+//    PartialClassReflect.ownMemberKeys(type)
+// Continuing the example:
+//    PartialClassReflect.ownMemberKeys(MyPartial) yields 'myMethod'
+
+// To get a member descriptor defined on the partial type use:
+//    PartialClassReflect.getOwnMemberDescriptor(type, key)
+// Continuing the example:
+//    PartialClassReflect.getOwnMemberDescriptor(MyPartial, 'myMethod')
+// returns the descriptor for myMethod
+
+// To get all member descriptors defined on the partial type use:
+//    PartialClassReflect.getOwnMemberDescriptors(type)
+// Continuing the example:
+//    PartialClassReflect.getOwnMemberDescriptors(MyPartial)
+// returns an object with myMethod descriptors as members.
+
+// To define a member using a standalone descriptor use:
+//    PartialClassReflect.defineMember(type, key, descriptor)
+// Continuing the example:
+//    PartialClassReflect.defineMember(MyPartial, 'myMethod', descriptor)
+// defines myMethod on MyPartial.prototype *except* if the descriptor
+// is abstract and myMethod already exists on MyPartial.prototype.
+
+// PartialClassReflect.mergeMembers(type, partialType) makes repeated calls
+// to defineMember to copy the descriptors defined on partialType to the type. 
+// Continuing the example:
+//    class MyType { }
+//    PartialClassReflect.mergeMembers(MyType, MyPartial)
+// Now MyType.prototype has myMethod.
+
+// The PartialClassReflect API provides reflection over the resulting 
+// merged type. These include:
+// 1. The set of partial types that contributed members to the type.
+//    PartialClassReflect.declarations(type) returns this set.
+// 2. For each member key, the set of partial types that defined the key.
+//    PartialClassReflect.memberHosts(type, key) returns this set.
+// 3. For each member key, the partial type that actually defined the key.
+//    PartialClassReflect.getMemberHost(type, key) returns this type.
+// AnonymousPartialClass partial types are transparent so their members
+// will appear to be defined by the type itself. Continuing the example:
+//    PartialClassReflect.declarations(MyType) yields MyType
+//    PartialClassReflect.memberHosts(MyType, 'myMethod') yields MyType
+//    PartialClassReflect.getMemberHost(MyType, 'myMethod') is MyType 
+
+// Custom partial types can be defined by extending PartialClass. For
+// example, Concept extends PartialClass to define concept partial types.
+// See Concept for more details. Custom partial types are not transparent
+// so their members will appear to be defined by the custom partial type.
+
+// Custom partial types can reference other partial types and so form a 
+// poset of partial types. OwnDeclarationSymbols describes how to declare
+// the partial types associated with a type of partial type. 
+
+// PartialClassReflect has non-"own" variants that will walk the poset of
+// partial types yielding partial types reachable from the supplied 
+// partial type (declarations), the set of keys (memberKeys), the set of 
+// descriptors (getMemberDescriptors), or the descriptor for a given slot
+// (getMemberDescriptor). The same members can be used to reflect on a
+// type that has been merged with one or more partial types. 
+
+// --
 
 // Compile transforms a descriptor before being copied to the target type. 
 // For example, a concept partial type can apply a policy that all its 
@@ -37,7 +117,9 @@ const Compile = Symbol('PartialClass.compile')
 // PartialClass so that the poset of associated types can be traversed.
 const OwnDeclarationSymbols = Symbol('PartialClass.ownDeclaraitionSymbols')
 
-// The loader associates the following with the types it loads:
+// The loader tracks the following assoications during loading. Note: The 
+// reflection uses these association to ensures that reflection accurately 
+// reflects what the loader actually did instead of trying to simulate it. 
 const Declarations = Symbol('PartialClass.declarations')
 const MemberHostLookup = Symbol('PartialClassReflect.memberHostLookup')
 const MemberHostMap = Symbol('PartialClassReflect.memberHostMap')
@@ -60,7 +142,21 @@ export class PartialClass {
 
 class PrototypicalPartialType { }
 
-export class AnonymousPartialClass extends PartialClass { }
+export class AnonymousPartialClass extends PartialClass { 
+  static create(pojo) {
+    assert(isPojo(pojo), 'pojo must be a POJO')
+
+    const [type] = [class extends AnonymousPartialClass { }]
+    const prototype = type.prototype
+
+    for (const key of ownMemberNamesAndSymbols(pojo)) {
+      const descriptor = Object.getOwnPropertyDescriptor(pojo, key)
+      Object.defineProperty(prototype, key, descriptor)
+    }
+
+    return type
+  }
+}
 
 export class PartialClassReflect {
 
@@ -82,27 +178,18 @@ export class PartialClassReflect {
     })
   }  
   
-  // getPartialClass returns the type's PartialClass, or null if the type
-  // does not extend PartialClass indirectly by exactly one level.
-  // For example, if type extends Extension, which extends PartialClass,
-  // then getPartialClass(type) returns Extension.
   static getPartialClass(type) {
     const partialClass = Object.getPrototypeOf(type)
-
-    // Extension or Concept must extend PartialClass indirectly 
-    // by exactly one level
-    if (Object.getPrototypeOf(partialClass) != PartialClass)
-      return null
-
+    if (Object.getPrototypeOf(partialClass) != PartialClass) return null
     return partialClass
   }
   static isPartialClass(type) {
-    return !!PCReflect.getPartialClass(type)
+    return PCReflect.getPartialClass(type) != null
   }
 
   static *ownDeclarations(type, { filterType } = { }) {
     if (PCReflect.isPartialClass(type)) {
-      yield* ownAssociatedTypes(type, 
+      yield* associatedOwnTypes(type, 
         OwnDeclarationSymbols,
         { filterType })
     }
@@ -165,7 +252,7 @@ export class PartialClassReflect {
     if (PCReflect.isPartialClass(type)) {
       const prototypicalType = PCReflect.#getPrototypicalType(type)
       return associatedObject(type, Descriptors, () => 
-        PartialClassReflect.getMemberDescriptors(prototypicalType))
+        PCReflect.getMemberDescriptors(prototypicalType))
     }
     else {
       const descriptors = { }
@@ -226,8 +313,6 @@ export class PartialClassReflect {
     if(type == PartialClass || type.prototype instanceof PartialClass) 
       throw `Expected type to not be a PartialClass.`
 
-    if (isPojo(partialType)) partialType = PCReflect.fromPojo(partialType)
-
     PCReflect.verifyPartialClass(partialType)
 
     for (const declaration of PCReflect.ownDeclarations(partialType)) {
@@ -245,18 +330,6 @@ export class PartialClassReflect {
       PCReflect.associate$(type, partialType, keys)
   }
 
-  static fromPojo(pojo) {
-    const [type] = [class extends AnonymousPartialClass { }]
-    const prototype = type.prototype
-
-    for (const key of ownMemberNamesAndSymbols(pojo)) {
-      const descriptor = Object.getOwnPropertyDescriptor(pojo, key)
-      Object.defineProperty(prototype, key, descriptor)
-    }
-
-    return type
-  }
-
   static *memberHosts(type, key) {
     // returns map: key => concepts that define the key
     const prototypicalType = PCReflect.#getPrototypicalType(type)
@@ -264,7 +337,6 @@ export class PartialClassReflect {
     yield* associatedLookupGet(
       prototypicalType, MemberHostLookup, key) ?? [ type ]
   }
-  
   static getMemberHost(type, key) {
     // returns map: key => partial class that defined the key
     const prototypicalType = PCReflect.#getPrototypicalType(type)
@@ -275,13 +347,3 @@ export class PartialClassReflect {
 }
 
 const PCReflect = PartialClassReflect
-
-// Design Goals:
-// Partial classes are an extension of Object.defineProperties where the
-// descriptors can be a pojo as usual but also as a pojo that contains
-// lambdas or as classes that form trees of partial classes. To verify 
-// the shape of the resulting class a reflection API is provided. That API
-// can choose to reconstruct the loader or the loader can leave artifacts
-// that the loader consumes. The former is more isolated but the latter is
-// more accurate because it captures exactly what the loader did instead of
-// trying to simulate it. 

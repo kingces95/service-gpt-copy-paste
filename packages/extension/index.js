@@ -44,7 +44,7 @@ export class Extension extends PartialClass {
 
   static fromArg(arg) {
     if (isPojo(arg))
-      arg = PartialClassReflect.fromPojo(arg)
+      arg = AnonymousPartialClass.create(arg)
 
     assert(isExtensionOf(arg, PartialClass),
       `Expected arg to be a PartialClass.`)

@@ -17,43 +17,43 @@ describe('A type', () => {
     expect(actual).toEqual(expected)
   })
   describe('and a concept', () => {
-    let concept
+    let MyConcept
     beforeEach(() => {
-      concept = class MyConcept extends Concept { }
+      MyConcept = class MyConcept extends Concept { }
     })
     it('not passed to implement should throw', () => {
       expect(() => implement(type, null)).toThrow()
     })
     it('should satisfy the concept', () => {
-      expect(null).not.toBeInstanceOf(concept)
-      expect(type.prototype).toBeInstanceOf(concept)
+      expect(null).not.toBeInstanceOf(MyConcept)
+      expect(type.prototype).toBeInstanceOf(MyConcept)
     })
     it('should throw implementing itself', () => {
-      expect(() => implement(concept, concept)).toThrow([
+      expect(() => implement(MyConcept, MyConcept)).toThrow([
         "Expected type to not be a PartialClass."
       ].join(' '))
     })
     describe('already implemented by the type', () => {
       let methodFn
       beforeEach(() => {
-        concept.prototype.method = function() { }
+        MyConcept.prototype.method = function() { }
         methodFn = () => { }
         type.prototype.method = methodFn
       })
       it('should not whack the existing method', () => {
-        implement(type, concept)
+        implement(type, MyConcept)
         expect(type.prototype.method).toBe(methodFn)
       })
       it('should whack the existing method when re-implemented', () => {
         const newMethodFn = () => { }
-        implement(type, concept, { method: newMethodFn })
+        implement(type, MyConcept, { method: newMethodFn })
         expect(type.prototype.method).toBe(newMethodFn)
       })
     })
     describe('and a type that extends the concept', () => {
       let extendedConcept
       beforeEach(() => {
-        extendedConcept = class ExtendedConcept extends concept { }
+        extendedConcept = class ExtendedConcept extends MyConcept { }
       })
       it('should throw when implemented', () => {
         const cls = class { }
@@ -64,25 +64,25 @@ describe('A type', () => {
     })
     describe('implmented by the type', () => {
       beforeEach(() => {
-        implement(type, concept)
+        implement(type, MyConcept)
       })
       it('should satisfy the concept', () => {
-        implement(type, concept)
-        expect(type.prototype).toBeInstanceOf(concept)
+        implement(type, MyConcept)
+        expect(type.prototype).toBeInstanceOf(MyConcept)
       })
       it('should be an own declared concept', () => {
         const actual = [...ConceptReflect.ownConcepts(type)]
-        const expected = [concept]
+        const expected = [MyConcept]
         expect(actual).toEqual(expected)
       })
     })
     describe('with a data property', () => {
       beforeEach(() => {
-        concept.prototype.data = 42
+        MyConcept.prototype.data = 42
       })
       it('should throw when implemented', () => {
         expect(() => {
-          implement(type, concept)
+          implement(type, MyConcept)
         }).toThrow(
           'Concept members cannot be data properties. Use accessor or method instead.'
         )
@@ -90,25 +90,25 @@ describe('A type', () => {
     })
     describe('with an accessor', () => {
       beforeEach(() => {
-        Object.defineProperty(concept.prototype, 'accessor', {
+        Object.defineProperty(MyConcept.prototype, 'accessor', {
           get: abstract,
           set: abstract,
           configurable: true,
         })
         const descriptor = Object.getOwnPropertyDescriptor(
-          concept.prototype, 'accessor')
+          MyConcept.prototype, 'accessor')
         expect(descriptor.get).toBe(abstract)
         expect(descriptor.set).toBe(abstract)
       })
       it('should not satisfy the concept', () => {
-        expect(satisfies(type.prototype, concept)).toBe(false)
+        expect(satisfies(type.prototype, MyConcept)).toBe(false)
       })
       describe('when implemented', () => {
         beforeEach(() => {
-          implement(type, concept)
+          implement(type, MyConcept)
         })
         it('should satisfy the concept', () => {
-          expect(satisfies(type.prototype, concept)).toBe(true)
+          expect(satisfies(type.prototype, MyConcept)).toBe(true)
         })
         it('should have an abstract accessor', () => {
           const descriptor = Object.getOwnPropertyDescriptor(
@@ -129,7 +129,7 @@ describe('A type', () => {
             expect(descriptor.set).toBe(abstract)
           })
           it('should still satisfy the concept', () => {
-            expect(satisfies(type.prototype, concept)).toBe(true)
+            expect(satisfies(type.prototype, MyConcept)).toBe(true)
           })
         })
         describe('and removes the setter', () => {
@@ -145,25 +145,25 @@ describe('A type', () => {
             expect(descriptor.set).toBe(undefined)
           })
           it('should still satisfy the concept', () => {
-            expect(satisfies(type.prototype, concept)).toBe(true)
+            expect(satisfies(type.prototype, MyConcept)).toBe(true)
           })
         })
       })
     })
     describe('with a method', () => {
       beforeEach(() => {
-        concept.prototype.method = abstract
+        MyConcept.prototype.method = abstract
       })
       it('should not satisfy the concept', () => {
-        expect(satisfies(type, concept)).toBe(false)
+        expect(satisfies(type, MyConcept)).toBe(false)
       })
 
       describe('when implemented', () => {
         beforeEach(() => {
-          implement(type, concept)
+          implement(type, MyConcept)
         })
         it('should satisfy the concept', () => {
-          expect(satisfies(type.prototype, concept)).toBe(true)
+          expect(satisfies(type.prototype, MyConcept)).toBe(true)
         })
         it('should have an abstract method', () => {
           expect(type.prototype.method).toBe(abstract)
@@ -175,32 +175,32 @@ describe('A type', () => {
             })
           }) 
           it('should still satisfy the concept', () => {
-            expect(satisfies(type.prototype, concept)).toBe(true)
-            expect(type.prototype instanceof concept).toBe(true)
+            expect(satisfies(type.prototype, MyConcept)).toBe(true)
+            expect(type.prototype instanceof MyConcept).toBe(true)
           })
         })
       })
       describe('when implemented with a definition', () => {
         const emptyMethod = () => { }
         beforeEach(() => {
-          implement(type, concept, { method: emptyMethod })
+          implement(type, MyConcept, { method: emptyMethod })
         })
         it('should satisfy the concept', () => {
-          expect(satisfies(type.prototype, concept)).toBe(true)
+          expect(satisfies(type.prototype, MyConcept)).toBe(true)
         })
         it('should have the defined method', () => {
           expect(type.prototype.method).toBe(emptyMethod)
         })
         it('should be an own declared concept', () => {
           const actual = [...ConceptReflect.ownConcepts(type)]
-          const expected = [concept]
+          const expected = [MyConcept]
           expect(actual).toEqual(expected)
         })
       })
       describe('when implemented with a definition not matching the concept', () => {
         const emptyMethod = () => { }
         it('should throw', () => {
-          expect(() => implement(type, concept, { other: emptyMethod }))
+          expect(() => implement(type, MyConcept, { other: emptyMethod }))
             .toThrow("Concept 'MyConcept' does not define member 'other'.")
         })
       })
@@ -211,21 +211,21 @@ describe('A type', () => {
         associatedConcept = class extends Concept {
           associatedMethod() { }
         }
-        concept.tagType = associatedConcept
-        concept.prototype.method = abstract
+        MyConcept.tagType = associatedConcept
+        MyConcept.prototype.method = abstract
       })
       it('should not satisfy the concept', () => {
-        expect(type.prototype).not.toBeInstanceOf(concept)
+        expect(type.prototype).not.toBeInstanceOf(MyConcept)
       })
       describe('when implemented with the correct tag', () => {
         beforeEach(() => {
           type.tagType = class { 
             associatedMethod() { }
           }
-          implement(type, concept)
+          implement(type, MyConcept)
         })
         it('should satisfy the concept', () => {
-          expect(type.prototype).toBeInstanceOf(concept)
+          expect(type.prototype).toBeInstanceOf(MyConcept)
         })
       })
       describe('when implemented with an incorrect tag', () => {
@@ -234,7 +234,7 @@ describe('A type', () => {
           type.prototype.method = abstract
         })
         it('should not satisfy the concept', () => {
-          expect(type.prototype).not.toBeInstanceOf(concept)
+          expect(type.prototype).not.toBeInstanceOf(MyConcept)
         })
       })
     })
