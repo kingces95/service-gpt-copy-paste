@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { abstract } from '@kingjs/abstract'
-import { PartialClass } from '@kingjs/partial-class'
+import { Compile } from '@kingjs/partial-class'
 import { extend } from '@kingjs/extend'
 import { Extension, Extensions } from '@kingjs/extension'
 
@@ -127,7 +127,7 @@ describe('A type', () => {
       let compiledMember = function() { return 'compiled' }
       beforeEach(() => {
         didCompile = false
-        partialType[PartialClass.Symbol.compile] = function(descriptor) {
+        partialType[Compile] = function(descriptor) {
           expect(this).toBe(partialType)
           expect(descriptor.value).toBe(partialType.prototype.member)
           descriptor.value = compiledMember

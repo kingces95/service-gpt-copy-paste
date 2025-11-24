@@ -7,6 +7,7 @@ import {
   PartialClass, 
   PartialClassReflect, 
   AnonymousPartialClass,
+  Compile,
 } from '@kingjs/partial-class'
 import { Extension, Extensions, ExtensionReflect } from '@kingjs/extension'
 import { Concept, ConceptReflect } from "@kingjs/concept"
@@ -394,7 +395,7 @@ export class ConceptInfo extends PartialClassInfo {
   }
 
   compile$(descriptor) { 
-    return Concept[PartialClass.Symbol.compile](descriptor) 
+    return Concept[Compile](descriptor) 
   }
   *ownConcepts$() {
     for (const extension of this.extensions()) {

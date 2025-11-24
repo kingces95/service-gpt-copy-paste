@@ -1,10 +1,8 @@
 import { assert } from '@kingjs/assert'
 import { Reflection } from '@kingjs/reflection'
 import { Compiler } from '@kingjs/compiler'
-import { Es6ClassInfo } from '@kingjs/es6-info'
 import { isPojo } from '@kingjs/pojo-test'
 import { isAbstract } from '@kingjs/abstract'
-import { Descriptor } from '@kingjs/descriptor'
 import { Associated } from '@kingjs/associated'
 
 const {
@@ -150,11 +148,11 @@ const {
 // members are "abstract" by setting all get/set/value to abstract for 
 // non-data members. Compile is called with the descriptor and returns 
 // a descriptor.
-const Compile = Symbol('PartialClass.compile')
+export const Compile = Symbol('PartialClass.compile')
 
 // OwnDeclarationSymbols describes how types are associated with the
 // PartialClass so that the poset of associated types can be traversed.
-const OwnDeclarationSymbols = Symbol('PartialClass.ownDeclaraitionSymbols')
+export const OwnDeclarationSymbols = Symbol('PartialClass.ownDeclaraitionSymbols')
 
 // The loader tracks the following assoications during loading. Note: The 
 // reflection uses these association to ensures that reflection accurately 
@@ -175,20 +173,10 @@ const Descriptors = Symbol('PartialClassReflect.descriptors')
 const PrototypicalType = Symbol('PartialClassReflect.prototypicalType')
 
 export class PartialClass {
-  static Symbol = {
-    ownDeclaraitionSymbols: OwnDeclarationSymbols,
-    compile: Compile,
-  }
-
-  constructor() {
-    throw new TypeError('PartialClass cannot be instantiated.')
-  }
-
+  constructor() { throw new TypeError('PartialClass cannot be instantiated.') }
   static [OwnDeclarationSymbols] = { }
   static [Compile](descriptor) { return Compiler.compile(descriptor) }
 }
-
-class PrototypicalPartialType { }
 
 export class AnonymousPartialClass extends PartialClass { 
   static create(pojo) {
@@ -205,6 +193,8 @@ export class AnonymousPartialClass extends PartialClass {
     return type
   }
 }
+
+class PrototypicalPartialType { }
 
 export class PartialClassReflect {
 

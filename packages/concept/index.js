@@ -1,10 +1,18 @@
 import { assert } from '@kingjs/assert'
 import { Reflection } from '@kingjs/reflection'
-import { Extension, Extensions, ExtensionReflect } from '@kingjs/extension'
+import { 
+  Extension, 
+  Extensions, 
+  ExtensionReflect 
+} from '@kingjs/extension'
 import { extend } from '@kingjs/extend'
 import { abstract } from '@kingjs/abstract'
 import { Descriptor } from '@kingjs/descriptor'
 import { isPojo } from '@kingjs/pojo-test'
+import { 
+  Compile,
+  OwnDeclarationSymbols,
+} from '@kingjs/partial-class'
 
 import { 
   PartialClass, 
@@ -32,8 +40,8 @@ const KnownStaticMembers = new Set([
 ])
 
 export class Concept extends PartialClass {
-  static [PartialClass.Symbol.ownDeclaraitionSymbols] = {
-    ...Extension[PartialClass.Symbol.ownDeclaraitionSymbols],
+  static [OwnDeclarationSymbols] = {
+    ...Extension[OwnDeclarationSymbols],
     [Concepts]: { expectedType: Concept },
   }
 
@@ -50,8 +58,8 @@ export class Concept extends PartialClass {
     return satisfies(instance, this)
   }
 
-  static [PartialClass.Symbol.compile](descriptor) {
-    const result = super[PartialClass.Symbol.compile](descriptor)
+  static [Compile](descriptor) {
+    const result = super[Compile](descriptor)
 
     assert(!hasData(result), [
       `Concept members cannot be data properties.`,

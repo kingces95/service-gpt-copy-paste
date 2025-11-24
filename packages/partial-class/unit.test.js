@@ -4,7 +4,9 @@ import { abstract } from '@kingjs/abstract'
 import { 
   PartialClass, 
   PartialClassReflect,
-  AnonymousPartialClass
+  AnonymousPartialClass,
+  OwnDeclarationSymbols,
+  Compile,
 } from '@kingjs/partial-class'
 
 describe('PartialClass', () => {
@@ -130,7 +132,7 @@ describe('Extension', () => {
   
   beforeEach(() => {
     Extension = class Extension extends PartialClass { 
-      static [PartialClass.Symbol.ownDeclaraitionSymbols] = { 
+      static [OwnDeclarationSymbols] = { 
         [ExtensionSymbol]: { 
           expectedType: [Extension, AnonymousPartialClass] 
         } 
@@ -489,7 +491,7 @@ describe('Extension', () => {
           beforeEach(() => {
             compileCalled = false
       
-            Extension[PartialClass.Symbol.compile] = function(descriptor) {
+            Extension[Compile] = function(descriptor) {
               if (!compileCalled) {
                 compileCalled = true
                 expect(descriptor.value).toBe(mySubExtensionMethod)

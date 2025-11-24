@@ -3,20 +3,15 @@ import {
   PartialClass, 
   PartialClassReflect,
   AnonymousPartialClass, 
+  OwnDeclarationSymbols,
 } from '@kingjs/partial-class'
 import { isPojo } from '@kingjs/pojo-test'
-import { Descriptor } from '@kingjs/descriptor'
 import { Reflection } from '@kingjs/reflection'
 
 export const Extensions = Symbol('Extensions')
 
 const {
-  get: getDescriptor,
-} = Descriptor
-
-const {
   isExtensionOf,
-  ownMemberNamesAndSymbols,
 } = Reflection
 
 // Extend copies members from one or more extensions to a type prototype.
@@ -28,14 +23,8 @@ const {
 //    class Dumpper extends Extension { dump() { Console.log(this) } }
 //    extend(MyType, Dumpper)
 
-// Extend also accepts POJO with concise syntax. The POJO is converted into
-// an Extension.
-//    const Dumpper = { dump: { value: () => console.log(this) } }
-// In this case, the POJO is converted to an anonymous extension
-// before being implemented on the type prototype. See Extension.fromPojo.
-
 export class Extension extends PartialClass {
-  static [PartialClass.Symbol.ownDeclaraitionSymbols] = {
+  static [OwnDeclarationSymbols] = {
     [Extensions]: { 
       expectedType: [Extension, AnonymousPartialClass],
       map: Extension.fromArg,
@@ -50,22 +39,6 @@ export class Extension extends PartialClass {
       `Expected arg to be a PartialClass.`)
 
     return arg
-  }
-
-  static fromPojo(pojo) {
-    assert(isPojo(pojo))
-
-    // define an anonymous extension
-    const [anonymousExtension] = [class extends Extension { }]
-    const prototype = anonymousExtension.prototype
-    
-    // copy descriptors from pojo to anonymous extension prototype
-    for (const name of ownMemberNamesAndSymbols(pojo)) {
-      const descriptor = getDescriptor(pojo, name)
-      Object.defineProperty(prototype, name, descriptor)
-    }
-
-    return anonymousExtension
   }
 }
 
@@ -87,4 +60,12 @@ export class ExtensionReflect {
   static *ownMemberKeys(type) { 
     yield* PartialClassReflect.ownMemberKeys(type) 
   }
+}
+
+export function extend(type, ...partials) {
+
+  // for each extension, compile and bind its members to the type prototype
+  for (const partial of partials)
+    PartialClassReflect.mergeMembers(type, 
+      Extension.fromArg(partial))
 }
