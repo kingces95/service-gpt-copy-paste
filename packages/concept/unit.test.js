@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Concept, ConceptReflect, satisfies, implement } from '@kingjs/concept'
+import { PartialClassReflect } from '@kingjs/partial-class'
+import { 
+  Concept, 
+  satisfies, 
+  implement 
+} from '@kingjs/concept'
 import { abstract } from '@kingjs/abstract'
 
 describe('A type', () => {
@@ -12,7 +17,7 @@ describe('A type', () => {
     type = class { }
   })
   it('should have no declared concepts', () => {
-    const actual = [...ConceptReflect.ownConcepts(type)]
+    const actual = [...PartialClassReflect.ownDeclarations(type)]
     const expected = [ ]
     expect(actual).toEqual(expected)
   })
@@ -71,7 +76,7 @@ describe('A type', () => {
         expect(type.prototype).toBeInstanceOf(MyConcept)
       })
       it('should be an own declared concept', () => {
-        const actual = [...ConceptReflect.ownConcepts(type)]
+        const actual = [...PartialClassReflect.ownDeclarations(type)]
         const expected = [MyConcept]
         expect(actual).toEqual(expected)
       })
@@ -192,7 +197,7 @@ describe('A type', () => {
           expect(type.prototype.method).toBe(emptyMethod)
         })
         it('should be an own declared concept', () => {
-          const actual = [...ConceptReflect.ownConcepts(type)]
+          const actual = [...PartialClassReflect.ownDeclarations(type)]
           const expected = [MyConcept]
           expect(actual).toEqual(expected)
         })

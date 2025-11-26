@@ -3,7 +3,6 @@ import { Reflection } from '@kingjs/reflection'
 import { 
   Extension, 
   Extensions, 
-  ExtensionReflect 
 } from '@kingjs/extension'
 import { extend } from '@kingjs/extend'
 import { abstract } from '@kingjs/abstract'
@@ -80,8 +79,10 @@ export class Concept extends PartialClass {
 
   static *associatedConcepts() {
     yield* this.ownAssociatedConcepts()
-    for (const concept of ConceptReflect.concepts(this))
+    for (const concept of PartialClassReflect.declarations(this)) {
+      if (!(concept.prototype instanceof Concept)) continue
       yield *concept.associatedConcepts()
+    }
   }
   static *ownAssociatedConcepts() {
     for (const name of ownStaticMemberNamesAndSymbols(this)) {
@@ -95,34 +96,6 @@ export class Concept extends PartialClass {
       if (!descriptor?.enumerable) continue
 
       yield [name, concept]
-    }
-  }
-}
-
-// ConceptReflect.memberLookup
-const Filter = { filterType: Concept }
-
-export class ConceptReflect {
-  static isConcept(type) {
-    return PartialClassReflect.getPartialClass(type) == Concept
-  }
-  static *concepts(type) {
-    yield* PartialClassReflect.declarations(type, Filter)
-  }
-  static *ownConcepts(type) {
-    yield* PartialClassReflect.ownDeclarations(type, Filter)
-  }
-  static *memberKeys(type) { 
-    yield* PartialClassReflect.memberKeys(type) 
-  }
-  static *ownMemberKeys(type) { 
-    yield* PartialClassReflect.ownMemberKeys(type) 
-  }
-  static *memberHosts(type, key) {
-    // filter to only those hosts that are concepts
-    for (const host of PartialClassReflect.memberHosts(type, key)) {
-      if (ConceptReflect.isConcept(host))
-        yield host
     }
   }
 }
@@ -150,7 +123,7 @@ export function satisfies(instance, concept) {
       return false 
   }
 
-  for (const name of ConceptReflect.memberKeys(concept)) {
+  for (const name of PartialClassReflect.memberKeys(concept)) {
     if (name in instance) continue 
     return false
   }
@@ -169,8 +142,8 @@ export function implement(type, concept, implementation = { }) {
     implementation = AnonymousPartialClass.create(implementation)
 
   // restrict implementation to members defined by the concept.
-  const conceptMembers = new Set(ConceptReflect.memberKeys(concept))
-  for (const name of ExtensionReflect.memberKeys(implementation)) {
+  const conceptMembers = new Set(PartialClassReflect.memberKeys(concept))
+  for (const name of PartialClassReflect.memberKeys(implementation)) {
     if (conceptMembers.has(name)) continue
     throw new Error(`Concept '${concept.name}' does not define member '${name}'.`)
   }

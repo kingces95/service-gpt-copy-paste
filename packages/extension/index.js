@@ -42,26 +42,6 @@ export class Extension extends PartialClass {
   }
 }
 
-const Filter = { filterType: Extension }
-
-export class ExtensionReflect {
-  static isExtension(type) {
-    return PartialClassReflect.getPartialClass(type) == Extension
-  }
-  static *extensions(type) {
-    yield* PartialClassReflect.declarations(type, Filter)
-  }
-  static *ownExtensions(type) {
-    yield* PartialClassReflect.ownDeclarations(type, Filter)
-  }
-  static *memberKeys(type) { 
-    yield* PartialClassReflect.memberKeys(type) 
-  }
-  static *ownMemberKeys(type) { 
-    yield* PartialClassReflect.ownMemberKeys(type) 
-  }
-}
-
 export function extend(type, ...partials) {
 
   // for each extension, compile and bind its members to the type prototype

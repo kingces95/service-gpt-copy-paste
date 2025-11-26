@@ -9,7 +9,10 @@ import {
   AnonymousPartialClass,
   Compile,
 } from '@kingjs/partial-class'
-import { Extension, Extensions, ExtensionReflect } from '@kingjs/extension'
+import { 
+  Extension, 
+  Extensions, 
+} from '@kingjs/extension'
 import { Concept, ConceptReflect } from "@kingjs/concept"
 import { Compiler } from "@kingjs/compiler"
 import { Es6Info, Es6ClassInfo } from "@kingjs/es6-info"
