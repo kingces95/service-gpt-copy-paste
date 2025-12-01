@@ -1,10 +1,10 @@
-import { Extension } from '@kingjs/extension'
-import { PartialClassReflect } from '@kingjs/partial-class'
+import { PartialClass } from '@kingjs/partial-class'
+import { MemberReflect } from '@kingjs/member-reflect'
 
 export function extend(type, ...partials) {
 
   // for each extension, compile and bind its members to the type prototype
   for (const partial of partials)
-    PartialClassReflect.mergeMembers(type, 
-      Extension.fromArg(partial))
+    MemberReflect.merge(type, 
+      PartialClass.fromArg(partial))
 }

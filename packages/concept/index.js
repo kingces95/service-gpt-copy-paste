@@ -1,23 +1,13 @@
 import { assert } from '@kingjs/assert'
-import { Reflection } from '@kingjs/reflection'
-import { 
-  Extension, 
-  Extensions, 
-} from '@kingjs/extension'
+import { isPojo } from '@kingjs/pojo-test'
 import { extend } from '@kingjs/extend'
 import { abstract } from '@kingjs/abstract'
+import { Reflection } from '@kingjs/reflection'
 import { Descriptor } from '@kingjs/descriptor'
-import { isPojo } from '@kingjs/pojo-test'
-import { 
-  Compile,
-  OwnDeclarationSymbols,
-} from '@kingjs/partial-class'
-
-import { 
-  PartialClass, 
-  PartialClassReflect,
-  AnonymousPartialClass,
-} from '@kingjs/partial-class'
+import { MemberReflect } from '@kingjs/member-reflect'
+import { PartialClass } from '@kingjs/partial-class'
+import { ExtensionGroup, Extensions } from '@kingjs/extension-group'
+import { MemberCollection } from '@kingjs/member-collection'
 
 const {
   hasGetter,
@@ -27,7 +17,7 @@ const {
 } = Descriptor
 
 const {
-  ownStaticMemberNamesAndSymbols,
+  ownStaticMemberKeys,
   isExtensionOf,
 } = Reflection
 
@@ -38,15 +28,15 @@ const KnownStaticMembers = new Set([
   Concepts,
 ])
 
-export class Concept extends PartialClass {
-  static [OwnDeclarationSymbols] = {
-    ...Extension[OwnDeclarationSymbols],
+export class Concept extends MemberCollection {
+  static [MemberCollection.OwnCollectionSymbols] = {
+    ...ExtensionGroup[MemberCollection.OwnCollectionSymbols],
     [Concepts]: { expectedType: Concept },
   }
 
   // `myInstance instanceof myConcept` tests if an instance satsifies a concept.
   // Justification to override Symbol.hasInstance: There should never exist an
-  // instance of a PartialClass much less a Concept (except for the prototype of
+  // instance of a MemberCollection much less a Concept (except for the prototype of
   // the class itself). So it is reasonable to override the behavior of
   // instanceof to test if an instance satisfies the concept. For reflection, use
   // Reflection.isExtensionOf(type, concept).
@@ -57,8 +47,8 @@ export class Concept extends PartialClass {
     return satisfies(instance, this)
   }
 
-  static [Compile](descriptor) {
-    const result = super[Compile](descriptor)
+  static [MemberCollection.Compile](descriptor) {
+    const result = super[MemberCollection.Compile](descriptor)
 
     assert(!hasData(result), [
       `Concept members cannot be data properties.`,
@@ -79,13 +69,11 @@ export class Concept extends PartialClass {
 
   static *associatedConcepts() {
     yield* this.ownAssociatedConcepts()
-    for (const concept of PartialClassReflect.declarations(this)) {
-      if (!(concept.prototype instanceof Concept)) continue
+    for (const concept of MemberReflect.collections(this))
       yield *concept.associatedConcepts()
-    }
   }
   static *ownAssociatedConcepts() {
-    for (const name of ownStaticMemberNamesAndSymbols(this)) {
+    for (const name of ownStaticMemberKeys(this)) {
       if (KnownStaticMembers.has(name)) continue
 
       const concept = this[name]
@@ -123,7 +111,7 @@ export function satisfies(instance, concept) {
       return false 
   }
 
-  for (const name of PartialClassReflect.memberKeys(concept)) {
+  for (const name of MemberReflect.keys(concept)) {
     if (name in instance) continue 
     return false
   }
@@ -139,11 +127,11 @@ export function implement(type, concept, implementation = { }) {
 
   // if pojo, create anonymous partial class from pojo
   if (isPojo(implementation))
-    implementation = AnonymousPartialClass.create(implementation)
+    implementation = PartialClass.create(implementation)
 
   // restrict implementation to members defined by the concept.
-  const conceptMembers = new Set(PartialClassReflect.memberKeys(concept))
-  for (const name of PartialClassReflect.memberKeys(implementation)) {
+  const conceptMembers = new Set(MemberReflect.keys(concept))
+  for (const name of MemberReflect.keys(implementation)) {
     if (conceptMembers.has(name)) continue
     throw new Error(`Concept '${concept.name}' does not define member '${name}'.`)
   }

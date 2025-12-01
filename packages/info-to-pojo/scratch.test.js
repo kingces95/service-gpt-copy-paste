@@ -2,7 +2,7 @@ import { Info } from "@kingjs/info"
 import { filterInfoPojo } from "@kingjs/info-to-pojo"
 import { dumpPojo } from "@kingjs/pojo-dump"
 import { abstract } from "@kingjs/abstract"
-import { Extension, Extensions } from "@kingjs/extension"
+import { ExtensionGroup, Extensions } from "@kingjs/extension"
 import { extend } from "@kingjs/extend"
 import { Concept, Concepts, implement } from "@kingjs/concept"
 
@@ -27,18 +27,18 @@ class MyConcept extends Concept {
   myConceptMethod() { }
 }
 
-class MyBaseExtensionClass extends Extension {
+class MyBaseExtensionClass extends ExtensionGroup {
   myBaseExtensionMethod() { }
   myNewExtensionMethod() { }
 }
 
-class MyExtensionClass extends Extension {
+class MyExtensionClass extends ExtensionGroup {
   static [Extensions] = MyBaseExtensionClass
   myNewExtensionMethod() { }
   myExtensionMethod() { }
 }
 
-class MyPartialClass extends Extension {
+class MyPartialClass extends ExtensionGroup {
   static [Extensions] = MyExtensionClass
   myPartialMethod() { }
 }
@@ -109,7 +109,7 @@ function dump(fn) {
 dump(Function)
 dump(Object)
 dump(Concept)
-dump(Extension)
+dump(ExtensionGroup)
 dump(MyConcept)
 dump(MyPartialClass)
 dump(MyExtensionClass)

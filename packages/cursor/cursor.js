@@ -2,6 +2,7 @@ import { DebugProxy } from '@kingjs/debug-proxy'
 import { CursorConcept } from './cursor-concepts'
 import { extend } from '@kingjs/extend'
 import { implement } from '@kingjs/concept'
+import { abstract } from '@kingjs/abstract'
 
 export class Cursor extends DebugProxy {
   #scope
@@ -14,7 +15,7 @@ export class Cursor extends DebugProxy {
   get scope$() { return this.#scope }
 
   static {
-    extend(this, { equals$ })
+    extend(this, { equals$: abstract })
 
     implement(this, CursorConcept, {
       equals(other) {

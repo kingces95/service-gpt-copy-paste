@@ -1,10 +1,10 @@
 // import { describe, it, expect } from 'vitest'
 // import { beforeEach } from 'vitest'
-// import { Extension } from '@kingjs/extension'
+// import { ExtensionGroup } from '@kingjs/extension-group'
 // import { Concept } from "@kingjs/concept"
 // import { Extensions, Concepts, load } from '@kingjs/loader'
 
-// class MyPart extends Extension { 
+// class MyPart extends ExtensionGroup { 
 //   partMethod() { }
 // }
 

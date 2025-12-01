@@ -53,7 +53,7 @@ describe('Extended and base classes', () => {
       })
     
       it('has all members in its prototype', () => {
-        expect([...Reflection.namesAndSymbols(extended.prototype)]).toEqual(members)
+        expect([...Reflection.keys(extended.prototype)]).toEqual(members)
       })
       it('has all names', () => {
         expect([...Reflection.names(extended.prototype)]).toEqual(names)

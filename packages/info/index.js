@@ -3,16 +3,10 @@ import { isPojo } from "@kingjs/pojo-test"
 import { abstract } from "@kingjs/abstract"
 import { Normalize } from "@kingjs/normalize"
 import { Reflection } from '@kingjs/reflection'
-import { 
-  PartialClass, 
-  PartialClassReflect, 
-  AnonymousPartialClass,
-  Compile,
-} from '@kingjs/partial-class'
-import { 
-  Extension, 
-  Extensions, 
-} from '@kingjs/extension'
+import { PartialClass } from '@kingjs/partial-class'
+import { MemberCollection } from '@kingjs/member-collection'
+import { MemberReflect } from '@kingjs/member-reflect'
+import { ExtensionGroup, Extensions } from '@kingjs/extension-group'
 import { Concept, ConceptReflect } from "@kingjs/concept"
 import { Compiler } from "@kingjs/compiler"
 import { Es6Info, Es6ClassInfo } from "@kingjs/es6-info"
@@ -36,18 +30,18 @@ const ExtensionRuntimeNameOrSymbol = new Set([
 export class Info {
   static from(type) {
     if (isPojo(type))
-      type = AnonymousPartialClass.create(es6ClassInfo)
+      type = PartialClass.create(es6ClassInfo)
       
-    const es6ClassInfo = PartialClassReflect.getClassInfo(type)
+    const es6ClassInfo = MemberReflect.getClassInfo(type)
     const fn = es6ClassInfo.ctor
 
-    if (fn == PartialClass)
+    if (fn == MemberCollection)
       return new PartialClassInfo(es6ClassInfo)
 
     if (fn == Concept || Reflection.isExtensionOf(fn, Concept))
       return new ConceptInfo(es6ClassInfo)
 
-    if (fn == Extension || Reflection.isExtensionOf(fn, Extension))
+    if (fn == ExtensionGroup || Reflection.isExtensionOf(fn, ExtensionGroup))
       return new ExtensionInfo(es6ClassInfo)
     
     return new ClassInfo(es6ClassInfo)
@@ -63,7 +57,6 @@ export class FunctionInfo extends Info {
   }
 
   static *members(type, { isStatic = false } = { }) {
-    
   } 
 
   static *hierarchy(type, { isStatic = false } = { }) {
@@ -317,7 +310,7 @@ export class FunctionInfo extends Info {
 
   getOwnMember(nameOrSymbol, { isStatic = false } = { }) {
     if (!isStatic) {
-      // PartialClass members load after own members so will override them.
+      // MemberCollection members load after own members so will override them.
       // To emulate this behavior, getOwnMember needs to traverse
       // the tree of extensions in reverse order.
       for (const extension of this.extensions({ reverse: true })) {
@@ -357,9 +350,9 @@ export class ClassInfo extends FunctionInfo {
 }
 export class PartialClassInfo extends FunctionInfo { 
   static {
-    Info.PartialClass = new PartialClassInfo(PartialClass)
+    Info.MemberCollection = new PartialClassInfo(MemberCollection)
   }
-  get root$() { return Info.PartialClass }
+  get root$() { return Info.MemberCollection }
   get includeExtensions$() { return false }
   isRuntimeNameOrSymbol$(nameOrSymbol) {
     return ExtensionRuntimeNameOrSymbol.has(nameOrSymbol)
@@ -370,13 +363,13 @@ export class PartialClassInfo extends FunctionInfo {
 }
 export class ExtensionInfo extends PartialClassInfo {
   static {
-    Info.Extension = new ExtensionInfo(Extension)
+    Info.ExtensionGroup = new ExtensionInfo(ExtensionGroup)
   }
 
   constructor(fn) {
-    assert(fn == Extension
-      || Object.getPrototypeOf(fn) == Extension,
-      `Partial class ${fn.name} must directly extend Extension.`
+    assert(fn == ExtensionGroup
+      || Object.getPrototypeOf(fn) == ExtensionGroup,
+      `Partial class ${fn.name} must directly extend ExtensionGroup.`
     )
     super(fn)
   }
@@ -398,7 +391,7 @@ export class ConceptInfo extends PartialClassInfo {
   }
 
   compile$(descriptor) { 
-    return Concept[Compile](descriptor) 
+    return Concept[MemberCollection.Compile](descriptor) 
   }
   *ownConcepts$() {
     for (const extension of this.extensions()) {

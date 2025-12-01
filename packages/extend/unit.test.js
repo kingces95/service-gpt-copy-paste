@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { abstract } from '@kingjs/abstract'
-import { Compile } from '@kingjs/partial-class'
 import { extend } from '@kingjs/extend'
-import { Extension, Extensions } from '@kingjs/extension'
+import { ExtensionGroup, Extensions } from '@kingjs/extension-group'
+import { MemberCollection } from '@kingjs/member-collection'
 
 describe('A type', () => {
   let type
@@ -73,7 +73,7 @@ describe('A type', () => {
   describe('and a partial type with a member function', () => {
     let partialType
     beforeEach(() => {
-      partialType = class extends Extension { 
+      partialType = class extends ExtensionGroup { 
         member() { return 'member' } }
     })
     it('can extend the member', () => {
@@ -83,7 +83,7 @@ describe('A type', () => {
     describe('and another partial type with a member function', () => {
       let anotherPartialType
       beforeEach(() => {
-        anotherPartialType = class extends Extension { 
+        anotherPartialType = class extends ExtensionGroup { 
           member() { return 'override' } }
       })
       it('can extend both partial types', () => {
@@ -94,7 +94,7 @@ describe('A type', () => {
     describe('as an extension', () => {
       let extendedPartialType
       beforeEach(() => {
-        extendedPartialType = class extends Extension {
+        extendedPartialType = class extends ExtensionGroup {
           static [Extensions] = partialType }
       })
       it('can extend the member', () => {
@@ -113,7 +113,7 @@ describe('A type', () => {
       describe('as an extension', () => {
         let extendedExtendedPartialType
         beforeEach(() => {
-          extendedExtendedPartialType = class extends Extension {
+          extendedExtendedPartialType = class extends ExtensionGroup {
             static [Extensions] = extendedPartialType }
         })
         it('can extend the member', () => {
@@ -127,7 +127,7 @@ describe('A type', () => {
       let compiledMember = function() { return 'compiled' }
       beforeEach(() => {
         didCompile = false
-        partialType[Compile] = function(descriptor) {
+        partialType[MemberCollection.Compile] = function(descriptor) {
           expect(this).toBe(partialType)
           expect(descriptor.value).toBe(partialType.prototype.member)
           descriptor.value = compiledMember

@@ -1,7 +1,3 @@
-import { getOwn } from '@kingjs/get-own'
-import { asIterable } from '@kingjs/as-iterable'
-import { assert } from '@kingjs/assert'
-
 const KnownInstanceMembers = new Set([ 'constructor'])
 const KnownStaticMembers = new Set([ 'length', 'name', 'prototype'])
 
@@ -35,17 +31,13 @@ export class Reflection {
     yield *Reflection.#keys(prototype, root, Object.getOwnPropertySymbols)
   }
 
-  static *namesAndSymbols(prototype, root = Object) {
+  static *keys(prototype, root = Object) {
     yield* Reflection.names(prototype, root)
     yield* Reflection.symbols(prototype, root)
   }
 
-  static *memberNamesAndSymbols(prototype, root = Object) {
-    yield *Reflection.#keys(prototype, root, Reflection.ownMemberNamesAndSymbols)
-  }
-
-  static *ownNamesAndSymbols(prototype) {
-    yield *Reflect.ownKeys(prototype)
+  static *memberKeys(prototype, root = Object) {
+    yield *Reflection.#keys(prototype, root, Reflection.ownMemberKeys)
   }
 
   static isKnownInstanceMember(name) {
@@ -56,15 +48,15 @@ export class Reflection {
     return KnownStaticMembers.has(name)
   }
 
-  static *ownMemberNamesAndSymbols(prototype) {
-    for (const name of Reflection.ownNamesAndSymbols(prototype)) {
+  static *ownMemberKeys(prototype) {
+    for (const name of Reflect.ownKeys(prototype)) {
       if (Reflection.isKnownInstanceMember(name)) continue
       yield name
     }
   }
 
-  static *ownStaticMemberNamesAndSymbols(prototype) {
-    for (const name of Reflection.ownNamesAndSymbols(prototype)) {
+  static *ownStaticMemberKeys(prototype) {
+    for (const name of Reflect.ownKeys(prototype)) {
       if (Reflection.isKnownStaticMember(name)) continue
       yield name
     }
@@ -77,6 +69,7 @@ export class Reflection {
       prototype = Object.getPrototypeOf(prototype)
     }
   }
+  
   static *prototypeHierarchy(target) {
     yield target
     yield* Reflection.prototypes(target)

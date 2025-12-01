@@ -48,7 +48,7 @@ const Es6ObjectPrototypeMethods = [
 ]
 
 const {
-  namesAndSymbols,
+  keys,
 } = Reflection
 
 // All members of object and function are known members (not user defined)
@@ -202,7 +202,7 @@ describe('Es6ClassInfo known type invariants:', () => {
 
       let keySet
       beforeEach(() => {
-        keySet = new Set(namesAndSymbols(prototype, null))
+        keySet = new Set(keys(prototype, null))
 
         // remove object runtime names and symbols
         for (const nameOrSymbol of Es6ObjectRuntimeNameOrSymbol)

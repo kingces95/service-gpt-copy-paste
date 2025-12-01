@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { PartialClassReflect } from '@kingjs/partial-class'
+import { MemberReflect } from '@kingjs/member-reflect'
 import { 
   Concept, 
   satisfies, 
@@ -17,7 +17,7 @@ describe('A type', () => {
     type = class { }
   })
   it('should have no declared concepts', () => {
-    const actual = [...PartialClassReflect.ownDeclarations(type)]
+    const actual = [...MemberReflect.ownCollections(type)]
     const expected = [ ]
     expect(actual).toEqual(expected)
   })
@@ -35,7 +35,7 @@ describe('A type', () => {
     })
     it('should throw implementing itself', () => {
       expect(() => implement(MyConcept, MyConcept)).toThrow([
-        "Expected type to not be a PartialClass."
+        "Expected type to not be a MemberCollection."
       ].join(' '))
     })
     describe('already implemented by the type', () => {
@@ -63,7 +63,7 @@ describe('A type', () => {
       it('should throw when implemented', () => {
         const cls = class { }
         expect(() => implement(cls, extendedConcept)).toThrow([
-          'Partial class must indirectly extend PartialClass.',
+          'Partial class must indirectly extend MemberCollection.',
         ].join(' '))
       })
     })
@@ -76,7 +76,7 @@ describe('A type', () => {
         expect(type.prototype).toBeInstanceOf(MyConcept)
       })
       it('should be an own declared concept', () => {
-        const actual = [...PartialClassReflect.ownDeclarations(type)]
+        const actual = [...MemberReflect.ownCollections(type)]
         const expected = [MyConcept]
         expect(actual).toEqual(expected)
       })
@@ -197,7 +197,7 @@ describe('A type', () => {
           expect(type.prototype.method).toBe(emptyMethod)
         })
         it('should be an own declared concept', () => {
-          const actual = [...PartialClassReflect.ownDeclarations(type)]
+          const actual = [...MemberReflect.ownCollections(type)]
           const expected = [MyConcept]
           expect(actual).toEqual(expected)
         })

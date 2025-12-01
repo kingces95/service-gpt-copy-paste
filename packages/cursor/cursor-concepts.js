@@ -1,13 +1,13 @@
 import { Concept } from '@kingjs/concept'
-import { Extension } from '@kingjs/extension'
-import { Extensions } from '@kingjs/extension'
+import { ExtensionGroup } from '@kingjs/extension-group'
+import { Extensions } from '@kingjs/extension-group'
 import { Preconditions } from '@kingjs/debug-proxy'
 import {
   throwNotEquatableTo,
 } from './throw.js'
 
 export class CursorConcept extends Concept {
-  static [Preconditions] = Extension
+  static [Preconditions] = ExtensionGroup
   static [Extensions] = {
     next() {
       const value = this.value 

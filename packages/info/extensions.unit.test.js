@@ -1,12 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Info, FunctionInfo } from "@kingjs/info"
-import { Extension, Extensions } from '@kingjs/extension'
+import { Extensions } from '@kingjs/extension-group'
 import { extend } from '@kingjs/extend'
-import { 
-  AnonymousPartialClass,
-  PartialClassReflect 
-} from '@kingjs/partial-class'
+import { PartialClass } from '@kingjs/partial-class'
 
 function getMemberValue(cls) {
   const info = Info.from(cls)
@@ -24,7 +21,7 @@ describe('A class with a member', () => {
     let partial
     let memberFn = function member() { }
     beforeEach(() => {
-      partial = AnonymousPartialClass.create({ member: memberFn })
+      partial = PartialClass.create({ member: memberFn })
     })
     it('should match class and partial member', async () => {
       extend(cls, partial)
