@@ -1,11 +1,11 @@
 import { Info } from "@kingjs/info"
 import { abstract } from "@kingjs/abstract"
-import { ExtensionGroup, Extensions } from "@kingjs/extension-group"
+import { PartialClass, Extensions } from "@kingjs/extension-group"
 import { extend } from "@kingjs/extend"
 import { Concept, Concepts, implement } from "@kingjs/concept"
 import { } from "@kingjs/info-to-pojo"
-import { MemberCollection } from "@kingjs/member-collection"
-import { PartialClass } from "@kingjs/partial-class"
+import { PartialObject } from "@kingjs/partial-object"
+import { TransparentPartialClass } from "@kingjs/transparent-partial-class"
 
 const MySymbol = Symbol('my-symbol')
 const MyStaticSymbol = Symbol('my-static-symbol')
@@ -28,18 +28,18 @@ class MyConcept extends Concept {
   myConceptMethod() { }
 }
 
-class MyBaseExtensionClass extends ExtensionGroup {
+class MyBaseExtensionClass extends PartialClass {
   myBaseExtensionMethod() { }
   myNewExtensionMethod() { }
 }
 
-class MyExtensionClass extends ExtensionGroup {
+class MyExtensionClass extends PartialClass {
   static [Extensions] = MyBaseExtensionClass
   myNewExtensionMethod() { }
   myExtensionMethod() { }
 }
 
-class MyExtensionGroup extends ExtensionGroup {
+class MyExtensionGroup extends PartialClass {
   static [Extensions] = MyExtensionClass
   myPartialMethod() { }
 }
@@ -103,10 +103,10 @@ const myBasePrototype = MyBase.prototype
 // dump(Function)
 // dump(Object)
 
-// dump(MemberCollection)
-// dump(ExtensionGroup)
-// dump(Concept)
+// dump(PartialObject)
 // dump(PartialClass)
+// dump(Concept)
+// dump(TransparentPartialClass)
 
 // dump(MyPartialClass)
 // dump(MyExtensionClass)

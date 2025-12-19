@@ -1,8 +1,8 @@
-{ name: 'Concept', base: 'ExtensionGroup' }
-{ name: 'ExtensionGroup' }
+{ name: 'Concept', base: 'PartialClass' }
+{ name: 'PartialClass' }
 {
   name: 'MyExtensionClass',
-  base: 'ExtensionGroup',
+  base: 'PartialClass',
   members: {
     instance: {
       methods: {
@@ -13,7 +13,7 @@
 }
 {
   name: 'MyPartialClass',
-  base: 'ExtensionGroup',
+  base: 'PartialClass',
   members: {
     instance: {
       methods: {

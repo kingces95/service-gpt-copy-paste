@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Info, FunctionInfo } from "@kingjs/info"
-import { ExtensionGroup, Extensions } from '@kingjs/extension-group'
+import { PartialClass, Extensions } from '@kingjs/extension-group'
 import { extend } from '@kingjs/extend'
-import { PartialClass } from '@kingjs/partial-class'
+import { TransparentPartialClass } from '@kingjs/transparent-partial-class'
 import { abstract } from '@kingjs/abstract'
 import { } from "@kingjs/info-to-pojo"
-import { MemberReflect } from '@kingjs/member-reflect'
+import { PartialReflect } from '@kingjs/partial-reflect'
 
 function getMemberValue(cls) {
   const info = Info.from(cls)
@@ -25,11 +25,11 @@ const pojoFilter = {
 describe('A partial class', () => {
   describe.each([
     ['no members', { }, { }],
-    // ['static data', class MyEg extends ExtensionGroup { 
+    // ['static data', class MyEg extends PartialClass { 
     //   static myStaticMember = 1 }, {
     //   // static members are ignored by the DSL
     //   }],
-    // ['static getter', class MyEg extends ExtensionGroup {
+    // ['static getter', class MyEg extends PartialClass {
     //   static get myStaticAccessor() { return 1 } 
     // }, { 
     //   // static members are ignored by the DSL
@@ -63,12 +63,12 @@ describe('A partial class', () => {
     }],
   ])('with %s', (_, cls, expected) => {
     it('has a pojo', async () => {
-      const partialClass = PartialClass.create(cls)
+      const partialClass = TransparentPartialClass.create(cls)
       const fnInfo = Info.from(partialClass)
       const actual = await fnInfo.toPojo(pojoFilter) 
       expect(actual).toEqual({
         ...expected,
-        base: 'PartialClass',
+        base: 'TransparentPartialClass',
         isAnonymous: true,
       })
     })
@@ -84,7 +84,7 @@ describe('A class with a member', () => {
     let extensions
     let extensionFn = function extensionFn() { }
     beforeEach(() => {
-      extensions = class MyEx extends ExtensionGroup { }
+      extensions = class MyEx extends PartialClass { }
       extensions.prototype.member = extensionFn
     })
     it('when merged should overwrite the member', async () => {
@@ -100,9 +100,9 @@ describe('A class with a member', () => {
         extensions[Extensions] =  { member: partialClassFn }
       })
       it('should have an own partial class', () => {
-        const partialClass = [...MemberReflect.ownCollections(extensions)]
+        const partialClass = [...PartialReflect.ownCollections(extensions)]
         expect(partialClass).toHaveLength(1)
-        expect(partialClass[0].prototype).instanceOf(PartialClass)
+        expect(partialClass[0].prototype).instanceOf(TransparentPartialClass)
       })
       it('when merged should use the partial class member', async () => {
 

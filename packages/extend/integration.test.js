@@ -3,14 +3,14 @@ import { describe, it, expect } from 'vitest'
 import { Info } from "@kingjs/info"
 import { extend } from '@kingjs/extend'
 import { } from "@kingjs/info-to-pojo"
-import { ExtensionGroup } from '@kingjs/extension-group'
-import { PartialClass } from '@kingjs/partial-class'
+import { PartialClass } from '@kingjs/extension-group'
+import { TransparentPartialClass } from '@kingjs/transparent-partial-class'
 
 const filter = {
   filter: { isNonPublic: false, isKnown: false },
 }
 
-describe('PartialClass with non-standard properties', () => {
+describe('TransparentPartialClass with non-standard properties', () => {
   let pojo
   beforeEach(() => {
     pojo = {
@@ -46,7 +46,7 @@ describe('PartialClass with non-standard properties', () => {
 
 describe('Kitchen sink', () => {
   describe.each([
-    ['class', class extends ExtensionGroup {
+    ['class', class extends PartialClass {
       get getter0() { }
       get getter1() { }
       set setter0(value) { }
@@ -55,7 +55,7 @@ describe('Kitchen sink', () => {
       member1() { return 42 }
       member2() { return 42 }
     }],
-    ['lambda', PartialClass.create({
+    ['lambda', TransparentPartialClass.create({
       getter0: { get: () => { } },
       get getter1() { },
 

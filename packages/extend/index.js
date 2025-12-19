@@ -1,10 +1,7 @@
-import { PartialClass } from '@kingjs/partial-class'
-import { MemberReflect } from '@kingjs/member-reflect'
+import { TransparentPartialClass } from '@kingjs/transparent-partial-class'
+import { PartialReflect } from '@kingjs/partial-reflect'
 
 export function extend(type, ...partials) {
-
-  // for each extension, compile and bind its members to the type prototype
   for (const partial of partials)
-    MemberReflect.merge(type, 
-      PartialClass.fromArg(partial))
+    PartialReflect.merge(type, TransparentPartialClass.fromArg(partial))
 }

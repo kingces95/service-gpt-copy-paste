@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Info, FunctionInfo } from "@kingjs/info"
 import { Concept } from '@kingjs/concept'
-import { ExtensionGroup } from '@kingjs/extension-group'
-import { PartialClass } from '@kingjs/partial-class'
+import { PartialClass } from '@kingjs/extension-group'
+import { TransparentPartialClass } from '@kingjs/transparent-partial-class'
 import { } from "@kingjs/info-to-pojo"
 
 import { abstract } from '@kingjs/abstract'
@@ -112,7 +112,7 @@ describe('My concept', () => {
 describe('My extension group', () => {
   let myExtensionGroup
   beforeEach(() => {
-    myExtensionGroup = class MyExtensionGroup extends ExtensionGroup { }
+    myExtensionGroup = class MyExtensionGroup extends PartialClass { }
   })
   it('has a toString of MyExtensionGroup', () => {
     const extensionGroupInfo = Info.from(myExtensionGroup)
@@ -124,7 +124,7 @@ describe('My partial class', () => {
   let myPartialClass
   beforeEach(() => {
     const pojo = { }
-    myPartialClass = PartialClass.fromArg(pojo)
+    myPartialClass = TransparentPartialClass.fromArg(pojo)
   })
   it('has a toString of MyPartialClass', () => {
     const partialClassInfo = Info.from(myPartialClass)
@@ -138,10 +138,10 @@ describe('A member', () => {
       class MyConcept extends Concept { member() { } }, 
       'member, abstract function, [conceptInfo MyConcept]'],
     ['on MyExtensionGroup', 'member', 
-      class MyExtensionGroup extends ExtensionGroup { member() { } }, 
+      class MyExtensionGroup extends PartialClass { member() { } }, 
       'member, function, [extensionGroupInfo MyExtensionGroup]'],
     ['on MyPartialClass', 'member',
-      PartialClass.fromArg({ member() { } }),
+      TransparentPartialClass.fromArg({ member() { } }),
       'member, function, [partialClassInfo]'],
 
     ['on MyClass', 'member', class MyClass { member() { } }, 

@@ -74,7 +74,7 @@ Despite being foundational to Unix workflows, ULF has remained unnamed and unsun
 
 ---
 
-## 🔧 Possible File MemberCollection
+## 🔧 Possible File PartialObject
 
 ```plaintext
 *.ulf

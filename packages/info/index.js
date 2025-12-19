@@ -1,15 +1,15 @@
 import { assert } from '@kingjs/assert'
 import { isAbstract } from "@kingjs/abstract"
-import { PartialClass } from '@kingjs/partial-class'
-import { MemberCollection } from '@kingjs/member-collection'
-import { MemberReflect } from '@kingjs/member-reflect'
+import { TransparentPartialClass } from '@kingjs/transparent-partial-class'
+import { PartialObject } from '@kingjs/partial-object'
+import { PartialReflect } from '@kingjs/partial-reflect'
 import { 
   Es6Info, 
   Es6MemberInfo 
 } from "@kingjs/es6-info"
 import { 
-  ExtensionGroup, 
-  ExtensionGroupReflect, 
+  PartialClass, 
+  PartialClassReflect, 
 } from '@kingjs/extension-group'
 import { 
   Concept, 
@@ -21,14 +21,14 @@ export class Info {
     if (!fn) return null
     assert(typeof fn == 'function', 'fn must be a function')
 
-    if (fn == MemberCollection) return new PartialObjectInfo(fn)
+    if (fn == PartialObject) return new PartialObjectInfo(fn)
+    if (fn == TransparentPartialClass) return new PartialObjectInfo(fn)
     if (fn == PartialClass) return new PartialObjectInfo(fn)
-    if (fn == ExtensionGroup) return new PartialObjectInfo(fn)
     if (fn == Concept) return new PartialObjectInfo(fn)
 
-    const collectionType = MemberReflect.getCollectionType(fn)
-    if (collectionType == PartialClass) return new PartialClassInfo(fn)
-    if (collectionType == ExtensionGroup) return new ExtensionGroupInfo(fn)
+    const collectionType = PartialReflect.getPartialObjectType(fn)
+    if (collectionType == TransparentPartialClass) return new PartialClassInfo(fn)
+    if (collectionType == PartialClass) return new ExtensionGroupInfo(fn)
     if (collectionType == Concept) return new ConceptInfo(fn)  
     return new ClassInfo(fn)
   }
@@ -72,7 +72,7 @@ export class FunctionInfo extends Info {
 
   constructor(type) {
     super()
-    const prototypicalType = MemberReflect.getPrototypicalType$(type)
+    const prototypicalType = PartialReflect.getPrototypicalType$(type)
     this.#es6ClassInfo = Es6Info.from(prototypicalType)
     this.#ctor = type
   }
@@ -94,7 +94,7 @@ export class FunctionInfo extends Info {
   get isPartialClass() { return this instanceof PartialClassInfo }
 
   *ownExtensionGroups() {
-    const groups = [...ExtensionGroupReflect.ownExtensionGroups(this.ctor)]
+    const groups = [...PartialClassReflect.ownExtensionGroups(this.ctor)]
     yield *groups.map(group => Info.from(group))
   }
   *ownConcepts() {
@@ -165,7 +165,7 @@ export class FunctionInfo extends Info {
   }
   *extensionGroups() {
     const fn = this.ctor
-    const groups = [...ExtensionGroupReflect.extensionGroups(fn)]
+    const groups = [...PartialClassReflect.extensionGroups(fn)]
     yield *groups.map(group => Info.from(group))
   }
 
@@ -198,9 +198,9 @@ export class PartialFunctionInfo extends FunctionInfo {
 export class PartialObjectInfo extends PartialFunctionInfo {
   constructor(type) {
     assert(
-      type === MemberCollection
+      type === PartialObject
+      || type == TransparentPartialClass
       || type == PartialClass
-      || type == ExtensionGroup
       || type == Concept
     )
 
@@ -234,14 +234,14 @@ export class MemberCollectionInfo extends PartialFunctionInfo {
 }
 export class PartialClassInfo extends MemberCollectionInfo {
   constructor(type) {
-    assert(type.prototype instanceof PartialClass)
+    assert(type.prototype instanceof TransparentPartialClass)
     super(type)
   }
   toString() { return `[partialClassInfo]` }
 }
 export class ExtensionGroupInfo extends MemberCollectionInfo {
   constructor(type) {
-    assert(type.prototype instanceof ExtensionGroup)
+    assert(type.prototype instanceof PartialClass)
     super(type)
   }
   toString() { return `[extensionGroupInfo ${this.id.toString()}]` }
@@ -260,9 +260,9 @@ Info.Array = Info.from(Array)
 Info.String = Info.from(String)
 Info.Number = Info.from(Number)
 Info.Boolean = Info.from(Boolean)
-Info.MemberCollection = Info.from(MemberCollection)
-Info.MemberCollection = Info.from(MemberCollection)
-Info.ExtensionGroup = Info.from(ExtensionGroup)
+Info.PartialObject = Info.from(PartialObject)
+Info.PartialObject = Info.from(PartialObject)
+Info.PartialClass = Info.from(PartialClass)
 Info.Concept = Info.from(Concept)
 
 export class MemberInfo extends Info {
@@ -288,7 +288,7 @@ export class MemberInfo extends Info {
 
   get host() { 
     let host = this.#es6MemberInfo.host
-    const fn = MemberReflect.getPrototypicalHost$(host.ctor)
+    const fn = PartialReflect.getPrototypicalHost$(host.ctor)
     return Info.from(fn)
   }
   get name() { return this.#es6MemberInfo.name }
@@ -323,7 +323,7 @@ export class MemberInfo extends Info {
   
   get extensionGroup() {
     return Info.from(
-      ExtensionGroupReflect.getExtensionGroup(this.host.ctor, this.name))
+      PartialClassReflect.getExtensionGroup(this.host.ctor, this.name))
   }
 
   get isConceptual() {

@@ -1,5 +1,5 @@
 import { Concept } from '@kingjs/concept'
-import { ExtensionGroup } from '@kingjs/extension-group'
+import { PartialClass } from '@kingjs/extension-group'
 import { Extensions } from '@kingjs/extension-group'
 import { Preconditions } from '@kingjs/debug-proxy'
 import {
@@ -7,7 +7,7 @@ import {
 } from './throw.js'
 
 export class CursorConcept extends Concept {
-  static [Preconditions] = ExtensionGroup
+  static [Preconditions] = PartialClass
   static [Extensions] = {
     next() {
       const value = this.value 

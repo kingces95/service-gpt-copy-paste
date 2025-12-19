@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { FunctionInfo, Info } from "@kingjs/info"
-import { ExtensionGroup, Extensions } from '@kingjs/extension-group'
+import { PartialClass, Extensions } from '@kingjs/extension-group'
 import { extend } from '@kingjs/extend'
 import { Concept, Concepts, implement } from '@kingjs/concept'
 import { } from "@kingjs/info-to-pojo"
@@ -22,7 +22,7 @@ describe('FunctionInfo for Concept', () => {
     expect(fnInfo.ctor).toBe(Concept)
   })
   it('is not a partial class', () => {
-    expect(!fnInfo.isPartial).toBe(true)
+    expect(!fnInfo.isPartialObject).toBe(true)
   })
   it('is a concept', () => {
     expect(fnInfo.isConcept).toBe(false)
@@ -32,7 +32,7 @@ describe('FunctionInfo for Concept', () => {
     expect(Array.from(concepts)).toEqual([])
   })
   it('has PartialClassInfo base', () => {
-    const ExtensionInfo = Info.MemberCollection
+    const ExtensionInfo = Info.PartialObject
     expect(fnInfo.base).toEqual(ExtensionInfo)
   })
 })
@@ -79,7 +79,7 @@ describe('A concept', () => {
   describe('without a name', () => {
     let cls
     beforeEach(() => {
-      [cls] = [class extends ExtensionGroup { }]
+      [cls] = [class extends PartialClass { }]
     })
     it('does not throws', () => {
       expect(() => Info.from(cls)).not.toThrow()
@@ -188,7 +188,7 @@ describe('A concept with a member', () => {
     let type
     let typeInfo
     beforeEach(() => {
-      type = class MyClass extends ExtensionGroup { }
+      type = class MyClass extends PartialClass { }
       type[Concepts] = myConcept
       typeInfo = Info.from(type)
     })
@@ -357,7 +357,7 @@ describe('A bespoke concept', () => {
       it('should throw while loading', async () => {
         expect(() => Info.from(myExtendedConcept)).toThrow([
           `Assertion failed:`,
-          `Expected type to indirectly extend MemberCollection.`
+          `Expected type to indirectly extend PartialObject.`
         ].join(' '))
       })
     })

@@ -1,36 +1,49 @@
-import { assert } from '@kingjs/assert'
-import { Reflection } from '@kingjs/reflection'
-import { isPojo } from '@kingjs/pojo-test'
-import { MemberCollection } from '@kingjs/member-collection'
+import { PartialObject } from '@kingjs/partial-object'
+import { TransparentPartialClass } from '@kingjs/transparent-partial-class'
+import { PartialReflect } from '@kingjs/partial-reflect'
 
-const {
-  isExtensionOf,
-  ownMemberKeys,
-} = Reflection
+export const Extensions = Symbol('Extensions')
 
-export class PartialClass extends MemberCollection {
+// Extend copies members from one or more extensions to a type prototype.
+// An extension is a class which extends PartialClass. For example, an extension 
+// could define a dump method that dumps the instance to the console. A type 
+// could be dynamically extended with the Dumpper extension like this:
+//    import { PartialClass } from '@kingjs/extension-group'
+//    class MyType { }
+//    class Dumpper extends PartialClass { dump() { Console.log(this) } }
+//    extend(MyType, Dumpper)
 
-  static create(pojo) {
-    assert(isPojo(pojo), 'expected a pojo')
-
-    const [type] = [class extends PartialClass { }]
-    const prototype = type.prototype
-
-    for (const key of ownMemberKeys(pojo)) {
-      const descriptor = Object.getOwnPropertyDescriptor(pojo, key)
-      Object.defineProperty(prototype, key, descriptor)
+export class PartialClass extends PartialObject {
+  static [PartialObject.OwnCollectionSymbols] = {
+    [Extensions]: { 
+      expectedType: [ PartialClass, TransparentPartialClass ],
+      map: TransparentPartialClass.fromArg,
     }
+  }
+}
 
-    return type
+export class PartialClassReflect {
+  static isExtensionGroup(type) {
+    const collectionType = PartialReflect.getPartialObjectType(type)
+    return collectionType == PartialClass
   }
 
-  static fromArg(arg) {
-    if (isPojo(arg))
-      arg = PartialClass.create(arg)
-
-    assert(isExtensionOf(arg, MemberCollection),
-      `Expected arg to be a MemberCollection.`)
-
-    return arg
+  static *extensionGroups(type) {
+    for (const collection of PartialReflect.collections(type)) {
+      const collectionType = PartialReflect.getPartialObjectType(collection)
+      if (collectionType != PartialClass) continue
+      yield collection
+    }
+  }
+  static *ownExtensionGroups(type) {
+    for (const collection of PartialReflect.ownCollections(type)) {
+      if (!PartialClassReflect.isExtensionGroup(collection)) continue 
+      yield collection
+    }
+  }
+  static getExtensionGroup(type, name) {
+    const host = PartialReflect.getHost(type, name)
+    if (!PartialClassReflect.isExtensionGroup(host)) return null
+    return host
   }
 }

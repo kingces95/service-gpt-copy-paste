@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 
-import { MemberCollection } from '@kingjs/member-collection'
-import { ExtensionGroup } from '@kingjs/extension-group'
+import { PartialObject } from '@kingjs/partial-object'
+import { PartialClass } from '@kingjs/extension-group'
 import { Concept } from '@kingjs/concept'
-import { PartialClass } from '@kingjs/partial-class'
+import { TransparentPartialClass } from '@kingjs/transparent-partial-class'
 
 import { Info } from "@kingjs/info"
 import { } from "@kingjs/info-to-pojo"
@@ -42,39 +42,15 @@ describe('Function members', () => {
   })
 })
 
-describe('MemberCollection members', () => {
+describe('PartialObject members', () => {
   let pojo
   beforeEach(async () => {
-    const fnInfo = Info.from(MemberCollection)
+    const fnInfo = Info.from(PartialObject)
     pojo = await fnInfo.toPojo()
   })
 
   it('matches expected', () => {
-    expect(pojo).toEqual({ name: 'MemberCollection' })
-  })
-})
-
-describe('ExtensionGroup members', () => {
-  let pojo
-  beforeEach(async () => {
-    const fnInfo = Info.from(ExtensionGroup)
-    pojo = await fnInfo.toPojo()
-  })
-
-  it('matches expected', () => {
-    expect(pojo).toEqual({ name: 'ExtensionGroup', base: 'MemberCollection' })
-  })
-})
-
-describe('Concept members', () => {
-  let pojo
-  beforeEach(async () => {
-    const fnInfo = Info.from(Concept)
-    pojo = await fnInfo.toPojo()
-  })
-
-  it('matches expected', () => {
-    expect(pojo).toEqual({ name: 'Concept', base: 'MemberCollection' })
+    expect(pojo).toEqual({ name: 'PartialObject' })
   })
 })
 
@@ -86,7 +62,31 @@ describe('PartialClass members', () => {
   })
 
   it('matches expected', () => {
-    expect(pojo).toEqual({ name: 'PartialClass', base: 'MemberCollection' })
+    expect(pojo).toEqual({ name: 'PartialClass', base: 'PartialObject' })
+  })
+})
+
+describe('Concept members', () => {
+  let pojo
+  beforeEach(async () => {
+    const fnInfo = Info.from(Concept)
+    pojo = await fnInfo.toPojo()
+  })
+
+  it('matches expected', () => {
+    expect(pojo).toEqual({ name: 'Concept', base: 'PartialObject' })
+  })
+})
+
+describe('TransparentPartialClass members', () => {
+  let pojo
+  beforeEach(async () => {
+    const fnInfo = Info.from(TransparentPartialClass)
+    pojo = await fnInfo.toPojo()
+  })
+
+  it('matches expected', () => {
+    expect(pojo).toEqual({ name: 'TransparentPartialClass', base: 'PartialObject' })
   })
 })
 

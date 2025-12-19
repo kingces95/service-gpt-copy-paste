@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { MemberReflect } from '@kingjs/member-reflect'
+import { PartialReflect } from '@kingjs/partial-reflect'
 import { 
   Concept, 
   satisfies, 
@@ -14,12 +14,12 @@ describe('MyConcept', () => {
     MyConcept = class MyConcept extends Concept { }
   })
   it('should have no own concepts', () => {
-    const actual = [...MemberReflect.ownCollections(MyConcept)]
+    const actual = [...PartialReflect.ownCollections(MyConcept)]
     const expected = [ ]
     expect(actual).toEqual(expected)
   })
   it('should have not inherited concepts', () => {
-    const actual = [...MemberReflect.collections(MyConcept)]
+    const actual = [...PartialReflect.collections(MyConcept)]
     const expected = [ ]
     expect(actual).toEqual(expected)
   })
@@ -28,7 +28,7 @@ describe('MyConcept', () => {
       MyConcept.prototype.member = abstract
     })
     it('should report MyConcept as host for the member', () => {
-      const host = MemberReflect.getHost(MyConcept, 'member')
+      const host = PartialReflect.getHost(MyConcept, 'member')
       expect(host).toBe(MyConcept)
     })
   })
@@ -43,7 +43,7 @@ describe('A type', () => {
     type = class { }
   })
   it('should have no declared concepts', () => {
-    const actual = [...MemberReflect.ownCollections(type)]
+    const actual = [...PartialReflect.ownCollections(type)]
     const expected = [ ]
     expect(actual).toEqual(expected)
   })
@@ -61,7 +61,7 @@ describe('A type', () => {
     })
     it('should throw implementing itself', () => {
       expect(() => implement(MyConcept, MyConcept)).toThrow([
-        "Expected type to not be a MemberCollection."
+        "Expected type to not be a PartialObject."
       ].join(' '))
     })
     describe('already implemented by the type', () => {
@@ -89,7 +89,7 @@ describe('A type', () => {
       it('should throw when implemented', () => {
         const cls = class { }
         expect(() => implement(cls, extendedConcept)).toThrow([
-          'Assertion failed: Expected type to indirectly extend MemberCollection.',
+          'Assertion failed: Expected type to indirectly extend PartialObject.',
         ].join(' '))
       })
     })
@@ -102,7 +102,7 @@ describe('A type', () => {
         expect(type.prototype).toBeInstanceOf(MyConcept)
       })
       it('should be an own declared concept', () => {
-        const actual = [...MemberReflect.ownCollections(type)]
+        const actual = [...PartialReflect.ownCollections(type)]
         const expected = [MyConcept]
         expect(actual).toEqual(expected)
       })
@@ -223,7 +223,7 @@ describe('A type', () => {
           expect(type.prototype.method).toBe(emptyMethod)
         })
         it('should be an own declared concept', () => {
-          const actual = [...MemberReflect.ownCollections(type)]
+          const actual = [...PartialReflect.ownCollections(type)]
           const expected = [MyConcept]
           expect(actual).toEqual(expected)
         })

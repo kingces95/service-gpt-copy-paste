@@ -6,7 +6,7 @@ import { Reflection } from '@kingjs/reflection'
 // A general purpose global map of type to associated metadata
 const Associations = new Map()
 
-export class Associated {
+export class Associate {
 
   static *ownTypes(type, symbols, options = { }) {
     const { filterType: globalFilterType } = options
@@ -20,7 +20,7 @@ export class Associated {
       const { filterType: localFilterType, expectedType, map } = options
       const expectedTypes = [...asIterable(expectedType)]
 
-      const metadata = Associated.iterable(type, symbol)
+      const metadata = Associate.iterable(type, symbol)
       for (let associatedType of asIterable(metadata)) {
         if (map) associatedType = map(associatedType)
   
@@ -31,7 +31,7 @@ export class Associated {
           ).length > 0
           
         if (!isValid)
-          throw `Associated type "${associatedType.name}" is of an unexpected type.`
+          throw `Associate type "${associatedType.name}" is of an unexpected type.`
   
         if (localFilterType 
           && !Reflection.isExtensionOf(associatedType, localFilterType)) 
@@ -50,7 +50,7 @@ export class Associated {
     const { inherit, traverse, visited } = options
     
     for (const prototype of Reflection.prototypeHierarchy(type)) {
-      for (const associatedType of Associated.ownTypes(
+      for (const associatedType of Associate.ownTypes(
         prototype, symbols, options)) {
 
         if (visited.has(associatedType)) continue
@@ -58,7 +58,7 @@ export class Associated {
         yield associatedType
 
         if (traverse)
-          yield* Associated.types(associatedType, symbols, options)
+          yield* Associate.types(associatedType, symbols, options)
       }
 
       if (!inherit) break
@@ -101,14 +101,14 @@ export class Associated {
 
   static keyMap(type, associatedTypesFn, keysFn) {
     // map of key to an associated types
-    return Associated.keyReduce(
+    return Associate.keyReduce(
       type, associatedTypesFn, keysFn,
       (existing, associatedType) => existing || associatedType)
   }
 
   static keyLookup(type, associatedTypesFn, keysFn) {
     // map of key to set of associated types defining the key
-    return Associated.keyReduce(
+    return Associate.keyReduce(
       type, associatedTypesFn, keysFn,
       (existing = new Set(), associatedType) => {
         existing.add(associatedType)
@@ -147,14 +147,14 @@ export class Associated {
   }
 
   static set(type, symbol) {
-    return Associated.object(type, symbol, () => new Set())
+    return Associate.object(type, symbol, () => new Set())
   }
   static map(type, symbol) {
-    return Associated.object(type, symbol, () => new Map())
+    return Associate.object(type, symbol, () => new Map())
   }
   static lookup(type, symbol, key) {
     // returns set of associated types for key
-    const map = Associated.map(type, symbol)
+    const map = Associate.map(type, symbol)
     let set = map.get(key)
     if (!set) {
       set = new Set()
@@ -167,18 +167,18 @@ export class Associated {
     assert(value != null, 'value must be non-null')
     assert(key != null, 'key must be non-null')
 
-    const map = Associated.map(type, symbol)
+    const map = Associate.map(type, symbol)
     map.set(key, value)
   }
   static setAdd(type, symbol, ...values) {
-    const set = Associated.set(type, symbol)
+    const set = Associate.set(type, symbol)
     for (const value of values) {
       assert(value != null, 'value must be non-null')
       set.add(value)
     }
   }
   static lookupAdd(type, symbol, key, ...values) {
-    const set = Associated.lookup(type, symbol, key)
+    const set = Associate.lookup(type, symbol, key)
     for (const value of values) {
       assert(value != null, 'value must be non-null')
       set.add(value)
@@ -186,33 +186,33 @@ export class Associated {
   }
 
   static mapCopy(type, sourceType, symbol, key) {
-    const value = Associated.mapGet(sourceType, symbol, key)
+    const value = Associate.mapGet(sourceType, symbol, key)
     if (!value) return
-    Associated.mapSet(type, symbol, key, value)
+    Associate.mapSet(type, symbol, key, value)
   }
   static setCopy(type, sourceType, symbol) {
-    const values = Associated.set(sourceType, symbol)
-    Associated.setAdd(type, symbol, ...values)
+    const values = Associate.set(sourceType, symbol)
+    Associate.setAdd(type, symbol, ...values)
   }
   static lookupCopy(type, sourceType, symbol, key) {
-    const values = Associated.lookup(sourceType, symbol, key)
-    Associated.lookupAdd(type, symbol, key, ...values)
+    const values = Associate.lookup(sourceType, symbol, key)
+    Associate.lookupAdd(type, symbol, key, ...values)
   }
 
   static iterable(type, symbol) {
-    return Associated.object(type, symbol) || []
+    return Associate.object(type, symbol) || []
   }
   static mapGet(type, symbol, key) {
-    const map = Associated.object(type, symbol)
+    const map = Associate.object(type, symbol)
     return map?.get(key)
   }
   static lookupGet(type, symbol, key) {
-    const map = Associated.object(type, symbol)
+    const map = Associate.object(type, symbol)
     return map?.get(key)
   }
 
   static setDelete(type, symbol, value) {
-    const set = Associated.object(type, symbol)
+    const set = Associate.object(type, symbol)
     set?.delete(value)
   }
 }
