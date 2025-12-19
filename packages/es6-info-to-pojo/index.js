@@ -1,28 +1,36 @@
 import {
-  //Es6Info,
   Es6ClassInfo,
   Es6MemberInfo,
   Es6ValueMemberInfo,
   Es6DataMemberInfo,
   Es6MethodMemberInfo,
-  //Es6ConstructorMemberInfo,
   Es6AccessorMemberInfo,
 } from '@kingjs/es6-info'
-
+import { Descriptor } from '@kingjs/descriptor'
 import { trimPojo } from '@kingjs/pojo-trim'
 import { toPojo } from '@kingjs/pojo'
 import { dumpPojo } from "@kingjs/pojo-dump"
 
-const symbol = Symbol('es6-info-to-pojo')
+const {
+  userDefined: DefaultUserDefinedModifier,
+  accessor: DefaultAccessorModifier,
+  value: DefaultValueModifier,
+  method: DefaultMethodModifier,
+  data: DefaultDataModifier,
+} = Descriptor.DefaultModifier
 
-Es6ClassInfo[symbol] = {
+export const Es6InfoToPojoSymbol = Symbol('es6-info-to-pojo')
+
+Es6ClassInfo[Es6InfoToPojoSymbol] = {
   name: 'string',
   base: 'name',
-  records: 'records',
-  toString: 'string',
+  isAnonymous: false,
+  members: 'records',
+  ownMembers: 'records',
+  // toString: 'string',
 }
 
-Es6MemberInfo[symbol] = {
+Es6MemberInfo[Es6InfoToPojoSymbol] = {
   name: 'key',
   type: 'string',
   
@@ -31,33 +39,31 @@ Es6MemberInfo[symbol] = {
   isKnown: 'boolean',
   isNonPublic: 'boolean',
 
-  isConfigurable: 'naeloob',
+  isConfigurable: DefaultUserDefinedModifier.configurable,
 
   hasGetter: 'boolean',
   hasSetter: 'boolean',
-  // hasValue: 'boolean',
-  // parent: 'name',
   rootHost: 'name',
 }
 
-Es6ValueMemberInfo[symbol] = {
-  ...Es6MemberInfo[symbol],
-  isWritable: 'naeloob',
+Es6ValueMemberInfo[Es6InfoToPojoSymbol] = {
+  ...Es6MemberInfo[Es6InfoToPojoSymbol],
+  isWritable: DefaultValueModifier.writable,
 }
 
-Es6MethodMemberInfo[symbol] = {
-  ...Es6ValueMemberInfo[symbol],
-  isEnumerable: 'boolean',
+Es6MethodMemberInfo[Es6InfoToPojoSymbol] = {
+  ...Es6ValueMemberInfo[Es6InfoToPojoSymbol],
+  isEnumerable: DefaultMethodModifier.enumerable,
 }
 
-Es6DataMemberInfo[symbol] = {
-  ...Es6ValueMemberInfo[symbol],
-  isEnumerable: 'naeloob',
+Es6DataMemberInfo[Es6InfoToPojoSymbol] = {
+  ...Es6ValueMemberInfo[Es6InfoToPojoSymbol],
+  isEnumerable: DefaultDataModifier.enumerable,
 }
 
-Es6AccessorMemberInfo[symbol] = {
-  ...Es6MemberInfo[symbol],
-  isEnumerable: 'boolean',
+Es6AccessorMemberInfo[Es6InfoToPojoSymbol] = {
+  ...Es6MemberInfo[Es6InfoToPojoSymbol],
+  isEnumerable: DefaultAccessorModifier.enumerable,
 }
 
 const typePivotMd = {
@@ -89,22 +95,17 @@ const staticPivotMd = {
   }
 }
 
-Es6ClassInfo.prototype.records = function*(filter) {
-  const { includeInhertied = true } = filter || { }
-
-  if (includeInhertied) {
-    yield* Es6ClassInfo.members(this)
-    yield* Es6ClassInfo.members(this, { isStatic: true })
-  } else {
-    yield* this.ownMembers()
-    yield* this.ownMembers({ isStatic: true })
-  }
-}
-Es6ClassInfo.prototype.toPojo = async function({ filter } = { }) {
+Es6ClassInfo.prototype.toPojo = async function({ 
+  filter, 
+  ownOnly,
+} = { }) {
   const pojo = await toPojo(this, { 
-    symbol,
     filter,
+    symbol: Es6InfoToPojoSymbol,
     pivot: staticPivotMd,
+    excludeKeys: new Set([
+      ownOnly ? 'members' : 'ownMembers',
+    ]),
   })
 
   const trimmedPojo = trimPojo(pojo)
@@ -114,49 +115,3 @@ Es6ClassInfo.prototype.dump = async function(options = { }) {
   const pojo = await this.toPojo(options)
   dumpPojo(pojo)
 }
-
-// export function filterInfoPojo(pojo, { 
-//   includeStatic = false,
-//   includeInstance = false
-// } = {
-//   includeStatic: {
-//     isNonPublic: false,
-//     isKnown: false,
-//     isSymbol: false,
-//     isInherited: false,
-//   },
-//   includeInstance: {
-//     isNonPublic: false,
-//     isKnown: false,
-//     isSymbol: false,
-//     isInherited: false,
-//   }
-// }) {
-//   const result = { }
-
-//   if (pojo.name) result.name = pojo.name
-//   if (pojo.base) result.base = pojo.base
-
-//   function filter(name, member, { 
-//     isNonPublic, isKnown, isSymbol, isInherited }) {
-
-//     if (!isNonPublic && member.isNonPublic) return false
-//     if (!isKnown && member.isKnown) return false
-//     if (!isSymbol && typeof name == 'symbol') return false
-//     if (!isInherited && (member.host != pojo.name)) return false
-//     return true
-//   }
-
-//   const allMembers = [...pojo.__records ?? []]
-//     .filter(member => {
-//       if (typeof includeStatic == 'boolean' && member.isStatic)
-//         return includeStatic
-//       if (typeof includeInstance == 'boolean' && !member.isStatic)
-//         return includeInstance
-//       return filter(member.name, member,
-//         member.isStatic ? includeStatic : includeInstance)
-//     })
-
-//   result.members = pivotPojos(allMembers, staticPivotMd)
-//   return trimPojo(result)
-// }

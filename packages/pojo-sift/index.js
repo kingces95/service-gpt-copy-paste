@@ -10,7 +10,6 @@ export function* siftPojos(records, filters) {
         const filterValue = filter[key]
         if (recordValue != filterValue) 
           continue filterLoop
-
       }
 
       yield record

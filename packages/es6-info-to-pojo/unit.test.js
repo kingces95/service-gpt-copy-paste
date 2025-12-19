@@ -1,12 +1,18 @@
-import { Es6Info } from "@kingjs/es6-info"
-import { } from "@kingjs/es6-info-to-pojo"
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { objectPojo } from "./object.pojo.js"
-import { functionPojo } from "./function.pojo.js"
-import { myClassPojo, MyClass } from "./scratch.test.js"
 
-describe('Object to pojo', () => {
+import { Es6Info } from "@kingjs/es6-info"
+import { } from "@kingjs/es6-info-to-pojo"
+
+import { objectPojo } from "./pojo/object.pojo.js"
+import { functionPojo } from "./pojo/function.pojo.js"
+import { myClassPojo } from "./pojo/my-class.pojo.js"
+import { myClassStaticPojo } from "./pojo/my-class-static.pojo.js"
+import { myClassInstancePojo } from "./pojo/my-class-instance.pojo.js"
+
+import { MyClass } from "./dump.test.js"
+
+describe('Object members', () => {
   let pojo
   beforeEach(async () => {
     const objInfo = Es6Info.from(Object)
@@ -18,7 +24,7 @@ describe('Object to pojo', () => {
   })
 })
 
-describe('Function to pojo', () => {
+describe('Function members', () => {
   let pojo
   beforeEach(async () => {
     const fnInfo = Es6Info.from(Function)
@@ -30,7 +36,7 @@ describe('Function to pojo', () => {
   })
 })
 
-describe('MyClass to pojo', () => {
+describe('MyClass members', () => {
   let pojo
   beforeEach(async () => {
     const fnInfo = Es6Info.from(MyClass)
@@ -44,5 +50,41 @@ describe('MyClass to pojo', () => {
 
   it('matches expected', () => {
     expect(pojo).toEqual(myClassPojo)
+  })
+})
+
+describe('MyClass instance members', () => {
+  let pojo
+  beforeEach(async () => {
+    const fnInfo = Es6Info.from(MyClass)
+    pojo = await fnInfo.toPojo({
+      filter: { 
+        isStatic: false,
+        isKnown: false,
+        isNonPublic: false,
+      },
+    })
+  })
+
+  it('matches expected', () => {
+    expect(pojo).toEqual(myClassInstancePojo)
+  })
+})
+
+describe('MyClass static members', () => {
+  let pojo
+  beforeEach(async () => {
+    const fnInfo = Es6Info.from(MyClass)
+    pojo = await fnInfo.toPojo({
+      filter: { 
+        isStatic: true,
+        isKnown: false,
+        isNonPublic: false,
+      },
+    })
+  })
+
+  it('matches expected', () => {
+    expect(pojo).toEqual(myClassStaticPojo)
   })
 })

@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Info, FunctionInfo } from "@kingjs/info"
-import { filterInfoPojo } from "@kingjs/info-to-pojo"
+import { Concept } from '@kingjs/concept'
+import { ExtensionGroup } from '@kingjs/extension-group'
+import { PartialClass } from '@kingjs/partial-class'
+import { } from "@kingjs/info-to-pojo"
 
 import { abstract } from '@kingjs/abstract'
 
@@ -17,13 +20,13 @@ describe('FunctionInfo for Object', () => {
     expect(fnInfo.equals(null)).toBe(false)
   })
   it('does not have a member missing', () => {
-    expect(fnInfo.getOwnMember('missing')).toBeNull()
-    expect(FunctionInfo.getMember(fnInfo, 'missing')).toBeNull()
+    expect(fnInfo.getOwnInstanceMember('missing')).toBeNull()
+    expect(FunctionInfo.getInstanceMember(fnInfo, 'missing')).toBeNull()
   })
   describe('has a toString member', () => {
     let toStringMember
     beforeEach(() => {
-      toStringMember = fnInfo.getOwnMember('toString')
+      toStringMember = fnInfo.getOwnInstanceMember('toString')
     })
     it('has no root type', () => {
       const rootType = toStringMember.rootHost()
@@ -33,14 +36,15 @@ describe('FunctionInfo for Object', () => {
   describe('has a constructor member', () => {
     let ctorMember
     beforeEach(() => {
-      ctorMember = fnInfo.getOwnMember('constructor')
+      ctorMember = fnInfo.getOwnInstanceMember('constructor')
     })
 
     it('equals itself', () => {
       expect(ctorMember.equals(ctorMember)).toBe(true)
     })
     it('equals a different instance of itself', () => {
-      expect(ctorMember.equals(fnInfo.getOwnMember('constructor'))).toBe(true)
+      expect(ctorMember.equals(
+        fnInfo.getOwnInstanceMember('constructor'))).toBe(true)
     })
     it('does not equal null', () => {
       expect(ctorMember.equals(null)).toBe(false)
@@ -49,7 +53,7 @@ describe('FunctionInfo for Object', () => {
     describe('has a hasOwnProperty member', () => {
       let hasOwnPropertyMember
       beforeEach(() => {
-        hasOwnPropertyMember = fnInfo.getOwnMember('hasOwnProperty')
+        hasOwnPropertyMember = fnInfo.getOwnInstanceMember('hasOwnProperty')
       })
       it('does not equal the constructor member', () => {
         expect(hasOwnPropertyMember.equals(ctorMember)).toBe(false)
@@ -59,19 +63,6 @@ describe('FunctionInfo for Object', () => {
 })
 
 const MySymbol = Symbol('test-symbol')
-
-function filter(pojo) {
-  return filterInfoPojo(pojo, {
-    includeInstance: {
-      isInherited: true,
-      isSymbol: true,
-    },
-    includeStatic: {
-      isInherited: true,
-      // isSymbol: true,
-    }
-  })
-}
 
 describe('FunctionInfo for Function', () => {
   let fnInfo
@@ -88,7 +79,7 @@ describe('FunctionInfo for Function', () => {
   describe('static members', () => {
     let staticMembers
     beforeEach(() => {
-      staticMembers = [...fnInfo.ownMembers({ isStatic: true })]
+      staticMembers = [...fnInfo.ownStaticMembers()]
     })
     it('should all be known', () => {
       for (const member of staticMembers)
@@ -98,32 +89,108 @@ describe('FunctionInfo for Function', () => {
   describe('instance members', () => {
     let instanceMembers
     beforeEach(() => {
-      instanceMembers = [...fnInfo.ownMembers({ isStatic: false })]
+      instanceMembers = [...fnInfo.ownInstanceMembers()]
     })
     it('should all be known', () => {
       for (const member of instanceMembers)
         expect(member.isKnown).toBe(true)
     })
   })
-  describe('static hierarchy', () => {
-    let staticHierarchy
-    beforeEach(() => {
-      staticHierarchy = [...FunctionInfo.hierarchy(fnInfo, { isStatic: true })]
-    })
-    it('should be [Function]', () => {
-      expect(staticHierarchy.map(x => x.name)).toEqual(['Function'])
-    })
+})
+
+describe('My concept', () => {
+  let myConcept
+  beforeEach(() => {
+    myConcept = class MyConcept extends Concept { }
   })
-  describe('instance hierarchy', () => {
-    let instanceHierarchy
-    beforeEach(() => {
-      instanceHierarchy = [...FunctionInfo.hierarchy(fnInfo)]
+  it('has a toString of MyConcept', () => {
+    const conceptInfo = Info.from(myConcept)
+    expect(conceptInfo.toString()).toBe('[conceptInfo MyConcept]')
+  })
+})
+
+describe('My extension group', () => {
+  let myExtensionGroup
+  beforeEach(() => {
+    myExtensionGroup = class MyExtensionGroup extends ExtensionGroup { }
+  })
+  it('has a toString of MyExtensionGroup', () => {
+    const extensionGroupInfo = Info.from(myExtensionGroup)
+    expect(extensionGroupInfo.toString()).toBe('[extensionGroupInfo MyExtensionGroup]')
+  })
+})
+
+describe('My partial class', () => {
+  let myPartialClass
+  beforeEach(() => {
+    const pojo = { }
+    myPartialClass = PartialClass.fromArg(pojo)
+  })
+  it('has a toString of MyPartialClass', () => {
+    const partialClassInfo = Info.from(myPartialClass)
+    expect(partialClassInfo.toString()).toBe('[partialClassInfo]')
+  })
+})
+
+describe('A member', () => {
+  describe.each([
+    ['on MyConcept', 'member', 
+      class MyConcept extends Concept { member() { } }, 
+      'member, abstract function, [conceptInfo MyConcept]'],
+    ['on MyExtensionGroup', 'member', 
+      class MyExtensionGroup extends ExtensionGroup { member() { } }, 
+      'member, function, [extensionGroupInfo MyExtensionGroup]'],
+    ['on MyPartialClass', 'member',
+      PartialClass.fromArg({ member() { } }),
+      'member, function, [partialClassInfo]'],
+
+    ['on MyClass', 'member', class MyClass { member() { } }, 
+      'member, function, [classInfo MyClass]'],
+    ['constructor', 'constructor', class MyClass { constructor() { } },
+      'constructor, hidden { value: [class] }, [classInfo MyClass]'],
+    ['on anonnymous', 'member', class { member() { } }, 
+      'member, function, [classInfo <anonymous>]'],
+    ['static on MyClass', 'member', class MyClass { static member() { } },
+      'member, static function, [classInfo MyClass]'],
+    ['with symbol name', MySymbol, class MyClass { [MySymbol]() { } },
+      '[Symbol(test-symbol)], function, [classInfo MyClass]'],
+    ['static with symbol name', MySymbol, class MyClass { static [MySymbol]() { } },
+      '[Symbol(test-symbol)], static function, [classInfo MyClass]'],
+    ['getter on MyClass', 'member', class MyClass { 
+      get member() { } 
+      set member(value) { }
+    }, 'member, { get; set }, [classInfo MyClass]'],
+    ])('%s', (_, name, cls, expected) => {
+    it('has a toString', async () => {
+      const fnInfo = Info.from(cls)
+      const member = fnInfo.getOwnInstanceMember(name) 
+        ?? fnInfo.getOwnStaticMember(name)
+      expect(member.toString()).toBe(expected) 
     })
-    it('should be [Function, Object]', () => {
-      expect(instanceHierarchy.map(x => x.name)).toEqual(['Function', 'Object'])
+    it('does not equal Object.toString member', async () => {
+      const fnInfo = Info.from(cls)
+      const member = fnInfo.getOwnInstanceMember(name) 
+        ?? fnInfo.getOwnStaticMember(name)
+      const objectFnInfo = Info.from(Object)
+      const objectToStringMember = 
+        objectFnInfo.getOwnInstanceMember('toString')
+      expect(member.equals(objectToStringMember)).toBe(false)
     })
   })
 })
+
+const pojoFilter = {
+    ownOnly: false,
+    filter: [{ 
+      isStatic: true,
+      isKnown: false,
+      isNonPublic: false,
+    }, {
+      isStatic: false,
+      isKnown: false,
+      isNonPublic: false,
+    }],
+  }
 
 describe('A class', () => {
   describe('with a name', () => {
@@ -133,7 +200,7 @@ describe('A class', () => {
     })
     it('has a toString of MyClass', () => {
       const fnInfo = Info.from(cls)
-      expect(fnInfo.toString()).toBe('MyClass')
+      expect(fnInfo.toString()).toBe('[classInfo MyClass]')
     })
   })
   describe('without a name', () => {
@@ -143,7 +210,7 @@ describe('A class', () => {
     })
     it('has a toString of <anonymous>', () => {
       const fnInfo = Info.from(cls)
-      expect(fnInfo.toString()).toBe('<anonymous>')
+      expect(fnInfo.toString()).toBe('[classInfo <anonymous>]')
     })
   })
 
@@ -172,46 +239,12 @@ describe('A class', () => {
   ])('with %s', (description, cls, expected) => {
     it('has a pojo', async () => {
       const fnInfo = Info.from(cls)
-      expect(filter(await fnInfo.__toPojo())).toEqual({
+      const pojo = await fnInfo.toPojo(pojoFilter)
+      expected.isAnonymous = true
+      expect(pojo).toEqual({
         ...expected,
-        base: 'Object'
+        base: 'Object',
       })
-    })
-  })
-})
-
-describe('A member', () => {
-  describe.each([
-    ['on MyClass', 'member', class MyClass { member() { } }, 
-      'member { value: method }, MyClass'],
-    ['constructor', 'constructor', class MyClass { constructor() { } },
-      'hidden constructor { value: function }, MyClass'],
-    ['on anonnymous', 'member', class { member() { } }, 
-      'member { value: method }'],
-    ['static on MyClass', 'member', class MyClass { static member() { } },
-      'static member { value: method }, MyClass'],
-    ['with symbol name', MySymbol, class MyClass { [MySymbol]() { } },
-      '[Symbol(test-symbol)] { value: method }, MyClass'],
-    ['static with symbol name', MySymbol, class MyClass { static [MySymbol]() { } },
-      'static [Symbol(test-symbol)] { value: method }, MyClass'],
-    ['getter on MyClass', 'member', class MyClass { 
-      get member() { } 
-      set member(value) { }
-    }, 'member { get: method; set: method }, MyClass'],
-    ])('%s', (_, name, cls, expected) => {
-    it('has a toString', async () => {
-      const fnInfo = Info.from(cls)
-      const member = fnInfo.getOwnMember(name) 
-        ?? fnInfo.getOwnMember(name, { isStatic: true })
-      expect(member.toString()).toBe(expected) 
-    })
-    it('does not equal Object.toString member', async () => {
-      const fnInfo = Info.from(cls)
-      const member = fnInfo.getOwnMember(name) 
-        ?? fnInfo.getOwnMember(name, { isStatic: true })
-      const objectFnInfo = Info.from(Object)
-      const objectToStringMember = objectFnInfo.getOwnMember('toString')
-      expect(member.equals(objectToStringMember)).toBe(false)
     })
   })
 })
@@ -233,6 +266,7 @@ describe('A bespoke class', () => {
     })  
     it('has a pojo', async () => {
       const pojo = {
+        isAnonymous: true,
         members: { instance: { methods: {
           [MySymbol]: { 
             type: 'method',
@@ -242,9 +276,8 @@ describe('A bespoke class', () => {
         base: 'Object'
       }
       const fnInfo = Info.from(myClass)
-      const actual = await fnInfo.__toPojo()
-      const actualPojo = filter(actual)
-      expect(actualPojo).toEqual(pojo)
+      const actual = await fnInfo.toPojo(pojoFilter)
+      expect(actual).toEqual(pojo)
     })
   })  
   describe('extended by an extended class', () => {
@@ -262,7 +295,7 @@ describe('A bespoke class', () => {
 
       it('should have Object as root of toString', async () => {
         const fnInfo = Info.from(myExtendedClass)
-        const toStringMember = fnInfo.getOwnMember('toString')
+        const toStringMember = fnInfo.getOwnInstanceMember('toString')
         const object = FunctionInfo.Object
         expect(toStringMember.rootHost().equals(object)).toBe(true)
         expect(toStringMember.rootHost().name).toBe('Object')
@@ -276,10 +309,12 @@ describe('A bespoke class', () => {
     })
     it('has a pojo', async () => {
       const pojo = {
-        members: { 
-          instance: { methods: {
-            constructor: { type: 'method', rootHost: 'Object' } 
-          } },
+        isAnonymous: true,
+        members: {
+          // Instance ctor is known so excluded by filter 
+          // instance: { methods: {
+          //   constructor: { type: 'method', rootHost: 'Object' } 
+          // } },
           static: { data: {
             constructor: { type: 'data' }
           } }
@@ -288,7 +323,8 @@ describe('A bespoke class', () => {
       }
 
       const fnInfo = Info.from(myClass)
-      expect(filter(await fnInfo.__toPojo())).toEqual(pojo)
+      const actual = await fnInfo.toPojo(pojoFilter)
+      expect(actual).toEqual(pojo)
     })
   })
   describe('with static const member', () => {
@@ -304,6 +340,7 @@ describe('A bespoke class', () => {
     })
     it('has a pojo', async () => {
       const pojo = {
+        isAnonymous: true,
         members: { static: { data: {
           myStaticConst: { 
             type: 'data',
@@ -314,7 +351,8 @@ describe('A bespoke class', () => {
         base: 'Object'
       }
       const fnInfo = Info.from(myClass)
-      expect(filter(await fnInfo.__toPojo())).toEqual(pojo)
+      const actual = await fnInfo.toPojo(pojoFilter)
+      expect(actual).toEqual(pojo)
     })
   })
   describe('with static and instance data members', () => {
@@ -326,6 +364,7 @@ describe('A bespoke class', () => {
     })
     it('has a pojo', async () => {
       const pojo = {
+        isAnonymous: true,
         members: { 
           instance: { data: {
             myInstanceData: { 
@@ -339,7 +378,8 @@ describe('A bespoke class', () => {
         base: 'Object'
       }
       const fnInfo = Info.from(myClass)
-      expect(filter(await fnInfo.__toPojo())).toEqual(pojo)
+      const actual = await fnInfo.toPojo(pojoFilter)
+      expect(actual).toEqual(pojo)
     })
   })
   describe('with private members', () => {
@@ -354,11 +394,13 @@ describe('A bespoke class', () => {
   
     it('has a pojo', async () => {
       const pojo = {
+        isAnonymous: true,
         base: 'Object'
       }
   
       const fnInfo = Info.from(myClass)
-      expect(filter(await fnInfo.__toPojo())).toEqual(pojo)
+      const actual = await fnInfo.toPojo(pojoFilter)
+      expect(actual).toEqual(pojo)
     })
   })
   describe('with a static and instance accessor and method members', () => {
@@ -376,6 +418,7 @@ describe('A bespoke class', () => {
   
     it('has a pojo', async () => {
       const pojo = {
+        isAnonymous: true,
         members: {
           instance: {
             accessors: {
@@ -398,7 +441,8 @@ describe('A bespoke class', () => {
       }
   
       const fnInfo = Info.from(myClass)
-      expect(filter(await fnInfo.__toPojo())).toEqual(pojo)
+      const actual = await fnInfo.toPojo(pojoFilter)
+      expect(actual).toEqual(pojo)
     })
   })
   describe('with an abstract method and accessor', () => {
@@ -419,6 +463,7 @@ describe('A bespoke class', () => {
     })
     it('has a pojo', async () => {
       const pojo = {
+        isAnonymous: true,
         members: {
           instance: {
             accessors: {
@@ -437,7 +482,8 @@ describe('A bespoke class', () => {
         base: 'Object'
       }
       const fnInfo = Info.from(myClass)
-      expect(filter(await fnInfo.__toPojo())).toEqual(pojo)
+      const actual = await fnInfo.toPojo(pojoFilter)
+      expect(actual).toEqual(pojo)
     })
   })
 })

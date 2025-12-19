@@ -20,6 +20,7 @@ export class Es6KeyInfo {
   #key
 
   constructor(key) {
+    if (!key) key = null
     this.#key = key
   }
 

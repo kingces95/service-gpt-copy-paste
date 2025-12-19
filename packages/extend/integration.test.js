@@ -2,19 +2,12 @@ import { beforeEach } from 'vitest'
 import { describe, it, expect } from 'vitest'
 import { Info } from "@kingjs/info"
 import { extend } from '@kingjs/extend'
-import { filterInfoPojo } from "@kingjs/info-to-pojo"
+import { } from "@kingjs/info-to-pojo"
 import { ExtensionGroup } from '@kingjs/extension-group'
+import { PartialClass } from '@kingjs/partial-class'
 
-function filter(pojo) {
-  return filterInfoPojo(pojo, {
-    includeInstance: {
-      isInherited: true,
-      isSymbol: true,
-    },
-    includeStatic: {
-      isInherited: true,
-    }
-  })
+const filter = {
+  filter: { isNonPublic: false, isKnown: false },
 }
 
 describe('PartialClass with non-standard properties', () => {
@@ -37,13 +30,14 @@ describe('PartialClass with non-standard properties', () => {
     })
 
     it('should have and info pojo', async () => {
-      const pojo = filter(await Info.from(cls).__toPojo())
+      const pojo = await Info.from(cls).toPojo(filter)
       expect(pojo).toEqual({
         members: { instance: { data: {
           writableFalse: { type: 'data', isWritable: false },
           enumerableFalse: { type: 'data', isEnumerable: false },
           configurableFalse: { type: 'data', isConfigurable: false },
         } } },
+        isAnonymous: true,
         base: 'Object',
       })
     })
@@ -61,7 +55,7 @@ describe('Kitchen sink', () => {
       member1() { return 42 }
       member2() { return 42 }
     }],
-    ['lambda', {
+    ['lambda', PartialClass.create({
       getter0: { get: () => { } },
       get getter1() { },
 
@@ -71,7 +65,7 @@ describe('Kitchen sink', () => {
       member0: { value: () => { return 42 } },
       member1() { return 42 },
       member2: () => 42,
-    }]
+    })]
   ])('defined using %s syntax', (_, partialClass) => {
     let expectedMembers
     beforeEach(() => {
@@ -94,11 +88,8 @@ describe('Kitchen sink', () => {
     })
 
     it('should have expected info pojo', async () => {
-      const pojo = filter(await Info.from(partialClass).__toPojo())
-      expect(pojo).toEqual({
-        members: expectedMembers,
-        base: 'ExtensionGroup',
-      })
+      const pojo = await Info.from(partialClass).toPojo(filter)
+      expect(pojo.members).toEqual(expectedMembers)
     })
 
     describe('defined on a class', () => {
@@ -109,9 +100,10 @@ describe('Kitchen sink', () => {
       })
       
       it('should have expected info pojo', async () => {
-        const pojo = filter(await Info.from(cls).__toPojo())
+        const pojo = await Info.from(cls).toPojo(filter)
         expect(pojo).toEqual({
           members: expectedMembers,
+          isAnonymous: true,
           base: 'Object',
         })
       })

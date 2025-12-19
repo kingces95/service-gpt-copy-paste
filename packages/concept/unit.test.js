@@ -8,6 +8,32 @@ import {
 } from '@kingjs/concept'
 import { abstract } from '@kingjs/abstract'
 
+describe('MyConcept', () => {
+  let MyConcept
+  beforeEach(() => {
+    MyConcept = class MyConcept extends Concept { }
+  })
+  it('should have no own concepts', () => {
+    const actual = [...MemberReflect.ownCollections(MyConcept)]
+    const expected = [ ]
+    expect(actual).toEqual(expected)
+  })
+  it('should have not inherited concepts', () => {
+    const actual = [...MemberReflect.collections(MyConcept)]
+    const expected = [ ]
+    expect(actual).toEqual(expected)
+  })
+  describe('with a member', () => {
+    beforeEach(() => {
+      MyConcept.prototype.member = abstract
+    })
+    it('should report MyConcept as host for the member', () => {
+      const host = MemberReflect.getHost(MyConcept, 'member')
+      expect(host).toBe(MyConcept)
+    })
+  })
+})
+
 describe('A type', () => {
   it('not passed to implement should throw', () => {
     expect(() => implement(null, class extends Concept { })).toThrow()
@@ -63,7 +89,7 @@ describe('A type', () => {
       it('should throw when implemented', () => {
         const cls = class { }
         expect(() => implement(cls, extendedConcept)).toThrow([
-          'Partial class must indirectly extend MemberCollection.',
+          'Assertion failed: Expected type to indirectly extend MemberCollection.',
         ].join(' '))
       })
     })

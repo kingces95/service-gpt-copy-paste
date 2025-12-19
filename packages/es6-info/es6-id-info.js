@@ -4,7 +4,7 @@ import { Es6KeyInfo } from './es6-key-info.js'
 
 export class Es6IdInfo {
   static create(id) {
-    if (id == null)
+    if (id == null || id == '')
       return new Es6AnnonymousIdInfo()
 
     if (typeof id == 'string' || typeof id == 'symbol')
@@ -16,7 +16,7 @@ export class Es6IdInfo {
   get value() { return null }
   get isSymbol() { return false }
   get isString() { return false }
-  get isAnnonymous() { return false }
+  get isAnonymous() { return false }
 }
 
 export class Es6NamedIdInfo extends Es6IdInfo {
@@ -45,7 +45,7 @@ export class Es6AnnonymousIdInfo extends Es6IdInfo {
     this.#_ = this.toString()
   }
 
-  get isAnnonymous() { return true }
+  get isAnonymous() { return true }
   get isNonPublic() { return true }
   toString() { return '<anonymous>' }
 }

@@ -1,7 +1,6 @@
 import { assert } from '@kingjs/assert'
 import { Descriptor } from "@kingjs/descriptor"
 import { es6Typeof } from "./es6-typeof.js"
-import { Es6IdInfo } from "./es6-id-info.js"
 
 const {  
   get: getDescriptor,
@@ -10,7 +9,17 @@ const {
   hasGetter,
   hasSetter,
   hasClassPrototypeDefaults,
+  DefaultModifier,
 } = Descriptor
+
+const {
+  userDefined: DefaultUserDefinedModifier,
+  accessor: DefaultAccessorModifier,
+  value: DefaultValueModifier,
+  method: DefaultMethodModifier,
+  data: DefaultDataModifier,
+} = DefaultModifier
+
 
 // Describes an ES6 property descriptor. The descriptor can be one of three types:
 // - Accessor descriptor: 
@@ -69,7 +78,7 @@ const {
 //      "sealed const myMethod()"
 
 export class Es6DescriptorInfo {
-  static DefaultConfigurable = true
+  static DefaultConfigurable = DefaultUserDefinedModifier.configurable
 
   static create(descriptor) {
     
@@ -155,7 +164,7 @@ export class Es6DescriptorInfo {
 
 export class Es6AccessorDescriptorInfo extends Es6DescriptorInfo {
   static Tag = 'accessor'
-  static DefaultEnumerable = false
+  static DefaultEnumerable = DefaultAccessorModifier.enumerable
 
   get type() { return Es6AccessorDescriptorInfo.Tag }
 
@@ -174,7 +183,7 @@ export class Es6AccessorDescriptorInfo extends Es6DescriptorInfo {
 }
 
 export class Es6ValueDescriptorInfo extends Es6DescriptorInfo { 
-  static DefaultWritable = true
+  static DefaultWritable = DefaultValueModifier.writable
 
   constructor(descriptor) {
     assert(hasValue(descriptor))
@@ -192,7 +201,7 @@ export class Es6ValueDescriptorInfo extends Es6DescriptorInfo {
 
 export class Es6DataDescriptorInfo extends Es6ValueDescriptorInfo {
   static Tag = 'data'
-  static DefaultEnumerable = true
+  static DefaultEnumerable = DefaultDataModifier.enumerable
 
   constructor(descriptor) {
     super(descriptor)
@@ -212,7 +221,7 @@ export class Es6DataDescriptorInfo extends Es6ValueDescriptorInfo {
 
 export class Es6MethodDescriptorInfo extends Es6ValueDescriptorInfo { 
   static Tag = 'method'
-  static DefaultEnumerable = false
+  static DefaultEnumerable = DefaultMethodModifier.enumerable
 
   constructor(descriptor) {
     assert(typeof descriptor.value == 'function')

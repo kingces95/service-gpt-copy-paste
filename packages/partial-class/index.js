@@ -11,7 +11,7 @@ const {
 export class PartialClass extends MemberCollection {
 
   static create(pojo) {
-    assert(isPojo(pojo), 'pojo must be a POJO')
+    assert(isPojo(pojo), 'expected a pojo')
 
     const [type] = [class extends PartialClass { }]
     const prototype = type.prototype

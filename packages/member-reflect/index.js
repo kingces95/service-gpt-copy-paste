@@ -124,6 +124,23 @@ const {
 
 class Prototypical { }
 
+// Could be a static on Prototypical, but the point of Prototypical is to
+// simplify the reflection Info layer by providing an object which has no
+// known members other than those defined by MemberCollection.
+function prototypicalCreate(type) {
+  let prototypicalType = class extends Prototypical { }
+  Object.defineProperties(prototypicalType, {
+    name: {
+      value: '$prototypical_' + type.name,
+      configurable: true,
+      enumerable: false,
+      writable: false,
+    }
+  })
+  MemberReflect.merge(prototypicalType, type)
+  return prototypicalType
+}
+
 export class MemberReflect {
 
   // The loader tracks the following assoications during loading. Note: The 
@@ -144,54 +161,76 @@ export class MemberReflect {
   // partial types.
   static PrototypicalType = Symbol('MemberReflect.prototypicalType')
 
-  static #getPrototypicalType(type) {
+  // Third, for each prototypical type, a reverse mapping back to the
+  // member collection that defined each member is created.
+  static PrototypicalHost = Symbol('MemberReflect.prototypicalHost')
+
+  static getPrototypicalType$(type) {
     if (!MemberReflect.isCollection(type)) return type
 
-    return Associated.object(type, MemberReflect.PrototypicalType, () => {
-      let prototypicalType = class extends Prototypical { }
-      Object.defineProperties(prototypicalType, {
-        name: {
-          value: '$prototypical_' + type.name,
-          configurable: true,
-          enumerable: false,
-          writable: false,
-        }
-      })
-      MemberReflect.merge(prototypicalType, type)
-      return prototypicalType
-    })
-  }  
-  
+    const prototypicalType = Associated.object(
+      type, MemberReflect.PrototypicalType, prototypicalCreate)
+
+    Associated.object(
+      prototypicalType, 
+      MemberReflect.PrototypicalHost, 
+      () => type)
+
+    // Patch up caches on the prototypical type. The prototypical type
+    // is a stand-in for the member collection but what we have so far
+    // is a class that is merged with the member collection. The difference
+    // being that a stand-in would not be associated with the member 
+    // collection itself. So we need to remove the association that
+    // points back to the member collection itself.
+
+    // HACK: Remove the collection from the Declarations set.
+    Associated.setDelete(
+      prototypicalType, 
+      MemberReflect.Declarations, 
+      type)
+
+    return prototypicalType
+  }
+
+  static getPrototypicalHost$(type) {
+    if (!(type.prototype instanceof Prototypical)) return type
+    return Associated.object(type, MemberReflect.PrototypicalHost)
+  }
+
   static getCollectionType(type) {
-    const partialClass = Object.getPrototypeOf(type)
-    if (Object.getPrototypeOf(partialClass) != MemberCollection) return null
-    return partialClass
+    const prototype = Object.getPrototypeOf(type)
+    if (prototype == MemberCollection) return null
+    if (Object.getPrototypeOf(prototype) != MemberCollection) {
+      assert(!(prototype.prototype instanceof MemberCollection),
+        `Expected type to indirectly extend MemberCollection.`)
+      return null
+    }
+
+    return prototype
   }
   static isCollection(type) {
     return MemberReflect.getCollectionType(type) != null
   }
 
-  static *ownCollections(type, { filterType } = { }) {
+  static *ownCollections(type) {
     if (MemberReflect.isCollection(type)) {
       yield* Associated.ownTypes(type, 
-        MemberCollection.OwnCollectionSymbols,
-        { filterType })
+        MemberCollection.OwnCollectionSymbols)
     }
     else {
       yield* Associated.types(type, 
-        { [MemberReflect.Declarations]: { filterType } }, 
+        { [MemberReflect.Declarations]: { } }, 
         { inherit: false })
     }
   }
-  static *collections(type, { filterType } = { }) {
+  static *collections(type) {
     if (MemberReflect.isCollection(type)) {
-      const prototypicalType = MemberReflect.#getPrototypicalType(type)
-      yield* [...MemberReflect.collections(prototypicalType, 
-        { filterType })].filter(declaration => declaration != type)
+      const prototypicalType = MemberReflect.getPrototypicalType$(type)
+      yield* MemberReflect.collections(prototypicalType)
     }
     else {
       yield* Associated.types(type, 
-        { [MemberReflect.Declarations]: { filterType } }, 
+        { [MemberReflect.Declarations]: { } }, 
         { inherit: true })
     }
   }
@@ -207,7 +246,7 @@ export class MemberReflect {
   }
   static *keys(type) { 
     if (MemberReflect.isCollection(type)) {
-      const prototypicalType = MemberReflect.#getPrototypicalType(type)
+      const prototypicalType = MemberReflect.getPrototypicalType$(type)
       yield* MemberReflect.keys(prototypicalType)    
     } 
     else {
@@ -222,7 +261,7 @@ export class MemberReflect {
     return type[MemberCollection.Compile](descriptor) 
   }
   static getDescriptor(type, key) {
-    const prototypicalType = MemberReflect.#getPrototypicalType(type)
+    const prototypicalType = MemberReflect.getPrototypicalType$(type)
     return Object.getOwnPropertyDescriptor(prototypicalType.prototype, key)
   }
 
@@ -234,9 +273,9 @@ export class MemberReflect {
   }
   static getDescriptors(type) {
     if (MemberReflect.isCollection(type)) {
-      const prototypicalType = MemberReflect.#getPrototypicalType(type)
-      return Associated.object(type, MemberReflect.Descriptors, () => 
-        MemberReflect.getDescriptors(prototypicalType))
+      const prototypicalType = MemberReflect.getPrototypicalType$(type)
+      return Associated.object(type, MemberReflect.Descriptors, 
+        () => MemberReflect.getDescriptors(prototypicalType))
     }
     else {
       const descriptors = { }
@@ -262,30 +301,19 @@ export class MemberReflect {
     return keys
   }
 
-  static verifyPartialClass(partialType) {
-    if (!MemberReflect.isCollection(partialType))
-      throw `Partial class must indirectly extend MemberCollection.`
+  static associateKeys$(type, collection, keys) {
+    assert(!(collection.prototype instanceof PartialClass)) 
 
-    if (!isExtensionOf(partialType, PartialClass) && !partialType.name)
-      throw `MemberCollection must have a name.`
-  }
-
-  static associate$(type, partialType, keys) {
-    assert(!(partialType.prototype instanceof PartialClass)) 
-
-    Associated.setAdd(type, MemberReflect.Declarations, partialType)
     for (const [key, defined] of keys) {
-      Associated.lookupAdd(type, MemberReflect.HostLookup, key, partialType)
+      Associated.lookupAdd(type, MemberReflect.HostLookup, key, collection)
       if (!defined) continue
-      Associated.mapSet(type, MemberReflect.HostMap, key, partialType)
+      Associated.mapSet(type, MemberReflect.HostMap, key, collection)
     }
   }
-  static mergeAssociations$(type, partialType, keys) {
-    assert(!(partialType.prototype instanceof PartialClass)) 
+  static mergeAssociations$(type, collection, keys) {
+    assert(!(collection.prototype instanceof PartialClass)) 
     
-    Associated.setAdd(type, MemberReflect.Declarations, partialType)
-
-    const prototypicalType = MemberReflect.#getPrototypicalType(partialType)
+    const prototypicalType = MemberReflect.getPrototypicalType$(collection)
     Associated.setCopy(type, prototypicalType, MemberReflect.Declarations)
     for (const [key, defined] of keys) {
       Associated.lookupCopy(type, prototypicalType, MemberReflect.HostLookup, key)
@@ -293,37 +321,47 @@ export class MemberReflect {
       Associated.mapCopy(type, prototypicalType, MemberReflect.HostMap, key)
     }
   }
-  static merge(type, partialType) {
+  static merge(type, collection) {
     if(type == MemberCollection || type.prototype instanceof MemberCollection) 
       throw `Expected type to not be a MemberCollection.`
 
-    MemberReflect.verifyPartialClass(partialType)
+    assert(MemberReflect.isCollection(collection),
+      `Expected collection to indirectly extend MemberCollection.`)
 
-    for (const declaration of MemberReflect.ownCollections(partialType)) {
-      const descriptors = MemberReflect.getDescriptors(declaration)
+    for (const child of MemberReflect.ownCollections(collection)) {
+      const descriptors = MemberReflect.getDescriptors(child)
       const keys = MemberReflect.defineProperties(type, descriptors)
-      if (!(declaration.prototype instanceof PartialClass))
-        MemberReflect.mergeAssociations$(type, declaration, keys)
-      else
-        MemberReflect.associate$(type, partialType, keys)
+
+      // PartialClass members are transparent.
+      if (child.prototype instanceof PartialClass) {
+        MemberReflect.associateKeys$(type, collection, keys)
+        continue
+      }
+
+      Associated.setAdd(type, MemberReflect.Declarations, child)
+      MemberReflect.mergeAssociations$(type, child, keys)
     }
 
-    const descriptors = MemberReflect.getOwnDescriptors(partialType)
+    const descriptors = MemberReflect.getOwnDescriptors(collection)
     const keys = MemberReflect.defineProperties(type, descriptors)
-    if (!(partialType.prototype instanceof PartialClass))
-      MemberReflect.associate$(type, partialType, keys)
+
+    // PartialClass members are transparent.
+    if (collection.prototype instanceof PartialClass) return
+
+    Associated.setAdd(type, MemberReflect.Declarations, collection)
+    MemberReflect.associateKeys$(type, collection, keys)
   }
 
   static *hosts(type, key) {
     // returns map: key => concepts that define the key
-    const prototypicalType = MemberReflect.#getPrototypicalType(type)
+    const prototypicalType = MemberReflect.getPrototypicalType$(type)
     if (!(key in prototypicalType.prototype)) return null
     yield* Associated.lookupGet(
       prototypicalType, MemberReflect.HostLookup, key) ?? [ type ]
   }
   static getHost(type, key) {
     // returns map: key => partial class that defined the key
-    const prototypicalType = MemberReflect.#getPrototypicalType(type)
+    const prototypicalType = MemberReflect.getPrototypicalType$(type)
     if (!(key in prototypicalType.prototype)) return null
     return Associated.mapGet(
       prototypicalType, MemberReflect.HostMap, key) || type

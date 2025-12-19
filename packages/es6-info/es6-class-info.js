@@ -13,6 +13,7 @@ export const Es6ObjectRuntimeNameOrSymbol = new Set([
 
 export class Es6Info {
   static from(fn) {
+    if (!fn) return null
     assert(fn instanceof Function, 'fn must be a function')
     return new Es6ClassInfo(fn)
   }
@@ -23,20 +24,33 @@ export class Es6ClassInfo extends Es6Info {
   static getMember(type, key, { isStatic = false } = { }) {
     assert(type instanceof Es6ClassInfo, 'type must be a Es6ClassInfo')
 
-    for (const current of Es6ClassInfo.hierarchy(type, { isStatic })) {
-      const member = current.getOwnMember(key, { isStatic })
+    for (const current of Es6ClassInfo.#hierarchy(type, { isStatic })) {
+      const member = current.#getOwnMember(key, { isStatic })
       if (member) return member
     }
 
     return null
   }
+  static getStaticMember(type, key) {
+    return Es6ClassInfo.getMember(type, key, { isStatic: true }) }
+  static getInstanceMember(type, key) {
+    return Es6ClassInfo.getMember(type, key, { isStatic: false }) }
 
-  static *members(type, { isStatic = false } = { }) {
+  static *instanceMembers(type) { 
+    yield* Es6ClassInfo.#members(type, { isStatic: false }) }
+  static *staticMembers(type) { 
+    yield* Es6ClassInfo.#members(type, { isStatic: true }) }
+  static *members(type) {
+    yield* Es6ClassInfo.#members(type, { isStatic: true })
+    yield* Es6ClassInfo.#members(type, { isStatic: false })
+  }
+
+  static *#members(type, { isStatic = false } = { }) {
     assert(type instanceof Es6ClassInfo, 'type must be a Es6ClassInfo')
 
     const visited = new Set()
-    for (const current of Es6ClassInfo.hierarchy(type, { isStatic })) {
-      for (const member of current.ownMembers({ isStatic })) {
+    for (const current of Es6ClassInfo.#hierarchy(type, { isStatic })) {
+      for (const member of current.#ownMembers({ isStatic })) {
         if (visited.has(member.name)) continue
         visited.add(member.name)
         yield member
@@ -44,12 +58,12 @@ export class Es6ClassInfo extends Es6Info {
     }
   } 
 
-  static *hierarchy(type, { isStatic = false } = { }) {
+  static *#hierarchy(type, { isStatic = false } = { }) {
     assert(type instanceof Es6ClassInfo, 'type must be a Es6ClassInfo')
 
     for (let current = type; current; current = current.base) {
       
-      // Typically a given a function F, 
+      // Typically given a function F, 
       //    Object.getPrototypeOf(F) 
       // is the function that F extends. But for Function, 
       //    Object.getPrototypeOf(Function)
@@ -75,6 +89,31 @@ export class Es6ClassInfo extends Es6Info {
     this.#_ = this.toString()
   }
 
+  *#ownMembers({ isStatic = false } = { }) {
+    const definitions = this.getDefinitions$({ isStatic })
+    
+    for (const key of Reflect.ownKeys(definitions)) {
+      if (Es6ObjectRuntimeNameOrSymbol.has(key)) continue
+      
+      const descriptor = Object.getOwnPropertyDescriptor(definitions, key)
+      const descriptorInfo = Es6DescriptorInfo.create(descriptor)
+      const keyInfo = Es6KeyInfo.create(key)
+      yield Es6MemberInfo.create$(this, keyInfo, descriptorInfo, { isStatic })
+    }
+  }
+  #getOwnMember(key, { isStatic = false } = { }) {
+    if (key == null) return null
+    if (Es6ObjectRuntimeNameOrSymbol.has(key)) return null
+
+    const definitions = this.getDefinitions$({ isStatic })
+    const descriptor = Object.getOwnPropertyDescriptor(definitions, key)
+    if (!descriptor) return null
+    
+    const descriptorInfo = Es6DescriptorInfo.create(descriptor)
+    const keyInfo = Es6KeyInfo.create(key)
+    return Es6MemberInfo.create$(this, keyInfo, descriptorInfo, { isStatic })
+  }
+
   get isObject$() { return this.#fn === Object }
 
   getDefinitions$({ isStatic = false } = { }) {
@@ -84,6 +123,7 @@ export class Es6ClassInfo extends Es6Info {
   get ctor() { return this.#fn }
   get id() { return this.#idInfo }
   get name() { return this.id.value }
+  get isAnonymous() { return this.id.isAnonymous }
   get base() { 
     if (this.equals(Es6ClassInfo.Object)) return null
 
@@ -98,31 +138,28 @@ export class Es6ClassInfo extends Es6Info {
     return this.#idInfo.isNonPublic
   }
 
-  *ownMembers({ isStatic = false } = { }) {
-    const definitions = this.getDefinitions$({ isStatic })
-    
-    for (const key of Reflect.ownKeys(definitions)) {
-      if (Es6ObjectRuntimeNameOrSymbol.has(key)) continue
-      
-      const descriptor = Object.getOwnPropertyDescriptor(definitions, key)
-      const descriptorInfo = Es6DescriptorInfo.create(descriptor)
-      const keyInfo = Es6KeyInfo.create(key)
-      yield Es6MemberInfo.create$(this, keyInfo, descriptorInfo, { isStatic })
-    }
+  *ownInstanceMembers() { yield* this.#ownMembers({ isStatic: false }) }
+  *ownStaticMembers() { yield* this.#ownMembers({ isStatic: true }) }
+  *ownMembers() {
+    yield* this.#ownMembers({ isStatic: false })
+    yield* this.#ownMembers({ isStatic: true })
   }
 
-  getOwnMember(key, { isStatic = false } = { }) {
-    if (key == null) return null
-    if (Es6ObjectRuntimeNameOrSymbol.has(key)) return null
+  getOwnInstanceMember(name) {
+    return this.#getOwnMember(name, { isStatic: false }) }
+  getOwnStaticMember(name) {
+    return this.#getOwnMember(name, { isStatic: true }) }
 
-    const definitions = this.getDefinitions$({ isStatic })
-    const descriptor = Object.getOwnPropertyDescriptor(definitions, key)
-    if (!descriptor) return null
-    
-    const descriptorInfo = Es6DescriptorInfo.create(descriptor)
-    const keyInfo = Es6KeyInfo.create(key)
-    return Es6MemberInfo.create$(this, keyInfo, descriptorInfo, { isStatic })
-  }
+  // Convienience aliases for Es6ClassInfo.* methods. The static methods
+  // host the logic instead of the instance methods because the methods
+  // return members from the entire hierarchy, which is more correctly
+  // expressed as static traversal methods. That said, these convienience 
+  // instance methods are useful and expected.
+  *members() { yield* Es6ClassInfo.members(this) }
+  *staticMembers() { yield* Es6ClassInfo.staticMembers(this) }
+  *instanceMembers() { yield* Es6ClassInfo.instanceMembers(this) }
+  getStaticMember(key) { return Es6ClassInfo.getStaticMember(this, key) }
+  getInstanceMember(key) { return Es6ClassInfo.getInstanceMember(this, key) }
 
   equals(other) {
     if (!(other instanceof Es6ClassInfo)) return false
@@ -130,7 +167,7 @@ export class Es6ClassInfo extends Es6Info {
   }
 
   [util.inspect.custom]() { return this.toString() }
-  toString() { return `[classInfo ${this.#idInfo.toString()}]` }
+  toString() { return `[es6ClassInfo ${this.id.toString()}]` }
 }
 
 Es6Info.Object = new Es6ClassInfo(Object)
@@ -161,15 +198,17 @@ export class Es6MemberInfo extends Es6Info {
   }
 
   static #discriminate(host, keyInfo, descriptorInfo, { isStatic } = { }) {
-    if (descriptorInfo.isAccessor) return Es6AccessorMemberInfo
+    if (descriptorInfo.isAccessor) 
+      return Es6AccessorMemberInfo
 
     if (host 
       && keyInfo.value === 'constructor'
       && !isStatic
       && descriptorInfo.value === host.ctor)
-        return Es6ConstructorMemberInfo
+      return Es6ConstructorMemberInfo
 
-    if (descriptorInfo.isMethod) return Es6MethodMemberInfo
+    if (descriptorInfo.isMethod) 
+      return Es6MethodMemberInfo
 
     assert(descriptorInfo.isData,
       'descriptor must be a data descriptor')
@@ -201,6 +240,7 @@ export class Es6MemberInfo extends Es6Info {
     return parent ? parent.rootOrSelf$() : this 
   }
 
+  get descriptorInfo() { return this.#descriptorInfo }
   get host() { return this.#host }
   get name() { return this.#keyInfo.value }
   get isNonPublic() { return this.#keyInfo.isNonPublic }
@@ -245,8 +285,9 @@ export class Es6MemberInfo extends Es6Info {
     const parent = this.host.base
     if (!parent) return null
 
-    const isStatic = this.isStatic
-    return parent.getOwnMember(this.name, { isStatic })
+    return this.isStatic
+      ? parent.getOwnStaticMember(this.name)
+      : parent.getOwnInstanceMember(this.name)
   }
   root() {
     let parent = this.parent()
@@ -266,7 +307,7 @@ export class Es6MemberInfo extends Es6Info {
     return true
   }
 
-  toString({ modifiers = [] } = { }) {
+  toString({ modifiers = [], host = this.host } = { }) {
     const keyInfo = this.keyInfo$
 
     return [
@@ -275,7 +316,7 @@ export class Es6MemberInfo extends Es6Info {
         ...modifiers,
         this.#descriptorInfo.toString(),
       ].filter(Boolean).join(' '),
-      this.host.name
+      host.toString()
     ].join(', ')
   }
 }

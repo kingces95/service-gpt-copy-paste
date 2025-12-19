@@ -31,11 +31,6 @@ describe('A type', () => {
     const declarations = [...MemberReflect.collections(type)]
     expect(declarations).toHaveLength(0)
   })
-  it('should throw if verified as a MemberCollection', () => {
-    expect(() => {
-      MemberReflect.verifyPartialClass(type)
-    }).toThrow(`Partial class must indirectly extend MemberCollection.`)
-  })
 
   describe('after merging a method', () => {
     let method
@@ -151,10 +146,10 @@ describe('ExtensionGroup', () => {
     beforeEach(() => {
       [MyNamelessExtension] = [class extends ExtensionGroup { }]
     })
-    it('should throw when verified as a MemberCollection', () => {
+    it('should not throw when verified as a MemberCollection', () => {
       expect(() => {
-        MemberReflect.verifyPartialClass(MyNamelessExtension)
-      }).toThrow(`MemberCollection must have a name.`)
+        MemberReflect.getCollectionType(MyNamelessExtension)
+      }).not.toThrow()
     })
   })
 

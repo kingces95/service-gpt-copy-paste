@@ -116,6 +116,31 @@ describe('An extension', () => {
       expect(declarations).toHaveLength(1)
       expect(declarations[0]).toBe(subExtension)
     })
+    describe('that has a subMember', () => {
+      let subMember
+      beforeEach(() => {
+        subMember = function subMember() { }
+        subExtension.prototype.subMember = subMember
+      })
+      it('should have the subMember as a key', () => {
+        const keys = [...MemberReflect.keys(extension)]
+        expect(keys).toHaveLength(1)
+        expect(keys[0]).toBe('subMember')
+      })
+      it('should not have the subMember as an own key', () => {
+        const keys = [...MemberReflect.ownKeys(extension)]
+        expect(keys).toHaveLength(0)
+      })
+      it('should report subExtension as host for subMember', () => {
+        const host = MemberReflect.getHost(extension, 'subMember')
+        expect(host).toBe(subExtension)
+      })
+      it('should report subExtension as only host for subMember', () => {
+        const hosts = [...MemberReflect.hosts(extension, 'subMember')]
+        expect(hosts).toHaveLength(1)
+        expect(hosts[0]).toBe(subExtension)
+      })
+    })
     describe('that also has a sub extension with a member', () => {
       let subSubExtension
       let subSubMember

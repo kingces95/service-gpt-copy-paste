@@ -88,6 +88,30 @@ export class Concept extends MemberCollection {
   }
 }
 
+export class ConceptReflect {
+  static isConcept(type) {
+    const collectionType = MemberReflect.getCollectionType(type)
+    return collectionType == Concept
+  }
+
+  static *concepts(type) {
+    for (const collection of MemberReflect.collections(type)) {
+      if (!ConceptReflect.isConcept(collection)) continue
+      yield collection
+    }
+  }
+  static *ownConcepts(type) {
+    for (const collection of MemberReflect.ownCollections(type)) {
+      if (!ConceptReflect.isConcept(collection)) continue
+      yield collection
+    }
+  }
+  static *getConcepts(type, name) {
+    const hosts = [...MemberReflect.hosts(type, name)]
+    yield* hosts.filter(host => ConceptReflect.isConcept(host))
+  }
+}
+
 export function satisfies(instance, concept) {
   assert(isExtensionOf(concept, Concept),
     `Argument concept must extend Concept.`)

@@ -1,6 +1,6 @@
 export const objectPojo = {
   name: 'Object',
-  records: {
+  members: {
     static: {
       __known: {
         methods: {
@@ -73,5 +73,4 @@ export const objectPojo = {
       }
     }
   },
-  toString: '[classInfo Object]'
 }

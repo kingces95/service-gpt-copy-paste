@@ -58,14 +58,14 @@ describe('Es6ClassInfo ur type invariants:', () => {
     Es6ClassInfo.Function,
   ])('%s', (classInfo) => {
     describe.each([
-      ...classInfo.ownMembers({ isStatic: true }).map(m => [m.name, m]), 
+      ...classInfo.ownStaticMembers().map(m => [m.name, m]), 
     ])('static member %s', (name, member) => {
       it('is known', () => {
         expect(member.isKnown).toBe(true)
       })
     })
     describe.each([
-      ...classInfo.ownMembers({ isStatic: false }).map(m => [m.name, m]), 
+      ...classInfo.ownInstanceMembers().map(m => [m.name, m]), 
     ])('member %s', (name, member) => {
       it('is known', () => {
         expect(member.isKnown).toBe(true)
@@ -80,19 +80,25 @@ describe('Es6ClassInfo vacuous cases', () => {
     classInfo = Es6ClassInfo.from(class { })
   })
   it('does not have null own member', () => {
-    expect(classInfo.getOwnMember(null)).toBe(null)
+    expect(classInfo.getOwnInstanceMember(null)).toBe(null)
   })
   it('does not have null member', () => {
-    expect(Es6ClassInfo.getMember(classInfo, null)).toBe(null)
+    expect(classInfo.getInstanceMember(null)).toBe(null)
   })
   it('does not have own member "missing"', () => {
-    expect(classInfo.getOwnMember('missing')).toBe(null)
+    expect(classInfo.getOwnInstanceMember('missing')).toBe(null)
   })
   it('does not have member "missing"', () => {
-    expect(Es6ClassInfo.getMember(classInfo, 'missing')).toBe(null)
+    expect(classInfo.getInstanceMember('missing')).toBe(null)
   })
   it('does not equal null', () => {
     expect(classInfo.equals(null)).toBe(false)
+  })
+  it('has null name', () => {
+    expect(classInfo.name).toBeNull()
+  })
+  it('is anonymous', () => {
+    expect(classInfo.isAnonymous).toBeTruthy()
   })
 })
 
@@ -124,7 +130,7 @@ describe('Es6ClassInfo known type invariants:', () => {
         expect(classInfo.base.equals(base)).toBe(true)
     })
     it('has correct toString', () => {
-      expect(classInfo.toString()).toBe(`[classInfo ${fn.name}]`)
+      expect(classInfo.toString()).toBe(`[es6ClassInfo ${fn.name}]`)
     })
     it('equals itself', () => {
       expect(classInfo.equals(classInfo)).toBe(true)
@@ -142,7 +148,9 @@ describe('Es6ClassInfo known type invariants:', () => {
     ])('known member %s', (memberName, isStatic) => {
       let member
       beforeEach(() => {
-        member = classInfo.getOwnMember(memberName, { isStatic })
+        member = isStatic
+          ? classInfo.getOwnStaticMember(memberName)
+          : classInfo.getOwnInstanceMember(memberName)
       })
       it('is known', () => {
         expect(member.isKnown).toBe(true)
@@ -158,8 +166,7 @@ describe('Es6ClassInfo known type invariants:', () => {
         ])('%s', (excludedName) => {
 
           it('when resolved by static hierarchy', () => {
-          const member = Es6ClassInfo.getMember(
-            classInfo, excludedName, { isStatic: true })
+          const member = classInfo.getStaticMember(excludedName)
           expect(member).toBeNull()
         })
       })
@@ -171,8 +178,7 @@ describe('Es6ClassInfo known type invariants:', () => {
         [...Es6ObjectRuntimeNameOrSymbol]
       )(' %s', (excludedName) => {
         it('when resolved by instance hierarchy', () => {
-          const member = Es6ClassInfo.getMember(
-            classInfo, excludedName)
+          const member = classInfo.getInstanceMember(excludedName)
           expect(member).toBeNull()
         })
       })    
@@ -187,7 +193,9 @@ describe('Es6ClassInfo known type invariants:', () => {
       let ownMemberSet
       beforeEach(() => {
         ownKeySet = new Set(Reflect.ownKeys(prototype))
-        ownMemberSet = new Set(classInfo.ownMembers({ isStatic }))
+        ownMemberSet = new Set(isStatic
+          ? classInfo.ownStaticMembers()
+          : classInfo.ownInstanceMembers())
 
         // remove object runtime names and symbols
         for (const nameOrSymbol of Es6ObjectRuntimeNameOrSymbol) {
@@ -222,7 +230,9 @@ describe('Es6ClassInfo known type invariants:', () => {
       let memberSet
       let memberNameSet
       beforeEach(() => {
-        let members = [...Es6ClassInfo.members(classInfo, { isStatic })]
+        let members = isStatic 
+          ? [...classInfo.staticMembers()]
+          : [...classInfo.instanceMembers()]
         memberSet = new Set(members)
         memberNameSet = new Set(members.map(m => m.name))
       })
@@ -256,7 +266,9 @@ describe('Es6ClassInfo known type invariants:', () => {
           let member
           let descriptor
           beforeEach(() => {
-            member = classInfo.getOwnMember(name, { isStatic })
+            member = isStatic 
+              ? classInfo.getOwnStaticMember(name)
+              : classInfo.getOwnInstanceMember(name)
             descriptor = Object.getOwnPropertyDescriptor(prototype, name)
           })
           it('exists on classInfo', () => {
@@ -289,37 +301,39 @@ describe('Es6ClassInfo known type invariants:', () => {
             switch (name) {
               case 'length': 
                 expect(toString).toBe(
-                  `length, ${static$}const hidden { value: [number] }, ${fn.name}`)
+                  `length, ${static$}const hidden { value: [number] }, [es6ClassInfo ${fn.name}]`)
                 break
               case 'name':
                 expect(toString).toBe(
-                  `name, ${static$}const hidden { value: [string] }, ${fn.name}`)
+                  `name, ${static$}const hidden { value: [string] }, [es6ClassInfo ${fn.name}]`)
                 break
               case 'prototype':
                 expect(toString).toBe(fn == Function ?
-                  `prototype, static sealed const function, Function` :
-                  `prototype, static sealed const hidden { value: [object] }, ${fn.name}`)
+                  `prototype, static sealed const function, [es6ClassInfo ${fn.name}]` :
+                  `prototype, static sealed const hidden { value: [object] }, [es6ClassInfo ${fn.name}]`)
                 break
               case 'constructor':
                 expect(toString).toBe(
-                  `constructor, hidden { value: [class] }, ${fn.name}`)
+                  `constructor, hidden { value: [class] }, [es6ClassInfo ${fn.name}]`)
                 break
               case Symbol.hasInstance:
                 expect(toString).toBe(
-                  `[Symbol(Symbol.hasInstance)], sealed const function, ${fn.name}`)
+                  `[Symbol(Symbol.hasInstance)], sealed const function, [es6ClassInfo ${fn.name}]`)
                 break
               case 'arguments':
               case 'caller':
                 expect(toString).toBe(
-                  `${name}, { get; set }, ${fn.name}`)
+                  `${name}, { get; set }, [es6ClassInfo ${fn.name}]`)
                 break
               default:
                 expect(toString).toBe(
-                  `${name}, ${static$}${typeof prototype[name]}, ${fn.name}`)
+                  `${name}, ${static$}${typeof prototype[name]}, [es6ClassInfo ${fn.name}]`)
             }
           })
           it('equals another instance from getOwnMember', () => {
-            const other = classInfo.getOwnMember(name, { isStatic })
+            const other = isStatic
+              ? classInfo.getOwnStaticMember(name)
+              : classInfo.getOwnInstanceMember(name)
             expect(member.equals(other)).toBe(true)
           })
           it('type matches predicate', () => {
@@ -344,8 +358,9 @@ describe('Es6ClassInfo known type invariants:', () => {
             expect(member.host.equals(classInfo)).toBe(true)
           })
           it('can be found on classInfo hierarchy by name', () => {
-            const found = Es6ClassInfo.getMember(
-              classInfo, name, { isStatic })
+            const found = isStatic
+              ? classInfo.getStaticMember(name)
+              : classInfo.getInstanceMember(name)
             expect(found.equals(member)).toBe(true)
           })
         })
@@ -363,17 +378,17 @@ describe('Es6ClassInfo Object class', () => {
     expect(classInfo.isNonPublic).toBe(false)
   })
   it('has descriptive toString', () => {
-    expect(classInfo.toString()).toEqual('[classInfo Object]')
+    expect(classInfo.toString()).toEqual('[es6ClassInfo Object]')
   })
   it('has descriptive inspect to string', () => {
     expect(classInfo[Symbol.for('nodejs.util.inspect.custom')]())
-      .toEqual('[classInfo Object]')
+      .toEqual('[es6ClassInfo Object]')
   })
 
   describe('static members', () => {
     let staticMembers
     beforeEach(() => {
-      staticMembers = [...classInfo.ownMembers({ isStatic: true })]
+      staticMembers = [...classInfo.ownStaticMembers()]
     })
     it('have no parent', () => {
       for (const member of staticMembers)
@@ -391,7 +406,7 @@ describe('Es6ClassInfo Object class', () => {
   describe('members', () => {
     let members
     beforeEach(() => {
-      members = [...classInfo.ownMembers()]
+      members = [...classInfo.ownInstanceMembers()]
     })
     it('none have a parent', () => {
       for (const member of members)
@@ -418,11 +433,13 @@ describe('Es6ClassInfo Function class', () => {
   describe('members', () => {
     let members
     beforeEach(() => {
-      members = [...classInfo.ownMembers()]
+      members = [...classInfo.ownInstanceMembers()]
     })
     it('is subset of members from hierarchy plus object', () => {
-      const fromMembers = [...Es6ClassInfo.members(classInfo)]
-      const membersPlusObject = [...members, ...Es6ClassInfo.Object.ownMembers()]
+      const fromMembers = [...Es6ClassInfo.instanceMembers(classInfo)]
+      const membersPlusObject = [
+        ...members, 
+        ...Es6ClassInfo.Object.ownInstanceMembers()]
       expect(membersPlusObject.length > fromMembers.length).toBe(true)
       for (const member of fromMembers) {
         const found = membersPlusObject.find(m => m.equals(member))
@@ -431,13 +448,13 @@ describe('Es6ClassInfo Function class', () => {
     })
   })
   describe('static members', () => {
-    let ownMembers
+    let ownStaticMembers
     beforeEach(() => {
-      ownMembers = [...classInfo.ownMembers({ isStatic: true })]
+      ownStaticMembers = [...classInfo.ownStaticMembers()]
     })
     it('is length, name, or prototype', () => {
-      expect(ownMembers.length).toBe(3)
-      for (const ownMember of ownMembers) {
+      expect(ownStaticMembers.length).toBe(3)
+      for (const ownMember of ownStaticMembers) {
         expect(['length', 'name', 'prototype'
           ].includes(ownMember.name)).toBe(true)
       }
@@ -447,16 +464,16 @@ describe('Es6ClassInfo Function class', () => {
       // the static members of Function are exactly those defined
       // on Function itself.
       const members = [
-        ...Es6ClassInfo.members(classInfo, { isStatic: true })]
+        ...Es6ClassInfo.staticMembers(classInfo)]
 
-      expect(members.length).toBe(ownMembers.length)
-      for (const ownMember of ownMembers) {
+      expect(members.length).toBe(ownStaticMembers.length)
+      for (const ownMember of ownStaticMembers) {
         const found = members.find(m => m.equals(ownMember))
         expect(found).toBeDefined()
       }
     })
     it('are public', () => {
-      for (const member of ownMembers)
+      for (const member of ownStaticMembers)
         expect(member.isNonPublic).toBe(false)
     })
   })
@@ -475,7 +492,7 @@ describe('Es6ClassInfo empty custom class', () => {
   describe('members', () => {
     let members
     beforeEach(() => {
-      members = [...classInfo.ownMembers()]
+      members = [...classInfo.ownInstanceMembers()]
     })
     it('has only constructor member', () => {
       expect(members.length).toBe(1)
@@ -489,7 +506,7 @@ describe('Es6ClassInfo empty custom class', () => {
   describe('static members', () => {
     let staticMembers
     beforeEach(() => {
-      staticMembers = [...classInfo.ownMembers({ isStatic: true })]
+      staticMembers = [...classInfo.ownStaticMembers()]
     })
     it('is length, name, or prototype', () => {
       expect(staticMembers.length).toBe(3)
@@ -507,8 +524,8 @@ describe('Es6ClassInfo empty custom class', () => {
         expect(parent).toBeDefined()
         // Es6 is really: MyEmptyClass → Function.prototype → Object.prototype
         // We pretend it is: MyEmptyClass → Object 
-        const memberOnFunction = Es6ClassInfo.Object.getOwnMember(
-          member.name, { isStatic: true })
+        const memberOnFunction = 
+          Es6ClassInfo.Object.getOwnStaticMember(member.name)
         expect(parent.equals(memberOnFunction)).toBe(true)
       }
     })
@@ -550,7 +567,7 @@ describe('Es6ClassInfo class with non-public member', () => {
   ])('%s', (memberName) => {
     let member
     beforeEach(() => {
-      member = classInfo.getOwnMember(memberName)
+      member = classInfo.getOwnInstanceMember(memberName)
     })
     it('is non-public', () => {
       expect(member.isNonPublic).toBe(true)
@@ -570,10 +587,10 @@ describe('Es6MemberInfo toString', () => {
       toString() { } 
     }
     classInfo = Es6ClassInfo.from(myClass)
-    member = classInfo.getOwnMember('toString')
-    staticMember = classInfo.getOwnMember('toString', { isStatic: true })
-    objectMember = Es6ClassInfo.Object.getOwnMember('toString')
-    ctorMember = classInfo.getOwnMember('constructor')
+    member = classInfo.getOwnInstanceMember('toString')
+    staticMember = classInfo.getOwnStaticMember('toString')
+    objectMember = Es6ClassInfo.Object.getOwnInstanceMember('toString')
+    ctorMember = classInfo.getOwnInstanceMember('constructor')
   })
   describe('of sub class member', () => {
     let mySubClass
@@ -583,7 +600,7 @@ describe('Es6MemberInfo toString', () => {
         toString() { }
       }
       const subClassInfo = Es6ClassInfo.from(mySubClass)
-      subMember = subClassInfo.getOwnMember('toString')
+      subMember = subClassInfo.getOwnInstanceMember('toString')
     })
 
     it('has correct root host', () => {
@@ -593,7 +610,7 @@ describe('Es6MemberInfo toString', () => {
 
   it('has correct toString', () => {
     expect(member.toString())
-      .toBe('toString, function, MyEmptyClass')
+      .toBe('toString, function, [es6ClassInfo MyEmptyClass]')
   })
   // test member info .equals
 
@@ -614,7 +631,7 @@ describe('Es6MemberInfo toString', () => {
   })
   it('does not equal accessor "toString" dynamically set on same class', () => {
     myClass.prototype.__defineGetter__('toString', function() { return '$' })
-    const accessorMember = classInfo.getOwnMember('toString')
+    const accessorMember = classInfo.getOwnInstanceMember('toString')
     expect(member.equals(accessorMember)).toBe(false)
   })
 })
@@ -628,3 +645,41 @@ describe('Es6MemberInfo toString', () => {
 //     classInfo = Es6ClassInfo.from(MyEmptyClass)
 //   })
 // })
+
+const MySymbol = Symbol('test-symbol')
+
+describe('A member', () => {
+  describe.each([
+    ['on MyClass', 'member', class MyClass { member() { } }, 
+      'member, function, [es6ClassInfo MyClass]'],
+    ['constructor', 'constructor', class MyClass { constructor() { } },
+      'constructor, hidden { value: [class] }, [es6ClassInfo MyClass]'],
+    ['on anonnymous', 'member', class { member() { } }, 
+      'member, function, [es6ClassInfo <anonymous>]'],
+    ['static on MyClass', 'member', class MyClass { static member() { } },
+      'member, static function, [es6ClassInfo MyClass]'],
+    ['with symbol name', MySymbol, class MyClass { [MySymbol]() { } },
+      '[Symbol(test-symbol)], function, [es6ClassInfo MyClass]'],
+    ['static with symbol name', MySymbol, class MyClass { static [MySymbol]() { } },
+      '[Symbol(test-symbol)], static function, [es6ClassInfo MyClass]'],
+    ['getter on MyClass', 'member', class MyClass { 
+      get member() { } 
+      set member(value) { }
+    }, 'member, { get; set }, [es6ClassInfo MyClass]'],
+    ])('%s', (_, name, cls, expected) => {
+    it('has a toString', async () => {
+      const fnInfo = Es6ClassInfo.from(cls)
+      const member = fnInfo.getOwnInstanceMember(name) 
+        ?? fnInfo.getOwnStaticMember(name)
+      expect(member.toString()).toBe(expected) 
+    })
+    it('does not equal Object.toString member', async () => {
+      const fnInfo = Es6ClassInfo.from(cls)
+      const member = fnInfo.getOwnInstanceMember(name) 
+        ?? fnInfo.getOwnStaticMember(name)
+      const objectFnInfo = Es6ClassInfo.from(Object)
+      const objectToStringMember = objectFnInfo.getOwnInstanceMember('toString')
+      expect(member.equals(objectToStringMember)).toBe(false)
+    })
+  })
+})

@@ -139,7 +139,7 @@ export class Associated {
       if (!fn) return null
 
       // create and cache
-      cache = fn()
+      cache = fn(type)
       typeCache.set(symbol, cache)
     }
 
@@ -209,5 +209,10 @@ export class Associated {
   static lookupGet(type, symbol, key) {
     const map = Associated.object(type, symbol)
     return map?.get(key)
+  }
+
+  static setDelete(type, symbol, value) {
+    const set = Associated.object(type, symbol)
+    set?.delete(value)
   }
 }

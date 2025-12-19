@@ -1,5 +1,6 @@
 import { MemberCollection } from '@kingjs/member-collection'
 import { PartialClass } from '@kingjs/partial-class'
+import { MemberReflect } from '@kingjs/member-reflect'
 
 export const Extensions = Symbol('Extensions')
 
@@ -18,5 +19,31 @@ export class ExtensionGroup extends MemberCollection {
       expectedType: [ ExtensionGroup, PartialClass ],
       map: PartialClass.fromArg,
     }
+  }
+}
+
+export class ExtensionGroupReflect {
+  static isExtensionGroup(type) {
+    const collectionType = MemberReflect.getCollectionType(type)
+    return collectionType == ExtensionGroup
+  }
+
+  static *extensionGroups(type) {
+    for (const collection of MemberReflect.collections(type)) {
+      const collectionType = MemberReflect.getCollectionType(collection)
+      if (collectionType != ExtensionGroup) continue
+      yield collection
+    }
+  }
+  static *ownExtensionGroups(type) {
+    for (const collection of MemberReflect.ownCollections(type)) {
+      if (!ExtensionGroupReflect.isExtensionGroup(collection)) continue 
+      yield collection
+    }
+  }
+  static getExtensionGroup(type, name) {
+    const host = MemberReflect.getHost(type, name)
+    if (!ExtensionGroupReflect.isExtensionGroup(host)) return null
+    return host
   }
 }

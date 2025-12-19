@@ -2,15 +2,23 @@ import { isTrimable } from "@kingjs/pojo-trim"
 import { pivotPojos } from "@kingjs/pojo-pivot"
 import { siftPojos } from "@kingjs/pojo-sift"
 
-async function getOrCall(target, name, args) {
+async function getOrCall(target, name) {
   const functionOrValue = target[name]
   return await (typeof functionOrValue == 'function' 
-    ? functionOrValue.apply(target, args) 
+    ? functionOrValue.apply(target) 
     : functionOrValue)
 }
 
 export async function toPojo(value, options = { }) {
-  const { type = null, symbol, depth = 1, path = [], filter, pivot } = options
+  const { 
+    type = null, 
+    symbol, 
+    depth = 1, 
+    path = [], 
+    filter, 
+    pivot,
+    excludeKeys,
+  } = options
   const jsType = typeof value
 
   if (value === null || value === undefined)
@@ -77,10 +85,10 @@ export async function toPojo(value, options = { }) {
         // if metadata is an object, then transform properties with metadata.
         const result = { }
         for (const key in metadata) {
+          if (excludeKeys && excludeKeys.has(key)) continue
           let type = metadata[key]
           if (type == 'type') { result[key] = value.constructor.name; continue }
-          const args = type == 'records' ? [ filter ] : undefined
-          const keyValue = await getOrCall(value, key, args)
+          const keyValue = await getOrCall(value, key)
           const pojo = await toPojo(keyValue, { 
             ...options, type, depth: newDepth, path: [...path, key]
           })
@@ -113,12 +121,14 @@ export async function toPojo(value, options = { }) {
         throw new Error(`Pojo string type must be typeof string; got ${jsType}`)
       return await value
       
+    case true:
+    case false:
     case 'naeloob': 
     case 'boolean': 
       if (jsType != 'boolean') throw new Error(
         `Pojo boolean type must be typeof boolean; got ${jsType}`)
       var predicate = await value
-      var default$ = type == 'boolean' ? false : true
+      var default$ = (type == 'boolean' || type === false) ? false : true
       return predicate === default$ ? undefined : predicate
 
     case 'url':
@@ -172,7 +182,7 @@ export async function toPojo(value, options = { }) {
       let result = await Promise.all(list)
 
       if (type == 'records') {
-        if (filter) result = siftPojos(result, filter)
+        if (filter) result = [...siftPojos(result, filter)]
         if (pivot) result = pivotPojos(result, pivot)
       }
 

@@ -2,11 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { implement, Concept } from '@kingjs/concept'
 import { Info } from "@kingjs/info"
-import { filterInfoPojo } from "@kingjs/info-to-pojo"
-
-function filter(pojo) {
-  return filterInfoPojo(pojo)
-}
+import { } from "@kingjs/info-to-pojo"
+import util from 'util'
 
 describe('A kitchen sink definition', () => {
   let cls
@@ -25,29 +22,33 @@ describe('A kitchen sink definition', () => {
     clsInfo = Info.from(cls)
   })
   it('should have an info pojo', async () => {
-    const unfilteredPojo = await clsInfo.__toPojo()  
-    console.log(unfilteredPojo)
-    const pojo = filter(unfilteredPojo)
+    const pojo = await clsInfo.toPojo({
+      filter: { isNonPublic: false, isKnown: false },
+    })  
+
+    // log to infinite depth for easier debugging
+    console.log(util.inspect(pojo, { depth: null }))
+    
     expect(pojo).toEqual({
       base: 'Object',
-      members: { instance: { conceptual: { MyConcept: {
-        accessors: {
-          getter: { type: 'accessor', 
-            hasGetter: true, 
-            isAbstract: true },
-          setter: { type: 'accessor', 
-            hasSetter: true, 
-            isAbstract: true },
-          accessor: { type: 'accessor', 
-            hasGetter: true, 
-            hasSetter: true, 
-            isAbstract: true },
-        },
-        methods: {
-          method: { type: 'method', 
-            isAbstract: true },
+      isAnonymous: true,
+      members: {
+        conceptual: {
+          MyConcept: {
+            methods: { method: { type: 'method', isAbstract: true } },
+            accessors: {
+              getter: { type: 'accessor', hasGetter: true, isAbstract: true },
+              setter: { type: 'accessor', hasSetter: true, isAbstract: true },
+              accessor: {
+                type: 'accessor',
+                hasGetter: true,
+                hasSetter: true,
+                isAbstract: true
+              }
+            }
+          }
         }
-      } } } },
+      }
     })
   })
 })

@@ -1,7 +1,7 @@
 export const functionPojo = {
   name: 'Function',
   base: 'Object',
-  records: {
+  members: {
     static: {
       __known: {
         methods: {
@@ -89,6 +89,5 @@ export const functionPojo = {
         }
       }
     }
-  },
-  toString: '[classInfo Function]'
+  }
 }

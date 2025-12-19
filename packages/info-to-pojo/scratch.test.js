@@ -1,10 +1,11 @@
 import { Info } from "@kingjs/info"
-import { filterInfoPojo } from "@kingjs/info-to-pojo"
-import { dumpPojo } from "@kingjs/pojo-dump"
 import { abstract } from "@kingjs/abstract"
-import { ExtensionGroup, Extensions } from "@kingjs/extension"
+import { ExtensionGroup, Extensions } from "@kingjs/extension-group"
 import { extend } from "@kingjs/extend"
 import { Concept, Concepts, implement } from "@kingjs/concept"
+import { } from "@kingjs/info-to-pojo"
+import { MemberCollection } from "@kingjs/member-collection"
+import { PartialClass } from "@kingjs/partial-class"
 
 const MySymbol = Symbol('my-symbol')
 const MyStaticSymbol = Symbol('my-static-symbol')
@@ -38,7 +39,7 @@ class MyExtensionClass extends ExtensionGroup {
   myExtensionMethod() { }
 }
 
-class MyPartialClass extends ExtensionGroup {
+class MyExtensionGroup extends ExtensionGroup {
   static [Extensions] = MyExtensionClass
   myPartialMethod() { }
 }
@@ -54,9 +55,11 @@ class MyBase {
   myBaseMethod() { }
 }
 
+class MyEmptyClass { }
+
 class MyClass extends MyBase {
   static { 
-    extend(this, MyPartialClass) 
+    extend(this, MyExtensionGroup) 
   }
 
   static get myStaticAccessor() { }
@@ -76,42 +79,40 @@ class MyClass extends MyBase {
 }
 
 // attach abstract method to MyClass
-Object.defineProperty(MyBase.prototype, 'myAbstractMethod', {
+Object.defineProperty(MyClass.prototype, 'myAbstractMethod', {
   value: abstract,
   writable: true,
   enumerable: false,
   configurable: true,
 })
 
-function filter(pojo) {
-  return filterInfoPojo(pojo, {
-    includeInstance: {
-      isInherited: true,
-      isSymbol: true,
-      // isKnown: true,
-    },
-    includeStatic: {
-      isInherited: true,
-      // isKnown: true,
-      // isSymbol: true,
-    }
-  })
-}
-
 function dump(fn) {
   const fnInfo = Info.from(fn)
-  fnInfo.__toPojo().then(pojo => { 
-    pojo = filter(pojo)
-    dumpPojo(pojo)
+  fnInfo.dump({
+    ownOnly: false,
+    filter: [{ 
+      // isStatic: true,
+      // isKnown: false,
+      // isNonPublic: false,
+    }],
   })
 }
 
-dump(Function)
-dump(Object)
-dump(Concept)
-dump(ExtensionGroup)
-dump(MyConcept)
-dump(MyPartialClass)
-dump(MyExtensionClass)
-dump(MyBase)
-dump(MyClass)
+const myBasePrototype = MyBase.prototype
+
+// dump(Function)
+// dump(Object)
+
+// dump(MemberCollection)
+// dump(ExtensionGroup)
+// dump(Concept)
+// dump(PartialClass)
+
+// dump(MyPartialClass)
+// dump(MyExtensionClass)
+// dump(MyBaseConcept)
+// dump(MyLeftConcept)
+// dump(MyConcept)
+// dump(MyEmptyClass)
+// dump(MyBase)
+// dump(MyClass)

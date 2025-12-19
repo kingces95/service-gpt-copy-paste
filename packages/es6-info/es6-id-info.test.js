@@ -9,7 +9,7 @@ describe('Es6IdInfo', () => {
       idInfo = Es6IdInfo.create(42)
     })
     it('is not an anonymous id', () => {
-      expect(idInfo.isAnnonymous).toBe(false)
+      expect(idInfo.isAnonymous).toBe(false)
     })
     it('is a number id', () => {
       expect(idInfo.isString).toBe(true)
@@ -30,7 +30,7 @@ describe('Es6IdInfo', () => {
       idInfo = Es6IdInfo.create('myId')
     })
     it('is not an anonymous id', () => {
-      expect(idInfo.isAnnonymous).toBe(false)
+      expect(idInfo.isAnonymous).toBe(false)
     })
     it('is a string id', () => {
       expect(idInfo.isString).toBe(true)
@@ -60,7 +60,7 @@ describe('Es6IdInfo', () => {
       idInfo = Es6IdInfo.create(sym)
     })
     it('is not an anonymous id', () => {
-      expect(idInfo.isAnnonymous).toBe(false)
+      expect(idInfo.isAnonymous).toBe(false)
     })
     it('is a symbol id', () => {
       expect(idInfo.isString).toBe(false)
@@ -81,7 +81,7 @@ describe('Es6IdInfo', () => {
       idInfo = Es6IdInfo.create(null)
     })
     it('is an anonymous id', () => {
-      expect(idInfo.isAnnonymous).toBe(true)
+      expect(idInfo.isAnonymous).toBe(true)
       expect(idInfo.isString).toBe(false)
       expect(idInfo.isSymbol).toBe(false)
     })

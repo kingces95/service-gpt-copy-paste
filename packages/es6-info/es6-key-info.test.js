@@ -26,6 +26,15 @@ describe('Es6KeyInfo', () => {
     })
   })
 
+  describe('with empty string key', () => {
+    beforeEach(() => {
+      keyInfo = Es6KeyInfo.create('')
+    })
+    it('is null value', () => {
+      expect(keyInfo.value).toBeNull()
+    })
+  })
+
   describe('with string key', () => {
     beforeEach(() => {
       keyInfo = Es6KeyInfo.create('myKey')

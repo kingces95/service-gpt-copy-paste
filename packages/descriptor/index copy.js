@@ -1,4 +1,5 @@
 import { isPojo } from '@kingjs/pojo-test'
+import { ac } from 'vitest/dist/chunks/reporters.d.DG9VKi4m.js'
 
 export class Descriptor {
   
@@ -66,34 +67,26 @@ export class Descriptor {
     return undefined
   }
 
-  static {
-    Descriptor.DefaultModifier = { }
-    Descriptor.DefaultModifier.userDefined = {
-      configurable: true
-    }
-    Descriptor.DefaultModifier.accessor = {
-      ...Descriptor.DefaultModifier.userDefined,
+  static DefaultModifier = {
+    accessor: { 
+      enumerable: false, 
+      configurable: true,
+    },
+    method: {
       enumerable: false,
-    }
-
-    Descriptor.DefaultModifier.value = {
-      ...Descriptor.DefaultModifier.userDefined,
+      configurable: true,
       writable: true,
-    }
-    Descriptor.DefaultModifier.method = {
-      ...Descriptor.DefaultModifier.value,
-      enumerable: false,
-    }
-    Descriptor.DefaultModifier.data = {
-      ...Descriptor.DefaultModifier.value,
+    },
+    data: {
       enumerable: true,
-    }
-
-    Descriptor.DefaultModifier.ptype = {
+      configurable: true,
+      writable: true,
+    },
+    ptype: {
       enumerable: false,
       configurable: false,
       writable: false,
-    }
+    },
   }
 
   static getDefaultModifier(descriptor) {
@@ -106,8 +99,10 @@ export class Descriptor {
 
   static hasExpectedModifiers(descriptor, expected) {
     if (!descriptor) return false
-    for (const key of Object.keys(expected))
-      if (!!descriptor[key] != expected[key]) return false
+    for (const key of Object.keys(expected)) {
+      if (descriptor[key] !== expected[key])
+        return false
+    }
     return true
   }
 
@@ -134,7 +129,14 @@ export class Descriptor {
   //  - Methods: enumerable: false, configurable: true, writable: true
   //  - Data: enumerable: true, configurable: true, writable: true
   static hasMemberDeclarationDefaults(descriptor) {
-    const expected = Descriptor.getDefaultModifier(descriptor)
-    return Descriptor.hasExpectedModifiers(descriptor, expected)
+    if (!descriptor) return false
+    if (!descriptor.configurable) return false
+    if (Descriptor.hasValue(descriptor)) {
+      if (!descriptor.writable) return false
+      if (descriptor.enumerable) return false
+    } else {
+      if (descriptor.enumerable) return false
+    }
+    return true
   }
 }
