@@ -1,5 +1,4 @@
 import { assert } from '@kingjs/assert'
-import { isPojo } from '@kingjs/pojo-test'
 import { extend } from '@kingjs/extend'
 import { abstract } from '@kingjs/abstract'
 import { Reflection } from '@kingjs/reflection'
@@ -142,27 +141,4 @@ export class ConceptReflect {
 
     return true
   }
-
-  static implement(type, concept, implementation = { }) {
-    assert(typeof type == 'function',
-      'Type must be a function (e.g. class or function).')
-    assert(isExtensionOf(concept, Concept),
-      'Argument concept must extend Concept.')
-
-    // if pojo, create anonymous partial class from pojo
-    implementation = PartialReflect.defineType(implementation)
-
-    // restrict implementation to members defined by the concept.
-    const conceptMembers = new Set(PartialReflect.keys(concept))
-    for (const name of PartialReflect.keys(implementation)) {
-      if (conceptMembers.has(name)) continue
-      throw new Error(`Concept '${concept.name}' does not define member '${name}'.`)
-    }
-
-    extend(type, concept, implementation)
-  }
-}
-
-export function implement(type, concept, implementation = { }) {
-  return ConceptReflect.implement(type, concept, implementation)
 }

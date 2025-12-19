@@ -1,7 +1,7 @@
 import { DebugProxy } from '@kingjs/debug-proxy'
 import { CursorConcept } from './cursor-concepts'
 import { extend } from '@kingjs/extend'
-import { implement } from '@kingjs/concept'
+import { implement } from '@kingjs/implement'
 import { abstract } from '@kingjs/abstract'
 
 export class Cursor extends DebugProxy {

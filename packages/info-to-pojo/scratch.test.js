@@ -2,10 +2,9 @@ import { Info } from "@kingjs/info"
 import { abstract } from "@kingjs/abstract"
 import { PartialClass, Extensions } from "@kingjs/partial-class"
 import { extend } from "@kingjs/extend"
-import { Concept, Concepts, implement } from "@kingjs/concept"
+import { implement } from "@kingjs/implement"
+import { Concept, Concepts } from "@kingjs/concept"
 import { } from "@kingjs/info-to-pojo"
-import { PartialObject } from "@kingjs/partial-object"
-import { TransparentPartialClass } from "@kingjs/transparent-partial-class"
 
 const MySymbol = Symbol('my-symbol')
 const MyStaticSymbol = Symbol('my-static-symbol')

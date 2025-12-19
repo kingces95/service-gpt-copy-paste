@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { implement, Concept } from '@kingjs/concept'
+import { implement } from '@kingjs/implement'
+import { Concept } from '@kingjs/concept'
 import { Info } from "@kingjs/info"
 import { } from "@kingjs/info-to-pojo"
 import util from 'util'

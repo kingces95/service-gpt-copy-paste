@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { FunctionInfo, Info } from "@kingjs/info"
-import { PartialClass, Extensions } from '@kingjs/partial-class'
+import { Info } from "@kingjs/info"
+import { PartialClass } from '@kingjs/partial-class'
 import { extend } from '@kingjs/extend'
-import { Concept, Concepts, implement } from '@kingjs/concept'
+import { implement } from '@kingjs/implement'
+import { Concept, Concepts } from '@kingjs/concept'
 import { } from "@kingjs/info-to-pojo"
-import { isSymbol } from 'lodash'
 
 describe('FunctionInfo for Concept', () => {
   let fnInfo

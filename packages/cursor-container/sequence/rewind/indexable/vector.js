@@ -1,4 +1,4 @@
-import { implement } from '@kingjs/concept'
+import { implement } from '@kingjs/implement'
 import { IndexableContainer } from "./indexable-container.js"
 import {
   IndexableContainerConcept

@@ -1,4 +1,4 @@
-import { implement } from '@kingjs/concept'
+import { implement } from '@kingjs/implement'
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Cursor } from './cursor.js'
