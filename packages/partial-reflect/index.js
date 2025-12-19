@@ -1,4 +1,5 @@
 import { assert } from '@kingjs/assert'
+import { isPojo } from '@kingjs/pojo-test'
 import { Reflection } from '@kingjs/reflection'
 import { isAbstract } from '@kingjs/abstract'
 import { Associate } from '@kingjs/associate'
@@ -8,6 +9,7 @@ import { PartialObject } from '@kingjs/partial-object'
 const {
   memberKeys,
   ownMemberKeys,
+  isExtensionOf,
 } = Reflection
 
 // The PartialReflect API provides reflection over PartialObject. For
@@ -17,10 +19,11 @@ const {
 // To get the type of the PartialObject use:
 //    PartialReflect.getPartialObjectType(type)
 // For example, given the PartialObject defined above:
-//    PartialReflect.getPartialObjectType(MyPartial) === TransparentPartialClass
+//    PartialReflect.getPartialObjectType(MyPartial) 
+//      === TransparentPartialClass
 
 // Suppose we reflect on a PartialObject defined like this:
-//    const MyPartial = TransparentPartialClass.create({
+//    const MyPartial = PartialReflect.defineType({
 //      myMethod() { ... }
 //    }) 
 
@@ -368,5 +371,24 @@ export class PartialReflect {
     if (!(key in prototypicalType.prototype)) return null
     return Associate.mapGet(
       prototypicalType, PartialReflect.HostMap, key) || type
+  }
+
+  static defineType(pojoOrType) {
+    if (isPojo(pojoOrType)) {
+      const [type] = [class extends TransparentPartialClass { }]
+      const prototype = type.prototype
+  
+      for (const key of ownMemberKeys(pojoOrType)) {
+        const descriptor = Object.getOwnPropertyDescriptor(pojoOrType, key)
+        Object.defineProperty(prototype, key, descriptor)
+      }
+  
+      return type
+    }
+
+    assert(isExtensionOf(pojoOrType, PartialObject),
+      `Expected arg to be a PartialObject.`)
+
+    return pojoOrType
   }
 }

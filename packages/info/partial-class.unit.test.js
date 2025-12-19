@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Info, FunctionInfo } from "@kingjs/info"
-import { PartialClass, Extensions } from '@kingjs/extension-group'
+import { PartialClass, Extensions } from '@kingjs/partial-class'
 import { extend } from '@kingjs/extend'
 import { TransparentPartialClass } from '@kingjs/transparent-partial-class'
 import { abstract } from '@kingjs/abstract'
@@ -63,7 +63,7 @@ describe('A partial class', () => {
     }],
   ])('with %s', (_, cls, expected) => {
     it('has a pojo', async () => {
-      const partialClass = TransparentPartialClass.create(cls)
+      const partialClass = PartialReflect.defineType(cls)
       const fnInfo = Info.from(partialClass)
       const actual = await fnInfo.toPojo(pojoFilter) 
       expect(actual).toEqual({

@@ -10,7 +10,7 @@ import {
 import { 
   PartialClass, 
   PartialClassReflect, 
-} from '@kingjs/extension-group'
+} from '@kingjs/partial-class'
 import { 
   Concept, 
   ConceptReflect 

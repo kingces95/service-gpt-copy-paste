@@ -1,6 +1,6 @@
 import { Info } from "@kingjs/info"
 import { abstract } from "@kingjs/abstract"
-import { PartialClass, Extensions } from "@kingjs/extension-group"
+import { PartialClass, Extensions } from "@kingjs/partial-class"
 import { extend } from "@kingjs/extend"
 import { Concept, Concepts, implement } from "@kingjs/concept"
 import { } from "@kingjs/info-to-pojo"

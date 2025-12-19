@@ -3,8 +3,8 @@ import { describe, it, expect } from 'vitest'
 import { Info } from "@kingjs/info"
 import { extend } from '@kingjs/extend'
 import { } from "@kingjs/info-to-pojo"
-import { PartialClass } from '@kingjs/extension-group'
-import { TransparentPartialClass } from '@kingjs/transparent-partial-class'
+import { PartialClass } from '@kingjs/partial-class'
+import { PartialReflect } from '@kingjs/partial-reflect'
 
 const filter = {
   filter: { isNonPublic: false, isKnown: false },
@@ -55,7 +55,7 @@ describe('Kitchen sink', () => {
       member1() { return 42 }
       member2() { return 42 }
     }],
-    ['lambda', TransparentPartialClass.create({
+    ['lambda', PartialReflect.defineType({
       getter0: { get: () => { } },
       get getter1() { },
 

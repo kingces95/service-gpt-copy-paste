@@ -5,34 +5,34 @@ import { Compiler } from '@kingjs/compiler'
 // TransparentPartialClass which extends PartialObject, can be crated with a 
 // POJO whose properties are "compiled" into property descriptors. For 
 // example, a method can be defined like this:
-//    const MyPartial = TransparentPartialClass.create({
+//    const MyPartial = PartialReflect.defineType({
 //      myMethod() { ... }
 //    }) 
 
 // The method could also be defined using a descriptor:
-//    const MyPartial = TransparentPartialClass.create({
+//    const MyPartial = PartialReflect.defineType({
 //      myMethod: { value: function() { ... } }
 //    })
 
 // Or as a lambda:
-//    const MyPartial = TransparentPartialClass.create({
+//    const MyPartial = PartialReflect.defineType({
 //      myMethod: () => { ... }
 //    })
 
 // Or using a named function like 'abstract':
 //    import { abstract } from '@kingjs/abstract'
-//    const MyPartial = TransparentPartialClass.create({
+//    const MyPartial = PartialReflect.defineType({
 //      myMethod: abstract
 //    })
 
 // An accessor can be defined like this:
-//    const MyPartial = TransparentPartialClass.create({
+//    const MyPartial = PartialReflect.defineType({
 //      get myProperty() { ... },
 //      set myProperty(value) { ... },
 //    })
 
 // A constant can be defined like this:
-//    const MyPartial = TransparentPartialClass.create({
+//    const MyPartial = PartialReflect.defineType({
 //      myConstant: { 
 //        value: 42, 
 //        enumerable: true, 
@@ -58,14 +58,14 @@ const OwnCollectionSymbols = Symbol('PartialObject.ownCollectionSymbols')
 // For example, OwnCollectionSymbols is used by PartialClass to designate
 // the Extensions symbol as containing an adjacency list to other PartialObject
 // types of type PartialClass and TransparentPartialClass. Also specified is
-// a coercion method TransparentPartialClass.fromArg is used to transform POJOs 
+// a coercion method PartialReflect.defineType is used to transform POJOs 
 // into PartialClass types:
 
 //    class PartialClass extends PartialObject {
 //      static [PartialObject.OwnCollectionSymbols] = {
 //        [Extensions]: { 
 //          expectedType: [ PartialClass, TransparentPartialClass ],
-//          map: TransparentPartialClass.fromArg,
+//          map: PartialReflect.defineType,
 //        }
 //      }
 //    }

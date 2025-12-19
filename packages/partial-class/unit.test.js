@@ -5,7 +5,7 @@ import { PartialReflect } from '@kingjs/partial-reflect'
 import { 
   PartialClass, 
   Extensions 
-} from '@kingjs/extension-group'
+} from '@kingjs/partial-class'
 
 describe('A type', () => {
   let type

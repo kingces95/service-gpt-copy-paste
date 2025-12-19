@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { abstract } from '@kingjs/abstract'
 import { extend } from '@kingjs/extend'
-import { PartialClass, Extensions } from '@kingjs/extension-group'
+import { PartialClass, Extensions } from '@kingjs/partial-class'
 import { PartialObject } from '@kingjs/partial-object'
 
 describe('A type', () => {

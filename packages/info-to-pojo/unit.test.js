@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 
 import { PartialObject } from '@kingjs/partial-object'
-import { PartialClass } from '@kingjs/extension-group'
+import { PartialClass } from '@kingjs/partial-class'
 import { Concept } from '@kingjs/concept'
 import { TransparentPartialClass } from '@kingjs/transparent-partial-class'
 

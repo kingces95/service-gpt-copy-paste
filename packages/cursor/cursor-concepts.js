@@ -1,6 +1,6 @@
 import { Concept } from '@kingjs/concept'
-import { PartialClass } from '@kingjs/extension-group'
-import { Extensions } from '@kingjs/extension-group'
+import { PartialClass } from '@kingjs/partial-class'
+import { Extensions } from '@kingjs/partial-class'
 import { Preconditions } from '@kingjs/debug-proxy'
 import {
   throwNotEquatableTo,

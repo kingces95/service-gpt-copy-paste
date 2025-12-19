@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { TransparentPartialClass } from '@kingjs/transparent-partial-class'
-import { PartialClass } from '@kingjs/extension-group'
+import { PartialClass } from '@kingjs/partial-class'
+import { PartialReflect } from '@kingjs/partial-reflect'
 
 describe('A method', () => {
   let method
@@ -14,10 +15,10 @@ describe('A method', () => {
       extension = class extends PartialClass { }
       extension.prototype.method = method
     })
-    describe('converted by TransparentPartialClass.fromArg', () => {
+    describe('converted by PartialReflect.defineType', () => {
       let arg
       beforeEach(() => {
-        arg = TransparentPartialClass.fromArg(extension)
+        arg = PartialReflect.defineType(extension)
       })
       it('should be the extension class', () => {
         expect(arg).toBe(extension)
@@ -29,10 +30,10 @@ describe('A method', () => {
     beforeEach(() => {
       pojo = { method }
     })
-    describe('converted by TransparentPartialClass.fromArg', () => {
+    describe('converted by PartialReflect.defineType', () => {
       let arg
       beforeEach(() => {
-        arg = TransparentPartialClass.fromArg(pojo)
+        arg = PartialReflect.defineType(pojo)
       })
       it('should be a type that extends TransparentPartialClass', () => {
         expect(arg.prototype).toBeInstanceOf(TransparentPartialClass)
@@ -41,10 +42,10 @@ describe('A method', () => {
         expect(arg.prototype.method).toBe(method)
       })
     })
-    describe('converted by TransparentPartialClass.create', () => {
+    describe('converted by PartialReflect.defineType', () => {
       let extension
       beforeEach(() => {
-        extension = TransparentPartialClass.create(pojo)
+        extension = PartialReflect.defineType(pojo)
       })
       it('should be a type that extends PartialClass', () => {
         expect(extension.prototype).toBeInstanceOf(TransparentPartialClass)

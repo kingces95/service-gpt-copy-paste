@@ -8,7 +8,7 @@ export const Extensions = Symbol('Extensions')
 // An extension is a class which extends PartialClass. For example, an extension 
 // could define a dump method that dumps the instance to the console. A type 
 // could be dynamically extended with the Dumpper extension like this:
-//    import { PartialClass } from '@kingjs/extension-group'
+//    import { PartialClass } from '@kingjs/partial-class'
 //    class MyType { }
 //    class Dumpper extends PartialClass { dump() { Console.log(this) } }
 //    extend(MyType, Dumpper)
@@ -17,7 +17,7 @@ export class PartialClass extends PartialObject {
   static [PartialObject.OwnCollectionSymbols] = {
     [Extensions]: { 
       expectedType: [ PartialClass, TransparentPartialClass ],
-      map: TransparentPartialClass.fromArg,
+      map: PartialReflect.defineType,
     }
   }
 }

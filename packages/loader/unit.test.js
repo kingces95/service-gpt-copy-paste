@@ -1,6 +1,6 @@
 // import { describe, it, expect } from 'vitest'
 // import { beforeEach } from 'vitest'
-// import { PartialClass } from '@kingjs/extension-group'
+// import { PartialClass } from '@kingjs/partial-class'
 // import { Concept } from "@kingjs/concept"
 // import { Extensions, Concepts, load } from '@kingjs/loader'
 

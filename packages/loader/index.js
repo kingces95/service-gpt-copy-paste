@@ -1,6 +1,6 @@
 // import { assert } from '@kingjs/assert'
 // import { extend } from '@kingjs/extend'
-// import { extensions } from '@kingjs/extension-group'
+// import { extensions } from '@kingjs/partial-class'
 // import { concepts } from '@kingjs/concept'
 
 // export function load(type) {

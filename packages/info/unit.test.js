@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Info, FunctionInfo } from "@kingjs/info"
 import { Concept } from '@kingjs/concept'
-import { PartialClass } from '@kingjs/extension-group'
-import { TransparentPartialClass } from '@kingjs/transparent-partial-class'
+import { PartialClass } from '@kingjs/partial-class'
+import { PartialReflect } from '@kingjs/partial-reflect'
 import { } from "@kingjs/info-to-pojo"
 
 import { abstract } from '@kingjs/abstract'
@@ -124,7 +124,7 @@ describe('My partial class', () => {
   let myPartialClass
   beforeEach(() => {
     const pojo = { }
-    myPartialClass = TransparentPartialClass.fromArg(pojo)
+    myPartialClass = PartialReflect.defineType(pojo)
   })
   it('has a toString of MyPartialClass', () => {
     const partialClassInfo = Info.from(myPartialClass)
@@ -141,7 +141,7 @@ describe('A member', () => {
       class MyExtensionGroup extends PartialClass { member() { } }, 
       'member, function, [extensionGroupInfo MyExtensionGroup]'],
     ['on MyPartialClass', 'member',
-      TransparentPartialClass.fromArg({ member() { } }),
+      PartialReflect.defineType({ member() { } }),
       'member, function, [partialClassInfo]'],
 
     ['on MyClass', 'member', class MyClass { member() { } }, 
