@@ -1,5 +1,4 @@
 import { assert } from '@kingjs/assert'
-import { extend } from '@kingjs/extend'
 import { abstract } from '@kingjs/abstract'
 import { Reflection } from '@kingjs/reflection'
 import { Descriptor } from '@kingjs/descriptor'
@@ -39,9 +38,6 @@ export class Concept extends PartialObject {
   // instanceof to test if an instance satisfies the concept. For reflection, use
   // Reflection.isExtensionOf(type, concept).
   static [Symbol.hasInstance](instance) {
-    if (!instance) 
-      return false
-
     return ConceptReflect.satisfies(instance, this)
   }
 
@@ -84,7 +80,7 @@ export class ConceptReflect {
       yield collection
     }
   }
-  static *getConcepts(type, name) {
+  static *getConceptHosts(type, name) {
     const hosts = [...PartialReflect.hosts(type, name)]
     yield* hosts.filter(host => ConceptReflect.isConcept(host))
   }
@@ -101,15 +97,15 @@ export class ConceptReflect {
       const concept = type[name]
       if (typeof concept != 'function') continue
       if (!isExtensionOf(concept, Concept)) continue
-      
-      const descriptor = Object.getOwnPropertyDescriptor(type, name)
-      if (!descriptor?.enumerable) continue
 
       yield [name, concept]
     }
   }
 
   static satisfies(instance, concept) {
+    if (typeof instance != 'object' || instance == null)
+      return false
+
     assert(isExtensionOf(concept, Concept),
       `Argument concept must extend Concept.`)
 

@@ -341,7 +341,7 @@ export class MemberInfo extends Info {
     const host = this.host
     for (let member = this; member; member = member.parent()) {
       const fn = member.host.ctor
-      for (const concept of ConceptReflect.getConcepts(fn, member.name)) {
+      for (const concept of ConceptReflect.getConceptHosts(fn, member.name)) {
         if (concept == host.ctor) continue
         seen.add(concept)
       }

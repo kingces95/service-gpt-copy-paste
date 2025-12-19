@@ -11,12 +11,23 @@ import { } from "@kingjs/info-to-pojo"
 
 import { objectPojo } from "./pojo/object.pojo.js"
 import { functionPojo } from "./pojo/function.pojo.js"
+import { myClassPojo } from "./pojo/my-class.pojo.js"
+import { myConceptPojo } from "./pojo/my-concept.pojo.js"
 
-// import { myClassPojo } from "./pojo/my-class.pojo.js"
 // import { myClassStaticPojo } from "./pojo/my-class-static.pojo.js"
 // import { myClassInstancePojo } from "./pojo/my-class-instance.pojo.js"
 
-// import { MyClass } from "./dump.test.js"
+import {
+  MyBaseConcept,
+  MyLeftConcept,
+  MyRightConcept,
+  MyConcept,
+  MyBasePartialClass,
+  MyPartialClass,
+  MyBase,
+  MyEmptyClass,
+  MyClass
+} from "./my-classes.js"
 
 describe('Object members', () => {
   let pojo
@@ -90,23 +101,34 @@ describe('TransparentPartialClass members', () => {
   })
 })
 
+describe('MyClass members', () => {
+  let pojo
+  beforeEach(async () => {
+    const fnInfo = Info.from(MyClass)
+    pojo = await fnInfo.toPojo({
+      filter: { 
+        isKnown: false,
+        isNonPublic: false,
+      },
+    })
+  })
 
-// describe('MyClass members', () => {
-//   let pojo
-//   beforeEach(async () => {
-//     const fnInfo = Es6Info.from(MyClass)
-//     pojo = await fnInfo.toPojo({
-//       filter: { 
-//         isKnown: false,
-//         isNonPublic: false,
-//       },
-//     })
-//   })
+  it('matches expected', () => {
+    expect(pojo).toEqual(myClassPojo)
+  })
+})
 
-//   it('matches expected', () => {
-//     expect(pojo).toEqual(myClassPojo)
-//   })
-// })
+describe('MyConcept members', () => {
+  let pojo
+  beforeEach(async () => {
+    const fnInfo = Info.from(MyConcept)
+    pojo = await fnInfo.toPojo()
+  })
+
+  it('matches expected', () => {
+    expect(pojo).toEqual(myConceptPojo)
+  })
+})
 
 // describe('MyClass instance members', () => {
 //   let pojo
