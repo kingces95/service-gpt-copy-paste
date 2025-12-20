@@ -56,44 +56,44 @@ import { Compiler } from '@kingjs/compiler'
 const OwnCollectionSymbols = Symbol('PartialObject.ownCollectionSymbols')
 
 // For example, OwnCollectionSymbols is used by PartialClass to designate
-// the Extensions symbol as containing an adjacency list to other PartialObject
+// the Extends symbol as containing an adjacency list to other PartialObject
 // types of type PartialClass and TransparentPartialClass. Also specified is
 // a coercion method PartialReflect.defineType is used to transform POJOs 
 // into PartialClass types:
 
 //    class PartialClass extends PartialObject {
 //      static [PartialObject.OwnCollectionSymbols] = {
-//        [Extensions]: { 
+//        [Extends]: { 
 //          expectedType: [ PartialClass, TransparentPartialClass ],
 //          map: PartialReflect.defineType,
 //        }
 //      }
 //    }
 
-// The simplest use of the Extensions symbol is to apply a TransparentPartialClass 
+// The simplest use of the Extends symbol is to apply a TransparentPartialClass 
 // type expressed as a POJO. A single extension can exist as a single element of an
 // array or unwrapped like this:
 
 //    class MyExtension extends PartialClass {
-//      static [Extensions] = { 
+//      static [Extends] = { 
 //        myMethod() { ... } 
 //        myOtherMethod() { ... }
 //      }
 //    }
 
-// The Extensions symbol can contain an array of member collections like this:
+// The Extends symbol can contain an array of member collections like this:
 
 //    class MyMethodGroup extends PartialClass {
 //      myMethod() { ... }
 //    }
 //    class MyExtension extends PartialClass {
-//      static [Extensions] = [ 
+//      static [Extends] = [ 
 //        MyMethodGroup,
 //        { myOtherMethod() { ... } },
 //      ]
 //    }
 
-// The Extensions can then be merged into a type using PartialReflect.merge
+// The Extends can then be merged into a type using PartialReflect.merge
 // like so:
 
 //    class MyType { }
@@ -135,7 +135,7 @@ const Compile = Symbol('PartialObject.compile')
 // that uses equals to throw if two instances are not equal:
 
 //   class EqualityConcept extends Concept {
-//     static [Extensions] = {
+//     static [Extends] = {
 //       throwIfNotEqual(other) {
 //         if (!this.equals(other)) throw 'Not equal'
 //       }

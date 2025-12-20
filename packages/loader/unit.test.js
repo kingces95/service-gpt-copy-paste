@@ -2,7 +2,7 @@
 // import { beforeEach } from 'vitest'
 // import { PartialClass } from '@kingjs/partial-class'
 // import { Concept } from "@kingjs/concept"
-// import { Extensions, Concepts, load } from '@kingjs/loader'
+// import { Extends, Concepts, load } from '@kingjs/loader'
 
 // class MyPart extends PartialClass { 
 //   partMethod() { }
@@ -16,7 +16,7 @@
 //   let type
 //   beforeEach(() => {
 //     [type] = [class { 
-//       static [Extensions] = [ MyPart ]
+//       static [Extends] = [ MyPart ]
 //       static [Concepts] = [ MyConcept ]
 //       static { load(this) }
 //     }]

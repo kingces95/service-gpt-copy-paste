@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { PartialObject } from '@kingjs/partial-object'
 import { PartialReflect } from '@kingjs/partial-reflect'
-import { PartialClass, Extensions } from '@kingjs/partial-class'
+import { PartialClass, Extends } from '@kingjs/partial-class'
 
 describe('A type', () => {
   let type
@@ -18,7 +18,7 @@ describe('A type', () => {
     beforeEach(() => {
       subExtension = class SubExtension extends PartialClass { }
       extension = class MyExtension extends PartialClass { 
-        static [Extensions] = [ subExtension, subExtension ]
+        static [Extends] = [ subExtension, subExtension ]
       }
       PartialReflect.merge(type, extension)
     })
@@ -106,7 +106,7 @@ describe('An extension', () => {
     let subExtension
     beforeEach(() => {
       subExtension = class extends PartialClass { }
-      extension[Extensions] = [ subExtension ]
+      extension[Extends] = [ subExtension ]
     })
     it('should have the sub extension as an own declaration', () => {
       const declarations = [...PartialReflect.ownExtensions(extension)]
@@ -144,7 +144,7 @@ describe('An extension', () => {
       beforeEach(() => {
         subSubMember = function member() { }
         subSubExtension = class extends PartialClass { }
-        subExtension[Extensions] = [ subSubExtension ]
+        subExtension[Extends] = [ subSubExtension ]
         subSubExtension.prototype.member = subSubMember
       })
       it('should not have the sub sub extension as an own declaration', () => {
@@ -173,7 +173,7 @@ describe('An extension', () => {
           MyPartialClass = class extends PartialObject { }
           myPartialClass = class extends MyPartialClass { }
           myPartialClass.prototype.differentMember = myMember
-          extension[Extensions].push(myPartialClass)
+          extension[Extends].push(myPartialClass)
         })
         it('should assert that MyPartialClass is not an PartialClass', () => {
           expect(() => {

@@ -13,7 +13,7 @@ export class RangeConcept extends Concept {
   toRange() { }
 }
 export class ContainerConcept extends Concept {
-  static [Extensions] = {
+  static [Extends] = {
     toRange() { return new Range(this.begin(), this.end()) },
     get isEmpty() { return this.begin().equals(this.end()) }
   }

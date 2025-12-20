@@ -14,7 +14,7 @@ import { TrimmedSlidingWindow } from "./trimmed-sliding-window.js"
 // CodePointSlidingWindow abstracts away code unit boundaries and allows
 // the user to iterate over code points. 
 
-// Extensions are expected to override the following functions:
+// Extends are expected to override the following functions:
 
 // - decodelength$(codeUnit): 
 //   returns the length in code-units of the code-point given an aligned 

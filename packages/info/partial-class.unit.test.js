@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Info, FunctionInfo } from "@kingjs/info"
-import { PartialClass, Extensions } from '@kingjs/partial-class'
+import { PartialClass, Extends } from '@kingjs/partial-class'
 import { extend } from '@kingjs/extend'
 import { TransparentPartialClass } from '@kingjs/transparent-partial-class'
 import { abstract } from '@kingjs/abstract'
@@ -97,7 +97,7 @@ describe('A class with a member', () => {
     describe('and a partial class member', () => {
       let partialClassFn = function partialClassFn() { }
       beforeEach(() => {
-        extensions[Extensions] =  { member: partialClassFn }
+        extensions[Extends] =  { member: partialClassFn }
       })
       it('should have an own partial class', () => {
         const partialClass = [...PartialReflect.ownExtensions(extensions)]

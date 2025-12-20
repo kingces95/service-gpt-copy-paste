@@ -79,11 +79,11 @@ const {
 // merged onto a type their members are reported as defined by the PartialObject
 // and not the type.
 
-// Extensions of PartialObject can override Compile to transform descriptors
+// Extends of PartialObject can override Compile to transform descriptors
 // before being defined on the target type. For example, Concept overrides
 // Compile to make all its members abstract. See Concept for more details.
 
-// Extensions of PartialObject can reference other PartialObject types and so form a 
+// Extends of PartialObject can reference other PartialObject types and so form a 
 // poset of PartialObject types. OwnCollectionSymbols describes how to declare
 // the PartialObject types associated with a type of PartialObject. For example,
 // if OwnCollectionSymbols is defined like this:

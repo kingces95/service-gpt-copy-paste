@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { abstract } from '@kingjs/abstract'
 import { extend } from '@kingjs/extend'
-import { PartialClass, Extensions } from '@kingjs/partial-class'
+import { PartialClass, Extends } from '@kingjs/partial-class'
 import { PartialObject } from '@kingjs/partial-object'
 
 describe('A type', () => {
@@ -95,7 +95,7 @@ describe('A type', () => {
       let extendedPartialType
       beforeEach(() => {
         extendedPartialType = class extends PartialClass {
-          static [Extensions] = partialType }
+          static [Extends] = partialType }
       })
       it('can extend the member', () => {
         extend(type, extendedPartialType)
@@ -103,7 +103,7 @@ describe('A type', () => {
       })
       describe('that is an array of extensions', () => {
         beforeEach(() => {
-          extendedPartialType[Extensions] = [partialType]
+          extendedPartialType[Extends] = [partialType]
         })
         it('can extend the member', () => {
           extend(type, extendedPartialType)
@@ -114,7 +114,7 @@ describe('A type', () => {
         let extendedExtendedPartialType
         beforeEach(() => {
           extendedExtendedPartialType = class extends PartialClass {
-            static [Extensions] = extendedPartialType }
+            static [Extends] = extendedPartialType }
         })
         it('can extend the member', () => {
           extend(type, extendedExtendedPartialType)

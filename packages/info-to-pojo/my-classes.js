@@ -1,5 +1,5 @@
 import { abstract } from "@kingjs/abstract"
-import { PartialClass, Extensions } from "@kingjs/partial-class"
+import { PartialClass, Extends } from "@kingjs/partial-class"
 import { extend } from "@kingjs/extend"
 import { implement } from "@kingjs/implement"
 import { Concept, Concepts } from "@kingjs/concept"
@@ -31,7 +31,7 @@ export class MyBasePartialClass extends PartialClass {
 }
 
 export class MyPartialClass extends PartialClass {
-  static [Extensions] = MyBasePartialClass
+  static [Extends] = MyBasePartialClass
   myNewMethod() { }
   myMethod() { }
 }

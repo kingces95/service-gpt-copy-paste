@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { PartialObject } from '@kingjs/partial-object'
-import { PartialClass, Extensions } from '@kingjs/partial-class'
+import { PartialClass, Extends } from '@kingjs/partial-class'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { Concept, Concepts, ConceptReflect } from '@kingjs/concept'
 import { abstract } from '@kingjs/abstract'
@@ -98,7 +98,7 @@ describe('MyConcept', () => {
     let MyPartialClass
     beforeEach(() => {
       MyPartialClass = class MyPartialClass extends PartialClass { }
-      MyConcept[Extensions] = [ MyPartialClass ]
+      MyConcept[Extends] = [ MyPartialClass ]
 
       MySubConcept = class MySubConcept extends Concept { }
       MyConcept[Concepts] = [ MySubConcept ]

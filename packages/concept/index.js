@@ -4,7 +4,7 @@ import { Reflection } from '@kingjs/reflection'
 import { Descriptor } from '@kingjs/descriptor'
 import { PartialObject } from '@kingjs/partial-object'
 import { PartialReflect } from '@kingjs/partial-reflect'
-import { PartialClass, Extensions } from '@kingjs/partial-class'
+import { PartialClass, Extends } from '@kingjs/partial-class'
 
 const {
   hasGetter,
@@ -21,7 +21,7 @@ const {
 export const Concepts = Symbol('Concept.Concepts')
 
 const KnownStaticMembers = new Set([
-  Extensions,
+  Extends,
   Concepts,
 ])
 

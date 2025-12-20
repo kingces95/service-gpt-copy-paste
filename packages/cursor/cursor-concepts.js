@@ -1,14 +1,12 @@
 import { Concept } from '@kingjs/concept'
 import { PartialClass } from '@kingjs/partial-class'
-import { Extensions } from '@kingjs/partial-class'
+import { Extends } from '@kingjs/partial-class'
 import { Preconditions } from '@kingjs/debug-proxy'
-import {
-  throwNotEquatableTo,
-} from './throw.js'
+import { throwNotEquatableTo } from './throw.js'
 
 export class CursorConcept extends Concept {
   static [Preconditions] = PartialClass
-  static [Extensions] = {
+  static [Extends] = {
     next() {
       const value = this.value 
       if (!this.step()) return
@@ -61,7 +59,7 @@ export class ContiguousCursorConcept extends RandomAccessCursorConcept {
     }
   }
 
-  static [Extensions] = {
+  static [Extends] = {
     read(length = 1, signed = false, littleEndian = false) {
       return this.readAt(0, length, signed, littleEndian)
     },

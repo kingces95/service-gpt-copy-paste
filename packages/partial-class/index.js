@@ -2,7 +2,7 @@ import { PartialObject } from '@kingjs/partial-object'
 import { TransparentPartialClass } from '@kingjs/transparent-partial-class'
 import { PartialReflect } from '@kingjs/partial-reflect'
 
-export const Extensions = Symbol('Extensions')
+export const Extends = Symbol('Extends')
 
 // Extend copies members from one or more extensions to a type prototype.
 // An extension is a class which extends PartialClass. For example, an extension 
@@ -15,7 +15,7 @@ export const Extensions = Symbol('Extensions')
 
 export class PartialClass extends PartialObject {
   static [PartialObject.OwnCollectionSymbols] = {
-    [Extensions]: { 
+    [Extends]: { 
       expectedType: [ PartialClass, TransparentPartialClass ],
       map: PartialReflect.defineType,
     }

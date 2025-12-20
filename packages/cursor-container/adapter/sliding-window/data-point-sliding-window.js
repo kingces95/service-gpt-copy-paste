@@ -13,7 +13,7 @@ import { stepBackUntil, tryAdvance } from "@kingjs/cursor-algorithm"
 // CodePointSlidingWindow abstracts away code unit boundaries and allows
 // the user to iterate over code points. 
 
-// Extensions are expected to override the following functions:
+// Extends are expected to override the following functions:
 
 // - decodeLength$(dataPoint): 
 //   returns the length in code-units of the code-point given an aligned 
