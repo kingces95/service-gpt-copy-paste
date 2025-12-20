@@ -1,5 +1,5 @@
 import { PartialObject } from '@kingjs/partial-object'
-import { TransparentPartialClass } from '@kingjs/transparent-partial-class'
+import { PartialPojo } from '@kingjs/partial-pojo'
 import { PartialReflect } from '@kingjs/partial-reflect'
 
 export const Extends = Symbol('Extends')
@@ -16,14 +16,14 @@ export const Extends = Symbol('Extends')
 export class PartialClass extends PartialObject {
   static [PartialObject.OwnCollectionSymbols] = {
     [Extends]: { 
-      expectedType: [ PartialClass, TransparentPartialClass ],
+      expectedType: [ PartialClass, PartialPojo ],
       map: PartialReflect.defineType,
     }
   }
 }
 
 export class PartialClassReflect {
-  static isExtensionGroup(type) {
+  static isPartialClass(type) {
     const collectionType = PartialReflect.getPartialObjectType(type)
     return collectionType == PartialClass
   }
@@ -37,13 +37,13 @@ export class PartialClassReflect {
   }
   static *ownExtensionGroups(type) {
     for (const collection of PartialReflect.ownExtensions(type)) {
-      if (!PartialClassReflect.isExtensionGroup(collection)) continue 
+      if (!PartialClassReflect.isPartialClass(collection)) continue 
       yield collection
     }
   }
   static getExtensionGroup(type, name) {
     const host = PartialReflect.getHost(type, name)
-    if (!PartialClassReflect.isExtensionGroup(host)) return null
+    if (!PartialClassReflect.isPartialClass(host)) return null
     return host
   }
 }

@@ -3,7 +3,7 @@ import { beforeEach } from 'vitest'
 import { Info, FunctionInfo } from "@kingjs/info"
 import { PartialClass, Extends } from '@kingjs/partial-class'
 import { extend } from '@kingjs/extend'
-import { TransparentPartialClass } from '@kingjs/transparent-partial-class'
+import { PartialPojo } from '@kingjs/partial-pojo'
 import { abstract } from '@kingjs/abstract'
 import { } from "@kingjs/info-to-pojo"
 import { PartialReflect } from '@kingjs/partial-reflect'
@@ -68,7 +68,7 @@ describe('A partial class', () => {
       const actual = await fnInfo.toPojo(pojoFilter) 
       expect(actual).toEqual({
         ...expected,
-        base: 'TransparentPartialClass',
+        base: 'PartialPojo',
         isAnonymous: true,
       })
     })
@@ -102,7 +102,7 @@ describe('A class with a member', () => {
       it('should have an own partial class', () => {
         const partialClass = [...PartialReflect.ownExtensions(extensions)]
         expect(partialClass).toHaveLength(1)
-        expect(partialClass[0].prototype).instanceOf(TransparentPartialClass)
+        expect(partialClass[0].prototype).instanceOf(PartialPojo)
       })
       it('when merged should use the partial class member', async () => {
 

@@ -54,21 +54,27 @@ const pojoFilter = {
   }
 }
 
-describe('An extension group', () => {
+describe('A PartialClass', () => {
   describe('with a name', () => {
     let cls
     beforeEach(() => {
-      cls = class MyClass extends PartialClass { }
+      cls = class MyPartialClass extends PartialClass { }
     })
     it('has a toString of MyClass', () => {
       const fnInfo = Info.from(cls)
-      expect(fnInfo.toString()).toBe('[extensionGroupInfo MyClass]')
+      expect(fnInfo.toString()).toBe(
+        '[partialClassInfo MyPartialClass]')
     })
   })
   describe('without a name', () => {
     let cls
     beforeEach(() => {
       [cls] = [class extends PartialClass { }]
+    })
+    it('has a toString of MyClass', () => {
+      const fnInfo = Info.from(cls)
+      expect(fnInfo.toString()).toBe(
+        '[partialClassInfo <anonymous>]')
     })
     it('Info.from does not throw', () => {
       expect(() => Info.from(cls)).not.toThrow()
@@ -79,30 +85,30 @@ describe('An extension group', () => {
 describe('A member', () => {
   describe.each([
     ['abstract member', 'member', { member: abstract },
-      'member, abstract function, [partialClassInfo]' ],
+      'member, abstract function, [partialPojoInfo]' ],
     ['data member', 'member', { member: 1 },
-      'member, { value: [number] }, [partialClassInfo]' ],
+      'member, { value: [number] }, [partialPojoInfo]' ],
     ['null member', 'member', { member: null },
-      'member, { value: [null] }, [partialClassInfo]' ],
+      'member, { value: [null] }, [partialPojoInfo]' ],
     ['undefined member', 'member', { member: undefined },
-      'member, { value: [undefined] }, [partialClassInfo]' ],
+      'member, { value: [undefined] }, [partialPojoInfo]' ],
     ['boolean member', 'member', { member: true },
-      'member, { value: [boolean] }, [partialClassInfo]' ],
+      'member, { value: [boolean] }, [partialPojoInfo]' ],
     ['bigint member', 'member', { member: 10n },
-      'member, { value: [bigint] }, [partialClassInfo]' ],
+      'member, { value: [bigint] }, [partialPojoInfo]' ],
     ['symbol member', 'member', { member: MySymbol },
-      'member, { value: [symbol] }, [partialClassInfo]' ],
+      'member, { value: [symbol] }, [partialPojoInfo]' ],
     ['array member', 'member', { member: { value: [] } },
-      'member, { value: [array] }, [partialClassInfo]' ],
+      'member, { value: [array] }, [partialPojoInfo]' ],
     ['const data member', 'member', { 
       member: { value: 1, writable: false } },
-      'member, const { value: [number] }, [partialClassInfo]' ],
+      'member, const { value: [number] }, [partialPojoInfo]' ],
     ['sealed data member', 'member', { 
       member: { value: 1, configurable: false } },
-      'member, sealed { value: [number] }, [partialClassInfo]' ],
+      'member, sealed { value: [number] }, [partialPojoInfo]' ],
     ['hidden data member', 'member', { 
       member: { value: 1, enumerable: false } },
-      'member, hidden { value: [number] }, [partialClassInfo]' ],
+      'member, hidden { value: [number] }, [partialPojoInfo]' ],
     // ['prototype', 'prototype', class { },
     //   'static const hidden sealed prototype { value: object }' ],
     ])('%s', (_, name, cls, expected) => {

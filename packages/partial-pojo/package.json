@@ -1,5 +1,5 @@
 {
-  "name": "@kingjs/transparent-partial-class",
+  "name": "@kingjs/partial-pojo",
   "version": "1.0.0",
   "description": ".",
   "main": "index.js",

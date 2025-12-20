@@ -2,7 +2,7 @@ import { Compiler } from '@kingjs/compiler'
 
 // PartialObject in conjction with PartialReflect.merge is like 
 // Object.defineProperties but with richer descriptors. For example,
-// TransparentPartialClass which extends PartialObject, can be crated with a 
+// PartialPojo which extends PartialObject, can be crated with a 
 // POJO whose properties are "compiled" into property descriptors. For 
 // example, a method can be defined like this:
 //    const MyPartial = PartialReflect.defineType({
@@ -41,7 +41,7 @@ import { Compiler } from '@kingjs/compiler'
 //      }
 //    })
 
-// The TransparentPartialClass can then be merged into a type like this:
+// The PartialPojo can then be merged into a type like this:
 //    class MyType { }
 //    PartialReflect.merge(MyType, MyPartial)
 // Now MyType.prototype has myMethod, or myProperty, or myConstant
@@ -57,20 +57,20 @@ const OwnCollectionSymbols = Symbol('PartialObject.ownCollectionSymbols')
 
 // For example, OwnCollectionSymbols is used by PartialClass to designate
 // the Extends symbol as containing an adjacency list to other PartialObject
-// types of type PartialClass and TransparentPartialClass. Also specified is
+// types of type PartialClass and PartialPojo. Also specified is
 // a coercion method PartialReflect.defineType is used to transform POJOs 
 // into PartialClass types:
 
 //    class PartialClass extends PartialObject {
 //      static [PartialObject.OwnCollectionSymbols] = {
 //        [Extends]: { 
-//          expectedType: [ PartialClass, TransparentPartialClass ],
+//          expectedType: [ PartialClass, PartialPojo ],
 //          map: PartialReflect.defineType,
 //        }
 //      }
 //    }
 
-// The simplest use of the Extends symbol is to apply a TransparentPartialClass 
+// The simplest use of the Extends symbol is to apply a PartialPojo 
 // type expressed as a POJO. A single extension can exist as a single element of an
 // array or unwrapped like this:
 

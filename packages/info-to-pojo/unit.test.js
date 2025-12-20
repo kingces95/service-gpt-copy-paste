@@ -4,7 +4,7 @@ import { beforeEach } from 'vitest'
 import { PartialObject } from '@kingjs/partial-object'
 import { PartialClass } from '@kingjs/partial-class'
 import { Concept } from '@kingjs/concept'
-import { TransparentPartialClass } from '@kingjs/transparent-partial-class'
+import { PartialPojo } from '@kingjs/partial-pojo'
 
 import { Info } from "@kingjs/info"
 import { } from "@kingjs/info-to-pojo"
@@ -89,15 +89,15 @@ describe('Concept members', () => {
   })
 })
 
-describe('TransparentPartialClass members', () => {
+describe('PartialPojo members', () => {
   let pojo
   beforeEach(async () => {
-    const fnInfo = Info.from(TransparentPartialClass)
+    const fnInfo = Info.from(PartialPojo)
     pojo = await fnInfo.toPojo()
   })
 
   it('matches expected', () => {
-    expect(pojo).toEqual({ name: 'TransparentPartialClass', base: 'PartialObject' })
+    expect(pojo).toEqual({ name: 'PartialPojo', base: 'PartialObject' })
   })
 })
 

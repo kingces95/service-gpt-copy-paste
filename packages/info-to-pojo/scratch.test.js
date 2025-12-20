@@ -29,7 +29,7 @@ function dump(fn) {
 // dump(PartialObject)
 // dump(PartialClass)
 // dump(Concept)
-// dump(TransparentPartialClass)
+// dump(PartialPojo)
 
 // dump(MyPartialClass)
 // dump(MyExtensionClass)

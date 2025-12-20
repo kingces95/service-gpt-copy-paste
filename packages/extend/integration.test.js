@@ -10,7 +10,7 @@ const filter = {
   filter: { isNonPublic: false, isKnown: false },
 }
 
-describe('TransparentPartialClass with non-standard properties', () => {
+describe('PartialPojo with non-standard properties', () => {
   let pojo
   beforeEach(() => {
     pojo = {

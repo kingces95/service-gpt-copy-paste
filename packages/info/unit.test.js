@@ -109,26 +109,26 @@ describe('My concept', () => {
   })
 })
 
-describe('My extension group', () => {
-  let myExtensionGroup
+describe('My PartialClass', () => {
+  let myPartialClass
   beforeEach(() => {
-    myExtensionGroup = class MyExtensionGroup extends PartialClass { }
+    myPartialClass = class MyPartialClass extends PartialClass { }
   })
   it('has a toString of MyExtensionGroup', () => {
-    const extensionGroupInfo = Info.from(myExtensionGroup)
-    expect(extensionGroupInfo.toString()).toBe('[extensionGroupInfo MyExtensionGroup]')
+    const extensionGroupInfo = Info.from(myPartialClass)
+    expect(extensionGroupInfo.toString()).toBe('[partialClassInfo MyPartialClass]')
   })
 })
 
-describe('My partial class', () => {
-  let myPartialClass
+describe('My TransparentPartialObject', () => {
+  let myTransparentPartialObject
   beforeEach(() => {
     const pojo = { }
-    myPartialClass = PartialReflect.defineType(pojo)
+    myTransparentPartialObject = PartialReflect.defineType(pojo)
   })
   it('has a toString of MyPartialClass', () => {
-    const partialClassInfo = Info.from(myPartialClass)
-    expect(partialClassInfo.toString()).toBe('[partialClassInfo]')
+    const partialClassInfo = Info.from(myTransparentPartialObject)
+    expect(partialClassInfo.toString()).toBe('[partialPojoInfo]')
   })
 })
 
@@ -138,11 +138,11 @@ describe('A member', () => {
       class MyConcept extends Concept { member() { } }, 
       'member, abstract function, [conceptInfo MyConcept]'],
     ['on MyExtensionGroup', 'member', 
-      class MyExtensionGroup extends PartialClass { member() { } }, 
-      'member, function, [extensionGroupInfo MyExtensionGroup]'],
-    ['on MyPartialClass', 'member',
+      class MyPartialClass extends PartialClass { member() { } }, 
+      'member, function, [partialClassInfo MyPartialClass]'],
+    ['on MyTransparentPartialObject', 'member',
       PartialReflect.defineType({ member() { } }),
-      'member, function, [partialClassInfo]'],
+      'member, function, [partialPojoInfo]'],
 
     ['on MyClass', 'member', class MyClass { member() { } }, 
       'member, function, [classInfo MyClass]'],

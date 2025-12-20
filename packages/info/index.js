@@ -1,20 +1,11 @@
 import { assert } from '@kingjs/assert'
 import { isAbstract } from "@kingjs/abstract"
-import { TransparentPartialClass } from '@kingjs/transparent-partial-class'
+import { PartialPojo } from '@kingjs/partial-pojo'
 import { PartialObject } from '@kingjs/partial-object'
 import { PartialReflect } from '@kingjs/partial-reflect'
-import { 
-  Es6Info, 
-  Es6MemberInfo 
-} from "@kingjs/es6-info"
-import { 
-  PartialClass, 
-  PartialClassReflect, 
-} from '@kingjs/partial-class'
-import { 
-  Concept, 
-  ConceptReflect 
-} from "@kingjs/concept"
+import { Es6Info, Es6MemberInfo } from "@kingjs/es6-info"
+import { Concept, ConceptReflect } from "@kingjs/concept"
+import { PartialClass, PartialClassReflect } from '@kingjs/partial-class'
 
 export class Info {
   static from(fn) {
@@ -22,13 +13,13 @@ export class Info {
     assert(typeof fn == 'function', 'fn must be a function')
 
     if (fn == PartialObject) return new PartialObjectInfo(fn)
-    if (fn == TransparentPartialClass) return new PartialObjectInfo(fn)
+    if (fn == PartialPojo) return new PartialObjectInfo(fn)
     if (fn == PartialClass) return new PartialObjectInfo(fn)
     if (fn == Concept) return new PartialObjectInfo(fn)
 
     const collectionType = PartialReflect.getPartialObjectType(fn)
-    if (collectionType == TransparentPartialClass) return new PartialClassInfo(fn)
-    if (collectionType == PartialClass) return new ExtensionGroupInfo(fn)
+    if (collectionType == PartialPojo) return new PartialPojoInfo(fn)
+    if (collectionType == PartialClass) return new PartialClassInfo(fn)
     if (collectionType == Concept) return new ConceptInfo(fn)  
     return new ClassInfo(fn)
   }
@@ -80,6 +71,7 @@ export class FunctionInfo extends Info {
   get isObject$() { return this.#es6ClassInfo.isObject$ }
   get base$() { return Info.from(this.#es6ClassInfo.base?.ctor) }
   get id$() { return this.#es6ClassInfo.id }
+  get isTransparentPartialObject$() { return false }
 
   get ctor() { return this.#ctor }
   get name() { return this.id.value }
@@ -88,10 +80,11 @@ export class FunctionInfo extends Info {
   get base() { return this.base$ }
   get isNonPublic() { return this.#es6ClassInfo.isNonPublic }
 
-  get isMemberCollection() { return this instanceof MemberCollectionInfo }
-  get isExtensionGroup() { return this instanceof ExtensionGroupInfo }
-  get isConcept() { return this instanceof ConceptInfo }
+  get isPartialObject() { return this instanceof KnownPartialClassInfo }
+  get isTransparentPartialObject() { return this.isTransparentPartialObject$ }
   get isPartialClass() { return this instanceof PartialClassInfo }
+  get isPartialPojo() { return this instanceof PartialPojoInfo }
+  get isConcept() { return this instanceof ConceptInfo }
 
   *ownExtensionGroups() {
     const groups = [...PartialClassReflect.ownExtensionGroups(this.ctor)]
@@ -199,7 +192,7 @@ export class PartialObjectInfo extends PartialFunctionInfo {
   constructor(type) {
     assert(
       type === PartialObject
-      || type == TransparentPartialClass
+      || type == PartialPojo
       || type == PartialClass
       || type == Concept
     )
@@ -215,12 +208,12 @@ export class PartialObjectInfo extends PartialFunctionInfo {
 
   filter$(member) { return false }
 }
-export class MemberCollectionInfo extends PartialFunctionInfo { 
+export class KnownPartialClassInfo extends PartialFunctionInfo { 
   #_
   #es6ClassInfo
 
   constructor(type) {
-    assert(new.target != MemberCollectionInfo)
+    assert(new.target != KnownPartialClassInfo)
 
     super(type)
     this.#es6ClassInfo = Es6Info.from(type)
@@ -232,21 +225,24 @@ export class MemberCollectionInfo extends PartialFunctionInfo {
 
   filter$(member) { return !member?.isKnown }
 }
-export class PartialClassInfo extends MemberCollectionInfo {
+export class PartialPojoInfo extends KnownPartialClassInfo {
   constructor(type) {
-    assert(type.prototype instanceof TransparentPartialClass)
+    assert(type.prototype instanceof PartialPojo)
     super(type)
   }
-  toString() { return `[partialClassInfo]` }
+  
+  get isTransparentPartialObject$() { return true }
+
+  toString() { return `[partialPojoInfo]` }
 }
-export class ExtensionGroupInfo extends MemberCollectionInfo {
+export class PartialClassInfo extends KnownPartialClassInfo {
   constructor(type) {
     assert(type.prototype instanceof PartialClass)
     super(type)
   }
-  toString() { return `[extensionGroupInfo ${this.id.toString()}]` }
+  toString() { return `[partialClassInfo ${this.id.toString()}]` }
 }
-export class ConceptInfo extends MemberCollectionInfo {
+export class ConceptInfo extends KnownPartialClassInfo {
   constructor(type) {
     assert(type.prototype instanceof Concept)
     super(type)

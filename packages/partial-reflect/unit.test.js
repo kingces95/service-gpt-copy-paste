@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { abstract } from '@kingjs/abstract'
-import { TransparentPartialClass } from '@kingjs/transparent-partial-class'
+import { PartialPojo } from '@kingjs/partial-pojo'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { 
   PartialObject, 
@@ -128,7 +128,7 @@ describe('PartialClass', () => {
     PartialClass = class PartialClass extends PartialObject { 
       static [PartialObject.OwnCollectionSymbols] = { 
         [ExtensionSymbol]: { 
-          expectedType: [PartialClass, TransparentPartialClass] 
+          expectedType: [PartialClass, PartialPojo] 
         } 
       }
     }

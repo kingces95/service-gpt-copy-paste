@@ -31,7 +31,7 @@ describe('FunctionInfo for Concept', () => {
     const concepts = fnInfo.concepts()
     expect(Array.from(concepts)).toEqual([])
   })
-  it('has PartialClassInfo base', () => {
+  it('has PartialPojoInfo base', () => {
     const ExtensionInfo = Info.PartialObject
     expect(fnInfo.base).toEqual(ExtensionInfo)
   })

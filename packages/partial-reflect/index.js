@@ -3,7 +3,7 @@ import { isPojo } from '@kingjs/pojo-test'
 import { Reflection } from '@kingjs/reflection'
 import { isAbstract } from '@kingjs/abstract'
 import { Associate } from '@kingjs/associate'
-import { TransparentPartialClass } from '@kingjs/transparent-partial-class'
+import { PartialPojo } from '@kingjs/partial-pojo'
 import { PartialObject } from '@kingjs/partial-object'
 
 const {
@@ -20,7 +20,7 @@ const {
 //    PartialReflect.getPartialObjectType(type)
 // For example, given the PartialObject defined above:
 //    PartialReflect.getPartialObjectType(MyPartial) 
-//      === TransparentPartialClass
+//      === PartialPojo
 
 // Suppose we reflect on a PartialObject defined like this:
 //    const MyPartial = PartialReflect.defineType({
@@ -67,7 +67,7 @@ const {
 // 3. PartialReflect.getHost(type, key) returns, for each member 
 //    key, the PartialObject that actually defined the key.
 
-// TransparentPartialClass PartialObject are well-known. They are transparent. 
+// PartialPojo PartialObject are well-known. They are transparent. 
 // Their members will appear to be defined by the type itself. Continuing 
 // the example:
 //    PartialReflect.extensions(MyType) yields MyType
@@ -308,7 +308,7 @@ export class PartialReflect {
   }
 
   static associateKeys$(type, collection, keys) {
-    assert(!(collection.prototype instanceof TransparentPartialClass)) 
+    assert(!(collection.prototype instanceof PartialPojo)) 
 
     for (const [key, defined] of keys) {
       Associate.lookupAdd(type, PartialReflect.HostLookup, key, collection)
@@ -317,7 +317,7 @@ export class PartialReflect {
     }
   }
   static mergeAssociations$(type, collection, keys) {
-    assert(!(collection.prototype instanceof TransparentPartialClass)) 
+    assert(!(collection.prototype instanceof PartialPojo)) 
     
     const prototypicalType = PartialReflect.getPrototypicalType$(collection)
     Associate.setCopy(type, prototypicalType, PartialReflect.Declarations)
@@ -338,8 +338,8 @@ export class PartialReflect {
       const descriptors = PartialReflect.getDescriptors(child)
       const keys = PartialReflect.defineProperties(type, descriptors)
 
-      // TransparentPartialClass members are transparent.
-      if (child.prototype instanceof TransparentPartialClass) {
+      // PartialPojo members are transparent.
+      if (child.prototype instanceof PartialPojo) {
         PartialReflect.associateKeys$(type, collection, keys)
         continue
       }
@@ -351,8 +351,8 @@ export class PartialReflect {
     const descriptors = PartialReflect.getOwnDescriptors(collection)
     const keys = PartialReflect.defineProperties(type, descriptors)
 
-    // TransparentPartialClass members are transparent.
-    if (collection.prototype instanceof TransparentPartialClass) return
+    // PartialPojo members are transparent.
+    if (collection.prototype instanceof PartialPojo) return
 
     Associate.setAdd(type, PartialReflect.Declarations, collection)
     PartialReflect.associateKeys$(type, collection, keys)
@@ -375,7 +375,7 @@ export class PartialReflect {
 
   static defineType(pojoOrType) {
     if (isPojo(pojoOrType)) {
-      const [type] = [class extends TransparentPartialClass { }]
+      const [type] = [class extends PartialPojo { }]
       const prototype = type.prototype
   
       for (const key of ownMemberKeys(pojoOrType)) {
