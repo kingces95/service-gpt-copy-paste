@@ -100,7 +100,7 @@ describe('A class with a member', () => {
         extensions[Extensions] =  { member: partialClassFn }
       })
       it('should have an own partial class', () => {
-        const partialClass = [...PartialReflect.ownCollections(extensions)]
+        const partialClass = [...PartialReflect.ownExtensions(extensions)]
         expect(partialClass).toHaveLength(1)
         expect(partialClass[0].prototype).instanceOf(TransparentPartialClass)
       })

@@ -14,7 +14,7 @@ describe('A type', () => {
     type = class { }
   })
   it('should have no declared concepts', () => {
-    const actual = [...PartialReflect.ownCollections(type)]
+    const actual = [...PartialReflect.ownExtensions(type)]
     const expected = [ ]
     expect(actual).toEqual(expected)
   })
@@ -73,7 +73,7 @@ describe('A type', () => {
         expect(type.prototype).toBeInstanceOf(MyConcept)
       })
       it('should be an own declared concept', () => {
-        const actual = [...PartialReflect.ownCollections(type)]
+        const actual = [...PartialReflect.ownExtensions(type)]
         const expected = [MyConcept]
         expect(actual).toEqual(expected)
       })
@@ -194,7 +194,7 @@ describe('A type', () => {
           expect(type.prototype.method).toBe(emptyMethod)
         })
         it('should be an own declared concept', () => {
-          const actual = [...PartialReflect.ownCollections(type)]
+          const actual = [...PartialReflect.ownExtensions(type)]
           const expected = [MyConcept]
           expect(actual).toEqual(expected)
         })

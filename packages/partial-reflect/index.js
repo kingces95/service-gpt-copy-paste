@@ -60,7 +60,7 @@ const {
 
 // PartialReflect provides methods for reflection over the resulting 
 // merged type:
-// 1. PartialReflect.collections(type) returns set of 
+// 1. PartialReflect.extensions(type) returns set of 
 //    PartialObject that contributed members to the type.
 // 2. PartialReflect.hosts(type, key) returns, for each member 
 //    key, the set of PartialObject that defined the key.
@@ -70,7 +70,7 @@ const {
 // TransparentPartialClass PartialObject are well-known. They are transparent. 
 // Their members will appear to be defined by the type itself. Continuing 
 // the example:
-//    PartialReflect.collections(MyType) yields MyType
+//    PartialReflect.extensions(MyType) yields MyType
 //    PartialReflect.hosts(MyType, 'myMethod') yields MyType
 //    PartialReflect.getHost(MyType, 'myMethod') is MyType 
 
@@ -95,7 +95,7 @@ const {
 // or
 //   static [MyPartials] = MyPartialType1
 // PartialReflect will return the associated PartialObject types:
-//   PartialReflect.ownCollections(type)
+//   PartialReflect.ownExtensions(type)
 // OwnCollectionSymbols essentially defines "edges" in the poset of partial 
 // types.
 
@@ -108,7 +108,7 @@ const {
 //   PartialReflect.merge(MyType, MyPartialType1)
 //   PartialReflect.merge(MyType, MyPartialType2)
 // then
-//   PartialReflect.collections(MyType)
+//   PartialReflect.extensions(MyType)
 // yields MyPartialType1 and MyPartialType2
 //   PartialReflect.keys(MyType)
 // yields the union of the member keys defined by MyPartialType1 and
@@ -218,7 +218,7 @@ export class PartialReflect {
     return PartialReflect.getPartialObjectType(type) != null
   }
 
-  static *ownCollections(type) {
+  static *ownExtensions(type) {
     if (PartialReflect.isPartialObject(type)) {
       yield* Associate.ownTypes(type, 
         PartialObject.OwnCollectionSymbols)
@@ -229,10 +229,10 @@ export class PartialReflect {
         { inherit: false })
     }
   }
-  static *collections(type) {
+  static *extensions(type) {
     if (PartialReflect.isPartialObject(type)) {
       const prototypicalType = PartialReflect.getPrototypicalType$(type)
-      yield* PartialReflect.collections(prototypicalType)
+      yield* PartialReflect.extensions(prototypicalType)
     }
     else {
       yield* Associate.types(type, 
@@ -334,7 +334,7 @@ export class PartialReflect {
     assert(PartialReflect.isPartialObject(collection),
       `Expected collection to indirectly extend PartialObject.`)
 
-    for (const child of PartialReflect.ownCollections(collection)) {
+    for (const child of PartialReflect.ownExtensions(collection)) {
       const descriptors = PartialReflect.getDescriptors(child)
       const keys = PartialReflect.defineProperties(type, descriptors)
 

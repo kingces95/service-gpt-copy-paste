@@ -69,13 +69,13 @@ export class ConceptReflect {
   }
 
   static *concepts(type) {
-    for (const collection of PartialReflect.collections(type)) {
+    for (const collection of PartialReflect.extensions(type)) {
       if (!ConceptReflect.isConcept(collection)) continue
       yield collection
     }
   }
   static *ownConcepts(type) {
-    for (const collection of PartialReflect.ownCollections(type)) {
+    for (const collection of PartialReflect.ownExtensions(type)) {
       if (!ConceptReflect.isConcept(collection)) continue
       yield collection
     }
@@ -87,7 +87,7 @@ export class ConceptReflect {
 
   static *associatedConcepts(type) {
     yield* ConceptReflect.ownAssociatedConcepts(type)
-    for (const concept of PartialReflect.collections(type))
+    for (const concept of PartialReflect.extensions(type))
       yield *ConceptReflect.associatedConcepts(concept)
   }
   static *ownAssociatedConcepts(type) {

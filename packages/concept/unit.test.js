@@ -42,12 +42,12 @@ describe('MyConcept', () => {
     expect(ConceptReflect.isConcept(MyConcept)).toBe(true)
   })
   it('should have no own concepts', () => {
-    const actual = [...PartialReflect.ownCollections(MyConcept)]
+    const actual = [...PartialReflect.ownExtensions(MyConcept)]
     const expected = [ ]
     expect(actual).toEqual(expected)
   })
   it('should have not inherited concepts', () => {
-    const actual = [...PartialReflect.collections(MyConcept)]
+    const actual = [...PartialReflect.extensions(MyConcept)]
     const expected = [ ]
     expect(actual).toEqual(expected)
   })
