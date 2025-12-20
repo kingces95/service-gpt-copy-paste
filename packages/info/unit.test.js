@@ -4,11 +4,12 @@ import { Info, FunctionInfo } from "@kingjs/info"
 import { Concept } from '@kingjs/concept'
 import { PartialClass } from '@kingjs/partial-class'
 import { PartialReflect } from '@kingjs/partial-reflect'
+import { PartialPojo } from '@kingjs/partial-pojo'
 import { } from "@kingjs/info-to-pojo"
 
 import { abstract } from '@kingjs/abstract'
 
-describe('FunctionInfo for Object', () => {
+describe('Object', () => {
   let fnInfo
   beforeEach(() => {
     fnInfo = Info.from(Object)
@@ -22,6 +23,30 @@ describe('FunctionInfo for Object', () => {
   it('does not have a member missing', () => {
     expect(fnInfo.getOwnInstanceMember('missing')).toBeNull()
     expect(FunctionInfo.getInstanceMember(fnInfo, 'missing')).toBeNull()
+  })
+  describe('static operations', () => {
+    it('should have no static member missing', () => {
+      expect(FunctionInfo.getStaticMember(fnInfo, 'missing')).toBeNull()
+    })
+    it('should have no instance member missing', () => {
+      expect(FunctionInfo.getInstanceMember(fnInfo, 'missing')).toBeNull()
+    })
+
+    // list of static members that take type and yield results
+    describe.each([
+      ['instanceMembers', FunctionInfo.instanceMembers],
+      ['staticMembers', FunctionInfo.staticMembers],
+      ['members', FunctionInfo.members],
+      ['concepts', FunctionInfo.concepts],
+      ['partialClasses', FunctionInfo.partialClasses],
+      ['associatedConcepts', FunctionInfo.associatedConcepts],
+    ])('%s', (name, method) => {
+      it('should yield the same results as the instance operation', () => {
+        const staticResults = [...method(fnInfo)]
+        const instanceResults = [...fnInfo[method.name]()]
+        expect(staticResults).toEqual(instanceResults)
+      })
+    })
   })
   describe('has a toString member', () => {
     let toStringMember
@@ -64,7 +89,7 @@ describe('FunctionInfo for Object', () => {
 
 const MySymbol = Symbol('test-symbol')
 
-describe('FunctionInfo for Function', () => {
+describe('Function', () => {
   let fnInfo
   beforeEach(() => {
     fnInfo = Info.from(Function)
@@ -75,6 +100,9 @@ describe('FunctionInfo for Function', () => {
   it('should have Object as base', () => {
     const objectInfo = Info.Object
     expect(fnInfo.base.equals(objectInfo)).toBe(true)
+  })
+  it('should not be a partial object', () => {
+    expect(fnInfo.isPartialObject).toBe(false)
   })
   describe('static members', () => {
     let staticMembers
@@ -98,37 +126,97 @@ describe('FunctionInfo for Function', () => {
   })
 })
 
-describe('My concept', () => {
-  let myConcept
+describe('PartialPojo', () => {
+  let partialPojoInfo
   beforeEach(() => {
-    myConcept = class MyConcept extends Concept { }
+    partialPojoInfo = Info.from(PartialPojo)
+  })
+  it('should be a PartialPojo', () => {
+    expect(partialPojoInfo.isPartialPojo).toBe(false)
+  })
+  it('should be transparent', () => {
+    expect(partialPojoInfo.isTransparentPartialObject).toBe(false)
+  })
+  it('should be a partial object', () => {
+    expect(partialPojoInfo.isPartialObject).toBe(false)
+  })
+})
+
+describe('PartialClass', () => {
+  let partialClassInfo
+  beforeEach(() => {
+    partialClassInfo = Info.from(PartialClass)
+  })
+  it('should be a PartialClass', () => {
+    expect(partialClassInfo.isPartialClass).toBe(false)
+  })
+  it('should be a partial object', () => {
+    expect(partialClassInfo.isPartialObject).toBe(false)
+  })
+})
+
+describe('Concept', () => {
+  let conceptInfo
+  beforeEach(() => {
+    conceptInfo = Info.from(Concept)
+  })
+  it('should be a Concept', () => {
+    expect(conceptInfo.isConcept).toBe(false)
+  })  
+  it('should be a partial object', () => {
+    expect(conceptInfo.isPartialObject).toBe(false)
+  })
+})
+
+describe('MyConcept', () => {
+  let myConceptInfo
+  beforeEach(() => {
+    const myConcept = class MyConcept extends Concept { }
+    myConceptInfo = Info.from(myConcept)
   })
   it('has a toString of MyConcept', () => {
-    const conceptInfo = Info.from(myConcept)
-    expect(conceptInfo.toString()).toBe('[conceptInfo MyConcept]')
+    expect(myConceptInfo.toString()).toBe('[conceptInfo MyConcept]')
   })
 })
 
-describe('My PartialClass', () => {
-  let myPartialClass
+describe('MyPartialClass', () => {
+  let myPartialClassInfo
   beforeEach(() => {
-    myPartialClass = class MyPartialClass extends PartialClass { }
+    const myPartialClass = class MyPartialClass extends PartialClass { }
+    myPartialClassInfo = Info.from(myPartialClass)
   })
   it('has a toString of MyExtensionGroup', () => {
-    const extensionGroupInfo = Info.from(myPartialClass)
-    expect(extensionGroupInfo.toString()).toBe('[partialClassInfo MyPartialClass]')
+    expect(myPartialClassInfo.toString())
+      .toBe('[partialClassInfo MyPartialClass]')
+  })
+  it('should not be transparent', () => {
+    expect(myPartialClassInfo.isTransparentPartialObject).toBe(false)
   })
 })
 
-describe('My TransparentPartialObject', () => {
-  let myTransparentPartialObject
+describe('MyPartialPojo', () => {
+  let myPartialPojoInfo
   beforeEach(() => {
     const pojo = { }
-    myTransparentPartialObject = PartialReflect.defineType(pojo)
+    const myPojo = PartialReflect.defineType(pojo)
+    myPartialPojoInfo = Info.from(myPojo)
   })
   it('has a toString of MyPartialClass', () => {
-    const partialClassInfo = Info.from(myTransparentPartialObject)
-    expect(partialClassInfo.toString()).toBe('[partialPojoInfo]')
+    expect(myPartialPojoInfo.toString()).toBe('[partialPojoInfo]')
+  })
+  it('should be transparent', () => {
+    expect(myPartialPojoInfo.isTransparentPartialObject).toBe(true)
+  })
+})
+
+describe('MyClass', () => {
+  let myClassInfo
+  beforeEach(() => {
+    const myClass = class MyClass { }
+    myClassInfo = Info.from(myClass)
+  })
+  it('has a toString of MyClass', () => {
+    expect(myClassInfo.toString()).toBe('[classInfo MyClass]')
   })
 })
 

@@ -86,11 +86,16 @@ export class ConceptReflect {
   }
 
   static *associatedConcepts(type) {
+    const map = new Map()
+    
     yield* ConceptReflect.ownAssociatedConcepts(type)
     for (const concept of PartialReflect.extensions(type))
       yield *ConceptReflect.associatedConcepts(concept)
   }
   static *ownAssociatedConcepts(type) {
+    if (!ConceptReflect.isConcept(type))
+      return
+
     for (const name of ownStaticMemberKeys(type)) {
       if (KnownStaticMembers.has(name)) continue
 

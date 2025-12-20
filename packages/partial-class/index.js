@@ -28,14 +28,14 @@ export class PartialClassReflect {
     return collectionType == PartialClass
   }
 
-  static *extensionGroups(type) {
+  static *partialClasses(type) {
     for (const collection of PartialReflect.extensions(type)) {
       const collectionType = PartialReflect.getPartialObjectType(collection)
       if (collectionType != PartialClass) continue
       yield collection
     }
   }
-  static *ownExtensionGroups(type) {
+  static *ownPartialClasses(type) {
     for (const collection of PartialReflect.ownExtensions(type)) {
       if (!PartialClassReflect.isPartialClass(collection)) continue 
       yield collection
