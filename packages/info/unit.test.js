@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Info, FunctionInfo } from "@kingjs/info"
 import { Concept } from '@kingjs/concept'
+import { PartialObject } from '@kingjs/partial-object'
 import { PartialClass } from '@kingjs/partial-class'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { PartialPojo } from '@kingjs/partial-pojo'
@@ -20,34 +21,7 @@ describe('Object', () => {
   it('does not equal null', () => {
     expect(fnInfo.equals(null)).toBe(false)
   })
-  it('does not have a member missing', () => {
-    expect(fnInfo.getOwnInstanceMember('missing')).toBeNull()
-    expect(FunctionInfo.getInstanceMember(fnInfo, 'missing')).toBeNull()
-  })
-  describe('static operations', () => {
-    it('should have no static member missing', () => {
-      expect(FunctionInfo.getStaticMember(fnInfo, 'missing')).toBeNull()
-    })
-    it('should have no instance member missing', () => {
-      expect(FunctionInfo.getInstanceMember(fnInfo, 'missing')).toBeNull()
-    })
 
-    // list of static members that take type and yield results
-    describe.each([
-      ['instanceMembers', FunctionInfo.instanceMembers],
-      ['staticMembers', FunctionInfo.staticMembers],
-      ['members', FunctionInfo.members],
-      ['concepts', FunctionInfo.concepts],
-      ['partialClasses', FunctionInfo.partialClasses],
-      ['associatedConcepts', FunctionInfo.associatedConcepts],
-    ])('%s', (name, method) => {
-      it('should yield the same results as the instance operation', () => {
-        const staticResults = [...method(fnInfo)]
-        const instanceResults = [...fnInfo[method.name]()]
-        expect(staticResults).toEqual(instanceResults)
-      })
-    })
-  })
   describe('has a toString member', () => {
     let toStringMember
     beforeEach(() => {
@@ -102,7 +76,13 @@ describe('Function', () => {
     expect(fnInfo.base.equals(objectInfo)).toBe(true)
   })
   it('should not be a partial object', () => {
-    expect(fnInfo.isPartialObject).toBe(false)
+    expect(fnInfo.isAbstract).toBe(false)
+  })
+  it('should not be subclass of itself', () => {
+    expect(fnInfo.isSubclassOf(fnInfo)).toBe(false)
+  })
+  it('should not be transparent', () => {
+    expect(fnInfo.isTransparentPartialObject).toBe(false)
   })
   describe('static members', () => {
     let staticMembers
@@ -126,99 +106,333 @@ describe('Function', () => {
   })
 })
 
-describe('PartialPojo', () => {
-  let partialPojoInfo
-  beforeEach(() => {
-    partialPojoInfo = Info.from(PartialPojo)
-  })
-  it('should be a PartialPojo', () => {
-    expect(partialPojoInfo.isPartialPojo).toBe(false)
-  })
-  it('should be transparent', () => {
-    expect(partialPojoInfo.isTransparentPartialObject).toBe(false)
-  })
-  it('should be a partial object', () => {
-    expect(partialPojoInfo.isPartialObject).toBe(false)
-  })
-})
-
 describe('PartialClass', () => {
-  let partialClassInfo
-  beforeEach(() => {
-    partialClassInfo = Info.from(PartialClass)
+  const info = Info.from(PartialClass)
+  it('should not have an own constructor member', () => {
+    const ctorMember = info.getOwnInstanceMember('constructor')
+    expect(ctorMember).toBeNull()
   })
-  it('should be a PartialClass', () => {
-    expect(partialClassInfo.isPartialClass).toBe(false)
+  it('should not have a constructor member', () => {
+    const ctorMember = info.getInstanceMember('constructor')
+    expect(ctorMember).toBeNull()
   })
-  it('should be a partial object', () => {
-    expect(partialClassInfo.isPartialObject).toBe(false)
+  it('should not have an own name member', () => {
+    const nameMember = info.getOwnStaticMember('name')
+    expect(nameMember).toBeNull()
   })
-})
-
-describe('Concept', () => {
-  let conceptInfo
-  beforeEach(() => {
-    conceptInfo = Info.from(Concept)
-  })
-  it('should be a Concept', () => {
-    expect(conceptInfo.isConcept).toBe(false)
-  })  
-  it('should be a partial object', () => {
-    expect(conceptInfo.isPartialObject).toBe(false)
+  it('should not have a name member', () => {
+    const nameMember = info.getStaticMember('name')
+    expect(nameMember).toBeNull()
   })
 })
 
-describe('MyConcept', () => {
-  let myConceptInfo
-  beforeEach(() => {
-    const myConcept = class MyConcept extends Concept { }
-    myConceptInfo = Info.from(myConcept)
-  })
-  it('has a toString of MyConcept', () => {
-    expect(myConceptInfo.toString()).toBe('[conceptInfo MyConcept]')
-  })
-})
+const PartialObjectMd = {
+  create: () => PartialObject,
+  toString: '[knownPartialObjectInfo PartialObject]',
+  isTransparent: false,
+  isAbstract: true,
+  isPartialPojoSubClass: false,
+  isPartialClassSubclass: false,
+  isConceptSubclass: false,
+  isAnonymous: false,
+  base: null,
+}
 
-describe('MyPartialClass', () => {
-  let myPartialClassInfo
-  beforeEach(() => {
-    const myPartialClass = class MyPartialClass extends PartialClass { }
-    myPartialClassInfo = Info.from(myPartialClass)
-  })
-  it('has a toString of MyExtensionGroup', () => {
-    expect(myPartialClassInfo.toString())
-      .toBe('[partialClassInfo MyPartialClass]')
-  })
-  it('should not be transparent', () => {
-    expect(myPartialClassInfo.isTransparentPartialObject).toBe(false)
-  })
-})
+const PartialPojoMd = {
+  create: () => PartialPojo,
+  toString: '[knownPartialObjectInfo PartialPojo]',
+  isTransparent: false,
+  isAbstract: true,
+  isPartialPojoSubClass: false,
+  isPartialClassSubclass: false,
+  isConceptSubclass: false,
+  isAnonymous: false,
+  base: PartialObject,
+}
 
-describe('MyPartialPojo', () => {
-  let myPartialPojoInfo
-  beforeEach(() => {
+const PartialClassMd = {
+  create: () => PartialClass,
+  toString: '[knownPartialObjectInfo PartialClass]',
+  isTransparent: false,
+  isAbstract: true,
+  isPartialPojoSubClass: false,
+  isPartialClassSubclass: false,
+  isConceptSubclass: false,
+  isAnonymous: false,
+  base: PartialObject,
+}
+
+const ConceptMd = {
+  create: () => Concept,
+  toString: '[knownPartialObjectInfo Concept]',
+  isTransparent: false,
+  isAbstract: true,
+  isPartialPojoSubClass: false,
+  isPartialClassSubclass: false,
+  isConceptSubclass: false,
+  isAnonymous: false,
+  base: PartialObject,
+}
+
+const MyPartialPojoMd = {
+  create: () => {
     const pojo = { }
-    const myPojo = PartialReflect.defineType(pojo)
-    myPartialPojoInfo = Info.from(myPojo)
-  })
-  it('has a toString of MyPartialClass', () => {
-    expect(myPartialPojoInfo.toString()).toBe('[partialPojoInfo]')
-  })
-  it('should be transparent', () => {
-    expect(myPartialPojoInfo.isTransparentPartialObject).toBe(true)
+    return PartialReflect.defineType(pojo)
+  },
+  toString: '[partialPojoInfo]',
+  isTransparent: true,
+  isAbstract: true,
+  isPartialPojoSubClass: true,
+  isPartialClassSubclass: false,
+  isConceptSubclass: false,
+  isAnonymous: true,
+  base: PartialPojo,
+}
+
+const MyPartialClassMd = {
+  create: () => {
+    return class MyPartialClass extends PartialClass { }
+  },
+  toString: '[partialClassInfo MyPartialClass]',
+  isTransparent: false,
+  isAbstract: true,
+  isPartialPojoSubClass: false,
+  isPartialClassSubclass: true,
+  isConceptSubclass: false,
+  isAnonymous: false,
+  base: PartialClass,
+}
+
+const MyConceptMd = {
+  create: () => {
+    return class MyConcept extends Concept { }
+  },
+  toString: '[conceptInfo MyConcept]',
+  isTransparent: false,
+  isAbstract: true,
+  isPartialPojoSubClass: false,
+  isPartialClassSubclass: false,
+  isConceptSubclass: true,
+  isAnonymous: false,
+  base: Concept,
+}
+
+const Es6Object = {
+  create: () => Object,
+  toString: '[classInfo Object]',
+  isTransparent: false,
+  isAbstract: false,
+  isPartialPojoSubClass: false,
+  isPartialClassSubclass: false,
+  isConceptSubclass: false,
+  isAnonymous: false,
+  ownInstanceMembers: [ 
+    "constructor",
+    "__defineGetter__",
+    "__defineSetter__",
+    "hasOwnProperty",
+    "__lookupGetter__",
+    "__lookupSetter__",
+    "isPrototypeOf",
+    "propertyIsEnumerable",
+    "toString",
+    "valueOf",
+    "toLocaleString",
+  ],
+  ownStaticMembers: [ 
+    "length",
+    "name",
+    "prototype",
+    "assign",
+    "getOwnPropertyDescriptor",
+    "getOwnPropertyDescriptors",
+    "getOwnPropertyNames",
+    "getOwnPropertySymbols",
+    "hasOwn",
+    "is",
+    "preventExtensions",
+    "seal",
+    "create",
+    "defineProperties",
+    "defineProperty",
+    "freeze",
+    "getPrototypeOf",
+    "setPrototypeOf",
+    "isExtensible",
+    "isFrozen",
+    "isSealed",
+    "keys",
+    "entries",
+    "fromEntries",
+    "values",
+    "groupBy",    
+  ],
+  instanceMembers: [ 
+    "constructor",
+    "__defineGetter__",
+    "__defineSetter__",
+    "hasOwnProperty",
+    "__lookupGetter__",
+    "__lookupSetter__",
+    "isPrototypeOf",
+    "propertyIsEnumerable",
+    "toString",
+    "valueOf",
+    "toLocaleString",
+  ],
+  staticMembers: [ 
+    "length",
+    "name",
+    "prototype",
+    "assign",
+    "getOwnPropertyDescriptor",
+    "getOwnPropertyDescriptors",
+    "getOwnPropertyNames",
+    "getOwnPropertySymbols",
+    "hasOwn",
+    "is",
+    "preventExtensions",
+    "seal",
+    "create",
+    "defineProperties",
+    "defineProperty",
+    "freeze",
+    "getPrototypeOf",
+    "setPrototypeOf",
+    "isExtensible",
+    "isFrozen",
+    "isSealed",
+    "keys",
+    "entries",
+    "fromEntries",
+    "values",
+    "groupBy",        
+  ],
+  base: null,
+}
+
+const MyClassMd = {
+  create: () => {
+    return class MyClass { }
+  },
+  toString: '[classInfo MyClass]',
+  isTransparent: false,
+  isAbstract: false,
+  isPartialPojoSubClass: false,
+  isPartialClassSubclass: false,
+  isConceptSubclass: false,
+  isAnonymous: false,
+  ownInstanceMembers: [ 'constructor' ],
+  ownStaticMembers: [ 'length', 'name', 'prototype' ],
+  instanceMembers: [ 
+    "constructor",
+    "__defineGetter__",
+    "__defineSetter__",
+    "hasOwnProperty",
+    "__lookupGetter__",
+    "__lookupSetter__",
+    "isPrototypeOf",
+    "propertyIsEnumerable",
+    "toString",
+    "valueOf",
+    "toLocaleString",
+  ],
+  staticMembers: [ 'length', 'name', 'prototype' ],
+  base: Object,
+}
+
+describe('Given', () => {
+  describe.each([
+    ['Es6Object', Es6Object],
+    ['PartialObject', PartialObjectMd],
+    ['PartialPojo', PartialPojoMd],
+    ['PartialClass',  PartialClassMd],
+    ['Concept', ConceptMd],
+    ['MyPartialPojo', MyPartialPojoMd],
+    ['MyPartialClass', MyPartialClassMd],
+    ['MyConcept', MyConceptMd],
+    ['MyClass', MyClassMd],
+    ])('%s', (_, md) => {
+    let info
+    beforeEach(() => {
+      info = Info.from(md.create())
+    })
+    it('should have have expected predicates', () => {
+      expect(info.isPartialPojoSubClass).toBe(md.isPartialPojoSubClass)
+      expect(info.isAbstract).toBe(md.isAbstract)
+      expect(info.isTransparentPartialObject).toBe(md.isTransparent)
+      expect(info.isPartialClassSubclass).toBe(md.isPartialClassSubclass)
+      expect(info.isConceptSubclass).toBe(md.isConceptSubclass)
+      expect(info.isAnonymous).toBe(md.isAnonymous)
+    })
+    it('should have expected toString', () => {
+      expect(info.toString()).toBe(md.toString)
+    })
+    it('should have matching base', () => {
+      const expectedBase = md.base
+      const base = info.base?.ctor ?? null
+      expect(base).toBe(expectedBase)
+  
+      if (!base) return
+      const baseInfo = Info.from(base)
+      expect(info.base.equals(baseInfo)).toBe(true)
+    })
+    it('should be subclass of its base', () => {
+      const expectedBase = md.base
+      if (!expectedBase) return
+      const baseInfo = Info.from(expectedBase)
+      expect(info.isSubclassOf(baseInfo)).toBe(true)
+    })
+    it('should have matching own instance members', () => {
+      const expected = md.ownInstanceMembers ?? []
+      const members = [...info.ownInstanceMembers()].map(m => m.name)
+      expect(new Set(members)).toEqual(new Set(expected))
+    })
+    it('should have matching own static members', () => {
+      const expected = md.ownStaticMembers ?? []
+      const members = [...info.ownStaticMembers()].map(m => m.name)
+      expect(new Set(members)).toEqual(new Set(expected))
+    })
+    it('should have matching instance members', () => {
+      const expected = md.instanceMembers ?? []
+      const members = [...info.instanceMembers()].map(m => m.name)
+      expect(new Set(members)).toEqual(new Set(expected))
+  
+      for (const member of members)
+        expect(info.getInstanceMember(member)).not.toBeNull()
+    })
+    it('should have matching static members', () => {
+      const expected = md.staticMembers ?? []
+      const members = [...info.staticMembers()].map(m => m.name)
+      expect(new Set(members)).toEqual(new Set(expected))
+  
+      for (const member of members)
+        expect(info.getStaticMember(member)).not.toBeNull()
+    })
+    it('should have expected members', () => {
+      const expected = [
+        ...md.instanceMembers ?? [],
+        ...md.staticMembers ?? []]
+      const members = [...info.members()].map(m => m.name)
+      expect(new Set(members)).toEqual(new Set(expected))
+    })
+    it('should have own members as union of own static and own instance', () => {
+      const expected = [
+        ...md.ownInstanceMembers ?? [],
+        ...md.ownStaticMembers ?? []]
+      const members = [...info.ownMembers()].map(m => m.name)
+      expect(new Set(members)).toEqual(new Set(expected))
+    })
+    it('should have members as union of static and instance', () => {
+      const expected = [
+        ...md.instanceMembers ?? [],
+        ...md.staticMembers ?? []]
+      const members = [...info.members()].map(m => m.name)
+      expect(new Set(members)).toEqual(new Set(expected))
+    })
   })
 })
 
-describe('MyClass', () => {
-  let myClassInfo
-  beforeEach(() => {
-    const myClass = class MyClass { }
-    myClassInfo = Info.from(myClass)
-  })
-  it('has a toString of MyClass', () => {
-    expect(myClassInfo.toString()).toBe('[classInfo MyClass]')
-  })
-})
 
 describe('A member', () => {
   describe.each([
@@ -364,6 +578,10 @@ describe('A bespoke class', () => {
         base: 'Object'
       }
       const fnInfo = Info.from(myClass)
+
+      // expect base to be object
+      expect(fnInfo.base.ctor).toBe(Object)
+
       const actual = await fnInfo.toPojo(pojoFilter)
       expect(actual).toEqual(pojo)
     })

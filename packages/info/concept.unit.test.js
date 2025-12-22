@@ -25,7 +25,7 @@ describe('FunctionInfo for Concept', () => {
     expect(!fnInfo.isPartialObject).toBe(true)
   })
   it('is a concept', () => {
-    expect(fnInfo.isConcept).toBe(false)
+    expect(fnInfo.isConceptSubclass).toBe(false)
   })
   it('has no declared or inherited concepts', () => {
     const concepts = fnInfo.concepts()
@@ -63,7 +63,7 @@ describe('A concept', () => {
         fnInfo = Info.from(cls)
       })
       it('is a concept', () => {
-        expect(fnInfo.isConcept).toBe(true)
+        expect(fnInfo.isConceptSubclass).toBe(true)
       })
       describe.each([
         'toString',
