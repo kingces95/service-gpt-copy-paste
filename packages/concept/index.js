@@ -18,17 +18,17 @@ const {
   isExtensionOf,
 } = Reflection
 
-export const Concepts = Symbol('Concept.Concepts')
+export const Implements = Symbol('Concept.Implements')
 
 const KnownStaticMembers = new Set([
   Extends,
-  Concepts,
+  Implements,
 ])
 
 export class Concept extends PartialObject {
   static [PartialObject.OwnCollectionSymbols] = {
     ...PartialClass[PartialObject.OwnCollectionSymbols],
-    [Concepts]: { expectedType: Concept },
+    [Implements]: { expectedType: Concept },
   }
 
   // `myInstance instanceof myConcept` tests if an instance satsifies a concept.
@@ -69,13 +69,13 @@ export class ConceptReflect {
   }
 
   static *concepts(type) {
-    for (const collection of PartialReflect.extensions(type)) {
+    for (const collection of PartialReflect.partialObjects(type)) {
       if (!ConceptReflect.isConcept(collection)) continue
       yield collection
     }
   }
   static *ownConcepts(type) {
-    for (const collection of PartialReflect.ownExtensions(type)) {
+    for (const collection of PartialReflect.ownPartialObjects(type)) {
       if (!ConceptReflect.isConcept(collection)) continue
       yield collection
     }
@@ -89,7 +89,7 @@ export class ConceptReflect {
     const map = new Map()
     
     yield* ConceptReflect.ownAssociatedConcepts(type)
-    for (const concept of PartialReflect.extensions(type))
+    for (const concept of PartialReflect.partialObjects(type))
       yield *ConceptReflect.associatedConcepts(concept)
   }
   static *ownAssociatedConcepts(type) {

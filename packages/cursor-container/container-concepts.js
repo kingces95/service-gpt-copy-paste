@@ -1,4 +1,4 @@
-import { Concept, Concepts } from '@kingjs/concept'
+import { Concept, Implements } from '@kingjs/concept'
 import {
   CursorConcept,
   InputCursorConcept,
@@ -17,34 +17,34 @@ export class ContainerConcept extends Concept {
     toRange() { return new Range(this.begin(), this.end()) },
     get isEmpty() { return this.begin().equals(this.end()) }
   }
-  static [Concepts] = [ RangeConcept ]
+  static [Implements] = [ RangeConcept ]
   static cursorType = CursorConcept
 
   get begin() { }
   get end() { }
 }
 export class InputContainerConcept extends Concept {
-  static [Concepts] = [ ContainerConcept ]
+  static [Implements] = [ ContainerConcept ]
   static cursorType = InputCursorConcept
 }
 export class OutputContainerConcept extends Concept {
-  static [Concepts] = [ ContainerConcept ]
+  static [Implements] = [ ContainerConcept ]
   static cursorType = OutputCursorConcept
 }
 export class ForwardContainerConcept extends Concept {
-  static [Concepts] = [ InputContainerConcept ]
+  static [Implements] = [ InputContainerConcept ]
   static cursorType = ForwardCursorConcept
 }
 export class BidirectionalContainerConcept extends Concept {
-  static [Concepts] = [ ForwardContainerConcept ]
+  static [Implements] = [ ForwardContainerConcept ]
   static cursorType = BidirectionalCursorConcept
 }
 export class RandomAccessContainerConcept extends Concept {
-  static [Concepts] = [ BidirectionalContainerConcept ]
+  static [Implements] = [ BidirectionalContainerConcept ]
   static cursorType = RandomAccessCursorConcept
 }
 export class ContiguousContainerConcept extends Concept {
-  static [Concepts] = [ RandomAccessContainerConcept ]
+  static [Implements] = [ RandomAccessContainerConcept ]
   static cursorType = ContiguousCursorConcept
 }
 

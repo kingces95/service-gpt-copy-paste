@@ -8,8 +8,8 @@
 
 //   const extensions = [
 //     ...concepts(type),
-//     ...extensions(type)
+//     ...partialObjects(type)
 //   ]
 
-//   extend(type, ...extensions)
+//   extend(type, ...partialObjects)
 // }

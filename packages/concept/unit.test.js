@@ -3,7 +3,7 @@ import { beforeEach } from 'vitest'
 import { PartialObject } from '@kingjs/partial-object'
 import { PartialClass, Extends } from '@kingjs/partial-class'
 import { PartialReflect } from '@kingjs/partial-reflect'
-import { Concept, Concepts, ConceptReflect } from '@kingjs/concept'
+import { Concept, Implements, ConceptReflect } from '@kingjs/concept'
 import { abstract } from '@kingjs/abstract'
 
 describe('Concept', () => {
@@ -42,12 +42,12 @@ describe('MyConcept', () => {
     expect(ConceptReflect.isConcept(MyConcept)).toBe(true)
   })
   it('should have no own concepts', () => {
-    const actual = [...PartialReflect.ownExtensions(MyConcept)]
+    const actual = [...PartialReflect.ownPartialObjects(MyConcept)]
     const expected = [ ]
     expect(actual).toEqual(expected)
   })
   it('should have not inherited concepts', () => {
-    const actual = [...PartialReflect.extensions(MyConcept)]
+    const actual = [...PartialReflect.partialObjects(MyConcept)]
     const expected = [ ]
     expect(actual).toEqual(expected)
   })
@@ -101,7 +101,7 @@ describe('MyConcept', () => {
       MyConcept[Extends] = [ MyPartialClass ]
 
       MySubConcept = class MySubConcept extends Concept { }
-      MyConcept[Concepts] = [ MySubConcept ]
+      MyConcept[Implements] = [ MySubConcept ]
     })
     it('should have inherited concepts', () => {
       const actual = [...ConceptReflect.concepts(MyConcept)]

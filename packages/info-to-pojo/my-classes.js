@@ -2,7 +2,7 @@ import { abstract } from "@kingjs/abstract"
 import { PartialClass, Extends } from "@kingjs/partial-class"
 import { extend } from "@kingjs/extend"
 import { implement } from "@kingjs/implement"
-import { Concept, Concepts } from "@kingjs/concept"
+import { Concept, Implements } from "@kingjs/concept"
 
 const MySymbol = Symbol.for('my-symbol')
 const MyStaticSymbol = Symbol.for('my-static-symbol')
@@ -11,17 +11,17 @@ export class MyBaseConcept extends Concept {
   myBaseConceptMethod() { } 
 }
 export class MyLeftConcept extends Concept { 
-  static [Concepts] = MyBaseConcept
+  static [Implements] = MyBaseConcept
   myLeftConceptMethod() { } 
   myAmbidextrousMethod() { }
 }
 export class MyRightConcept extends Concept {
-  static [Concepts] = MyBaseConcept
+  static [Implements] = MyBaseConcept
   myRightConceptMethod() { } 
   myAmbidextrousMethod() { }
 }
 export class MyConcept extends Concept {
-  static [Concepts] = [ MyLeftConcept, MyRightConcept ]
+  static [Implements] = [ MyLeftConcept, MyRightConcept ]
   myConceptMethod() { }
 }
 

@@ -1,6 +1,5 @@
-import { Concept } from '@kingjs/concept'
-import { PartialClass } from '@kingjs/partial-class'
-import { Extends } from '@kingjs/partial-class'
+import { Concept, Implements } from '@kingjs/concept'
+import { PartialClass, Extends } from '@kingjs/partial-class'
 import { Preconditions } from '@kingjs/debug-proxy'
 import { throwNotEquatableTo } from './throw.js'
 
@@ -19,31 +18,38 @@ export class CursorConcept extends Concept {
   equatableTo(other) { }
 }
 
-export class InputCursorConcept extends CursorConcept {
+export class InputCursorConcept extends Concept {
+  static [Implements] = CursorConcept
   get value() { }
 }
 
-export class OutputCursorConcept extends CursorConcept {
+export class OutputCursorConcept extends Concept {
+  static [Implements] = CursorConcept
   set value(value) { }
 }
 
-export class ForwardCursorConcept extends CursorConcept {
+export class ForwardCursorConcept extends Concept {
+  static [Implements] = CursorConcept
   clone() { }
 }
 
-export class BidirectionalCursorConcept extends ForwardCursorConcept {
+export class BidirectionalCursorConcept extends Concept {
+  static [Implements] = ForwardCursorConcept
   stepBack() { }
 }
 
-export class RandomAccessCursorConcept extends BidirectionalCursorConcept {
-  static [Preconditions] = class extends BidirectionalCursorConcept[Preconditions] {
-    compareTo(other) {
-      if (!this.equatableTo(other)) throwNotEquatableTo(other)
+export class RandomAccessCursorConcept extends Concept {
+  static [Implements] = BidirectionalCursorConcept
+
+  static [Preconditions] = 
+    class extends BidirectionalCursorConcept[Preconditions] {
+      compareTo(other) {
+        if (!this.equatableTo(other)) throwNotEquatableTo(other)
+      }
+      subtract(other) {
+        if (!this.equatableTo(other)) throwNotEquatableTo(other)
+      }
     }
-    subtract(other) {
-      if (!this.equatableTo(other)) throwNotEquatableTo(other)
-    }
-  }
 
   move(offset) { }
   at(offset) { }
@@ -52,12 +58,15 @@ export class RandomAccessCursorConcept extends BidirectionalCursorConcept {
   subtract(other) { }
 }
 
-export class ContiguousCursorConcept extends RandomAccessCursorConcept {
-  static [Preconditions] = class extends RandomAccessCursorConcept[Preconditions] {
-    data(other) {
-      if (!this.equatableTo(other)) throwNotEquatableTo(other)
+export class ContiguousCursorConcept extends Concept {
+  static [Implements] = RandomAccessCursorConcept
+
+  static [Preconditions] = 
+    class extends RandomAccessCursorConcept[Preconditions] {
+      data(other) {
+        if (!this.equatableTo(other)) throwNotEquatableTo(other)
+      }
     }
-  }
 
   static [Extends] = {
     read(length = 1, signed = false, littleEndian = false) {

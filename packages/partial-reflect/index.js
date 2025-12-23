@@ -60,7 +60,7 @@ const {
 
 // PartialReflect provides methods for reflection over the resulting 
 // merged type:
-// 1. PartialReflect.extensions(type) returns set of 
+// 1. PartialReflect.partialObjects(type) returns set of 
 //    PartialObject that contributed members to the type.
 // 2. PartialReflect.hosts(type, key) returns, for each member 
 //    key, the set of PartialObject that defined the key.
@@ -70,7 +70,7 @@ const {
 // PartialPojo PartialObject are well-known. They are transparent. 
 // Their members will appear to be defined by the type itself. Continuing 
 // the example:
-//    PartialReflect.extensions(MyType) yields MyType
+//    PartialReflect.partialObjects(MyType) yields MyType
 //    PartialReflect.hosts(MyType, 'myMethod') yields MyType
 //    PartialReflect.getHost(MyType, 'myMethod') is MyType 
 
@@ -95,7 +95,7 @@ const {
 // or
 //   static [MyPartials] = MyPartialType1
 // PartialReflect will return the associated PartialObject types:
-//   PartialReflect.ownExtensions(type)
+//   PartialReflect.ownPartialObjects(type)
 // OwnCollectionSymbols essentially defines "edges" in the poset of partial 
 // types.
 
@@ -108,7 +108,7 @@ const {
 //   PartialReflect.merge(MyType, MyPartialType1)
 //   PartialReflect.merge(MyType, MyPartialType2)
 // then
-//   PartialReflect.extensions(MyType)
+//   PartialReflect.partialObjects(MyType)
 // yields MyPartialType1 and MyPartialType2
 //   PartialReflect.keys(MyType)
 // yields the union of the member keys defined by MyPartialType1 and
@@ -186,10 +186,10 @@ export class PartialReflect {
     // is a stand-in for the PartialObject but what we have so far
     // is a class that is merged with the PartialObject. The difference
     // being that a stand-in would not be associated with the member 
-    // collection itself. So we need to remove the association that
+    // partialObject itself. So we need to remove the association that
     // points back to the PartialObject itself.
 
-    // HACK: Remove the collection from the Declarations set.
+    // HACK: Remove the partialObject from the Declarations set.
     Associate.setDelete(
       prototypicalType, 
       PartialReflect.Declarations, 
@@ -218,7 +218,7 @@ export class PartialReflect {
     return PartialReflect.getPartialObjectType(type) != null
   }
 
-  static *ownExtensions(type) {
+  static *ownPartialObjects(type) {
     if (PartialReflect.isPartialObject(type)) {
       yield* Associate.ownTypes(type, 
         PartialObject.OwnCollectionSymbols)
@@ -229,10 +229,10 @@ export class PartialReflect {
         { inherit: false })
     }
   }
-  static *extensions(type) {
+  static *partialObjects(type) {
     if (PartialReflect.isPartialObject(type)) {
       const prototypicalType = PartialReflect.getPrototypicalType$(type)
-      yield* PartialReflect.extensions(prototypicalType)
+      yield* PartialReflect.partialObjects(prototypicalType)
     }
     else {
       yield* Associate.types(type, 
@@ -307,19 +307,19 @@ export class PartialReflect {
     return keys
   }
 
-  static associateKeys$(type, collection, keys) {
-    assert(!(collection.prototype instanceof PartialPojo)) 
+  static associateKeys$(type, partialObject, keys) {
+    assert(!(partialObject.prototype instanceof PartialPojo)) 
 
     for (const [key, defined] of keys) {
-      Associate.lookupAdd(type, PartialReflect.HostLookup, key, collection)
+      Associate.lookupAdd(type, PartialReflect.HostLookup, key, partialObject)
       if (!defined) continue
-      Associate.mapSet(type, PartialReflect.HostMap, key, collection)
+      Associate.mapSet(type, PartialReflect.HostMap, key, partialObject)
     }
   }
-  static mergeAssociations$(type, collection, keys) {
-    assert(!(collection.prototype instanceof PartialPojo)) 
+  static mergeAssociations$(type, partialObject, keys) {
+    assert(!(partialObject.prototype instanceof PartialPojo)) 
     
-    const prototypicalType = PartialReflect.getPrototypicalType$(collection)
+    const prototypicalType = PartialReflect.getPrototypicalType$(partialObject)
     Associate.setCopy(type, prototypicalType, PartialReflect.Declarations)
     for (const [key, defined] of keys) {
       Associate.lookupCopy(type, prototypicalType, PartialReflect.HostLookup, key)
@@ -327,20 +327,20 @@ export class PartialReflect {
       Associate.mapCopy(type, prototypicalType, PartialReflect.HostMap, key)
     }
   }
-  static merge(type, collection) {
+  static merge(type, partialObject) {
     if(type == PartialObject || type.prototype instanceof PartialObject) 
       throw `Expected type to not be a PartialObject.`
 
-    assert(PartialReflect.isPartialObject(collection),
-      `Expected collection to indirectly extend PartialObject.`)
+    assert(PartialReflect.isPartialObject(partialObject),
+      `Expected partialObject to indirectly extend PartialObject.`)
 
-    for (const child of PartialReflect.ownExtensions(collection)) {
+    for (const child of PartialReflect.ownPartialObjects(partialObject)) {
       const descriptors = PartialReflect.getDescriptors(child)
       const keys = PartialReflect.defineProperties(type, descriptors)
 
       // PartialPojo members are transparent.
       if (child.prototype instanceof PartialPojo) {
-        PartialReflect.associateKeys$(type, collection, keys)
+        PartialReflect.associateKeys$(type, partialObject, keys)
         continue
       }
 
@@ -348,14 +348,14 @@ export class PartialReflect {
       PartialReflect.mergeAssociations$(type, child, keys)
     }
 
-    const descriptors = PartialReflect.getOwnDescriptors(collection)
+    const descriptors = PartialReflect.getOwnDescriptors(partialObject)
     const keys = PartialReflect.defineProperties(type, descriptors)
 
     // PartialPojo members are transparent.
-    if (collection.prototype instanceof PartialPojo) return
+    if (partialObject.prototype instanceof PartialPojo) return
 
-    Associate.setAdd(type, PartialReflect.Declarations, collection)
-    PartialReflect.associateKeys$(type, collection, keys)
+    Associate.setAdd(type, PartialReflect.Declarations, partialObject)
+    PartialReflect.associateKeys$(type, partialObject, keys)
   }
 
   static *hosts(type, key) {

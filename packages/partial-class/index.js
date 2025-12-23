@@ -2,7 +2,7 @@ import { PartialObject } from '@kingjs/partial-object'
 import { PartialPojo } from '@kingjs/partial-pojo'
 import { PartialReflect } from '@kingjs/partial-reflect'
 
-export const Extends = Symbol('Extends')
+export const Extends = Symbol('PartialClass.Extends')
 
 // Extend copies members from one or more extensions to a type prototype.
 // An extension is a class which extends PartialClass. For example, an extension 
@@ -29,19 +29,19 @@ export class PartialClassReflect {
   }
 
   static *partialClasses(type) {
-    for (const collection of PartialReflect.extensions(type)) {
+    for (const collection of PartialReflect.partialObjects(type)) {
       const collectionType = PartialReflect.getPartialObjectType(collection)
       if (collectionType != PartialClass) continue
       yield collection
     }
   }
   static *ownPartialClasses(type) {
-    for (const collection of PartialReflect.ownExtensions(type)) {
+    for (const collection of PartialReflect.ownPartialObjects(type)) {
       if (!PartialClassReflect.isPartialClass(collection)) continue 
       yield collection
     }
   }
-  static getExtensionGroup(type, name) {
+  static getPartialClass(type, name) {
     const host = PartialReflect.getHost(type, name)
     if (!PartialClassReflect.isPartialClass(host)) return null
     return host

@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Concept, Concepts } from '@kingjs/concept'
+import { Concept, Implements } from '@kingjs/concept'
 
 class MyEmptyConcept extends Concept { }
 class MyGetterConcept extends Concept { get value() { } }
 class MySetterConcept extends Concept { set value(value) { } }
 class MyMethodConcept extends Concept { method() { } }
 class MyKitchenSinkConcept extends Concept {
-  [Concepts] = [
+  [Implements] = [
     MyGetterConcept,
     MySetterConcept,
     MyMethodConcept
@@ -33,7 +33,7 @@ class MyTaggedConceptWithMethod extends Concept {
   method() { }
 }
 class MyInheritedTaggedConcept extends Concept {
-  static [Concepts] = MyTaggedConcept
+  static [Implements] = MyTaggedConcept
 }
 
 class MyType {

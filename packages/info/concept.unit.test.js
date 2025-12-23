@@ -4,7 +4,7 @@ import { Info } from "@kingjs/info"
 import { PartialClass } from '@kingjs/partial-class'
 import { extend } from '@kingjs/extend'
 import { implement } from '@kingjs/implement'
-import { Concept, Concepts } from '@kingjs/concept'
+import { Concept, Implements } from '@kingjs/concept'
 import { } from "@kingjs/info-to-pojo"
 
 describe('FunctionInfo for Concept', () => {
@@ -189,7 +189,7 @@ describe('A concept with a member', () => {
     let typeInfo
     beforeEach(() => {
       type = class MyClass extends PartialClass { }
-      type[Concepts] = myConcept
+      type[Implements] = myConcept
       typeInfo = Info.from(type)
     })
     it('should have own names excluding the member', () => {
@@ -211,7 +211,7 @@ describe('A concept with a member', () => {
       let clsInfo
       beforeEach(() => {
         cls = class MyClass { }
-        // [Concepts] is ignored when added to a partial class
+        // [Implements] is ignored when added to a partial class
         extend(cls, type)
         clsInfo = Info.from(cls)
       })

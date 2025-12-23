@@ -7,11 +7,19 @@ import { Es6Info, Es6MemberInfo } from "@kingjs/es6-info"
 import { Concept, ConceptReflect } from "@kingjs/concept"
 import { PartialClass, PartialClassReflect } from '@kingjs/partial-class'
 
+const FunctionInfoCache = new WeakMap()
+
 export class Info {
   static from(fn) {
     if (!fn) return null
     assert(typeof fn == 'function', 'fn must be a function')
 
+    if (!FunctionInfoCache.has(fn))
+      FunctionInfoCache.set(fn, Info.#from(fn))
+
+    return FunctionInfoCache.get(fn)
+  }
+  static #from(fn) {
     if (fn == PartialObject) return new KnownPartialObjectInfo(fn)
     if (fn == PartialPojo) return new KnownPartialObjectInfo(fn)
     if (fn == PartialClass) return new KnownPartialObjectInfo(fn)
@@ -303,9 +311,9 @@ export class MemberInfo extends Info {
     return isAbstract(descriptor)
   }
   
-  get extensionGroup() {
+  get partialClass() {
     return Info.from(
-      PartialClassReflect.getExtensionGroup(this.host.ctor, this.name))
+      PartialClassReflect.getPartialClass(this.host.ctor, this.name))
   }
 
   get isConceptual() {

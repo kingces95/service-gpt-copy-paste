@@ -100,7 +100,7 @@ describe('A class with a member', () => {
         extensions[Extends] =  { member: partialClassFn }
       })
       it('should have an own partial class', () => {
-        const partialClass = [...PartialReflect.ownExtensions(extensions)]
+        const partialClass = [...PartialReflect.ownPartialObjects(extensions)]
         expect(partialClass).toHaveLength(1)
         expect(partialClass[0].prototype).instanceOf(PartialPojo)
       })
