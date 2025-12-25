@@ -77,53 +77,41 @@ describe('A partial class', () => {
 
 describe('A class with a member', () => {
   let cls
+  let myMemberFn = function classFn() { }
   beforeEach(() => {
-    [cls] = [class { member() { } }]
+    [cls] = [class { }]
+    cls.prototype.member = myMemberFn
   })
-  describe('and an extension member', () => {
-    let extensions
-    let extensionFn = function extensionFn() { }
+  describe('with a PartialClass', () => {
+    let myPartialClass
+    let myPartialMemberFn = function myPartialMemberFn() { }
     beforeEach(() => {
-      extensions = class MyEx extends PartialClass { }
-      extensions.prototype.member = extensionFn
+      myPartialClass = class MyEx extends PartialClass { }
+      myPartialClass.prototype.member = myPartialMemberFn
     })
-    it('when merged should overwrite the member', async () => {
-      extend(cls, extensions)
-      const extension = getMemberValue(extensions)
-      const clsMember = getMemberValue(cls)
-      expect(clsMember).toBe(extensionFn)
-      expect(extension).toBe(extensionFn)
+    it('should overwrite member when merged', async () => {
+      extend(cls, myPartialClass)
+      const fn = getMemberValue(cls)
+      expect(fn).toBe(myPartialMemberFn)
     })
-    describe('and a partial class member', () => {
-      let partialClassFn = function partialClassFn() { }
-      beforeEach(() => {
-        extensions[Extends] =  { member: partialClassFn }
-      })
-      it('should have an own partial class', () => {
-        const partialClass = [...PartialReflect.ownPartialObjects(extensions)]
-        expect(partialClass).toHaveLength(1)
-        expect(partialClass[0].prototype).instanceOf(PartialPojo)
-      })
-      it('when merged should use the partial class member', async () => {
+  })
+})
 
-        // check runtime behavior
-        extend(cls, extensions)
-        const clsMember = getMemberValue(cls)
-        expect(clsMember).toBe(extensionFn)
-        
-        // check reflection behavior
-        const partialMember = getMemberValue(extensions)
-        expect(partialMember).not.toBe(partialClassFn)
-        expect(partialMember).toBe(extensionFn)
-      })
-      it('should have partial names as a subset of class names', async () => {
-        const partialNames = [
-          ...Info.from(extensions).instanceMembers()].map(m => m.name)
-        const clsNames = [
-          ...Info.from(cls).instanceMembers()].map(m => m.name)
-        for (const name of partialNames)
-          expect(clsNames).toContain(name)
-      })
+describe('A PartialClass with a member', () => {
+  let myPartialClass
+  let myPartialMemberFn = function myPartialMemberFn() { }
+  beforeEach(() => {
+    myPartialClass = class MyEx extends PartialClass { }
+    myPartialClass.prototype.member = myPartialMemberFn
+  })
+  describe('extended by a PartialClass', () => {
+    let mySubPartialMemberFn = function partialClassFn() { }
+    beforeEach(() => {
+      myPartialClass[Extends] =  { member: mySubPartialMemberFn }
+    })
+    it('should not overwrite member', async () => {
+      const fn = getMemberValue(myPartialClass)
+      expect(fn).toBe(myPartialMemberFn)
     })
   })
 })

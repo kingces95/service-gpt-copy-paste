@@ -76,24 +76,24 @@ describe('A type', () => {
   })
 })
 
-describe('MyAnonymousExtension', () => {
-  let MyAnonymousExtension
+describe('MyPojoType', () => {
+  let MyPojoType
   beforeEach(() => {
-    MyAnonymousExtension = PartialReflect.defineType({ })
+    MyPojoType = PartialReflect.defineType({ })
   })
 
   describe('with method', () => {
     let method
     beforeEach(() => {
       method = function() { }
-      MyAnonymousExtension.prototype.method = method
+      MyPojoType.prototype.method = method
     })
 
-    describe('defined on myType', () => {
+    describe('meged with myType', () => {
       let myType
       beforeEach(() => {
         myType = class { }
-        PartialReflect.merge(myType, MyAnonymousExtension)
+        PartialReflect.merge(myType, MyPojoType)
       })
 
       it('should have the method on type', () => {
@@ -232,7 +232,12 @@ describe('PartialClass', () => {
           method = function() { }
           MyAnonymousSubExtension.prototype.method = method
         })
-
+        it('should have a descriptor for method', () => {
+          const descriptor = 
+            PartialReflect.getDescriptor(MyExtension, 'method')
+          expect(descriptor.value).toBe(method)
+        })
+        
         describe('defined on myType', () => {
           let myType
           beforeEach(() => {
@@ -245,11 +250,7 @@ describe('PartialClass', () => {
               [...PartialReflect.ownKeys(MyExtension)]
             expect(keys).toContain('method')
           })
-          it('should have a descriptor for method', () => {
-            const descriptor = 
-              PartialReflect.getDescriptor(MyExtension, 'method')
-            expect(descriptor.value).toBe(method)
-          })
+
           it('should not have anonymous declarations', () => {
             const declarations = 
               [...PartialReflect.partialObjects(myType)]

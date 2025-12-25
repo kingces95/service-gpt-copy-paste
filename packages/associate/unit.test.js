@@ -1,65 +1,411 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Reflection } from "@kingjs/reflection"
+import { Associate } from '@kingjs/associate'
 
-describe('Extended and base classes', () => {
-  describe.each([
-    ['names', true],
-    ['symbols', false],
-  ])('with %s', (_, isNames) => {
-    describe.each([
-      '|',
-      'a|',
-      'a,b|',
-      'a|a',
-      '|a',
-      '|a,b',
-      'a,b|a,b',
-    ])('%s', (declarations) => {
-      let extended
-      let base
-      let members
-      let names
-      let symbols
-    
+describe('MyClass that extends MyBase with MySymbol, MyType', () => {
+  let myClass
+  let mySymbol
+  let myBase
+  let myType
+  let myBaseType
+  let myMetadata
+  beforeEach(() => {
+    myBase = class MyBase { }
+    myClass = class MyClass extends myBase { } 
+    myBaseType = class MyBaseType { }
+    myType = class MyType extends myBaseType { }
+    mySymbol = Symbol.for('mySymbol')
+    myMetadata = { [mySymbol]: { } }
+  })
+
+  describe('with metadata as an argument...', () => {
+    describe('when associated declaratively...', () => {
+      describe('on MyClass...', () => {
+        beforeEach(() => {
+          myClass[mySymbol] = myType
+        })
+        it('is directly associated', () => {
+          const associated = [...Associate.ownTypes(myClass, myMetadata)]
+          expect(associated).toEqual([ myType ])
+        })
+        describe('with a mapping...', () => {
+          let myOtherType 
+          beforeEach(() => {
+            myOtherType = class MyOtherType { }
+            myMetadata[mySymbol].map = (obj) => {
+              if (obj == myType) return myOtherType
+            }
+          })
+          it('maps to the other type', () => {
+            const associated = [...Associate.ownTypes(myClass, myMetadata)]
+            expect(associated).toEqual([ myOtherType ])
+          })
+        })
+        describe('with an unexpected type...', () => {
+          beforeEach(() => {
+            myClass[mySymbol] = class MyOtherType { }
+            myMetadata[mySymbol].expectedType = [ myBaseType ]
+          })
+          it('throws', () => {
+            expect(() => {
+              [...Associate.ownTypes(myClass, myMetadata)]
+            }).toThrow()
+          })
+        })
+        describe('with an expected type...', () => {
+          beforeEach(() => {
+            myMetadata[mySymbol].expectedType = [ myBaseType ]
+          })
+          it('is directly associated', () => {
+            const associated = [...Associate.ownTypes(myClass, myMetadata)]
+            expect(associated).toEqual([ myType ])
+          })
+        })
+        describe('with MyEdgeClass as an expected type...', () => {
+          let myEdgeClass
+          beforeEach(() => {
+            myEdgeClass = class MyEdgeClass { }
+            myEdgeClass[mySymbol] = [ myClass, myClass ]
+          })
+          it('is transitively associated', () => {
+            const associated = [...Associate.types(
+              myEdgeClass, myMetadata, { traverse: true })]
+            expect(new Set(associated)).toEqual(new Set([ 
+              myType, myClass ]))
+          })
+        })
+      })
+      describe('on MyBase...', () => {
+        beforeEach(() => {
+          myBase[mySymbol] = myType
+        })
+        it('is associated', () => {
+          const associated = [...Associate.types(myClass, myMetadata)]
+          expect(associated).toEqual([ myType ])
+        })
+        it('is not directly associated', () => {
+          const associated = [...Associate.ownTypes(myClass, myMetadata)]
+          expect(associated).toEqual([])
+        })
+      })
+    })
+    describe('when associated procedurally...', () => {
       beforeEach(() => {
-        base = class { }
-        extended = class extends base { }
-        const [extendedMembers$, baseMembers$] = declarations.split('|')
-        const extendedMembers = extendedMembers$.split(',').filter(Boolean)
-        const baseMembers = baseMembers$.split(',').filter(Boolean)
+        Associate.objectInitialize(myClass, mySymbol, () => myType)
+      })
+      it('is associated', () => {
+        const associated = [...Associate.ownTypes(myClass, myMetadata)]
+        expect(associated).toEqual([ myType ])
+      })
+    })
+  })
+  describe('with metadata on MyClass...', () => {
+    let myMetadataPtr
+    beforeEach(() => {
+      myMetadataPtr = Symbol.for('myMetadataPtr')
+      myClass[myMetadataPtr] = myMetadata
+    })
+    describe('when associated declaratively...', () => {
+      describe('on MyClass...', () => {
+        beforeEach(() => {
+          myClass[mySymbol] = myType
+        })
+        it('is directly associated', () => {
+          const associated = [...Associate.ownTypes(
+            myClass, myMetadataPtr)]
+          expect(associated).toEqual([ myType ])
+        })
+      })
+    })
+  })
+})
 
-        if (!isNames) {
-          extendedMembers.forEach((name, i) => extendedMembers[i] = Symbol.for(name))
-          baseMembers.forEach((name, i) => baseMembers[i] = Symbol.for(name))
-        }
-    
-        extendedMembers.unshift('constructor')
-        extendedMembers.reduce((prototype, name) => {
-          prototype[name] = null
-          return prototype
-        }, extended.prototype)
-    
-        baseMembers.unshift('constructor')
-        baseMembers.reduce((prototype, name) => {
-          prototype[name] = null
-          return prototype
-        }, base.prototype)
-    
-        // members is a unique union of extended and base members as an array
-        members = [...new Set([...extendedMembers, ...baseMembers])].filter(Boolean)
-        names = members.filter(name => typeof name === 'string')
-        symbols = members.filter(name => typeof name === 'symbol')
+describe('MyClass with MyBase, MySymbol, MyKey, and MyValue', () => {
+  let myClass
+  let myBase
+  let mySymbol
+  let myKey
+  let myValue
+  beforeEach(() => {
+    myKey = 'myKey'
+    myValue = 'myValue'
+    mySymbol = Symbol.for('myObject')
+    myBase = class MyBase { }
+    myClass = class MyClass extends myBase { }
+  })
+
+  describe('has no associated...', () => {
+    it('object', () => {
+      const associated = Associate.objectGet(myClass, mySymbol)
+      expect(associated).toBeUndefined()
+    })
+    it('set', () => {
+      const associated = [...Associate.setGet(myClass, mySymbol)]
+      expect(associated).toEqual([])
+    })
+    it('map', () => {
+      const associated = Associate.mapGet(myClass, mySymbol, myKey)
+      expect(associated).toBeUndefined()
+    })
+    it('lookup', () => {
+      const associated = [...Associate.lookupGet(myClass, mySymbol, myKey)]
+      expect(associated).toEqual([])
+    })
+  })
+
+  describe('after declared association on MyClass with...', () => {
+    describe('object', () => {
+      beforeEach(() => {
+        myClass[mySymbol] = myValue
       })
-    
-      it('has all members in its prototype', () => {
-        expect([...Reflection.keys(extended.prototype)]).toEqual(members)
+      it('value is associated', () => {
+        const associated = Associate.objectGet(myClass, mySymbol)
+        expect(associated).toBe(myValue)
       })
-      it('has all names', () => {
-        expect([...Reflection.names(extended.prototype)]).toEqual(names)
+    })
+  })
+
+  describe('after association on MyClass with...', () => {
+    describe('object', () => {
+      beforeEach(() => {
+        Associate.objectInitialize(myClass, mySymbol, () => myValue)
       })
-      it('has all symbols', () => {
-        expect([...Reflection.symbols(extended.prototype)]).toEqual(symbols)
+      it('value is associated', () => {
+        const associated = Associate.objectGet(myClass, mySymbol)
+        expect(associated).toBe(myValue)
+      })
+      it('value is directly associated', () => {
+        const associated = Associate.objectGetOwn(myClass, mySymbol)
+        expect(associated).toBe(myValue)
+      })
+    })
+    describe('set', () => {
+      beforeEach(() => {
+        Associate.setAdd(myClass, mySymbol, myValue)
+      })
+      it('value is associated', () => {
+        const associated = [...Associate.setGet(myClass, mySymbol)]
+        expect(associated).toEqual([ myValue ])
+      })
+      it('value is directly associated', () => {
+        const associated = [...Associate.setGetOwn(myClass, mySymbol)]
+        expect(associated).toEqual([ myValue ])
+      })
+      describe('then deleted...', () => {
+        beforeEach(() => {
+          Associate.setDelete(myClass, mySymbol, myValue)
+        })
+        it('value is not associated', () => {
+          const associated = [...Associate.setGet(myClass, mySymbol)]
+          expect(associated).toEqual([])
+        })
+      })
+    })
+    describe('map', () => {
+      beforeEach(() => {
+        Associate.mapSet(myClass, mySymbol, myKey, myValue)
+      })
+      it('value is associated', () => {
+        const associated = Associate.mapGet(myClass, mySymbol, myKey)
+        expect(associated).toBe(myValue)
+      })
+      it('value is directly associated', () => {
+        const associated = Associate.mapGetOwn(myClass, mySymbol, myKey)
+        expect(associated).toBe(myValue)
+      })
+    })
+    describe('lookup', () => {
+      beforeEach(() => {
+        Associate.lookupAdd(myClass, mySymbol, myKey, myValue)
+      })
+      it('value is associated', () => {
+        const associated = [...Associate.lookupGet(myClass, mySymbol, myKey)]
+        expect(associated).toEqual([ myValue ])
+      })
+      it('value is directly associated', () => {
+        const associated = [...Associate.lookupGetOwn(myClass, mySymbol, myKey)]
+        expect(associated).toEqual([ myValue ])
+      })
+    })
+  })
+
+  describe('after association on MyBase with...', () => {
+    describe('object', () => {
+      beforeEach(() => {
+        Associate.objectInitialize(myBase, mySymbol, () => myValue)
+      })
+      it('value is associated', () => {
+        const associated = Associate.objectGet(myClass, mySymbol)
+        expect(associated).toBe(myValue)
+      })
+      it('value is not directly associated', () => {
+        const associated = Associate.objectGetOwn(myClass, mySymbol)
+        expect(associated).toBeUndefined()
+      })
+    })
+    describe('set', () => {
+      beforeEach(() => {
+        Associate.setAdd(myBase, mySymbol, myValue)
+      })
+      it('value is associated', () => {
+        const associated = [...Associate.setGet(myClass, mySymbol)]
+        expect(associated).toEqual([ myValue ])
+      })
+      it('value is not directly associated', () => {
+        const associated = [...Associate.setGetOwn(myClass, mySymbol)]
+        expect(associated).toEqual([])
+      })
+    })
+    describe('map', () => {
+      beforeEach(() => {
+        Associate.mapSet(myBase, mySymbol, myKey, myValue)
+      })
+      it('value is associated', () => {
+        const associated = Associate.mapGet(myClass, mySymbol, myKey)
+        expect(associated).toBe(myValue)
+      })
+      it('value is not directly associated', () => {
+        const associated = Associate.mapGetOwn(myClass, mySymbol, myKey)
+        expect(associated).toBeUndefined()
+      })
+    })
+    describe('lookup', () => {
+      beforeEach(() => {
+        Associate.lookupAdd(myBase, mySymbol, myKey, myValue)
+      })
+      it('value is associated', () => {
+        const associated = [...Associate.lookupGet(myClass, mySymbol, myKey)]
+        expect(associated).toEqual([ myValue ])
+      })
+      it('value is not directly associated', () => {
+        const associated = [...Associate.lookupGetOwn(myClass, mySymbol, myKey)]
+        expect(associated).toEqual([])
+      })
+    })
+  })
+
+  describe('after similar association on MyClass and MyBase with...', () => {
+    describe('set', () => {
+      beforeEach(() => {
+        Associate.setAdd(myClass, mySymbol, myValue)
+        Associate.setAdd(myBase, mySymbol, myValue)
+      })
+      it('value is associated once', () => {
+        const associated = [...Associate.setGet(myClass, mySymbol)]
+        expect(associated).toEqual([ myValue ])
+      })
+    })
+    describe('lookup', () => {
+      beforeEach(() => {
+        Associate.lookupAdd(myClass, mySymbol, myKey, myValue)
+        Associate.lookupAdd(myBase, mySymbol, myKey, myValue)
+      })
+      it('value is associated once', () => {
+        const associated = [...Associate.lookupGet(myClass, mySymbol, myKey)]
+        expect(associated).toEqual([ myValue ])
+      })
+    })
+    describe('map', () => {
+      beforeEach(() => {
+        Associate.mapSet(myClass, mySymbol, myKey, myValue)
+        Associate.mapSet(myBase, mySymbol, myKey, myValue)
+      })
+      it('value is associated once', () => {
+        const associated = Associate.mapGet(myClass, mySymbol, myKey)
+        expect(associated).toBe(myValue)
+      })
+    })
+  })
+  
+  describe('after dissimilar association on MyClass and MyBase with...', () => {
+    let myBaseValue
+    beforeEach(() => {
+      myBaseValue = 'myBaseValue'
+    })
+
+    describe('object', () => {
+      beforeEach(() => {
+        Associate.objectInitialize(myBase, mySymbol, () => myBaseValue)
+        Associate.objectInitialize(myClass, mySymbol, () => myValue)
+      })
+      it('value is associated', () => {
+        const associated = Associate.objectGet(myClass, mySymbol)
+        expect(associated).toBe(myValue)
+      })
+      describe('after copying to MyOtherClass...', () => {
+        let myOtherClass
+        beforeEach(() => {
+          myOtherClass = class MyOtherClass extends myBase { }
+          Associate.objectCopy(myOtherClass, myClass, mySymbol)
+        })
+        it('myValue is associated', () => {
+          const associated = Associate.objectGet(myOtherClass, mySymbol)
+          expect(associated).toBe(myValue)
+        })
+      })
+    })
+    describe('map', () => {
+      beforeEach(() => {
+        Associate.mapSet(myBase, mySymbol, myKey, myBaseValue)
+        Associate.mapSet(myClass, mySymbol, myKey, myValue)
+      })
+
+      it('value is associated', () => {
+        const associated = Associate.mapGet(myClass, mySymbol, myKey)
+        expect(associated).toBe(myValue)
+      })
+      describe('after copying to MyOtherClass...', () => {
+        let myOtherClass
+        beforeEach(() => {
+          myOtherClass = class MyOtherClass extends myBase { }
+          Associate.mapCopy(myOtherClass, myClass, mySymbol, myKey)
+        })
+        it('myValue is associated', () => {
+          const associated = Associate.mapGet(myOtherClass, mySymbol, myKey)
+          expect(associated).toBe(myValue)
+        })
+      })
+    })
+    describe('set', () => {
+      beforeEach(() => {
+        Associate.setAdd(myBase, mySymbol, myBaseValue)
+        Associate.setAdd(myClass, mySymbol, myValue)
+      })
+      it('value and myBaseValue are associated', () => {
+        const associated = [...Associate.setGet(myClass, mySymbol)]
+        expect(new Set(associated)).toEqual(new Set([ myBaseValue, myValue ]))
+      })
+      describe('after copying to MyOtherClass...', () => {
+        let myOtherClass
+        beforeEach(() => {
+          myOtherClass = class MyOtherClass extends myBase { }
+          Associate.setCopy(myOtherClass, myClass, mySymbol)
+        })
+        it('value and myBaseValue are associated', () => {
+          const associated = [...Associate.setGet(myOtherClass, mySymbol)]
+          expect(new Set(associated)).toEqual(new Set([ myBaseValue, myValue ]))
+        })
+      })
+    })
+    describe('lookup', () => {
+      beforeEach(() => {
+        Associate.lookupAdd(myBase, mySymbol, myKey, myBaseValue)
+        Associate.lookupAdd(myClass, mySymbol, myKey, myValue)
+      })
+      it('value and myBaseValue are associated', () => {
+        const associated = [...Associate.lookupGet(myClass, mySymbol, myKey)]
+        expect(new Set(associated)).toEqual(new Set([ myBaseValue, myValue ]))
+      })
+      describe('after copying to MyOtherClass...', () => {
+        let myOtherClass
+        beforeEach(() => {
+          myOtherClass = class MyOtherClass extends myBase { }
+          Associate.lookupCopy(myOtherClass, myClass, mySymbol, myKey)
+        })
+        it('value and myBaseValue are associated', () => {
+          const associated = [...Associate.lookupGet(myOtherClass, mySymbol, myKey)]
+          expect(new Set(associated)).toEqual(new Set([ myBaseValue, myValue ]))
+        })
       })
     })
   })

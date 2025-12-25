@@ -5,6 +5,7 @@ import { isAbstract } from '@kingjs/abstract'
 import { Associate } from '@kingjs/associate'
 import { PartialPojo } from '@kingjs/partial-pojo'
 import { PartialObject } from '@kingjs/partial-object'
+import { Descriptor } from '@kingjs/descriptor'
 
 const {
   memberKeys,
@@ -130,20 +131,41 @@ const {
 
 class Prototypical { }
 
-// Could be a static on Prototypical, but the point of Prototypical is to
-// simplify the reflection Info layer by providing an object which has no
-// known members other than those defined by PartialObject.
-function prototypicalCreate(type) {
-  let prototypicalType = class extends Prototypical { }
-  Object.defineProperties(prototypicalType, {
+function defineName(type, name) {
+  Object.defineProperties(type, {
     name: {
-      value: '$prototypical_' + type.name,
+      value: name,
       configurable: true,
       enumerable: false,
       writable: false,
     }
   })
-  PartialReflect.merge(prototypicalType, type)
+}
+
+// Could be a static on Prototypical, but the point of Prototypical is to
+// simplify the reflection Info layer by providing an object which has no
+// known members other than those defined by PartialObject.
+function prototypicalCreate(type) {
+
+  let inheritedPrototypicalType = class extends Prototypical { }
+  let prototypicalType = class extends inheritedPrototypicalType { }
+  
+  defineName(inheritedPrototypicalType, '$inheritedPrototypical_' + type.name)
+  defineName(prototypicalType, '$prototypical_' + type.name)
+
+  PartialReflect.mergeInherited$(inheritedPrototypicalType, type)
+  PartialReflect.mergeOwn$(prototypicalType, type)
+  
+  Associate.objectInitialize(inheritedPrototypicalType, 
+    PartialReflect.PrototypicalHost, 
+    () => type)
+  
+  // HACK: A PartialObject should not report being merged with itself.
+  Associate.setDelete(
+    prototypicalType, 
+    PartialReflect.Declarations, 
+    type)
+    
   return prototypicalType
 }
 
@@ -174,33 +196,15 @@ export class PartialReflect {
   static getPrototypicalType$(type) {
     if (!PartialReflect.isPartialObject(type)) return type
 
-    const prototypicalType = Associate.object(
+    const prototypicalType = Associate.objectInitialize(
       type, PartialReflect.PrototypicalType, prototypicalCreate)
-
-    Associate.object(
-      prototypicalType, 
-      PartialReflect.PrototypicalHost, 
-      () => type)
-
-    // Patch up caches on the prototypical type. The prototypical type
-    // is a stand-in for the PartialObject but what we have so far
-    // is a class that is merged with the PartialObject. The difference
-    // being that a stand-in would not be associated with the member 
-    // partialObject itself. So we need to remove the association that
-    // points back to the PartialObject itself.
-
-    // HACK: Remove the partialObject from the Declarations set.
-    Associate.setDelete(
-      prototypicalType, 
-      PartialReflect.Declarations, 
-      type)
 
     return prototypicalType
   }
 
   static getPrototypicalHost$(type) {
     if (!(type.prototype instanceof Prototypical)) return type
-    return Associate.object(type, PartialReflect.PrototypicalHost)
+    return Associate.objectGet(type, PartialReflect.PrototypicalHost)
   }
 
   static getPartialObjectType(type) {
@@ -224,9 +228,8 @@ export class PartialReflect {
         PartialObject.OwnCollectionSymbols)
     }
     else {
-      yield* Associate.types(type, 
-        { [PartialReflect.Declarations]: { } }, 
-        { inherit: false })
+      yield* Associate.ownTypes(type, 
+        { [PartialReflect.Declarations]: { } })
     }
   }
   static *partialObjects(type) {
@@ -236,15 +239,20 @@ export class PartialReflect {
     }
     else {
       yield* Associate.types(type, 
-        { [PartialReflect.Declarations]: { } }, 
-        { inherit: true })
+        { [PartialReflect.Declarations]: { } })
     }
   }
 
   static *ownKeys(type) { 
     if (PartialReflect.isPartialObject(type)) {
-      yield* [...PartialReflect.keys(type)].filter(key => 
-        PartialReflect.getHost(type, key) == type)
+      // yield* [...PartialReflect.keys(type)].filter(key => 
+      //   PartialReflect.getHost(type, key) == type)
+
+      for (const key of PartialReflect.keys(type)) {
+        const host = PartialReflect.getHost(type, key)
+        if (host != type) continue
+        yield key
+      }
     }
     else {
       yield* ownMemberKeys(type.prototype) 
@@ -268,7 +276,7 @@ export class PartialReflect {
   }
   static getDescriptor(type, key) {
     const prototypicalType = PartialReflect.getPrototypicalType$(type)
-    return Object.getOwnPropertyDescriptor(prototypicalType.prototype, key)
+    return Descriptor.get(prototypicalType.prototype, key)
   }
 
   static getOwnDescriptors(type) {
@@ -280,7 +288,7 @@ export class PartialReflect {
   static getDescriptors(type) {
     if (PartialReflect.isPartialObject(type)) {
       const prototypicalType = PartialReflect.getPrototypicalType$(type)
-      return Associate.object(type, PartialReflect.Descriptors, 
+      return Associate.objectInitialize(type, PartialReflect.Descriptors, 
         () => PartialReflect.getDescriptors(prototypicalType))
     }
     else {
@@ -293,8 +301,15 @@ export class PartialReflect {
 
   static defineProperty(type, key, descriptor) {
     const prototype = type.prototype
-    // Skip adding abstract member to the prototype if a member already exists.
-    if (key in prototype && isAbstract(descriptor)) return false
+    
+    // only overwrite existing abstract members and then only
+    // if the new member is not also abstract.
+    if (key in prototype) {
+      if (isAbstract(descriptor)) return false
+      // const existingDescriptor = Descriptor.get(prototype, key)
+      // if (!isAbstract(existingDescriptor)) return false
+    }
+      
     Object.defineProperty(prototype, key, descriptor)
     return true
   }
@@ -327,7 +342,7 @@ export class PartialReflect {
       Associate.mapCopy(type, prototypicalType, PartialReflect.HostMap, key)
     }
   }
-  static merge(type, partialObject) {
+  static mergeInherited$(type, partialObject) {
     if(type == PartialObject || type.prototype instanceof PartialObject) 
       throw `Expected type to not be a PartialObject.`
 
@@ -347,6 +362,13 @@ export class PartialReflect {
       Associate.setAdd(type, PartialReflect.Declarations, child)
       PartialReflect.mergeAssociations$(type, child, keys)
     }
+  }
+  static mergeOwn$(type, partialObject) {
+    if(type == PartialObject || type.prototype instanceof PartialObject) 
+      throw `Expected type to not be a PartialObject.`
+
+    assert(PartialReflect.isPartialObject(partialObject),
+      `Expected partialObject to indirectly extend PartialObject.`)
 
     const descriptors = PartialReflect.getOwnDescriptors(partialObject)
     const keys = PartialReflect.defineProperties(type, descriptors)
@@ -357,16 +379,23 @@ export class PartialReflect {
     Associate.setAdd(type, PartialReflect.Declarations, partialObject)
     PartialReflect.associateKeys$(type, partialObject, keys)
   }
+  static merge(type, partialObject) {
+    PartialReflect.mergeInherited$(type, partialObject)
+    PartialReflect.mergeOwn$(type, partialObject)
+  }
 
   static *hosts(type, key) {
-    // returns map: key => concepts that define the key
+    // returns partial classes that could have defined the key
+    // For example, all concepts that defined the key
     const prototypicalType = PartialReflect.getPrototypicalType$(type)
     if (!(key in prototypicalType.prototype)) return null
-    yield* Associate.lookupGet(
-      prototypicalType, PartialReflect.HostLookup, key) ?? [ type ]
+    const result = [...Associate.lookupGet(
+      prototypicalType, PartialReflect.HostLookup, key)]
+    if (result.length == 0) yield type
+    else yield* result
   }
   static getHost(type, key) {
-    // returns map: key => partial class that defined the key
+    // returns partial class that defined the key
     const prototypicalType = PartialReflect.getPrototypicalType$(type)
     if (!(key in prototypicalType.prototype)) return null
     return Associate.mapGet(

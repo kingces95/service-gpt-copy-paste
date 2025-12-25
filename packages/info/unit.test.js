@@ -148,7 +148,7 @@ describe('MyClass', () => {
         PartialReflect.merge(cls, myPartialClass)
         info = Info.from(cls)
       })
-      describe('has a merged member', () => {
+      describe('has a member', () => {
         let memberInfo
         beforeEach(() => {
           memberInfo = info.getInstanceMember('myMethod')
@@ -157,13 +157,9 @@ describe('MyClass', () => {
           const host = memberInfo.host
           expect(host.equals(info)).toBe(true)
         })
-        it('should report no partial class', () => {
-          // the partial class myMethod should *not* whack the
-          // MyClass myMethod. Proivdes the illusion that MyClass
-          // "extends" the PartialClass where extension implies
-          // the methods on the most derived class whack inhertied ones.
+        it('should report partial class', () => {
           const partialClass = memberInfo.partialClass
-          // expect(partialClass).toBeNull()
+          expect(partialClass.equals(myPartialClassInfo)).toBe(true)
         })
       })
     })
@@ -364,12 +360,12 @@ describe('MyClass', () => {
         PartialReflect.merge(cls, myConcept)
         info = Info.from(cls)
       })
-      it('should report being merged with bothMyPartialClass', () => {
+      it('should report being merged with MyPartialClass', () => {
         const actualPartialClasses = [...info.ownPartialClasses()]
         const expectedPartialClasses = [myPartialClassInfo]
         expect(actualPartialClasses).toEqual(expectedPartialClasses)
       })
-      it('should report being merged with both MyConcept', () => {
+      it('should report being merged with MyConcept', () => {
         const actualConcepts = [...info.ownConcepts()]
         const expectedConcepts = [Info.from(myConcept)]
         expect(actualConcepts).toEqual(expectedConcepts)
@@ -397,12 +393,12 @@ describe('MyClass', () => {
         PartialReflect.merge(cls, myPartialClass)
         info = Info.from(cls)
       })
-      it('should report being merged with bothMyPartialClass', () => {
+      it('should report being merged with MyPartialClass', () => {
         const actualPartialClasses = [...info.ownPartialClasses()]
         const expectedPartialClasses = [myPartialClassInfo]
         expect(actualPartialClasses).toEqual(expectedPartialClasses)
       })
-      it('should report being merged with both MyConcept', () => {
+      it('should report being merged with MyConcept', () => {
         const actualConcepts = [...info.ownConcepts()]
         const expectedConcepts = [Info.from(myConcept)]
         expect(actualConcepts).toEqual(expectedConcepts)
