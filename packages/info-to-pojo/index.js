@@ -56,7 +56,8 @@ DataMemberInfo[InfoToPojoSymbol] = {
 const typePivotMd = {
   methods: { type: 'method' },
   data: { type: 'data' },
-  accessors: { type: 'accessor' },      
+  accessors: { type: 'accessor' },
+  constructor: { type: 'constructor' },    
 }
 const nonPublicPivotMd = {
   __nonPublic: {

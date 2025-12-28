@@ -137,6 +137,11 @@ export class Es6ClassInfo extends Es6Info {
   get isNonPublic() { 
     return this.#idInfo.isNonPublic
   }
+  get isKnown() {
+    if (this.equals(Es6ClassInfo.Object)) return true
+    if (this.equals(Es6ClassInfo.Function)) return true
+    return false
+  }
 
   *ownInstanceMembers() { yield* this.#ownMembers({ isStatic: false }) }
   *ownStaticMembers() { yield* this.#ownMembers({ isStatic: true }) }
@@ -245,19 +250,21 @@ export class Es6MemberInfo extends Es6Info {
   get name() { return this.#keyInfo.value }
   get isNonPublic() { return this.#keyInfo.isNonPublic }
   get isKnown() {
-    if (this.host.equals(Es6ClassInfo.Object)) return true
-    if (this.host.equals(Es6ClassInfo.Function)) return true
+    if (this.host.isKnown) return true
 
     if (this.isStatic) {
       if (Reflection.isKnownStaticMember(this.name)) return true
     } else {
       if (Reflection.isKnownInstanceMember(this.name)) return true
     }
+
+    return false
   }
   get type() {
     // useful for pivoting
     if (this.isAccessor) return 'accessor'
     if (this.isData) return 'data'
+    if (this.isConstructor) return 'constructor'
     if (this.isMethod) return 'method'
     assert(false, 'unreachable')
   }

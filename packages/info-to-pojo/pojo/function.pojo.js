@@ -41,8 +41,10 @@ export const functionPojo = {
             __lookupSetter__: { type: 'method', host: 'Object' }
           }
         },
+        constructor: {
+          constructor: { type: 'constructor', host: 'Function', rootHost: 'Object' },
+        },
         methods: {
-          constructor: { type: 'method', host: 'Function', rootHost: 'Object' },
           apply: { type: 'method', host: 'Function' },
           bind: { type: 'method', host: 'Function' },
           call: { type: 'method', host: 'Function' },

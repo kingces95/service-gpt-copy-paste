@@ -280,7 +280,7 @@ describe('Es6ClassInfo known type invariants:', () => {
           it('has matching descriptor info', () => {
             expect(member.isEnumerable).toBe(descriptor.enumerable)
             expect(member.isConfigurable).toBe(descriptor.configurable)
-            expect(member.isWritable).toBe(descriptor.writable)
+            expect(member.isWritable).toBe(!!descriptor.writable)
 
             expect(member.hasGetter).toBe(typeof descriptor.get === 'function')
             expect(member.hasSetter).toBe(typeof descriptor.set === 'function')

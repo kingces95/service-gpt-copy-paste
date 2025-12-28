@@ -3,6 +3,7 @@ import { assert } from '@kingjs/assert'
 export class Es6KeyInfo {
   static isNonPublic(name) { 
     if (typeof name === 'symbol') return false
+    if (!name) return false
 
     if (name.startsWith('_')) return true
     if (name.endsWith('_')) return true

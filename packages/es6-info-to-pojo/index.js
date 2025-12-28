@@ -67,6 +67,7 @@ Es6AccessorMemberInfo[Es6InfoToPojoSymbol] = {
 }
 
 const typePivotMd = {
+  constructor: { type: 'constructor' },
   methods: { type: 'method' },
   data: { type: 'data' },
   accessors: { type: 'accessor' },      

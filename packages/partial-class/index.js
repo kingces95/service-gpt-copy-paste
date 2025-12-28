@@ -24,6 +24,7 @@ export class PartialClass extends PartialObject {
 
 export class PartialClassReflect {
   static isPartialClass(type) {
+    if (!type) return false
     const collectionType = PartialReflect.getPartialObjectType(type)
     return collectionType == PartialClass
   }
@@ -44,6 +45,7 @@ export class PartialClassReflect {
   static getPartialClass(type, name) {
     const host = PartialReflect.getHost(type, name)
     if (!PartialClassReflect.isPartialClass(host)) return null
+    if (type == host) return null
     return host
   }
 }

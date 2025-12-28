@@ -131,7 +131,7 @@ export class Es6DescriptorInfo {
   get descriptor() { return this.#descriptor }
   get isEnumerable() { return this.descriptor.enumerable }
   get isConfigurable() { return this.descriptor.configurable }
-  get isWritable() { return this.descriptor.writable }
+  get isWritable() { return !!this.descriptor.writable }
 
   equals(other) {
     if (!(other instanceof Es6DescriptorInfo)) return false

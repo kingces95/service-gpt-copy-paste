@@ -220,7 +220,7 @@ describe('Es6DescriptorInfo', () => {
     it('has correct metadata', () => {
       expect(descInfo.isEnumerable).toBe(false)
       expect(descInfo.isConfigurable).toBe(true)
-      expect(descInfo.isWritable).toBeUndefined()
+      expect(descInfo.isWritable).toBe(false)
     })
     it('toString is correct', () => {
       expect(descInfo.toString()).equals('{ get; set }')
@@ -281,7 +281,7 @@ describe('Es6DescriptorInfo', () => {
     it('has correct metadata', () => {
       expect(descInfo.isEnumerable).toBe(true)
       expect(descInfo.isConfigurable).toBe(false)
-      expect(descInfo.isWritable).toBeUndefined()
+      expect(descInfo.isWritable).toBe(false)
     })
     it('toString is correct', () => {
       expect(descInfo.toString()).equals('sealed enumerable { set }')

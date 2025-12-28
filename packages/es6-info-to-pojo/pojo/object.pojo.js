@@ -61,8 +61,10 @@ export const objectPojo = {
             __lookupSetter__: { type: 'method', host: 'Object' }
           }
         },
+        constructor: {
+          constructor: { type: 'constructor', host: 'Object' },
+        },
         methods: {
-          constructor: { type: 'method', host: 'Object' },
           hasOwnProperty: { type: 'method', host: 'Object' },
           isPrototypeOf: { type: 'method', host: 'Object' },
           propertyIsEnumerable: { type: 'method', host: 'Object' },

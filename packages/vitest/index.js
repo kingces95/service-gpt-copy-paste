@@ -63,3 +63,33 @@ export function* starsAndBars(stars, bars, options = {}) {
     }
   }
 }
+
+export function toEqualAsSet(received, expected) {
+  const a = new Set(received)
+  const b = new Set(expected)
+
+  for (const v of a) {
+    if (!b.has(v)) {
+      return {
+        pass: false,
+        message: () =>
+          `expected set B to contain ${this.utils.printReceived(v)}`
+      }
+    }
+  }
+
+  for (const v of b) {
+    if (!a.has(v)) {
+      return {
+        pass: false,
+        message: () =>
+          `expected set A to contain ${this.utils.printExpected(v)}`
+      }
+    }
+  }
+
+  return {
+    pass: true,
+    message: () => 'expected sets not to be equal'
+  }
+}

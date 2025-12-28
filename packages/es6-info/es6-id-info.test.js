@@ -92,7 +92,7 @@ describe('Es6IdInfo', () => {
       expect(idInfo.toString()).toBe('<anonymous>')
     })
     it('is non-public', () => {
-      expect(idInfo.isNonPublic).toBe(true)
+      expect(idInfo.isNonPublic).toBe(false)
     })
   })
 })

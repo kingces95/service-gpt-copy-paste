@@ -12,6 +12,7 @@ const FunctionInfoCache = new WeakMap()
 export class Info {
   static from(fn) {
     if (!fn) return null
+    if (fn instanceof Es6Info) fn = fn.ctor
     assert(typeof fn == 'function', 'fn must be a function')
 
     if (!FunctionInfoCache.has(fn))
@@ -20,15 +21,16 @@ export class Info {
     return FunctionInfoCache.get(fn)
   }
   static #from(fn) {
-    if (fn == PartialObject) return new KnownPartialObjectInfo(fn)
-    if (fn == PartialPojo) return new KnownPartialObjectInfo(fn)
-    if (fn == PartialClass) return new KnownPartialObjectInfo(fn)
-    if (fn == Concept) return new KnownPartialObjectInfo(fn)
+    if (fn == PartialObject) return new PartialObjectInfo(fn)
+    if (fn == PartialPojo) return new PartialObjectInfo(fn)
+    if (fn == PartialClass) return new PartialObjectInfo(fn)
+    if (fn == Concept) return new PartialObjectInfo(fn)
 
     const collectionType = PartialReflect.getPartialObjectType(fn)
-    if (collectionType == PartialPojo) return new PartialPojoInfo(fn)
-    if (collectionType == PartialClass) return new PartialClassInfo(fn)
-    if (collectionType == Concept) return new ConceptInfo(fn)  
+    if (collectionType == PartialPojo) return new PartialPojoSubclassInfo(fn)
+    if (collectionType == PartialClass) return new PartialClassSubclassInfo(fn)
+    if (collectionType == Concept) return new ConceptSubclassInfo(fn)
+        
     return new ClassInfo(fn)
   }
 }
@@ -39,31 +41,55 @@ export class FunctionInfo extends Info {
 
   constructor(type) {
     super()
-    const prototypicalType = PartialReflect.getPrototypicalType$(type)
-    this.#es6ClassInfo = Es6Info.from(prototypicalType)
+    this.#es6ClassInfo = Es6Info.from(type)
+  }
+
+  #memberFilter(es6Member) {
+    if (!es6Member) return false
+    if (!this.isAbstract) return true
+    if (es6Member.isKnown) return false
+    if (es6Member.isStatic && this.isKnown) return false
+    return true
+  }
+  #getMember(es6Member) {
+    if (!this.#memberFilter(es6Member)) return null
+    return MemberInfo.from$(es6Member)
+  }
+  *#members(es6Members) {
+    for (const es6Member of es6Members) {
+      const member = this.#getMember(es6Member)
+      if (!member) continue
+      yield member
+    }
   }
 
   get md$() { return this.#es6ClassInfo }
-  get isObject$() { return this.#es6ClassInfo.isObject$ }
-  get isTransparentPartialObject$() { return false }
 
   get ctor() { return this.md$.ctor }
   get id() { return this.md$.id }
   get name() { return this.id.value }
   get base() { 
     const base = Info.from(this.md$.base?.ctor)
-    if (this.isAbstract && base.isObject$) return null
+    if (!this.isAbstract) return base
+    if (base == Info.Object) return null
     return base
   }
 
-  get isAbstract() { return this instanceof AbstractFunctionInfo }
+  get isKnown() { 
+    if (this == Info.PartialObject) return true
+    if (this == Info.PartialPojo) return true
+    if (this == Info.PartialClass) return true
+    if (this == Info.Concept) return true
+    return this.#es6ClassInfo.isKnown 
+  }
+  get isNonPublic() { return this.md$.isNonPublic }
+  get isAbstract() { return this instanceof PartialObjectInfo }
   get isAnonymous() { return this.id.isAnonymous }
-  get isNonPublic() { return this.#es6ClassInfo.isNonPublic }
-  get isTransparentPartialObject() { return this.isTransparentPartialObject$ }
+  get isTransparentPartialObject() { return this.isPartialPojoSubClass }
 
-  get isPartialClassSubclass() { return this instanceof PartialClassInfo }
-  get isPartialPojoSubClass() { return this instanceof PartialPojoInfo }
-  get isConceptSubclass() { return this instanceof ConceptInfo }
+  get isPartialClassSubclass() { return this instanceof PartialClassSubclassInfo }
+  get isPartialPojoSubClass() { return this instanceof PartialPojoSubclassInfo }
+  get isConceptSubclass() { return this instanceof ConceptSubclassInfo }
 
   isSubclassOf(other) {
     assert(other instanceof FunctionInfo, 'other must be a FunctionInfo')
@@ -76,39 +102,35 @@ export class FunctionInfo extends Info {
 
   getOwnStaticMember(key) {
     const es6ClassInfo = this.#es6ClassInfo
-    const member = es6ClassInfo.getOwnStaticMember(key)
-    if (!this.filter$(member)) return null
-    return MemberInfo.from$(member)
+    const es6Member = es6ClassInfo.getOwnStaticMember(key)
+    return this.#getMember(es6Member)
   }
   getOwnInstanceMember(key) {
     const es6ClassInfo = this.#es6ClassInfo
-    const member = es6ClassInfo.getOwnInstanceMember(key)
-    if (!this.filter$(member)) return null
-    return MemberInfo.from$(member)
+    const es6Member = es6ClassInfo.getOwnInstanceMember(key)
+    return this.#getMember(es6Member)
   }
 
   getStaticMember(key) {
     const es6ClassInfo = this.#es6ClassInfo
-    const member = es6ClassInfo.getStaticMember(key)
-    if (!this.filter$(member)) return null
-    return MemberInfo.from$(member) 
+    const es6Member = es6ClassInfo.getStaticMember(key)
+    return this.#getMember(es6Member)
   }
   getInstanceMember(key) {
     const es6ClassInfo = this.#es6ClassInfo
-    const member = es6ClassInfo.getInstanceMember(key)
-    if (!this.filter$(member)) return null
-    return MemberInfo.from$(member) 
+    const es6Member = es6ClassInfo.getInstanceMember(key)
+    return this.#getMember(es6Member)
   }
 
   *ownInstanceMembers() {
     const es6ClassInfo = this.#es6ClassInfo
     const members = [...es6ClassInfo.ownInstanceMembers()]
-    yield *members.filter(this.filter$).map(member => MemberInfo.from$(member))
+    yield *this.#members(members)
   }
   *ownStaticMembers() {
     const es6ClassInfo = this.#es6ClassInfo
     const members = [...es6ClassInfo.ownStaticMembers()]
-    yield *members.filter(this.filter$).map(member => MemberInfo.from$(member))
+    yield *this.#members(members)
   }
   *ownMembers() {
     yield *this.ownStaticMembers()
@@ -118,12 +140,12 @@ export class FunctionInfo extends Info {
   *instanceMembers() {
     const es6ClassInfo = this.#es6ClassInfo
     const members = [...es6ClassInfo.instanceMembers()]
-    yield *members.filter(this.filter$).map(m => MemberInfo.from$(m))
+    yield *this.#members(members)
   }
   *staticMembers() {
     const es6ClassInfo = this.#es6ClassInfo
     const members = [...es6ClassInfo.staticMembers()]
-    yield *members.filter(this.filter$).map(m => MemberInfo.from$(m))
+    yield *this.#members(members)
   }
   *members() {
     yield *this.staticMembers()
@@ -152,13 +174,13 @@ export class FunctionInfo extends Info {
 
   *associatedConcepts() {
     const fn = this.ctor
-    for (const concept of ConceptReflect.associatedConcepts(fn))
-      yield Info.from(concept)
+    const concepts = [...ConceptReflect.associatedConcepts(fn)]
+    yield *concepts.map(([name, concept]) => [name, Info.from(concept)])
   }
   *ownAssociatedConcepts() {
     const fn = this.ctor
-    for (const concept of ConceptReflect.ownAssociatedConcepts(fn))
-      yield Info.from(concept)
+    const concepts = [...ConceptReflect.ownAssociatedConcepts(fn)]
+    yield *concepts.map(([name, concept]) => [name, Info.from(concept)])
   }
 
   equals(other) {
@@ -177,66 +199,37 @@ export class ClassInfo extends FunctionInfo {
     this.#_ = this.toString()
   }
 
-  filter$(member) { return true }
-
   toString() { return `[classInfo ${this.id.toString()}]` }
 }
-export class AbstractFunctionInfo extends FunctionInfo {
-  constructor(type) {
-    assert(new.target !== AbstractFunctionInfo)
-    super(type)
-  }
-}
-export class KnownPartialObjectInfo extends AbstractFunctionInfo {
-  constructor(type) {
-    assert(
-      type === PartialObject
-      || type == PartialPojo
-      || type == PartialClass
-      || type == Concept
-    )
-
-    super(type)
-  }
-
-  filter$(member) { return false }
-
-  toString() { return `[knownPartialObjectInfo ${this.id.toString()}]` }
-}
-export class PartialObjectInfo extends AbstractFunctionInfo { 
+export class PartialObjectInfo extends FunctionInfo { 
   #_
   #es6ClassInfo
 
   constructor(type) {
-    assert(new.target != PartialObjectInfo)
-
-    super(type)
+    super(PartialReflect.getPrototypicalType$(type))
     this.#es6ClassInfo = Es6Info.from(type)
     this.#_ = this.toString()
   }
 
   get md$() { return this.#es6ClassInfo }
 
-  filter$(member) { return !member?.isKnown }
+  toString() { return `[classInfo ${this.id.toString()}]` }
 }
-export class PartialPojoInfo extends PartialObjectInfo {
+export class PartialPojoSubclassInfo extends PartialObjectInfo {
   constructor(type) {
     assert(type.prototype instanceof PartialPojo)
     super(type)
   }
-  
-  get isTransparentPartialObject$() { return true }
-
   toString() { return `[partialPojoInfo]` }
 }
-export class PartialClassInfo extends PartialObjectInfo {
+export class PartialClassSubclassInfo extends PartialObjectInfo {
   constructor(type) {
     assert(type.prototype instanceof PartialClass)
     super(type)
   }
   toString() { return `[partialClassInfo ${this.id.toString()}]` }
 }
-export class ConceptInfo extends PartialObjectInfo {
+export class ConceptSubclassInfo extends PartialObjectInfo {
   constructor(type) {
     assert(type.prototype instanceof Concept)
     super(type)
@@ -251,7 +244,7 @@ Info.String = Info.from(String)
 Info.Number = Info.from(Number)
 Info.Boolean = Info.from(Boolean)
 Info.PartialObject = Info.from(PartialObject)
-Info.PartialObject = Info.from(PartialObject)
+Info.PartialPojo = Info.from(PartialPojo)
 Info.PartialClass = Info.from(PartialClass)
 Info.Concept = Info.from(Concept)
 
@@ -312,13 +305,16 @@ export class MemberInfo extends Info {
   }
   
   get partialClass() {
-    return Info.from(
-      PartialClassReflect.getPartialClass(this.host.ctor, this.name))
+    if (this.isStatic) return null
+    const fn = this.host.ctor
+    const partialClass = PartialClassReflect.getPartialClass(fn, this.name)
+    return Info.from(partialClass)
   }
 
   get isConceptual() {
-    for (const concept of this.concepts()) return true
-    return false
+    if (this.isStatic) return false
+    return this.concepts().next().done == false
+      //|| this.host.isConceptSubclass
   }
   *concepts() {
     if (this.isStatic) return
@@ -343,7 +339,7 @@ export class MemberInfo extends Info {
 
   parent() { return MemberInfo.from$(this.#es6MemberInfo.parent()) }
   root() { return MemberInfo.from$(this.#es6MemberInfo.root()) }
-  rootHost() { return FunctionInfo.from(this.#es6MemberInfo.rootHost()?.ctor) }
+  rootHost() { return FunctionInfo.from(this.#es6MemberInfo.rootHost()) }
 
   equals(other) {
     if (!(other instanceof MemberInfo)) return false
@@ -361,28 +357,3 @@ export class AccessorMemberInfo extends MemberInfo { }
 export class ValueMemberInfo extends MemberInfo { }
 export class MethodMemberInfo extends ValueMemberInfo { }
 export class DataMemberInfo extends ValueMemberInfo { }
-
-export class AssociatedConceptInfo extends Info {
-  static from$(concept) {
-    if (!concept) return null
-    assert(typeof concept == 'function', 'concept must be a function')
-    assert(ConceptReflect.isConcept(concept), 'concept must be a Concept')
-    return new AssociatedConceptInfo(concept.name, concept)
-  }
-
-  #name
-  #concpt
-
-  constructor(name, concept) {
-    super()
-    this.#name = name
-    this.#concpt = concept
-  }
-
-  get name() { return this.#name }
-  get concept() { return Info.from(this.#concpt) }
-
-  toString() {
-    return `${this.concept.toString()}, [associatedConceptInfo ${this.name}]`
-  }
-}
