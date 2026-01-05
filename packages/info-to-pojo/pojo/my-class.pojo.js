@@ -6,58 +6,38 @@ export const myClassPojo = {
   base: 'MyBase',
   members: {
     conceptual: {
-      MyConcept: {
-        methods: {
-          myConceptMethod: { type: 'method', host: 'MyClass', rootHost: 'MyBase' }
-        }
-      },
-      MyBaseConcept: {
-        methods: { myBaseConceptMethod: { type: 'method', host: 'MyBase' } }
-      },
+      MyConcept: { methods: { myConceptMethod: { host: '.' } } },
       MyLeftConcept: {
         methods: {
-          myLeftConceptMethod: { type: 'method', host: 'MyBase', isAbstract: true },
-          myAmbidextrousMethod: { type: 'method', host: 'MyBase', isAbstract: true }
+          myLeftConceptMethod: { isAbstract: true, host: 'MyBase' },
+          myAmbidextrousMethod: { isAbstract: true, host: 'MyBase' }
         }
       },
       MyRightConcept: {
         methods: {
-          myAmbidextrousMethod: { type: 'method', host: 'MyBase', isAbstract: true },
-          myRightConceptMethod: { type: 'method', host: 'MyBase', isAbstract: true }
+          myAmbidextrousMethod: { isAbstract: true, host: 'MyBase' },
+          myRightConceptMethod: { isAbstract: true, host: 'MyBase' }
         }
-      }
+      },
+      MyBaseConcept: { methods: { myBaseConceptMethod: { host: 'MyBase' } } }
     },
     static: {
       methods: {
-        myStaticMethod: { type: 'method', host: 'MyClass' },
-        myStaticBaseMethod: { type: 'method', host: 'MyBase' },
-        [MyStaticSymbol]: { type: 'method', host: 'MyClass' }
+        myStaticMethod: { host: '.' },
+        myStaticBaseMethod: { host: 'MyBase' },
+        [MyStaticSymbol]: { host: '.' }
       },
-      accessors: {
-        myStaticAccessor: {
-          type: 'accessor',
-          host: 'MyClass',
-          hasGetter: true,
-          hasSetter: true
-        }
-      }
+      properties: { myStaticAccessor: { host: '.' } }
     },
     instance: {
       methods: {
-        myMethod: { type: 'method', host: 'MyClass' },
-        myAbstractMethod: { type: 'method', host: 'MyClass', isAbstract: true },
-        myBaseMethod: { type: 'method', host: 'MyClass', rootHost: 'MyBase' },
-        myNewMethod: { type: 'method', host: 'MyClass' },
-        [MySymbol]: { type: 'method', host: 'MyClass' }
+        myMethod: { host: '.' },
+        myAbstractMethod: { isAbstract: true, host: '.' },
+        myBaseMethod: { host: '.' },
+        myNewMethod: { host: '.' },
+        [MySymbol]: { host: '.' }
       },
-      accessors: {
-        myAccessor: {
-          type: 'accessor',
-          host: 'MyClass',
-          hasGetter: true,
-          hasSetter: true
-        }
-      }
+      properties: { myAccessor: { host: '.' } }
     }
   }
 }

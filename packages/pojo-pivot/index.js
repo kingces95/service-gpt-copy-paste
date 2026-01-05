@@ -1,18 +1,18 @@
 import { assert } from "@kingjs/assert"
 import { trimPojo } from "@kingjs/pojo-trim"
 
-function pivotPojo(pojoRow, pivotsMd, pivot) {
+function pivotPojo(pojoRow, pivotsMd, pivot, context) {
 
   for (const key of Reflect.ownKeys(pivotsMd)) {
     const pivotMd = pivotsMd[key]
-    const { predicate, type } = pivotMd
+    const { predicate, discriminatorKey = 'type', discriminator } = pivotMd
     if (predicate) {
       if (!pojoRow[predicate]) continue
       delete pojoRow[predicate]
     }
-    if (type) {
-      if (pojoRow.type != type) continue
-      // delete pojo.type
+    if (discriminator) {
+      if (pojoRow[discriminatorKey] != discriminator) continue
+      delete pojoRow[discriminatorKey]
     }
     
     // pivotSkeleton ensures this exists
@@ -27,13 +27,22 @@ function pivotPojo(pojoRow, pivotsMd, pivot) {
         if (!(copyPivotKey in nextPivot))
           nextPivot[copyPivotKey] = pivotSkeleton(copyPivotMd)
         const copyPivot = nextPivot[copyPivotKey]
-        pivotPojo({ ...pojoRow }, copyPivotMd, copyPivot)
+        pivotPojo({ ...pojoRow }, copyPivotMd, copyPivot, context)
       }
       return
     }
 
     // base case
     if (!('pivot' in pivotMd)) {
+      const { map, type } = pivotMd
+      
+      if (map) pojoRow = map(pojoRow, context)
+
+      if (type == 'array') {
+        nextPivot.push(pojoRow)
+        return
+      }
+
       const { name } = pojoRow
       nextPivot[name] = pojoRow
       delete pojoRow.name
@@ -41,15 +50,20 @@ function pivotPojo(pojoRow, pivotsMd, pivot) {
     }
 
     // recursive case
-    return pivotPojo(pojoRow, pivotMd.pivot, nextPivot)
+    return pivotPojo(pojoRow, pivotMd.pivot, nextPivot, context)
   }
 }
 
 function pivotSkeleton(pivotsMd, pivot = { }) {
   for (const key of Reflect.ownKeys(pivotsMd)) {
     const pivotMd = pivotsMd[key]
-    const subPivot = pivot[key] = { }
 
+    if (pivotMd.type == 'array') {
+      pivot[key] = [ ]
+      continue
+    }
+
+    const subPivot = pivot[key] = { }
     const subPivotMd = pivotMd.pivot
     if (subPivotMd)
       pivotSkeleton(subPivotMd, subPivot)
@@ -57,9 +71,9 @@ function pivotSkeleton(pivotsMd, pivot = { }) {
   return pivot
 }
 
-export function pivotPojos(pojoRows, metadata) {
+export function pivotPojos(pojoRows, metadata, context) {
   const pivot = pivotSkeleton(metadata)
   for (const pojoRow of pojoRows)
-    pivotPojo({ ...pojoRow }, metadata, pivot)
+    pivotPojo({ ...pojoRow }, metadata, pivot, context)
   return trimPojo(pivot)
 }

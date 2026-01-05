@@ -1,0 +1,15 @@
+{
+  "name": "@kingjs/es6-base-type",
+  "version": "1.0.0",
+  "description": "Converts yargs to a plain old javascript object.",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "peerDependencies": {},
+  "author": "Chris King",
+  "license": "MIT"
+}

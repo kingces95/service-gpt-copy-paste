@@ -1,76 +1,43 @@
 import {
   Es6ClassInfo,
   Es6MemberInfo,
-  Es6ValueMemberInfo,
-  Es6DataMemberInfo,
-  Es6MethodMemberInfo,
-  Es6AccessorMemberInfo,
 } from '@kingjs/es6-info'
-import { Descriptor } from '@kingjs/descriptor'
 import { trimPojo } from '@kingjs/pojo-trim'
 import { toPojo } from '@kingjs/pojo'
 import { dumpPojo } from "@kingjs/pojo-dump"
+import { PojoMetadata } from '@kingjs/pojo-metadata'
 
-const {
-  userDefined: DefaultUserDefinedModifier,
-  accessor: DefaultAccessorModifier,
-  value: DefaultValueModifier,
-  method: DefaultMethodModifier,
-  data: DefaultDataModifier,
-} = Descriptor.DefaultModifier
+function metadata({ ownOnly } = { }) {
 
-export const Es6InfoToPojoSymbol = Symbol('es6-info-to-pojo')
+  return new PojoMetadata([
+    [Es6ClassInfo, {
+      name: 'string',
+      base: 'name',
+      isAnonymous: 'boolean',
+      [ownOnly ? 'ownMembers' : 'members']: 'records',
+    }],
+    [Es6MemberInfo, {
+      name: 'key',
+      modifiers: 'list',
+      host: ({ name }, [ context ]) => 
+        name == context.name ? '.' : name,
 
-Es6ClassInfo[Es6InfoToPojoSymbol] = {
-  name: 'string',
-  base: 'name',
-  isAnonymous: false,
-  members: 'records',
-  ownMembers: 'records',
-  // toString: 'string',
-}
-
-Es6MemberInfo[Es6InfoToPojoSymbol] = {
-  name: 'key',
-  type: 'string',
-  
-  host: 'name',
-  isStatic: 'boolean',
-  isKnown: 'boolean',
-  isNonPublic: 'boolean',
-
-  isConfigurable: DefaultUserDefinedModifier.configurable,
-
-  hasGetter: 'boolean',
-  hasSetter: 'boolean',
-  rootHost: 'name',
-}
-
-Es6ValueMemberInfo[Es6InfoToPojoSymbol] = {
-  ...Es6MemberInfo[Es6InfoToPojoSymbol],
-  isWritable: DefaultValueModifier.writable,
-}
-
-Es6MethodMemberInfo[Es6InfoToPojoSymbol] = {
-  ...Es6ValueMemberInfo[Es6InfoToPojoSymbol],
-  isEnumerable: DefaultMethodModifier.enumerable,
-}
-
-Es6DataMemberInfo[Es6InfoToPojoSymbol] = {
-  ...Es6ValueMemberInfo[Es6InfoToPojoSymbol],
-  isEnumerable: DefaultDataModifier.enumerable,
-}
-
-Es6AccessorMemberInfo[Es6InfoToPojoSymbol] = {
-  ...Es6MemberInfo[Es6InfoToPojoSymbol],
-  isEnumerable: DefaultAccessorModifier.enumerable,
+      // pivots
+      type: 'string',
+      isStatic: 'boolean',
+      isKnown: 'boolean',
+      isNonPublic: 'boolean',
+    }]
+  ])
 }
 
 const typePivotMd = {
-  constructor: { type: 'constructor' },
-  methods: { type: 'method' },
-  data: { type: 'data' },
-  accessors: { type: 'accessor' },      
+  constructor: { discriminator: 'constructor' },
+  methods: { discriminator: 'method' },
+  getters: { discriminator: 'getter' },
+  setters: { discriminator: 'setter' },
+  properties: { discriminator: 'property' },
+  fields: { discriminator: 'field' },
 }
 const nonPublicPivotMd = {
   __nonPublic: {
@@ -96,17 +63,11 @@ const staticPivotMd = {
   }
 }
 
-Es6ClassInfo.prototype.toPojo = async function({ 
-  filter, 
-  ownOnly,
-} = { }) {
+Es6ClassInfo.prototype.toPojo = async function({ filter, ownOnly,} = { }) {
   const pojo = await toPojo(this, { 
     filter,
-    symbol: Es6InfoToPojoSymbol,
     pivot: staticPivotMd,
-    excludeKeys: new Set([
-      ownOnly ? 'members' : 'ownMembers',
-    ]),
+    metadata: metadata({ ownOnly }),
   })
 
   const trimmedPojo = trimPojo(pojo)

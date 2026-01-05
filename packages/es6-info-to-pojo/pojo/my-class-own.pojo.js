@@ -1,25 +1,19 @@
 const MySymbol = Symbol.for('my-symbol')
 const MyStaticSymbol = Symbol.for('my-static-symbol')
 
-export const myClassPojo = {
+export const myClassOwnPojo = {
   name: 'MyClass',
   base: 'MyBase',
-  members: {
+  ownMembers: {
     static: {
       methods: {
         myStaticMethod: { host: '.' },
-        myStaticBaseMethod: { host: 'MyBase' },
         [MyStaticSymbol]: { host: '.' }
       },
       properties: { myStaticAccessor: { host: '.' } }
     },
     instance: {
-      methods: {
-        myMethod: { host: '.' },
-        myBaseMethod: { host: 'MyBase' },
-        myFunkyMethod: { modifiers: [ 'sealed', 'const' ], host: 'MyBase' },
-        [MySymbol]: { host: '.' }
-      },
+      methods: { myMethod: { host: '.' }, [MySymbol]: { host: '.' } },
       properties: { myAccessor: { host: '.' } }
     }
   }

@@ -3,28 +3,22 @@ export const myConceptPojo = {
   base: 'Concept',
   members: {
     conceptual: {
-      MyBaseConcept: {
-        methods: {
-          myBaseConceptMethod: { type: 'method', host: 'MyConcept', isAbstract: true }
-        }
-      },
       MyLeftConcept: {
         methods: {
-          myLeftConceptMethod: { type: 'method', host: 'MyConcept', isAbstract: true },
-          myAmbidextrousMethod: { type: 'method', host: 'MyConcept', isAbstract: true }
+          myLeftConceptMethod: { isAbstract: true, host: '.' },
+          myAmbidextrousMethod: { isAbstract: true, host: '.' }
         }
       },
       MyRightConcept: {
         methods: {
-          myAmbidextrousMethod: { type: 'method', host: 'MyConcept', isAbstract: true },
-          myRightConceptMethod: { type: 'method', host: 'MyConcept', isAbstract: true }
+          myAmbidextrousMethod: { isAbstract: true, host: '.' },
+          myRightConceptMethod: { isAbstract: true, host: '.' }
         }
+      },
+      MyBaseConcept: {
+        methods: { myBaseConceptMethod: { isAbstract: true, host: '.' } }
       }
     },
-    instance: {
-      methods: {
-        myConceptMethod: { type: 'method', host: 'MyConcept', isAbstract: true }
-      }
-    }
+    instance: { methods: { myConceptMethod: { isAbstract: true, host: '.' } } }
   }
 }

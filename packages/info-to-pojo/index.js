@@ -1,63 +1,46 @@
 import {
-  Info,
   FunctionInfo,
   MemberInfo,
-  ValueMemberInfo,
-  AccessorMemberInfo,
-  MethodMemberInfo,
-  DataMemberInfo,
 } from '@kingjs/info'
-import { 
-  Es6ClassInfo,
-  Es6MemberInfo,
-  Es6ValueMemberInfo,
-  Es6MethodMemberInfo,
-  Es6DataMemberInfo,
-  Es6AccessorMemberInfo,
-} from '@kingjs/es6-info'
-import { Es6InfoToPojoSymbol } from '@kingjs/es6-info-to-pojo'
 import { trimPojo } from '@kingjs/pojo-trim'
 import { toPojo } from '@kingjs/pojo'
 import { dumpPojo } from "@kingjs/pojo-dump"
+import { PojoMetadata } from '@kingjs/pojo-metadata'
+import { isAbstract } from '@kingjs/abstract'
 
-const InfoToPojoSymbol = Symbol('info-to-pojo')
+function metadata({ ownOnly } = { }) {
+  return new PojoMetadata([
+    [FunctionInfo, {
+      name: 'string',
+      base: 'name',
+      isAnonymous: 'boolean',
+      [ownOnly ? 'ownMembers' : 'members']: 'records',
+    }],
+    [MemberInfo, {
+      name: 'key',
+      modifiers: 'list',
+      isAbstract: 'boolean',
+      host: ({ name }, [ context ]) => 
+        name == context.name ? '.' : name,
 
-FunctionInfo[InfoToPojoSymbol] = {
-  ...Es6ClassInfo[Es6InfoToPojoSymbol],
-}
-
-MemberInfo[InfoToPojoSymbol] = {
-  ...Es6MemberInfo[Es6InfoToPojoSymbol],
-  isConceptual: 'boolean',
-  isAbstract: 'boolean',
-  concepts: 'names',
-}
-
-AccessorMemberInfo[InfoToPojoSymbol] = {
-  ...MemberInfo[InfoToPojoSymbol],
-  ...Es6AccessorMemberInfo[InfoToPojoSymbol],
-}
-
-ValueMemberInfo[InfoToPojoSymbol] = {
-  ...MemberInfo[InfoToPojoSymbol],
-  ...Es6ValueMemberInfo[Es6InfoToPojoSymbol],
-}
-
-MethodMemberInfo[InfoToPojoSymbol] = {
-  ...ValueMemberInfo[InfoToPojoSymbol],
-  ...Es6MethodMemberInfo[Es6InfoToPojoSymbol],
-}
-
-DataMemberInfo[InfoToPojoSymbol] = {
-  ...ValueMemberInfo[InfoToPojoSymbol],
-  ...Es6DataMemberInfo[Es6InfoToPojoSymbol],
+      // pivots
+      type: 'string',
+      isStatic: 'boolean',
+      isKnown: 'boolean',
+      isNonPublic: 'boolean',
+      isConceptual: 'boolean',
+      concepts: 'names',
+    }],
+  ])
 }
 
 const typePivotMd = {
-  methods: { type: 'method' },
-  data: { type: 'data' },
-  accessors: { type: 'accessor' },
-  constructor: { type: 'constructor' },    
+  constructor: { discriminator: 'constructor' },
+  methods: { discriminator: 'method' },
+  getters: { discriminator: 'getter' },
+  setters: { discriminator: 'setter' },
+  properties: { discriminator: 'property' },
+  fields: { discriminator: 'field' },
 }
 const nonPublicPivotMd = {
   __nonPublic: {
@@ -90,17 +73,11 @@ const conceptualPivotMd = {
   ...staticPivotMd
 }
 
-FunctionInfo.prototype.toPojo = async function({ 
-  filter,
-  ownOnly,
-} = { }) {
+FunctionInfo.prototype.toPojo = async function({ filter, ownOnly } = { }) {
   const pojo = await toPojo(this, { 
     filter,
-    symbol: InfoToPojoSymbol,
     pivot: conceptualPivotMd,
-    excludeKeys: new Set([
-      ownOnly ? 'members' : 'ownMembers',
-    ]),
+    metadata: metadata({ ownOnly }),
   })
 
   const trimmedPojo = trimPojo(pojo)

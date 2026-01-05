@@ -6,24 +6,12 @@ export const myClassInstancePojo = {
   members: {
     instance: {
       methods: {
-        myMethod: { type: 'method', host: 'MyClass' },
-        myBaseMethod: { type: 'method', host: 'MyBase' },
-        myFunkyMethod: {
-          type: 'method',
-          host: 'MyBase',
-          isConfigurable: false,
-          isWritable: false
-        },
-        [MySymbol]: { type: 'method', host: 'MyClass' }
+        myMethod: { host: '.' },
+        myBaseMethod: { host: 'MyBase' },
+        myFunkyMethod: { modifiers: [ 'sealed', 'const' ], host: 'MyBase' },
+        [MySymbol]: { host: '.' }
       },
-      accessors: {
-        myAccessor: {
-          type: 'accessor',
-          host: 'MyClass',
-          hasGetter: true,
-          hasSetter: true
-        }
-      }
+      properties: { myAccessor: { host: '.' } }
     }
-  },
+  }
 }

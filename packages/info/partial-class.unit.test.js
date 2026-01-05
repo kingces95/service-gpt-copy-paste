@@ -37,28 +37,28 @@ describe('A partial class', () => {
     ['instance setter', {
       set myInstanceAccessor(value) { }
     }, {
-      members: { instance: { accessors: {
-        myInstanceAccessor: { type: 'accessor', hasSetter: true }
+      members: { instance: { setters: {
+        myInstanceAccessor: { host: '.' }
       } } },
     }],
     ['data', { myData: 1 }, { 
-      members: { instance: { data: {
-        myData: { type: 'data' } 
+      members: { instance: { fields: {
+        myData: { host: '.' } 
       } } },
     }],
     ['abstract method', { myMethod: abstract }, { 
       members: { instance: { methods: {
-        myMethod: { type: 'method', isAbstract: true } 
+        myMethod: { host: '.', isAbstract: true } 
       } } }
     }],
     ['descriptor member', { myMethod: { value: 1 } }, {
-      members: { instance: { data: {
-        myMethod: { type: 'data' } 
+      members: { instance: { fields: {
+        myMethod: { host: '.' } 
       } } },
     }],
     ['const field', { myField: { value: 3.141, writable: false } }, {
-      members: { instance: { data: {
-        myField: { type: 'data', isWritable: false } 
+      members: { instance: { fields: {
+        myField: { host: '.', modifiers: [ 'const' ] } 
       } } },
     }],
   ])('with %s', (_, cls, expected) => {

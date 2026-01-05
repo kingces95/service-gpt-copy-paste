@@ -85,30 +85,30 @@ describe('A PartialClass', () => {
 describe('A member', () => {
   describe.each([
     ['abstract member', 'member', { member: abstract },
-      'member, abstract function, [partialPojoInfo]' ],
+      'member, abstract method, [partialPojoInfo]' ],
     ['data member', 'member', { member: 1 },
-      'member, { value: [number] }, [partialPojoInfo]' ],
+      'member, number, [partialPojoInfo]' ],
     ['null member', 'member', { member: null },
-      'member, { value: [null] }, [partialPojoInfo]' ],
+      'member, null, [partialPojoInfo]' ],
     ['undefined member', 'member', { member: undefined },
-      'member, { value: [undefined] }, [partialPojoInfo]' ],
+      'member, undefined, [partialPojoInfo]' ],
     ['boolean member', 'member', { member: true },
-      'member, { value: [boolean] }, [partialPojoInfo]' ],
+      'member, boolean, [partialPojoInfo]' ],
     ['bigint member', 'member', { member: 10n },
-      'member, { value: [bigint] }, [partialPojoInfo]' ],
+      'member, bigint, [partialPojoInfo]' ],
     ['symbol member', 'member', { member: MySymbol },
-      'member, { value: [symbol] }, [partialPojoInfo]' ],
+      'member, symbol, [partialPojoInfo]' ],
     ['array member', 'member', { member: { value: [] } },
-      'member, { value: [array] }, [partialPojoInfo]' ],
+      'member, array, [partialPojoInfo]' ],
     ['const data member', 'member', { 
       member: { value: 1, writable: false } },
-      'member, const { value: [number] }, [partialPojoInfo]' ],
+      'member, const number, [partialPojoInfo]' ],
     ['sealed data member', 'member', { 
       member: { value: 1, configurable: false } },
-      'member, sealed { value: [number] }, [partialPojoInfo]' ],
+      'member, sealed number, [partialPojoInfo]' ],
     ['hidden data member', 'member', { 
       member: { value: 1, enumerable: false } },
-      'member, hidden { value: [number] }, [partialPojoInfo]' ],
+      'member, hidden number, [partialPojoInfo]' ],
     // ['prototype', 'prototype', class { },
     //   'static const hidden sealed prototype { value: object }' ],
     ])('%s', (_, name, cls, expected) => {
@@ -139,7 +139,7 @@ describe('A prototype member', () => {
   })
   it('has a toString', () => {
     expect(prototypeMember.toString()).toBe(
-      'prototype, static sealed const hidden { value: [object] }, [classInfo type]')
+      'prototype, static known sealed const hidden object, [classInfo type]')
   })
 })
 
@@ -156,8 +156,7 @@ describe('A bespoke partial class', () => {
       const pojo = {
         members: { instance: { methods: {
           [MySymbol]: { 
-            type: 'method',
-            host: 'MyClass',
+            host: '.',
           },
         } } },
         name: 'MyClass',
@@ -195,7 +194,7 @@ describe('A bespoke partial class', () => {
         name: 'MyClass',
         base: 'PartialClass',
         members: { instance: { methods: {
-          method: { host: 'MyClass', type: 'method' }
+          method: { host: '.' }
         } } },
       }
 
@@ -232,10 +231,9 @@ describe('A bespoke partial class', () => {
     it('has a pojo', async () => {
       const pojo = {
         members: { 
-          instance: { data: {
+          instance: { fields: {
             myInstanceData: {
-              host: 'MyClass',
-              type: 'data', 
+              host: '.',
           } } },
         },
         name: 'MyClass',
@@ -284,12 +282,11 @@ describe('A bespoke partial class', () => {
       const pojo = {
         members: {
           instance: {
-            accessors: {
-              myAccessor: { type: 'accessor', host: 'MyEg',
-                hasGetter: true, hasSetter: true }
+            properties: {
+              myAccessor: { host: '.' }
             },
             methods: {
-              myMethod: { type: 'method', host: 'MyEg' }
+              myMethod: { host: '.' }
             }
           },
         },
@@ -322,17 +319,14 @@ describe('A bespoke partial class', () => {
       const pojo = {
         members: {
           instance: {
-            accessors: {
+            properties: {
               myAccessor: { 
-                type: 'accessor', 
-                host: 'MyClass',
-                hasGetter: true, 
-                hasSetter: true, 
+                host: '.',
                 isAbstract: true 
               }
             },
             methods: {
-              myMethod: { type: 'method', host: 'MyClass', isAbstract: true }
+              myMethod: { host: '.', isAbstract: true }
             }
           }
         },

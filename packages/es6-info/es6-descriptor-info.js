@@ -156,9 +156,9 @@ export class Es6DescriptorInfo {
     return true
   }
 
-  toString() {
-    const isConfigurableDefault = Es6DescriptorInfo.DefaultConfigurable
-    return this.isConfigurable == isConfigurableDefault ? null : 'sealed'
+  *modifiers() {
+    if (this.isConfigurable != Es6DescriptorInfo.DefaultConfigurable)
+      yield 'sealed'
   }
 }
 
@@ -168,12 +168,15 @@ export class Es6AccessorDescriptorInfo extends Es6DescriptorInfo {
 
   get type() { return Es6AccessorDescriptorInfo.Tag }
 
-  toString() {
-    const isEnumerableDefault = Es6AccessorDescriptorInfo.DefaultEnumerable
+  *modifiers() { 
+    yield* super.modifiers()
+    if (this.isEnumerable != Es6AccessorDescriptorInfo.DefaultEnumerable)
+      yield 'enumerable'
+  }
 
+  toString() {
     return [
-      super.toString(),
-      this.isEnumerable == isEnumerableDefault ? null : 'enumerable',
+      ...this.modifiers(),
       '{', [
         !this.hasGetter ? null : `get`,
         !this.hasSetter ? null : `set`,
@@ -190,12 +193,10 @@ export class Es6ValueDescriptorInfo extends Es6DescriptorInfo {
     super(descriptor)
   }
 
-  toString() {
-    const isWritableDefault = Es6ValueDescriptorInfo.DefaultWritable
-    return [
-      super.toString(),
-      this.isWritable == isWritableDefault ? null : 'const',
-    ].filter(Boolean).join(' ')
+  *modifiers() { 
+    yield* super.modifiers()
+    if (this.isWritable != Es6ValueDescriptorInfo.DefaultWritable)
+      yield 'const'
   }
 }
 
@@ -208,12 +209,17 @@ export class Es6DataDescriptorInfo extends Es6ValueDescriptorInfo {
   }
 
   get type() { return Es6DataDescriptorInfo.Tag }
+
+  *modifiers() { 
+    yield* super.modifiers()
+    if (this.isEnumerable != Es6DataDescriptorInfo.DefaultEnumerable)
+      yield 'hidden'
+  }
   
   toString() {
     const isEnumerableDefault = Es6DataDescriptorInfo.DefaultEnumerable
     return [
-      super.toString(),
-      this.isEnumerable == isEnumerableDefault ? null : 'hidden', '{',
+      ...this.modifiers(), '{',
       `value:`, `[${es6Typeof(this.value)}]`, '}'
     ].filter(Boolean).join(' ')
   }
@@ -230,10 +236,14 @@ export class Es6MethodDescriptorInfo extends Es6ValueDescriptorInfo {
   }
 
   get type() { return Es6MethodDescriptorInfo.Tag }
+
+  *modifiers() { 
+    yield* super.modifiers()
+  }
   
   toString() {
     return [
-      super.toString(),
+      ...this.modifiers(),
       `function`,
     ].filter(Boolean).join(' ')
   }

@@ -9,6 +9,7 @@ import { functionPojo } from "./pojo/function.pojo.js"
 import { myClassPojo } from "./pojo/my-class.pojo.js"
 import { myClassStaticPojo } from "./pojo/my-class-static.pojo.js"
 import { myClassInstancePojo } from "./pojo/my-class-instance.pojo.js"
+import { myClassOwnPojo } from "./pojo/my-class-own.pojo.js"
 
 import { MyClass } from "./dump.test.js"
 
@@ -86,5 +87,23 @@ describe('MyClass static members', () => {
 
   it('matches expected', () => {
     expect(pojo).toEqual(myClassStaticPojo)
+  })
+})
+
+describe('MyClass own members', () => {
+  let pojo
+  beforeEach(async () => {
+    const fnInfo = Es6Info.from(MyClass)
+    pojo = await fnInfo.toPojo({
+      ownOnly: true,
+      filter: { 
+        isKnown: false,
+        isNonPublic: false,
+      },
+    })
+  })
+
+  it('matches expected', () => {
+    expect(pojo).toEqual(myClassOwnPojo)
   })
 })

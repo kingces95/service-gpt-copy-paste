@@ -4,9 +4,9 @@ import { beforeEach } from 'vitest'
 import { pivotPojos } from '@kingjs/pojo-pivot'
 
 const typePivotMd = {
-  methods: { type: 'method' },
-  data: { type: 'data' },
-  accessors: { type: 'accessor' },      
+  methods: { discriminator: 'method' },
+  data: { discriminator: 'data' },
+  accessors: { discriminator: 'accessor' },      
 }
 const nonPublicPivotMd = {
   __nonPublic: {
@@ -69,6 +69,10 @@ describe('Rows of pojos ala reflection info', () => {
       { name: '_knownStaticMethod', 
         type: 'method', isKnown: true, isStatic: true, isNonPublic: true },
     ]
+
+    // add `host: '.'` to each info
+    for (const info of infos)
+      info.host = '.'
   })
 
   describe('pivoted with metadata', () => {
@@ -82,28 +86,28 @@ describe('Rows of pojos ala reflection info', () => {
         __static: {
           __known: {
             __nonPublic: {
-              methods: { _knownStaticMethod: { type: 'method' } }
+              methods: { _knownStaticMethod: { host: '.' } }
             },
-            methods: { knownStaticMethod: { type: 'method' } }
+            methods: { knownStaticMethod: { host: '.' } }
           },
           __nonPublic: {
-            methods: { _staticMethod: { type: 'method' } }
+            methods: { _staticMethod: { host: '.' } }
           },
-          methods: { staticMethod: { type: 'method' } }
+          methods: { staticMethod: { host: '.' } }
         },
         __instance: {
           __known: {
             __nonPublic: {
-              methods: { _knownMethod: { type: 'method' } }
+              methods: { _knownMethod: { host: '.' } }
             },
-            methods: { knownMethod: { type: 'method' } }
+            methods: { knownMethod: { host: '.' } }
           },
           __nonPublic: {
-            methods: { _method: { type: 'method' } }
+            methods: { _method: { host: '.' } }
           },
-          methods: { method: { type: 'method' } },
-          data: { data: { type: 'data' } },
-          accessors: { accessor: { type: 'accessor', hasGetter: true } }
+          methods: { method: { host: '.' } },
+          data: { data: { host: '.' } },
+          accessors: { accessor: { host: '.', hasGetter: true } }
         }
       }
       //console.log(result)

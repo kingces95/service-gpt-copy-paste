@@ -206,7 +206,9 @@ export class PartialObjectInfo extends FunctionInfo {
   #es6ClassInfo
 
   constructor(type) {
-    super(PartialReflect.getPrototypicalType$(type))
+    const prototypicalHost = PartialReflect.getPrototypicalType$(type)
+    assert(prototypicalHost instanceof Function)
+    super(prototypicalHost)
     this.#es6ClassInfo = Es6Info.from(type)
     this.#_ = this.toString()
   }
@@ -255,9 +257,7 @@ export class MemberInfo extends Info {
     assert(es6MemberInfo instanceof Es6MemberInfo, 
       'descriptor must be a Es6MemberInfo')
     
-    if (es6MemberInfo.isAccessor) return new AccessorMemberInfo(es6MemberInfo)
-    if (es6MemberInfo.isMethod) return new MethodMemberInfo(es6MemberInfo)
-    return new DataMemberInfo(es6MemberInfo)
+    return new MemberInfo(es6MemberInfo)
   }
 
   #_
@@ -269,20 +269,27 @@ export class MemberInfo extends Info {
     this.#_ = this.toString()
   }
 
+  get descriptorInfo() { return this.#es6MemberInfo.descriptorInfo }
   get host() { 
     let host = this.#es6MemberInfo.host
     const fn = PartialReflect.getPrototypicalHost$(host.ctor)
     return Info.from(fn)
   }
   get name() { return this.#es6MemberInfo.name }
+  get keyInfo() { return this.#es6MemberInfo.keyInfo }
   get isKnown() { return this.#es6MemberInfo.isKnown }
   get isNonPublic() { return this.#es6MemberInfo.isNonPublic }
-
+  get type() { return this.#es6MemberInfo.type }
+  get returnType() { return this.#es6MemberInfo.returnType }
+  
   get isAccessor() { return this.#es6MemberInfo.isAccessor }
+  get isSetter() { return this.#es6MemberInfo.isSetter }
+  get isGetter() { return this.#es6MemberInfo.isGetter }
+  get isProperty() { return this.#es6MemberInfo.isProperty }
+  get isField() { return this.#es6MemberInfo.isField }
   get isMethod() { return this.#es6MemberInfo.isMethod }
   get isData() { return this.#es6MemberInfo.isData }
   get isConstructor() { return this.#es6MemberInfo.isConstructor }
-  get type() { return this.#es6MemberInfo.type }
 
   get isStatic() { return this.#es6MemberInfo.isStatic }
 
@@ -298,11 +305,7 @@ export class MemberInfo extends Info {
   get setter() { return this.#es6MemberInfo.setter }
   get value() { return this.#es6MemberInfo.value }
 
-  get isAbstract() { 
-    const { descriptorInfo } = this.#es6MemberInfo
-    const { descriptor } = descriptorInfo
-    return isAbstract(descriptor)
-  }
+  get isAbstract() { return isAbstract(this.descriptorInfo.descriptor) }
   
   get partialClass() {
     if (this.isStatic) return null
@@ -346,14 +349,35 @@ export class MemberInfo extends Info {
     return this.#es6MemberInfo.equals(other.#es6MemberInfo)
   }
 
-  toString() { 
-    return this.#es6MemberInfo.toString({
-      modifiers: [ this.isAbstract ? 'abstract' : null ],
-      host: this.host
-    })
+  get descriptorType() { return this.#es6MemberInfo.descriptorType }
+  *modifiers() { yield* this.#es6MemberInfo.modifiers() }
+  *pivots() {
+    yield* this.#es6MemberInfo.pivots()
+    if (this.isAbstract) yield 'abstract'
+  }
+
+  toString() {
+    const keyInfo = this.keyInfo
+
+    return [
+      // e.g. 'myMethod', '[Symbol.mySymbol]'
+      keyInfo.toString(), 
+      
+      [
+        // e.g. 'static', 'non-public', 'known', 'conceptual', 'abstract'
+        ...this.pivots(), 
+
+        // e.g. 'sealed', 'enumerable', 'const', 'hidden'
+        ...this.modifiers(),
+
+        // e.g. 'method', 'constructor, 'getter', 'setter', 'property'
+        // or when field 'string', 'number', 'function', 'array' etc.
+        this.descriptorType, 
+
+      ].filter(Boolean).join(' '),
+
+      // e.g. '[classInfo MyClass]'
+      this.host.toString()
+    ].join(', ')
   }
 }
-export class AccessorMemberInfo extends MemberInfo { }
-export class ValueMemberInfo extends MemberInfo { }
-export class MethodMemberInfo extends ValueMemberInfo { }
-export class DataMemberInfo extends ValueMemberInfo { }

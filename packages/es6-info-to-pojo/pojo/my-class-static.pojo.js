@@ -6,18 +6,11 @@ export const myClassStaticPojo = {
   members: {
     static: {
       methods: {
-        myStaticMethod: { type: 'method', host: 'MyClass' },
-        myStaticBaseMethod: { type: 'method', host: 'MyBase' },
-        [MyStaticSymbol]: { type: 'method', host: 'MyClass' }
+        myStaticMethod: { host: '.' },
+        myStaticBaseMethod: { host: 'MyBase' },
+        [MyStaticSymbol]: { host: '.' }
       },
-      accessors: {
-        myStaticAccessor: {
-          type: 'accessor',
-          host: 'MyClass',
-          hasGetter: true,
-          hasSetter: true
-        }
-      }
-    },
-  },
+      properties: { myStaticAccessor: { host: '.' } }
+    }
+  }
 }

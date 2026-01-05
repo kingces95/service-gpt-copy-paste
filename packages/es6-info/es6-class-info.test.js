@@ -5,12 +5,11 @@ import {
   Es6ObjectRuntimeNameOrSymbol,
   Es6ClassInfo, 
   Es6MemberInfo,
-  Es6ConstructorMemberInfo, 
-  Es6DataMemberInfo, 
-  Es6MethodMemberInfo, 
-  Es6AccessorMemberInfo } from './es6-class-info.js'
-import { has } from 'lodash'
-import { value } from '@kingjs/abstract'
+  Es6ConstructorInfo, 
+  Es6ValueInfo, 
+  Es6MethodInfo, 
+  Es6AccessorInfo } from './es6-class-info.js'
+
 
 // Functions are also instances so can self-reflect. These members would
 // typically only exist in a reflection system ala FunctionInfo.call() but
@@ -297,37 +296,38 @@ describe('Es6ClassInfo known type invariants:', () => {
           it('has correct toString', () => {
             const toString = member.toString()
             const static$ = isStatic ? 'static ' : ''
+            const nonPublic$ = member.isNonPublic ? 'non-public ' : ''
 
             switch (name) {
               case 'length': 
                 expect(toString).toBe(
-                  `length, ${static$}const hidden { value: [number] }, [es6ClassInfo ${fn.name}]`)
+                  `length, ${static$}known const hidden number, [es6ClassInfo ${fn.name}]`)
                 break
               case 'name':
                 expect(toString).toBe(
-                  `name, ${static$}const hidden { value: [string] }, [es6ClassInfo ${fn.name}]`)
+                  `name, ${static$}known const hidden string, [es6ClassInfo ${fn.name}]`)
                 break
               case 'prototype':
                 expect(toString).toBe(fn == Function ?
-                  `prototype, static sealed const function, [es6ClassInfo ${fn.name}]` :
-                  `prototype, static sealed const hidden { value: [object] }, [es6ClassInfo ${fn.name}]`)
+                  `prototype, static known sealed const method, [es6ClassInfo ${fn.name}]` :
+                  `prototype, static known sealed const hidden object, [es6ClassInfo ${fn.name}]`)
                 break
               case 'constructor':
                 expect(toString).toBe(
-                  `constructor, hidden { value: [class] }, [es6ClassInfo ${fn.name}]`)
+                  `constructor, known hidden constructor, [es6ClassInfo ${fn.name}]`)
                 break
               case Symbol.hasInstance:
                 expect(toString).toBe(
-                  `[Symbol(Symbol.hasInstance)], sealed const function, [es6ClassInfo ${fn.name}]`)
+                  `[Symbol(Symbol.hasInstance)], known sealed const method, [es6ClassInfo ${fn.name}]`)
                 break
               case 'arguments':
               case 'caller':
                 expect(toString).toBe(
-                  `${name}, { get; set }, [es6ClassInfo ${fn.name}]`)
+                  `${name}, known property, [es6ClassInfo ${fn.name}]`)
                 break
               default:
                 expect(toString).toBe(
-                  `${name}, ${static$}${typeof prototype[name]}, [es6ClassInfo ${fn.name}]`)
+                  `${name}, ${static$}${nonPublic$}known method, [es6ClassInfo ${fn.name}]`)
             }
           })
           it('equals another instance from getOwnMember', () => {
@@ -337,13 +337,13 @@ describe('Es6ClassInfo known type invariants:', () => {
             expect(member.equals(other)).toBe(true)
           })
           it('type matches predicate', () => {
-            if (member instanceof Es6ConstructorMemberInfo)
+            if (member instanceof Es6ConstructorInfo)
               expect(member.isConstructor).toBe(true)
-            else if (member instanceof Es6MethodMemberInfo)
+            else if (member instanceof Es6MethodInfo)
               expect(member.isMethod).toBe(true)
-            else if (member instanceof Es6DataMemberInfo)
+            else if (member instanceof Es6ValueInfo)
               expect(member.isData).toBe(true)
-            else if (member instanceof Es6AccessorMemberInfo)
+            else if (member instanceof Es6AccessorInfo)
               expect(member.isAccessor).toBe(true)
             else
               throw new Error(`Unknown member type: ${member}`)
@@ -496,7 +496,7 @@ describe('Es6ClassInfo empty custom class', () => {
     })
     it('has only constructor member', () => {
       expect(members.length).toBe(1)
-      expect(members[0]).toBeInstanceOf(Es6ConstructorMemberInfo)
+      expect(members[0]).toBeInstanceOf(Es6ConstructorInfo)
       expect(members[0].isConstructor).toBe(true)
       expect(members[0].isStatic).toBe(false)
       expect(members[0].isNonPublic).toBe(false)
@@ -610,7 +610,7 @@ describe('Es6MemberInfo toString', () => {
 
   it('has correct toString', () => {
     expect(member.toString())
-      .toBe('toString, function, [es6ClassInfo MyEmptyClass]')
+      .toBe('toString, method, [es6ClassInfo MyEmptyClass]')
   })
   // test member info .equals
 
@@ -651,21 +651,27 @@ const MySymbol = Symbol('test-symbol')
 describe('A member', () => {
   describe.each([
     ['on MyClass', 'member', class MyClass { member() { } }, 
-      'member, function, [es6ClassInfo MyClass]'],
+      'member, method, [es6ClassInfo MyClass]'],
     ['constructor', 'constructor', class MyClass { constructor() { } },
-      'constructor, hidden { value: [class] }, [es6ClassInfo MyClass]'],
+      'constructor, known hidden constructor, [es6ClassInfo MyClass]'],
     ['on anonnymous', 'member', class { member() { } }, 
-      'member, function, [es6ClassInfo <anonymous>]'],
+      'member, method, [es6ClassInfo <anonymous>]'],
     ['static on MyClass', 'member', class MyClass { static member() { } },
-      'member, static function, [es6ClassInfo MyClass]'],
+      'member, static method, [es6ClassInfo MyClass]'],
     ['with symbol name', MySymbol, class MyClass { [MySymbol]() { } },
-      '[Symbol(test-symbol)], function, [es6ClassInfo MyClass]'],
+      '[Symbol(test-symbol)], method, [es6ClassInfo MyClass]'],
     ['static with symbol name', MySymbol, class MyClass { static [MySymbol]() { } },
-      '[Symbol(test-symbol)], static function, [es6ClassInfo MyClass]'],
-    ['getter on MyClass', 'member', class MyClass { 
+      '[Symbol(test-symbol)], static method, [es6ClassInfo MyClass]'],
+    ['property on MyClass', 'member', class MyClass { 
       get member() { } 
       set member(value) { }
-    }, 'member, { get; set }, [es6ClassInfo MyClass]'],
+    }, 'member, property, [es6ClassInfo MyClass]'],
+    ['getter on MyClass', 'member', class MyClass { 
+      get member() { } 
+    }, 'member, getter, [es6ClassInfo MyClass]'],
+    ['setter on MyClass', 'member', class MyClass { 
+      set member(value) { }
+    }, 'member, setter, [es6ClassInfo MyClass]'],
     ])('%s', (_, name, cls, expected) => {
     it('has a toString', async () => {
       const fnInfo = Es6ClassInfo.from(cls)

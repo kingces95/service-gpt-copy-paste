@@ -339,23 +339,23 @@ describe('A class', () => {
   describe.each([
     ['no members', class { }, { }],
     ['static data', class { static myStaticMember = 1 }, {
-      members: { static: { data: {
-        myStaticMember: { type: 'data' } 
+      members: { static: { fields: {
+        myStaticMember: { host: '.' } 
       } } },
     }],
     ['instance member', class { myInstanceMember = 1 }, { }],
     ['static getter', class {
       static get myStaticAccessor() { return 1 }
     }, {
-      members: { static: { accessors: {
-        myStaticAccessor: { type: 'accessor', hasGetter: true  }
+      members: { static: { getters: {
+        myStaticAccessor: { host: '.'  }
       } } },
     }],
     ['instance setter', class {
       set myInstanceAccessor(value) { }
     }, {
-      members: { instance: { accessors: {
-        myInstanceAccessor: { type: 'accessor', hasSetter: true }
+      members: { instance: { setters: {
+        myInstanceAccessor: { host: '.' }
       } } },
     }],
   ])('with %s', (description, cls, expected) => {
@@ -391,8 +391,7 @@ describe('A bespoke class', () => {
         isAnonymous: true,
         members: { instance: { methods: {
           [MySymbol]: { 
-            type: 'method',
-            // isEnumerable: true
+            host: '.',
           },
         } } },
         base: 'Object'
@@ -438,11 +437,8 @@ describe('A bespoke class', () => {
         isAnonymous: true,
         members: {
           // Instance ctor is known so excluded by filter 
-          // instance: { methods: {
-          //   constructor: { type: 'method', rootHost: 'Object' } 
-          // } },
-          static: { data: {
-            constructor: { type: 'data' }
+          static: { fields: {
+            constructor: { host: '.' }
           } }
         },
         base: 'Object'
@@ -467,11 +463,10 @@ describe('A bespoke class', () => {
     it('has a pojo', async () => {
       const pojo = {
         isAnonymous: true,
-        members: { static: { data: {
+        members: { static: { fields: {
           myStaticConst: { 
-            type: 'data',
-            isConfigurable: false,
-            isWritable: false,
+            host: '.',
+            modifiers: [ 'sealed', 'const' ],
           }
         } } },
         base: 'Object'
@@ -492,13 +487,13 @@ describe('A bespoke class', () => {
       const pojo = {
         isAnonymous: true,
         members: { 
-          instance: { data: {
+          instance: { fields: {
             myInstanceData: { 
-              type: 'data', 
+              host: '.', 
           } } },
-          static: { data: {
+          static: { fields: {
             myStaticData: { 
-              type: 'data', 
+              host: '.', 
           } } },
         },
         base: 'Object'
@@ -547,19 +542,19 @@ describe('A bespoke class', () => {
         isAnonymous: true,
         members: {
           instance: {
-            accessors: {
-              myAccessor: { type: 'accessor', hasGetter: true, hasSetter: true }
+            properties: {
+              myAccessor: { host: '.' }
             },
             methods: {
-              myMethod: { type: 'method' }
+              myMethod: { host: '.' }
             }
           },
           static: {
-            accessors: {
-              myAccessor: { type: 'accessor', hasGetter: true, hasSetter: true }
+            properties: {
+              myAccessor: { host: '.' }
             },
             methods: {
-              myMethod: { type: 'method' }
+              myMethod: { host: '.' }
             }
           }
         },
@@ -592,16 +587,14 @@ describe('A bespoke class', () => {
         isAnonymous: true,
         members: {
           instance: {
-            accessors: {
+            properties: {
               myAccessor: { 
-                type: 'accessor', 
-                hasGetter: true, 
-                hasSetter: true, 
+                host: '.', 
                 isAbstract: true 
               }
             },
             methods: {
-              myMethod: { type: 'method', isAbstract: true }
+              myMethod: { host: '.', isAbstract: true }
             }
           }
         },

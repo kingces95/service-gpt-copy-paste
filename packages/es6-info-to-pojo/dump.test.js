@@ -39,14 +39,14 @@ Object.defineProperty(MyBase.prototype, 'myFunkyMethod', {
 })
 
 function dump(fn) {
-  const fnInfo = Es6Info.from(fn)
-  const name = fnInfo.name 
-  fnInfo.dump({
-    ownOnly: false,
+  const info = Es6Info.from(fn)
+  const name = info.name 
+  info.dump({
+    ownOnly: true,
     filter: [{ 
-      isStatic: true,
-      isKnown: true,
-      //isNonPublic: true,
+      // isStatic: false,
+      isKnown: false,
+      isNonPublic: false,
     }],
   })
 }
@@ -55,6 +55,6 @@ function dump(fn) {
 // dump(Object)
 // dump(Function)
 // dump(MyBase)
-// dump(MyClass)
-dump(AnonymousClass)
+dump(MyClass)
+// dump(AnonymousClass)
 

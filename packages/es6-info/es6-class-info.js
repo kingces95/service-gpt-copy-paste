@@ -3,6 +3,7 @@ import { Es6DescriptorInfo } from './es6-descriptor-info.js'
 import { Es6IdInfo } from './es6-id-info.js'
 import { Es6KeyInfo } from './es6-key-info.js'
 import { Reflection } from '@kingjs/reflection'
+import { es6Typeof } from "./es6-typeof.js"
 import util from 'util'
 
 // Es6MemberInfo = Es6DescriptorInfo + name + host + isStatic
@@ -193,31 +194,31 @@ export class Es6MemberInfo extends Es6Info {
     assert(descriptorInfo instanceof Es6DescriptorInfo, 
       'descriptor must be a DescriptorInfo')
 
-    assert(descriptorInfo.isData 
-      || descriptorInfo.isMethod 
-      || descriptorInfo.isAccessor,
+    const { isData, isMethod, isAccessor, hasGetter, hasSetter } = descriptorInfo
+
+    assert(isData || isMethod || isAccessor,
       'descriptor must be a data, method, or accessor descriptor')
-    
-    const ctor = this.#discriminate(host, keyInfo, descriptorInfo, metadata)
-    return new ctor(host, keyInfo, descriptorInfo, metadata)
-  }
 
-  static #discriminate(host, keyInfo, descriptorInfo, { isStatic } = { }) {
-    if (descriptorInfo.isAccessor) 
-      return Es6AccessorMemberInfo
+    if (isAccessor) {
+      if (!hasSetter) 
+        return new Es6GetterInfo(host, keyInfo, descriptorInfo, metadata)
+      else if (!hasGetter)
+        return new Es6SetterInfo(host, keyInfo, descriptorInfo, metadata)
+      else
+        return new Es6PropertyInfo(host, keyInfo, descriptorInfo, metadata)
+    }
 
-    if (host 
-      && keyInfo.value === 'constructor'
-      && !isStatic
+    if (keyInfo.value === 'constructor' 
+      && !metadata.isStatic
       && descriptorInfo.value === host.ctor)
-      return Es6ConstructorMemberInfo
+      return new Es6ConstructorInfo(host, keyInfo, descriptorInfo, metadata)
 
-    if (descriptorInfo.isMethod) 
-      return Es6MethodMemberInfo
+    if (isData)
+      return new Es6FieldInfo(host, keyInfo, descriptorInfo, metadata)
 
-    assert(descriptorInfo.isData,
-      'descriptor must be a data descriptor')
-    return Es6DataMemberInfo
+    assert(isMethod)
+
+    return new Es6MethodInfo(host, keyInfo, descriptorInfo, metadata)
   }
 
   #_
@@ -239,7 +240,6 @@ export class Es6MemberInfo extends Es6Info {
     this.#_ = this.toString()
   }
 
-  get keyInfo$() { return this.#keyInfo }
   rootOrSelf$() {
     const parent = this.parent() 
     return parent ? parent.rootOrSelf$() : this 
@@ -248,6 +248,7 @@ export class Es6MemberInfo extends Es6Info {
   get descriptorInfo() { return this.#descriptorInfo }
   get host() { return this.#host }
   get name() { return this.#keyInfo.value }
+  get keyInfo() { return this.#keyInfo }
   get isNonPublic() { return this.#keyInfo.isNonPublic }
   get isKnown() {
     if (this.host.isKnown) return true
@@ -261,18 +262,27 @@ export class Es6MemberInfo extends Es6Info {
     return false
   }
   get type() {
-    // useful for pivoting
-    if (this.isAccessor) return 'accessor'
-    if (this.isData) return 'data'
+    if (this.isGetter) return 'getter'
+    if (this.isSetter) return 'setter'
+    if (this.isProperty) return 'property'
+    if (this.isField) return 'field'
     if (this.isConstructor) return 'constructor'
     if (this.isMethod) return 'method'
     assert(false, 'unreachable')
   }
+  get returnType() {
+    if (this.isField) return es6Typeof(this.value)
+    return 'object'
+  }
 
-  get isAccessor() { return this instanceof Es6AccessorMemberInfo }
-  get isMethod() { return this instanceof Es6MethodMemberInfo }
-  get isData() { return this instanceof Es6DataMemberInfo }
-  get isConstructor() { return this instanceof Es6ConstructorMemberInfo }
+  get isAccessor() { return this instanceof Es6AccessorInfo }
+  get isSetter() { return this instanceof Es6SetterInfo }
+  get isGetter() { return this instanceof Es6GetterInfo }
+  get isProperty() { return this instanceof Es6PropertyInfo }
+  get isConstructor() { return this instanceof Es6ConstructorInfo }
+  get isMethod() { return this instanceof Es6MethodInfo }
+  get isData() { return this instanceof Es6ValueInfo }
+  get isField() { return this instanceof Es6FieldInfo }
 
   get isStatic() { return this.#isStatic }
 
@@ -314,27 +324,50 @@ export class Es6MemberInfo extends Es6Info {
     return true
   }
 
-  toString({ modifiers = [], host = this.host } = { }) {
-    const keyInfo = this.keyInfo$
+  get descriptorType() {
+    if (this.isField) return this.returnType
+    return this.type
+  }
+  *modifiers() { yield* this.#descriptorInfo.modifiers() }
+  *pivots() { 
+    if (this.isStatic) yield 'static' 
+    if (this.isNonPublic) yield 'non-public'
+    if (this.isKnown) yield 'known'
+  }
+
+  toString() {
+    const keyInfo = this.keyInfo
 
     return [
-      keyInfo.toString(), [
-        this.isStatic ? 'static' : null,
-        ...modifiers,
-        this.#descriptorInfo.toString(),
+      // e.g. 'myMethod', '[Symbol.mySymbol]'
+      keyInfo.toString(), 
+      
+      [
+        // e.g. 'static', 'non-public', 'known'
+        ...this.pivots(), 
+
+        // e.g. 'sealed', 'enumerable', 'const', 'hidden'
+        ...this.modifiers(),
+
+        // e.g. 'method', 'constructor, 'getter', 'setter', 'property'
+        // or when field 'string', 'number', 'function', 'array' etc.
+        this.descriptorType, 
+
       ].filter(Boolean).join(' '),
-      host.toString()
+
+      // e.g. '[es6ClassInfo MyClass]'
+      this.host.toString()
     ].join(', ')
   }
 }
-export class Es6ValueMemberInfo extends Es6MemberInfo { 
-}
-export class Es6DataMemberInfo extends Es6ValueMemberInfo { 
-}
-export class Es6MethodMemberInfo extends Es6ValueMemberInfo { 
-}
-export class Es6ConstructorMemberInfo extends Es6MethodMemberInfo { 
-}
-export class Es6AccessorMemberInfo extends Es6MemberInfo { 
-}
 
+// useful for attaching toPojo metadata
+export class Es6AccessorInfo extends Es6MemberInfo { }
+export class Es6GetterInfo extends Es6AccessorInfo { }
+export class Es6SetterInfo extends Es6AccessorInfo { }
+export class Es6PropertyInfo extends Es6AccessorInfo { }
+export class Es6ValueInfo extends Es6MemberInfo { }
+export class Es6FieldInfo extends Es6ValueInfo { }
+export class Es6MethodInfo extends Es6ValueInfo { }
+export class Es6ConstructorInfo extends Es6MethodInfo { }
+  

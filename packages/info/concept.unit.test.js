@@ -89,23 +89,21 @@ describe('A concept', () => {
   describe.each([
     ['no members', class MyConcept extends Concept { }, { }],
     ['static data', class MyConcept extends Concept { 
-      static myStaticMember = 1 }, {
+      static member = 1 }, {
       // static members are ignored by the DSL
-      }],
+    }],
     ['static getter', class MyConcept extends Concept {
-      static get myStaticAccessor() { return 1 } 
+      static get member() { return 1 } 
     }, { 
       // static members are ignored by the DSL
     }],
     ['instance setter', class MyConcept extends Concept {
-      set myInstanceAccessor(value) { }
+      set member(value) { }
     }, 
     {
-      members: { instance: { accessors: {
-        myInstanceAccessor: { 
-          type: 'accessor', 
-          host: 'MyConcept',
-          hasSetter: true,
+      members: { instance: { setters: {
+        member: { 
+          host: '.',
           isAbstract: true
         }
       } } },
@@ -127,10 +125,10 @@ describe('A member', () => {
   describe.each([
     ['abstract member', 'member', class MyConcept extends Concept { 
       member() { } },
-      'member, abstract function, [conceptInfo MyConcept]' ],
+      'member, abstract method, [conceptInfo MyConcept]' ],
     ['abstract getter', 'member', class MyConcept extends Concept { 
       get member() { } },
-      'member, abstract { get }, [conceptInfo MyConcept]' ],
+      'member, abstract getter, [conceptInfo MyConcept]' ],
     ])('%s', (_, name, cls, expected) => {
     it('has a toString', async () => {
       const fnInfo = Info.from(cls)
@@ -308,8 +306,7 @@ describe('A bespoke concept', () => {
       const pojo = {
         members: { instance: { methods: {
           [MySymbol]: { 
-            type: 'method',
-            host: 'MyConcept',
+            host: '.',
             isAbstract: true,
           },
         } } },
@@ -332,9 +329,8 @@ describe('A bespoke concept', () => {
           base: 'Object',
           members: { conceptual: { MyConcept: { methods: {
             [MySymbol]: { 
-              type: 'method',
               isAbstract: true,
-              host: 'MyClass',
+              host: '.',
             },
           } } } },
           name: 'MyClass'
@@ -373,7 +369,7 @@ describe('A bespoke concept', () => {
         name: 'MyConcept',
         base: 'Concept',
         members: { instance: { methods: {
-          method: { host: 'MyConcept', type: 'method', isAbstract: true }
+          method: { host: '.', isAbstract: true }
         } } },
       }
 
@@ -435,20 +431,16 @@ describe('A bespoke concept', () => {
         base: 'Concept',
         members: {
           instance: {
-            accessors: {
+            properties: {
               myAccessor: { 
-                type: 'accessor', 
-                hasGetter: true, 
-                hasSetter: true, 
                 isAbstract: true,
-                host: 'MyConcept'
+                host: '.'
               }
             },
             methods: {
               myMethod: { 
-                type: 'method', 
                 isAbstract: true,
-                host: 'MyConcept'
+                host: '.'
               }
             }
           },

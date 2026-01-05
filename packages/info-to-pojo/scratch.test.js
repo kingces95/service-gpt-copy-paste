@@ -23,8 +23,8 @@ function dump(fn) {
   })
 }
 
-// dump(Function)
 // dump(Object)
+// dump(Function)
 
 // dump(PartialObject)
 // dump(PartialClass)

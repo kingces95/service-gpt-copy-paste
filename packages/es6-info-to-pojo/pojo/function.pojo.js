@@ -4,30 +4,10 @@ export const functionPojo = {
   members: {
     static: {
       __known: {
-        methods: {
-          prototype: {
-            type: 'method',
-            host: 'Function',
-            isConfigurable: false,
-            rootHost: 'Object',
-            isWritable: false
-          }
-        },
-        data: {
-          length: {
-            type: 'data',
-            host: 'Function',
-            rootHost: 'Object',
-            isWritable: false,
-            isEnumerable: false
-          },
-          name: {
-            type: 'data',
-            host: 'Function',
-            rootHost: 'Object',
-            isWritable: false,
-            isEnumerable: false
-          }
+        methods: { prototype: { modifiers: [ 'sealed', 'const' ], host: '.' } },
+        fields: {
+          length: { modifiers: [ 'const', 'hidden' ], host: '.' },
+          name: { modifiers: [ 'const', 'hidden' ], host: '.' }
         }
       }
     },
@@ -35,61 +15,31 @@ export const functionPojo = {
       __known: {
         __nonPublic: {
           methods: {
-            __defineGetter__: { type: 'method', host: 'Object' },
-            __defineSetter__: { type: 'method', host: 'Object' },
-            __lookupGetter__: { type: 'method', host: 'Object' },
-            __lookupSetter__: { type: 'method', host: 'Object' }
+            __defineGetter__: { host: 'Object' },
+            __defineSetter__: { host: 'Object' },
+            __lookupGetter__: { host: 'Object' },
+            __lookupSetter__: { host: 'Object' }
           }
         },
-        constructor: {
-          constructor: { type: 'constructor', host: 'Function', rootHost: 'Object' },
-        },
+        constructor: { constructor: { modifiers: [ 'hidden' ], host: '.' } },
         methods: {
-          apply: { type: 'method', host: 'Function' },
-          bind: { type: 'method', host: 'Function' },
-          call: { type: 'method', host: 'Function' },
-          toString: { type: 'method', host: 'Function', rootHost: 'Object' },
-          hasOwnProperty: { type: 'method', host: 'Object' },
-          isPrototypeOf: { type: 'method', host: 'Object' },
-          propertyIsEnumerable: { type: 'method', host: 'Object' },
-          valueOf: { type: 'method', host: 'Object' },
-          toLocaleString: { type: 'method', host: 'Object' },
-          [Symbol.hasInstance]: {
-            type: 'method',
-            host: 'Function',
-            isConfigurable: false,
-            isWritable: false
-          }
+          apply: { host: '.' },
+          bind: { host: '.' },
+          call: { host: '.' },
+          toString: { host: '.' },
+          hasOwnProperty: { host: 'Object' },
+          isPrototypeOf: { host: 'Object' },
+          propertyIsEnumerable: { host: 'Object' },
+          valueOf: { host: 'Object' },
+          toLocaleString: { host: 'Object' },
+          [Symbol.hasInstance]: { modifiers: [ 'sealed', 'const' ], host: '.' }
         },
-        data: {
-          length: {
-            type: 'data',
-            host: 'Function',
-            isWritable: false,
-            isEnumerable: false
-          },
-          name: {
-            type: 'data',
-            host: 'Function',
-            isWritable: false,
-            isEnumerable: false
-          }
-        },
-        accessors: {
-          arguments: {
-            type: 'accessor',
-            host: 'Function',
-            hasGetter: true,
-            hasSetter: true
-          },
-          caller: {
-            type: 'accessor',
-            host: 'Function',
-            hasGetter: true,
-            hasSetter: true
-          }
+        properties: { arguments: { host: '.' }, caller: { host: '.' } },
+        fields: {
+          length: { modifiers: [ 'const', 'hidden' ], host: '.' },
+          name: { modifiers: [ 'const', 'hidden' ], host: '.' }
         }
       }
     }
-  },
+  }
 }

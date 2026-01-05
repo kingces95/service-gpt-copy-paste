@@ -1,3 +1,4 @@
+import assert from 'assert'
 import { isTrimable } from "@kingjs/pojo-trim"
 import { pivotPojos } from "@kingjs/pojo-pivot"
 import { siftPojos } from "@kingjs/pojo-sift"
@@ -12,12 +13,12 @@ async function getOrCall(target, name) {
 export async function toPojo(value, options = { }) {
   const { 
     type = null, 
-    symbol, 
+    symbol, metadata,
     depth = 1, 
     path = [], 
+    context = [],
     filter, 
     pivot,
-    excludeKeys,
   } = options
   const jsType = typeof value
 
@@ -46,16 +47,19 @@ export async function toPojo(value, options = { }) {
         if (value[Symbol.iterator] || value[Symbol.asyncIterator])
           return await toPojo(value, { ...options, type: 'list' })
 
-        const metadata = value.constructor?.[symbol]
+        const valueMd = value.constructor?.[symbol]
+          ?? metadata?.get(value.constructor)
+        assert(valueMd != null, 
+          `failed to find pojo metadata ctor: ${value.constructor?.name} `)
         const isPojo = Object.getPrototypeOf(value) === Object.prototype
 
         // if there is no metadata, then ignore unless it is a plain object.
-        if (!metadata && !isPojo) {
+        if (!valueMd && !isPojo) {
           return
         }
 
         // if there is no metadata, then transform all properties to pojos.
-        if (!metadata) {
+        if (!valueMd) {
           const result = { }
           for (const key in value) {
             const pojo = await toPojo(value[key], { ...options, path: [...path, key] })
@@ -68,7 +72,7 @@ export async function toPojo(value, options = { }) {
         } 
 
         // stop recursing if depth is zero and object can be referenced
-        const ref = value[metadata[symbol]]
+        const ref = value[valueMd[symbol]]
         if (!depth && ref)
           return ref
 
@@ -76,21 +80,22 @@ export async function toPojo(value, options = { }) {
         let newDepth = depth - (ref ? 1 : 0)
         
         // if metadata is a string, return the value of the property
-        if (typeof metadata == 'string') {
-          return await toPojo(await getOrCall(value, metadata), { 
-            ...options, depth: newDepth, path: [...path, metadata]
+        if (typeof valueMd == 'string') {
+          return await toPojo(await getOrCall(value, valueMd), { 
+            ...options, path: [...path, valueMd], 
+              depth: newDepth, context: [...context, result]
           })
         }
 
         // if metadata is an object, then transform properties with metadata.
         const result = { }
-        for (const key in metadata) {
-          if (excludeKeys && excludeKeys.has(key)) continue
-          let type = metadata[key]
+        for (const key in valueMd) {
+          let type = valueMd[key]
           if (type == 'type') { result[key] = value.constructor.name; continue }
           const keyValue = await getOrCall(value, key)
           const pojo = await toPojo(keyValue, { 
-            ...options, type, depth: newDepth, path: [...path, key]
+            ...options, type, path: [...path, key], 
+              depth: newDepth, context: [...context, result]
           })
           if (pojo === undefined) continue
           result[key] = pojo
@@ -103,6 +108,10 @@ export async function toPojo(value, options = { }) {
       default:
         throw new Error(`unexpected type: ${jsType}`)
     }
+  }
+
+  if (typeof type == 'function') {
+    return await type(value, context)
   }
 
   switch (type) {
@@ -162,6 +171,12 @@ export async function toPojo(value, options = { }) {
       return list
     }
 
+    case 'tokens':
+      const list = []
+      for await (const item of value)
+        list.push(item)
+      return list.join(' ')     
+
     case 'records':
       // use options.filter to filter records if provided
     case 'names':
@@ -174,7 +189,9 @@ export async function toPojo(value, options = { }) {
 
       const list = []
       for await (const item of value) {
-        list.push(await toPojo(item, { ...options, type: listType }))
+        const element = await toPojo(item, { ...options, type: listType })
+        assert(element)
+        list.push(element)
       }
       if (!list.length)
         return
@@ -183,7 +200,7 @@ export async function toPojo(value, options = { }) {
 
       if (type == 'records') {
         if (filter) result = [...siftPojos(result, filter)]
-        if (pivot) result = pivotPojos(result, pivot)
+        if (pivot) result = pivotPojos(result, pivot, context)
       }
 
       return result
