@@ -21,7 +21,7 @@ export const functionPojo = {
             __lookupSetter__: { host: 'Object' }
           }
         },
-        constructor: { constructor: { modifiers: [ 'hidden' ], host: '.' } },
+        constructor: { constructor: { host: '.' } },
         methods: {
           apply: { host: '.' },
           bind: { host: '.' },

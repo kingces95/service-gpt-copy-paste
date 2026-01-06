@@ -45,7 +45,7 @@ export const objectPojo = {
             __lookupSetter__: { host: '.' }
           }
         },
-        constructor: { constructor: { modifiers: [ 'hidden' ], host: '.' } },
+        constructor: { constructor: { host: '.' } },
         methods: {
           hasOwnProperty: { host: '.' },
           isPrototypeOf: { host: '.' },

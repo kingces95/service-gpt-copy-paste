@@ -1,9 +1,8 @@
 import { assert } from '@kingjs/assert'
-import { isAbstract } from "@kingjs/abstract"
 import { PartialPojo } from '@kingjs/partial-pojo'
 import { PartialObject } from '@kingjs/partial-object'
 import { PartialReflect } from '@kingjs/partial-reflect'
-import { Es6Info, Es6MemberInfo } from "@kingjs/es6-info"
+import { Es6ClassInfo, Es6MemberInfo } from "@kingjs/es6-info"
 import { Concept, ConceptReflect } from "@kingjs/concept"
 import { PartialClass, PartialClassReflect } from '@kingjs/partial-class'
 
@@ -12,7 +11,7 @@ const FunctionInfoCache = new WeakMap()
 export class Info {
   static from(fn) {
     if (!fn) return null
-    if (fn instanceof Es6Info) fn = fn.ctor
+    if (fn instanceof Es6ClassInfo) fn = fn.ctor
     assert(typeof fn == 'function', 'fn must be a function')
 
     if (!FunctionInfoCache.has(fn))
@@ -41,7 +40,7 @@ export class FunctionInfo extends Info {
 
   constructor(type) {
     super()
-    this.#es6ClassInfo = Es6Info.from(type)
+    this.#es6ClassInfo = Es6ClassInfo.from(type)
   }
 
   #memberFilter(es6Member) {
@@ -209,7 +208,7 @@ export class PartialObjectInfo extends FunctionInfo {
     const prototypicalHost = PartialReflect.getPrototypicalType$(type)
     assert(prototypicalHost instanceof Function)
     super(prototypicalHost)
-    this.#es6ClassInfo = Es6Info.from(type)
+    this.#es6ClassInfo = Es6ClassInfo.from(type)
     this.#_ = this.toString()
   }
 
@@ -269,44 +268,56 @@ export class MemberInfo extends Info {
     this.#_ = this.toString()
   }
 
-  get descriptorInfo() { return this.#es6MemberInfo.descriptorInfo }
-  get host() { 
-    let host = this.#es6MemberInfo.host
-    const fn = PartialReflect.getPrototypicalHost$(host.ctor)
-    return Info.from(fn)
-  }
   get name() { return this.#es6MemberInfo.name }
   get keyInfo() { return this.#es6MemberInfo.keyInfo }
-  get isKnown() { return this.#es6MemberInfo.isKnown }
-  get isNonPublic() { return this.#es6MemberInfo.isNonPublic }
-  get type() { return this.#es6MemberInfo.type }
+
+  get host() { 
+    let es6Host = this.#es6MemberInfo.host
+    const fn = PartialReflect.getPrototypicalHost$(es6Host.ctor)
+    return Info.from(fn)
+  }
   get returnType() { return this.#es6MemberInfo.returnType }
   
-  get isAccessor() { return this.#es6MemberInfo.isAccessor }
-  get isSetter() { return this.#es6MemberInfo.isSetter }
-  get isGetter() { return this.#es6MemberInfo.isGetter }
-  get isProperty() { return this.#es6MemberInfo.isProperty }
-  get isField() { return this.#es6MemberInfo.isField }
-  get isMethod() { return this.#es6MemberInfo.isMethod }
-  get isData() { return this.#es6MemberInfo.isData }
-  get isConstructor() { return this.#es6MemberInfo.isConstructor }
-
+  // pivots
   get isStatic() { return this.#es6MemberInfo.isStatic }
+  get isKnown() { return this.#es6MemberInfo.isKnown }
+  get isNonPublic() { return this.#es6MemberInfo.isNonPublic }
+  get isAbstract() { return this.#es6MemberInfo.isAbstract }
+  
+  // member type
+  get type() { return this.#es6MemberInfo.type }
+  get isConstructor() { return this.#es6MemberInfo.isConstructor }
+  get isMethod() { return this.#es6MemberInfo.isMethod }
+  get isField() { return this.#es6MemberInfo.isField }
+  get isProperty() { return this.#es6MemberInfo.isProperty }
+  get isGetter() { return this.#es6MemberInfo.isGetter }
+  get isSetter() { return this.#es6MemberInfo.isSetter }  
 
-  get isEnumerable() { return this.#es6MemberInfo.isEnumerable }
-  get isConfigurable() { return this.#es6MemberInfo.isConfigurable }
-  get isWritable() { return this.#es6MemberInfo.isWritable }
+  // member modifiers
+  get isVisible() { return this.#es6MemberInfo.isVisible }
+  get isHidden() { return this.#es6MemberInfo.isHidden }
+  get isSealed() { return this.#es6MemberInfo.isSealed }
+  get isConst() { return this.#es6MemberInfo.isConst }
 
-  get hasGetter() { return this.#es6MemberInfo.hasGetter }
-  get hasSetter() { return this.#es6MemberInfo.hasSetter }
-  get hasValue() { return this.#es6MemberInfo.hasValue }
-
+  // member values
   get getter() { return this.#es6MemberInfo.getter }
   get setter() { return this.#es6MemberInfo.setter }
   get value() { return this.#es6MemberInfo.value }
-
-  get isAbstract() { return isAbstract(this.descriptorInfo.descriptor) }
+  get method() { return this.#es6MemberInfo.method }
+  get ctor() { return this.#es6MemberInfo.ctor }
   
+  // descriptor
+  get descriptorInfo() { return this.#es6MemberInfo.descriptorInfo }
+
+  parent() { return MemberInfo.from$(this.#es6MemberInfo.parent()) }
+  root() { return MemberInfo.from$(this.#es6MemberInfo.root()) }
+  rootHost() { return FunctionInfo.from(this.#es6MemberInfo.rootHost()) }
+
+  equals(other) {
+    if (!(other instanceof MemberInfo)) return false
+    return this.#es6MemberInfo.equals(other.#es6MemberInfo)
+  }
+
   get partialClass() {
     if (this.isStatic) return null
     const fn = this.host.ctor
@@ -317,7 +328,6 @@ export class MemberInfo extends Info {
   get isConceptual() {
     if (this.isStatic) return false
     return this.concepts().next().done == false
-      //|| this.host.isConceptSubclass
   }
   *concepts() {
     if (this.isStatic) return
@@ -340,22 +350,13 @@ export class MemberInfo extends Info {
     yield *[...seen].map(fn => Info.from(fn))
   }
 
-  parent() { return MemberInfo.from$(this.#es6MemberInfo.parent()) }
-  root() { return MemberInfo.from$(this.#es6MemberInfo.root()) }
-  rootHost() { return FunctionInfo.from(this.#es6MemberInfo.rootHost()) }
-
-  equals(other) {
-    if (!(other instanceof MemberInfo)) return false
-    return this.#es6MemberInfo.equals(other.#es6MemberInfo)
-  }
-
-  get descriptorType() { return this.#es6MemberInfo.descriptorType }
   *modifiers() { yield* this.#es6MemberInfo.modifiers() }
   *pivots() {
     yield* this.#es6MemberInfo.pivots()
     if (this.isAbstract) yield 'abstract'
   }
 
+  toStringType() { return this.#es6MemberInfo.toStringType() }
   toString() {
     const keyInfo = this.keyInfo
 
@@ -372,7 +373,7 @@ export class MemberInfo extends Info {
 
         // e.g. 'method', 'constructor, 'getter', 'setter', 'property'
         // or when field 'string', 'number', 'function', 'array' etc.
-        this.descriptorType, 
+        this.toStringType(), 
 
       ].filter(Boolean).join(' '),
 

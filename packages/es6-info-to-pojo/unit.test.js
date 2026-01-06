@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 
-import { Es6Info } from "@kingjs/es6-info"
+import { Es6ClassInfo } from "@kingjs/es6-info"
 import { } from "@kingjs/es6-info-to-pojo"
 
 import { objectPojo } from "./pojo/object.pojo.js"
@@ -16,7 +16,7 @@ import { MyClass } from "./dump.test.js"
 describe('Object members', () => {
   let pojo
   beforeEach(async () => {
-    const objInfo = Es6Info.from(Object)
+    const objInfo = Es6ClassInfo.from(Object)
     pojo = await objInfo.toPojo()
   })
 
@@ -28,7 +28,7 @@ describe('Object members', () => {
 describe('Function members', () => {
   let pojo
   beforeEach(async () => {
-    const fnInfo = Es6Info.from(Function)
+    const fnInfo = Es6ClassInfo.from(Function)
     pojo = await fnInfo.toPojo()
   })
 
@@ -40,7 +40,7 @@ describe('Function members', () => {
 describe('MyClass members', () => {
   let pojo
   beforeEach(async () => {
-    const fnInfo = Es6Info.from(MyClass)
+    const fnInfo = Es6ClassInfo.from(MyClass)
     pojo = await fnInfo.toPojo({
       filter: { 
         isKnown: false,
@@ -57,7 +57,7 @@ describe('MyClass members', () => {
 describe('MyClass instance members', () => {
   let pojo
   beforeEach(async () => {
-    const fnInfo = Es6Info.from(MyClass)
+    const fnInfo = Es6ClassInfo.from(MyClass)
     pojo = await fnInfo.toPojo({
       filter: { 
         isStatic: false,
@@ -75,7 +75,7 @@ describe('MyClass instance members', () => {
 describe('MyClass static members', () => {
   let pojo
   beforeEach(async () => {
-    const fnInfo = Es6Info.from(MyClass)
+    const fnInfo = Es6ClassInfo.from(MyClass)
     pojo = await fnInfo.toPojo({
       filter: { 
         isStatic: true,
@@ -93,7 +93,7 @@ describe('MyClass static members', () => {
 describe('MyClass own members', () => {
   let pojo
   beforeEach(async () => {
-    const fnInfo = Es6Info.from(MyClass)
+    const fnInfo = Es6ClassInfo.from(MyClass)
     pojo = await fnInfo.toPojo({
       ownOnly: true,
       filter: { 

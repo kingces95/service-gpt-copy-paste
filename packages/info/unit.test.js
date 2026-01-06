@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Info, FunctionInfo } from "@kingjs/info"
+import { Info } from "@kingjs/info"
 import { Concept, Implements } from '@kingjs/concept'
 import { PartialObject } from '@kingjs/partial-object'
 import { PartialClass, Extends } from '@kingjs/partial-class'
@@ -8,7 +8,6 @@ import { PartialReflect } from '@kingjs/partial-reflect'
 import { PartialPojo } from '@kingjs/partial-pojo'
 import { } from "@kingjs/info-to-pojo"
 import { toEqualAsSet } from '@kingjs/vitest'
-import { abstract, isAbstract } from '@kingjs/abstract'
 
 expect.extend({ toEqualAsSet })
 
@@ -371,10 +370,9 @@ const ObjectToStringMd = {
 const ObjectConstrutorMd = {
   name: 'constructor',
   cls: Object,
-  toString: 'constructor, known hidden constructor, [classInfo Object]',
+  toString: 'constructor, known constructor, [classInfo Object]',
   type: 'constructor',
   isConstructor: true,
-  isMethod: true,
   isKnown: true,
   isConfigurable: true,
   isWritable: true,
@@ -461,10 +459,9 @@ const MyClassMemberMd = {
 const MyClassConstructorMd = {
   name: 'constructor',
   cls: class MyClass { constructor() { } },
-  toString: 'constructor, known hidden constructor, [classInfo MyClass]',
+  toString: 'constructor, known constructor, [classInfo MyClass]',
   type: 'constructor',
   isConstructor: true,
-  isMethod: true,
   isKnown: true,
   isConfigurable: true,
   isWritable: true,
@@ -538,6 +535,7 @@ const MyGetterMd = {
   toString: 'member, getter, [classInfo MyClass]',
   type: 'getter',
   isAccessor: true,
+  isGetter: true,
   hasGetter: true,
   isConfigurable: true,
 }
@@ -548,6 +546,7 @@ const MySetterMd = {
   toString: 'member, setter, [classInfo MyClass]',
   type: 'setter',
   isAccessor: true,
+  isSetter: true,
   hasSetter: true,
   isConfigurable: true,
 }
@@ -558,6 +557,7 @@ const MyAccessorMd = {
   toString: 'member, property, [classInfo MyClass]',
   type: 'property',
   isAccessor: true,
+  isProperty: true,
   hasGetter: true,
   hasSetter: true,
   isConfigurable: true,
@@ -624,21 +624,20 @@ describe('Member', () => {
       expect(info.isAbstract).toBe(!!md.isAbstract)
       expect(info.isConceptual).toBe(!!md.isConceptual)
 
-      expect(info.isAccessor).toBe(!!md.isAccessor)
+      expect(info.isField).toBe(!!md.isField)
+      expect(info.isProperty).toBe(!!md.isProperty)
+      expect(info.isGetter).toBe(!!md.isGetter)
+      expect(info.isSetter).toBe(!!md.isSetter)
       expect(info.isMethod).toBe(!!md.isMethod)
-      // expect(info.isData).toBe(!!md.isData)
       expect(info.isConstructor).toBe(!!md.isConstructor)
       expect(info.type).toBe(md.type)
       
       expect(info.isStatic).toBe(!!md.isStatic)
 
-      expect(info.isEnumerable).toBe(!!md.isEnumerable)
-      expect(info.isConfigurable).toBe(!!md.isConfigurable)
-      expect(info.isWritable).toBe(!!md.isWritable)
-
-      expect(info.hasGetter).toBe(!!md.hasGetter)
-      expect(info.hasSetter).toBe(!!md.hasSetter)
-      expect(info.hasValue).toBe(!!md.hasValue)
+      expect(info.isVisible).toBe(!!md.isEnumerable)
+      expect(info.isHidden).toBe(!md.isEnumerable)
+      expect(info.isSealed).toBe(!md.isConfigurable)
+      expect(info.isConst).toBe(!!md.isField && !md.isWritable)
     })
     it('has expected descriptor getter, setter, value', () => {
       if (md.hasGetter) expect(info.getter).toBeInstanceOf(Function)

@@ -133,7 +133,7 @@ describe('MyConcept members', () => {
 // describe('MyClass instance members', () => {
 //   let pojo
 //   beforeEach(async () => {
-//     const fnInfo = Es6Info.from(MyClass)
+//     const fnInfo = Es6ClassInfo.from(MyClass)
 //     pojo = await fnInfo.toPojo({
 //       filter: { 
 //         isStatic: false,
@@ -151,7 +151,7 @@ describe('MyConcept members', () => {
 // describe('MyClass static members', () => {
 //   let pojo
 //   beforeEach(async () => {
-//     const fnInfo = Es6Info.from(MyClass)
+//     const fnInfo = Es6ClassInfo.from(MyClass)
 //     pojo = await fnInfo.toPojo({
 //       filter: { 
 //         isStatic: true,

@@ -11,7 +11,7 @@ import { PartialReflect } from '@kingjs/partial-reflect'
 function getMemberValue(cls) {
   const info = Info.from(cls)
   const member = info.getInstanceMember('member')
-  const value = member?.value
+  const value = member?.method
   return value
 }
 

@@ -1,4 +1,4 @@
-import { Es6Info } from "@kingjs/es6-info"
+import { Es6ClassInfo } from "@kingjs/es6-info"
 import { } from "@kingjs/es6-info-to-pojo"
 
 const MySymbol = Symbol.for('my-symbol')
@@ -39,10 +39,10 @@ Object.defineProperty(MyBase.prototype, 'myFunkyMethod', {
 })
 
 function dump(fn) {
-  const info = Es6Info.from(fn)
+  const info = Es6ClassInfo.from(fn)
   const name = info.name 
   info.dump({
-    ownOnly: true,
+    // ownOnly: true,
     filter: [{ 
       // isStatic: false,
       isKnown: false,

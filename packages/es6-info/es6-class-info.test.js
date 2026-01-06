@@ -4,11 +4,13 @@ import { Reflection } from '@kingjs/reflection'
 import { 
   Es6ObjectRuntimeNameOrSymbol,
   Es6ClassInfo, 
-  Es6MemberInfo,
   Es6ConstructorInfo, 
-  Es6ValueInfo, 
   Es6MethodInfo, 
-  Es6AccessorInfo } from './es6-class-info.js'
+  Es6FieldInfo,
+  Es6GetterInfo,
+  Es6SetterInfo,
+  Es6PropertyInfo
+} from './es6-class-info.js'
 
 
 // Functions are also instances so can self-reflect. These members would
@@ -73,7 +75,7 @@ describe('Es6ClassInfo ur type invariants:', () => {
   })
 })
 
-describe('Es6ClassInfo vacuous cases', () => {
+describe('Es6ClassInfo', () => {
   let classInfo
   beforeEach(() => {
     classInfo = Es6ClassInfo.from(class { })
@@ -277,17 +279,14 @@ describe('Es6ClassInfo known type invariants:', () => {
             expect(member.equals(member)).toBe(true)
           })
           it('has matching descriptor info', () => {
-            expect(member.isEnumerable).toBe(descriptor.enumerable)
-            expect(member.isConfigurable).toBe(descriptor.configurable)
-            expect(member.isWritable).toBe(!!descriptor.writable)
-
-            expect(member.hasGetter).toBe(typeof descriptor.get === 'function')
-            expect(member.hasSetter).toBe(typeof descriptor.set === 'function')
+            expect(member.isVisible).toBe(descriptor.enumerable)
+            expect(member.isSealed).toBe(descriptor.configurable == false)
+            expect(member.isConst).toBe(descriptor.writable == false)
 
             expect(member.getter).toBe(descriptor.get)
             expect(member.setter).toBe(descriptor.set)
 
-            if (member.hasValue) {
+            if (member.isField) {
               expect(member.value).toBe(descriptor.value)
             } else {
               expect(member.value).toBeUndefined()
@@ -314,7 +313,7 @@ describe('Es6ClassInfo known type invariants:', () => {
                 break
               case 'constructor':
                 expect(toString).toBe(
-                  `constructor, known hidden constructor, [es6ClassInfo ${fn.name}]`)
+                  `constructor, known constructor, [es6ClassInfo ${fn.name}]`)
                 break
               case Symbol.hasInstance:
                 expect(toString).toBe(
@@ -341,12 +340,21 @@ describe('Es6ClassInfo known type invariants:', () => {
               expect(member.isConstructor).toBe(true)
             else if (member instanceof Es6MethodInfo)
               expect(member.isMethod).toBe(true)
-            else if (member instanceof Es6ValueInfo)
-              expect(member.isData).toBe(true)
-            else if (member instanceof Es6AccessorInfo)
-              expect(member.isAccessor).toBe(true)
+            else if (member instanceof Es6GetterInfo)
+              expect(member.isGeter).toBe(true)
+            else if (member instanceof Es6SetterInfo)
+              expect(member.isSetter).toBe(true)
+            else if (member instanceof Es6PropertyInfo)
+              expect(member.isProperty).toBe(true)
+            else if (member instanceof Es6FieldInfo)
+              expect(member.isField).toBe(true)
             else
               throw new Error(`Unknown member type: ${member}`)
+
+            if (member.isMethod || member.isConstructor)
+              expect(member.isFunction).toBe(true)
+            if (member.isGetter || member.isSetter || member.isProperty)
+              expect(member.isAccessor).toBe(true)
           })
           it('is static if request static members', () => {
             expect(member.isStatic).toBe(isStatic)
@@ -436,7 +444,7 @@ describe('Es6ClassInfo Function class', () => {
       members = [...classInfo.ownInstanceMembers()]
     })
     it('is subset of members from hierarchy plus object', () => {
-      const fromMembers = [...Es6ClassInfo.instanceMembers(classInfo)]
+      const fromMembers = [...classInfo.instanceMembers()]
       const membersPlusObject = [
         ...members, 
         ...Es6ClassInfo.Object.ownInstanceMembers()]
@@ -464,7 +472,7 @@ describe('Es6ClassInfo Function class', () => {
       // the static members of Function are exactly those defined
       // on Function itself.
       const members = [
-        ...Es6ClassInfo.staticMembers(classInfo)]
+        ...classInfo.staticMembers()]
 
       expect(members.length).toBe(ownStaticMembers.length)
       for (const ownMember of ownStaticMembers) {
@@ -653,7 +661,7 @@ describe('A member', () => {
     ['on MyClass', 'member', class MyClass { member() { } }, 
       'member, method, [es6ClassInfo MyClass]'],
     ['constructor', 'constructor', class MyClass { constructor() { } },
-      'constructor, known hidden constructor, [es6ClassInfo MyClass]'],
+      'constructor, known constructor, [es6ClassInfo MyClass]'],
     ['on anonnymous', 'member', class { member() { } }, 
       'member, method, [es6ClassInfo <anonymous>]'],
     ['static on MyClass', 'member', class MyClass { static member() { } },

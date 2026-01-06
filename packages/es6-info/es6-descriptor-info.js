@@ -1,6 +1,7 @@
 import { assert } from '@kingjs/assert'
 import { Descriptor } from "@kingjs/descriptor"
 import { es6Typeof } from "./es6-typeof.js"
+import { isAbstract } from "@kingjs/abstract"
 
 const {  
   get: getDescriptor,
@@ -114,21 +115,26 @@ export class Es6DescriptorInfo {
     this.#descriptor = descriptor
   }
 
-  // type of descriptor
+  // pivots
   // get type() { abstract }
   get isAccessor() { return this.type == Es6AccessorDescriptorInfo.Tag }
   get isData() { return this.type == Es6DataDescriptorInfo.Tag }
-  get isMethod() { return this.type == Es6MethodDescriptorInfo.Tag }
-  get hasValue() { return this instanceof Es6ValueDescriptorInfo }
+  get isAbstract() { return isAbstract(this.#descriptor) }
 
+  get isMethod() { return this.type == Es6MethodDescriptorInfo.Tag }
+  
+  get hasValue() { return this instanceof Es6ValueDescriptorInfo }
   get hasGetter() { return hasGetter(this.descriptor) }
   get hasSetter() { return hasSetter(this.descriptor) }
 
+  // values
   get getter() { return this.descriptor.get }
   get setter() { return this.descriptor.set }
   get value() { return this.descriptor.value }
   
   get descriptor() { return this.#descriptor }
+
+  // modifiers
   get isEnumerable() { return this.descriptor.enumerable }
   get isConfigurable() { return this.descriptor.configurable }
   get isWritable() { return !!this.descriptor.writable }
@@ -156,6 +162,10 @@ export class Es6DescriptorInfo {
     return true
   }
 
+  *pivots() {
+    yield this.type
+    if (this.isAbstract) yield 'abstract'
+  }
   *modifiers() {
     if (this.isConfigurable != Es6DescriptorInfo.DefaultConfigurable)
       yield 'sealed'

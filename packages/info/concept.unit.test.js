@@ -275,7 +275,7 @@ describe('A concept with a member', () => {
         })
         it('implements member with the function passed', () => {
           const member = subClsInfo.getOwnInstanceMember('member')
-          expect(member?.value).toBe(fn)
+          expect(member?.method).toBe(fn)
           expect(subCls.prototype.member).toBe(fn)
         })
       })

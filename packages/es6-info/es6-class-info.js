@@ -1,49 +1,31 @@
 import { assert } from '@kingjs/assert'
-import { Es6DescriptorInfo } from './es6-descriptor-info.js'
+import { Reflection } from '@kingjs/reflection'
+import { Descriptor } from "@kingjs/descriptor"
+import { 
+  Es6DescriptorInfo, 
+  Es6AccessorDescriptorInfo,
+  Es6ValueDescriptorInfo,
+} from './es6-descriptor-info.js'
 import { Es6IdInfo } from './es6-id-info.js'
 import { Es6KeyInfo } from './es6-key-info.js'
-import { Reflection } from '@kingjs/reflection'
 import { es6Typeof } from "./es6-typeof.js"
 import util from 'util'
 
-// Es6MemberInfo = Es6DescriptorInfo + name + host + isStatic
+const { 
+  get: getDescriptor,
+  hasClassPrototypeDefaults, 
+} = Descriptor
 
 export const Es6ObjectRuntimeNameOrSymbol = new Set([
   '__proto__',
 ])
 
-export class Es6Info {
+export class Es6ClassInfo {
+
   static from(fn) {
     if (!fn) return null
     assert(fn instanceof Function, 'fn must be a function')
     return new Es6ClassInfo(fn)
-  }
-}
-
-export class Es6ClassInfo extends Es6Info {
-
-  static getMember(type, key, { isStatic = false } = { }) {
-    assert(type instanceof Es6ClassInfo, 'type must be a Es6ClassInfo')
-
-    for (const current of Es6ClassInfo.#hierarchy(type, { isStatic })) {
-      const member = current.#getOwnMember(key, { isStatic })
-      if (member) return member
-    }
-
-    return null
-  }
-  static getStaticMember(type, key) {
-    return Es6ClassInfo.getMember(type, key, { isStatic: true }) }
-  static getInstanceMember(type, key) {
-    return Es6ClassInfo.getMember(type, key, { isStatic: false }) }
-
-  static *instanceMembers(type) { 
-    yield* Es6ClassInfo.#members(type, { isStatic: false }) }
-  static *staticMembers(type) { 
-    yield* Es6ClassInfo.#members(type, { isStatic: true }) }
-  static *members(type) {
-    yield* Es6ClassInfo.#members(type, { isStatic: true })
-    yield* Es6ClassInfo.#members(type, { isStatic: false })
   }
 
   static *#members(type, { isStatic = false } = { }) {
@@ -58,6 +40,15 @@ export class Es6ClassInfo extends Es6Info {
       }
     }
   } 
+
+  static #getMember(type, key, { isStatic = false } = { }) {
+    for (const current of Es6ClassInfo.#hierarchy(type, { isStatic })) {
+      const member = current.#getOwnMember(key, { isStatic })
+      if (member) return member
+    }
+
+    return null
+  }
 
   static *#hierarchy(type, { isStatic = false } = { }) {
     assert(type instanceof Es6ClassInfo, 'type must be a Es6ClassInfo')
@@ -133,7 +124,7 @@ export class Es6ClassInfo extends Es6Info {
     // special case 'boostrap circle' for Function
     if (baseFn == Function.prototype) return Es6ClassInfo.Object
 
-    return Es6Info.from(baseFn) 
+    return Es6ClassInfo.from(baseFn) 
   }
   get isNonPublic() { 
     return this.#idInfo.isNonPublic
@@ -151,21 +142,22 @@ export class Es6ClassInfo extends Es6Info {
     yield* this.#ownMembers({ isStatic: true })
   }
 
-  getOwnInstanceMember(name) {
-    return this.#getOwnMember(name, { isStatic: false }) }
-  getOwnStaticMember(name) {
-    return this.#getOwnMember(name, { isStatic: true }) }
+  *instanceMembers() { 
+    yield* Es6ClassInfo.#members(this, { isStatic: false }) }
+  *staticMembers() { 
+    yield* Es6ClassInfo.#members(this, { isStatic: true }) }
+  *members() {
+    yield* Es6ClassInfo.#members(this, { isStatic: true })
+    yield* Es6ClassInfo.#members(this, { isStatic: false })
+  }
 
-  // Convienience aliases for Es6ClassInfo.* methods. The static methods
-  // host the logic instead of the instance methods because the methods
-  // return members from the entire hierarchy, which is more correctly
-  // expressed as static traversal methods. That said, these convienience 
-  // instance methods are useful and expected.
-  *members() { yield* Es6ClassInfo.members(this) }
-  *staticMembers() { yield* Es6ClassInfo.staticMembers(this) }
-  *instanceMembers() { yield* Es6ClassInfo.instanceMembers(this) }
-  getStaticMember(key) { return Es6ClassInfo.getStaticMember(this, key) }
-  getInstanceMember(key) { return Es6ClassInfo.getInstanceMember(this, key) }
+  getOwnInstanceMember(key) { return this.#getOwnMember(key, { isStatic: false }) }
+  getOwnStaticMember(key) { return this.#getOwnMember(key, { isStatic: true }) }
+
+  getStaticMember(key) { 
+    return Es6ClassInfo.#getMember(this, key, { isStatic: true }) }
+  getInstanceMember(key) { 
+    return Es6ClassInfo.#getMember(this, key, { isStatic: false }) }
 
   equals(other) {
     if (!(other instanceof Es6ClassInfo)) return false
@@ -176,14 +168,14 @@ export class Es6ClassInfo extends Es6Info {
   toString() { return `[es6ClassInfo ${this.id.toString()}]` }
 }
 
-Es6Info.Object = new Es6ClassInfo(Object)
-Es6Info.Function = new Es6ClassInfo(Function)
-Es6Info.Array = new Es6ClassInfo(Array)
-Es6Info.String = new Es6ClassInfo(String)
-Es6Info.Number = new Es6ClassInfo(Number)
-Es6Info.Boolean = new Es6ClassInfo(Boolean)
+Es6ClassInfo.Object = new Es6ClassInfo(Object)
+Es6ClassInfo.Function = new Es6ClassInfo(Function)
+Es6ClassInfo.Array = new Es6ClassInfo(Array)
+Es6ClassInfo.String = new Es6ClassInfo(String)
+Es6ClassInfo.Number = new Es6ClassInfo(Number)
+Es6ClassInfo.Boolean = new Es6ClassInfo(Boolean)
 
-export class Es6MemberInfo extends Es6Info {
+export class Es6MemberInfo {
   static create$(host, keyInfo, descriptorInfo, metadata) {
     assert(host instanceof Es6ClassInfo, 
       'type must be a Es6ClassInfo')
@@ -194,31 +186,37 @@ export class Es6MemberInfo extends Es6Info {
     assert(descriptorInfo instanceof Es6DescriptorInfo, 
       'descriptor must be a DescriptorInfo')
 
-    const { isData, isMethod, isAccessor, hasGetter, hasSetter } = descriptorInfo
-
-    assert(isData || isMethod || isAccessor,
-      'descriptor must be a data, method, or accessor descriptor')
-
+    const args = [ host, keyInfo, descriptorInfo, metadata ]
+      
+    const { isAccessor, hasGetter, hasSetter } = descriptorInfo
     if (isAccessor) {
-      if (!hasSetter) 
-        return new Es6GetterInfo(host, keyInfo, descriptorInfo, metadata)
-      else if (!hasGetter)
-        return new Es6SetterInfo(host, keyInfo, descriptorInfo, metadata)
-      else
-        return new Es6PropertyInfo(host, keyInfo, descriptorInfo, metadata)
+      if (!hasSetter) return new Es6GetterInfo(...args)
+      if (!hasGetter) return new Es6SetterInfo(...args)
+      return new Es6PropertyInfo(...args)
     }
 
-    if (keyInfo.value === 'constructor' 
-      && !metadata.isStatic
-      && descriptorInfo.value === host.ctor)
-      return new Es6ConstructorInfo(host, keyInfo, descriptorInfo, metadata)
+    const value = descriptorInfo.value
+    const { isStatic } = metadata
+    const { value: key } = keyInfo
 
-    if (isData)
-      return new Es6FieldInfo(host, keyInfo, descriptorInfo, metadata)
+    // not a function is a field
+    if (typeof value !== 'function')
+      return new Es6FieldInfo(...args)
 
-    assert(isMethod)
+    // instance function 'constructor' matching host ctor is constructor
+    if (key === 'constructor' && !isStatic && value === host.ctor)
+      return new Es6ConstructorInfo(...args)
 
-    return new Es6MethodInfo(host, keyInfo, descriptorInfo, metadata)
+    // function but looks like a class ctor so not a method
+    if (hasClassPrototypeDefaults(getDescriptor(value, 'prototype')))
+      return new Es6FieldInfo(...args)
+
+    // vanilla function but is enumerable so not a method 
+    if (descriptorInfo.isEnumerable)
+      return new Es6FieldInfo(...args)
+
+    // vanilla hidden function is a method
+    return new Es6MethodInfo(...args)
   }
 
   #_
@@ -240,15 +238,26 @@ export class Es6MemberInfo extends Es6Info {
     this.#_ = this.toString()
   }
 
+  get #isEnumerable() { return this.#descriptorInfo.isEnumerable }
+  get #isConfigurable() { return this.#descriptorInfo.isConfigurable }
+  get #isWritable() { return this.#descriptorInfo.isWritable }
+
   rootOrSelf$() {
     const parent = this.parent() 
     return parent ? parent.rootOrSelf$() : this 
   }
 
-  get descriptorInfo() { return this.#descriptorInfo }
-  get host() { return this.#host }
   get name() { return this.#keyInfo.value }
   get keyInfo() { return this.#keyInfo }
+
+  get host() { return this.#host }
+  get returnType() {
+    if (this.isField) return es6Typeof(this.value)
+    return 'object'
+  }
+
+  // pivots
+  get isStatic() { return this.#isStatic }
   get isNonPublic() { return this.#keyInfo.isNonPublic }
   get isKnown() {
     if (this.host.isKnown) return true
@@ -261,42 +270,33 @@ export class Es6MemberInfo extends Es6Info {
 
     return false
   }
-  get type() {
-    if (this.isGetter) return 'getter'
-    if (this.isSetter) return 'setter'
-    if (this.isProperty) return 'property'
-    if (this.isField) return 'field'
-    if (this.isConstructor) return 'constructor'
-    if (this.isMethod) return 'method'
-    assert(false, 'unreachable')
-  }
-  get returnType() {
-    if (this.isField) return es6Typeof(this.value)
-    return 'object'
-  }
+  get isAbstract() { return this.#descriptorInfo.isAbstract }
 
-  get isAccessor() { return this instanceof Es6AccessorInfo }
+  // member types
+  get type() { return this.constructor.Type }
   get isSetter() { return this instanceof Es6SetterInfo }
   get isGetter() { return this instanceof Es6GetterInfo }
   get isProperty() { return this instanceof Es6PropertyInfo }
   get isConstructor() { return this instanceof Es6ConstructorInfo }
   get isMethod() { return this instanceof Es6MethodInfo }
-  get isData() { return this instanceof Es6ValueInfo }
   get isField() { return this instanceof Es6FieldInfo }
 
-  get isStatic() { return this.#isStatic }
+  // member type groups
+  get isAccessor() { return this.isGetter || this.isSetter || this.isProperty }
+  get isFunction() { return this.isMethod || this.isConstructor }
 
-  get isEnumerable() { return this.#descriptorInfo.isEnumerable }
-  get isConfigurable() { return this.#descriptorInfo.isConfigurable }
-  get isWritable() { return this.#descriptorInfo.isWritable }
+  // member modifiers
+  get isVisible() { return this.#isEnumerable }
+  get isHidden() { return !this.isVisible }
+  get isSealed() { return !this.#isConfigurable }
+  get isConst() { return !this.isAccessor && !this.#isWritable }
 
-  get hasGetter() { return this.#descriptorInfo.hasGetter }
-  get hasSetter() { return this.#descriptorInfo.hasSetter }
-  get hasValue() { return this.#descriptorInfo.hasValue }
-
-  get getter() { return this.#descriptorInfo.getter }
-  get setter() { return this.#descriptorInfo.setter }
-  get value() { return this.#descriptorInfo.value }
+  // descriptor values
+  get getter() { if (this.isAccessor) return this.#descriptorInfo.getter }
+  get setter() { if (this.isAccessor) return this.#descriptorInfo.setter }
+  get value() { if (this.isField) return this.#descriptorInfo.value }
+  get method() { if (this.isMethod) return this.#descriptorInfo.value }
+  get ctor() { if (this.isConstructor) return this.#descriptorInfo.value }
 
   parent() {
     const parent = this.host.base
@@ -324,17 +324,36 @@ export class Es6MemberInfo extends Es6Info {
     return true
   }
 
-  get descriptorType() {
-    if (this.isField) return this.returnType
-    return this.type
-  }
-  *modifiers() { yield* this.#descriptorInfo.modifiers() }
   *pivots() { 
     if (this.isStatic) yield 'static' 
     if (this.isNonPublic) yield 'non-public'
     if (this.isKnown) yield 'known'
+    if (this.isAbstract) yield 'abstract'
+  }
+  *modifiers() { 
+    const ctor = this.constructor
+
+    assert(ctor.DefaultConfigurable == true)
+    if (this.#isConfigurable != ctor.DefaultConfigurable && this.isSealed)
+      yield 'sealed'
+    
+    if ('DefaultWritable' in ctor) {
+      assert(ctor.DefaultWritable == true)
+      if (this.#isWritable != ctor.DefaultWritable && this.isConst)
+        yield 'const'
+    }
+
+    if (this.#isEnumerable != ctor.DefaultEnumerable && this.isVisible)
+      yield 'enumerable'
+
+    if (this.#isEnumerable != ctor.DefaultEnumerable && !this.isVisible)
+      yield 'hidden'
   }
 
+  toStringType() {
+    if (this.isField) return this.returnType
+    return this.type
+  }
   toString() {
     const keyInfo = this.keyInfo
 
@@ -351,7 +370,7 @@ export class Es6MemberInfo extends Es6Info {
 
         // e.g. 'method', 'constructor, 'getter', 'setter', 'property'
         // or when field 'string', 'number', 'function', 'array' etc.
-        this.descriptorType, 
+        this.toStringType(), 
 
       ].filter(Boolean).join(' '),
 
@@ -361,13 +380,37 @@ export class Es6MemberInfo extends Es6Info {
   }
 }
 
-// useful for attaching toPojo metadata
-export class Es6AccessorInfo extends Es6MemberInfo { }
-export class Es6GetterInfo extends Es6AccessorInfo { }
-export class Es6SetterInfo extends Es6AccessorInfo { }
-export class Es6PropertyInfo extends Es6AccessorInfo { }
-export class Es6ValueInfo extends Es6MemberInfo { }
-export class Es6FieldInfo extends Es6ValueInfo { }
-export class Es6MethodInfo extends Es6ValueInfo { }
-export class Es6ConstructorInfo extends Es6MethodInfo { }
+export class Es6GetterInfo extends Es6MemberInfo {
+  static Type = 'getter'
+  static DefaultConfigurable = Es6DescriptorInfo.DefaultConfigurable
+  static DefaultEnumerable = Es6AccessorDescriptorInfo.DefaultEnumerable
+}
+export class Es6SetterInfo extends Es6MemberInfo { 
+  static Type = 'setter'
+  static DefaultConfigurable = Es6DescriptorInfo.DefaultConfigurable
+  static DefaultEnumerable = Es6AccessorDescriptorInfo.DefaultEnumerable
+}
+export class Es6PropertyInfo extends Es6MemberInfo { 
+  static Type = 'property'
+  static DefaultConfigurable = Es6DescriptorInfo.DefaultConfigurable
+  static DefaultEnumerable = Es6AccessorDescriptorInfo.DefaultEnumerable
+}
+export class Es6FieldInfo extends Es6MemberInfo { 
+  static Type = 'field'
+  static DefaultConfigurable = Es6DescriptorInfo.DefaultConfigurable
+  static DefaultWritable = Es6ValueDescriptorInfo.DefaultWritable
+  static DefaultEnumerable = true
+}
+export class Es6MethodInfo extends Es6MemberInfo { 
+  static Type = 'method'
+  static DefaultConfigurable = Es6DescriptorInfo.DefaultConfigurable
+  static DefaultWritable = Es6ValueDescriptorInfo.DefaultWritable
+  static DefaultEnumerable = false
+}
+export class Es6ConstructorInfo extends Es6MemberInfo { 
+  static Type = 'constructor'
+  static DefaultConfigurable = Es6DescriptorInfo.DefaultConfigurable
+  static DefaultWritable = Es6ValueDescriptorInfo.DefaultWritable
+  static DefaultEnumerable = false
+}
   
