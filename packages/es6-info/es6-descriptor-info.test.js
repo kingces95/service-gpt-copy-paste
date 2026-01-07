@@ -1,345 +1,277 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Es6DescriptorInfo,
+import { abstract } from '@kingjs/abstract'
+import { 
+  Es6DescriptorInfo,
   Es6DataDescriptorInfo,
-  Es6ValueDescriptorInfo,
-  Es6AccessorDescriptorInfo,
-  Es6MethodDescriptorInfo,
+  Es6GetterDescriptorInfo,
+  Es6SetterDescriptorInfo,
+  Es6PropertyDescriptorInfo,
 } from './es6-descriptor-info'
 
-describe('Es6DescriptorInfo', () => {
-  let descInfo
-  describe('with a class definition', () => {
+const Getter = {
+  name: 'getter',
+  descriptor: { 
+    get: function myGetter() {},
+    enumerable: Es6GetterDescriptorInfo.DefaultEnumerable,
+    configurable: Es6GetterDescriptorInfo.DefaultConfigurable,
+  },
+  infoType: Es6GetterDescriptorInfo,
+  type: 'getter',
+  isGetter: true,
+  isAccessor: true,
+  isConfigurable: true,
+  toString: 'configurable getter',
+  returnType: 'object',
+}
+
+const OtherGetter = {
+  ...Getter,
+  name: 'other getter',
+  descriptor: { 
+    get: function otherGetter() {},
+    enumerable: Es6GetterDescriptorInfo.DefaultEnumerable,
+    configurable: Es6GetterDescriptorInfo.DefaultConfigurable,
+  },
+}
+
+const Setter = {
+  name: 'setter',
+  descriptor: {
+    set: function mySetter(v) {},
+    enumerable: Es6SetterDescriptorInfo.DefaultEnumerable,
+    configurable: Es6SetterDescriptorInfo.DefaultConfigurable,
+  },
+  infoType: Es6SetterDescriptorInfo,
+  type: 'setter',
+  isSetter: true,
+  isAccessor: true,
+  isConfigurable: true,
+  toString: 'configurable setter',
+  returnType: 'object',
+}
+
+const OtherSetter = {
+  ...Setter,
+  name: 'other setter',
+  descriptor: {
+    set: function otherSetter(v) {},
+    enumerable: Es6SetterDescriptorInfo.DefaultEnumerable,
+    configurable: Es6SetterDescriptorInfo.DefaultConfigurable,
+  },
+}
+
+const Property = {
+  name: 'property',
+  descriptor: {
+    get: function myPropertyGetter() {},
+    set: function myPropertySetter(v) {},
+    enumerable: Es6PropertyDescriptorInfo.DefaultEnumerable,
+    configurable: Es6PropertyDescriptorInfo.DefaultConfigurable,
+  },
+  infoType: Es6PropertyDescriptorInfo,
+  type: 'property',
+  isProperty: true,
+  isAccessor: true,
+  isConfigurable: true,
+  toString: 'configurable property',
+  returnType: 'object',
+}
+
+const Method = {
+  name: 'method',
+  descriptor: {
+    value: function myMethod() {},
+    enumerable: false,
+    configurable: Es6DataDescriptorInfo.DefaultConfigurable,
+    writable: Es6DataDescriptorInfo.DefaultWritable,
+  },
+  infoType: Es6DataDescriptorInfo,
+  type: 'data',
+  isConfigurable: true,
+  isWritable: true,
+  toString: 'configurable writable function',
+  returnType: 'function',
+}
+
+const VisibleMethod = {
+  name: 'visible method',
+  descriptor: {
+    value: function myVisibleMethod() {},
+    enumerable: true,
+    configurable: Es6DataDescriptorInfo.DefaultConfigurable,
+    writable: Es6DataDescriptorInfo.DefaultWritable,
+  },
+  infoType: Es6DataDescriptorInfo,
+  type: 'data',
+  isEnumerable: true,
+  isConfigurable: true,
+  isWritable: true,
+  toString: 'configurable enumerable writable function',
+  returnType: 'function',
+}
+
+const ConstMethod = {
+  name: 'const method',
+  descriptor: {
+    value: function myConstMethod() {},
+    enumerable: false,
+    configurable: Es6DataDescriptorInfo.DefaultConfigurable,
+    writable: false,
+  },
+  infoType: Es6DataDescriptorInfo,
+  type: 'data',
+  isConfigurable: true,
+  toString: 'configurable function',
+  returnType: 'function',
+}
+
+const SealedMethod = {
+  name: 'sealed method',
+  descriptor: {
+    value: function mySealedMethod() {},
+    enumerable: false,
+    configurable: false,
+    writable: Es6DataDescriptorInfo.DefaultWritable,
+  },
+  infoType: Es6DataDescriptorInfo,
+  type: 'data',
+  isWritable: true,
+  toString: 'writable function',
+  returnType: 'function',
+}
+
+const AbstractMethod = {
+  name: 'abstract method',
+  descriptor: {
+    value: abstract,
+    enumerable: false,
+    configurable: Es6DataDescriptorInfo.DefaultConfigurable,
+    writable: Es6DataDescriptorInfo.DefaultWritable,
+  },
+  infoType: Es6DataDescriptorInfo,
+  type: 'data',
+  isConfigurable: true,
+  isWritable: true,
+  isAbstract: true,
+  toString: 'abstract configurable writable function',
+  returnType: 'function',
+}
+
+const Number = {
+  name: 'number',
+  descriptor: {
+    value: 42,
+    enumerable: true,
+    configurable: Es6DataDescriptorInfo.DefaultConfigurable,
+    writable: Es6DataDescriptorInfo.DefaultWritable,
+  },
+  infoType: Es6DataDescriptorInfo,
+  type: 'data',
+  isConfigurable: true,
+  isWritable: true,
+  isEnumerable: true,
+  toString: 'configurable enumerable writable number',
+  returnType: 'number',
+}
+
+const NanNumber = {
+  name: 'NaN number',
+  descriptor: {
+    value: NaN,
+    enumerable: true,
+    configurable: Es6DataDescriptorInfo.DefaultConfigurable,
+    writable: Es6DataDescriptorInfo.DefaultWritable,
+  },
+  infoType: Es6DataDescriptorInfo,
+  type: 'data',
+  isConfigurable: true,
+  isWritable: true,
+  isEnumerable: true,
+  toString: 'configurable enumerable writable number',
+  returnType: 'number',
+}
+
+const Descriptors = [
+  [ Getter.name, Getter ],
+  [ OtherGetter.name, OtherGetter ],
+  [ Setter.name, Setter ],
+  [ OtherSetter.name, OtherSetter ],
+  [ Property.name, Property ],
+  [ Method.name, Method ],
+  [ VisibleMethod.name, VisibleMethod ],
+  [ ConstMethod.name, ConstMethod ],
+  [ SealedMethod.name, SealedMethod ],
+  [ AbstractMethod.name, AbstractMethod ],
+  [ Number.name, Number ],
+  [ NanNumber.name, NanNumber ],
+]
+ 
+describe('descriptor', () => {
+  describe.each(Descriptors)('%s', (_, md) => {
+    let info
     beforeEach(() => {
-      descInfo = Es6DescriptorInfo.create({
-        value: class MyClass {},
-        writable: Es6DataDescriptorInfo.DefaultWritable, 
-        enumerable: Es6DataDescriptorInfo.DefaultEnumerable, 
-        configurable: Es6DataDescriptorInfo.DefaultConfigurable 
-      })
+      info = Es6DescriptorInfo.create(md.descriptor)
     })
-    it('is a data descriptor', () => {
-      expect(descInfo.type).toBe(Es6DataDescriptorInfo.Tag)
-      expect(descInfo instanceof Es6ValueDescriptorInfo).toBe(true)
-      expect(descInfo instanceof Es6DataDescriptorInfo).toBe(true)
-      expect(descInfo instanceof Es6DescriptorInfo).toBe(true)
-      expect(descInfo.isData).toBe(true)
-      expect(descInfo.isMethod).toBe(false)
-      expect(descInfo.hasValue).toBe(true)
-      expect(descInfo.hasGetter).toBe(false)
-      expect(descInfo.hasSetter).toBe(false)
+
+    it('does not equal null', () => {
+      expect(info.equals(null)).toBe(false)
     })
-    it('is equal to itself', () => {
-      expect(descInfo.equals(descInfo)).toBe(true)
+    it('does not equal the other descriptors', () => {
+      for (const [_, otherMd] of Descriptors) {
+        if (otherMd === md) continue
+        const otherInfo = Es6DescriptorInfo.create(otherMd.descriptor)
+        expect(info.equals(otherInfo)).toBe(false)
+        expect(otherInfo.equals(info)).toBe(false)
+      }
     })
-    it('is unequal to null', () => {
-      expect(descInfo.equals(null)).toBe(false)
+    it('is correct info type', () => {
+      expect(info instanceof md.infoType).toBe(true)
     })
-    describe('copied', () => {
-      let copy
-      let descInfoCopy
-      beforeEach(() => {
-        descInfoCopy = Es6DescriptorInfo.create({ 
-          value: class MyClass {},
-          writable: Es6DataDescriptorInfo.DefaultWritable,
-          enumerable: Es6DataDescriptorInfo.DefaultEnumerable,
-          configurable: Es6DataDescriptorInfo.DefaultConfigurable
-        })
-        copy = descInfoCopy.descriptor
-      })
-      it('is unequal if configurable is different', () => {
-        copy.configurable = !descInfo.isConfigurable
-        expect(descInfo.equals(descInfoCopy)).toBe(false)
-      })
-      it('is unequal if enumerable is different', () => {
-        copy.enumerable = !descInfo.isEnumerable
-        expect(descInfo.equals(descInfoCopy)).toBe(false)
-      })
-      it('is unequal if writable is different', () => {
-        copy.writable = !descInfo.isWritable
-        expect(descInfo.equals(descInfoCopy)).toBe(false)
-      })
-      it('is unequal if value is different', () => {
-        copy.value = class MyClass2 {}
-        expect(descInfo.equals(descInfoCopy)).toBe(false)
-      })
+    it('equals itself', () => {
+      expect(info.equals(info)).toBe(true)
     })
-  })
-  describe('with a function definition that is enumerable', () => {
-    beforeEach(() => {
-      descInfo = Es6DescriptorInfo.create({ 
-        value: function myFunction() {},
-        writable: Es6DataDescriptorInfo.DefaultWritable,
-        enumerable: Es6DataDescriptorInfo.DefaultEnumerable, 
-        configurable: Es6DataDescriptorInfo.DefaultConfigurable 
-      })
+    it('has a descriptor', () => {
+      expect(info.descriptor).toBe(md.descriptor)
     })
-    it('is a data descriptor', () => {
-      expect(descInfo.type).toBe(Es6DataDescriptorInfo.Tag)
-      expect(descInfo instanceof Es6ValueDescriptorInfo).toBe(true)
-      expect(descInfo instanceof Es6DataDescriptorInfo).toBe(true)
-      expect(descInfo instanceof Es6DescriptorInfo).toBe(true)
-      expect(descInfo.isData).toBe(true)
-      expect(descInfo.isMethod).toBe(false)
-      expect(descInfo.hasValue).toBe(true)
-      expect(descInfo.hasGetter).toBe(false)
-      expect(descInfo.hasSetter).toBe(false)
-    })
-  })
-  describe('with NaN value descriptor', () => {
-    beforeEach(() => {
-      descInfo = Es6DescriptorInfo.create({
-        value: NaN,
-        writable: Es6DataDescriptorInfo.DefaultWritable, 
-        enumerable: Es6DataDescriptorInfo.DefaultEnumerable, 
-        configurable: Es6DataDescriptorInfo.DefaultConfigurable 
-      })
-    })
-    it('is equal to another NaN value descriptor', () => {
-      const otherDescInfo = Es6DescriptorInfo.create({ 
-        value: NaN,
-        writable: Es6DataDescriptorInfo.DefaultWritable, 
-        enumerable: Es6DataDescriptorInfo.DefaultEnumerable, 
-        configurable: Es6DataDescriptorInfo.DefaultConfigurable 
-      })
-      expect(descInfo.equals(otherDescInfo)).toBe(true)
-    })
-  })
-  describe('with value descriptor', () => {
-    beforeEach(() => {
-      descInfo = Es6DescriptorInfo.create({ 
-        value: 42, 
-        writable: Es6DataDescriptorInfo.DefaultWritable, 
-        enumerable: Es6DataDescriptorInfo.DefaultEnumerable, 
-        configurable: Es6DataDescriptorInfo.DefaultConfigurable 
-      })
-    })
-    it('does not equal a non-value descriptor', () => {
-      const otherDescInfo = Es6DescriptorInfo.create({ 
-        enumerable: Es6DataDescriptorInfo.DefaultEnumerable, 
-        configurable: Es6DataDescriptorInfo.DefaultConfigurable,
-        get: function() { return 42 },
-      })
-      expect(descInfo.equals(otherDescInfo)).toBe(false)
-    })
-    it('does not equal a value descriptor with different value', () => {
-      const otherDescInfo = Es6DescriptorInfo.create({ 
-        value: 43,
-        writable: Es6DataDescriptorInfo.DefaultWritable, 
-        enumerable: Es6DataDescriptorInfo.DefaultEnumerable, 
-        configurable: Es6DataDescriptorInfo.DefaultConfigurable 
-      })
-      expect(descInfo.equals(otherDescInfo)).toBe(false)
-    })
-    it('is a data descriptor', () => {
-      expect(descInfo.type).toBe(Es6DataDescriptorInfo.Tag)
-      expect(descInfo instanceof Es6ValueDescriptorInfo).toBe(true)
-      expect(descInfo instanceof Es6DataDescriptorInfo).toBe(true)
-      expect(descInfo instanceof Es6DescriptorInfo).toBe(true)
-      expect(descInfo.isData).toBe(true)
-      expect(descInfo.isMethod).toBe(false)
-      expect(descInfo.hasValue).toBe(true)
-      expect(descInfo.hasGetter).toBe(false)
-      expect(descInfo.hasSetter).toBe(false)
-    })
-    it('has correct metadata', () => {
-      expect(descInfo.value).toBe(42)
-      expect(descInfo.isWritable).toBe(true)
-      expect(descInfo.isEnumerable).toBe(true)
-      expect(descInfo.isConfigurable).toBe(true)
+    it('has correct predicates', () => {
+      expect(info.type).toBe(md.type)
+      expect(info.isGetter).toBe(!!md.isGetter)
+      expect(info.isSetter).toBe(!!md.isSetter)
+      expect(info.isProperty).toBe(!!md.isProperty)
+      expect(info.isAccessor).toBe(!!md.isAccessor)
+
+      expect(info.isConfigurable).toBe(md.isConfigurable == true)
+      expect(info.isEnumerable).toBe(md.isEnumerable == true)
+      expect(info.isWritable).toBe(md.isWritable == true)
+
+      expect(info.isAbstract).toBe(md.isAbstract == true)
     })
     it('toString is correct', () => {
-      expect(descInfo.toString()).equals('{ value: [number] }')
+      expect(info.toString()).toBe(md.toString)
     })
-  })
-  describe('with value descriptor with inverted defaults', () => {
-    beforeEach(() => {
-      descInfo = Es6DescriptorInfo.create({ 
-        value: 42,
-        writable: !Es6DataDescriptorInfo.DefaultWritable, 
-        enumerable: !Es6DataDescriptorInfo.DefaultEnumerable, 
-        configurable: !Es6DataDescriptorInfo.DefaultConfigurable 
-      })
+    it('has correct pivots', () => {
+      const pivots = Array.from(info.pivots())
+      if (md.isAbstract) {
+        expect(pivots).toContain('abstract')
+      }
     })
-    it('has the correct metadata', () => {
-      expect(descInfo.value).toBe(42)
-      expect(descInfo.isWritable).toBe(false)
-      expect(descInfo.isEnumerable).toBe(false)
-      expect(descInfo.isConfigurable).toBe(false)
+    it('has correct modifiers', () => {
+      const actual = Array.from(info.modifiers())
+      const expected = []
+      if (md.isConfigurable) expected.push('configurable')
+      if (md.isEnumerable) expected.push('enumerable')
+      if (md.isWritable) expected.push('writable')
+      expect(actual).toEqual(expected)
     })
-    it('toString is correct', () => {
-      expect(descInfo.toString()).equals('sealed const hidden { value: [number] }')
+    it('has correct getter', () => {
+      expect(info.getter).toBe(md.descriptor.get)
     })
-  })
-  describe('with accessor descriptor', () => {
-    const getter = function myGetter() {}
-    const setter = function mySetter(v) {}
-    beforeEach(() => {
-      descInfo = Es6DescriptorInfo.create({ 
-        get: getter,
-        set: setter,
-        enumerable: Es6AccessorDescriptorInfo.DefaultEnumerable, 
-        configurable: Es6AccessorDescriptorInfo.DefaultConfigurable 
-      })
+    it('has correct setter', () => {
+      expect(info.setter).toBe(md.descriptor.set)
     })
-    it('does not equal an accessor descriptor with different setter', () => {
-      const otherDescInfo = Es6DescriptorInfo.create({ 
-        get: getter,
-        set: function otherSetter(v) {},
-        enumerable: Es6AccessorDescriptorInfo.DefaultEnumerable, 
-        configurable: Es6AccessorDescriptorInfo.DefaultConfigurable 
-      })
-      expect(descInfo.equals(otherDescInfo)).toBe(false)
-      expect(otherDescInfo.equals(descInfo)).toBe(false)
-    })
-    it('does not equal an accessor descriptor with different getter', () => {
-      const otherDescInfo = Es6DescriptorInfo.create({ 
-        get: function otherGetter() {},
-        set: setter,
-        enumerable: Es6AccessorDescriptorInfo.DefaultEnumerable, 
-        configurable: Es6AccessorDescriptorInfo.DefaultConfigurable
-      })
-      expect(descInfo.equals(otherDescInfo)).toBe(false)
-      expect(otherDescInfo.equals(descInfo)).toBe(false)
-    })
-    it('is an accessor descriptor', () => {
-      expect(descInfo.type).toBe(Es6AccessorDescriptorInfo.Tag)
-      expect(descInfo instanceof Es6AccessorDescriptorInfo).toBe(true)
-      expect(descInfo instanceof Es6MethodDescriptorInfo).toBe(false)
-      expect(descInfo instanceof Es6DescriptorInfo).toBe(true)
-      expect(descInfo.isAccessor).toBe(true)
-      expect(descInfo.isMethod).toBe(false)
-      expect(descInfo.hasValue).toBe(false)
-      expect(descInfo.hasGetter).toBe(true)
-      expect(descInfo.hasSetter).toBe(true)
-    })
-    it('has correct getter and setter', () => {
-      expect(descInfo.getter).toBe(getter)
-      expect(descInfo.setter).toBe(setter)
-    })
-    it('has correct metadata', () => {
-      expect(descInfo.isEnumerable).toBe(false)
-      expect(descInfo.isConfigurable).toBe(true)
-      expect(descInfo.isWritable).toBe(false)
-    })
-    it('toString is correct', () => {
-      expect(descInfo.toString()).equals('{ get; set }')
-    })
-    it('is equal to itself', () => {
-      expect(descInfo.equals(descInfo)).toBe(true)
-    })
-    describe('copied', () => {
-      let copy
-      let descInfoCopy
-      beforeEach(() => {
-        descInfoCopy = Es6DescriptorInfo.create({ 
-          get: getter,
-          set: setter,
-          enumerable: Es6AccessorDescriptorInfo.DefaultEnumerable, 
-          configurable: Es6AccessorDescriptorInfo.DefaultConfigurable 
-        })
-        copy = descInfoCopy.descriptor
-      })
-      it('is unequal if getter is different', () => {
-        const otherGetter = function otherGetter() {}
-        copy.get = otherGetter
-        expect(descInfo.equals(descInfoCopy)).toBe(false)
-      })
-      it('is unequal if setter is different', () => {
-        const otherSetter = function otherSetter(v) {}
-        copy.set = otherSetter
-        expect(descInfo.equals(descInfoCopy)).toBe(false)
-      })
-    })
-  })
-  describe('with accessor descriptor with only getter', () => {
-    const getter = function myGetter() {}
-    beforeEach(() => {
-      descInfo = Es6DescriptorInfo.create({ 
-        get: getter,
-        enumerable: Es6AccessorDescriptorInfo.DefaultEnumerable, 
-        configurable: Es6AccessorDescriptorInfo.DefaultConfigurable 
-      })
-    })
-    it('toString is correct', () => {
-      expect(descInfo.toString()).equals('{ get }')
-    })
-  })
-  describe('with accessor descriptor with only getter and inverted defaults', () => {
-    const setter = function mySetter(v) {}
-    beforeEach(() => {
-      descInfo = Es6DescriptorInfo.create({ 
-        set: setter,
-        enumerable: !Es6AccessorDescriptorInfo.DefaultEnumerable, 
-        configurable: !Es6AccessorDescriptorInfo.DefaultConfigurable 
-      })
-    })
-    it('has correct getter and setter', () => {
-      expect(descInfo.getter).toBeUndefined()
-      expect(descInfo.setter).toBe(setter)
-    })
-    it('has correct metadata', () => {
-      expect(descInfo.isEnumerable).toBe(true)
-      expect(descInfo.isConfigurable).toBe(false)
-      expect(descInfo.isWritable).toBe(false)
-    })
-    it('toString is correct', () => {
-      expect(descInfo.toString()).equals('sealed enumerable { set }')
-    })  
-  })
-  describe('with method descriptor', () => {
-    const method = function myMethod() {}
-    beforeEach(() => {
-      descInfo = Es6DescriptorInfo.create({ 
-        value: method,
-        writable: Es6MethodDescriptorInfo.DefaultWritable,
-        enumerable: Es6MethodDescriptorInfo.DefaultEnumerable, 
-        configurable: Es6MethodDescriptorInfo.DefaultConfigurable 
-      })
-    })
-    it('is a method descriptor', () => {
-      expect(descInfo.type).toBe(Es6MethodDescriptorInfo.Tag)
-      expect(descInfo instanceof Es6MethodDescriptorInfo).toBe(true)
-      expect(descInfo instanceof Es6ValueDescriptorInfo).toBe(true)
-      expect(descInfo instanceof Es6DescriptorInfo).toBe(true)
-      expect(descInfo.isMethod).toBe(true)
-      expect(descInfo.hasValue).toBe(true)
-      expect(descInfo.hasGetter).toBe(false)
-      expect(descInfo.hasSetter).toBe(false)
-    })
-    it('has correct method', () => {
-      expect(descInfo.value).toBe(method)
-    })
-    it('has correct metadata', () => {
-      expect(descInfo.isWritable).toBe(true)
-      expect(descInfo.isEnumerable).toBe(false)
-      expect(descInfo.isConfigurable).toBe(true)
-    })
-    it('toString is correct', () => {
-      expect(descInfo.toString()).equals('function')
-    })
-  })
-  describe('with method descriptor with inverted defaults', () => {
-    const method = function myMethod() {}
-    beforeEach(() => {
-      descInfo = Es6DescriptorInfo.create({ 
-        value: method,
-        // writable must be false for methods
-        enumerable: Es6MethodDescriptorInfo.DefaultEnumerable, 
-        writable: !Es6MethodDescriptorInfo.DefaultWritable,
-        configurable: !Es6MethodDescriptorInfo.DefaultConfigurable 
-      })
-    })
-    it('has correct method', () => {
-      expect(descInfo.value).toBe(method)
-    })
-    it('has correct metadata', () => {
-      expect(descInfo.isWritable).toBe(false)
-      expect(descInfo.isEnumerable).toBe(false)
-      expect(descInfo.isConfigurable).toBe(false)
-    })
-    it('toString is correct', () => {
-      expect(descInfo.toString()).equals('sealed const function')
+    it('has correct returnType', () => {
+      expect(info.returnType).toBe(md.returnType)
     })
   })
 })

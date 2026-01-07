@@ -4,12 +4,10 @@ import { es6Typeof } from "./es6-typeof.js"
 import { isAbstract } from "@kingjs/abstract"
 
 const {  
-  get: getDescriptor,
   hasValue,
   hasAccessor,
   hasGetter,
   hasSetter,
-  hasClassPrototypeDefaults,
   DefaultModifier,
 } = Descriptor
 
@@ -17,96 +15,27 @@ const {
   userDefined: DefaultUserDefinedModifier,
   accessor: DefaultAccessorModifier,
   value: DefaultValueModifier,
-  method: DefaultMethodModifier,
-  data: DefaultDataModifier,
 } = DefaultModifier
 
-
-// Describes an ES6 property descriptor. The descriptor can be one of three types:
-// - Accessor descriptor: 
-//      has get and/or set functions, but no value.
-// - Data descriptor: 
-//      has a value that is not a function, or is a function but looks like a class or 
-//      is enumerable.
-// - Method descriptor: 
-//      has a value that is a non-enumerable function that does not look like a class.
-
-// The descriptor info also provides information about the descriptor's attributes:
-// - configurable
-// - enumerable
-// - writable (data and method descriptors only)
-
-// The descriptor info provides a toString method that summarizes the descriptor in a
-// concise format. The modifiers configurable, enumerable, and writable are only
-// included in the string when they differ from their default values. The default
-// values are:
-// - configurable: true
-// - writable: true (data and method descriptors only)
-// - enumerable:
-//      false (accessor descriptors)
-//      true (data descriptors)
-//      false (method descriptors)
-
-// The modifier const is used to indicate that writable is false.
-// The modifier sealed is used to indicate that configurable is false.
-// The modifier hidden is used to indicate that enumerable is false for data descriptors.
-
-// The id of the descriptor is included in the string when it can be inferred from
-// the function name of the getter, setter, or value. If the id is anonymous (null 
-// or undefined), then the string '<anonymous>' is used. Otherwise, the id is converted 
-// to a string. If the id is a symbol, it is enclosed in brackets. 
-
-// Typical Examples:
-// - Accessor descriptor: 
-//      "myId { get; set }"
-// - Data descriptor: 
-//      "value: [array]"
-// - Method descriptor: 
-//      "myMethod()"
-
-// Annonymous Examples:
-// - Accessor descriptor: 
-//      "<anonymous> { get; set }"
-// - Method descriptor: 
-//      "<anonymous>()"
-
-// Kitchen Sink Examples:
-// - Accessor descriptor: 
-//      "sealed const enumerable myId { get; set }"
-// - Data descriptor: 
-//      "const hidden value: [array]"
-// - Method descriptor: 
-//      "sealed const myMethod()"
-
 export class Es6DescriptorInfo {
-  static DefaultConfigurable = DefaultUserDefinedModifier.configurable
-
   static create(descriptor) {
     
     // accessor descriptor (no value)
     if (!hasValue(descriptor)) {
       assert(hasAccessor(descriptor))
-      return new Es6AccessorDescriptorInfo(descriptor)
+
+      if (!hasSetter(descriptor))
+        return new Es6GetterDescriptorInfo(descriptor)
+
+      if (!hasGetter(descriptor))
+        return new Es6SetterDescriptorInfo(descriptor)
+      
+      return new Es6PropertyDescriptorInfo(descriptor)
     }
 
     // value descriptor (has value)
     assert(hasValue(descriptor))
-
-    // data descriptor (has value but not a function)
-    const value = descriptor.value
-    if (typeof value !== 'function') 
-      return new Es6DataDescriptorInfo(descriptor)
-
-    // data descriptor (has value, is a function, but looks like a class)
-    if (hasClassPrototypeDefaults(getDescriptor(value, 'prototype')))
-      return new Es6DataDescriptorInfo(descriptor) 
-
-    // data descriptor (has value, is a function, but is enumerable)
-    if (descriptor.enumerable)
-      return new Es6DataDescriptorInfo(descriptor)
-
-    // method descriptor (has value, is a function, not enumerable)
-    return new Es6MethodDescriptorInfo(descriptor)
+    return new Es6DataDescriptorInfo(descriptor)
   }
 
   #descriptor
@@ -115,146 +44,117 @@ export class Es6DescriptorInfo {
     this.#descriptor = descriptor
   }
 
+  get descriptor() { return this.#descriptor }
+  get returnType() {
+    if (this.isData) return es6Typeof(this.value)
+    return 'object'
+  }
+
+  get type() { return this.constructor.Type }
+  get isGetter() { return this instanceof Es6GetterDescriptorInfo }
+  get isSetter() { return this instanceof Es6SetterDescriptorInfo }
+  get isProperty() { return this instanceof Es6PropertyDescriptorInfo }
+  get isAccessor() { return this.isGetter || this.isSetter || this.isProperty }
+  get isData() { return this instanceof Es6DataDescriptorInfo }
+
   // pivots
-  // get type() { abstract }
-  get isAccessor() { return this.type == Es6AccessorDescriptorInfo.Tag }
-  get isData() { return this.type == Es6DataDescriptorInfo.Tag }
   get isAbstract() { return isAbstract(this.#descriptor) }
-
-  get isMethod() { return this.type == Es6MethodDescriptorInfo.Tag }
   
-  get hasValue() { return this instanceof Es6ValueDescriptorInfo }
-  get hasGetter() { return hasGetter(this.descriptor) }
-  get hasSetter() { return hasSetter(this.descriptor) }
-
   // values
   get getter() { return this.descriptor.get }
   get setter() { return this.descriptor.set }
   get value() { return this.descriptor.value }
   
-  get descriptor() { return this.#descriptor }
-
   // modifiers
   get isEnumerable() { return this.descriptor.enumerable }
   get isConfigurable() { return this.descriptor.configurable }
   get isWritable() { return !!this.descriptor.writable }
 
-  equals(other) {
-    if (!(other instanceof Es6DescriptorInfo)) return false
+  #equalsData(other) {
+    if (this.isWritable !== other.isWritable) return false
+
+    if (this.value !== other.value) {
+      if (!(Number.isNaN(this.value) && Number.isNaN(other.value))) 
+        return false
+    }
+
+    return true
+  }
+  #equalsAccessor(other) {
+    const a = this.descriptor
+    const b = other.descriptor
+    
+    if (a.get !== b.get) return false
+    if (a.set !== b.set) return false
+    return true
+  }
+  #equalsModifier(other) {
     const a = this.descriptor
     const b = other.descriptor
 
     if (a.configurable !== b.configurable) return false
     if (a.enumerable !== b.enumerable) return false
-
-    if (this.hasValue != other.hasValue) return false
-    if (this.hasValue) {
-      if (a.writable !== b.writable) return false
-      if (a.value !== b.value) {
-        if (!(Number.isNaN(a.value) && Number.isNaN(b.value))) 
-          return false
-      }
-    } else {
-      if (a.get !== b.get) return false
-      if (a.set !== b.set) return false
-    }
-
     return true
+  }
+  #equalsBasic(other) {
+    if (!(other instanceof Es6DescriptorInfo)) return false
+    if (this.type != other.type) return false
+    return true
+  }
+  equals(other) {
+    if (!this.#equalsBasic(other)) return false
+    if (!this.#equalsModifier(other)) return false
+    if (this.isAccessor) return this.#equalsAccessor(other)
+    return this.#equalsData(other)
   }
 
   *pivots() {
-    yield this.type
     if (this.isAbstract) yield 'abstract'
   }
   *modifiers() {
-    if (this.isConfigurable != Es6DescriptorInfo.DefaultConfigurable)
-      yield 'sealed'
+    if (this.isConfigurable) yield 'configurable'
+    if (this.isEnumerable) yield 'enumerable'
+    if (this.isData && this.isWritable) yield 'writable'
+  }
+
+  toStringType() {
+    if (this.isData) return this.returnType
+    return this.type
+  }
+  toString() {
+    return [
+      // e.g. 'abstract'
+      ...this.pivots(), 
+
+      // e.g. 'configurable', 'enumerable', 'writable'
+      ...this.modifiers(),
+
+      // e.g. 'getter', 'setter', 'property'
+      // or when value 'string', 'number', 'function', 'array' etc.
+      this.toStringType(), 
+
+    ].filter(Boolean).join(' ')
   }
 }
 
-export class Es6AccessorDescriptorInfo extends Es6DescriptorInfo {
-  static Tag = 'accessor'
+export class Es6GetterDescriptorInfo extends Es6DescriptorInfo {
+  static Type = 'getter'
+  static DefaultConfigurable = DefaultUserDefinedModifier.configurable
   static DefaultEnumerable = DefaultAccessorModifier.enumerable
-
-  get type() { return Es6AccessorDescriptorInfo.Tag }
-
-  *modifiers() { 
-    yield* super.modifiers()
-    if (this.isEnumerable != Es6AccessorDescriptorInfo.DefaultEnumerable)
-      yield 'enumerable'
-  }
-
-  toString() {
-    return [
-      ...this.modifiers(),
-      '{', [
-        !this.hasGetter ? null : `get`,
-        !this.hasSetter ? null : `set`,
-      ].filter(Boolean).join('; '), '}'
-    ].filter(Boolean).join(' ')
-  }
 }
-
-export class Es6ValueDescriptorInfo extends Es6DescriptorInfo { 
+export class Es6SetterDescriptorInfo extends Es6DescriptorInfo {
+  static Type = 'setter'
+  static DefaultConfigurable = DefaultUserDefinedModifier.configurable
+  static DefaultEnumerable = DefaultAccessorModifier.enumerable
+}
+export class Es6PropertyDescriptorInfo extends Es6DescriptorInfo {
+  static Type = 'property'
+  static DefaultConfigurable = DefaultUserDefinedModifier.configurable
+  static DefaultEnumerable = DefaultAccessorModifier.enumerable
+}
+export class Es6DataDescriptorInfo extends Es6DescriptorInfo { 
+  static Type = 'data'
+  static DefaultConfigurable = DefaultUserDefinedModifier.configurable
   static DefaultWritable = DefaultValueModifier.writable
-
-  constructor(descriptor) {
-    assert(hasValue(descriptor))
-    super(descriptor)
-  }
-
-  *modifiers() { 
-    yield* super.modifiers()
-    if (this.isWritable != Es6ValueDescriptorInfo.DefaultWritable)
-      yield 'const'
-  }
 }
 
-export class Es6DataDescriptorInfo extends Es6ValueDescriptorInfo {
-  static Tag = 'data'
-  static DefaultEnumerable = DefaultDataModifier.enumerable
-
-  constructor(descriptor) {
-    super(descriptor)
-  }
-
-  get type() { return Es6DataDescriptorInfo.Tag }
-
-  *modifiers() { 
-    yield* super.modifiers()
-    if (this.isEnumerable != Es6DataDescriptorInfo.DefaultEnumerable)
-      yield 'hidden'
-  }
-  
-  toString() {
-    const isEnumerableDefault = Es6DataDescriptorInfo.DefaultEnumerable
-    return [
-      ...this.modifiers(), '{',
-      `value:`, `[${es6Typeof(this.value)}]`, '}'
-    ].filter(Boolean).join(' ')
-  }
-}
-
-export class Es6MethodDescriptorInfo extends Es6ValueDescriptorInfo { 
-  static Tag = 'method'
-  static DefaultEnumerable = DefaultMethodModifier.enumerable
-
-  constructor(descriptor) {
-    assert(typeof descriptor.value == 'function')
-    assert(!descriptor.enumerable)
-    super(descriptor)
-  }
-
-  get type() { return Es6MethodDescriptorInfo.Tag }
-
-  *modifiers() { 
-    yield* super.modifiers()
-  }
-  
-  toString() {
-    return [
-      ...this.modifiers(),
-      `function`,
-    ].filter(Boolean).join(' ')
-  }
-}

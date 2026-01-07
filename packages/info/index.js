@@ -351,10 +351,7 @@ export class MemberInfo extends Info {
   }
 
   *modifiers() { yield* this.#es6MemberInfo.modifiers() }
-  *pivots() {
-    yield* this.#es6MemberInfo.pivots()
-    if (this.isAbstract) yield 'abstract'
-  }
+  *pivots() { yield* this.#es6MemberInfo.pivots() }
 
   toStringType() { return this.#es6MemberInfo.toStringType() }
   toString() {
