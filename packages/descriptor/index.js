@@ -1,107 +1,54 @@
+import { assert } from '@kingjs/assert'
 import { isPojo } from '@kingjs/pojo-test'
 
 export class Descriptor {
-  
-  static hasGetter(descriptor) {
-    if (!descriptor) return false
-    return 'get' in descriptor && descriptor.get !== undefined
-  }
 
-  static hasSetter(descriptor) {
-    if (!descriptor) return false
-    return 'set' in descriptor && descriptor.set !== undefined
-  }
+  static typeof(descriptor) {
+    const hasGetter = Descriptor.hasGetter(descriptor)
+    const hasSetter = Descriptor.hasSetter(descriptor)
+    const hasValue = Descriptor.hasValue(descriptor)
 
-  static hasAccessor(descriptor) {
-    if (!descriptor) return false
-    return Descriptor.hasGetter(descriptor) || 
-      Descriptor.hasSetter(descriptor)
+    if (hasValue) {
+      assert(!hasGetter && !hasSetter,
+        'Invalid descriptor: value and accessor are mutually exclusive.')
+      return DataDescriptor.Type
+    }
+
+    assert(hasGetter || hasSetter,
+      'Invalid descriptor: must have value or accessor.')
+    if (!hasGetter) return SetterDescriptor.Type
+    if (!hasSetter) return GetterDescriptor.Type
+    return PropertyDescriptor.Type
   }
 
   static hasValue(descriptor) {
-    if (!descriptor) return false
+    if (!isPojo(descriptor)) return false
     return 'value' in descriptor
   }
-
-  static hasData(descriptor) {
-    return Descriptor.hasValue(descriptor) && !Descriptor.hasMethod(descriptor)
+  
+  static hasGetter(descriptor) {
+    if (!isPojo(descriptor)) return false
+    if (!('get' in descriptor)) return false
+    return descriptor.get !== undefined
   }
 
-  static hasMethod(descriptor) {
-    if (!Descriptor.hasValue(descriptor)) return false
-    const fn = descriptor.value
-    if (!(fn instanceof Function)) return false
-    const prototypeDescriptor = Object.getOwnPropertyDescriptor(fn, 'prototype')
-    return !Descriptor.hasClassPrototypeDefaults(prototypeDescriptor)
+  static hasSetter(descriptor) {
+    if (!isPojo(descriptor)) return false
+    if (!('set' in descriptor)) return false
+    return descriptor.set !== undefined
   }
 
-  static *implementation(descriptor) {
-    if (!descriptor)
-      return
-    
-    if (descriptor.get) 
-      yield descriptor.get
-
-    if (descriptor.set) 
-      yield descriptor.set
-
-    if (Descriptor.hasMethod(descriptor))
-      yield descriptor.value
+  static hasAccessor(descriptor) {
+    if (Descriptor.hasGetter(descriptor)) return true
+    if (Descriptor.hasSetter(descriptor)) return true
+    return false
   }
 
   // object instanceOf Descriptor - test if pojo and has value or accessor
   static [Symbol.hasInstance](instance) {
-    if (!isPojo(instance)) return false
-    if (Descriptor.hasValue(instance)) return true
-    if (Descriptor.hasAccessor(instance)) return true
-    return false
-  }
-
-  static get(prototype, property) {
-    while (prototype) {
-      const descriptor = Object.getOwnPropertyDescriptor(prototype, property)
-      if (descriptor) return descriptor
-      prototype = Object.getPrototypeOf(prototype)
-    }
-    return undefined
-  }
-
-  static {
-    Descriptor.DefaultModifier = { }
-    Descriptor.DefaultModifier.userDefined = {
-      configurable: true
-    }
-    Descriptor.DefaultModifier.accessor = {
-      ...Descriptor.DefaultModifier.userDefined,
-      enumerable: false,
-    }
-
-    Descriptor.DefaultModifier.value = {
-      ...Descriptor.DefaultModifier.userDefined,
-      writable: true,
-    }
-    Descriptor.DefaultModifier.method = {
-      ...Descriptor.DefaultModifier.value,
-      enumerable: false,
-    }
-    Descriptor.DefaultModifier.data = {
-      ...Descriptor.DefaultModifier.value,
-      enumerable: true,
-    }
-
-    Descriptor.DefaultModifier.ptype = {
-      enumerable: false,
-      configurable: false,
-      writable: false,
-    }
-  }
-
-  static getDefaultModifier(descriptor) {
-    const { accessor, method, data } = Descriptor.DefaultModifier
-    if (!descriptor) return null
-    if (Descriptor.hasAccessor(descriptor)) return accessor
-    if (Descriptor.hasMethod(descriptor)) return method
-    return data
+    const hasValue = Descriptor.hasValue(instance)
+    const hasAccessor = Descriptor.hasAccessor(instance)
+    return hasValue || hasAccessor
   }
 
   static hasExpectedModifiers(descriptor, expected) {
@@ -111,30 +58,31 @@ export class Descriptor {
     return true
   }
 
-  // hasClassPrototypeDefaults checks if a prototype descriptor of a function
-  // has a particular set of defaults which can be used to loosly determine 
-  // if a class was declared using the class syntax. The defaults are:
-  //  - enumerable: false, configurable: false, writable: false
-  static hasClassPrototypeDefaults(prototypeDescriptor) {
-    if (!prototypeDescriptor) return false
-    if (!prototypeDescriptor.value) return false
-
-    // if (prototypeDescriptor.enumerable) return false
-    // if (prototypeDescriptor.configurable) return false
-    // if (prototypeDescriptor.writable) return false
-    const expected = Descriptor.DefaultModifier.ptype
-    if (!Descriptor.hasExpectedModifiers(prototypeDescriptor, expected))
-      return false
-
-    return true
+  static *modifiers(descriptor) {
+    if (descriptor.configurable) yield 'configurable'
+    if (descriptor.enumerable) yield 'enumerable'
+    if (descriptor.writable) yield 'writable'
   }
+}
 
-  // hasMemberDeclarationDefaults checks if a descriptor has the defaults:
-  //  - Accessors: enumerable: false, configurable: true
-  //  - Methods: enumerable: false, configurable: true, writable: true
-  //  - Data: enumerable: true, configurable: true, writable: true
-  static hasMemberDeclarationDefaults(descriptor) {
-    const expected = Descriptor.getDefaultModifier(descriptor)
-    return Descriptor.hasExpectedModifiers(descriptor, expected)
-  }
+export class PropertyDescriptor {
+  static Type = 'property'
+  static DefaultConfigurable = true
+  static DefaultEnumerable = false
+}
+export class GetterDescriptor {
+  static Type = 'getter'
+  static DefaultConfigurable = true
+  static DefaultEnumerable = false
+}
+export class SetterDescriptor {
+  static Type = 'setter'
+  static DefaultConfigurable = true
+  static DefaultEnumerable = false
+}
+export class DataDescriptor {
+  static Type = 'data'
+  static DefaultConfigurable = true
+  static DefaultEnumerable = true
+  static DefaultWritable = true
 }

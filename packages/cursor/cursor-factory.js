@@ -1,6 +1,6 @@
 import { Range } from "./range.js"
 import { Interval } from "./interval.js"
-import { Member } from '@kingjs/reflection'
+import { Member } from '@kingjs/es6-info'
 import { get } from '@kingjs/abstract'
 
 const { define } = Member

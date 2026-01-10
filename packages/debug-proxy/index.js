@@ -1,6 +1,4 @@
 import { createProxy } from '@kingjs/proxy'
-// import { Reflection } from '@kingjs/reflection'
-// import { getOwn } from '@kingjs/get-own'
 
 // DebugProxy is a class that clients can extend which will build a
 // prototype chain of preconditions exposed as static getters and

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Reflection } from "@kingjs/reflection"
+import { Es6Reflect } from './es6-reflect.js'
 
 describe('Extended and base classes', () => {
   describe.each([
@@ -53,13 +53,13 @@ describe('Extended and base classes', () => {
       })
     
       it('has all members in its prototype', () => {
-        expect([...Reflection.keys(extended.prototype)]).toEqual(members)
+        expect([...Es6Reflect.keys(extended.prototype)]).toEqual(members)
       })
       it('has all names', () => {
-        expect([...Reflection.names(extended.prototype)]).toEqual(names)
+        expect([...Es6Reflect.names(extended.prototype)]).toEqual(names)
       })
       it('has all symbols', () => {
-        expect([...Reflection.symbols(extended.prototype)]).toEqual(symbols)
+        expect([...Es6Reflect.symbols(extended.prototype)]).toEqual(symbols)
       })
     })
   })

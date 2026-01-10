@@ -1,7 +1,7 @@
 import { getOwn } from '@kingjs/get-own'
 import { asIterable } from '@kingjs/as-iterable'
 import { assert } from '@kingjs/assert'
-import { Reflection } from '@kingjs/reflection'
+import { Es6Reflect } from '@kingjs/es6-info'
 
 // A general purpose global map of type to associated metadata
 const Associations = new Map()
@@ -73,7 +73,7 @@ export class Associate {
         // assert if associated type fails to extend any expected type
         const isValid = !expectedTypes.length || 
           expectedTypes.filter(expectedType => 
-            Reflection.isExtensionOf(associatedType, expectedType)
+            Es6Reflect.isExtensionOf(associatedType, expectedType)
           ).length > 0
           
         if (!isValid) 
@@ -87,7 +87,7 @@ export class Associate {
     if (!options.visited) options = { ...options, visited: new Set() }
     const { traverse, visited } = options
     
-    for (const prototype of Reflection.prototypeHierarchy(type)) {
+    for (const prototype of Es6Reflect.prototypeHierarchy(type)) {
       for (const associatedType of Associate.ownTypes(prototype, symbols)) {
 
         if (visited.has(associatedType)) continue

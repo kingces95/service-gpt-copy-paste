@@ -1,41 +1,24 @@
-import { assert } from '@kingjs/assert'
-import { Descriptor } from "@kingjs/descriptor"
-import { es6Typeof } from "./es6-typeof.js"
 import { isAbstract } from "@kingjs/abstract"
-
-const {  
-  hasValue,
-  hasAccessor,
-  hasGetter,
-  hasSetter,
-  DefaultModifier,
-} = Descriptor
-
-const {
-  userDefined: DefaultUserDefinedModifier,
-  accessor: DefaultAccessorModifier,
-  value: DefaultValueModifier,
-} = DefaultModifier
+import { es6Typeof } from "./es6-typeof.js"
+import { Es6Descriptor } from './es6-descriptor.js'
 
 export class Es6DescriptorInfo {
   static create(descriptor) {
-    
-    // accessor descriptor (no value)
-    if (!hasValue(descriptor)) {
-      assert(hasAccessor(descriptor))
 
-      if (!hasSetter(descriptor))
+    const type = Es6Descriptor.typeof(descriptor)
+    switch (type) {
+      case Es6GetterDescriptorInfo.Type:
         return new Es6GetterDescriptorInfo(descriptor)
-
-      if (!hasGetter(descriptor))
+      case Es6SetterDescriptorInfo.Type:
         return new Es6SetterDescriptorInfo(descriptor)
-      
-      return new Es6PropertyDescriptorInfo(descriptor)
+      case Es6PropertyDescriptorInfo.Type:
+        return new Es6PropertyDescriptorInfo(descriptor)
+      case Es6MethodDescriptorInfo.Type:
+        return new Es6MethodDescriptorInfo(descriptor)
+      case Es6FieldDescriptorInfo.Type:
+        return new Es6FieldDescriptorInfo(descriptor)
     }
-
-    // value descriptor (has value)
-    assert(hasValue(descriptor))
-    return new Es6DataDescriptorInfo(descriptor)
+    throw new Error(`Unknown descriptor type.`)
   }
 
   #descriptor
@@ -55,8 +38,10 @@ export class Es6DescriptorInfo {
   get isSetter() { return this instanceof Es6SetterDescriptorInfo }
   get isProperty() { return this instanceof Es6PropertyDescriptorInfo }
   get isAccessor() { return this.isGetter || this.isSetter || this.isProperty }
-  get isData() { return this instanceof Es6DataDescriptorInfo }
-
+  get isMethod() { return this instanceof Es6MethodDescriptorInfo }
+  get isField() { return this instanceof Es6FieldDescriptorInfo }
+  get isData() { return this.isMethod || this.isField }
+  
   // pivots
   get isAbstract() { return isAbstract(this.#descriptor) }
   
@@ -70,42 +55,9 @@ export class Es6DescriptorInfo {
   get isConfigurable() { return this.descriptor.configurable }
   get isWritable() { return !!this.descriptor.writable }
 
-  #equalsData(other) {
-    if (this.isWritable !== other.isWritable) return false
-
-    if (this.value !== other.value) {
-      if (!(Number.isNaN(this.value) && Number.isNaN(other.value))) 
-        return false
-    }
-
-    return true
-  }
-  #equalsAccessor(other) {
-    const a = this.descriptor
-    const b = other.descriptor
-    
-    if (a.get !== b.get) return false
-    if (a.set !== b.set) return false
-    return true
-  }
-  #equalsModifier(other) {
-    const a = this.descriptor
-    const b = other.descriptor
-
-    if (a.configurable !== b.configurable) return false
-    if (a.enumerable !== b.enumerable) return false
-    return true
-  }
-  #equalsBasic(other) {
-    if (!(other instanceof Es6DescriptorInfo)) return false
-    if (this.type != other.type) return false
-    return true
-  }
   equals(other) {
-    if (!this.#equalsBasic(other)) return false
-    if (!this.#equalsModifier(other)) return false
-    if (this.isAccessor) return this.#equalsAccessor(other)
-    return this.#equalsData(other)
+    if (!(other instanceof Es6DescriptorInfo)) return false
+    return Es6Descriptor.equals(this.descriptor, other.descriptor)
   }
 
   *pivots() {
@@ -137,24 +89,31 @@ export class Es6DescriptorInfo {
   }
 }
 
+export class Es6PropertyDescriptorInfo extends Es6DescriptorInfo {
+  static Type = 'property'
+  static DefaultConfigurable = true
+  static DefaultEnumerable = false
+}
 export class Es6GetterDescriptorInfo extends Es6DescriptorInfo {
   static Type = 'getter'
-  static DefaultConfigurable = DefaultUserDefinedModifier.configurable
-  static DefaultEnumerable = DefaultAccessorModifier.enumerable
+  static DefaultConfigurable = true
+  static DefaultEnumerable = false
 }
 export class Es6SetterDescriptorInfo extends Es6DescriptorInfo {
   static Type = 'setter'
-  static DefaultConfigurable = DefaultUserDefinedModifier.configurable
-  static DefaultEnumerable = DefaultAccessorModifier.enumerable
+  static DefaultConfigurable = true
+  static DefaultEnumerable = false
 }
-export class Es6PropertyDescriptorInfo extends Es6DescriptorInfo {
-  static Type = 'property'
-  static DefaultConfigurable = DefaultUserDefinedModifier.configurable
-  static DefaultEnumerable = DefaultAccessorModifier.enumerable
+export class Es6MethodDescriptorInfo extends Es6DescriptorInfo {
+  static Type = 'method'
+  static DefaultConfigurable = true
+  static DefaultEnumerable = false
+  static DefaultWritable = true
 }
-export class Es6DataDescriptorInfo extends Es6DescriptorInfo { 
-  static Type = 'data'
-  static DefaultConfigurable = DefaultUserDefinedModifier.configurable
-  static DefaultWritable = DefaultValueModifier.writable
+export class Es6FieldDescriptorInfo extends Es6DescriptorInfo {
+  static Type = 'field'
+  static DefaultConfigurable = true
+  static DefaultEnumerable = true
+  static DefaultWritable = true
 }
 

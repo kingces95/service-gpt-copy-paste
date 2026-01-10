@@ -1,6 +1,6 @@
 import { assert } from '@kingjs/assert'
 import { abstract } from '@kingjs/abstract'
-import { Reflection } from '@kingjs/reflection'
+import { Es6Reflect, Es6Descriptor } from '@kingjs/es6-info'
 import { Descriptor } from '@kingjs/descriptor'
 import { PartialObject } from '@kingjs/partial-object'
 import { PartialReflect } from '@kingjs/partial-reflect'
@@ -9,14 +9,17 @@ import { PartialClass, Extends } from '@kingjs/partial-class'
 const {
   hasGetter,
   hasSetter,
+} = Descriptor
+
+const {
   hasMethod,
   hasData,
-} = Descriptor
+} = Es6Descriptor
 
 const {
   ownStaticMemberKeys,
   isExtensionOf,
-} = Reflection
+} = Es6Reflect
 
 export const Implements = Symbol('Concept.Implements')
 

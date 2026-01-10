@@ -1,9 +1,6 @@
-import { Descriptor } from "@kingjs/descriptor"
+import { Es6Descriptor } from "./es6-descriptor.js"
 
-const {  
-  get: getDescriptor,
-  hasClassPrototypeDefaults,
-} = Descriptor
+const { hasClassPrototypeDefaults } = Es6Descriptor
 
 export function es6Typeof(value) {
   if (value === undefined) return 'undefined'
@@ -11,12 +8,14 @@ export function es6Typeof(value) {
   if (Array.isArray(value)) return 'array'
 
   if (typeof value == 'function') {
-    if (hasClassPrototypeDefaults(getDescriptor(value, 'prototype')))
+    const prototypeDescriptor =
+      Object.getOwnPropertyDescriptor(value, 'prototype')
+
+    if (hasClassPrototypeDefaults(prototypeDescriptor))
       return 'class'
+
     return 'function'
   }
 
   return typeof value
 }
-
-

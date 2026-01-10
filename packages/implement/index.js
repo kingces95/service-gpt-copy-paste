@@ -1,12 +1,12 @@
 import { assert } from '@kingjs/assert'
 import { extend } from '@kingjs/extend'
-import { Reflection } from '@kingjs/reflection'
+import { Es6Reflect } from '@kingjs/es6-info'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { Concept } from '@kingjs/concept'
 
 const {
   isExtensionOf,
-} = Reflection
+} = Es6Reflect
 
 export function implement(type, concept, implementation = { }) {
   assert(typeof type == 'function',

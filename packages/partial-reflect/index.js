@@ -1,17 +1,17 @@
 import { assert } from '@kingjs/assert'
 import { isPojo } from '@kingjs/pojo-test'
-import { Reflection } from '@kingjs/reflection'
+import { Es6Reflect } from '@kingjs/es6-info'
 import { isAbstract } from '@kingjs/abstract'
 import { Associate } from '@kingjs/associate'
 import { PartialPojo } from '@kingjs/partial-pojo'
 import { PartialObject } from '@kingjs/partial-object'
-import { Descriptor } from '@kingjs/descriptor'
+import { Es6Descriptor } from '@kingjs/es6-info'
 
 const {
   memberKeys,
   ownMemberKeys,
   isExtensionOf,
-} = Reflection
+} = Es6Reflect
 
 // The PartialReflect API provides reflection over PartialObject. For
 // example, to verify that a type is a PartialObject use:
@@ -276,7 +276,7 @@ export class PartialReflect {
   }
   static getDescriptor(type, key) {
     const prototypicalType = PartialReflect.getPrototypicalType$(type)
-    return Descriptor.get(prototypicalType.prototype, key)
+    return Es6Descriptor.get(prototypicalType.prototype, key)
   }
 
   static getOwnDescriptors(type) {

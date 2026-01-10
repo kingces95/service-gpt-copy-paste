@@ -1,16 +1,8 @@
 const KnownInstanceMembers = new Set([ 'constructor'])
 const KnownStaticMembers = new Set([ 'length', 'name', 'prototype'])
 
-export class Reflection {
-  static isExtensionOf(childClass, parentClass) {
-    let prototype = childClass
-    while (prototype) {
-      if (prototype === parentClass) return true
-      prototype = Object.getPrototypeOf(prototype)
-    }
-    return false
-  }
-
+export class Es6Reflect {
+  
   static *#keys(prototype, root, ownKeysFn) {
     const keys = new Set()
     while (prototype != root?.prototype) {
@@ -24,20 +16,20 @@ export class Reflection {
   }
 
   static *names(prototype, root = Object) {
-    yield *Reflection.#keys(prototype, root, Object.getOwnPropertyNames)
+    yield *Es6Reflect.#keys(prototype, root, Object.getOwnPropertyNames)
   }
 
   static *symbols(prototype, root = Object) {
-    yield *Reflection.#keys(prototype, root, Object.getOwnPropertySymbols)
+    yield *Es6Reflect.#keys(prototype, root, Object.getOwnPropertySymbols)
   }
 
   static *keys(prototype, root = Object) {
-    yield* Reflection.names(prototype, root)
-    yield* Reflection.symbols(prototype, root)
+    yield* Es6Reflect.names(prototype, root)
+    yield* Es6Reflect.symbols(prototype, root)
   }
 
   static *memberKeys(prototype, root = Object) {
-    yield *Reflection.#keys(prototype, root, Reflection.ownMemberKeys)
+    yield *Es6Reflect.#keys(prototype, root, Es6Reflect.ownMemberKeys)
   }
 
   static isKnownInstanceMember(name) {
@@ -50,16 +42,25 @@ export class Reflection {
 
   static *ownMemberKeys(prototype) {
     for (const name of Reflect.ownKeys(prototype)) {
-      if (Reflection.isKnownInstanceMember(name)) continue
+      if (Es6Reflect.isKnownInstanceMember(name)) continue
       yield name
     }
   }
 
   static *ownStaticMemberKeys(prototype) {
     for (const name of Reflect.ownKeys(prototype)) {
-      if (Reflection.isKnownStaticMember(name)) continue
+      if (Es6Reflect.isKnownStaticMember(name)) continue
       yield name
     }
+  }
+
+  static isExtensionOf(childClass, parentClass) {
+    let prototype = childClass
+    while (prototype) {
+      if (prototype === parentClass) return true
+      prototype = Object.getPrototypeOf(prototype)
+    }
+    return false
   }
 
   static *prototypes(target) {
@@ -72,6 +73,6 @@ export class Reflection {
   
   static *prototypeHierarchy(target) {
     yield target
-    yield* Reflection.prototypes(target)
+    yield* Es6Reflect.prototypes(target)
   }
 }

@@ -1,13 +1,16 @@
 import { assert } from '@kingjs/assert'
 import { Descriptor } from '@kingjs/descriptor'
+import { Es6Descriptor } from '@kingjs/es6-info'
 
 const {
-  hasData,
-  hasMethod,
   hasGetter,
   hasSetter,
   hasAccessor,
 } = Descriptor
+
+const {
+  hasData,
+} = Es6Descriptor
 
 // Compiler transforms a descriptor to a descriptor. 
 //  - procedural descriptors are transformed such so their metadata is 

@@ -1,427 +1,140 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Descriptor } from "@kingjs/descriptor"
+import { 
+  Descriptor,
+  DataDescriptor,
+  PropertyDescriptor,
+  GetterDescriptor,
+  SetterDescriptor
+} from "@kingjs/descriptor"
 
-const {
-  get,
-  hasData,
-  hasMethod,
-  hasClassPrototypeDefaults,
-  hasMemberDeclarationDefaults,
-  hasGetter,
-  hasSetter,
-  hasAccessor,
-  hasValue,
-  implementation,
-} = Descriptor
+const TestMethodDescriptor = {
+  name: 'Method',
+  type: 'data',
+  descriptor: {
+    value: function() { },
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  },
+  modifiers: [ 'configurable', 'writable' ]
+}
 
-function getter() { }
-function setter() { }
-function fn() { }
+const TestGetterDescriptor = {
+  name: 'Getter',
+  type: 'getter',
+  descriptor: {
+    get: function() { },
+    enumerable: false,
+    configurable: true,
+  },
+  modifiers: [ 'configurable' ]
+}
 
-describe('A class', () => {
-  let cls
-  beforeEach(() => {
-    [cls] = [class { }]
+const TestSetterDescriptor = {
+  name: 'Setter',
+  type: 'setter',
+  descriptor: {
+    set: function(value) { },
+    enumerable: false,
+    configurable: true,
+  },
+  modifiers: [ 'configurable' ]
+}
+
+const TestPropertyDescriptor = {
+  name: 'Property',
+  type: 'property',
+  descriptor: {
+    get: function() { },
+    set: function(value) { },
+    enumerable: false,
+    configurable: true,
+  },
+  modifiers: [ 'configurable' ]
+}
+
+const TestNumberDescriptor = {
+  name: 'Data',
+  type: 'data',
+  descriptor: {
+    value: 42,
+    enumerable: true,
+    configurable: true,
+    writable: true,
+  },
+  modifiers: [ 'configurable', 'enumerable', 'writable' ]
+}
+
+const Descriptors = [
+  [TestMethodDescriptor.name, TestMethodDescriptor],
+  [TestGetterDescriptor.name, TestGetterDescriptor],
+  [TestSetterDescriptor.name, TestSetterDescriptor],
+  [TestPropertyDescriptor.name, TestPropertyDescriptor],
+  [TestNumberDescriptor.name, TestNumberDescriptor],
+]
+
+describe('Descriptor', () => {
+  it('returns false for null for tests', () => {
+    expect(null instanceof Descriptor).toBe(false)
+    expect(Descriptor.hasValue(null)).toBe(false)
+    expect(Descriptor.hasGetter(null)).toBe(false)
+    expect(Descriptor.hasSetter(null)).toBe(false)
+    expect(Descriptor.hasAccessor(null)).toBe(false)
   })
-  it('should not get the member', () => {
-    const descriptor = get(cls.prototype, 'member')
-    expect(descriptor).toBe(undefined)
-  })
-  describe('with a member', () => {
-    beforeEach(() => {
-      Object.defineProperties(cls.prototype, { member: { value: fn } })
+
+  describe.each(Descriptors)('%s', (_, test) => {
+    const { descriptor } = test
+    it('should have correct type', () => {
+      const actual = Descriptor.typeof(descriptor)
+      const expected = test.type
+      expect(actual).toBe(expected)
     })
-    describe('used as a base class', () => {
-      let derived
-      beforeEach(() => {
-        [derived] = [class extends cls { }]
-      })
-      it('should get the member from the base class', () => {
-        const descriptor = get(derived.prototype, 'member')
-        expect(descriptor.value).toBe(fn)
-      })
+    it('should have expected modifiers', () => {
+      const actual = [...Descriptor.modifiers(descriptor)]
+      const expected = test.modifiers
+      expect(actual).toEqual(expected)
     })
   })
 })
 
-describe('A class with a method and accessor', () => {
-  let cls
-  beforeEach(() => {
-    [cls] = [class {
-      method() { }
-      get accessor() { }
-    }]
+describe('DataDescriptor', () => {
+  it('has Type "data"', () => {
+    expect(DataDescriptor.Type).toBe('data')
   })
-  describe('the prototype descriptor', () => {
-    let descriptor
-    beforeEach(() => {
-      descriptor = Object.getOwnPropertyDescriptor(cls, 'prototype')
-    })
-    it('should be a class prototype defaults', () => {
-      expect(hasClassPrototypeDefaults(descriptor)).toBe(true)
-    })
-    describe('with flipped enumerable', () => {
-      beforeEach(() => {
-        descriptor.enumerable = !descriptor.enumerable
-      })
-      it('should not have class prototype defaults', () => {
-        expect(hasClassPrototypeDefaults(descriptor)).toBe(false)
-      })
-    })
-    describe('with flipped configurable', () => {
-      beforeEach(() => {
-        descriptor.configurable = !descriptor.configurable
-      })
-      it('should not have class prototype defaults', () => {
-        expect(hasClassPrototypeDefaults(descriptor)).toBe(false)
-      })
-    })
-    describe('with flipped writable', () => {
-      beforeEach(() => {
-        descriptor.writable = !descriptor.writable
-      })
-      it('should not have class prototype defaults', () => {
-        expect(hasClassPrototypeDefaults(descriptor)).toBe(false)
-      })
-    })
-  })
-  describe('the method descriptor', () => {
-    let descriptor
-    beforeEach(() => {
-      descriptor = Object.getOwnPropertyDescriptor(cls.prototype, 'method')
-    })
-    it('should have a method', () => {
-      expect(hasMethod(descriptor)).toBe(true)
-    })
-    it('should be a member declaration defaults', () => {
-      expect(hasMemberDeclarationDefaults(descriptor)).toBe(true)
-    })
-    describe('with flipped enumerable', () => {
-      beforeEach(() => {
-        descriptor.enumerable = !descriptor.enumerable
-      })
-      it('should not be a member declaration defaults', () => {
-        expect(hasMemberDeclarationDefaults(descriptor)).toBe(false)
-      })
-    })
-    describe('with flipped configurable', () => {
-      beforeEach(() => {
-        descriptor.configurable = !descriptor.configurable
-      })
-      it('should not be a member declaration defaults', () => {
-        expect(hasMemberDeclarationDefaults(descriptor)).toBe(false)
-      })
-    })
-    describe('with flipped writable', () => {
-      beforeEach(() => {
-        descriptor.writable = !descriptor.writable
-      })
-      it('should not be a member declaration defaults', () => {
-        expect(hasMemberDeclarationDefaults(descriptor)).toBe(false)
-      })
-    })  
-  })
-  describe('the accessor descriptor', () => {
-    let descriptor
-    beforeEach(() => {
-      descriptor = Object.getOwnPropertyDescriptor(cls.prototype, 'accessor')
-    })
-    it('should have an accessor', () => {
-      expect(hasAccessor(descriptor)).toBe(true)
-    })
-    it('should be a member declaration defaults', () => {
-      expect(hasMemberDeclarationDefaults(descriptor)).toBe(true)
-    })
-    describe('with flipped enumerable', () => {
-      beforeEach(() => {
-        descriptor.enumerable = !descriptor.enumerable
-      })
-      it('should not be a member declaration defaults', () => {
-        expect(hasMemberDeclarationDefaults(descriptor)).toBe(false)
-      })
-    })
-    describe('with flipped configurable', () => {
-      beforeEach(() => {
-        descriptor.configurable = !descriptor.configurable
-      })
-      it('should not be a member declaration defaults', () => {
-        expect(hasMemberDeclarationDefaults(descriptor)).toBe(false)
-      })
-    })
+  it('has correct defaults', () => {
+    expect(DataDescriptor.DefaultConfigurable).toBe(true)
+    expect(DataDescriptor.DefaultWritable).toBe(true)
+    expect(DataDescriptor.DefaultEnumerable).toBe(true)
   })
 })
 
-describe('A descriptor', () => {
-  let descriptor
-  describe('when an empty object', () => {
-    beforeEach(() => {
-      descriptor = { }
-    })
-    it('should not be an instance of Descriptor', () => {
-      expect(descriptor instanceof Descriptor).toBe(false)
-    })
+describe('PropertyDescriptor', () => {
+  it('has Type "property"', () => {
+    expect(PropertyDescriptor.Type).toBe('property')
   })
-  describe('when null', () => {
-    beforeEach(() => {
-      descriptor = null
-    })
-    it('should not have a getter', () => {
-      expect(hasGetter(descriptor)).toBe(false)
-    })
-    it('should not have a setter', () => {
-      expect(hasSetter(descriptor)).toBe(false)
-    })
-    it('should not have an accessor', () => {
-      expect(hasAccessor(descriptor)).toBe(false)
-    })
-    it('should not have a value', () => {
-      expect(hasValue(descriptor)).toBe(false)
-    })
-    it('should have no members', () => {
-      const members = [...implementation(descriptor)]
-      expect(members.length).toBe(0)
-    })
-    it('should not be an instance of Descriptor', () => {
-      expect(descriptor instanceof Descriptor).toBe(false)
-    })
-    it('should have no data', () => {
-      expect(hasData(descriptor)).toBe(false)
-    })
-    it('should have no method', () => {
-      expect(hasMethod(descriptor)).toBe(false)
-    })
-    it('should not be a class prototype defaults', () => {
-      expect(hasClassPrototypeDefaults(descriptor)).toBe(false)
-    })
-    it('should not be a member declaration defaults', () => {
-      expect(hasMemberDeclarationDefaults(descriptor)).toBe(false)
-    })
+  it('has correct defaults', () => {
+    expect(PropertyDescriptor.DefaultConfigurable).toBe(true)
+    expect(PropertyDescriptor.DefaultEnumerable).toBe(false)
   })
-  describe('accessor', () => {
-    describe('with a getter', () => {
-      beforeEach(() => {
-        descriptor = { get: getter }
-      })
-      it('should have a getter', () => {
-        expect(hasGetter(descriptor)).toBe(true)
-      })
-      it('should not have a setter', () => {
-        expect(hasSetter(descriptor)).toBe(false)
-      })
-      it('should have an accessor', () => {
-        expect(hasAccessor(descriptor)).toBe(true)
-      })
-      it('should not have a value', () => {
-        expect(hasValue(descriptor)).toBe(false)
-      })
-      it('should have one member', () => {
-        const members = [...implementation(descriptor)]
-        expect(members.length).toBe(1)
-        expect(members[0]).toBe(getter)
-      })
-      it('should be an instance of Descriptor', () => {
-        expect(descriptor instanceof Descriptor).toBe(true)
-      })
-      it('should not have data', () => {
-        expect(hasData(descriptor)).toBe(false)
-      })
-      it('should not have method', () => {
-        expect(hasMethod(descriptor)).toBe(false)
-      })
-      it('should not be a class prototype defaults', () => {
-        expect(hasClassPrototypeDefaults(descriptor)).toBe(false)
-      })
-      it('should not be a member declaration defaults', () => {
-        expect(hasMemberDeclarationDefaults(descriptor)).toBe(false)
-      })
-    })
-    describe('with a setter', () => {
-      beforeEach(() => {
-        descriptor = { set: setter }
-      })
-      it('should not have a getter', () => {
-        expect(hasGetter(descriptor)).toBe(false)
-      })
-      it('should have a setter', () => {
-        expect(hasSetter(descriptor)).toBe(true)
-      })
-      it('should have an accessor', () => {
-        expect(hasAccessor(descriptor)).toBe(true)
-      })
-      it('should not have a value', () => {
-        expect(hasValue(descriptor)).toBe(false)
-      })
-      it('should have one member', () => {
-        const members = [...implementation(descriptor)]
-        expect(members.length).toBe(1)
-        expect(members[0]).toBe(setter)
-      })
-      it('should be an instance of Descriptor', () => {
-        expect(descriptor instanceof Descriptor).toBe(true)
-      })
-      it('should not have data', () => {
-        expect(hasData(descriptor)).toBe(false)
-      })
-      it('should not have method', () => {
-        expect(hasMethod(descriptor)).toBe(false)
-      })
-      it('should not be a class prototype defaults', () => {
-        expect(hasClassPrototypeDefaults(descriptor)).toBe(false)
-      })
-      it('should not be a member declaration defaults', () => {
-        expect(hasMemberDeclarationDefaults(descriptor)).toBe(false)
-      })
-    })
-    describe('with a getter and setter', () => {
-      beforeEach(() => {
-        descriptor = { get: getter, set: setter }
-      })
-      it('should have a getter', () => {
-        expect(hasGetter(descriptor)).toBe(true)
-      })
-      it('should have a setter', () => {
-        expect(hasSetter(descriptor)).toBe(true)
-      })
-      it('should have an accessor', () => {
-        expect(hasAccessor(descriptor)).toBe(true)
-      })
-      it('should not have a value', () => {
-        expect(hasValue(descriptor)).toBe(false)
-      })
-      it('should have two members', () => {
-        const members = [...implementation(descriptor)]
-        expect(members.length).toBe(2)
-        expect(members).toContain(getter)
-        expect(members).toContain(setter)
-      })
-      it('should be an instance of Descriptor', () => {
-        expect(descriptor instanceof Descriptor).toBe(true)
-      })
-      it('should not have data', () => {
-        expect(hasData(descriptor)).toBe(false)
-      })
-      it('should not have method', () => {
-        expect(hasMethod(descriptor)).toBe(false)
-      })
-      it('should not be a class prototype defaults', () => {
-        expect(hasClassPrototypeDefaults(descriptor)).toBe(false)
-      })
-      it('should not be a member declaration defaults', () => {
-        expect(hasMemberDeclarationDefaults(descriptor)).toBe(false)
-      })
-    })
+})
+
+describe('GetterDescriptor', () => {
+  it('has Type "getter"', () => {
+    expect(GetterDescriptor.Type).toBe('getter')
   })
-  describe('data', () => {
-    describe('with a method', () => {
-      beforeEach(() => {
-        descriptor = { value: fn }
-      })
-      it('should not have a getter', () => {
-        expect(hasGetter(descriptor)).toBe(false)
-      })
-      it('should not have a setter', () => {
-        expect(hasSetter(descriptor)).toBe(false)
-      })
-      it('should not have an accessor', () => {
-        expect(hasAccessor(descriptor)).toBe(false)
-      })
-      it('should have a value', () => {
-        expect(hasValue(descriptor)).toBe(true)
-      })
-      it('should have one member', () => {
-        const members = [...implementation(descriptor)]
-        expect(members.length).toBe(1)
-        expect(members[0]).toBe(fn)
-      })
-      it('should be an instance of Descriptor', () => {
-        expect(descriptor instanceof Descriptor).toBe(true)
-      })
-      it('should not have data', () => {
-        expect(hasData(descriptor)).toBe(false)
-      })
-      it('should have method', () => {
-        expect(hasMethod(descriptor)).toBe(true)
-      })
-      it('should be a class prototype defaults', () => {
-        expect(hasClassPrototypeDefaults(descriptor)).toBe(true)
-      })
-      it('should not be a member declaration defaults', () => {
-        expect(hasMemberDeclarationDefaults(descriptor)).toBe(false)
-      })
-    })
-    describe('with a class', () => {
-      beforeEach(() => {
-        // a class is a function but considered data
-        descriptor = { value: class { } }
-      })
-      it('should not have a getter', () => {
-        expect(hasGetter(descriptor)).toBe(false)
-      })
-      it('should not have a setter', () => {
-        expect(hasSetter(descriptor)).toBe(false)
-      })
-      it('should not have an accessor', () => {
-        expect(hasAccessor(descriptor)).toBe(false)
-      })
-      it('should have a value', () => {
-        expect(hasValue(descriptor)).toBe(true)
-      })
-      it('should have no members', () => {
-        const members = [...implementation(descriptor)]
-        expect(members.length).toBe(0)
-      })
-      it('should be an instance of Descriptor', () => {
-        expect(descriptor instanceof Descriptor).toBe(true)
-      })
-      it('should have data', () => {
-        expect(hasData(descriptor)).toBe(true)
-      })
-      it('should not have a method', () => {
-        expect(hasMethod(descriptor)).toBe(false)
-      })
-      it('should be a class prototype defaults', () => {
-        expect(hasClassPrototypeDefaults(descriptor)).toBe(true)
-      })
-      it('should not be a member declaration defaults', () => {
-        expect(hasMemberDeclarationDefaults(descriptor)).toBe(false)
-      })
-    })
-    describe('with null', () => {
-      beforeEach(() => {
-        descriptor = { value: null }
-      })
-      it('should not have a getter', () => {
-        expect(hasGetter(descriptor)).toBe(false)
-      })
-      it('should not have a setter', () => {
-        expect(hasSetter(descriptor)).toBe(false)
-      })
-      it('should not have an accessor', () => {
-        expect(hasAccessor(descriptor)).toBe(false)
-      })
-      it('should have a value', () => {
-        expect(hasValue(descriptor)).toBe(true)
-      })
-      it('should have no members', () => {
-        const members = [...implementation(descriptor)]
-        expect(members.length).toBe(0)
-      })
-      it('should be an instance of Descriptor', () => {
-        expect(descriptor instanceof Descriptor).toBe(true)
-      })
-      it('should have data', () => {
-        expect(hasData(descriptor)).toBe(true)
-      })
-      it('should not have a method', () => {
-        expect(hasMethod(descriptor)).toBe(false)
-      })
-      it('should not be a class prototype defaults', () => {
-        expect(hasClassPrototypeDefaults(descriptor)).toBe(false)
-      })
-      it('should not be a member declaration defaults', () => {
-        expect(hasMemberDeclarationDefaults(descriptor)).toBe(false)
-      })
-    })
+  it('has correct defaults', () => {
+    expect(GetterDescriptor.DefaultConfigurable).toBe(true)
+    expect(GetterDescriptor.DefaultEnumerable).toBe(false)
+  })
+})
+
+describe('SetterDescriptor', () => {
+  it('has Type "setter"', () => {
+    expect(SetterDescriptor.Type).toBe('setter')
+  })
+  it('has correct defaults', () => {
+    expect(SetterDescriptor.DefaultConfigurable).toBe(true)
+    expect(SetterDescriptor.DefaultEnumerable).toBe(false)
   })
 })
