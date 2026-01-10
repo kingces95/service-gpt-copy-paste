@@ -152,8 +152,7 @@ export class Es6ClassInfo {
     yield* Es6ClassInfo.#members(this, { isStatic: true }) }
   *members() {
     yield* Es6ClassInfo.#members(this, { isStatic: true })
-    yield* Es6ClassInfo.#members(this, { isStatic: false })
-  }
+    yield* Es6ClassInfo.#members(this, { isStatic: false }) }
   getStaticMember(key) { 
     return Es6ClassInfo.#getMember(this, key, { isStatic: true }) }
   getInstanceMember(key) { 
@@ -244,7 +243,7 @@ export class Es6MemberInfo {
 
   get host() { return this.#host }
   get type() { return this.constructor.Type }
-  get returnType() {
+  get fieldType() {
     if (this.isField) return es6Typeof(this.value)
     return 'object'
   }
@@ -346,7 +345,7 @@ export class Es6MemberInfo {
   }
 
   toStringType() {
-    if (this.isField) return this.returnType
+    if (this.isField) return this.fieldType
     return this.type
   }
   toString() {

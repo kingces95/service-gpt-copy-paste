@@ -25,9 +25,9 @@ export class Es6DescriptorInfo {
   }
 
   get descriptor() { return this.#descriptor }
-  get returnType() {
-    if (this.isData) return es6Typeof(this.value)
-    return 'object'
+  get fieldType() {
+    if (!this.isField) return null
+    return es6Typeof(this.value)
   }
 
   get type() { return this.constructor.Type }
@@ -60,14 +60,10 @@ export class Es6DescriptorInfo {
   *pivots() {
     if (this.isAbstract) yield 'abstract'
   }
-  *modifiers() {
-    if (this.isConfigurable) yield 'configurable'
-    if (this.isEnumerable) yield 'enumerable'
-    if (this.isData && this.isWritable) yield 'writable'
-  }
+  *modifiers() { yield* Es6Descriptor.modifiers(this.descriptor) }
 
   toStringType() {
-    if (this.isData) return this.returnType
+    if (this.isField) return this.fieldType
     return this.type
   }
   toString() {
@@ -75,12 +71,14 @@ export class Es6DescriptorInfo {
       // e.g. 'abstract'
       ...this.pivots(), 
 
-      // e.g. 'configurable', 'enumerable', 'writable'
+      // e.g. 'const', 'visible', 'hidden', 'sealed'
       ...this.modifiers(),
 
-      // e.g. 'getter', 'setter', 'property'
-      // or when value 'string', 'number', 'function', 'array' etc.
-      this.toStringType(), 
+      // e.g. 'getter', 'setter', 'property', 'method', 'field'
+      this.type,
+
+      // 'string', 'number', 'function', 'array' etc.
+      this.fieldType ? `[${this.fieldType}]` : null,   
 
     ].filter(Boolean).join(' ')
   }

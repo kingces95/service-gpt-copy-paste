@@ -27,8 +27,8 @@ const Getter = {
   },
   infoType: Es6GetterDescriptorInfo,
   type: 'getter',
-  returnType: 'object',
   modifiers: [  ],
+  toString: 'getter',
 }
 
 const EnumerableGetter = {
@@ -40,8 +40,8 @@ const EnumerableGetter = {
   },
   infoType: Es6GetterDescriptorInfo,
   type: 'getter',
-  returnType: 'object',
   modifiers: [ 'enumerable' ],
+  toString: 'enumerable getter',
 }
 
 const OtherGetter = {
@@ -63,8 +63,8 @@ const Setter = {
   },
   infoType: Es6SetterDescriptorInfo,
   type: 'setter',
-  returnType: 'object',
   modifiers: [  ],
+  toString: 'setter',
 }
 
 const OtherSetter = {
@@ -87,8 +87,8 @@ const Property = {
   },
   infoType: Es6PropertyDescriptorInfo,
   type: 'property',
-  returnType: 'object',
   modifiers: [ ],
+  toString: 'property',
 }
 
 const Method = {
@@ -101,8 +101,8 @@ const Method = {
   },
   infoType: Es6MethodDescriptorInfo,
   type: 'method',
-  returnType: 'function',
   modifiers: [  ],
+  toString: 'method',
 }
 
 const Function = {
@@ -115,8 +115,9 @@ const Function = {
   },
   infoType: Es6FieldDescriptorInfo,
   type: 'field',
-  returnType: 'function',
+  fieldType: 'function',
   modifiers: [  ],
+  toString: 'field [function]',
 }
 
 const ConstMethod = {
@@ -129,8 +130,8 @@ const ConstMethod = {
   },
   infoType: Es6MethodDescriptorInfo,
   type: 'method',
-  returnType: 'function',
   modifiers: [ 'const' ],
+  toString: 'const method',
 }
 
 const SealedMethod = {
@@ -143,8 +144,8 @@ const SealedMethod = {
   },
   infoType: Es6MethodDescriptorInfo,
   type: 'method',
-  returnType: 'function',
   modifiers: [ 'sealed' ],
+  toString: 'sealed method',
 }
 
 const AbstractMethod = {
@@ -157,9 +158,9 @@ const AbstractMethod = {
   },
   infoType: Es6MethodDescriptorInfo,
   type: 'method',
-  returnType: 'function',
   isAbstract: true,
   modifiers: [  ],
+  toString: 'abstract method',
 }
 
 const Number = {
@@ -172,8 +173,9 @@ const Number = {
   },
   infoType: Es6FieldDescriptorInfo,
   type: 'field',
-  returnType: 'number',
+  fieldType: 'number',
   modifiers: [  ],
+  toString: 'field [number]',
 }
 
 const HiddenNumber = {
@@ -186,8 +188,9 @@ const HiddenNumber = {
   },
   infoType: Es6FieldDescriptorInfo,
   type: 'field',
-  returnType: 'number',
+  fieldType: 'number',
   modifiers: [ 'hidden' ],
+  toString: 'hidden field [number]',
 }
 
 const ConstNumber = {
@@ -200,8 +203,9 @@ const ConstNumber = {
   },
   infoType: Es6FieldDescriptorInfo,
   type: 'field',
-  returnType: 'number',
+  fieldType: 'number',
   modifiers: [ 'const' ],
+  toString: 'const field [number]',
 }
 
 const NanNumber = {
@@ -214,8 +218,9 @@ const NanNumber = {
   },
   infoType: Es6FieldDescriptorInfo,
   type: 'field',
-  returnType: 'number',
+  fieldType: 'number',
   modifiers: [  ],
+  toString: 'field [number]',
 }
 
 const Descriptors = [
@@ -236,7 +241,7 @@ const Descriptors = [
   [ NanNumber.name, NanNumber ],
 ]
  
-describe('descriptor', () => {
+describe('Descriptor', () => {
   describe.each(Descriptors)('%s', (_, md) => {
     it('does not equal the other descriptors', () => {
       for (const [_, otherMd] of Descriptors) {
@@ -263,7 +268,7 @@ describe('descriptor', () => {
   })
 })
 
-describe('descriptor', () => {
+describe('DescriptorInfo', () => {
   describe.each(Descriptors)('%s', (_, md) => {
     let info
     beforeEach(() => {
@@ -311,25 +316,22 @@ describe('descriptor', () => {
         expect(pivots).toContain('abstract')
       }
     })
-    // it('toString is correct', () => {
-    //   expect(info.toString()).toBe(md.toString)
-    // })
-    // it('has correct modifiers', () => {
-    //   const actual = Array.from(info.modifiers())
-    //   const expected = []
-    //   if (md.isConfigurable) expected.push('configurable')
-    //   if (md.isEnumerable) expected.push('enumerable')
-    //   if (md.isWritable) expected.push('writable')
-    //   expect(actual).toEqual(expected)
-    // })
+    it('toString is correct', () => {
+      expect(info.toString()).toBe(md.toString)
+    })
+    it('has correct modifiers', () => {
+      const actual = Array.from(info.modifiers())
+      const expected = md.modifiers
+      expect(actual).toEqual(expected)
+    })
     it('has correct getter', () => {
       expect(info.getter).toBe(md.descriptor.get)
     })
     it('has correct setter', () => {
       expect(info.setter).toBe(md.descriptor.set)
     })
-    it('has correct returnType', () => {
-      expect(info.returnType).toBe(md.returnType)
+    it('has correct fieldType', () => {
+      expect(info.fieldType == md.fieldType).toBe(true)
     })
   })
 })

@@ -276,7 +276,7 @@ export class MemberInfo extends Info {
     const fn = PartialReflect.getPrototypicalHost$(es6Host.ctor)
     return Info.from(fn)
   }
-  get returnType() { return this.#es6MemberInfo.returnType }
+  get fieldType() { return this.#es6MemberInfo.fieldType }
   
   // pivots
   get isStatic() { return this.#es6MemberInfo.isStatic }
