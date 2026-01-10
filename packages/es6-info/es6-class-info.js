@@ -1,5 +1,6 @@
 import { assert } from '@kingjs/assert'
 import { Es6Reflect } from './es6-reflect.js'
+import { Es6Descriptor } from './es6-descriptor.js'
 import { 
   Es6DescriptorInfo, 
   Es6GetterDescriptorInfo,
@@ -243,9 +244,9 @@ export class Es6MemberInfo {
 
   get host() { return this.#host }
   get type() { return this.constructor.Type }
-  get fieldType() {
-    if (this.isField) return es6Typeof(this.value)
-    return 'object'
+  get fieldType() { 
+    if (!this.isField) return null
+    return this.#descriptorInfo.fieldType 
   }
 
   // pivots
@@ -319,29 +320,12 @@ export class Es6MemberInfo {
     if (this.isStatic) yield 'static' 
     if (this.isNonPublic) yield 'non-public'
     if (this.isKnown) yield 'known'
-    if (this.isAbstract) yield 'abstract'
+    yield* this.#descriptorInfo.pivots()
   }
   *modifiers() { 
-    const ctor = this.constructor
-
-    // assert(ctor.DefaultConfigurable == true,
-    //   'Es6MemberInfo modifier DefaultConfigurable must be true')
-    if (this.#isConfigurable != ctor.DefaultConfigurable && this.isSealed)
-      yield 'sealed'
-    
-    if ('DefaultWritable' in ctor) {
-      assert(ctor.DefaultWritable == true,
-        'Es6MemberInfo modifier DefaultWritable must be true')
-
-      if (this.#isWritable != ctor.DefaultWritable && this.isConst)
-        yield 'const'
-    }
-
-    if (this.#isEnumerable != ctor.DefaultEnumerable && this.isVisible)
-      yield 'enumerable'
-
-    if (this.#isEnumerable != ctor.DefaultEnumerable && !this.isVisible)
-      yield 'hidden'
+    yield* Es6Descriptor.modifiers(
+      this.#descriptorInfo.descriptor, 
+      TypeMap.get(this.type)) 
   }
 
   toStringType() {
@@ -355,18 +339,20 @@ export class Es6MemberInfo {
       // e.g. 'myMethod', '[Symbol.mySymbol]'
       keyInfo.toString(), 
       
-      [
-        // e.g. 'static', 'non-public', 'known', 'abstract'
-        ...this.pivots(), 
+    [
+      // e.g. 'abstract'
+      ...this.pivots(), 
 
-        // e.g. 'sealed', 'enumerable', 'const', 'hidden'
-        ...this.modifiers(),
+      // e.g. 'const', 'visible', 'hidden', 'sealed'
+      ...this.modifiers(),
 
-        // e.g. 'method', 'constructor, 'getter', 'setter', 'property'
-        // or when field 'string', 'number', 'function', 'array' etc.
-        this.toStringType(), 
+      // e.g. 'getter', 'setter', 'property', 'method', 'field'
+      this.type,
 
-      ].filter(Boolean).join(' '),
+      // 'string', 'number', 'function', 'array' etc.
+      this.fieldType ? `[${this.fieldType}]` : null,   
+
+    ].filter(Boolean).join(' '),
 
       // e.g. '[es6ClassInfo MyClass]'
       this.host.toString()
@@ -414,3 +400,12 @@ export class Es6PrototypeInfo extends Es6MemberInfo {
   static DefaultEnumerable = false
 }
   
+const TypeMap = new Map([
+  [Es6FieldInfo.Type, Es6FieldInfo],
+  [Es6MethodInfo.Type, Es6MethodInfo],
+  [Es6GetterInfo.Type, Es6GetterInfo],
+  [Es6SetterInfo.Type, Es6SetterInfo],
+  [Es6PropertyInfo.Type, Es6PropertyInfo],
+  [Es6ConstructorInfo.Type, Es6ConstructorInfo],
+  [Es6PrototypeInfo.Type, Es6PrototypeInfo],
+])

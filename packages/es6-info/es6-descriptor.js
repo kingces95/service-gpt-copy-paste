@@ -55,9 +55,9 @@ export class Es6Descriptor {
     return undefined
   }
   
-  static *modifiers(descriptor) { 
-    const type =  Es6Descriptor.typeof(descriptor)
-    const md = TypeMap.get(type)
+  static *modifiers(
+    descriptor, 
+    md = TypeMap.get(Es6Descriptor.typeof(descriptor))) { 
 
     if (descriptor.configurable != md.DefaultConfigurable 
       && descriptor.configurable == false)

@@ -256,7 +256,7 @@ const MyStaticSymbolMemberMd = {
 const MyFieldMd = {
   name: 'member',
   cls: class MyClass { static { this.prototype.member = 42 } },
-  toString: 'member, number, [es6ClassInfo MyClass]',
+  toString: 'member, field [number], [es6ClassInfo MyClass]',
   type: 'field',
   isField: true,
   isData: true,

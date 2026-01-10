@@ -300,16 +300,16 @@ describe('Es6ClassInfo known type invariants:', () => {
             switch (name) {
               case 'length': 
                 expect(toString).toBe(
-                  `length, ${static$}known const hidden number, [es6ClassInfo ${fn.name}]`)
+                  `length, ${static$}known const hidden field [number], [es6ClassInfo ${fn.name}]`)
                 break
               case 'name':
                 expect(toString).toBe(
-                  `name, ${static$}known const hidden string, [es6ClassInfo ${fn.name}]`)
+                  `name, ${static$}known const hidden field [string], [es6ClassInfo ${fn.name}]`)
                 break
               case 'prototype':
                 expect(toString).toBe(fn == Function ?
                   `prototype, static known sealed const method, [es6ClassInfo ${fn.name}]` :
-                  `prototype, static known sealed const hidden object, [es6ClassInfo ${fn.name}]`)
+                  `prototype, static known sealed const hidden field [object], [es6ClassInfo ${fn.name}]`)
                 break
               case 'constructor':
                 expect(toString).toBe(

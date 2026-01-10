@@ -62,10 +62,6 @@ export class Es6DescriptorInfo {
   }
   *modifiers() { yield* Es6Descriptor.modifiers(this.descriptor) }
 
-  toStringType() {
-    if (this.isField) return this.fieldType
-    return this.type
-  }
   toString() {
     return [
       // e.g. 'abstract'
