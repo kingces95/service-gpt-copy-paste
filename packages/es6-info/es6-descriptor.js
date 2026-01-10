@@ -23,7 +23,7 @@ export class Es6Descriptor {
   }
 
   static #equalsData(lhs, rhs) {
-    if (lhs.isWritable !== rhs.isWritable) return false
+    if (lhs.writable !== rhs.writable) return false
     if (lhs.value == rhs.value) return true
     if (Number.isNaN(lhs.value) && Number.isNaN(rhs.value)) return true
     return false
@@ -54,6 +54,28 @@ export class Es6Descriptor {
     }
     return undefined
   }
+  
+  static *modifiers(descriptor) { 
+    const type =  Es6Descriptor.typeof(descriptor)
+    const md = TypeMap.get(type)
+
+    if (descriptor.configurable != md.DefaultConfigurable 
+      && descriptor.configurable == false)
+      yield 'sealed'
+
+    if ('writable' in descriptor 
+      && descriptor.writable != md.DefaultWritable 
+      && descriptor.writable == false)
+      yield 'const'
+
+    if (descriptor.enumerable != md.DefaultEnumerable 
+      && descriptor.enumerable == true)
+      yield 'enumerable'
+
+    if (descriptor.enumerable != md.DefaultEnumerable 
+      && !descriptor.enumerable == true)
+      yield 'hidden'
+  }
 }
 
 export class Es6FieldDescriptor {
@@ -83,3 +105,11 @@ export class Es6PropertyDescriptor {
   static DefaultConfigurable = GetterDescriptor.DefaultConfigurable
   static DefaultEnumerable = GetterDescriptor.DefaultEnumerable
 }
+
+const TypeMap = new Map([
+  [Es6FieldDescriptor.Type, Es6FieldDescriptor],
+  [Es6MethodDescriptor.Type, Es6MethodDescriptor],
+  [Es6GetterDescriptor.Type, Es6GetterDescriptor],
+  [Es6SetterDescriptor.Type, Es6SetterDescriptor],
+  [Es6PropertyDescriptor.Type, Es6PropertyDescriptor],
+])

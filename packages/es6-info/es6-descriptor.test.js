@@ -8,9 +8,14 @@ import {
   Es6SetterDescriptor,
   Es6PropertyDescriptor,
 } from './es6-descriptor.js'
-
-import { describe, it, expect } from 'vitest'
-import { beforeEach } from 'vitest'
+import { 
+  Es6DescriptorInfo,
+  Es6MethodDescriptorInfo,
+  Es6FieldDescriptorInfo,
+  Es6GetterDescriptorInfo,
+  Es6SetterDescriptorInfo,
+  Es6PropertyDescriptorInfo,
+} from './es6-descriptor-info'
 import { abstract } from '@kingjs/abstract'
 
 const Getter = {
@@ -20,13 +25,23 @@ const Getter = {
     enumerable: Es6GetterDescriptor.DefaultEnumerable,
     configurable: Es6GetterDescriptor.DefaultConfigurable,
   },
-  infoType: Es6GetterDescriptor,
+  infoType: Es6GetterDescriptorInfo,
   type: 'getter',
-  isGetter: true,
-  isAccessor: true,
-  isConfigurable: true,
-  toString: 'configurable getter',
   returnType: 'object',
+  modifiers: [  ],
+}
+
+const EnumerableGetter = {
+  name: 'enumerable getter',
+  descriptor: { 
+    get: function myEnumerableGetter() {},
+    enumerable: true,
+    configurable: Es6GetterDescriptor.DefaultConfigurable,
+  },
+  infoType: Es6GetterDescriptorInfo,
+  type: 'getter',
+  returnType: 'object',
+  modifiers: [ 'enumerable' ],
 }
 
 const OtherGetter = {
@@ -46,13 +61,10 @@ const Setter = {
     enumerable: Es6SetterDescriptor.DefaultEnumerable,
     configurable: Es6SetterDescriptor.DefaultConfigurable,
   },
-  infoType: Es6SetterDescriptor,
+  infoType: Es6SetterDescriptorInfo,
   type: 'setter',
-  isSetter: true,
-  isAccessor: true,
-  isConfigurable: true,
-  toString: 'configurable setter',
   returnType: 'object',
+  modifiers: [  ],
 }
 
 const OtherSetter = {
@@ -73,13 +85,10 @@ const Property = {
     enumerable: Es6PropertyDescriptor.DefaultEnumerable,
     configurable: Es6PropertyDescriptor.DefaultConfigurable,
   },
-  infoType: Es6PropertyDescriptor,
+  infoType: Es6PropertyDescriptorInfo,
   type: 'property',
-  isProperty: true,
-  isAccessor: true,
-  isConfigurable: true,
-  toString: 'configurable property',
   returnType: 'object',
+  modifiers: [ ],
 }
 
 const Method = {
@@ -90,15 +99,13 @@ const Method = {
     configurable: Es6MethodDescriptor.DefaultConfigurable,
     writable: Es6MethodDescriptor.DefaultWritable,
   },
-  infoType: Es6MethodDescriptor,
+  infoType: Es6MethodDescriptorInfo,
   type: 'method',
-  isConfigurable: true,
-  isWritable: true,
-  toString: 'configurable writable function',
   returnType: 'function',
+  modifiers: [  ],
 }
 
-const VisibleMethod = {
+const Function = {
   name: 'visible method',
   descriptor: {
     value: function myVisibleMethod() {},
@@ -106,13 +113,10 @@ const VisibleMethod = {
     configurable: Es6MethodDescriptor.DefaultConfigurable,
     writable: Es6MethodDescriptor.DefaultWritable,
   },
-  infoType: Es6MethodDescriptor,
+  infoType: Es6FieldDescriptorInfo,
   type: 'field',
-  isEnumerable: true,
-  isConfigurable: true,
-  isWritable: true,
-  toString: 'configurable enumerable writable function',
   returnType: 'function',
+  modifiers: [  ],
 }
 
 const ConstMethod = {
@@ -123,11 +127,10 @@ const ConstMethod = {
     configurable: Es6MethodDescriptor.DefaultConfigurable,
     writable: false,
   },
-  infoType: Es6MethodDescriptor,
+  infoType: Es6MethodDescriptorInfo,
   type: 'method',
-  isConfigurable: true,
-  toString: 'configurable function',
   returnType: 'function',
+  modifiers: [ 'const' ],
 }
 
 const SealedMethod = {
@@ -138,11 +141,10 @@ const SealedMethod = {
     configurable: false,
     writable: Es6MethodDescriptor.DefaultWritable,
   },
-  infoType: Es6MethodDescriptor,
+  infoType: Es6MethodDescriptorInfo,
   type: 'method',
-  isWritable: true,
-  toString: 'writable function',
   returnType: 'function',
+  modifiers: [ 'sealed' ],
 }
 
 const AbstractMethod = {
@@ -153,13 +155,11 @@ const AbstractMethod = {
     configurable: Es6MethodDescriptor.DefaultConfigurable,
     writable: Es6MethodDescriptor.DefaultWritable,
   },
-  infoType: Es6MethodDescriptor,
+  infoType: Es6MethodDescriptorInfo,
   type: 'method',
-  isConfigurable: true,
-  isWritable: true,
-  isAbstract: true,
-  toString: 'abstract configurable writable function',
   returnType: 'function',
+  isAbstract: true,
+  modifiers: [  ],
 }
 
 const Number = {
@@ -170,13 +170,38 @@ const Number = {
     configurable: Es6FieldDescriptor.DefaultConfigurable,
     writable: Es6FieldDescriptor.DefaultWritable,
   },
-  infoType: Es6FieldDescriptor,
+  infoType: Es6FieldDescriptorInfo,
   type: 'field',
-  isConfigurable: true,
-  isWritable: true,
-  isEnumerable: true,
-  toString: 'configurable enumerable writable number',
   returnType: 'number',
+  modifiers: [  ],
+}
+
+const HiddenNumber = {
+  name: 'hidden number',
+  descriptor: {
+    value: 42,
+    enumerable: false,
+    configurable: Es6FieldDescriptor.DefaultConfigurable,
+    writable: Es6FieldDescriptor.DefaultWritable,
+  },
+  infoType: Es6FieldDescriptorInfo,
+  type: 'field',
+  returnType: 'number',
+  modifiers: [ 'hidden' ],
+}
+
+const ConstNumber = {
+  name: 'const number',
+  descriptor: {
+    value: 42,
+    enumerable: true,
+    configurable: Es6FieldDescriptor.DefaultConfigurable,
+    writable: false,
+  },
+  infoType: Es6FieldDescriptorInfo,
+  type: 'field',
+  returnType: 'number',
+  modifiers: [ 'const' ],
 }
 
 const NanNumber = {
@@ -187,27 +212,27 @@ const NanNumber = {
     configurable: Es6FieldDescriptor.DefaultConfigurable,
     writable: Es6FieldDescriptor.DefaultWritable,
   },
-  infoType: Es6FieldDescriptor,
+  infoType: Es6FieldDescriptorInfo,
   type: 'field',
-  isConfigurable: true,
-  isWritable: true,
-  isEnumerable: true,
-  toString: 'configurable enumerable writable number',
   returnType: 'number',
+  modifiers: [  ],
 }
 
 const Descriptors = [
   [ Getter.name, Getter ],
+  [ EnumerableGetter.name, EnumerableGetter ],
   [ OtherGetter.name, OtherGetter ],
   [ Setter.name, Setter ],
   [ OtherSetter.name, OtherSetter ],
   [ Property.name, Property ],
   [ Method.name, Method ],
-  [ VisibleMethod.name, VisibleMethod ],
+  [ Function.name, Function ],
   [ ConstMethod.name, ConstMethod ],
   [ SealedMethod.name, SealedMethod ],
   [ AbstractMethod.name, AbstractMethod ],
   [ Number.name, Number ],
+  [ HiddenNumber.name, HiddenNumber ],
+  [ ConstNumber.name, ConstNumber ],
   [ NanNumber.name, NanNumber ],
 ]
  
@@ -230,30 +255,64 @@ describe('descriptor', () => {
       const type = Es6Descriptor.typeof(md.descriptor)
       expect(type).toBe(md.type)
     })
+    it('has correct modifiers', () => {
+      const actual = [...Es6Descriptor.modifiers(md.descriptor)]
+      const expected = md.modifiers
+      expect(actual).toEqual(expected)
+    })
+  })
+})
+
+describe('descriptor', () => {
+  describe.each(Descriptors)('%s', (_, md) => {
+    let info
+    beforeEach(() => {
+      info = Es6DescriptorInfo.create(md.descriptor)
+    })
+
+    it('does not equal null', () => {
+      expect(info.equals(null)).toBe(false)
+    })
+    it('does not equal the other descriptors', () => {
+      for (const [_, otherMd] of Descriptors) {
+        if (otherMd === md) continue
+        const otherInfo = Es6DescriptorInfo.create(otherMd.descriptor)
+        expect(info.equals(otherInfo)).toBe(false)
+        expect(otherInfo.equals(info)).toBe(false)
+      }
+    })
+    it('is correct info type', () => {
+      expect(info instanceof md.infoType).toBe(true)
+    })
+    it('equals itself', () => {
+      expect(info.equals(info)).toBe(true)
+    })
+    it('has a descriptor', () => {
+      expect(info.descriptor).toBe(md.descriptor)
+    })
     it('has correct predicates', () => {
-      // expect(info.type).toBe(md.type)
-      // expect(info.isGetter).toBe(!!md.isGetter)
-      // expect(info.isSetter).toBe(!!md.isSetter)
-      // expect(info.isProperty).toBe(!!md.isProperty)
-      // expect(info.isAccessor).toBe(!!md.isAccessor)
+      expect(info.type).toBe(md.type)
 
-      // expect(info.isConfigurable).toBe(md.isConfigurable == true)
-      // expect(info.isEnumerable).toBe(md.isEnumerable == true)
-      // expect(info.isWritable).toBe(md.isWritable == true)
+      expect(info.isGetter).toBe(md.type == 'getter')
+      expect(info.isSetter).toBe(md.type == 'setter')
+      expect(info.isProperty).toBe(md.type == 'property')
+      expect(info.isAccessor).toBe(md.type == 'getter' || md.type == 'setter' || md.type == 'property')
 
-      // expect(info.isAbstract).toBe(md.isAbstract == true)
+      const d = md.descriptor
+      expect(info.isConfigurable).toBe(d.configurable == true)
+      expect(info.isEnumerable).toBe(d.enumerable == true)
+      expect(info.isWritable).toBe(d.writable == true)
 
-      // use declarative Es6Descriptor to test same
-
+      expect(info.isAbstract).toBe(md.isAbstract == true)
+    })
+    it('has correct pivots', () => {
+      const pivots = Array.from(info.pivots())
+      if (md.isAbstract) {
+        expect(pivots).toContain('abstract')
+      }
     })
     // it('toString is correct', () => {
     //   expect(info.toString()).toBe(md.toString)
-    // })
-    // it('has correct pivots', () => {
-    //   const pivots = Array.from(info.pivots())
-    //   if (md.isAbstract) {
-    //     expect(pivots).toContain('abstract')
-    //   }
     // })
     // it('has correct modifiers', () => {
     //   const actual = Array.from(info.modifiers())
@@ -263,15 +322,14 @@ describe('descriptor', () => {
     //   if (md.isWritable) expected.push('writable')
     //   expect(actual).toEqual(expected)
     // })
-    // it('has correct getter', () => {
-    //   expect(info.getter).toBe(md.descriptor.get)
-    // })
-    // it('has correct setter', () => {
-    //   expect(info.setter).toBe(md.descriptor.set)
-    // })
-    // it('has correct returnType', () => {
-    //   expect(info.returnType).toBe(md.returnType)
-    // })
+    it('has correct getter', () => {
+      expect(info.getter).toBe(md.descriptor.get)
+    })
+    it('has correct setter', () => {
+      expect(info.setter).toBe(md.descriptor.set)
+    })
+    it('has correct returnType', () => {
+      expect(info.returnType).toBe(md.returnType)
+    })
   })
 })
-
