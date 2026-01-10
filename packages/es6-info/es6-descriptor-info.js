@@ -1,24 +1,21 @@
+import { assert } from "@kingjs/assert"
 import { isAbstract } from "@kingjs/abstract"
 import { es6Typeof } from "./es6-typeof.js"
-import { Es6Descriptor } from './es6-descriptor.js'
+import { 
+  Es6Descriptor,
+  Es6FieldDescriptor,
+  Es6MethodDescriptor,
+  Es6GetterDescriptor,
+  Es6SetterDescriptor,
+  Es6PropertyDescriptor, 
+} from './es6-descriptor.js'
 
 export class Es6DescriptorInfo {
   static create(descriptor) {
-
     const type = Es6Descriptor.typeof(descriptor)
-    switch (type) {
-      case Es6GetterDescriptorInfo.Type:
-        return new Es6GetterDescriptorInfo(descriptor)
-      case Es6SetterDescriptorInfo.Type:
-        return new Es6SetterDescriptorInfo(descriptor)
-      case Es6PropertyDescriptorInfo.Type:
-        return new Es6PropertyDescriptorInfo(descriptor)
-      case Es6MethodDescriptorInfo.Type:
-        return new Es6MethodDescriptorInfo(descriptor)
-      case Es6FieldDescriptorInfo.Type:
-        return new Es6FieldDescriptorInfo(descriptor)
-    }
-    throw new Error(`Unknown descriptor type.`)
+    const ctor = TypeMap.get(type)
+    assert(ctor, `Unknown descriptor type.`)
+    return new ctor(descriptor)
   }
 
   #descriptor
@@ -91,29 +88,36 @@ export class Es6DescriptorInfo {
 
 export class Es6PropertyDescriptorInfo extends Es6DescriptorInfo {
   static Type = 'property'
-  static DefaultConfigurable = true
-  static DefaultEnumerable = false
+  static DefaultConfigurable = Es6PropertyDescriptor.DefaultConfigurable
+  static DefaultEnumerable = Es6PropertyDescriptor.DefaultEnumerable
 }
 export class Es6GetterDescriptorInfo extends Es6DescriptorInfo {
   static Type = 'getter'
-  static DefaultConfigurable = true
-  static DefaultEnumerable = false
+  static DefaultConfigurable = Es6GetterDescriptor.DefaultConfigurable
+  static DefaultEnumerable = Es6GetterDescriptor.DefaultEnumerable
 }
 export class Es6SetterDescriptorInfo extends Es6DescriptorInfo {
   static Type = 'setter'
-  static DefaultConfigurable = true
-  static DefaultEnumerable = false
+  static DefaultConfigurable = Es6SetterDescriptor.DefaultConfigurable
+  static DefaultEnumerable = Es6SetterDescriptor.DefaultEnumerable
 }
 export class Es6MethodDescriptorInfo extends Es6DescriptorInfo {
   static Type = 'method'
-  static DefaultConfigurable = true
-  static DefaultEnumerable = false
-  static DefaultWritable = true
+  static DefaultConfigurable = Es6MethodDescriptor.DefaultConfigurable
+  static DefaultEnumerable = Es6MethodDescriptor.DefaultEnumerable
+  static DefaultWritable = Es6MethodDescriptor.DefaultWritable
 }
 export class Es6FieldDescriptorInfo extends Es6DescriptorInfo {
   static Type = 'field'
-  static DefaultConfigurable = true
-  static DefaultEnumerable = true
-  static DefaultWritable = true
+  static DefaultConfigurable = Es6FieldDescriptor.DefaultConfigurable
+  static DefaultEnumerable = Es6FieldDescriptor.DefaultEnumerable
+  static DefaultWritable = Es6FieldDescriptor.DefaultWritable
 }
 
+const TypeMap = new Map([
+  [Es6FieldDescriptorInfo.Type, Es6FieldDescriptorInfo],
+  [Es6MethodDescriptorInfo.Type, Es6MethodDescriptorInfo],
+  [Es6GetterDescriptorInfo.Type, Es6GetterDescriptorInfo],
+  [Es6SetterDescriptorInfo.Type, Es6SetterDescriptorInfo],
+  [Es6PropertyDescriptorInfo.Type, Es6PropertyDescriptorInfo],
+])

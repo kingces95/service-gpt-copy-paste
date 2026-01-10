@@ -58,36 +58,28 @@ export class Es6Descriptor {
 
 export class Es6FieldDescriptor {
   static Type = 'field'
-  static DefaultConfigurable = true
+  static DefaultConfigurable = DataDescriptor.DefaultConfigurable
+  static DefaultWritable = DataDescriptor.DefaultWritable
   static DefaultEnumerable = true
-  static DefaultWritable = true
 }
 export class Es6MethodDescriptor {
   static Type = 'method'
-  static DefaultConfigurable = true
+  static DefaultConfigurable = DataDescriptor.DefaultConfigurable
+  static DefaultWritable = DataDescriptor.DefaultWritable
   static DefaultEnumerable = false
-  static DefaultWritable = true
 }
 export class Es6GetterDescriptor {
   static Type = GetterDescriptor.Type
-  static DefaultConfigurable = true
-  static DefaultEnumerable = false
+  static DefaultConfigurable = GetterDescriptor.DefaultConfigurable
+  static DefaultEnumerable = GetterDescriptor.DefaultEnumerable
 }
 export class Es6SetterDescriptor {
   static Type = SetterDescriptor.Type
-  static DefaultConfigurable = true
-  static DefaultEnumerable = false
+  static DefaultConfigurable = GetterDescriptor.DefaultConfigurable
+  static DefaultEnumerable = GetterDescriptor.DefaultEnumerable
 }
 export class Es6PropertyDescriptor {
   static Type = PropertyDescriptor.Type
-  static DefaultConfigurable = true
-  static DefaultEnumerable = false
+  static DefaultConfigurable = GetterDescriptor.DefaultConfigurable
+  static DefaultEnumerable = GetterDescriptor.DefaultEnumerable
 }
-
-const TypeMap = new Map([
-  [Es6FieldDescriptor.Type, Es6FieldDescriptor],
-  [Es6MethodDescriptor.Type, Es6MethodDescriptor],
-  [Es6GetterDescriptor.Type, Es6GetterDescriptor],
-  [Es6SetterDescriptor.Type, Es6SetterDescriptor],
-  [Es6PropertyDescriptor.Type, Es6PropertyDescriptor],
-])
