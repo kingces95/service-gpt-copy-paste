@@ -386,8 +386,7 @@ describe('A bespoke concept', () => {
     it('will throw getting that own member', async () => {
       expect(() => Info.from(myConcept)).toThrow([
         `Assertion failed:`,
-        `Concept members cannot be data properties.`,
-        `Use accessor or method instead.`].join(' '))
+        `Concept members must be accessors or methods not field.`].join(' '))
     })
   })
   describe('with private members', () => {

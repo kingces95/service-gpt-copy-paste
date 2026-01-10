@@ -86,7 +86,7 @@ describe('A type', () => {
         expect(() => {
           implement(type, MyConcept)
         }).toThrow(
-          'Concept members cannot be data properties. Use accessor or method instead.'
+          'Concept members must be accessors or methods not field.'
         )
       })    
     })

@@ -5,20 +5,21 @@ import {
   SetterDescriptor,
   PropertyDescriptor,
 } from '@kingjs/descriptor'
+import { es6Typeof } from './es6-typeof.js'
 
 export class Es6Descriptor {
 
   static typeof(descriptor) {
     const type = Descriptor.typeof(descriptor)
 
-    if (type == DataDescriptor.Type) {
-      if (Es6Descriptor.hasMethod(descriptor))
-        return Es6MethodDescriptor.Type
-  
-      return Es6FieldDescriptor.Type
-    }
+    if (type != DataDescriptor.Type) 
+      return type
+      
+    const valueType = es6Typeof(descriptor.value)
+    if (valueType == 'function' && descriptor.enumerable == false)
+      return Es6MethodDescriptor.Type
 
-    return type
+    return Es6FieldDescriptor.Type
   }
 
   static #equalsData(lhs, rhs) {
@@ -45,21 +46,6 @@ export class Es6Descriptor {
       : Es6Descriptor.#equalsAccessor(lhs, rhs)
   }
 
-  static hasData(descriptor) {
-    return Descriptor.hasValue(descriptor) 
-      && !Es6Descriptor.hasMethod(descriptor)
-  }
-
-  static hasMethod(descriptor) {
-    if (!Descriptor.hasValue(descriptor)) return false
-    const fn = descriptor.value
-    if (!(fn instanceof Function)) return false
-    const prototypeDescriptor = Object.getOwnPropertyDescriptor(fn, 'prototype')
-    if (Es6Descriptor.hasClassPrototypeDefaults(prototypeDescriptor)) return false
-    if (descriptor.enumerable) return false
-    return true
-  }
-
   static get(prototype, property) {
     while (prototype) {
       const descriptor = Object.getOwnPropertyDescriptor(prototype, property)
@@ -67,54 +53,6 @@ export class Es6Descriptor {
       prototype = Object.getPrototypeOf(prototype)
     }
     return undefined
-  }
-
-  static {  
-    Es6Descriptor.DefaultModifier = { }
-    Es6Descriptor.DefaultModifier.userDefined = {
-      configurable: true
-    }
-    Es6Descriptor.DefaultModifier.accessor = {
-      ...Es6Descriptor.DefaultModifier.userDefined,
-      enumerable: false,
-    }
-
-    Es6Descriptor.DefaultModifier.value = {
-      ...Es6Descriptor.DefaultModifier.userDefined,
-      writable: true,
-    }
-    Es6Descriptor.DefaultModifier.method = {
-      ...Es6Descriptor.DefaultModifier.value,
-      enumerable: false,
-    }
-    Es6Descriptor.DefaultModifier.data = {
-      ...Es6Descriptor.DefaultModifier.value,
-      enumerable: true,
-    }
-
-    Es6Descriptor.DefaultModifier.ptype = {
-      enumerable: false,
-      configurable: false,
-      writable: false,
-    }
-  }
-
-  // hasClassPrototypeDefaults checks if a prototype descriptor of a function
-  // has a particular set of defaults which can be used to loosly determine 
-  // if a class was declared using the class syntax. The defaults are:
-  //  - enumerable: false, configurable: false, writable: false
-  static hasClassPrototypeDefaults(prototypeDescriptor) {
-    if (!prototypeDescriptor) return false
-    if (!prototypeDescriptor.value) return false
-
-    // if (prototypeDescriptor.enumerable) return false
-    // if (prototypeDescriptor.configurable) return false
-    // if (prototypeDescriptor.writable) return false
-    const expected = Es6Descriptor.DefaultModifier.ptype
-    if (!Descriptor.hasExpectedModifiers(prototypeDescriptor, expected))
-      return false
-
-    return true
   }
 }
 

@@ -6,8 +6,6 @@ import { Descriptor } from '@kingjs/descriptor'
 const {
   get,
   hasData,
-  hasMethod,
-  hasClassPrototypeDefaults,
   implementation,
 } = Es6Descriptor
 
@@ -56,48 +54,6 @@ describe('A class with a method and accessor', () => {
       get accessor() { }
     }]
   })
-  describe('the prototype descriptor', () => {
-    let descriptor
-    beforeEach(() => {
-      descriptor = Object.getOwnPropertyDescriptor(cls, 'prototype')
-    })
-    it('should be a class prototype defaults', () => {
-      expect(hasClassPrototypeDefaults(descriptor)).toBe(true)
-    })
-    describe('with flipped enumerable', () => {
-      beforeEach(() => {
-        descriptor.enumerable = !descriptor.enumerable
-      })
-      it('should not have class prototype defaults', () => {
-        expect(hasClassPrototypeDefaults(descriptor)).toBe(false)
-      })
-    })
-    describe('with flipped configurable', () => {
-      beforeEach(() => {
-        descriptor.configurable = !descriptor.configurable
-      })
-      it('should not have class prototype defaults', () => {
-        expect(hasClassPrototypeDefaults(descriptor)).toBe(false)
-      })
-    })
-    describe('with flipped writable', () => {
-      beforeEach(() => {
-        descriptor.writable = !descriptor.writable
-      })
-      it('should not have class prototype defaults', () => {
-        expect(hasClassPrototypeDefaults(descriptor)).toBe(false)
-      })
-    })
-  })
-  describe('the method descriptor', () => {
-    let descriptor
-    beforeEach(() => {
-      descriptor = Object.getOwnPropertyDescriptor(cls.prototype, 'method')
-    })
-    it('should have a method', () => {
-      expect(hasMethod(descriptor)).toBe(true)
-    })
-  })
   describe('the accessor descriptor', () => {
     let descriptor
     beforeEach(() => {
@@ -141,12 +97,6 @@ describe('A descriptor', () => {
     it('should have no data', () => {
       expect(hasData(descriptor)).toBe(false)
     })
-    it('should have no method', () => {
-      expect(hasMethod(descriptor)).toBe(false)
-    })
-    it('should not be a class prototype defaults', () => {
-      expect(hasClassPrototypeDefaults(descriptor)).toBe(false)
-    })
   })
   describe('accessor', () => {
     describe('with a getter', () => {
@@ -171,12 +121,6 @@ describe('A descriptor', () => {
       it('should not have data', () => {
         expect(hasData(descriptor)).toBe(false)
       })
-      it('should not have method', () => {
-        expect(hasMethod(descriptor)).toBe(false)
-      })
-      it('should not be a class prototype defaults', () => {
-        expect(hasClassPrototypeDefaults(descriptor)).toBe(false)
-      })
     })
     describe('with a setter', () => {
       beforeEach(() => {
@@ -200,12 +144,6 @@ describe('A descriptor', () => {
       it('should not have data', () => {
         expect(hasData(descriptor)).toBe(false)
       })
-      it('should not have method', () => {
-        expect(hasMethod(descriptor)).toBe(false)
-      })
-      it('should not be a class prototype defaults', () => {
-        expect(hasClassPrototypeDefaults(descriptor)).toBe(false)
-      })
     })
     describe('with a getter and setter', () => {
       beforeEach(() => {
@@ -228,12 +166,6 @@ describe('A descriptor', () => {
       })
       it('should not have data', () => {
         expect(hasData(descriptor)).toBe(false)
-      })
-      it('should not have method', () => {
-        expect(hasMethod(descriptor)).toBe(false)
-      })
-      it('should not be a class prototype defaults', () => {
-        expect(hasClassPrototypeDefaults(descriptor)).toBe(false)
       })
     })
   })
@@ -260,12 +192,6 @@ describe('A descriptor', () => {
       it('should not have data', () => {
         expect(hasData(descriptor)).toBe(false)
       })
-      it('should have method', () => {
-        expect(hasMethod(descriptor)).toBe(true)
-      })
-      it('should be a class prototype defaults', () => {
-        expect(hasClassPrototypeDefaults(descriptor)).toBe(true)
-      })
     })
     describe('with a class', () => {
       beforeEach(() => {
@@ -290,12 +216,6 @@ describe('A descriptor', () => {
       it('should have data', () => {
         expect(hasData(descriptor)).toBe(true)
       })
-      it('should not have a method', () => {
-        expect(hasMethod(descriptor)).toBe(false)
-      })
-      it('should be a class prototype defaults', () => {
-        expect(hasClassPrototypeDefaults(descriptor)).toBe(true)
-      })
     })
     describe('with null', () => {
       beforeEach(() => {
@@ -318,12 +238,6 @@ describe('A descriptor', () => {
       })
       it('should have data', () => {
         expect(hasData(descriptor)).toBe(true)
-      })
-      it('should not have a method', () => {
-        expect(hasMethod(descriptor)).toBe(false)
-      })
-      it('should not be a class prototype defaults', () => {
-        expect(hasClassPrototypeDefaults(descriptor)).toBe(false)
       })
     })
   })

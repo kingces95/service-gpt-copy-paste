@@ -1,20 +1,9 @@
 import { assert } from '@kingjs/assert'
 import { abstract } from '@kingjs/abstract'
 import { Es6Reflect, Es6Descriptor } from '@kingjs/es6-info'
-import { Descriptor } from '@kingjs/descriptor'
 import { PartialObject } from '@kingjs/partial-object'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { PartialClass, Extends } from '@kingjs/partial-class'
-
-const {
-  hasGetter,
-  hasSetter,
-} = Descriptor
-
-const {
-  hasMethod,
-  hasData,
-} = Es6Descriptor
 
 const {
   ownStaticMemberKeys,
@@ -47,19 +36,26 @@ export class Concept extends PartialObject {
   static [PartialObject.Compile](descriptor) {
     const result = super[PartialObject.Compile](descriptor)
 
-    assert(!hasData(result), [
-      `Concept members cannot be data properties.`,
-      `Use accessor or method instead.`].join(' '))
-
-    // make all concept members abstract
-    if (hasGetter(result)) 
-      result.get = abstract
-
-    if (hasSetter(result)) 
-      result.set = abstract
-
-    if (hasMethod(result)) 
-      result.value = abstract
+    const type = Es6Descriptor.typeof(result)
+    switch (type) { 
+      case 'getter':
+        result.get = abstract
+        break
+      case 'setter':
+        result.set = abstract
+        break
+      case 'property':
+        result.get = abstract
+        result.set = abstract
+        break
+      case 'method':
+        result.value = abstract
+        break
+      default:
+        assert(false, [
+          `Concept members must be accessors or methods`,
+          `not ${type}.`].join(' '))
+    }
 
     return result
   }

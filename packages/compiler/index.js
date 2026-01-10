@@ -1,16 +1,12 @@
 import { assert } from '@kingjs/assert'
 import { Descriptor } from '@kingjs/descriptor'
-import { Es6Descriptor } from '@kingjs/es6-info'
+import { es6Typeof } from '@kingjs/es6-info'
 
 const {
   hasGetter,
   hasSetter,
   hasAccessor,
 } = Descriptor
-
-const {
-  hasData,
-} = Es6Descriptor
 
 // Compiler transforms a descriptor to a descriptor. 
 //  - procedural descriptors are transformed such so their metadata is 
@@ -97,22 +93,27 @@ export class Compiler {
   static emit(descriptor) {
     if (!descriptor) return null
 
-    assert(descriptor instanceof Descriptor, 'descriptor must be a Descriptor')
+    assert(descriptor instanceof Descriptor, 
+      'descriptor must be a Descriptor')
 
-    // copy the descriptor
-    const result = {
-      ...descriptor,
-    }
+    const result = { ...descriptor }
 
-    // assign defaults as though the member were declared in source code
-    if (!('enumerable' in result))
-      result.enumerable = hasData(descriptor)
-    if (!('configurable' in result))
+    if ('configurable' in result == false)
       result.configurable = true
-    if ('value' in result) {
-      if (!('writable' in result))
+    
+    const type = Descriptor.typeof(result)
+    if (type == 'data') {
+      if ('writable' in result == false)
         result.writable = true
-    }  
+
+      const valueType = es6Typeof(result.value)
+      if ('enumerable' in result == false)
+        result.enumerable = valueType != 'function'
+    }
+    else {
+      if ('enumerable' in result == false)
+        result.enumerable = false
+    }
 
     return result
   }
