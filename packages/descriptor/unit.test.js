@@ -85,6 +85,19 @@ describe('Descriptor', () => {
 
   describe.each(Descriptors)('%s', (_, test) => {
     const { descriptor } = test
+    it('should equal itself', () => {
+      const actual = Descriptor.equals(descriptor, descriptor)
+      expect(actual).toBe(true)
+    })
+    it('should not equal other descriptors', () => {
+      Descriptors.forEach(([_, otherTest]) => {
+        if (otherTest === test) return
+        const actual = Descriptor.equals(
+          descriptor,
+          otherTest.descriptor)
+        expect(actual).toBe(false)
+      })
+    })
     it('should have correct type', () => {
       const actual = Descriptor.typeof(descriptor)
       const expected = test.type

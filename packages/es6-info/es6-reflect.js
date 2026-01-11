@@ -1,5 +1,5 @@
-const KnownInstanceMembers = new Set([ 'constructor'])
-const KnownStaticMembers = new Set([ 'length', 'name', 'prototype'])
+const KnownInstanceMembers = new Set([ 'constructor' ])
+const KnownStaticMembers = new Set([ 'length', 'name', 'prototype' ])
 
 export class Es6Reflect {
   

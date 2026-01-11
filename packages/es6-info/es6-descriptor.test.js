@@ -1,3 +1,4 @@
+import assert from 'assert'
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { 
@@ -18,7 +19,7 @@ import {
 } from './es6-descriptor-info'
 import { abstract } from '@kingjs/abstract'
 
-const Getter = {
+const GetterMd = {
   name: 'getter',
   descriptor: { 
     get: function myGetter() {},
@@ -31,7 +32,7 @@ const Getter = {
   toString: 'getter',
 }
 
-const EnumerableGetter = {
+const EnumerableGetterMd = {
   name: 'enumerable getter',
   descriptor: { 
     get: function myEnumerableGetter() {},
@@ -40,12 +41,12 @@ const EnumerableGetter = {
   },
   infoType: Es6GetterDescriptorInfo,
   type: 'getter',
-  modifiers: [ 'enumerable' ],
-  toString: 'enumerable getter',
+  modifiers: [ 'visible' ],
+  toString: 'visible getter',
 }
 
-const OtherGetter = {
-  ...Getter,
+const OtherGetterMd = {
+  ...GetterMd,
   name: 'other getter',
   descriptor: { 
     get: function otherGetter() {},
@@ -54,7 +55,7 @@ const OtherGetter = {
   },
 }
 
-const Setter = {
+const SetterMd = {
   name: 'setter',
   descriptor: {
     set: function mySetter(v) {},
@@ -67,8 +68,8 @@ const Setter = {
   toString: 'setter',
 }
 
-const OtherSetter = {
-  ...Setter,
+const OtherSetterMd = {
+  ...SetterMd,
   name: 'other setter',
   descriptor: {
     set: function otherSetter(v) {},
@@ -77,7 +78,7 @@ const OtherSetter = {
   },
 }
 
-const Property = {
+const PropertyMd = {
   name: 'property',
   descriptor: {
     get: function myPropertyGetter() {},
@@ -91,7 +92,7 @@ const Property = {
   toString: 'property',
 }
 
-const Method = {
+const MethodMd = {
   name: 'method',
   descriptor: {
     value: function myMethod() {},
@@ -105,7 +106,7 @@ const Method = {
   toString: 'method',
 }
 
-const Function = {
+const FunctionMd = {
   name: 'visible method',
   descriptor: {
     value: function myVisibleMethod() {},
@@ -120,7 +121,7 @@ const Function = {
   toString: 'field [function]',
 }
 
-const ConstMethod = {
+const ConstMethodMd = {
   name: 'const method',
   descriptor: {
     value: function myConstMethod() {},
@@ -134,7 +135,7 @@ const ConstMethod = {
   toString: 'const method',
 }
 
-const SealedMethod = {
+const SealedMethodMd = {
   name: 'sealed method',
   descriptor: {
     value: function mySealedMethod() {},
@@ -148,7 +149,7 @@ const SealedMethod = {
   toString: 'sealed method',
 }
 
-const AbstractMethod = {
+const AbstractMethodMd = {
   name: 'abstract method',
   descriptor: {
     value: abstract,
@@ -163,7 +164,7 @@ const AbstractMethod = {
   toString: 'abstract method',
 }
 
-const Number = {
+const NumberMd = {
   name: 'number',
   descriptor: {
     value: 42,
@@ -178,7 +179,7 @@ const Number = {
   toString: 'field [number]',
 }
 
-const HiddenNumber = {
+const HiddenNumberMd = {
   name: 'hidden number',
   descriptor: {
     value: 42,
@@ -193,7 +194,7 @@ const HiddenNumber = {
   toString: 'hidden field [number]',
 }
 
-const ConstNumber = {
+const ConstNumberMd = {
   name: 'const number',
   descriptor: {
     value: 42,
@@ -208,7 +209,7 @@ const ConstNumber = {
   toString: 'const field [number]',
 }
 
-const NanNumber = {
+const NanNumberMd = {
   name: 'NaN number',
   descriptor: {
     value: NaN,
@@ -224,21 +225,21 @@ const NanNumber = {
 }
 
 const Descriptors = [
-  [ Getter.name, Getter ],
-  [ EnumerableGetter.name, EnumerableGetter ],
-  [ OtherGetter.name, OtherGetter ],
-  [ Setter.name, Setter ],
-  [ OtherSetter.name, OtherSetter ],
-  [ Property.name, Property ],
-  [ Method.name, Method ],
-  [ Function.name, Function ],
-  [ ConstMethod.name, ConstMethod ],
-  [ SealedMethod.name, SealedMethod ],
-  [ AbstractMethod.name, AbstractMethod ],
-  [ Number.name, Number ],
-  [ HiddenNumber.name, HiddenNumber ],
-  [ ConstNumber.name, ConstNumber ],
-  [ NanNumber.name, NanNumber ],
+  [ GetterMd.name, GetterMd ],
+  [ EnumerableGetterMd.name, EnumerableGetterMd ],
+  [ OtherGetterMd.name, OtherGetterMd ],
+  [ SetterMd.name, SetterMd ],
+  [ OtherSetterMd.name, OtherSetterMd ],
+  [ PropertyMd.name, PropertyMd ],
+  [ MethodMd.name, MethodMd ],
+  [ FunctionMd.name, FunctionMd ],
+  [ ConstMethodMd.name, ConstMethodMd ],
+  [ SealedMethodMd.name, SealedMethodMd ],
+  [ AbstractMethodMd.name, AbstractMethodMd ],
+  [ NumberMd.name, NumberMd ],
+  [ HiddenNumberMd.name, HiddenNumberMd ],
+  [ ConstNumberMd.name, ConstNumberMd ],
+  [ NanNumberMd.name, NanNumberMd ],
 ]
  
 describe('Descriptor', () => {
@@ -301,7 +302,10 @@ describe('DescriptorInfo', () => {
       expect(info.isGetter).toBe(md.type == 'getter')
       expect(info.isSetter).toBe(md.type == 'setter')
       expect(info.isProperty).toBe(md.type == 'property')
-      expect(info.isAccessor).toBe(md.type == 'getter' || md.type == 'setter' || md.type == 'property')
+      expect(info.isAccessor).toBe(
+        md.type == 'getter' 
+        || md.type == 'setter' 
+        || md.type == 'property')
 
       const d = md.descriptor
       expect(info.isConfigurable).toBe(d.configurable == true)
@@ -332,6 +336,92 @@ describe('DescriptorInfo', () => {
     })
     it('has correct fieldType', () => {
       expect(info.fieldType == md.fieldType).toBe(true)
+    })
+  })
+})
+
+
+class MyClass { }
+class MyExtendedClass extends MyClass { }
+
+function es6GetPrototypeOf(object) {
+  if (object == null) return null
+
+  const prototype = Object.getPrototypeOf(object)
+
+  if (prototype == Function.prototype && object instanceof Function)
+    return Object
+
+  return prototype
+}
+
+describe('getPrototypeOf', () => {
+  describe('Object', () => {
+    const prototype = Object.getPrototypeOf(Object)
+    it('is Function.prototype', () => {
+      // Object is a function
+      expect(prototype == Function.prototype).toBe(true)
+    })
+    it('typeof is "function"', () => {
+      // is callable
+      expect(typeof prototype == 'function').toBe(true)
+    })
+    it('not instanceof Function', () => {
+      expect(prototype instanceof Function).toBe(false)
+    })
+  })
+  describe('Function.prototype', () => {
+    const prototype = Object.getPrototypeOf(Function.prototype)
+    it('is Object.prototype', () => {
+      // everything is an object
+      expect(prototype == Object.prototype).toBe(true)
+    })
+    it('typeof is "object"', () => {
+      // not callable
+      expect(typeof prototype).toBe('object')
+    })
+    it('not instanceof Function', () => {
+      expect(prototype instanceof Function).toBe(false)
+    })
+  })
+  describe('Function', () => {
+    const prototype = Object.getPrototypeOf(Function)
+    it('is Function.prototype', () => {
+      // Function is a function
+      expect(prototype == Function.prototype).toBe(true)
+    })
+    it('typeof is "function"', () => {
+      expect(typeof prototype == 'function').toBe(true)
+    })
+    it('not instanceof Function', () => {
+      expect(prototype instanceof Function).toBe(false)
+    })
+  })
+  describe('MyClass', () => {
+    const prototype = Object.getPrototypeOf(MyClass)
+    it('is Function.prototype', () => {
+      // MyClass is a function
+      expect(prototype == Function.prototype).toBe(true)
+      expect(prototype instanceof Function).toBe(false)
+    })
+    it('typeof is "function"', () => {
+      expect(typeof prototype == 'function').toBe(true)
+    })
+    it('not instanceof Function', () => {
+      expect(prototype instanceof Function).toBe(false)
+    })
+  })
+  describe('MyExtendedClass', () => {
+    const prototype = Object.getPrototypeOf(MyExtendedClass)
+    it('is MyClass', () => {
+      // MyExtendedClass extends MyClass and is a function
+      expect(prototype == MyClass).toBe(true)
+    })
+    it('typeof is "function"', () => {
+      expect(typeof prototype == 'function').toBe(true)
+    })
+    it('instanceof Function', () => {
+      expect(prototype instanceof Function).toBe(true)
     })
   })
 })

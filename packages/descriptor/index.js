@@ -3,6 +3,15 @@ import { isPojo } from '@kingjs/pojo-test'
 
 export class Descriptor {
 
+  static get(prototype, property) {
+    while (prototype) {
+      const descriptor = Object.getOwnPropertyDescriptor(prototype, property)
+      if (descriptor) return descriptor
+      prototype = Object.getPrototypeOf(prototype)
+    }
+    return undefined
+  }
+
   static typeof(descriptor) {
     const hasGetter = Descriptor.hasGetter(descriptor)
     const hasSetter = Descriptor.hasSetter(descriptor)
@@ -62,6 +71,30 @@ export class Descriptor {
     if (descriptor.configurable) yield 'configurable'
     if (descriptor.enumerable) yield 'enumerable'
     if (descriptor.writable) yield 'writable'
+  }
+
+  static #equalsData(lhs, rhs) {
+    if (lhs.writable !== rhs.writable) return false
+    if (lhs.value == rhs.value) return true
+    if (Number.isNaN(lhs.value) && Number.isNaN(rhs.value)) return true
+    return false
+  }
+  static #equalsAccessor(lhs, rhs) {
+    if (lhs.get !== rhs.get) return false
+    if (lhs.set !== rhs.set) return false
+    return true
+  }
+  static equals(lhs, rhs) {
+    const lhsType = Descriptor.typeof(lhs)
+    const rhsType = Descriptor.typeof(rhs)
+    if (lhsType != rhsType) return false
+
+    if (lhs.configurable !== rhs.configurable) return false
+    if (lhs.enumerable !== rhs.enumerable) return false
+
+    return lhsType == 'data'
+      ? Descriptor.#equalsData(lhs, rhs)
+      : Descriptor.#equalsAccessor(lhs, rhs)
   }
 }
 

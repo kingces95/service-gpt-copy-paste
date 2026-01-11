@@ -176,40 +176,29 @@ export class Es6MemberInfo {
   static create$(host, keyInfo, descriptorInfo, metadata) {
     assert(host instanceof Es6ClassInfo, 
       'type must be a Es6ClassInfo')
-
     assert(keyInfo instanceof Es6KeyInfo, 
       'key must be a KeyInfo')
-
     assert(descriptorInfo instanceof Es6DescriptorInfo, 
       'descriptor must be a DescriptorInfo')
 
-    const args = [ host, keyInfo, descriptorInfo, metadata ]
-      
-    const { isAccessor, isProperty, isGetter, isSetter, isData } = descriptorInfo
-    assert(isAccessor || isData)
-    if (isAccessor) {
-      if (isGetter) return new Es6GetterInfo(...args)
-      if (isSetter) return new Es6SetterInfo(...args)
-      assert(isProperty)
-      return new Es6PropertyInfo(...args)
+    let type = descriptorInfo.type
+
+    if (type == 'field') {
+      const value = descriptorInfo.value
+      const { isStatic } = metadata
+      const { value: key } = keyInfo
+      const es6Type = es6Typeof(value)
+
+      // constructor
+      if (key === 'constructor' && !isStatic && value === host.ctor) {
+        assert(es6Type == 'class')
+        type = 'constructor'
+      }
     }
 
-    const value = descriptorInfo.value
-    const { isStatic } = metadata
-    const { value: key } = keyInfo
-    const es6Type = es6Typeof(value)
-
-    // instance function 'constructor' matching host ctor is constructor
-    if (key === 'constructor' && !isStatic && value === host.ctor) {
-      assert(es6Type == 'class')
-      return new Es6ConstructorInfo(...args)
-    }
-    
-    // vanilla hidden function is a method
-    if (es6Type == 'function' && !descriptorInfo.isEnumerable) 
-      return new Es6MethodInfo(...args)
-    
-    return new Es6FieldInfo(...args)
+    const ctor = TypeMap.get(type)
+    assert(ctor, `Unknown member type.`)
+    return new ctor(host, keyInfo, descriptorInfo, metadata)
   }
 
   #_

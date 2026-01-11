@@ -5,7 +5,7 @@ import { isAbstract } from '@kingjs/abstract'
 import { Associate } from '@kingjs/associate'
 import { PartialPojo } from '@kingjs/partial-pojo'
 import { PartialObject } from '@kingjs/partial-object'
-import { Es6Descriptor } from '@kingjs/es6-info'
+import { Descriptor } from '@kingjs/descriptor'
 
 const {
   memberKeys,
@@ -276,7 +276,7 @@ export class PartialReflect {
   }
   static getDescriptor(type, key) {
     const prototypicalType = PartialReflect.getPrototypicalType$(type)
-    return Es6Descriptor.get(prototypicalType.prototype, key)
+    return Descriptor.get(prototypicalType.prototype, key)
   }
 
   static getOwnDescriptors(type) {

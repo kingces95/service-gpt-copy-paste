@@ -22,55 +22,23 @@ export class Es6Descriptor {
     return Es6FieldDescriptor.Type
   }
 
-  static #equalsData(lhs, rhs) {
-    if (lhs.writable !== rhs.writable) return false
-    if (lhs.value == rhs.value) return true
-    if (Number.isNaN(lhs.value) && Number.isNaN(rhs.value)) return true
-    return false
-  }
-  static #equalsAccessor(lhs, rhs) {
-    if (lhs.get !== rhs.get) return false
-    if (lhs.set !== rhs.set) return false
-    return true
-  }
   static equals(lhs, rhs) {
-    const lhsType = Descriptor.typeof(lhs)
-    const rhsType = Descriptor.typeof(rhs)
-    if (lhsType != rhsType) return false
-
-    if (lhs.configurable !== rhs.configurable) return false
-    if (lhs.enumerable !== rhs.enumerable) return false
-
-    return lhsType == 'data'
-      ? Es6Descriptor.#equalsData(lhs, rhs)
-      : Es6Descriptor.#equalsAccessor(lhs, rhs)
-  }
-
-  static get(prototype, property) {
-    while (prototype) {
-      const descriptor = Object.getOwnPropertyDescriptor(prototype, property)
-      if (descriptor) return descriptor
-      prototype = Object.getPrototypeOf(prototype)
-    }
-    return undefined
+    return Descriptor.equals(lhs, rhs)
   }
   
   static *modifiers(
     descriptor, 
     md = TypeMap.get(Es6Descriptor.typeof(descriptor))) { 
 
-    if (descriptor.configurable != md.DefaultConfigurable 
-      && descriptor.configurable == false)
+    if (descriptor.configurable == false)
       yield 'sealed'
 
-    if ('writable' in descriptor 
-      && descriptor.writable != md.DefaultWritable 
-      && descriptor.writable == false)
+    if (descriptor.writable == false)
       yield 'const'
 
     if (descriptor.enumerable != md.DefaultEnumerable 
       && descriptor.enumerable == true)
-      yield 'enumerable'
+      yield 'visible'
 
     if (descriptor.enumerable != md.DefaultEnumerable 
       && !descriptor.enumerable == true)

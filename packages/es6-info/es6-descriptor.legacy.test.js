@@ -4,12 +4,12 @@ import { Es6Descriptor } from './es6-descriptor.js'
 import { Descriptor } from '@kingjs/descriptor'
 
 const {
-  get,
   hasData,
   implementation,
 } = Es6Descriptor
 
 const {
+  get,
   hasGetter,
   hasSetter,
   hasAccessor,
