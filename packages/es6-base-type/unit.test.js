@@ -2,34 +2,62 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { es6BaseType } from '@kingjs/es6-base-type'
 
-describe('Es6BaseType', () => {
-  let baseType
-  it('reports Object as having no base type', () => {
-    baseType = es6BaseType(Object)
-    expect(baseType).toBeNull()
+const NullTest = {
+  name: 'null',
+  type: null,
+  baseType: null,
+}
+
+const ObjectTest = {
+  name: 'Object',
+  type: Object,
+  baseType: null,
+}
+
+const FunctionTest = {
+  name: 'Function',
+  type: Function,
+  baseType: Object,
+}
+
+class MyClass { }
+class MyClassExtendsNull extends null { }
+class MyExtendedClass extends MyClass { }
+
+const MyClassTest = {
+  name: 'MyClass',
+  type: MyClass,
+  baseType: Object,
+}
+
+const MyClassExtendsNullTest = {
+  name: 'MyClassExtendsNull',
+  type: MyClassExtendsNull,
+  baseType: Object,
+}
+
+const MyExtendedClassTest = {
+  name: 'MyExtendedClass',
+  type: MyExtendedClass,
+  baseType: MyClass,
+}
+
+const tests = [
+  [NullTest.name, NullTest],
+  [ObjectTest.name, ObjectTest],
+  [FunctionTest.name, FunctionTest],
+  [MyClassTest.name, MyClassTest],
+  [MyClassExtendsNullTest.name, MyClassExtendsNullTest],
+  [MyExtendedClassTest.name, MyExtendedClassTest]
+]
+
+describe.each(tests)('%s', (_, test) => {
+  let type, baseType
+  beforeEach(() => {
+    ({ type, baseType } = test)
   })
-  it('reports null as having no base type', () => {
-    baseType = es6BaseType(null)
-    expect(baseType).toBeNull()
-  })
-  it('reports Function as having Object as base type', () => {
-    baseType = es6BaseType(Function)
-    expect(baseType).toBe(Object)
-  })
-  it('reports a class with no extends as having Object as base type', () => {
-    class MyClass { }
-    baseType = es6BaseType(MyClass)
-    expect(baseType).toBe(Object)
-  })
-  it('reports a class that extends null as having Object as a base type', () => {
-    class MyClass extends null { }
-    baseType = es6BaseType(MyClass)
-    expect(baseType).toBe(Object)
-  })
-  it('reports a class that extends another class as having that class as base type', () => {
-    class MyBaseClass { }
-    class MyClass extends MyBaseClass { }
-    baseType = es6BaseType(MyClass)
-    expect(baseType).toBe(MyBaseClass)
+  it(`should have correct base type`, () => {
+    const result = es6BaseType(type)
+    expect(result).toBe(baseType)
   })
 })

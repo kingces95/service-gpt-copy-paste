@@ -1,4 +1,5 @@
 import { assert } from '@kingjs/assert'
+import { es6BaseType } from '@kingjs/es6-base-type'
 import { Es6Reflect } from './es6-reflect.js'
 import { Es6Descriptor } from './es6-descriptor.js'
 import { 
@@ -117,26 +118,15 @@ export class Es6ClassInfo {
   get ctor() { return this.#fn }
   get id() { return this.#idInfo }
   get name() { return this.id.value }
+  get isNonPublic() { return this.id.isNonPublic }
   get isAnonymous() { return this.id.isAnonymous }
-  get base() { 
-    if (this.equals(Es6ClassInfo.Object)) return null
-
-    const baseFn = Object.getPrototypeOf(this.ctor)
-    
-    // special case 'boostrap circle' for Function
-    if (baseFn == Function.prototype) 
-      return Es6ClassInfo.Object
-
-    return Es6ClassInfo.from(baseFn) 
-  }
-  get isNonPublic() { 
-    return this.#idInfo.isNonPublic
-  }
   get isKnown() {
     if (this.equals(Es6ClassInfo.Object)) return true
     if (this.equals(Es6ClassInfo.Function)) return true
     return false
   }
+  
+  get base() { return Es6ClassInfo.from(es6BaseType(this.ctor)) }
 
   *ownInstanceMembers() { yield* this.ownMembers$({ isStatic: false }) }
   *ownStaticMembers() { yield* this.ownMembers$({ isStatic: true }) }
