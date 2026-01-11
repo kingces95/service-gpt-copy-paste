@@ -52,7 +52,7 @@ function lookupLoad(type, symbol, key) {
   return set
 }
 
-export class Associate {
+export class Es6Associate {
 
   static *ownTypes(type, symbols) {
 
@@ -66,7 +66,7 @@ export class Associate {
       const { expectedType, map } = options
       const expectedTypes = [...asIterable(expectedType)]
 
-      const metadata = Associate.iterable(type, symbol)
+      const metadata = Es6Associate.iterable(type, symbol)
       for (let associatedType of asIterable(metadata)) {
         if (map) associatedType = map(associatedType)
   
@@ -77,7 +77,7 @@ export class Associate {
           ).length > 0
           
         if (!isValid) 
-          throw `Associate type "${associatedType.name}" is of an unexpected type.`
+          throw `Es6Associate type "${associatedType.name}" is of an unexpected type.`
        
         yield associatedType
       }
@@ -88,14 +88,14 @@ export class Associate {
     const { traverse, visited } = options
     
     for (const prototype of Es6Reflect.prototypeHierarchy(type)) {
-      for (const associatedType of Associate.ownTypes(prototype, symbols)) {
+      for (const associatedType of Es6Associate.ownTypes(prototype, symbols)) {
 
         if (visited.has(associatedType)) continue
         visited.add(associatedType)
         yield associatedType
 
         if (traverse)
-          yield* Associate.types(associatedType, symbols, options)
+          yield* Es6Associate.types(associatedType, symbols, options)
       }
     }
   }
@@ -130,20 +130,20 @@ export class Associate {
   }
 
   static objectCopy(type, sourceType, symbol) {
-    const value = Associate.objectGet(sourceType, symbol)
-    Associate.objectInitialize(type, symbol, () => value)
+    const value = Es6Associate.objectGet(sourceType, symbol)
+    Es6Associate.objectInitialize(type, symbol, () => value)
   }
   static setCopy(type, sourceType, symbol) {
-    const values = Associate.setGet(sourceType, symbol)
-    Associate.setAdd(type, symbol, ...values)
+    const values = Es6Associate.setGet(sourceType, symbol)
+    Es6Associate.setAdd(type, symbol, ...values)
   }
   static mapCopy(type, sourceType, symbol, key) {
-    const value = Associate.mapGet(sourceType, symbol, key)
-    Associate.mapSet(type, symbol, key, value)
+    const value = Es6Associate.mapGet(sourceType, symbol, key)
+    Es6Associate.mapSet(type, symbol, key, value)
   }
   static lookupCopy(type, sourceType, symbol, key) {
-    const values = Associate.lookupGet(sourceType, symbol, key)
-    Associate.lookupAdd(type, symbol, key, ...values)
+    const values = Es6Associate.lookupGet(sourceType, symbol, key)
+    Es6Associate.lookupAdd(type, symbol, key, ...values)
   }
 
   static objectGetOwn(type, symbol) {
@@ -165,7 +165,7 @@ export class Associate {
 
   static objectGet(type, symbol) {
     while (type) {
-      const value = Associate.objectGetOwn(type, symbol)
+      const value = Es6Associate.objectGetOwn(type, symbol)
       if (value) return value
       type = Object.getPrototypeOf(type)
     }
@@ -173,7 +173,7 @@ export class Associate {
   static *setGet(type, symbol) {
     const set = new Set()
     while (type) {
-      for (const value of Associate.setGetOwn(type, symbol)) {
+      for (const value of Es6Associate.setGetOwn(type, symbol)) {
         if (set.has(value)) continue
         yield value
         set.add(value)
@@ -183,7 +183,7 @@ export class Associate {
   }
   static mapGet(type, symbol, key) {
     while (type) {
-      const value = Associate.mapGetOwn(type, symbol, key)
+      const value = Es6Associate.mapGetOwn(type, symbol, key)
       if (value) return value
       type = Object.getPrototypeOf(type)
     }
@@ -191,7 +191,7 @@ export class Associate {
   static *lookupGet(type, symbol, key) {
     const set = new Set()
     while (type) {
-      for (const value of Associate.lookupGetOwn(type, symbol, key)) {
+      for (const value of Es6Associate.lookupGetOwn(type, symbol, key)) {
         if (set.has(value)) continue
         yield value
         set.add(value)

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Associate } from '@kingjs/associate'
+import { Es6Associate } from '@kingjs/es6-associate'
 
 describe('MyClass that extends MyBase with MySymbol, MyType', () => {
   let myClass
@@ -25,7 +25,7 @@ describe('MyClass that extends MyBase with MySymbol, MyType', () => {
           myClass[mySymbol] = myType
         })
         it('is directly associated', () => {
-          const associated = [...Associate.ownTypes(myClass, myMetadata)]
+          const associated = [...Es6Associate.ownTypes(myClass, myMetadata)]
           expect(associated).toEqual([ myType ])
         })
         describe('with a mapping...', () => {
@@ -37,7 +37,7 @@ describe('MyClass that extends MyBase with MySymbol, MyType', () => {
             }
           })
           it('maps to the other type', () => {
-            const associated = [...Associate.ownTypes(myClass, myMetadata)]
+            const associated = [...Es6Associate.ownTypes(myClass, myMetadata)]
             expect(associated).toEqual([ myOtherType ])
           })
         })
@@ -48,7 +48,7 @@ describe('MyClass that extends MyBase with MySymbol, MyType', () => {
           })
           it('throws', () => {
             expect(() => {
-              [...Associate.ownTypes(myClass, myMetadata)]
+              [...Es6Associate.ownTypes(myClass, myMetadata)]
             }).toThrow()
           })
         })
@@ -57,7 +57,7 @@ describe('MyClass that extends MyBase with MySymbol, MyType', () => {
             myMetadata[mySymbol].expectedType = [ myBaseType ]
           })
           it('is directly associated', () => {
-            const associated = [...Associate.ownTypes(myClass, myMetadata)]
+            const associated = [...Es6Associate.ownTypes(myClass, myMetadata)]
             expect(associated).toEqual([ myType ])
           })
         })
@@ -68,7 +68,7 @@ describe('MyClass that extends MyBase with MySymbol, MyType', () => {
             myEdgeClass[mySymbol] = [ myClass, myClass ]
           })
           it('is transitively associated', () => {
-            const associated = [...Associate.types(
+            const associated = [...Es6Associate.types(
               myEdgeClass, myMetadata, { traverse: true })]
             expect(new Set(associated)).toEqual(new Set([ 
               myType, myClass ]))
@@ -80,21 +80,21 @@ describe('MyClass that extends MyBase with MySymbol, MyType', () => {
           myBase[mySymbol] = myType
         })
         it('is associated', () => {
-          const associated = [...Associate.types(myClass, myMetadata)]
+          const associated = [...Es6Associate.types(myClass, myMetadata)]
           expect(associated).toEqual([ myType ])
         })
         it('is not directly associated', () => {
-          const associated = [...Associate.ownTypes(myClass, myMetadata)]
+          const associated = [...Es6Associate.ownTypes(myClass, myMetadata)]
           expect(associated).toEqual([])
         })
       })
     })
     describe('when associated procedurally...', () => {
       beforeEach(() => {
-        Associate.objectInitialize(myClass, mySymbol, () => myType)
+        Es6Associate.objectInitialize(myClass, mySymbol, () => myType)
       })
       it('is associated', () => {
-        const associated = [...Associate.ownTypes(myClass, myMetadata)]
+        const associated = [...Es6Associate.ownTypes(myClass, myMetadata)]
         expect(associated).toEqual([ myType ])
       })
     })
@@ -111,7 +111,7 @@ describe('MyClass that extends MyBase with MySymbol, MyType', () => {
           myClass[mySymbol] = myType
         })
         it('is directly associated', () => {
-          const associated = [...Associate.ownTypes(
+          const associated = [...Es6Associate.ownTypes(
             myClass, myMetadataPtr)]
           expect(associated).toEqual([ myType ])
         })
@@ -136,19 +136,19 @@ describe('MyClass with MyBase, MySymbol, MyKey, and MyValue', () => {
 
   describe('has no associated...', () => {
     it('object', () => {
-      const associated = Associate.objectGet(myClass, mySymbol)
+      const associated = Es6Associate.objectGet(myClass, mySymbol)
       expect(associated).toBeUndefined()
     })
     it('set', () => {
-      const associated = [...Associate.setGet(myClass, mySymbol)]
+      const associated = [...Es6Associate.setGet(myClass, mySymbol)]
       expect(associated).toEqual([])
     })
     it('map', () => {
-      const associated = Associate.mapGet(myClass, mySymbol, myKey)
+      const associated = Es6Associate.mapGet(myClass, mySymbol, myKey)
       expect(associated).toBeUndefined()
     })
     it('lookup', () => {
-      const associated = [...Associate.lookupGet(myClass, mySymbol, myKey)]
+      const associated = [...Es6Associate.lookupGet(myClass, mySymbol, myKey)]
       expect(associated).toEqual([])
     })
   })
@@ -159,7 +159,7 @@ describe('MyClass with MyBase, MySymbol, MyKey, and MyValue', () => {
         myClass[mySymbol] = myValue
       })
       it('value is associated', () => {
-        const associated = Associate.objectGet(myClass, mySymbol)
+        const associated = Es6Associate.objectGet(myClass, mySymbol)
         expect(associated).toBe(myValue)
       })
     })
@@ -168,62 +168,62 @@ describe('MyClass with MyBase, MySymbol, MyKey, and MyValue', () => {
   describe('after association on MyClass with...', () => {
     describe('object', () => {
       beforeEach(() => {
-        Associate.objectInitialize(myClass, mySymbol, () => myValue)
+        Es6Associate.objectInitialize(myClass, mySymbol, () => myValue)
       })
       it('value is associated', () => {
-        const associated = Associate.objectGet(myClass, mySymbol)
+        const associated = Es6Associate.objectGet(myClass, mySymbol)
         expect(associated).toBe(myValue)
       })
       it('value is directly associated', () => {
-        const associated = Associate.objectGetOwn(myClass, mySymbol)
+        const associated = Es6Associate.objectGetOwn(myClass, mySymbol)
         expect(associated).toBe(myValue)
       })
     })
     describe('set', () => {
       beforeEach(() => {
-        Associate.setAdd(myClass, mySymbol, myValue)
+        Es6Associate.setAdd(myClass, mySymbol, myValue)
       })
       it('value is associated', () => {
-        const associated = [...Associate.setGet(myClass, mySymbol)]
+        const associated = [...Es6Associate.setGet(myClass, mySymbol)]
         expect(associated).toEqual([ myValue ])
       })
       it('value is directly associated', () => {
-        const associated = [...Associate.setGetOwn(myClass, mySymbol)]
+        const associated = [...Es6Associate.setGetOwn(myClass, mySymbol)]
         expect(associated).toEqual([ myValue ])
       })
       describe('then deleted...', () => {
         beforeEach(() => {
-          Associate.setDelete(myClass, mySymbol, myValue)
+          Es6Associate.setDelete(myClass, mySymbol, myValue)
         })
         it('value is not associated', () => {
-          const associated = [...Associate.setGet(myClass, mySymbol)]
+          const associated = [...Es6Associate.setGet(myClass, mySymbol)]
           expect(associated).toEqual([])
         })
       })
     })
     describe('map', () => {
       beforeEach(() => {
-        Associate.mapSet(myClass, mySymbol, myKey, myValue)
+        Es6Associate.mapSet(myClass, mySymbol, myKey, myValue)
       })
       it('value is associated', () => {
-        const associated = Associate.mapGet(myClass, mySymbol, myKey)
+        const associated = Es6Associate.mapGet(myClass, mySymbol, myKey)
         expect(associated).toBe(myValue)
       })
       it('value is directly associated', () => {
-        const associated = Associate.mapGetOwn(myClass, mySymbol, myKey)
+        const associated = Es6Associate.mapGetOwn(myClass, mySymbol, myKey)
         expect(associated).toBe(myValue)
       })
     })
     describe('lookup', () => {
       beforeEach(() => {
-        Associate.lookupAdd(myClass, mySymbol, myKey, myValue)
+        Es6Associate.lookupAdd(myClass, mySymbol, myKey, myValue)
       })
       it('value is associated', () => {
-        const associated = [...Associate.lookupGet(myClass, mySymbol, myKey)]
+        const associated = [...Es6Associate.lookupGet(myClass, mySymbol, myKey)]
         expect(associated).toEqual([ myValue ])
       })
       it('value is directly associated', () => {
-        const associated = [...Associate.lookupGetOwn(myClass, mySymbol, myKey)]
+        const associated = [...Es6Associate.lookupGetOwn(myClass, mySymbol, myKey)]
         expect(associated).toEqual([ myValue ])
       })
     })
@@ -232,53 +232,53 @@ describe('MyClass with MyBase, MySymbol, MyKey, and MyValue', () => {
   describe('after association on MyBase with...', () => {
     describe('object', () => {
       beforeEach(() => {
-        Associate.objectInitialize(myBase, mySymbol, () => myValue)
+        Es6Associate.objectInitialize(myBase, mySymbol, () => myValue)
       })
       it('value is associated', () => {
-        const associated = Associate.objectGet(myClass, mySymbol)
+        const associated = Es6Associate.objectGet(myClass, mySymbol)
         expect(associated).toBe(myValue)
       })
       it('value is not directly associated', () => {
-        const associated = Associate.objectGetOwn(myClass, mySymbol)
+        const associated = Es6Associate.objectGetOwn(myClass, mySymbol)
         expect(associated).toBeUndefined()
       })
     })
     describe('set', () => {
       beforeEach(() => {
-        Associate.setAdd(myBase, mySymbol, myValue)
+        Es6Associate.setAdd(myBase, mySymbol, myValue)
       })
       it('value is associated', () => {
-        const associated = [...Associate.setGet(myClass, mySymbol)]
+        const associated = [...Es6Associate.setGet(myClass, mySymbol)]
         expect(associated).toEqual([ myValue ])
       })
       it('value is not directly associated', () => {
-        const associated = [...Associate.setGetOwn(myClass, mySymbol)]
+        const associated = [...Es6Associate.setGetOwn(myClass, mySymbol)]
         expect(associated).toEqual([])
       })
     })
     describe('map', () => {
       beforeEach(() => {
-        Associate.mapSet(myBase, mySymbol, myKey, myValue)
+        Es6Associate.mapSet(myBase, mySymbol, myKey, myValue)
       })
       it('value is associated', () => {
-        const associated = Associate.mapGet(myClass, mySymbol, myKey)
+        const associated = Es6Associate.mapGet(myClass, mySymbol, myKey)
         expect(associated).toBe(myValue)
       })
       it('value is not directly associated', () => {
-        const associated = Associate.mapGetOwn(myClass, mySymbol, myKey)
+        const associated = Es6Associate.mapGetOwn(myClass, mySymbol, myKey)
         expect(associated).toBeUndefined()
       })
     })
     describe('lookup', () => {
       beforeEach(() => {
-        Associate.lookupAdd(myBase, mySymbol, myKey, myValue)
+        Es6Associate.lookupAdd(myBase, mySymbol, myKey, myValue)
       })
       it('value is associated', () => {
-        const associated = [...Associate.lookupGet(myClass, mySymbol, myKey)]
+        const associated = [...Es6Associate.lookupGet(myClass, mySymbol, myKey)]
         expect(associated).toEqual([ myValue ])
       })
       it('value is not directly associated', () => {
-        const associated = [...Associate.lookupGetOwn(myClass, mySymbol, myKey)]
+        const associated = [...Es6Associate.lookupGetOwn(myClass, mySymbol, myKey)]
         expect(associated).toEqual([])
       })
     })
@@ -287,31 +287,31 @@ describe('MyClass with MyBase, MySymbol, MyKey, and MyValue', () => {
   describe('after similar association on MyClass and MyBase with...', () => {
     describe('set', () => {
       beforeEach(() => {
-        Associate.setAdd(myClass, mySymbol, myValue)
-        Associate.setAdd(myBase, mySymbol, myValue)
+        Es6Associate.setAdd(myClass, mySymbol, myValue)
+        Es6Associate.setAdd(myBase, mySymbol, myValue)
       })
       it('value is associated once', () => {
-        const associated = [...Associate.setGet(myClass, mySymbol)]
+        const associated = [...Es6Associate.setGet(myClass, mySymbol)]
         expect(associated).toEqual([ myValue ])
       })
     })
     describe('lookup', () => {
       beforeEach(() => {
-        Associate.lookupAdd(myClass, mySymbol, myKey, myValue)
-        Associate.lookupAdd(myBase, mySymbol, myKey, myValue)
+        Es6Associate.lookupAdd(myClass, mySymbol, myKey, myValue)
+        Es6Associate.lookupAdd(myBase, mySymbol, myKey, myValue)
       })
       it('value is associated once', () => {
-        const associated = [...Associate.lookupGet(myClass, mySymbol, myKey)]
+        const associated = [...Es6Associate.lookupGet(myClass, mySymbol, myKey)]
         expect(associated).toEqual([ myValue ])
       })
     })
     describe('map', () => {
       beforeEach(() => {
-        Associate.mapSet(myClass, mySymbol, myKey, myValue)
-        Associate.mapSet(myBase, mySymbol, myKey, myValue)
+        Es6Associate.mapSet(myClass, mySymbol, myKey, myValue)
+        Es6Associate.mapSet(myBase, mySymbol, myKey, myValue)
       })
       it('value is associated once', () => {
-        const associated = Associate.mapGet(myClass, mySymbol, myKey)
+        const associated = Es6Associate.mapGet(myClass, mySymbol, myKey)
         expect(associated).toBe(myValue)
       })
     })
@@ -325,85 +325,85 @@ describe('MyClass with MyBase, MySymbol, MyKey, and MyValue', () => {
 
     describe('object', () => {
       beforeEach(() => {
-        Associate.objectInitialize(myBase, mySymbol, () => myBaseValue)
-        Associate.objectInitialize(myClass, mySymbol, () => myValue)
+        Es6Associate.objectInitialize(myBase, mySymbol, () => myBaseValue)
+        Es6Associate.objectInitialize(myClass, mySymbol, () => myValue)
       })
       it('value is associated', () => {
-        const associated = Associate.objectGet(myClass, mySymbol)
+        const associated = Es6Associate.objectGet(myClass, mySymbol)
         expect(associated).toBe(myValue)
       })
       describe('after copying to MyOtherClass...', () => {
         let myOtherClass
         beforeEach(() => {
           myOtherClass = class MyOtherClass extends myBase { }
-          Associate.objectCopy(myOtherClass, myClass, mySymbol)
+          Es6Associate.objectCopy(myOtherClass, myClass, mySymbol)
         })
         it('myValue is associated', () => {
-          const associated = Associate.objectGet(myOtherClass, mySymbol)
+          const associated = Es6Associate.objectGet(myOtherClass, mySymbol)
           expect(associated).toBe(myValue)
         })
       })
     })
     describe('map', () => {
       beforeEach(() => {
-        Associate.mapSet(myBase, mySymbol, myKey, myBaseValue)
-        Associate.mapSet(myClass, mySymbol, myKey, myValue)
+        Es6Associate.mapSet(myBase, mySymbol, myKey, myBaseValue)
+        Es6Associate.mapSet(myClass, mySymbol, myKey, myValue)
       })
 
       it('value is associated', () => {
-        const associated = Associate.mapGet(myClass, mySymbol, myKey)
+        const associated = Es6Associate.mapGet(myClass, mySymbol, myKey)
         expect(associated).toBe(myValue)
       })
       describe('after copying to MyOtherClass...', () => {
         let myOtherClass
         beforeEach(() => {
           myOtherClass = class MyOtherClass extends myBase { }
-          Associate.mapCopy(myOtherClass, myClass, mySymbol, myKey)
+          Es6Associate.mapCopy(myOtherClass, myClass, mySymbol, myKey)
         })
         it('myValue is associated', () => {
-          const associated = Associate.mapGet(myOtherClass, mySymbol, myKey)
+          const associated = Es6Associate.mapGet(myOtherClass, mySymbol, myKey)
           expect(associated).toBe(myValue)
         })
       })
     })
     describe('set', () => {
       beforeEach(() => {
-        Associate.setAdd(myBase, mySymbol, myBaseValue)
-        Associate.setAdd(myClass, mySymbol, myValue)
+        Es6Associate.setAdd(myBase, mySymbol, myBaseValue)
+        Es6Associate.setAdd(myClass, mySymbol, myValue)
       })
       it('value and myBaseValue are associated', () => {
-        const associated = [...Associate.setGet(myClass, mySymbol)]
+        const associated = [...Es6Associate.setGet(myClass, mySymbol)]
         expect(new Set(associated)).toEqual(new Set([ myBaseValue, myValue ]))
       })
       describe('after copying to MyOtherClass...', () => {
         let myOtherClass
         beforeEach(() => {
           myOtherClass = class MyOtherClass extends myBase { }
-          Associate.setCopy(myOtherClass, myClass, mySymbol)
+          Es6Associate.setCopy(myOtherClass, myClass, mySymbol)
         })
         it('value and myBaseValue are associated', () => {
-          const associated = [...Associate.setGet(myOtherClass, mySymbol)]
+          const associated = [...Es6Associate.setGet(myOtherClass, mySymbol)]
           expect(new Set(associated)).toEqual(new Set([ myBaseValue, myValue ]))
         })
       })
     })
     describe('lookup', () => {
       beforeEach(() => {
-        Associate.lookupAdd(myBase, mySymbol, myKey, myBaseValue)
-        Associate.lookupAdd(myClass, mySymbol, myKey, myValue)
+        Es6Associate.lookupAdd(myBase, mySymbol, myKey, myBaseValue)
+        Es6Associate.lookupAdd(myClass, mySymbol, myKey, myValue)
       })
       it('value and myBaseValue are associated', () => {
-        const associated = [...Associate.lookupGet(myClass, mySymbol, myKey)]
+        const associated = [...Es6Associate.lookupGet(myClass, mySymbol, myKey)]
         expect(new Set(associated)).toEqual(new Set([ myBaseValue, myValue ]))
       })
       describe('after copying to MyOtherClass...', () => {
         let myOtherClass
         beforeEach(() => {
           myOtherClass = class MyOtherClass extends myBase { }
-          Associate.lookupCopy(myOtherClass, myClass, mySymbol, myKey)
+          Es6Associate.lookupCopy(myOtherClass, myClass, mySymbol, myKey)
         })
         it('value and myBaseValue are associated', () => {
-          const associated = [...Associate.lookupGet(myOtherClass, mySymbol, myKey)]
+          const associated = [...Es6Associate.lookupGet(myOtherClass, mySymbol, myKey)]
           expect(new Set(associated)).toEqual(new Set([ myBaseValue, myValue ]))
         })
       })

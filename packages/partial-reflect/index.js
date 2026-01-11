@@ -2,7 +2,7 @@ import { assert } from '@kingjs/assert'
 import { isPojo } from '@kingjs/pojo-test'
 import { Es6Reflect } from '@kingjs/es6-info'
 import { isAbstract } from '@kingjs/abstract'
-import { Associate } from '@kingjs/associate'
+import { Es6Associate } from '@kingjs/es6-associate'
 import { PartialPojo } from '@kingjs/partial-pojo'
 import { PartialObject } from '@kingjs/partial-object'
 import { Descriptor } from '@kingjs/descriptor'
@@ -156,12 +156,12 @@ function prototypicalCreate(type) {
   PartialReflect.mergeInherited$(inheritedPrototypicalType, type)
   PartialReflect.mergeOwn$(prototypicalType, type)
   
-  Associate.objectInitialize(inheritedPrototypicalType, 
+  Es6Associate.objectInitialize(inheritedPrototypicalType, 
     PartialReflect.PrototypicalHost, 
     () => type)
   
   // HACK: A PartialObject should not report being merged with itself.
-  Associate.setDelete(
+  Es6Associate.setDelete(
     prototypicalType, 
     PartialReflect.Declarations, 
     type)
@@ -196,7 +196,7 @@ export class PartialReflect {
   static getPrototypicalType$(type) {
     if (!PartialReflect.isPartialObject(type)) return type
 
-    const prototypicalType = Associate.objectInitialize(
+    const prototypicalType = Es6Associate.objectInitialize(
       type, PartialReflect.PrototypicalType, prototypicalCreate)
 
     return prototypicalType
@@ -204,7 +204,7 @@ export class PartialReflect {
 
   static getPrototypicalHost$(type) {
     if (!(type.prototype instanceof Prototypical)) return type
-    return Associate.objectGet(type, PartialReflect.PrototypicalHost)
+    return Es6Associate.objectGet(type, PartialReflect.PrototypicalHost)
   }
 
   static getPartialObjectType(type) {
@@ -224,11 +224,11 @@ export class PartialReflect {
 
   static *ownPartialObjects(type) {
     if (PartialReflect.isPartialObject(type)) {
-      yield* Associate.ownTypes(type, 
+      yield* Es6Associate.ownTypes(type, 
         PartialObject.OwnCollectionSymbols)
     }
     else {
-      yield* Associate.ownTypes(type, 
+      yield* Es6Associate.ownTypes(type, 
         { [PartialReflect.Declarations]: { } })
     }
   }
@@ -238,7 +238,7 @@ export class PartialReflect {
       yield* PartialReflect.partialObjects(prototypicalType)
     }
     else {
-      yield* Associate.types(type, 
+      yield* Es6Associate.types(type, 
         { [PartialReflect.Declarations]: { } })
     }
   }
@@ -288,7 +288,7 @@ export class PartialReflect {
   static getDescriptors(type) {
     if (PartialReflect.isPartialObject(type)) {
       const prototypicalType = PartialReflect.getPrototypicalType$(type)
-      return Associate.objectInitialize(type, PartialReflect.Descriptors, 
+      return Es6Associate.objectInitialize(type, PartialReflect.Descriptors, 
         () => PartialReflect.getDescriptors(prototypicalType))
     }
     else {
@@ -326,20 +326,20 @@ export class PartialReflect {
     assert(!(partialObject.prototype instanceof PartialPojo)) 
 
     for (const [key, defined] of keys) {
-      Associate.lookupAdd(type, PartialReflect.HostLookup, key, partialObject)
+      Es6Associate.lookupAdd(type, PartialReflect.HostLookup, key, partialObject)
       if (!defined) continue
-      Associate.mapSet(type, PartialReflect.HostMap, key, partialObject)
+      Es6Associate.mapSet(type, PartialReflect.HostMap, key, partialObject)
     }
   }
   static mergeAssociations$(type, partialObject, keys) {
     assert(!(partialObject.prototype instanceof PartialPojo)) 
     
     const prototypicalType = PartialReflect.getPrototypicalType$(partialObject)
-    Associate.setCopy(type, prototypicalType, PartialReflect.Declarations)
+    Es6Associate.setCopy(type, prototypicalType, PartialReflect.Declarations)
     for (const [key, defined] of keys) {
-      Associate.lookupCopy(type, prototypicalType, PartialReflect.HostLookup, key)
+      Es6Associate.lookupCopy(type, prototypicalType, PartialReflect.HostLookup, key)
       if (!defined) continue
-      Associate.mapCopy(type, prototypicalType, PartialReflect.HostMap, key)
+      Es6Associate.mapCopy(type, prototypicalType, PartialReflect.HostMap, key)
     }
   }
   static mergeInherited$(type, partialObject) {
@@ -359,7 +359,7 @@ export class PartialReflect {
         continue
       }
 
-      Associate.setAdd(type, PartialReflect.Declarations, child)
+      Es6Associate.setAdd(type, PartialReflect.Declarations, child)
       PartialReflect.mergeAssociations$(type, child, keys)
     }
   }
@@ -376,7 +376,7 @@ export class PartialReflect {
     // PartialPojo members are transparent.
     if (partialObject.prototype instanceof PartialPojo) return
 
-    Associate.setAdd(type, PartialReflect.Declarations, partialObject)
+    Es6Associate.setAdd(type, PartialReflect.Declarations, partialObject)
     PartialReflect.associateKeys$(type, partialObject, keys)
   }
   static merge(type, partialObject) {
@@ -389,7 +389,7 @@ export class PartialReflect {
     // For example, all concepts that defined the key
     const prototypicalType = PartialReflect.getPrototypicalType$(type)
     if (!(key in prototypicalType.prototype)) return null
-    const result = [...Associate.lookupGet(
+    const result = [...Es6Associate.lookupGet(
       prototypicalType, PartialReflect.HostLookup, key)]
     if (result.length == 0) yield type
     else yield* result
@@ -398,7 +398,7 @@ export class PartialReflect {
     // returns partial class that defined the key
     const prototypicalType = PartialReflect.getPrototypicalType$(type)
     if (!(key in prototypicalType.prototype)) return null
-    return Associate.mapGet(
+    return Es6Associate.mapGet(
       prototypicalType, PartialReflect.HostMap, key) || type
   }
 
