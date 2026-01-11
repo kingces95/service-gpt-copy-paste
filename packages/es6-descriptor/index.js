@@ -5,7 +5,7 @@ import {
   SetterDescriptor,
   PropertyDescriptor,
 } from '@kingjs/descriptor'
-import { es6Typeof } from './es6-typeof.js'
+import { es6Typeof } from '@kingjs/es6-typeof'
 
 export class Es6Descriptor {
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Es6Descriptor } from './es6-descriptor.js'
+import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { Descriptor } from '@kingjs/descriptor'
 
 const {

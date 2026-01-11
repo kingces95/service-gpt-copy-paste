@@ -1,6 +1,6 @@
 import { assert } from '@kingjs/assert'
 import { Descriptor } from '@kingjs/descriptor'
-import { es6Typeof } from '@kingjs/es6-info'
+import { es6Typeof } from '@kingjs/es6-typeof'
 
 const {
   hasGetter,

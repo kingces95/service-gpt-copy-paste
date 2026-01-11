@@ -1,6 +1,6 @@
 import { assert } from "@kingjs/assert"
 import { isAbstract } from "@kingjs/abstract"
-import { es6Typeof } from "./es6-typeof.js"
+import { es6Typeof } from '@kingjs/es6-typeof'
 import { 
   Es6Descriptor,
   Es6FieldDescriptor,
@@ -8,7 +8,7 @@ import {
   Es6GetterDescriptor,
   Es6SetterDescriptor,
   Es6PropertyDescriptor, 
-} from './es6-descriptor.js'
+} from '@kingjs/es6-descriptor'
 
 export class Es6DescriptorInfo {
   static create(descriptor) {

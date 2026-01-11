@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { es6Typeof } from './es6-typeof.js'
+import { es6Typeof } from '@kingjs/es6-typeof'
 
 describe('es6Typeof', () => {
   it('should return number for numbers', () => {

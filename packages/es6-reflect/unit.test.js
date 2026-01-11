@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Es6Reflect } from './es6-reflect.js'
+import { Es6Reflect } from '@kingjs/es6-reflect'
 
 describe('Extended and base classes', () => {
   describe.each([

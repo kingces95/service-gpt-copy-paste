@@ -1,6 +1,7 @@
 import { assert } from '@kingjs/assert'
 import { abstract } from '@kingjs/abstract'
-import { Es6Reflect, Es6Descriptor } from '@kingjs/es6-info'
+import { Es6Reflect } from '@kingjs/es6-info'
+import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { PartialObject } from '@kingjs/partial-object'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { PartialClass, Extends } from '@kingjs/partial-class'

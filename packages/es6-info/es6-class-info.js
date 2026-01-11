@@ -1,7 +1,7 @@
 import { assert } from '@kingjs/assert'
 import { es6BaseType } from '@kingjs/es6-base-type'
-import { Es6Reflect } from './es6-reflect.js'
-import { Es6Descriptor } from './es6-descriptor.js'
+import { Es6Reflect } from '@kingjs/es6-reflect'
+import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { 
   Es6DescriptorInfo, 
   Es6GetterDescriptorInfo,
@@ -12,7 +12,7 @@ import {
 } from './es6-descriptor-info.js'
 import { Es6IdInfo } from './es6-id-info.js'
 import { Es6KeyInfo } from './es6-key-info.js'
-import { es6Typeof } from "./es6-typeof.js"
+import { es6Typeof } from '@kingjs/es6-typeof'
 import util from 'util'
 
 const Es6ClassWeakMap = new WeakMap()
@@ -125,7 +125,7 @@ export class Es6ClassInfo {
     if (this.equals(Es6ClassInfo.Function)) return true
     return false
   }
-  
+
   get base() { return Es6ClassInfo.from(es6BaseType(this.ctor)) }
 
   *ownInstanceMembers() { yield* this.ownMembers$({ isStatic: false }) }
