@@ -120,11 +120,7 @@ export class Es6ClassInfo {
   get name() { return this.id.value }
   get isNonPublic() { return this.id.isNonPublic }
   get isAnonymous() { return this.id.isAnonymous }
-  get isKnown() {
-    if (this.equals(Es6ClassInfo.Object)) return true
-    if (this.equals(Es6ClassInfo.Function)) return true
-    return false
-  }
+  get isKnown() { return Es6Reflect.isKnown(this.ctor) }
 
   get base() { return Es6ClassInfo.from(es6BaseType(this.ctor)) }
 

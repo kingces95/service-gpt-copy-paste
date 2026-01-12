@@ -48,10 +48,6 @@ const Es6ObjectPrototypeMethods = [
   "valueOf",
 ]
 
-const {
-  keys,
-} = Es6Reflect
-
 // All members of object and function are known members (not user defined)
 describe('Es6ClassInfo ur type invariants:', () => {
   describe.each([
@@ -211,7 +207,7 @@ describe('Es6ClassInfo known type invariants:', () => {
 
       let keySet
       beforeEach(() => {
-        keySet = new Set(keys(prototype, null))
+        keySet = new Set(Es6Reflect.keys(prototype, null))
 
         // remove object runtime names and symbols
         for (const nameOrSymbol of Es6ObjectRuntimeNameOrSymbol)

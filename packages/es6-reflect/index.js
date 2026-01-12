@@ -1,3 +1,5 @@
+import assert from 'assert'
+
 const KnownInstanceMembers = new Set([ 'constructor' ])
 const KnownStaticMembers = new Set([ 'length', 'name', 'prototype' ])
 
@@ -15,21 +17,19 @@ export class Es6Reflect {
     }
   }
 
-  static *names(prototype, root = Object) {
+  static *keys(prototype, root = Object) {
+    // assert(root == Object)
     yield *Es6Reflect.#keys(prototype, root, Object.getOwnPropertyNames)
-  }
-
-  static *symbols(prototype, root = Object) {
     yield *Es6Reflect.#keys(prototype, root, Object.getOwnPropertySymbols)
   }
 
-  static *keys(prototype, root = Object) {
-    yield* Es6Reflect.names(prototype, root)
-    yield* Es6Reflect.symbols(prototype, root)
-  }
-
-  static *memberKeys(prototype, root = Object) {
-    yield *Es6Reflect.#keys(prototype, root, Es6Reflect.ownMemberKeys)
+  static isKnown(prototype) {
+    // instance
+    return prototype == Object.prototype 
+      || prototype == Function.prototype
+      // static
+      || prototype == Object
+      || prototype == Function
   }
 
   static isKnownInstanceMember(name) {
@@ -38,6 +38,10 @@ export class Es6Reflect {
 
   static isKnownStaticMember(name) {
     return KnownStaticMembers.has(name)
+  }
+
+  static *memberKeys(prototype, root = Object) {
+    yield *Es6Reflect.#keys(prototype, root, Es6Reflect.ownMemberKeys)
   }
 
   static *ownMemberKeys(prototype) {

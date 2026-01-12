@@ -48,18 +48,10 @@ describe('Extended and base classes', () => {
     
         // members is a unique union of extended and base members as an array
         members = [...new Set([...extendedMembers, ...baseMembers])].filter(Boolean)
-        names = members.filter(name => typeof name === 'string')
-        symbols = members.filter(name => typeof name === 'symbol')
       })
     
       it('has all members in its prototype', () => {
         expect([...Es6Reflect.keys(extended.prototype)]).toEqual(members)
-      })
-      it('has all names', () => {
-        expect([...Es6Reflect.names(extended.prototype)]).toEqual(names)
-      })
-      it('has all symbols', () => {
-        expect([...Es6Reflect.symbols(extended.prototype)]).toEqual(symbols)
       })
     })
   })
