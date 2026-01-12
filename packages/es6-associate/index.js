@@ -87,8 +87,8 @@ export class Es6Associate {
     if (!options.visited) options = { ...options, visited: new Set() }
     const { traverse, visited } = options
     
-    for (const prototype of Es6Reflect.prototypeHierarchy(type)) {
-      for (const associatedType of Es6Associate.ownTypes(prototype, symbols)) {
+    for (const current of Es6Reflect.staticHierarchy(type)) {
+      for (const associatedType of Es6Associate.ownTypes(current, symbols)) {
 
         if (visited.has(associatedType)) continue
         visited.add(associatedType)

@@ -7,12 +7,6 @@ import { PartialPojo } from '@kingjs/partial-pojo'
 import { PartialObject } from '@kingjs/partial-object'
 import { Descriptor } from '@kingjs/descriptor'
 
-const {
-  memberKeys,
-  ownMemberKeys,
-  isExtensionOf,
-} = Es6Reflect
-
 // The PartialReflect API provides reflection over PartialObject. For
 // example, to verify that a type is a PartialObject use:
 //    PartialReflect.isPartialObject(type)
@@ -255,7 +249,7 @@ export class PartialReflect {
       }
     }
     else {
-      yield* ownMemberKeys(type.prototype) 
+      yield* Es6Reflect.ownInstanceKeys(type) 
     }
   }
   static *keys(type) { 
@@ -264,7 +258,7 @@ export class PartialReflect {
       yield* PartialReflect.keys(prototypicalType)    
     } 
     else {
-      yield* memberKeys(type.prototype)
+      yield* Es6Reflect.instanceKeys(type)
     }
   }
 
@@ -281,7 +275,7 @@ export class PartialReflect {
 
   static getOwnDescriptors(type) {
     const descriptors = { }
-    for (const key of ownMemberKeys(type.prototype))
+    for (const key of Es6Reflect.ownInstanceKeys(type))
       descriptors[key] = PartialReflect.getOwnDescriptor(type, key)
     return descriptors
   }
@@ -407,7 +401,8 @@ export class PartialReflect {
       const [type] = [class extends PartialPojo { }]
       const prototype = type.prototype
   
-      for (const key of ownMemberKeys(pojoOrType)) {
+      for (const key of Reflect.ownKeys(pojoOrType)) {
+        if (key === 'constructor') continue
         const descriptor = Object.getOwnPropertyDescriptor(pojoOrType, key)
         Object.defineProperty(prototype, key, descriptor)
       }
@@ -415,7 +410,7 @@ export class PartialReflect {
       return type
     }
 
-    assert(isExtensionOf(pojoOrType, PartialObject),
+    assert(Es6Reflect.isExtensionOf(pojoOrType, PartialObject),
       `Expected arg to be a PartialObject.`)
 
     return pojoOrType

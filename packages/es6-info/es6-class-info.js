@@ -230,13 +230,7 @@ export class Es6MemberInfo {
   get isKnown() {
     if (this.host.isKnown) return true
 
-    if (this.isStatic) {
-      if (Es6Reflect.isKnownStaticMember(this.name)) return true
-    } else {
-      if (Es6Reflect.isKnownInstanceMember(this.name)) return true
-    }
-
-    return false
+    return Es6Reflect.isKnownKey$(this.host.ctor, this.name, this.isStatic)
   }
   get isAbstract() { return this.#descriptorInfo.isAbstract }
 

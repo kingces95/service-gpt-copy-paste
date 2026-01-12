@@ -2,57 +2,126 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 
-describe('Extended and base classes', () => {
-  describe.each([
-    ['names', true],
-    ['symbols', false],
-  ])('with %s', (_, isNames) => {
-    describe.each([
-      '|',
-      'a|',
-      'a,b|',
-      'a|a',
-      '|a',
-      '|a,b',
-      'a,b|a,b',
-    ])('%s', (declarations) => {
-      let extended
-      let base
-      let members
-      let names
-      let symbols
-    
-      beforeEach(() => {
-        base = class { }
-        extended = class extends base { }
-        const [extendedMembers$, baseMembers$] = declarations.split('|')
-        const extendedMembers = extendedMembers$.split(',').filter(Boolean)
-        const baseMembers = baseMembers$.split(',').filter(Boolean)
+const ObjectMd = {
+  name: 'Object',
+  type: Object,
+  staticChain: [ Object ],
+  instanceChain: [ Object ],
+  isKnown: true,
+}
 
-        if (!isNames) {
-          extendedMembers.forEach((name, i) => extendedMembers[i] = Symbol.for(name))
-          baseMembers.forEach((name, i) => baseMembers[i] = Symbol.for(name))
-        }
-    
-        extendedMembers.unshift('constructor')
-        extendedMembers.reduce((prototype, name) => {
-          prototype[name] = null
-          return prototype
-        }, extended.prototype)
-    
-        baseMembers.unshift('constructor')
-        baseMembers.reduce((prototype, name) => {
-          prototype[name] = null
-          return prototype
-        }, base.prototype)
-    
-        // members is a unique union of extended and base members as an array
-        members = [...new Set([...extendedMembers, ...baseMembers])].filter(Boolean)
-      })
-    
-      it('has all members in its prototype', () => {
-        expect([...Es6Reflect.keys(extended.prototype)]).toEqual(members)
-      })
-    })
+const FunctionMd = {
+  name: 'Function',
+  type: Function,
+  staticChain: [ ],
+  instanceChain: [ Function, Object ],
+  isKnown: true,
+}
+
+const MyFunction = function() { }
+const MyFunctionMd = {
+  name: 'MyFunction',
+  type: MyFunction,
+  staticChain: [ MyFunction ],
+  instanceChain: [ MyFunction, Object ],
+  isKnown: false,
+}
+
+const MyClass = class { 
+  static staticMember() { }
+  static staticBaseMember() { }
+  member() { }
+  baseMember() { }
+}
+const MyClassMd = {
+  name: 'MyClass',
+  type: MyClass,
+  staticChain: [ MyClass ],
+  instanceChain: [ MyClass, Object ],
+  isKnown: false,
+  ownInstanceKeys: [ 'member', 'baseMember' ],
+  ownStaticKeys: [ 'staticMember', 'staticBaseMember' ],
+  instanceKeys: [ 'member', 'baseMember' ],
+  staticKeys: [ 'staticMember', 'staticBaseMember' ],
+}
+
+const MyExtendedClass = class extends MyClass { 
+  static staticMember() { }
+  static extendedStaticMember() { }
+  member() { }
+  extendedMember() { }
+}
+const MyExtendedClassMd = {
+  name: 'MyExtendedClass',
+  type: MyExtendedClass,
+  staticChain: [ MyExtendedClass, MyClass ],
+  instanceChain: [ MyExtendedClass, MyClass, Object ],
+  isKnown: false,
+  ownInstanceKeys: [ 'member', 'extendedMember' ],
+  ownStaticKeys: [ 'staticMember', 'extendedStaticMember' ],
+  instanceKeys: [ 'member', 'extendedMember', 'baseMember' ],
+  staticKeys: [ 'staticMember', 'extendedStaticMember', 'staticBaseMember' ],
+}
+
+const Classes = [
+  [ObjectMd.name, ObjectMd],
+  [FunctionMd.name, FunctionMd],
+  [MyFunctionMd.name, MyFunctionMd],
+  [MyClassMd.name, MyClassMd],
+  [MyExtendedClassMd.name, MyExtendedClassMd],
+]
+
+// test Es6Reflect
+describe.each(Classes)('%s', (_, classMd) => {
+  let type
+  beforeEach(() => {
+    ({ type } = classMd)
+  })
+  it('has correct instance hierarchy', () => {
+    const expected = classMd.instanceChain
+    const actual = [...Es6Reflect.instanceHierarchy(type)]
+    expect(actual).toEqual(expected)
+  })
+  it('has correct static hierarchy', () => {
+    const expected = classMd.staticChain
+    const actual = [...Es6Reflect.staticHierarchy(type)]
+    expect(actual).toEqual(expected)
+  })
+  it('has correct own instance keys', () => {
+    const expected = classMd.ownInstanceKeys || []
+    const actual = [...Es6Reflect.ownInstanceKeys(type)]
+    // sort for comparison
+    expected.sort()
+    actual.sort()
+    expect(actual).toEqual(expected)
+  })
+  it('has correct own static keys', () => {
+    const expected = classMd.ownStaticKeys || []
+    const actual = [...Es6Reflect.ownStaticKeys(type)]
+    // sort for comparison
+    expected.sort()
+    actual.sort()
+    expect(actual).toEqual(expected)
+  })
+  it('has correct instance keys', () => {
+    const expected = classMd.instanceKeys || []
+    const actual = [...Es6Reflect.instanceKeys(type)]
+    // sort for comparison
+    expected.sort()
+    actual.sort()
+    expect(actual).toEqual(expected)
+  })
+  it('has correct static keys', () => {
+    const expected = classMd.staticKeys || []
+    const actual = [...Es6Reflect.staticKeys(type)]
+    // sort for comparison
+    expected.sort()
+    actual.sort()
+    expect(actual).toEqual(expected)
+  })
+  it('has correct isKnown result', () => {
+    const expected = classMd.isKnown
+    const actual = Es6Reflect.isKnown(type)
+    expect(actual).toBe(expected)
   })
 })

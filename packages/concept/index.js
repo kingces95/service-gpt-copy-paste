@@ -6,11 +6,6 @@ import { PartialObject } from '@kingjs/partial-object'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { PartialClass, Extends } from '@kingjs/partial-class'
 
-const {
-  ownStaticMemberKeys,
-  isExtensionOf,
-} = Es6Reflect
-
 export const Implements = Symbol('Concept.Implements')
 
 const KnownStaticMembers = new Set([
@@ -29,7 +24,7 @@ export class Concept extends PartialObject {
   // instance of a PartialObject much less a Concept (except for the prototype of
   // the class itself). So it is reasonable to override the behavior of
   // instanceof to test if an instance satisfies the concept. For reflection, use
-  // Reflection.isExtensionOf(type, concept).
+  // Es6Reflect.isExtensionOf(type, concept).
   static [Symbol.hasInstance](instance) {
     return ConceptReflect.satisfies(instance, this)
   }
@@ -96,12 +91,12 @@ export class ConceptReflect {
     if (!ConceptReflect.isConcept(type))
       return
 
-    for (const name of ownStaticMemberKeys(type)) {
+    for (const name of Es6Reflect.ownStaticKeys(type)) {
       if (KnownStaticMembers.has(name)) continue
 
       const concept = type[name]
       if (typeof concept != 'function') continue
-      if (!isExtensionOf(concept, Concept)) continue
+      if (!Es6Reflect.isExtensionOf(concept, Concept)) continue
 
       yield [name, concept]
     }
@@ -111,7 +106,7 @@ export class ConceptReflect {
     if (typeof instance != 'object' || instance == null)
       return false
 
-    assert(isExtensionOf(concept, Concept),
+    assert(Es6Reflect.isExtensionOf(concept, Concept),
       `Argument concept must extend Concept.`)
 
     // Associate concepts allow for 

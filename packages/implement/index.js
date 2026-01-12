@@ -4,14 +4,10 @@ import { Es6Reflect } from '@kingjs/es6-info'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { Concept } from '@kingjs/concept'
 
-const {
-  isExtensionOf,
-} = Es6Reflect
-
 export function implement(type, concept, implementation = { }) {
   assert(typeof type == 'function',
     'Type must be a function (e.g. class or function).')
-  assert(isExtensionOf(concept, Concept),
+  assert(Es6Reflect.isExtensionOf(concept, Concept),
     'Argument concept must extend Concept.')
 
   // if pojo, create anonymous partial class from pojo
