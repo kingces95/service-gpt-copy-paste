@@ -1,9 +1,8 @@
-import assert from 'assert'
-
 const KnownInstanceMembers = new Set([ 'constructor' ])
 const KnownStaticMembers = new Set([ 'length', 'name', 'prototype' ])
 
-// New version that is static and known aware. Takes type instead of prototype.
+// Es6Reflect, like Reflect but operates on Type and is static aware.
+
 export class Es6Reflect {
   static *#prototypeChain(object) {
     while (object) {
@@ -12,10 +11,23 @@ export class Es6Reflect {
     }
   }
 
-  static *#hierarchy(type, isStatic) {
-    yield* isStatic
-      ? Es6Reflect.staticHierarchy(type)
-      : Es6Reflect.instanceHierarchy(type)
+  static *hierarchy$(type, isStatic) {
+    if (isStatic) {
+      for (const object of Es6Reflect.#prototypeChain(type)) {
+
+        // Suppress Function.prototype; the fact that an Es6 
+        // class is a function is not relevant to static hierarchy 
+        // declared in source code; Effect is to exclude methods 
+        // like call, bind, apply, etc.
+        if (object == Function.prototype) break
+        
+        yield object
+      }
+    }
+    else {
+      for (const object of Es6Reflect.#prototypeChain(type.prototype))
+        yield object.constructor
+    }
   }
 
   static isKnownKey$(type, name, isStatic) {
@@ -25,49 +37,79 @@ export class Es6Reflect {
       : KnownInstanceMembers.has(name)
   }
 
-  static *#ownKeys(type, isStatic) {
+  static *ownKeys$(type, isStatic) {
     const keys = isStatic
       ? Reflect.ownKeys(type)
       : Reflect.ownKeys(type.prototype)
 
-    for (const name of keys) {
-      if (Es6Reflect.isKnownKey$(type, name, isStatic)) continue
-      yield name
-    }
+    yield* keys
   }
 
-  static *#keys(type, isStatic) {
+  static *members$(type, isStatic) {
     const visited = new Set()
-    for (const current of Es6Reflect.#hierarchy(type, isStatic)) {
-      for (const name of Es6Reflect.#ownKeys(current, isStatic)) {
+    for (const current of Es6Reflect.hierarchy$(type, isStatic)) {
+      for (const name of Es6Reflect.ownKeys$(current, isStatic)) {
         if (visited.has(name)) continue
         visited.add(name)
-        yield name
+        yield [name, current]
       }
     }
   }
 
-  // type hierarchies
-  static *staticHierarchy(type) {
-    for (const object of Es6Reflect.#prototypeChain(type)) {
-
-      // Suppress Function.prototype; the fact that an Es6 
-      // class is a function is not relevant to static hierarchy 
-      // declared in source code; Naturally will exclude methods 
-      // like call, bind, apply, etc.
-      if (object == Function || object == Function.prototype) break
-      
-      yield object
+  static *ownDescriptors$(type, isStatic) {
+    const ownKeys = Es6Reflect.ownKeys$(type, isStatic)
+    for (const key of ownKeys) {
+      const descriptor = Es6Reflect.getOwnDescriptor$(type, key, isStatic)
+      yield [key, descriptor]
     }
   }
+
+  static getOwnDescriptor$(type, name, isStatic) {
+    const object = isStatic
+      ? type
+      : type.prototype
+
+    return Object.getOwnPropertyDescriptor(object, name)
+  }
+
+  static *descriptors$(type, isStatic) {
+    for (const [name, owner] of Es6Reflect.members$(type, isStatic)) {
+      const descriptor = Es6Reflect.getOwnDescriptor$(owner, name, isStatic)
+      yield [name, owner, descriptor]
+    }
+  }
+
+  static getDescriptor$(type, name, isStatic) {
+    for (const current of Es6Reflect.hierarchy$(type, isStatic)) {
+      const descriptor = Es6Reflect.getOwnDescriptor$(current, name, isStatic)
+      if (!descriptor) continue
+      return [descriptor, current]
+    }
+    return null
+  }
+
+  static *#keys(type, isStatic) {
+    for (const [name] of Es6Reflect.members$(type, isStatic))
+      yield name
+  }
+
+  // type hierarchies
+  static *staticHierarchy(type) {
+    yield* Es6Reflect.hierarchy$(type, true)
+  }
   static *instanceHierarchy(type) {
-    for (const object of Es6Reflect.#prototypeChain(type.prototype))
-      yield object.constructor
+    yield* Es6Reflect.hierarchy$(type, false)
   }
 
   // predicates
   static isKnown(type) {
     return type == Object || type == Function
+  }
+  static isKnownStaticKey(type, name) {
+    return Es6Reflect.isKnownKey$(type, name, true)
+  }
+  static isKnownInstanceKey(type, name) {
+    return Es6Reflect.isKnownKey$(type, name, false)
   }
   static isExtensionOf(cls, targetCls) {
     const hierarchy = Es6Reflect.staticHierarchy(cls)
@@ -76,18 +118,46 @@ export class Es6Reflect {
     return false
   }
 
+  // name resolution
+  static getOwnStaticDescriptor(type, name) {
+    return Es6Reflect.getOwnDescriptor$(type, name, true)
+  }
+  static getOwnInstanceDescriptor(type, name) {
+    return Es6Reflect.getOwnDescriptor$(type, name, false)
+  }
+  static getStaticDescriptor(type, name) {
+    return Es6Reflect.getDescriptor$(type, name, true)
+  }
+  static getInstanceDescriptor(type, name) {
+    return Es6Reflect.getDescriptor$(type, name, false)
+  }
+  static getInstanceHost(type, name) {
+    const [ _, host ] = Es6Reflect.getDescriptor$(type, name, false) || []
+    return host || null
+  }
+  static getStaticHost(type, name) {
+    const [ _, host ] = Es6Reflect.getDescriptor$(type, name, true) || []
+    return host || null
+  }
+
   // key enumerations
   static* ownInstanceKeys(type) {
-    yield* Es6Reflect.#ownKeys(type, false)
+    yield* Es6Reflect.ownKeys$(type, false)
   }
   static* ownStaticKeys(type) {
-    yield* Es6Reflect.#ownKeys(type, true)
+    yield* Es6Reflect.ownKeys$(type, true)
   }
   static* instanceKeys(type) {
     yield* Es6Reflect.#keys(type, false)
   }
-  static* staticKeys(type) {
-    yield* Es6Reflect.#keys(type, true)
+  // static* staticKeys(type) {
+  //   yield* Es6Reflect.#keys(type, true)
+  // }
+  static* instanceMembers(type) {
+    yield* Es6Reflect.members$(type, false)
+  }
+  static* staticMembers(type) {
+    yield* Es6Reflect.members$(type, true)
   }
   
   static *#keys$(prototype, root, ownKeysFn) {

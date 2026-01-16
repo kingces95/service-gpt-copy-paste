@@ -35,44 +35,26 @@ export class Es6ClassInfo {
 
   static *#members(type, { isStatic = false } = { }) {
     assert(type instanceof Es6ClassInfo, 'type must be a Es6ClassInfo')
-
-    const visited = new Set()
-    for (const current of Es6ClassInfo.#hierarchy(type, { isStatic })) {
-      for (const member of current.ownMembers$({ isStatic })) {
-        if (visited.has(member.name)) continue
-        visited.add(member.name)
-        yield member
-      }
-    }
-  } 
-
-  static #getMember(type, key, { isStatic = false } = { }) {
-    for (const current of Es6ClassInfo.#hierarchy(type, { isStatic })) {
-      const member = current.getOwnMember$(key, { isStatic })
-      if (member) return member
-    }
-
-    return null
+    yield* Es6Reflect.descriptors$(type.ctor, isStatic)
+      .filter(([key, owner]) => 
+        !Es6Reflect.isKnownKey$(owner, key, isStatic))
+      .map(([key, owner, descriptor]) => 
+        Es6ClassInfo.#createMember(owner, key, descriptor, { isStatic }))
   }
 
-  static *#hierarchy(type, { isStatic = false } = { }) {
+  static #getMember(type, key, { isStatic = false } = { }) {
     assert(type instanceof Es6ClassInfo, 'type must be a Es6ClassInfo')
+    const [descriptor, owner] = 
+    Es6Reflect.getDescriptor$(type.ctor, key, isStatic) || []
+    if (!descriptor) return null
+    return Es6ClassInfo.#createMember(owner, key, descriptor, { isStatic })
+  }
 
-    for (let current = type; current; current = current.base) {
-      
-      // Typically given a function F, 
-      //    Object.getPrototypeOf(F) 
-      // is the function that F extends. But for Function, 
-      //    Object.getPrototypeOf(Function)
-      // is not Object but the known object Function.prototype. For this
-      // reason, Function does not inherit Object static members and
-      // so Object should not be included in the *static* hierarchy of 
-      // Function.
-      if (isStatic && current.isObject$ && !type.isObject$) 
-        break
-
-      yield current
-    }
+  static #createMember(fn, key, descriptor, { isStatic }) {
+    const hostInfo = Es6ClassInfo.from(fn)
+    const descriptorInfo = Es6DescriptorInfo.create(descriptor)
+    const keyInfo = Es6KeyInfo.create(key)
+    return Es6MemberInfo.create$(hostInfo, keyInfo, descriptorInfo, { isStatic })
   }
 
   #_
@@ -88,31 +70,17 @@ export class Es6ClassInfo {
   get isObject$() { return this.#fn === Object }
 
   *ownMembers$({ isStatic = false } = { }) {
-    const definitions = this.getDefinitions$({ isStatic })
-    
-    for (const key of Reflect.ownKeys(definitions)) {
-      if (Es6ObjectRuntimeNameOrSymbol.has(key)) continue
-      
-      const descriptor = Object.getOwnPropertyDescriptor(definitions, key)
-      const descriptorInfo = Es6DescriptorInfo.create(descriptor)
-      const keyInfo = Es6KeyInfo.create(key)
-      yield Es6MemberInfo.create$(this, keyInfo, descriptorInfo, { isStatic })
-    }
+    const type = this.ctor
+    yield* Es6Reflect.ownDescriptors$(type, isStatic)
+      .filter(([key]) => 
+        !Es6Reflect.isKnownKey$(type, key, isStatic))
+      .map(([key, descriptor]) => 
+        Es6ClassInfo.#createMember(type, key, descriptor, { isStatic }))
   }
   getOwnMember$(key, { isStatic = false } = { }) {
-    if (key == null) return null
-    if (Es6ObjectRuntimeNameOrSymbol.has(key)) return null
-
-    const definitions = this.getDefinitions$({ isStatic })
-    const descriptor = Object.getOwnPropertyDescriptor(definitions, key)
+    const descriptor = Es6Reflect.getOwnDescriptor$(this.ctor, key, isStatic)
     if (!descriptor) return null
-    
-    const descriptorInfo = Es6DescriptorInfo.create(descriptor)
-    const keyInfo = Es6KeyInfo.create(key)
-    return Es6MemberInfo.create$(this, keyInfo, descriptorInfo, { isStatic })
-  }
-  getDefinitions$({ isStatic = false } = { }) {
-    return isStatic ? this.#fn : this.#fn.prototype
+    return Es6ClassInfo.#createMember(this.ctor, key, descriptor, { isStatic })
   }
 
   get ctor() { return this.#fn }
@@ -229,7 +197,6 @@ export class Es6MemberInfo {
   get isNonPublic() { return this.#keyInfo.isNonPublic }
   get isKnown() {
     if (this.host.isKnown) return true
-
     return Es6Reflect.isKnownKey$(this.host.ctor, this.name, this.isStatic)
   }
   get isAbstract() { return this.#descriptorInfo.isAbstract }

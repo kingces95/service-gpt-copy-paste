@@ -239,9 +239,6 @@ export class PartialReflect {
 
   static *ownKeys(type) { 
     if (PartialReflect.isPartialObject(type)) {
-      // yield* [...PartialReflect.keys(type)].filter(key => 
-      //   PartialReflect.getHost(type, key) == type)
-
       for (const key of PartialReflect.keys(type)) {
         const host = PartialReflect.getHost(type, key)
         if (host != type) continue
@@ -249,7 +246,10 @@ export class PartialReflect {
       }
     }
     else {
-      yield* Es6Reflect.ownInstanceKeys(type) 
+      for (const key of Es6Reflect.ownInstanceKeys(type)) {
+        if (Es6Reflect.isKnownInstanceKey(type, key)) continue
+        yield key
+      }
     }
   }
   static *keys(type) { 
@@ -258,7 +258,10 @@ export class PartialReflect {
       yield* PartialReflect.keys(prototypicalType)    
     } 
     else {
-      yield* Es6Reflect.instanceKeys(type)
+      for (const [key, host] of Es6Reflect.instanceMembers(type)) {
+        if (Es6Reflect.isKnownInstanceKey(host, key)) continue
+        yield key
+      }
     }
   }
 
@@ -275,8 +278,10 @@ export class PartialReflect {
 
   static getOwnDescriptors(type) {
     const descriptors = { }
-    for (const key of Es6Reflect.ownInstanceKeys(type))
+    for (const key of Es6Reflect.ownInstanceKeys(type)) {
+      if (Es6Reflect.isKnownInstanceKey(type, key)) continue
       descriptors[key] = PartialReflect.getOwnDescriptor(type, key)
+    }
     return descriptors
   }
   static getDescriptors(type) {
@@ -358,7 +363,7 @@ export class PartialReflect {
     }
   }
   static mergeOwn$(type, partialObject) {
-    if(type == PartialObject || type.prototype instanceof PartialObject) 
+    if (type == PartialObject || type.prototype instanceof PartialObject) 
       throw `Expected type to not be a PartialObject.`
 
     assert(PartialReflect.isPartialObject(partialObject),
@@ -391,7 +396,10 @@ export class PartialReflect {
   static getHost(type, key) {
     // returns partial class that defined the key
     const prototypicalType = PartialReflect.getPrototypicalType$(type)
-    if (!(key in prototypicalType.prototype)) return null
+
+    const host = Es6Reflect.getInstanceHost(prototypicalType, key)
+    if (!host) return null
+    if (Es6Reflect.isKnownInstanceKey(host, key)) return null
     return Es6Associate.mapGet(
       prototypicalType, PartialReflect.HostMap, key) || type
   }

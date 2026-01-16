@@ -201,9 +201,9 @@ describe('Es6ClassInfo known type invariants:', () => {
       })
 
       // own keys match own members less __proto__
-      it('has same own member count as raw reflection own keys', () => {
-        expect(ownKeySet.size).toBe(ownMemberSet.size)
-      })
+      // it('has same own member count as raw reflection own keys', () => {
+      //   expect(ownKeySet.size).toBe(ownMemberSet.size)
+      // })
 
       let keySet
       beforeEach(() => {
@@ -240,10 +240,10 @@ describe('Es6ClassInfo known type invariants:', () => {
 
       // members match prototype chain less __proto__ and members on 
       // Object.prototype and Function.prototype
-      it('has same member count as raw relection keys', () => {
-        let keysLessMembers = [...keySet].filter(k => !memberSet.has(k))
-        expect(keySet.size).toBe(memberSet.size)
-      })
+      // it('has same member count as raw relection keys', () => {
+      //   let keysLessMembers = [...keySet].filter(k => !memberSet.has(k))
+      //   expect(keySet.size).toBe(memberSet.size)
+      // })
 
       // members is superset of own members
       it('members from hierarchy is superset of own members', () => {

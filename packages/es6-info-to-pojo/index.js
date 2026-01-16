@@ -63,7 +63,7 @@ const staticPivotMd = {
   }
 }
 
-Es6ClassInfo.prototype.toPojo = async function({ filter, ownOnly,} = { }) {
+Es6ClassInfo.prototype.toPojo = async function({ filter, ownOnly } = { }) {
   const pojo = await toPojo(this, { 
     filter,
     pivot: staticPivotMd,

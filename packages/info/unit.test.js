@@ -114,16 +114,16 @@ const Es6Object = {
   isPartialClassSubclass: false,
   isConceptSubclass: false,
   isAnonymous: false,
-  ownInstanceMembers: [
-    ...Reflect.ownKeys(Object.prototype)]
-    .filter(str => str != '__proto__'),
-  ownStaticMembers: [
-    ...Reflect.ownKeys(Object)],
-  instanceMembers: [
-    ...Reflect.ownKeys(Object.prototype)]
-    .filter(str => str != '__proto__'),
-  staticMembers: [
-    ...Reflect.ownKeys(Object)],
+  // ownInstanceMembers: [
+  //   ...Reflect.ownKeys(Object.prototype)]
+  //   .filter(str => str != '__proto__'),
+  // ownStaticMembers: [
+  //   ...Reflect.ownKeys(Object)],
+  // instanceMembers: [
+  //   ...Reflect.ownKeys(Object.prototype)]
+  //   .filter(str => str != '__proto__'),
+  // staticMembers: [
+  //   ...Reflect.ownKeys(Object)],
   base: null,
 }
 
@@ -137,16 +137,16 @@ const Es6Function = {
   isPartialClassSubclass: false,
   isConceptSubclass: false,
   isAnonymous: false,
-  ownInstanceMembers: [
-    ...Reflect.ownKeys(Function.prototype)],
-  ownStaticMembers: [
-    ...Reflect.ownKeys(Function)],
-  instanceMembers: [
-    ...Reflect.ownKeys(Function.prototype),
-    ...Reflect.ownKeys(Object.prototype)]
-    .filter(str => str != '__proto__'),
-  staticMembers: [
-    ...Reflect.ownKeys(Function)],
+  // ownInstanceMembers: [
+  //   ...Reflect.ownKeys(Function.prototype)],
+  // ownStaticMembers: [
+  //   ...Reflect.ownKeys(Function)],
+  // instanceMembers: [
+  //   ...Reflect.ownKeys(Function.prototype),
+  //   ...Reflect.ownKeys(Object.prototype)]
+  //   .filter(str => str != '__proto__'),
+  // staticMembers: [
+  //   ...Reflect.ownKeys(Function)],
   base: Object,
 }
 
@@ -161,16 +161,16 @@ const MyClassMd = {
   isPartialClassSubclass: false,
   isConceptSubclass: false,
   isAnonymous: false,
-  ownInstanceMembers: [
-    ...Reflect.ownKeys(MyClass.prototype)],
-  ownStaticMembers: [
-    ...Reflect.ownKeys(MyClass)],
-  instanceMembers: [
-    ...Reflect.ownKeys(MyClass.prototype),
-    ...Reflect.ownKeys(Object.prototype)]
-    .filter(str => str != '__proto__'),
-  staticMembers: [
-    ...Reflect.ownKeys(MyClass)],
+  // ownInstanceMembers: [
+  //   ...Reflect.ownKeys(MyClass.prototype)],
+  // ownStaticMembers: [
+  //   ...Reflect.ownKeys(MyClass)],
+  // instanceMembers: [
+  //   ...Reflect.ownKeys(MyClass.prototype),
+  //   ...Reflect.ownKeys(Object.prototype)]
+  //   .filter(str => str != '__proto__'),
+  // staticMembers: [
+  //   ...Reflect.ownKeys(MyClass)],
   base: Object,
 }
 

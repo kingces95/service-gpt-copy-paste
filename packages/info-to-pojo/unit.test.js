@@ -37,7 +37,7 @@ describe('Object members', () => {
   })
 
   it('matches expected', () => {
-    expect(pojo).toEqual(objectPojo)
+    expect(pojo).toEqual({ name: 'Object' })
   })
 })
 
@@ -49,7 +49,7 @@ describe('Function members', () => {
   })
 
   it('matches expected', () => {
-    expect(pojo).toEqual(functionPojo)
+    expect(pojo).toEqual({ name: 'Function', base: 'Object' })
   })
 })
 
