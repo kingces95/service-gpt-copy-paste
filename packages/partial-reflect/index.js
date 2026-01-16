@@ -246,8 +246,8 @@ export class PartialReflect {
       }
     }
     else {
-      for (const key of Es6Reflect.ownInstanceKeys(type)) {
-        if (Es6Reflect.isKnownInstanceKey(type, key)) continue
+      for (const key of Es6Reflect.ownKeys(type)) {
+        if (Es6Reflect.isKnownKey(type, key)) continue
         yield key
       }
     }
@@ -258,8 +258,8 @@ export class PartialReflect {
       yield* PartialReflect.keys(prototypicalType)    
     } 
     else {
-      for (const [key, host] of Es6Reflect.instanceMembers(type)) {
-        if (Es6Reflect.isKnownInstanceKey(host, key)) continue
+      for (const [key, host] of Es6Reflect.members(type)) {
+        if (Es6Reflect.isKnownKey(host, key)) continue
         yield key
       }
     }
@@ -278,8 +278,8 @@ export class PartialReflect {
 
   static getOwnDescriptors(type) {
     const descriptors = { }
-    for (const key of Es6Reflect.ownInstanceKeys(type)) {
-      if (Es6Reflect.isKnownInstanceKey(type, key)) continue
+    for (const key of Es6Reflect.ownKeys(type)) {
+      if (Es6Reflect.isKnownKey(type, key)) continue
       descriptors[key] = PartialReflect.getOwnDescriptor(type, key)
     }
     return descriptors
@@ -397,9 +397,9 @@ export class PartialReflect {
     // returns partial class that defined the key
     const prototypicalType = PartialReflect.getPrototypicalType$(type)
 
-    const host = Es6Reflect.getInstanceHost(prototypicalType, key)
+    const host = Es6Reflect.getHost(prototypicalType, key)
     if (!host) return null
-    if (Es6Reflect.isKnownInstanceKey(host, key)) return null
+    if (Es6Reflect.isKnownKey(host, key)) return null
     return Es6Associate.mapGet(
       prototypicalType, PartialReflect.HostMap, key) || type
   }

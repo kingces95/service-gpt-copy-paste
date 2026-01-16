@@ -91,7 +91,7 @@ export class ConceptReflect {
     if (!ConceptReflect.isConcept(type))
       return
 
-    for (const name of Es6Reflect.ownStaticKeys(type)) {
+    for (const name of Es6Reflect.ownKeys(type, { isStatic: true })) {
       if (KnownStaticMembers.has(name)) continue
 
       const concept = type[name]

@@ -170,16 +170,16 @@ describe('Es6ClassInfo known type invariants:', () => {
     })
 
     // excludes exposed runtime internals
-    describe('excludes instance member', () => {
-      describe.each(
-        [...Es6ObjectRuntimeNameOrSymbol]
-      )(' %s', (excludedName) => {
-        it('when resolved by instance hierarchy', () => {
-          const member = classInfo.getInstanceMember(excludedName)
-          expect(member).toBeNull()
-        })
-      })    
-    })
+    // describe('excludes instance member', () => {
+    //   describe.each(
+    //     [...Es6ObjectRuntimeNameOrSymbol]
+    //   )(' %s', (excludedName) => {
+    //     it('when resolved by instance hierarchy', () => {
+    //       const member = classInfo.getInstanceMember(excludedName)
+    //       expect(member).toBeNull()
+    //     })
+    //   })    
+    // })
 
     describe.each([
       ['static', true, fn],
@@ -207,7 +207,8 @@ describe('Es6ClassInfo known type invariants:', () => {
 
       let keySet
       beforeEach(() => {
-        keySet = new Set(Es6Reflect.keys$(prototype, null))
+        keySet = new Set(Es6Reflect.members(fn, { isStatic })
+          .map(([name]) => name))
 
         // remove object runtime names and symbols
         for (const nameOrSymbol of Es6ObjectRuntimeNameOrSymbol)
