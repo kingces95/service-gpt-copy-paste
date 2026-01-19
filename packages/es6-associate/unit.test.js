@@ -88,6 +88,19 @@ describe('MyClass that extends MyBase with MySymbol, MyType', () => {
           expect(associated).toEqual([])
         })
       })
+      describe('on Object...', () => {
+        beforeEach(() => {
+          Object[mySymbol] = myType
+        })
+        it('is associated', () => {
+          const associated = [...Es6Associate.types(myClass, myMetadata)]
+          expect(associated).toEqual([ myType ])
+        })
+        it('is not directly associated', () => {
+          const associated = [...Es6Associate.ownTypes(myClass, myMetadata)]
+          expect(associated).toEqual([])
+        })
+      })
     })
     describe('when associated procedurally...', () => {
       beforeEach(() => {

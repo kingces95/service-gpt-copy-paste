@@ -149,8 +149,10 @@ describe.each(Classes)('%s', (_, classMd) => {
 
     it('has correct members', () => {
       const expected = classMd[label].members || []
-      const actual = [...Es6Reflect.members(type, { isStatic })]
-        .filter(([name, type]) => Es6Reflect.isKnownKey(type, name, { isStatic }) === false)
+      const actual = [...Es6Reflect.keys(type, { 
+        isStatic, 
+        excludeKnown: true,
+        includeOwner: true })]
       // sort for comparison
       expected.sort(([lhs], [rhs]) => lhs.localeCompare(rhs))
       actual.sort(([lhs], [rhs]) => lhs.localeCompare(rhs))
@@ -161,8 +163,10 @@ describe.each(Classes)('%s', (_, classMd) => {
       const expected = keys(type, isStatic)
 
       const actual = Object.fromEntries(
-        [...Es6Reflect.members(type, { isStatic })]
-        .map(([name]) => [name, true])
+        [...Es6Reflect.keys(type, { 
+          isStatic,
+          excludeKnown: false })]
+        .map((name) => [name, true])
       )
       expect(actual).toEqual(expected)
     })

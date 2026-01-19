@@ -1,7 +1,7 @@
 import { getOwn } from '@kingjs/get-own'
 import { asIterable } from '@kingjs/as-iterable'
 import { assert } from '@kingjs/assert'
-import { Es6Reflect } from '@kingjs/es6-info'
+import { Es6Reflect } from '@kingjs/es6-reflect'
 
 // A general purpose global map of type to associated metadata
 const Associations = new Map()
@@ -87,7 +87,7 @@ export class Es6Associate {
     if (!options.visited) options = { ...options, visited: new Set() }
     const { traverse, visited } = options
     
-    for (const current of Es6Reflect.hierarchy(type, { isStatic: true })) {
+    for (const current of Es6Reflect.hierarchy(type)) {
       for (const associatedType of Es6Associate.ownTypes(current, symbols)) {
 
         if (visited.has(associatedType)) continue

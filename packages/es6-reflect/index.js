@@ -51,41 +51,55 @@ export class Es6Reflect {
     }
   }
 
-  static *ownKeys(type, { isStatic } = { }) {
+  static hasOwnKey(type, name, { isStatic, excludeKnown } = { }) {
+    if (excludeKnown && Es6Reflect.isKnownKey(type, name, { isStatic }))
+      return false
+
+    const object = isStatic
+      ? type
+      : type.prototype
+
+    return object.hasOwnProperty(name)
+  }
+
+  static *ownKeys(type, { isStatic, excludeKnown } = { }) {
     const keys = isStatic
       ? Reflect.ownKeys(type)
       : Reflect.ownKeys(type.prototype)
 
-    yield* keys
-  }
-
-  static getHost(type, name, { isStatic } = { }) {
-    for (const current of Es6Reflect.#prototypeChain(type, { isStatic })) {
-      if (current.hasOwnProperty(name))
-        return current
+    for (const name of keys) {
+      if (excludeKnown && Es6Reflect.isKnownKey(type, name, { isStatic }))
+        continue
+      yield name
     }
   }
 
-  static *members(type, { isStatic } = { }) {
+  static *keys(type, { isStatic, excludeKnown, includeOwner } = { }) {
     const visited = new Set()
-    for (const current of Es6Reflect.hierarchy(type, { isStatic })) {
-      for (const name of Es6Reflect.ownKeys(current, { isStatic })) {
-        if (visited.has(name)) continue
-        visited.add(name)
-        yield [name, current]
+    for (const owner of Es6Reflect.hierarchy(type, { isStatic })) {
+      for (const key of Es6Reflect.ownKeys(owner, { isStatic, excludeKnown })) {
+        if (visited.has(key)) continue
+        visited.add(key)
+        
+        yield includeOwner 
+          ? [ key, owner ]
+          : key
       }
     }
   }
 
-  static *ownDescriptors(type, { isStatic } = { }) {
-    const ownKeys = Es6Reflect.ownKeys(type, { isStatic })
-    for (const key of ownKeys) {
-      const descriptor = Es6Reflect.getOwnDescriptor(type, key, { isStatic })
-      yield [key, descriptor]
+  static getHost(type, name, { isStatic, excludeKnown } = { }) {
+    for (const owner of Es6Reflect.hierarchy(type, { isStatic })) {
+      if (!Es6Reflect.hasOwnKey(owner, name, { isStatic, excludeKnown })) 
+        continue
+      return owner
     }
   }
 
-  static getOwnDescriptor(type, name, { isStatic } = { }) {
+  static getOwnDescriptor(type, name, { isStatic, excludeKnown } = { }) {
+    if (!Es6Reflect.hasOwnKey(type, name, { isStatic, excludeKnown }))
+      return null
+
     const object = isStatic
       ? type
       : type.prototype
@@ -93,19 +107,35 @@ export class Es6Reflect {
     return Object.getOwnPropertyDescriptor(object, name)
   }
 
-  static *descriptors(type, { isStatic } = { }) {
-    for (const [name, owner] of Es6Reflect.members(type, { isStatic })) {
-      const descriptor = Es6Reflect.getOwnDescriptor(owner, name, { isStatic })
-      yield [name, owner, descriptor]
+  static *ownDescriptors(type, { isStatic, excludeKnown } = { }) {
+    const ownKeys = Es6Reflect.ownKeys(type, { isStatic, excludeKnown })
+    for (const key of ownKeys) {
+      const descriptor = Es6Reflect.getOwnDescriptor(
+        type, key, { isStatic, excludeKnown })
+      yield [key, descriptor]
     }
   }
 
-  static getDescriptor(type, name, { isStatic } = { }) {
-    for (const current of Es6Reflect.hierarchy(type, { isStatic })) {
-      const descriptor = Es6Reflect.getOwnDescriptor(current, name, { isStatic })
+  static getDescriptor(type, name, { isStatic, excludeKnown, includeOwner } = { }) {
+    for (const owner of Es6Reflect.hierarchy(type, { isStatic })) {
+      const descriptor = Es6Reflect.getOwnDescriptor(
+        owner, name, { isStatic, excludeKnown })
       if (!descriptor) continue
-      return [descriptor, current]
+      return includeOwner
+        ? [descriptor, owner]
+        : descriptor
     }
     return null
+  }
+  
+  static *descriptors(type, { isStatic, excludeKnown, includeContext } = { }) {
+    for (const [name, owner] of Es6Reflect.keys(
+      type, { isStatic, includeOwner: true })) {
+      const descriptor = Es6Reflect.getOwnDescriptor(
+        owner, name, { isStatic, excludeKnown })
+      yield includeContext
+        ? [descriptor, name, owner]
+        : descriptor
+    }
   }
 }

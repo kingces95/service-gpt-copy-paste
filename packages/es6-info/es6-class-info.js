@@ -35,19 +35,19 @@ export class Es6ClassInfo {
 
   static *#members(type, { isStatic = false } = { }) {
     assert(type instanceof Es6ClassInfo, 'type must be a Es6ClassInfo')
-    yield* Es6Reflect.descriptors(type.ctor, { isStatic })
-      .filter(([key, owner]) => 
-        !Es6Reflect.isKnownKey(owner, key, { isStatic }))
-      .map(([key, owner, descriptor]) => 
-        Es6ClassInfo.#createMember(owner, key, descriptor, { isStatic }))
+    yield* Es6Reflect.descriptors(
+      type.ctor, { isStatic, includeContext: true })
+      .map(([descriptor, key, owner]) => Es6ClassInfo.#createMember(
+        owner, key, descriptor, { isStatic }))
   }
 
   static #getMember(type, key, { isStatic = false } = { }) {
     assert(type instanceof Es6ClassInfo, 'type must be a Es6ClassInfo')
-    const [descriptor, owner] = 
-      Es6Reflect.getDescriptor(type.ctor, key, { isStatic }) || []
+    const [descriptor, owner] = Es6Reflect.getDescriptor(
+      type.ctor, key, { isStatic, includeOwner: true }) || []
     if (!descriptor) return null
-    return Es6ClassInfo.#createMember(owner, key, descriptor, { isStatic })
+    return Es6ClassInfo.#createMember(
+      owner, key, descriptor, { isStatic })
   }
 
   static #createMember(fn, key, descriptor, { isStatic }) {
@@ -72,15 +72,16 @@ export class Es6ClassInfo {
   *ownMembers$({ isStatic = false } = { }) {
     const type = this.ctor
     yield* Es6Reflect.ownDescriptors(type, { isStatic })
-      .filter(([key]) => 
-        !Es6Reflect.isKnownKey(type, key, { isStatic }))
-      .map(([key, descriptor]) => 
-        Es6ClassInfo.#createMember(type, key, descriptor, { isStatic }))
+      .map(([key, descriptor]) => Es6ClassInfo.#createMember(
+        type, key, descriptor, { isStatic }))
   }
   getOwnMember$(key, { isStatic = false } = { }) {
-    const descriptor = Es6Reflect.getOwnDescriptor(this.ctor, key, { isStatic })
+    const type = this.ctor
+    const descriptor = Es6Reflect.getOwnDescriptor(
+      type, key, { isStatic })
     if (!descriptor) return null
-    return Es6ClassInfo.#createMember(this.ctor, key, descriptor, { isStatic })
+    return Es6ClassInfo.#createMember(
+      type, key, descriptor, { isStatic })
   }
 
   get ctor() { return this.#fn }

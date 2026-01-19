@@ -207,8 +207,7 @@ describe('Es6ClassInfo known type invariants:', () => {
 
       let keySet
       beforeEach(() => {
-        keySet = new Set(Es6Reflect.members(fn, { isStatic })
-          .map(([name]) => name))
+        keySet = new Set(Es6Reflect.keys(fn, { isStatic }))
 
         // remove object runtime names and symbols
         for (const nameOrSymbol of Es6ObjectRuntimeNameOrSymbol)

@@ -1,3 +1,4 @@
+import assert from 'assert'
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { 
@@ -118,6 +119,15 @@ describe('Es6ClassInfo', () => {
         expect(got.equals(member)).toBe(true)
       }
     })
+    it('can get toString by name', () => {
+      const toStringMember = info.getInstanceMember('toString')
+      expect(toStringMember).not.toBeNull()
+    })
+    // it('includes toString in instance members', () => {
+    //   const members = [...info.instanceMembers()]
+    //   const toStringMember = members.find(m => m.name == 'toString')
+    //   expect(toStringMember).not.toBeUndefined()
+    // })
     it('can get all static own members by name', () => {
       for (const member of info.ownStaticMembers()) {
         const got = info.getOwnStaticMember(member.name)
@@ -321,18 +331,25 @@ describe('Es6MemberInfo', () => {
     let info
     beforeEach(() => {
       typeInfo = Es6ClassInfo.from(md.cls)
-      info = typeInfo.getInstanceMember(md.name)
-      if (!info)
-        info = typeInfo.getStaticMember(md.name)
+      info = md.isStatic 
+        ? typeInfo.getStaticMember(md.name)
+        : typeInfo.getInstanceMember(md.name)
     })
     it('should equal itself', () => {
       expect(info.equals(info)).toBe(true)
     })
+    it('should be found in members list', () => {
+      const members = md.isStatic
+        ? [...typeInfo.staticMembers()]
+        : [...typeInfo.instanceMembers()]
+      const found = members.find(m => m.equals(info))
+      expect(found).not.toBeUndefined()
+    })
     it('should equal a different instance of itself', () => {
       const typeInfo = Es6ClassInfo.from(md.cls)
-      let otherInfo = typeInfo.getInstanceMember(md.name)
-      if (!otherInfo)
-        otherInfo = typeInfo.getStaticMember(md.name)
+      let otherInfo = md.isStatic
+        ? typeInfo.getStaticMember(md.name)
+        : typeInfo.getInstanceMember(md.name)
       expect(info.equals(otherInfo)).toBe(true)
     })
     it('should not equal null', () => {

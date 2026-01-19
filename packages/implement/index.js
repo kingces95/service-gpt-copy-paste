@@ -1,6 +1,6 @@
 import { assert } from '@kingjs/assert'
 import { extend } from '@kingjs/extend'
-import { Es6Reflect } from '@kingjs/es6-info'
+import { Es6Reflect } from '@kingjs/es6-reflect'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { Concept } from '@kingjs/concept'
 

@@ -45,8 +45,8 @@ export class FunctionInfo extends Info {
 
   #memberFilter(es6Member) {
     if (!es6Member) return false
-    if (!this.isAbstract) return true
     if (es6Member.isKnown) return false
+    if (!this.isAbstract) return true
     if (es6Member.isStatic && this.isKnown) return false
     return true
   }

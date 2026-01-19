@@ -1,6 +1,6 @@
 import { assert } from '@kingjs/assert'
 import { isPojo } from '@kingjs/pojo-test'
-import { Es6Reflect } from '@kingjs/es6-info'
+import { Es6Reflect } from '@kingjs/es6-reflect'
 import { isAbstract } from '@kingjs/abstract'
 import { Es6Associate } from '@kingjs/es6-associate'
 import { PartialPojo } from '@kingjs/partial-pojo'
@@ -258,8 +258,7 @@ export class PartialReflect {
       yield* PartialReflect.keys(prototypicalType)    
     } 
     else {
-      for (const [key, host] of Es6Reflect.members(type)) {
-        if (Es6Reflect.isKnownKey(host, key)) continue
+      for (const key of Es6Reflect.keys(type, { excludeKnown: true })) {
         yield key
       }
     }
@@ -394,14 +393,18 @@ export class PartialReflect {
     else yield* result
   }
   static getHost(type, key) {
-    // returns partial class that defined the key
     const prototypicalType = PartialReflect.getPrototypicalType$(type)
 
-    const host = Es6Reflect.getHost(prototypicalType, key)
+    const host = Es6Reflect.getHost(prototypicalType, key, {
+      excludeKnown: true
+    })
+    
     if (!host) return null
-    if (Es6Reflect.isKnownKey(host, key)) return null
-    return Es6Associate.mapGet(
-      prototypicalType, PartialReflect.HostMap, key) || type
+
+    const associate = Es6Associate.mapGet(
+      prototypicalType, PartialReflect.HostMap, key)
+
+    return associate || type
   }
 
   static defineType(pojoOrType) {

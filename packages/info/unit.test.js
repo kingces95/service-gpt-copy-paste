@@ -355,29 +355,29 @@ describe('Given', () => {
   })
 })
 
-const ObjectToStringMd = {
-  name: 'toString',
-  cls: Object,
-  toString: 'toString, known method, [classInfo Object]',
-  type: 'method',
-  isMethod: true,
-  isConfigurable: true,
-  isWritable: true,
-  hasValue: true,
-  isKnown: true,
-}
+// const ObjectToStringMd = {
+//   name: 'toString',
+//   cls: Object,
+//   toString: 'toString, known method, [classInfo Object]',
+//   type: 'method',
+//   isMethod: true,
+//   isConfigurable: true,
+//   isWritable: true,
+//   hasValue: true,
+//   isKnown: true,
+// }
 
-const ObjectConstrutorMd = {
-  name: 'constructor',
-  cls: Object,
-  toString: 'constructor, known constructor, [classInfo Object]',
-  type: 'constructor',
-  isConstructor: true,
-  isKnown: true,
-  isConfigurable: true,
-  isWritable: true,
-  hasValue: true,
-}
+// const ObjectConstrutorMd = {
+//   name: 'constructor',
+//   cls: Object,
+//   toString: 'constructor, known constructor, [classInfo Object]',
+//   type: 'constructor',
+//   isConstructor: true,
+//   isKnown: true,
+//   isConfigurable: true,
+//   isWritable: true,
+//   hasValue: true,
+// }
 
 const MyConceptMemberMd = {
   name: 'member',
@@ -456,19 +456,19 @@ const MyClassMemberMd = {
   hasValue: true,
 }
 
-const MyClassConstructorMd = {
-  name: 'constructor',
-  cls: class MyClass { constructor() { } },
-  toString: 'constructor, known constructor, [classInfo MyClass]',
-  type: 'constructor',
-  isConstructor: true,
-  isKnown: true,
-  isConfigurable: true,
-  isWritable: true,
-  hasValue: true,
-  parentHost: Object,
-  rootHost: Object,
-}
+// const MyClassConstructorMd = {
+//   name: 'constructor',
+//   cls: class MyClass { constructor() { } },
+//   toString: 'constructor, known constructor, [classInfo MyClass]',
+//   type: 'constructor',
+//   isConstructor: true,
+//   isKnown: true,
+//   isConfigurable: true,
+//   isWritable: true,
+//   hasValue: true,
+//   parentHost: Object,
+//   rootHost: Object,
+// }
 
 const MyAnonMemberMd = {
   name: 'member',
@@ -565,15 +565,15 @@ const MyAccessorMd = {
 
 describe('Member', () => {
   describe.each([
-    ['ObjectToString', ObjectToStringMd],
-    ['ObjectConstrutor', ObjectConstrutorMd],
+    // ['ObjectToString', ObjectToStringMd],
+    // ['ObjectConstrutor', ObjectConstrutorMd],
     ['MyConceptMember', MyConceptMemberMd],
     ['MyConceptExtensionMember', MyConceptExtensionMemberMd],
     ['MyPartialClassMember', MyPartialClassMemberMd],
     ['MyPartialClassExtensionMember', MyPartialClassExtensionMemberMd],
     ['MyPojoMember', MyPojoMemberMd],
     ['MyClassMember', MyClassMemberMd],
-    ['MyClassConstructor', MyClassConstructorMd],
+    // ['MyClassConstructor', MyClassConstructorMd],
     ['MyAnonMember', MyAnonMemberMd],
     ['MyStaticMember', MyStaticMemberMd],
     ['MySymbolMember', MySymbolMemberMd],

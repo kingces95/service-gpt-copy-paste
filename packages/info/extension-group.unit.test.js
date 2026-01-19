@@ -137,10 +137,13 @@ describe('A prototype member', () => {
     const fnInfo = Info.from(type)
     prototypeMember = fnInfo.getOwnStaticMember('prototype')
   })
-  it('has a toString', () => {
-    expect(prototypeMember.toString()).toBe(
-      'prototype, static known sealed const hidden object, [classInfo type]')
+  it('is missing', () => {
+    expect(prototypeMember).toBeNull()
   })
+  // it('has a toString', () => {
+  //   expect(prototypeMember.toString()).toBe(
+  //     'prototype, static known sealed const hidden object, [classInfo type]')
+  // })
 })
 
 describe('A bespoke partial class', () => {
