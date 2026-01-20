@@ -111,7 +111,7 @@ describe('A concept', () => {
   ])('with %s', (_, cls, expected) => {
     it('has a pojo', async () => {
       const info = Info.from(cls)
-      const members = [...info.members()]
+      // const members = [...info.members()]
       expect(await info.toPojo(pojoFilter)).toEqual({
         ...expected,
         base: 'Concept',

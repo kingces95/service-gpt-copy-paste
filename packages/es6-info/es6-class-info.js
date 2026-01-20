@@ -33,23 +33,6 @@ export class Es6ClassInfo {
     return info
   }
 
-  static *#members(type, { isStatic = false } = { }) {
-    assert(type instanceof Es6ClassInfo, 'type must be a Es6ClassInfo')
-    yield* Es6Reflect.descriptors(
-      type.ctor, { isStatic, includeContext: true })
-      .map(([descriptor, key, owner]) => Es6ClassInfo.#createMember(
-        owner, key, descriptor, { isStatic }))
-  }
-
-  static #getMember(type, key, { isStatic = false } = { }) {
-    assert(type instanceof Es6ClassInfo, 'type must be a Es6ClassInfo')
-    const [descriptor, owner] = Es6Reflect.getDescriptor(
-      type.ctor, key, { isStatic, includeOwner: true }) || []
-    if (!descriptor) return null
-    return Es6ClassInfo.#createMember(
-      owner, key, descriptor, { isStatic })
-  }
-
   static #createMember(fn, key, descriptor, { isStatic }) {
     const hostInfo = Es6ClassInfo.from(fn)
     const descriptorInfo = Es6DescriptorInfo.create(descriptor)
@@ -69,21 +52,6 @@ export class Es6ClassInfo {
 
   get isObject$() { return this.#fn === Object }
 
-  *ownMembers$({ isStatic = false } = { }) {
-    const type = this.ctor
-    yield* Es6Reflect.ownDescriptors(type, { isStatic })
-      .map(([key, descriptor]) => Es6ClassInfo.#createMember(
-        type, key, descriptor, { isStatic }))
-  }
-  getOwnMember$(key, { isStatic = false } = { }) {
-    const type = this.ctor
-    const descriptor = Es6Reflect.getOwnDescriptor(
-      type, key, { isStatic })
-    if (!descriptor) return null
-    return Es6ClassInfo.#createMember(
-      type, key, descriptor, { isStatic })
-  }
-
   get ctor() { return this.#fn }
   get id() { return this.#idInfo }
   get name() { return this.id.value }
@@ -93,26 +61,41 @@ export class Es6ClassInfo {
 
   get base() { return Es6ClassInfo.from(es6BaseType(this.ctor)) }
 
-  *ownInstanceMembers() { yield* this.ownMembers$({ isStatic: false }) }
-  *ownStaticMembers() { yield* this.ownMembers$({ isStatic: true }) }
-  *ownMembers() {
-    yield* this.ownMembers$({ isStatic: false })
-    yield* this.ownMembers$({ isStatic: true })
+  *ownMembers({ isStatic = false } = { }) {
+    const type = this.ctor
+    yield* Es6Reflect.ownDescriptors(type, { isStatic })
+      .map(([key, descriptor]) => Es6ClassInfo.#createMember(
+        type, key, descriptor, { isStatic }))
   }
-  getOwnInstanceMember(key) { return this.getOwnMember$(key, { isStatic: false }) }
-  getOwnStaticMember(key) { return this.getOwnMember$(key, { isStatic: true }) }
+  getOwnMember(key, { isStatic = false } = { }) {
+    const type = this.ctor
+    const descriptor = Es6Reflect.getOwnDescriptor(
+      type, key, { isStatic })
+    if (!descriptor) return null
+    return Es6ClassInfo.#createMember(
+      type, key, descriptor, { isStatic })
+  }
 
-  *instanceMembers() { 
-    yield* Es6ClassInfo.#members(this, { isStatic: false }) }
-  *staticMembers() { 
-    yield* Es6ClassInfo.#members(this, { isStatic: true }) }
-  *members() {
-    yield* Es6ClassInfo.#members(this, { isStatic: true })
-    yield* Es6ClassInfo.#members(this, { isStatic: false }) }
-  getStaticMember(key) { 
-    return Es6ClassInfo.#getMember(this, key, { isStatic: true }) }
-  getInstanceMember(key) { 
-    return Es6ClassInfo.#getMember(this, key, { isStatic: false }) }
+  *members({ isStatic = false } = { }) {
+    const type = this.ctor
+    yield* Es6Reflect.descriptors(
+      type, { isStatic, includeContext: true })
+      .map(([descriptor, key, owner]) => Es6ClassInfo.#createMember(
+        owner, key, descriptor, { isStatic }))
+  }
+  getMember(key, { isStatic = false } = { }) {
+    const type = this.ctor
+    const [descriptor, owner] = Es6Reflect.getDescriptor(
+      type, key, { isStatic, includeOwner: true }) || []
+    if (!descriptor) return null
+    return Es6ClassInfo.#createMember(
+      owner, key, descriptor, { isStatic })
+  }
+
+  *ownStaticMembers() { yield* this.ownMembers({ isStatic: true }) }
+  getOwnStaticMember(key) { return this.getOwnMember(key, { isStatic: true }) }
+  *staticMembers() { yield* this.members({ isStatic: true }) }
+  getStaticMember(key) { return this.getMember(key, { isStatic: true }) }
 
   equals(other) { return this == other }
 
@@ -232,9 +215,8 @@ export class Es6MemberInfo {
     const parent = this.host.base
     if (!parent) return null
 
-    return this.isStatic
-      ? parent.getOwnStaticMember(this.name)
-      : parent.getOwnInstanceMember(this.name)
+    const isStatic = this.isStatic
+    return parent.getOwnMember(this.name, { isStatic })
   }
   root() {
     let parent = this.parent()

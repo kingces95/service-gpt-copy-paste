@@ -7,14 +7,23 @@ import { toPojo } from '@kingjs/pojo'
 import { dumpPojo } from "@kingjs/pojo-dump"
 import { PojoMetadata } from '@kingjs/pojo-metadata'
 
-function metadata({ ownOnly } = { }) {
+function metadata({ ownOnly, isStatic } = { }) {
 
   return new PojoMetadata([
     [Es6ClassInfo, {
       name: 'string',
       base: 'name',
       isAnonymous: 'boolean',
-      [ownOnly ? 'ownMembers' : 'members']: 'records',
+      [ownOnly ? 'ownMembers' : 'members']: 
+        isStatic == true ? 'ignore' : 'records',
+      [ownOnly ? 'ownStaticMembers' : 'staticMembers']: 
+        isStatic == false ? 'ignore' : 'records',
+      allMembers: (info) => {
+        return [
+          ...info[ownOnly ? 'ownMembers' : 'members'](),
+          ...info[ownOnly ? 'ownStaticMembers' : 'staticMembers'](),
+        ]
+      },
     }],
     [Es6MemberInfo, {
       name: 'key',
@@ -24,7 +33,6 @@ function metadata({ ownOnly } = { }) {
 
       // pivots
       type: 'string',
-      isStatic: 'boolean',
       isKnown: 'boolean',
       isNonPublic: 'boolean',
     }]
@@ -53,21 +61,14 @@ const knownPivotMd = {
   },
   ...nonPublicPivotMd
 }
-const staticPivotMd = {
-  static: {
-    predicate: 'isStatic', 
-    pivot: knownPivotMd,
-  },
-  instance: {
-    pivot: knownPivotMd
-  }
-}
 
-Es6ClassInfo.prototype.toPojo = async function({ filter, ownOnly } = { }) {
+Es6ClassInfo.prototype.toPojo = async function({ 
+  ownOnly, isStatic, ...filter } = { }) {
+
   const pojo = await toPojo(this, { 
     filter,
-    pivot: staticPivotMd,
-    metadata: metadata({ ownOnly }),
+    pivot: knownPivotMd,
+    metadata: metadata({ ownOnly, isStatic }),
   })
 
   const trimmedPojo = trimPojo(pojo)

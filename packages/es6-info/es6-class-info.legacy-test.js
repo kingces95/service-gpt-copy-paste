@@ -229,7 +229,7 @@ describe('Es6ClassInfo known type invariants:', () => {
       beforeEach(() => {
         let members = isStatic 
           ? [...classInfo.staticMembers()]
-          : [...classInfo.instanceMembers()]
+          : [...classInfo.members()]
         memberSet = new Set(members)
         memberNameSet = new Set(members.map(m => m.name))
       })
@@ -440,7 +440,7 @@ describe('Es6ClassInfo Function class', () => {
       members = [...classInfo.ownInstanceMembers()]
     })
     it('is subset of members from hierarchy plus object', () => {
-      const fromMembers = [...classInfo.instanceMembers()]
+      const fromMembers = [...classInfo.members()]
       const membersPlusObject = [
         ...members, 
         ...Es6ClassInfo.Object.ownInstanceMembers()]

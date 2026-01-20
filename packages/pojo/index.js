@@ -91,11 +91,13 @@ export async function toPojo(value, options = { }) {
         const result = { }
         for (const key in valueMd) {
           let type = valueMd[key]
-          if (type == 'type') { result[key] = value.constructor.name; continue }
+          if (type == 'type') { 
+            result[key] = value.constructor.name; continue }
+
           const keyValue = await getOrCall(value, key)
           const pojo = await toPojo(keyValue, { 
             ...options, type, path: [...path, key], 
-              depth: newDepth, context: [...context, result]
+            depth: newDepth, context: [...context, result]
           })
           if (pojo === undefined) continue
           result[key] = pojo
@@ -115,6 +117,8 @@ export async function toPojo(value, options = { }) {
   }
 
   switch (type) {
+    case 'ignore':
+      return
     case 'number':
       if (jsType != type && jsType != 'bigint') throw new Error(
         `Pojo number type must be typeof number or bigint; got ${jsType}`)

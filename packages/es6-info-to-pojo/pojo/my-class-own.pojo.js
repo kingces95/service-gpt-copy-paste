@@ -4,17 +4,15 @@ const MyStaticSymbol = Symbol.for('my-static-symbol')
 export const myClassOwnPojo = {
   name: 'MyClass',
   base: 'MyBase',
-  ownMembers: {
-    static: {
-      methods: {
-        myStaticMethod: { host: '.' },
-        [MyStaticSymbol]: { host: '.' }
-      },
-      properties: { myStaticAccessor: { host: '.' } }
+  ownStaticMembers: {
+    methods: {
+      myStaticMethod: { host: '.' },
+      [MyStaticSymbol]: { host: '.' }
     },
-    instance: {
-      methods: { myMethod: { host: '.' }, [MySymbol]: { host: '.' } },
-      properties: { myAccessor: { host: '.' } }
-    }
+    properties: { myStaticAccessor: { host: '.' } }
+  },
+  ownMembers: {
+    methods: { myMethod: { host: '.' }, [MySymbol]: { host: '.' } },
+    properties: { myAccessor: { host: '.' } }
   }
 }

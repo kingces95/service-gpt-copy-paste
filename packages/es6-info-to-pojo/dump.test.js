@@ -43,11 +43,9 @@ function dump(fn) {
   const name = info.name 
   info.dump({
     // ownOnly: true,
-    filter: [{ 
-      // isStatic: false,
-      isKnown: false,
-      isNonPublic: false,
-    }],
+    // isStatic: false,
+    isKnown: false,
+    isNonPublic: false,
   })
 }
 

@@ -106,7 +106,7 @@ export class FunctionInfo extends Info {
   }
   getOwnInstanceMember(key) {
     const es6ClassInfo = this.#es6ClassInfo
-    const es6Member = es6ClassInfo.getOwnInstanceMember(key)
+    const es6Member = es6ClassInfo.getOwnMember(key)
     return this.#getMember(es6Member)
   }
 
@@ -117,13 +117,13 @@ export class FunctionInfo extends Info {
   }
   getInstanceMember(key) {
     const es6ClassInfo = this.#es6ClassInfo
-    const es6Member = es6ClassInfo.getInstanceMember(key)
+    const es6Member = es6ClassInfo.getMember(key)
     return this.#getMember(es6Member)
   }
 
   *ownInstanceMembers() {
     const es6ClassInfo = this.#es6ClassInfo
-    const members = [...es6ClassInfo.ownInstanceMembers()]
+    const members = [...es6ClassInfo.ownMembers()]
     yield *this.#members(members)
   }
   *ownStaticMembers() {
@@ -138,7 +138,7 @@ export class FunctionInfo extends Info {
 
   *instanceMembers() {
     const es6ClassInfo = this.#es6ClassInfo
-    const members = [...es6ClassInfo.instanceMembers()]
+    const members = [...es6ClassInfo.members()]
     yield *this.#members(members)
   }
   *staticMembers() {

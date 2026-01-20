@@ -21,8 +21,19 @@ describe('Object members', () => {
   })
 
   it('matches expected', () => {
-    // expect(pojo).toEqual({ name: 'Object' })
     expect(pojo).toEqual(objectPojo)
+  })
+})
+
+describe('Unknown object members', () => {
+  let pojo
+  beforeEach(async () => {
+    const objInfo = Es6ClassInfo.from(Object)
+    pojo = await objInfo.toPojo({ isKnown: false })
+  })
+
+  it('matches expected', () => {
+    expect(pojo).toEqual({ name: 'Object' })
   })
 })
 
@@ -34,7 +45,6 @@ describe('Function members', () => {
   })
 
   it('matches expected', () => {
-    // expect(pojo).toEqual({ name: 'Function', base: 'Object' })
     expect(pojo).toEqual(functionPojo)
   })
 })
@@ -44,10 +54,8 @@ describe('MyClass members', () => {
   beforeEach(async () => {
     const fnInfo = Es6ClassInfo.from(MyClass)
     pojo = await fnInfo.toPojo({
-      filter: { 
-        isKnown: false,
-        isNonPublic: false,
-      },
+      isKnown: false,
+      isNonPublic: false,
     })
   })
 
@@ -61,11 +69,9 @@ describe('MyClass instance members', () => {
   beforeEach(async () => {
     const fnInfo = Es6ClassInfo.from(MyClass)
     pojo = await fnInfo.toPojo({
-      filter: { 
-        isStatic: false,
-        isKnown: false,
-        isNonPublic: false,
-      },
+      isStatic: false,
+      isKnown: false,
+      isNonPublic: false,
     })
   })
 
@@ -79,11 +85,9 @@ describe('MyClass static members', () => {
   beforeEach(async () => {
     const fnInfo = Es6ClassInfo.from(MyClass)
     pojo = await fnInfo.toPojo({
-      filter: { 
-        isStatic: true,
-        isKnown: false,
-        isNonPublic: false,
-      },
+      isKnown: false,
+      isNonPublic: false,
+      isStatic: true,
     })
   })
 
@@ -98,10 +102,8 @@ describe('MyClass own members', () => {
     const fnInfo = Es6ClassInfo.from(MyClass)
     pojo = await fnInfo.toPojo({
       ownOnly: true,
-      filter: { 
-        isKnown: false,
-        isNonPublic: false,
-      },
+      isKnown: false,
+      isNonPublic: false,
     })
   })
 

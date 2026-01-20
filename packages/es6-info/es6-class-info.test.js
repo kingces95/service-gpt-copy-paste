@@ -46,8 +46,8 @@ const MyClass = {
 
 class MyClassWithMembers {
   static staticField = 1
-  instanceField = 2
 }
+MyClassWithMembers.prototype.instanceField = 2
 const MyClassWithOwnMembers = {
   name: 'MyClassWithOwnMembers',
   class: MyClassWithMembers,
@@ -114,17 +114,17 @@ describe('Es6ClassInfo', () => {
       expect(members.length > 0).toBe(md.hasOwnMembers == true)
     })
     it('can get all insance own members by name', () => {
-      for (const member of info.ownInstanceMembers()) {
-        const got = info.getOwnInstanceMember(member.name)
+      for (const member of info.ownMembers()) {
+        const got = info.getOwnMember(member.name)
         expect(got.equals(member)).toBe(true)
       }
     })
     it('can get toString by name', () => {
-      const toStringMember = info.getInstanceMember('toString')
+      const toStringMember = info.getMember('toString')
       expect(toStringMember).not.toBeNull()
     })
     // it('includes toString in instance members', () => {
-    //   const members = [...info.instanceMembers()]
+    //   const members = [...info.members()]
     //   const toStringMember = members.find(m => m.name == 'toString')
     //   expect(toStringMember).not.toBeUndefined()
     // })
@@ -139,10 +139,10 @@ describe('Es6ClassInfo', () => {
       expect(members.length > 0).toBe(md.hasMembers == true)
     })
     it('can get all instance members by name', () => {
-      for (const member of info.instanceMembers()) {
-        const got = info.getInstanceMember(member.name)
+      for (const member of info.members()) {
+        const got = info.getMember(member.name)
         if (!got) 
-          info.getInstanceMember(member.name)
+          info.getMember(member.name)
         expect(got.equals(member)).toBe(true)
       }
     })
@@ -154,15 +154,15 @@ describe('Es6ClassInfo', () => {
     })
     it('returns null for missing members', () => {
       const missingName = '__missing_member__'
-      expect(info.getOwnInstanceMember(missingName)).toBe(null)
+      expect(info.getOwnMember(missingName)).toBe(null)
       expect(info.getOwnStaticMember(missingName)).toBe(null)
-      expect(info.getInstanceMember(missingName)).toBe(null)
+      expect(info.getMember(missingName)).toBe(null)
       expect(info.getStaticMember(missingName)).toBe(null)
     })
     it('returns null for null member name', () => {
-      expect(info.getOwnInstanceMember(null)).toBe(null)
+      expect(info.getOwnMember(null)).toBe(null)
       expect(info.getOwnStaticMember(null)).toBe(null)
-      expect(info.getInstanceMember(null)).toBe(null)
+      expect(info.getMember(null)).toBe(null)
       expect(info.getStaticMember(null)).toBe(null)
     })
   })
@@ -333,7 +333,7 @@ describe('Es6MemberInfo', () => {
       typeInfo = Es6ClassInfo.from(md.cls)
       info = md.isStatic 
         ? typeInfo.getStaticMember(md.name)
-        : typeInfo.getInstanceMember(md.name)
+        : typeInfo.getMember(md.name)
     })
     it('should equal itself', () => {
       expect(info.equals(info)).toBe(true)
@@ -341,7 +341,7 @@ describe('Es6MemberInfo', () => {
     it('should be found in members list', () => {
       const members = md.isStatic
         ? [...typeInfo.staticMembers()]
-        : [...typeInfo.instanceMembers()]
+        : [...typeInfo.members()]
       const found = members.find(m => m.equals(info))
       expect(found).not.toBeUndefined()
     })
@@ -349,7 +349,7 @@ describe('Es6MemberInfo', () => {
       const typeInfo = Es6ClassInfo.from(md.cls)
       let otherInfo = md.isStatic
         ? typeInfo.getStaticMember(md.name)
-        : typeInfo.getInstanceMember(md.name)
+        : typeInfo.getMember(md.name)
       expect(info.equals(otherInfo)).toBe(true)
     })
     it('should not equal null', () => {
@@ -397,10 +397,10 @@ describe('Es6MemberInfo', () => {
       }
 
       const expectedParentHost = Es6ClassInfo.from(md.parentHost)
-      const expectedParent = expectedParentHost.getInstanceMember(md.name)
+      const expectedParent = expectedParentHost.getMember(md.name)
 
       const expectedRootHost = Es6ClassInfo.from(md.rootHost)
-      const expectedRoot = expectedRootHost.getInstanceMember(md.name)
+      const expectedRoot = expectedRootHost.getMember(md.name)
 
       const root = info.root()
       expect(root.equals(expectedRoot)).toBe(true)
