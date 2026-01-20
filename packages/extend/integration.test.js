@@ -32,11 +32,11 @@ describe('PartialPojo with non-standard properties', () => {
     it('should have and info pojo', async () => {
       const pojo = await Info.from(cls).toPojo(filter)
       expect(pojo).toEqual({
-        members: { instance: { fields: {
+        members: { fields: {
           writableFalse: { host: '.', modifiers: [ 'const' ] },
           enumerableFalse: { host: '.', modifiers: [ 'hidden' ] },
           configurableFalse: { host: '.', modifiers: [ 'sealed' ]},
-        } } },
+        } },
         isAnonymous: true,
         base: 'Object',
       })
@@ -71,21 +71,19 @@ describe('Kitchen sink', () => {
     beforeEach(() => {
       expectedMembers = 
       { 
-        instance: { 
-          getters: {
-            getter0: { host: '.', },
-            getter1: { host: '.', },
-          },
-          setters: {
-            setter0: { host: '.', },
-            setter1: { host: '.', },
-          },
-          methods: {
-            member0: { host: '.' },
-            member1: { host: '.' },
-            member2: { host: '.' },
-          }
+        getters: {
+          getter0: { host: '.', },
+          getter1: { host: '.', },
         },
+        setters: {
+          setter0: { host: '.', },
+          setter1: { host: '.', },
+        },
+        methods: {
+          member0: { host: '.' },
+          member1: { host: '.' },
+          member2: { host: '.' },
+        }
       }
     })
 

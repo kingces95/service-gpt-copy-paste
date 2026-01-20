@@ -40,7 +40,7 @@ describe('MyClass', () => {
       describe('has a member', () => {
         let memberInfo
         beforeEach(() => {
-          memberInfo = info.getInstanceMember('myMethod')
+          memberInfo = info.getMember('myMethod')
         })
         it('should report MyClass as host', () => {
           const host = memberInfo.host
@@ -66,7 +66,7 @@ describe('MyClass', () => {
       myPartialClassInfo = Info.from(myPartialClass)
     })
     it('should report having the merged member', () => {
-      const member = info.getInstanceMember('myMethod')
+      const member = info.getMember('myMethod')
       expect(member).not.toBeNull()
     })  
     it('should report being merged directly with MyPartialClass', () => {
@@ -77,7 +77,7 @@ describe('MyClass', () => {
     describe('has a merged member', () => {
       let memberInfo
       beforeEach(() => {
-        memberInfo = info.getInstanceMember('myMethod')
+        memberInfo = info.getMember('myMethod')
       })
       it('should report MyClass as host', () => {
         const rootHost = memberInfo.host
@@ -147,7 +147,7 @@ describe('MyClass', () => {
           info = Info.from(cls)
         })
         it('should report having the merged member', () => {
-          const member = info.getInstanceMember('myMethod')
+          const member = info.getMember('myMethod')
           expect(member).not.toBeNull()
         })
         it('should report being merged MyExtendedConcept and MyConcept', () => {
@@ -160,7 +160,7 @@ describe('MyClass', () => {
         describe('has a merged member', () => {
           let memberInfo
           beforeEach(() => {
-            memberInfo = info.getInstanceMember('myMethod')
+            memberInfo = info.getMember('myMethod')
           })
           it('should report MyClass as host', () => {
             const rootHost = memberInfo.host
@@ -189,7 +189,7 @@ describe('MyClass', () => {
         info = Info.from(cls)
       })
       it('should report having the merged member', () => {
-        const member = info.getInstanceMember('myMethod')
+        const member = info.getMember('myMethod')
         expect(member).not.toBeNull()
       })
       it('should report being merged directly with MyConcept', () => {
@@ -200,7 +200,7 @@ describe('MyClass', () => {
       describe('has a merged member', () => {
         let memberInfo  
         beforeEach(() => {
-          memberInfo = info.getInstanceMember('myMethod')
+          memberInfo = info.getMember('myMethod')
         })
         it('should report MyClass as host', () => {
           const rootHost = memberInfo.host
@@ -262,7 +262,7 @@ describe('MyClass', () => {
       describe('has a merged member', () => {
         let memberInfo
         beforeEach(() => {
-          memberInfo = info.getInstanceMember('myMethod')
+          memberInfo = info.getMember('myMethod')
         })
         it('should report MyPartialClass as its partialClass', () => {
           const partialClass = memberInfo.partialClass
@@ -295,7 +295,7 @@ describe('MyClass', () => {
       describe('has a merged member', () => {
         let memberInfo
         beforeEach(() => {
-          memberInfo = info.getInstanceMember('myMethod')
+          memberInfo = info.getMember('myMethod')
         })
         it('should report MyPartialClass as its partialClass', () => {
           const partialClass = memberInfo.partialClass
@@ -337,24 +337,24 @@ describe('A class', () => {
   describe.each([
     ['no members', class { }, { }],
     ['static data', class { static myStaticMember = 1 }, {
-      members: { static: { fields: {
+      staticMembers: { fields: {
         myStaticMember: { host: '.' } 
-      } } },
+      } },
     }],
     ['instance member', class { myInstanceMember = 1 }, { }],
     ['static getter', class {
       static get myStaticAccessor() { return 1 }
     }, {
-      members: { static: { getters: {
+      staticMembers: { getters: {
         myStaticAccessor: { host: '.'  }
-      } } },
+      } },
     }],
     ['instance setter', class {
       set myInstanceAccessor(value) { }
     }, {
-      members: { instance: { setters: {
+      members: { setters: {
         myInstanceAccessor: { host: '.' }
-      } } },
+      } },
     }],
   ])('with %s', (description, cls, expected) => {
     it('has a pojo', async () => {
@@ -387,11 +387,11 @@ describe('A bespoke class', () => {
     it('has a pojo', async () => {
       const pojo = {
         isAnonymous: true,
-        members: { instance: { methods: {
+        members: { methods: {
           [MySymbol]: { 
             host: '.',
           },
-        } } },
+        } },
         base: 'Object'
       }
       const fnInfo = Info.from(myClass)
@@ -418,7 +418,7 @@ describe('A bespoke class', () => {
 
       it('should have Object as root of toString', async () => {
         const fnInfo = Info.from(myExtendedClass)
-        const toStringMember = fnInfo.getOwnInstanceMember('toString')
+        const toStringMember = fnInfo.getOwnMember('toString')
         const object = FunctionInfo.Object
         expect(toStringMember.rootHost().equals(object)).toBe(true)
         expect(toStringMember.rootHost().name).toBe('Object')
@@ -433,11 +433,11 @@ describe('A bespoke class', () => {
     it('has a pojo', async () => {
       const pojo = {
         isAnonymous: true,
-        members: {
+        staticMembers: {
           // Instance ctor is known so excluded by filter 
-          static: { fields: {
+          fields: {
             constructor: { host: '.' }
-          } }
+          }
         },
         base: 'Object'
       }
@@ -461,12 +461,12 @@ describe('A bespoke class', () => {
     it('has a pojo', async () => {
       const pojo = {
         isAnonymous: true,
-        members: { static: { fields: {
+        staticMembers: { fields: {
           myStaticConst: { 
             host: '.',
             modifiers: [ 'sealed', 'const' ],
           }
-        } } },
+        } },
         base: 'Object'
       }
       const fnInfo = Info.from(myClass)
@@ -485,15 +485,15 @@ describe('A bespoke class', () => {
       const pojo = {
         isAnonymous: true,
         members: { 
-          instance: { fields: {
+          fields: {
             myInstanceData: { 
               host: '.', 
-          } } },
-          static: { fields: {
-            myStaticData: { 
-              host: '.', 
-          } } },
+          } },
         },
+        staticMembers: { fields: {
+          myStaticData: { 
+            host: '.', 
+        } } },
         base: 'Object'
       }
       const fnInfo = Info.from(myClass)
@@ -539,21 +539,19 @@ describe('A bespoke class', () => {
       const pojo = {
         isAnonymous: true,
         members: {
-          instance: {
-            properties: {
-              myAccessor: { host: '.' }
-            },
-            methods: {
-              myMethod: { host: '.' }
-            }
+          properties: {
+            myAccessor: { host: '.' }
           },
-          static: {
-            properties: {
-              myAccessor: { host: '.' }
-            },
-            methods: {
-              myMethod: { host: '.' }
-            }
+          methods: {
+            myMethod: { host: '.' }
+          },
+        },
+        staticMembers: {
+          properties: {
+            myAccessor: { host: '.' }
+          },
+          methods: {
+            myMethod: { host: '.' }
           }
         },
         base: 'Object'
@@ -584,16 +582,14 @@ describe('A bespoke class', () => {
       const pojo = {
         isAnonymous: true,
         members: {
-          instance: {
-            properties: {
-              myAccessor: { 
-                host: '.', 
-                isAbstract: true 
-              }
-            },
-            methods: {
-              myMethod: { host: '.', isAbstract: true }
+          properties: {
+            myAccessor: { 
+              host: '.', 
+              isAbstract: true 
             }
+          },
+          methods: {
+            myMethod: { host: '.', isAbstract: true }
           }
         },
         base: 'Object'

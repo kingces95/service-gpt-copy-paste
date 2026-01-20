@@ -14,11 +14,11 @@ import { toEqualAsSet } from '@kingjs/vitest'
 describe('PartialClass', () => {
   const info = Info.from(PartialClass)
   it('should not have an own constructor member', () => {
-    const ctorMember = info.getOwnInstanceMember('constructor')
+    const ctorMember = info.getOwnMember('constructor')
     expect(ctorMember).toBeNull()
   })
   it('should not have a constructor member', () => {
-    const ctorMember = info.getInstanceMember('constructor')
+    const ctorMember = info.getMember('constructor')
     expect(ctorMember).toBeNull()
   })
   it('should not have an own name member', () => {

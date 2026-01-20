@@ -68,7 +68,7 @@ describe('A concept', () => {
         'constructor',  
       ])('%s', (name) => {
         it('is missing', () => {
-          const member = fnInfo.getOwnInstanceMember(name)
+          const member = fnInfo.getOwnMember(name)
           expect(member).toBeNull()
         })
       })
@@ -99,12 +99,12 @@ describe('A concept', () => {
       set member(value) { }
     }, 
     {
-      members: { instance: { setters: {
+      members: { setters: {
         member: { 
           host: '.',
           isAbstract: true
         }
-      } } },
+      } },
     }],
   ])('with %s', (_, cls, expected) => {
     it('has a pojo', async () => {
@@ -130,17 +130,17 @@ describe('A member', () => {
     ])('%s', (_, name, cls, expected) => {
     it('has a toString', async () => {
       const fnInfo = Info.from(cls)
-      const member = fnInfo.getOwnInstanceMember(name) 
+      const member = fnInfo.getOwnMember(name) 
         ?? fnInfo.getOwnStaticMember(name)
       expect(member.toString()).toBe(expected) 
     })
     it('does not equal Object.toString member', async () => {
       const fnInfo = Info.from(cls)
-      const member = fnInfo.getOwnInstanceMember(name) 
+      const member = fnInfo.getOwnMember(name) 
         ?? fnInfo.getOwnStaticMember(name)
       const objectFnInfo = Info.from(Object)
       const objectToStringMember = 
-        objectFnInfo.getOwnInstanceMember('toString')
+        objectFnInfo.getOwnMember('toString')
       expect(member.equals(objectToStringMember)).toBe(false)
     })
   })
@@ -272,7 +272,7 @@ describe('A concept with a member', () => {
           expect(actual).toEqual(expected)
         })
         it('implements member with the function passed', () => {
-          const member = subClsInfo.getOwnInstanceMember('member')
+          const member = subClsInfo.getOwnMember('member')
           expect(member?.method).toBe(fn)
           expect(subCls.prototype.member).toBe(fn)
         })
@@ -302,12 +302,12 @@ describe('A bespoke concept', () => {
     })  
     it('has a pojo', async () => {
       const pojo = {
-        members: { instance: { methods: {
+        members: { methods: {
           [MySymbol]: { 
             host: '.',
             isAbstract: true,
           },
-        } } },
+        } },
         name: 'MyConcept',
         base: 'Concept'
       }
@@ -366,9 +366,9 @@ describe('A bespoke concept', () => {
       const pojo = {
         name: 'MyConcept',
         base: 'Concept',
-        members: { instance: { methods: {
+        members: { methods: {
           method: { host: '.', isAbstract: true }
-        } } },
+        } },
       }
 
       // Constructors are ignored by the DSL
@@ -427,20 +427,18 @@ describe('A bespoke concept', () => {
         name: 'MyConcept',
         base: 'Concept',
         members: {
-          instance: {
-            properties: {
-              myAccessor: { 
-                isAbstract: true,
-                host: '.'
-              }
-            },
-            methods: {
-              myMethod: { 
-                isAbstract: true,
-                host: '.'
-              }
+          properties: {
+            myAccessor: { 
+              isAbstract: true,
+              host: '.'
             }
           },
+          methods: {
+            myMethod: { 
+              isAbstract: true,
+              host: '.'
+            }
+          }
         },
       }
   

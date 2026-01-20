@@ -1,7 +1,7 @@
 export const myConceptPojo = {
   name: 'MyConcept',
   base: 'Concept',
-  members: {
+  members: { 
     conceptual: {
       MyLeftConcept: {
         methods: {
@@ -19,6 +19,6 @@ export const myConceptPojo = {
         methods: { myBaseConceptMethod: { isAbstract: true, host: '.' } }
       }
     },
-    instance: { methods: { myConceptMethod: { isAbstract: true, host: '.' } } }
+    methods: { myConceptMethod: { isAbstract: true, host: '.' } } 
   }
 }

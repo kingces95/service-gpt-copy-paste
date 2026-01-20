@@ -10,7 +10,7 @@ import { PartialReflect } from '@kingjs/partial-reflect'
 
 function getMemberValue(cls) {
   const info = Info.from(cls)
-  const member = info.getInstanceMember('member')
+  const member = info.getMember('member')
   const value = member?.method
   return value
 }
@@ -35,29 +35,29 @@ describe('A partial class', () => {
     ['instance setter', {
       set myInstanceAccessor(value) { }
     }, {
-      members: { instance: { setters: {
+      members: { setters: {
         myInstanceAccessor: { host: '.' }
-      } } },
+      } },
     }],
     ['data', { myData: 1 }, { 
-      members: { instance: { fields: {
+      members: { fields: {
         myData: { host: '.' } 
-      } } },
+      } },
     }],
     ['abstract method', { myMethod: abstract }, { 
-      members: { instance: { methods: {
+      members: { methods: {
         myMethod: { host: '.', isAbstract: true } 
-      } } }
+      } }
     }],
     ['descriptor member', { myMethod: { value: 1 } }, {
-      members: { instance: { fields: {
+      members: { fields: {
         myMethod: { host: '.' } 
-      } } },
+      } },
     }],
     ['const field', { myField: { value: 3.141, writable: false } }, {
-      members: { instance: { fields: {
+      members: { fields: {
         myField: { host: '.', modifiers: [ 'const' ] } 
-      } } },
+      } },
     }],
   ])('with %s', (_, cls, expected) => {
     it('has a pojo', async () => {

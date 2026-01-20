@@ -106,7 +106,7 @@ describe('Es6ClassInfo', () => {
       expect(actualBase == expectedBase).toBe(true)
     })
     // it('returns null for __proto__', () => {
-    //   const protoMember = info.getOwnInstanceMember('__proto__')
+    //   const protoMember = info.getOwnMember('__proto__')
     //   expect(protoMember).toBe(null)
     // })
     it('has correct own members', () => {

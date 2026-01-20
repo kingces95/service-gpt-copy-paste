@@ -114,7 +114,7 @@ const Es6Object = {
   isPartialClassSubclass: false,
   isConceptSubclass: false,
   isAnonymous: false,
-  // ownInstanceMembers: [
+  // ownMembers: [
   //   ...Reflect.ownKeys(Object.prototype)]
   //   .filter(str => str != '__proto__'),
   // ownStaticMembers: [
@@ -137,7 +137,7 @@ const Es6Function = {
   isPartialClassSubclass: false,
   isConceptSubclass: false,
   isAnonymous: false,
-  // ownInstanceMembers: [
+  // ownMembers: [
   //   ...Reflect.ownKeys(Function.prototype)],
   // ownStaticMembers: [
   //   ...Reflect.ownKeys(Function)],
@@ -161,7 +161,7 @@ const MyClassMd = {
   isPartialClassSubclass: false,
   isConceptSubclass: false,
   isAnonymous: false,
-  // ownInstanceMembers: [
+  // ownMembers: [
   //   ...Reflect.ownKeys(MyClass.prototype)],
   // ownStaticMembers: [
   //   ...Reflect.ownKeys(MyClass)],
@@ -233,8 +233,8 @@ describe('Given', () => {
       expect(info.isAnonymous).toBe(md.isAnonymous)
     })
     it('should have matching own instance members', () => {
-      const expected = md.ownInstanceMembers ?? []
-      const members = [...info.ownInstanceMembers()].map(m => m.name)
+      const expected = md.ownMembers ?? []
+      const members = [...info.ownMembers()].map(m => m.name)
       expect(members).toEqualAsSet(expected)
     })
     it('should have matching own static members', () => {
@@ -244,7 +244,7 @@ describe('Given', () => {
     })
     it('should have matching instance members', () => {
       const expected = md.instanceMembers ?? []
-      const members = [...info.instanceMembers()].map(m => m.name)
+      const members = [...info.members()].map(m => m.name)
       expect(members).toEqualAsSet(expected)
     })
     it('should have matching static members', () => {
@@ -264,7 +264,7 @@ describe('Given', () => {
     })
     it('should have own members as union of own static and own instance', () => {
       const expected = [
-        ...md.ownInstanceMembers ?? [],
+        ...md.ownMembers ?? [],
         ...md.ownStaticMembers ?? []]
       const members = [...info.ownMembers()].map(m => m.name)
       expect(members).toEqualAsSet(expected)
@@ -284,20 +284,20 @@ describe('Given', () => {
     })
     it('should have no constructor or name member if abstract', () => {
       if (!info.isAbstract) return
-      const ctorMember = info.getOwnInstanceMember('constructor')
+      const ctorMember = info.getOwnMember('constructor')
       expect(ctorMember).toBeNull()
       const nameMember = info.getOwnStaticMember('name')
       expect(nameMember).toBeNull()
     })
     it('should have no own constructor or name member if abstract', () => {
       if (!info.isAbstract) return
-      const ctorMember = info.getInstanceMember('constructor')
+      const ctorMember = info.getMember('constructor')
       expect(ctorMember).toBeNull()
       const nameMember = info.getStaticMember('name')
       expect(nameMember).toBeNull()
     })
     it('should have no myMissingMember member', () => {
-      const missingMember = info.getOwnInstanceMember('myMissingMember')
+      const missingMember = info.getOwnMember('myMissingMember')
       expect(missingMember).toBeNull()
     })
     it('should have no own PartialClass associations', () => {
@@ -344,7 +344,7 @@ describe('Given', () => {
     describe('instance members', () => {
       let instanceMembers
       beforeEach(() => {
-        instanceMembers = [...info.instanceMembers()]
+        instanceMembers = [...info.members()]
       })
       it('should all be known if type is known', () => {
         if (!info.isKnown) return
@@ -587,7 +587,7 @@ describe('Member', () => {
     let info
     beforeEach(() => {
       typeInfo = Info.from(md.cls)
-      info = typeInfo.getInstanceMember(md.name)
+      info = typeInfo.getMember(md.name)
       if (!info)
         info = typeInfo.getStaticMember(md.name)
     })
@@ -596,7 +596,7 @@ describe('Member', () => {
     })
     it('should equal a different instance of itself', () => {
       const typeInfo = Info.from(md.cls)
-      let otherInfo = typeInfo.getInstanceMember(md.name)
+      let otherInfo = typeInfo.getMember(md.name)
       if (!otherInfo)
         otherInfo = typeInfo.getStaticMember(md.name)
       expect(info.equals(otherInfo)).toBe(true)
@@ -658,10 +658,10 @@ describe('Member', () => {
       }
 
       const expectedParentHost = Info.from(md.parentHost)
-      const expectedParent = expectedParentHost.getInstanceMember(md.name)
+      const expectedParent = expectedParentHost.getMember(md.name)
 
       const expectedRootHost = Info.from(md.rootHost)
-      const expectedRoot = expectedRootHost.getInstanceMember(md.name)
+      const expectedRoot = expectedRootHost.getMember(md.name)
 
       const root = info.root()
       expect(root.equals(expectedRoot)).toBe(true)

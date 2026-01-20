@@ -104,7 +104,7 @@ export class FunctionInfo extends Info {
     const es6Member = es6ClassInfo.getOwnStaticMember(key)
     return this.#getMember(es6Member)
   }
-  getOwnInstanceMember(key) {
+  getOwnMember(key) {
     const es6ClassInfo = this.#es6ClassInfo
     const es6Member = es6ClassInfo.getOwnMember(key)
     return this.#getMember(es6Member)
@@ -115,13 +115,13 @@ export class FunctionInfo extends Info {
     const es6Member = es6ClassInfo.getStaticMember(key)
     return this.#getMember(es6Member)
   }
-  getInstanceMember(key) {
+  getMember(key) {
     const es6ClassInfo = this.#es6ClassInfo
     const es6Member = es6ClassInfo.getMember(key)
     return this.#getMember(es6Member)
   }
 
-  *ownInstanceMembers() {
+  *ownMembers() {
     const es6ClassInfo = this.#es6ClassInfo
     const members = [...es6ClassInfo.ownMembers()]
     yield *this.#members(members)
@@ -131,12 +131,8 @@ export class FunctionInfo extends Info {
     const members = [...es6ClassInfo.ownStaticMembers()]
     yield *this.#members(members)
   }
-  *ownMembers() {
-    yield *this.ownStaticMembers()
-    yield *this.ownInstanceMembers()
-  }
 
-  *instanceMembers() {
+  *members() {
     const es6ClassInfo = this.#es6ClassInfo
     const members = [...es6ClassInfo.members()]
     yield *this.#members(members)
@@ -145,10 +141,6 @@ export class FunctionInfo extends Info {
     const es6ClassInfo = this.#es6ClassInfo
     const members = [...es6ClassInfo.staticMembers()]
     yield *this.#members(members)
-  }
-  *members() {
-    yield *this.staticMembers()
-    yield *this.instanceMembers()
   }
 
   *ownPartialClasses() {

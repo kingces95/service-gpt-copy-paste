@@ -18,12 +18,6 @@ function metadata({ ownOnly, isStatic } = { }) {
         isStatic == true ? 'ignore' : 'records',
       [ownOnly ? 'ownStaticMembers' : 'staticMembers']: 
         isStatic == false ? 'ignore' : 'records',
-      allMembers: (info) => {
-        return [
-          ...info[ownOnly ? 'ownMembers' : 'members'](),
-          ...info[ownOnly ? 'ownStaticMembers' : 'staticMembers'](),
-        ]
-      },
     }],
     [Es6MemberInfo, {
       name: 'key',

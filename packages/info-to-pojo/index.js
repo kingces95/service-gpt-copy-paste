@@ -8,13 +8,16 @@ import { dumpPojo } from "@kingjs/pojo-dump"
 import { PojoMetadata } from '@kingjs/pojo-metadata'
 import { isAbstract } from '@kingjs/abstract'
 
-function metadata({ ownOnly } = { }) {
+function metadata({ ownOnly, isStatic } = { }) {
   return new PojoMetadata([
     [FunctionInfo, {
       name: 'string',
       base: 'name',
       isAnonymous: 'boolean',
-      [ownOnly ? 'ownMembers' : 'members']: 'records',
+      [ownOnly ? 'ownMembers' : 'members']: 
+        isStatic == true ? 'ignore' : 'records',
+      [ownOnly ? 'ownStaticMembers' : 'staticMembers']: 
+        isStatic == false ? 'ignore' : 'records',
     }],
     [MemberInfo, {
       name: 'key',
@@ -25,7 +28,7 @@ function metadata({ ownOnly } = { }) {
 
       // pivots
       type: 'string',
-      isStatic: 'boolean',
+      // isStatic: 'boolean',
       isKnown: 'boolean',
       isNonPublic: 'boolean',
       isConceptual: 'boolean',
@@ -56,21 +59,12 @@ const knownPivotMd = {
   },
   ...nonPublicPivotMd
 }
-const staticPivotMd = {
-  static: {
-    predicate: 'isStatic', 
-    pivot: knownPivotMd,
-  },
-  instance: {
-    pivot: knownPivotMd
-  }
-}
 const conceptualPivotMd = {
   conceptual: {
     predicate: 'isConceptual',
     copyPivot: [ 'concepts', typePivotMd ],
   },
-  ...staticPivotMd
+  ...knownPivotMd
 }
 
 FunctionInfo.prototype.toPojo = async function({ 

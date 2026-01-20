@@ -27,7 +27,7 @@ describe('FunctionInfo for PartialClass', () => {
     'constructor',  
   ])('%s', (name) => {
     it('is missing', () => {
-      const member = fnInfo.getOwnInstanceMember(name)
+      const member = fnInfo.getOwnMember(name)
       expect(member).toBeNull()
     })
   })
@@ -112,16 +112,16 @@ describe('A member', () => {
     ])('%s', (_, name, cls, expected) => {
     it('has a toString', async () => {
       const fnInfo = Info.from(PartialReflect.defineType(cls))
-      const member = fnInfo.getOwnInstanceMember(name) 
+      const member = fnInfo.getOwnMember(name) 
         ?? fnInfo.getOwnStaticMember(name)
       expect(member.toString()).toBe(expected) 
     })
     it('does not equal Object.toString member', async () => {
       const fnInfo = Info.from(PartialReflect.defineType(cls))
-      const member = fnInfo.getOwnInstanceMember(name) 
+      const member = fnInfo.getOwnMember(name) 
         ?? fnInfo.getOwnStaticMember(name)
       const objectFnInfo = Info.from(Object)
-      const objectToStringMember = objectFnInfo.getOwnInstanceMember('toString')
+      const objectToStringMember = objectFnInfo.getOwnMember('toString')
       expect(member.equals(objectToStringMember)).toBe(false)
     })
   })
@@ -155,11 +155,11 @@ describe('A bespoke partial class', () => {
     })  
     it('has a pojo', async () => {
       const pojo = {
-        members: { instance: { methods: {
+        members: { methods: {
           [MySymbol]: { 
             host: '.',
           },
-        } } },
+        } },
         name: 'MyClass',
         base: 'PartialClass'
       }
@@ -194,9 +194,9 @@ describe('A bespoke partial class', () => {
       const pojo = {
         name: 'MyClass',
         base: 'PartialClass',
-        members: { instance: { methods: {
+        members: { methods: {
           method: { host: '.' }
-        } } },
+        } },
       }
 
       // Constructors are ignored by the DSL
@@ -232,10 +232,10 @@ describe('A bespoke partial class', () => {
     it('has a pojo', async () => {
       const pojo = {
         members: { 
-          instance: { fields: {
+          fields: {
             myInstanceData: {
               host: '.',
-          } } },
+          } },
         },
         name: 'MyClass',
         base: 'PartialClass'
@@ -282,14 +282,12 @@ describe('A bespoke partial class', () => {
     it('has a pojo', async () => {
       const pojo = {
         members: {
-          instance: {
-            properties: {
-              myAccessor: { host: '.' }
-            },
-            methods: {
-              myMethod: { host: '.' }
-            }
+          properties: {
+            myAccessor: { host: '.' }
           },
+          methods: {
+            myMethod: { host: '.' }
+          }
         },
         base: 'PartialClass',
         name: 'MyEg',
@@ -319,16 +317,14 @@ describe('A bespoke partial class', () => {
     it('has a pojo', async () => {
       const pojo = {
         members: {
-          instance: {
-            properties: {
-              myAccessor: { 
-                host: '.',
-                isAbstract: true 
-              }
-            },
-            methods: {
-              myMethod: { host: '.', isAbstract: true }
+          properties: {
+            myAccessor: { 
+              host: '.',
+              isAbstract: true 
             }
+          },
+          methods: {
+            myMethod: { host: '.', isAbstract: true }
           }
         },
         name: 'MyClass',
