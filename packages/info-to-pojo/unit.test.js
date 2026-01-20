@@ -106,10 +106,8 @@ describe('MyClass members', () => {
   beforeEach(async () => {
     const fnInfo = Info.from(MyClass)
     pojo = await fnInfo.toPojo({
-      filter: { 
-        isKnown: false,
-        isNonPublic: false,
-      },
+      isKnown: false,
+      isNonPublic: false,
     })
   })
 
@@ -135,11 +133,9 @@ describe('MyConcept members', () => {
 //   beforeEach(async () => {
 //     const fnInfo = Es6ClassInfo.from(MyClass)
 //     pojo = await fnInfo.toPojo({
-//       filter: { 
-//         isStatic: false,
-//         isKnown: false,
-//         isNonPublic: false,
-//       },
+//       isStatic: false,
+//       isKnown: false,
+//       isNonPublic: false,
 //     })
 //   })
 
@@ -153,11 +149,9 @@ describe('MyConcept members', () => {
 //   beforeEach(async () => {
 //     const fnInfo = Es6ClassInfo.from(MyClass)
 //     pojo = await fnInfo.toPojo({
-//       filter: { 
-//         isStatic: true,
-//         isKnown: false,
-//         isNonPublic: false,
-//       },
+//       isStatic: true,
+//       isKnown: false,
+//       isNonPublic: false,
 //     })
 //   })
 

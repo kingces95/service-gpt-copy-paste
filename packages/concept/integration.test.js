@@ -24,7 +24,7 @@ describe('A kitchen sink definition', () => {
   })
   it('should have an info pojo', async () => {
     const pojo = await clsInfo.toPojo({
-      filter: { isNonPublic: false, isKnown: false },
+      isNonPublic: false, isKnown: false,
     })  
 
     // log to infinite depth for easier debugging

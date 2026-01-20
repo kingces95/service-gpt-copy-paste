@@ -7,7 +7,7 @@ import { PartialClass } from '@kingjs/partial-class'
 import { PartialReflect } from '@kingjs/partial-reflect'
 
 const filter = {
-  filter: { isNonPublic: false, isKnown: false },
+  isNonPublic: false, isKnown: false,
 }
 
 describe('PartialPojo with non-standard properties', () => {

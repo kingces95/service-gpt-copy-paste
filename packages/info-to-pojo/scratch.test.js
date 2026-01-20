@@ -16,10 +16,8 @@ function dump(fn) {
   const fnInfo = Info.from(fn)
   fnInfo.dump({
     ownOnly: false,
-    filter: [{ 
-      isKnown: false,
-      isNonPublic: false,
-    }],
+    isKnown: false,
+    isNonPublic: false,
   })
 }
 

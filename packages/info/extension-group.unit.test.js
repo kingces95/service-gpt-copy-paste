@@ -48,10 +48,8 @@ describe('FunctionInfo for PartialClass', () => {
 const MySymbol = Symbol('test-symbol')
 
 const pojoFilter = {
-  filter: {
-    isNonPublic: false,
-    isKnown: false,
-  }
+  isNonPublic: false,
+  isKnown: false,
 }
 
 describe('A PartialClass', () => {

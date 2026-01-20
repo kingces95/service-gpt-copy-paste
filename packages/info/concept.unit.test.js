@@ -41,11 +41,9 @@ const MySymbol = Symbol('test-symbol')
 
 const pojoFilter = {
   ownOnly: false,
-  filter: {
-      isNonPublic: false,
-      isKnown: false,
-    }
-  }
+  isNonPublic: false,
+  isKnown: false,
+}
 
 describe('A concept', () => {
   describe('with a name', () => {

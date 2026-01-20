@@ -308,10 +308,8 @@ describe('MyClass', () => {
 
 const pojoFilter = {
   ownOnly: false,
-  filter: [{ 
-    isKnown: false,
-    isNonPublic: false,
-  }],
+  isKnown: false,
+  isNonPublic: false,
 }
 
 describe('A class', () => {

@@ -16,10 +16,8 @@ function getMemberValue(cls) {
 }
 
 const pojoFilter = {
-  filter: {
-    isNonPublic: false,
-    isKnown: false,
-  }
+  isNonPublic: false,
+  isKnown: false,
 }
 
 describe('A partial class', () => {

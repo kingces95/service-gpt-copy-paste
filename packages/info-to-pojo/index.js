@@ -73,7 +73,9 @@ const conceptualPivotMd = {
   ...staticPivotMd
 }
 
-FunctionInfo.prototype.toPojo = async function({ filter, ownOnly } = { }) {
+FunctionInfo.prototype.toPojo = async function({ 
+  ownOnly, ...filter } = { }) {
+
   const pojo = await toPojo(this, { 
     filter,
     pivot: conceptualPivotMd,
