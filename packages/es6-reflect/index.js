@@ -1,3 +1,7 @@
+import assert from 'assert'
+import { Es6Descriptor } from '@kingjs/es6-descriptor'
+import { es6Typeof } from '@kingjs/es6-typeof'
+
 const KnownInstanceMembers = new Set([ 'constructor' ])
 const KnownStaticMembers = new Set([ 'length', 'name', 'prototype' ])
 
@@ -13,6 +17,24 @@ export class Es6Reflect {
       yield object
       object = Object.getPrototypeOf(object)
     }
+  }
+
+  static typeof(fn, key, descriptor, { isStatic } = { }) {
+    const descriptorType = Es6Descriptor.typeof(descriptor)
+    if (descriptorType != 'field')
+      return descriptorType
+
+    const value = descriptor.value
+    const es6Type = es6Typeof(value)
+    if (key === 'constructor' 
+      && !isStatic 
+      && value === fn) {
+
+      assert(es6Type == 'class')
+      return 'constructor'
+    }
+
+    return 'field'
   }
 
   // predicates
@@ -74,14 +96,14 @@ export class Es6Reflect {
     }
   }
 
-  static *keys(type, { isStatic, excludeKnown, includeOwner } = { }) {
+  static *keys(type, { isStatic, excludeKnown, includeContext } = { }) {
     const visited = new Set()
     for (const owner of Es6Reflect.hierarchy(type, { isStatic })) {
       for (const key of Es6Reflect.ownKeys(owner, { isStatic, excludeKnown })) {
         if (visited.has(key)) continue
         visited.add(key)
         
-        yield includeOwner 
+        yield includeContext 
           ? [ key, owner ]
           : key
       }
@@ -106,7 +128,6 @@ export class Es6Reflect {
 
     return Object.getOwnPropertyDescriptor(object, name)
   }
-
   static *ownDescriptors(type, { isStatic, excludeKnown } = { }) {
     const ownKeys = Es6Reflect.ownKeys(type, { isStatic, excludeKnown })
     for (const key of ownKeys) {
@@ -116,21 +137,20 @@ export class Es6Reflect {
     }
   }
 
-  static getDescriptor(type, name, { isStatic, excludeKnown, includeOwner } = { }) {
+  static getDescriptor(type, name, { isStatic, excludeKnown, includeContext } = { }) {
     for (const owner of Es6Reflect.hierarchy(type, { isStatic })) {
       const descriptor = Es6Reflect.getOwnDescriptor(
         owner, name, { isStatic, excludeKnown })
       if (!descriptor) continue
-      return includeOwner
+      return includeContext
         ? [descriptor, owner]
         : descriptor
     }
     return null
   }
-  
   static *descriptors(type, { isStatic, excludeKnown, includeContext } = { }) {
     for (const [name, owner] of Es6Reflect.keys(
-      type, { isStatic, includeOwner: true })) {
+      type, { isStatic, includeContext: true })) {
       const descriptor = Es6Reflect.getOwnDescriptor(
         owner, name, { isStatic, excludeKnown })
       yield includeContext
@@ -138,4 +158,59 @@ export class Es6Reflect {
         : descriptor
     }
   }
+
+  static getMetadata(type) {
+    return Metadata.get(type)
+  }
 }
+
+
+export class Es6GetterMd {
+  static Type = 'getter'
+  static DefaultConfigurable = true
+  static DefaultEnumerable = false
+}
+export class Es6SetterMd { 
+  static Type = 'setter'
+  static DefaultConfigurable = true
+  static DefaultEnumerable = false
+}
+export class Es6PropertyMd { 
+  static Type = 'property'
+  static DefaultConfigurable = true
+  static DefaultEnumerable = false
+}
+export class Es6FieldMd { 
+  static Type = 'field'
+  static DefaultConfigurable = true
+  static DefaultWritable = true
+  static DefaultEnumerable = true
+}
+export class Es6MethodMd { 
+  static Type = 'method'
+  static DefaultConfigurable = true
+  static DefaultWritable = true
+  static DefaultEnumerable = false
+}
+export class Es6ConstructorMd { 
+  static Type = 'constructor'
+  static DefaultConfigurable = true
+  static DefaultWritable = true
+  static DefaultEnumerable = false
+}
+export class Es6PrototypeMd { 
+  static Type = 'prototype'
+  static DefaultConfigurable = false
+  static DefaultWritable = false
+  static DefaultEnumerable = false
+}
+
+const Metadata = new Map([
+  [Es6FieldMd.Type, Es6FieldMd],
+  [Es6MethodMd.Type, Es6MethodMd],
+  [Es6GetterMd.Type, Es6GetterMd],
+  [Es6SetterMd.Type, Es6SetterMd],
+  [Es6PropertyMd.Type, Es6PropertyMd],
+  [Es6ConstructorMd.Type, Es6ConstructorMd],
+  [Es6PrototypeMd.Type, Es6PrototypeMd],
+])

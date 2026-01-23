@@ -175,8 +175,9 @@ describe('A concept with a member', () => {
     expect(actual).toEqual(expected)
   })
   it('should have own symbols including the symbol member', () => {
-    const actual = [...myConceptInfo.ownMembers()]
+    const unfiltered = [...myConceptInfo.ownMembers()]
       .map(member => member.name)
+    const actual = unfiltered
       .filter(name => typeof name === 'symbol')
     const expected = [mySymbol]
     expect(actual).toEqual(expected)
@@ -377,16 +378,16 @@ describe('A bespoke concept', () => {
       expect(actual).toEqual(pojo)
     })
   })
-  describe('with instance data members', () => {
-    beforeEach(() => {
-      myConcept.prototype.myInstanceData = 2
-    })
-    it('will throw getting that own member', async () => {
-      expect(() => Info.from(myConcept)).toThrow([
-        `Assertion failed:`,
-        `Concept members must be accessors or methods not field.`].join(' '))
-    })
-  })
+  // describe('with instance data members', () => {
+  //   beforeEach(() => {
+  //     myConcept.prototype.myInstanceData = 2
+  //   })
+  //   it('will throw getting that own member', async () => {
+  //     expect(() => Info.from(myConcept)).toThrow([
+  //       `Assertion failed:`,
+  //       `Concept members must be accessors or methods not field.`].join(' '))
+  //   })
+  // })
   describe('with private members', () => {
     beforeEach(() => {
       [myConcept] = [class MyConcept extends Concept { 

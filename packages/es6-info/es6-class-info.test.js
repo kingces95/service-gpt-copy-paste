@@ -4,6 +4,7 @@ import { beforeEach } from 'vitest'
 import { 
   Es6ObjectRuntimeNameOrSymbol,
   Es6ClassInfo, 
+  Es6MemberInfo,
   Es6ConstructorInfo, 
   Es6MethodInfo, 
   Es6FieldInfo,
@@ -99,71 +100,47 @@ describe('Es6ClassInfo', () => {
       expect(info.isAnonymous).toBe(md.isAnonymous == true)
     })
     it('has correct base class', () => {
-      // object is default base
       const baseFn = 'base' in md ? md.base : Object
       const expectedBase = Es6ClassInfo.from(baseFn)
       const actualBase = info.base
       expect(actualBase == expectedBase).toBe(true)
     })
-    // it('returns null for __proto__', () => {
-    //   const protoMember = info.getOwnMember('__proto__')
-    //   expect(protoMember).toBe(null)
-    // })
-    it('has correct own members', () => {
-      const members = [...info.ownMembers()].filter(m => !m.isKnown)
-      expect(members.length > 0).toBe(md.hasOwnMembers == true)
-    })
-    it('can get all insance own members by name', () => {
-      for (const member of info.ownMembers()) {
-        const got = info.getOwnMember(member.name)
-        expect(got.equals(member)).toBe(true)
-      }
+    it('returns __proto__', () => {
+      const protoMember = info.getMember('__proto__')
+      expect(protoMember).toBeInstanceOf(Es6PropertyInfo)
     })
     it('can get toString by name', () => {
       const toStringMember = info.getMember('toString')
       expect(toStringMember).not.toBeNull()
     })
-    // it('includes toString in instance members', () => {
-    //   const members = [...info.members()]
-    //   const toStringMember = members.find(m => m.name == 'toString')
-    //   expect(toStringMember).not.toBeUndefined()
-    // })
-    it('can get all static own members by name', () => {
-      for (const member of info.ownStaticMembers()) {
-        const got = info.getOwnStaticMember(member.name)
-        expect(got.equals(member)).toBe(true)
-      }
+    it('includes toString in instance members', () => {
+      const members = [...info.members()]
+      const toStringMember = members.find(m => m.name == 'toString')
+      expect(toStringMember).toBeInstanceOf(Es6MethodInfo)
     })
-    it('has correct members', () => {
-      const members = [...info.members()].filter(m => !m.isKnown)
-      expect(members.length > 0).toBe(md.hasMembers == true)
-    })
-    it('can get all instance members by name', () => {
-      for (const member of info.members()) {
-        const got = info.getMember(member.name)
-        if (!got) 
-          info.getMember(member.name)
-        expect(got.equals(member)).toBe(true)
-      }
-    })
-    it('can get all static members by name', () => {
-      for (const member of info.staticMembers()) {
-        const got = info.getStaticMember(member.name)
-        expect(got.equals(member)).toBe(true)
-      }
-    })
-    it('returns null for missing members', () => {
-      const missingName = '__missing_member__'
-      expect(info.getOwnMember(missingName)).toBe(null)
-      expect(info.getOwnStaticMember(missingName)).toBe(null)
-      expect(info.getMember(missingName)).toBe(null)
-      expect(info.getStaticMember(missingName)).toBe(null)
-    })
-    it('returns null for null member name', () => {
-      expect(info.getOwnMember(null)).toBe(null)
-      expect(info.getOwnStaticMember(null)).toBe(null)
-      expect(info.getMember(null)).toBe(null)
-      expect(info.getStaticMember(null)).toBe(null)
+    describe.each([
+      ['static', true],
+      ['instance', false],
+    ])('%s', (label, isStatic) => {
+      it('has correct own members', () => {
+        const members = [...info.ownMembers({ isStatic })].filter(m => !m.isKnown)
+        expect(members.length > 0).toBe(md.hasOwnMembers == true)
+      })    
+      it('can get own members by name', () => {
+        for (const member of info.ownMembers({ isStatic })) {
+          const got = info.getOwnMember(member.name, { isStatic })
+          expect(got.equals(member)).toBe(true)
+        }
+      })
+      it('returns null for missing members', () => {
+        const missingName = '__missing_member__'
+        expect(info.getOwnMember(missingName, { isStatic })).toBe(null)
+        expect(info.getMember(missingName, { isStatic })).toBe(null)
+      })
+      it('returns null for null member name', () => {
+        expect(info.getOwnMember(null, { isStatic })).toBe(null)
+        expect(info.getMember(null, { isStatic })).toBe(null)
+      })    
     })
   })
 })
@@ -196,10 +173,23 @@ const ObjectConstrutorMd = {
 
 const MyClassMemberMd = {
   name: 'member',
-  cls: class MyClass { member() { } },
+  cls: class MyClass { member() { } otherMember() { } },
   type: 'method',
   isMethod: true,
   toString: 'member, method, [es6ClassInfo MyClass]',
+  isConfigurable: true,
+  isWritable: true,
+  hasValue: true,
+}
+
+MyClassMemberMd.cls.prototype.otherMember 
+  = MyClassMemberMd.cls.prototype.member
+const MyClassOtherMemberMd = {
+  name: 'otherMember',
+  cls: MyClassMemberMd.cls,
+  type: 'method',
+  isMethod: true,
+  toString: 'otherMember, method, [es6ClassInfo MyClass]',
   isConfigurable: true,
   isWritable: true,
   hasValue: true,
@@ -312,21 +302,24 @@ const MyAccessorMd = {
   isConfigurable: true,
 }
 
+const Members = [
+  ['ObjectToString', ObjectToStringMd],
+  ['ObjectConstrutor', ObjectConstrutorMd],
+  ['MyClassMember', MyClassMemberMd],
+  ['MyClassOtherMember', MyClassOtherMemberMd],
+  ['MyClassConstructor', MyClassConstructorMd],
+  ['MyAnonMember', MyAnonMemberMd],
+  ['MyStaticMember', MyStaticMemberMd],
+  ['MySymbolMember', MySymbolMemberMd],
+  ['MyStaticSymbolMember', MyStaticSymbolMemberMd],
+  ['MyField', MyFieldMd],
+  ['MyGetter', MyGetterMd],
+  ['MySetter', MySetterMd],
+  ['MyAccessor', MyAccessorMd],  
+]
+
 describe('Es6MemberInfo', () => {
-  describe.each([
-    ['ObjectToString', ObjectToStringMd],
-    ['ObjectConstrutor', ObjectConstrutorMd],
-    ['MyClassMember', MyClassMemberMd],
-    ['MyClassConstructor', MyClassConstructorMd],
-    ['MyAnonMember', MyAnonMemberMd],
-    ['MyStaticMember', MyStaticMemberMd],
-    ['MySymbolMember', MySymbolMemberMd],
-    ['MyStaticSymbolMember', MyStaticSymbolMemberMd],
-    ['MyField', MyFieldMd],
-    ['MyGetter', MyGetterMd],
-    ['MySetter', MySetterMd],
-    ['MyAccessor', MyAccessorMd],
-  ])('%s', (_, md) => {
+  describe.each(Members)('%s', (_, md) => {
     let typeInfo
     let info
     beforeEach(() => {
@@ -355,6 +348,17 @@ describe('Es6MemberInfo', () => {
     it('should not equal null', () => {
       expect(info.equals(null)).toBe(false)
     })
+    it('should not equal any other member', () => {
+      for (const [_, otherMd] of Members) {
+        if (otherMd === md)
+          continue
+        const typeInfo = Es6ClassInfo.from(otherMd.cls)
+        let otherInfo = otherMd.isStatic
+          ? typeInfo.getStaticMember(otherMd.name)
+          : typeInfo.getMember(otherMd.name)
+        expect(info.equals(otherInfo)).toBe(false)
+      }
+    })
     it('should have expected toString', () => {
       expect(info.toString()).toBe(md.toString)
     })
@@ -373,25 +377,32 @@ describe('Es6MemberInfo', () => {
       
       expect(info.isStatic).toBe(!!md.isStatic)
 
-      // expect(info.isVisible).toBe(!!md.isEnumerable)
-      // expect(info.isHidden).toBe(!md.isEnumerable)
-      // expect(info.isSealed).toBe(!md.isConfigurable)
-      // expect(info.isConst).toBe(!!md.isField && !md.isWritable)
+      expect(info.isVisible).toBe(!!md.isEnumerable)
+      expect(info.isHidden).toBe(!md.isEnumerable)
+      expect(info.isSealed).toBe(!md.isConfigurable)
+      expect(info.isConst).toBe(!!md.isField && !md.isWritable)
+
+      expect(info.isFunction).toBe(!!md.isMethod || !!md.isConstructor)
+      expect(info.isAccessor).toBe(!!md.isAccessor)
     })
-    it('has expected descriptor getter, setter, value', () => {
+    it('has expected getter, setter, method, ctor, and value', () => {
       if (md.hasGetter) expect(info.getter).toBeInstanceOf(Function)
       else expect(info.getter).toBeUndefined()
 
       if (md.hasSetter) expect(info.setter).toBeInstanceOf(Function)
       else expect(info.setter).toBeUndefined()
 
-      // if (md.hasValue) expect(info.value).toBeInstanceOf(Function)
-      // else expect(info.value).toBeUndefined()
+      if (md.isMethod) expect(info.method).toBeInstanceOf(Function)
+      else expect(info.method).toBeUndefined()
+
+      if (md.isConstructor) expect(info.ctor).toBeInstanceOf(Function)
+      else expect(info.ctor).toBeUndefined()
+
+      if (md.isField) expect(info.value).not.toBeUndefined()
+      else expect(info.value).toBeUndefined()
     })
     it('has no root, rootHost, or parent', () => {
       if (!md.parentHost) {
-        expect(info.root()).toBeNull()
-        expect(info.rootHost()).toBeNull()
         expect(info.parent()).toBeNull()
         return
       }
@@ -401,12 +412,6 @@ describe('Es6MemberInfo', () => {
 
       const expectedRootHost = Es6ClassInfo.from(md.rootHost)
       const expectedRoot = expectedRootHost.getMember(md.name)
-
-      const root = info.root()
-      expect(root.equals(expectedRoot)).toBe(true)
-
-      const rootHost = info.rootHost()
-      expect(rootHost).toBe(expectedRootHost)
 
       const parent = info.parent()
       expect(parent.equals(expectedParent)).toBe(true)

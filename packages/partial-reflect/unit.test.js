@@ -192,10 +192,10 @@ describe('PartialClass', () => {
         MyExtension, 'missingMember')
       expect(host).toBe(null)
     })
-    it('should return undefined for missing member descriptor', () => {
+    it('should return null for missing member descriptor', () => {
       const descriptor = PartialReflect.getDescriptor(
         MyExtension, 'missingMember')
-      expect(descriptor).toBe(undefined)
+      expect(descriptor).toBe(null)
     })
 
     describe('with an abstract method', () => {

@@ -519,7 +519,7 @@ const MyStaticSymbolMemberMd = {
 const MyFieldMd = {
   name: 'member',
   cls: class MyClass { static { this.prototype.member = 42 } },
-  toString: 'member, number, [classInfo MyClass]',
+  toString: 'member, field [number], [classInfo MyClass]',
   type: 'field',
   isField: true,
   isData: true,
@@ -651,8 +651,6 @@ describe('Member', () => {
     })
     it('has no root, rootHost, or parent', () => {
       if (!md.parentHost) {
-        expect(info.root()).toBeNull()
-        expect(info.rootHost()).toBeNull()
         expect(info.parent()).toBeNull()
         return
       }
@@ -662,12 +660,6 @@ describe('Member', () => {
 
       const expectedRootHost = Info.from(md.rootHost)
       const expectedRoot = expectedRootHost.getMember(md.name)
-
-      const root = info.root()
-      expect(root.equals(expectedRoot)).toBe(true)
-
-      const rootHost = info.rootHost()
-      expect(rootHost).toBe(expectedRootHost)
 
       const parent = info.parent()
       expect(parent.equals(expectedParent)).toBe(true)

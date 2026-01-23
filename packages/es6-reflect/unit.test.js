@@ -152,7 +152,7 @@ describe.each(Classes)('%s', (_, classMd) => {
       const actual = [...Es6Reflect.keys(type, { 
         isStatic, 
         excludeKnown: true,
-        includeOwner: true })]
+        includeContext: true })]
       // sort for comparison
       expected.sort(([lhs], [rhs]) => lhs.localeCompare(rhs))
       actual.sort(([lhs], [rhs]) => lhs.localeCompare(rhs))

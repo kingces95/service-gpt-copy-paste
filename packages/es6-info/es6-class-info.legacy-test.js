@@ -398,14 +398,6 @@ describe('Es6ClassInfo Object class', () => {
       for (const member of staticMembers)
         expect(member.parent()).toBe(null)
     })
-    it('have no root', () => {
-      for (const member of staticMembers)
-        expect(member.root()).toBe(null)
-    })
-    it('have no root host', () => {
-      for (const member of staticMembers)
-        expect(member.rootHost()).toBe(null)
-    })
   })
   describe('members', () => {
     let members
@@ -415,14 +407,6 @@ describe('Es6ClassInfo Object class', () => {
     it('none have a parent', () => {
       for (const member of members)
         expect(member.parent()).toBe(null)
-    })
-    it('none have a root', () => {
-      for (const member of members)
-        expect(member.root()).toBe(null)
-    })
-    it('none have a root host', () => {
-      for (const member of members)
-        expect(member.rootHost()).toBe(null)
     })
   })
 })
@@ -533,12 +517,6 @@ describe('Es6ClassInfo empty custom class', () => {
         expect(parent.equals(memberOnFunction)).toBe(true)
       }
     })
-    it('have Object as a parent host', () => {
-      // Es6 is really: MyEmptyClass → Function.prototype → Object.prototype
-      // We pretend it is: MyEmptyClass → Object 
-      for (const member of staticMembers)
-        expect(member.rootHost().equals(Es6ClassInfo.Object)).toBe(true)
-    })
   })
 })
 describe('Es6ClassInfo extended custom class', () => {
@@ -595,21 +573,6 @@ describe('Es6MemberInfo toString', () => {
     staticMember = classInfo.getOwnStaticMember('toString')
     objectMember = Es6ClassInfo.Object.getOwnMember('toString')
     ctorMember = classInfo.getOwnMember('constructor')
-  })
-  describe('of sub class member', () => {
-    let mySubClass
-    let subMember
-    beforeEach(() => {
-      mySubClass = class MySubClass extends myClass { 
-        toString() { }
-      }
-      const subClassInfo = Es6ClassInfo.from(mySubClass)
-      subMember = subClassInfo.getOwnMember('toString')
-    })
-
-    it('has correct root host', () => {
-      expect(subMember.root().equals(objectMember)).toBe(true)
-    })
   })
 
   it('has correct toString', () => {

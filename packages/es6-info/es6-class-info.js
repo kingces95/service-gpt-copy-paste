@@ -17,10 +17,6 @@ import util from 'util'
 
 const Es6ClassWeakMap = new WeakMap()
 
-export const Es6ObjectRuntimeNameOrSymbol = new Set([
-  '__proto__',
-])
-
 export class Es6ClassInfo {
 
   static from(fn) {
@@ -29,28 +25,21 @@ export class Es6ClassInfo {
 
     let info = Es6ClassWeakMap.get(fn)
     if (info) return info
-    Es6ClassWeakMap.set(fn, info = new Es6ClassInfo(fn))
-    return info
-  }
 
-  static #createMember(fn, key, descriptor, { isStatic }) {
-    const hostInfo = Es6ClassInfo.from(fn)
-    const descriptorInfo = Es6DescriptorInfo.create(descriptor)
-    const keyInfo = Es6KeyInfo.create(key)
-    return Es6MemberInfo.create$(hostInfo, keyInfo, descriptorInfo, { isStatic })
+    const idInfo = Es6IdInfo.create(fn.name)
+    Es6ClassWeakMap.set(fn, info = new Es6ClassInfo(fn, idInfo))
+    return info
   }
 
   #_
   #fn
   #idInfo
 
-  constructor(fn) {
+  constructor(fn, idInfo) {
     this.#fn = fn
-    this.#idInfo = Es6IdInfo.create(fn.name)
+    this.#idInfo = idInfo
     this.#_ = this.toString()
   }
-
-  get isObject$() { return this.#fn === Object }
 
   get ctor() { return this.#fn }
   get id() { return this.#idInfo }
@@ -64,7 +53,7 @@ export class Es6ClassInfo {
   *ownMembers({ isStatic = false } = { }) {
     const type = this.ctor
     yield* Es6Reflect.ownDescriptors(type, { isStatic })
-      .map(([key, descriptor]) => Es6ClassInfo.#createMember(
+      .map(([key, descriptor]) => Es6MemberInfo.create(
         type, key, descriptor, { isStatic }))
   }
   getOwnMember(key, { isStatic = false } = { }) {
@@ -72,7 +61,7 @@ export class Es6ClassInfo {
     const descriptor = Es6Reflect.getOwnDescriptor(
       type, key, { isStatic })
     if (!descriptor) return null
-    return Es6ClassInfo.#createMember(
+    return Es6MemberInfo.create(
       type, key, descriptor, { isStatic })
   }
 
@@ -80,15 +69,15 @@ export class Es6ClassInfo {
     const type = this.ctor
     yield* Es6Reflect.descriptors(
       type, { isStatic, includeContext: true })
-      .map(([descriptor, key, owner]) => Es6ClassInfo.#createMember(
+      .map(([descriptor, key, owner]) => Es6MemberInfo.create(
         owner, key, descriptor, { isStatic }))
   }
   getMember(key, { isStatic = false } = { }) {
     const type = this.ctor
     const [descriptor, owner] = Es6Reflect.getDescriptor(
-      type, key, { isStatic, includeOwner: true }) || []
+      type, key, { isStatic, includeContext: true }) || []
     if (!descriptor) return null
-    return Es6ClassInfo.#createMember(
+    return Es6MemberInfo.create(
       owner, key, descriptor, { isStatic })
   }
 
@@ -111,32 +100,13 @@ Es6ClassInfo.Number = Es6ClassInfo.from(Number)
 Es6ClassInfo.Boolean = Es6ClassInfo.from(Boolean)
 
 export class Es6MemberInfo {
-  static create$(host, keyInfo, descriptorInfo, metadata) {
-    assert(host instanceof Es6ClassInfo, 
-      'type must be a Es6ClassInfo')
-    assert(keyInfo instanceof Es6KeyInfo, 
-      'key must be a KeyInfo')
-    assert(descriptorInfo instanceof Es6DescriptorInfo, 
-      'descriptor must be a DescriptorInfo')
-
-    let type = descriptorInfo.type
-
-    if (type == 'field') {
-      const value = descriptorInfo.value
-      const { isStatic } = metadata
-      const { value: key } = keyInfo
-      const es6Type = es6Typeof(value)
-
-      // constructor
-      if (key === 'constructor' && !isStatic && value === host.ctor) {
-        assert(es6Type == 'class')
-        type = 'constructor'
-      }
-    }
-
-    const ctor = TypeMap.get(type)
-    assert(ctor, `Unknown member type.`)
-    return new ctor(host, keyInfo, descriptorInfo, metadata)
+  static create(fn, key, descriptor, { isStatic }) {
+    const hostInfo = Es6ClassInfo.from(fn)
+    const descriptorInfo = Es6DescriptorInfo.create(descriptor)
+    const keyInfo = Es6KeyInfo.create(key)
+    const memberType = Es6Reflect.typeof(fn, key, descriptor, { isStatic })
+    const ctor = TypeMap.get(memberType)
+    return new ctor(hostInfo, keyInfo, descriptorInfo, { isStatic })
   }
 
   #_
@@ -161,13 +131,9 @@ export class Es6MemberInfo {
   get #isConfigurable() { return this.#descriptorInfo.isConfigurable }
   get #isWritable() { return this.#descriptorInfo.isWritable }
 
-  rootOrSelf$() {
-    const parent = this.parent() 
-    return parent ? parent.rootOrSelf$() : this 
-  }
-
   get name() { return this.#keyInfo.value }
   get keyInfo() { return this.#keyInfo }
+  get descriptorInfo() { return this.#descriptorInfo }
 
   get host() { return this.#host }
   get type() { return this.constructor.Type }
@@ -194,10 +160,6 @@ export class Es6MemberInfo {
   get isMethod() { return this instanceof Es6MethodInfo }
   get isField() { return this instanceof Es6FieldInfo }
 
-  // member type groups
-  get isAccessor() { return this.isGetter || this.isSetter || this.isProperty }
-  get isFunction() { return this.isMethod || this.isConstructor }
-
   // member modifiers
   get isVisible() { return this.#isEnumerable }
   get isHidden() { return !this.isVisible }
@@ -211,6 +173,10 @@ export class Es6MemberInfo {
   get method() { if (this.isMethod) return this.#descriptorInfo.value }
   get ctor() { if (this.isConstructor) return this.#descriptorInfo.value }
 
+  // member type groups
+  get isAccessor() { return this.isGetter || this.isSetter || this.isProperty }
+  get isFunction() { return this.isMethod || this.isConstructor }
+
   parent() {
     const parent = this.host.base
     if (!parent) return null
@@ -218,40 +184,28 @@ export class Es6MemberInfo {
     const isStatic = this.isStatic
     return parent.getOwnMember(this.name, { isStatic })
   }
-  root() {
-    let parent = this.parent()
-    if (!parent) return null
-    return parent.rootOrSelf$()
-  }
-  rootHost() {
-    return this.root()?.host ?? null
-  }
 
   equals(other) {
     if (!(other instanceof Es6MemberInfo)) return false
     if (this.#isStatic !== other.#isStatic) return false
     if (!this.#host.equals(other.#host)) return false
-    if (!this.#keyInfo.equals(other.#keyInfo)) return false
     if (!this.#descriptorInfo.equals(other.#descriptorInfo)) return false
+    if (!this.#keyInfo.equals(other.#keyInfo)) return false
     return true
   }
 
+  *modifiers() { 
+    yield* Es6Descriptor.modifiers(
+      this.#descriptorInfo.descriptor, 
+      TypeMap.get(this.type)) 
+  }  
   *pivots() { 
     if (this.isStatic) yield 'static' 
     if (this.isNonPublic) yield 'non-public'
     if (this.isKnown) yield 'known'
     yield* this.#descriptorInfo.pivots()
   }
-  *modifiers() { 
-    yield* Es6Descriptor.modifiers(
-      this.#descriptorInfo.descriptor, 
-      TypeMap.get(this.type)) 
-  }
 
-  toStringType() {
-    if (this.isField) return this.fieldType
-    return this.type
-  }
   toString() {
     const keyInfo = this.keyInfo
 

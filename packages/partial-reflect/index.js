@@ -177,6 +177,7 @@ export class PartialReflect {
   // First, for each PartialObject, a POJO of descriptors is created from 
   // the members defined on the PartialObject. 
   static Descriptors = Symbol('PartialReflect.descriptors')
+  static StaticDescriptors = Symbol('PartialReflect.staticDescriptors')
 
   // Second, for each PartialObject, a prototypical type is created that
   // hosts all members defined by the PartialObject and its associated
@@ -215,6 +216,13 @@ export class PartialReflect {
   static isPartialObject(type) {
     return PartialReflect.getPartialObjectType(type) != null
   }
+  static isKnown(type) {
+    if (!type) return false
+    if (Es6Reflect.isKnown(type)) return true
+    if (type == PartialObject) return true
+    if (Object.getPrototypeOf(type) == PartialObject) return true
+    return false
+  }
 
   static *ownPartialObjects(type) {
     if (PartialReflect.isPartialObject(type)) {
@@ -252,47 +260,70 @@ export class PartialReflect {
       }
     }
   }
-  static *keys(type) { 
+  static *keys(type, { isStatic, includeContext } = { }) { 
     if (PartialReflect.isPartialObject(type)) {
       const prototypicalType = PartialReflect.getPrototypicalType$(type)
-      yield* PartialReflect.keys(prototypicalType)    
-    } 
+      yield* PartialReflect.keys(prototypicalType, { isStatic, includeContext } )    
+    }
     else {
-      for (const key of Es6Reflect.keys(type, { excludeKnown: true })) {
+      for (const key of Es6Reflect.keys(
+        type, { isStatic, includeContext, excludeKnown: true })) {
         yield key
       }
     }
   }
 
-  static getOwnDescriptor(type, key) {
-    const prototype = type.prototype
-    const descriptor = Object.getOwnPropertyDescriptor(prototype, key)
+  static getOwnDescriptor(type, key, { isStatic } = { }) {
+    const descriptor = Es6Reflect.getOwnDescriptor(
+      type, key, { isStatic, excludeKnown: true })
+    if (!descriptor) return null
     if (!PartialReflect.isPartialObject(type)) return descriptor
     return type[PartialObject.Compile](descriptor) 
   }
-  static getDescriptor(type, key) {
-    const prototypicalType = PartialReflect.getPrototypicalType$(type)
-    return Descriptor.get(prototypicalType.prototype, key)
-  }
-
-  static getOwnDescriptors(type) {
+  static getOwnDescriptors(type, { isStatic } = { }) {
     const descriptors = { }
-    for (const key of Es6Reflect.ownKeys(type)) {
-      if (Es6Reflect.isKnownKey(type, key)) continue
-      descriptors[key] = PartialReflect.getOwnDescriptor(type, key)
+    if (isStatic && PartialReflect.isKnown(type)) return descriptors
+    for (const key of Es6Reflect.ownKeys(type, { isStatic, excludeKnown: true })) {
+      const descriptor = PartialReflect.getOwnDescriptor(type, key, { isStatic })
+      assert(descriptor,
+        `Expected descriptor for key '${String(key)}'.`)
+      descriptors[key] = descriptor
     }
     return descriptors
   }
-  static getDescriptors(type) {
+  
+  static getDescriptor(type, key, { isStatic, includeContext } = { }) {
+    const prototypicalType = PartialReflect.getPrototypicalType$(type)
+    const result = Es6Reflect.getDescriptor(
+      prototypicalType, key, { isStatic, includeContext, excludeKnown: true })
+    if (includeContext) {
+      const [descriptor, owner$] = result || []
+      if (!descriptor) return result || []
+      const owner = PartialReflect.getPrototypicalHost$(owner$)
+      return [descriptor, owner]
+    }
+    return result
+  }
+  static getDescriptors(type, { isStatic, includeContext } = { }) {
+    if (isStatic && PartialReflect.isKnown(type)) return { }
     if (PartialReflect.isPartialObject(type)) {
       const prototypicalType = PartialReflect.getPrototypicalType$(type)
-      return Es6Associate.objectInitialize(type, PartialReflect.Descriptors, 
-        () => PartialReflect.getDescriptors(prototypicalType))
+      return Es6Associate.objectInitialize(type, isStatic
+        ? PartialReflect.StaticDescriptors
+        : PartialReflect.Descriptors, 
+        () => PartialReflect.getDescriptors(
+          prototypicalType, { isStatic, includeContext }))
     }
     else {
       const descriptors = { }
-      for (const key of PartialReflect.keys(type))
-        descriptors[key] = PartialReflect.getDescriptor(type, key)
+      for (const [key, owner$] of PartialReflect.keys(
+        type, { isStatic, includeContext: true })) {
+          const owner = PartialReflect.getPrototypicalHost$(owner$)
+          const descriptor = PartialReflect.getDescriptor(type, key, { isStatic })
+          descriptors[key] = includeContext
+            ? [descriptor, owner]
+            : descriptor
+      }
       return descriptors
     }
   }

@@ -415,14 +415,6 @@ describe('A bespoke class', () => {
         myExtendedClass.prototype.toString = function() { 
           return 'myExtendedClass' }
       })
-
-      it('should have Object as root of toString', async () => {
-        const fnInfo = Info.from(myExtendedClass)
-        const toStringMember = fnInfo.getOwnMember('toString')
-        const object = FunctionInfo.Object
-        expect(toStringMember.rootHost().equals(object)).toBe(true)
-        expect(toStringMember.rootHost().name).toBe('Object')
-      })
     })
   }) 
   describe('with static and explicit constructor members', () => {

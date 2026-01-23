@@ -2,13 +2,23 @@ import { assert } from '@kingjs/assert'
 import { PartialPojo } from '@kingjs/partial-pojo'
 import { PartialObject } from '@kingjs/partial-object'
 import { PartialReflect } from '@kingjs/partial-reflect'
-import { Es6ClassInfo, Es6MemberInfo } from "@kingjs/es6-info"
+import { Es6Reflect } from '@kingjs/es6-reflect'
+import { Es6Descriptor } from '@kingjs/es6-descriptor'
+import { 
+  Es6ClassInfo, 
+  Es6MemberInfo,
+  Es6IdInfo,
+  Es6KeyInfo,
+  Es6DescriptorInfo,
+} from "@kingjs/es6-info"
+import { es6BaseType } from '@kingjs/es6-base-type'
 import { Concept, ConceptReflect } from "@kingjs/concept"
 import { PartialClass, PartialClassReflect } from '@kingjs/partial-class'
 
 const FunctionInfoCache = new WeakMap()
 
 export class Info {
+
   static from(fn) {
     if (!fn) return null
     if (fn instanceof Es6ClassInfo) fn = fn.ctor
@@ -20,68 +30,54 @@ export class Info {
     return FunctionInfoCache.get(fn)
   }
   static #from(fn) {
-    if (fn == PartialObject) return new PartialObjectInfo(fn)
-    if (fn == PartialPojo) return new PartialObjectInfo(fn)
-    if (fn == PartialClass) return new PartialObjectInfo(fn)
-    if (fn == Concept) return new PartialObjectInfo(fn)
+    const idInfo = Es6IdInfo.create(fn.name)
 
-    const collectionType = PartialReflect.getPartialObjectType(fn)
-    if (collectionType == PartialPojo) return new PartialPojoSubclassInfo(fn)
-    if (collectionType == PartialClass) return new PartialClassSubclassInfo(fn)
-    if (collectionType == Concept) return new ConceptSubclassInfo(fn)
+    if (fn == PartialObject) return new PartialObjectInfo(fn, idInfo)
+    if (fn == PartialPojo) return new PartialObjectInfo(fn, idInfo)
+    if (fn == PartialClass) return new PartialObjectInfo(fn, idInfo)
+    if (fn == Concept) return new PartialObjectInfo(fn, idInfo)
+
+    const collectionType = PartialReflect.getPartialObjectType(fn, idInfo)
+    if (collectionType == PartialPojo) return new PartialPojoSubclassInfo(fn, idInfo)
+    if (collectionType == PartialClass) return new PartialClassSubclassInfo(fn, idInfo)
+    if (collectionType == Concept) return new ConceptSubclassInfo(fn, idInfo)
         
-    return new ClassInfo(fn)
+    return new ClassInfo(fn, idInfo)
   }
 }
 
 export class FunctionInfo extends Info {
 
-  #es6ClassInfo
+  #_
+  #idInfo
+  #fn
 
-  constructor(type) {
+  constructor(type, idInfo) {
     super()
-    this.#es6ClassInfo = Es6ClassInfo.from(type)
+    this.#fn = type
+    this.#idInfo = idInfo
+    this.#_ = this.toString()
   }
 
-  #memberFilter(es6Member) {
-    if (!es6Member) return false
-    if (es6Member.isKnown) return false
-    if (!this.isAbstract) return true
-    if (es6Member.isStatic && this.isKnown) return false
-    return true
-  }
-  #getMember(es6Member) {
-    if (!this.#memberFilter(es6Member)) return null
-    return MemberInfo.from$(es6Member)
-  }
-  *#members(es6Members) {
-    for (const es6Member of es6Members) {
-      const member = this.#getMember(es6Member)
-      if (!member) continue
-      yield member
-    }
+  #createMembmer(fn, key, descriptor, { isStatic } = { }) {
+    assert(fn == PartialReflect.getPrototypicalHost$(fn),
+      'fn must be the prototypical host of the member.')
+    // fn = PartialReflect.getPrototypicalHost$(fn)
+    return MemberInfo.from$(fn, key, descriptor, { isStatic })
   }
 
-  get md$() { return this.#es6ClassInfo }
-
-  get ctor() { return this.md$.ctor }
-  get id() { return this.md$.id }
+  get ctor() { return this.#fn }
+  get id() { return this.#idInfo }
   get name() { return this.id.value }
   get base() { 
-    const base = Info.from(this.md$.base?.ctor)
+    const base = Info.from(es6BaseType(this.ctor)) 
     if (!this.isAbstract) return base
     if (base == Info.Object) return null
     return base
   }
 
-  get isKnown() { 
-    if (this == Info.PartialObject) return true
-    if (this == Info.PartialPojo) return true
-    if (this == Info.PartialClass) return true
-    if (this == Info.Concept) return true
-    return this.#es6ClassInfo.isKnown 
-  }
-  get isNonPublic() { return this.md$.isNonPublic }
+  get isKnown() { return PartialReflect.isKnown(this.ctor) }
+  get isNonPublic() { return this.id.isNonPublic }
   get isAbstract() { return this instanceof PartialObjectInfo }
   get isAnonymous() { return this.id.isAnonymous }
   get isTransparentPartialObject() { return this.isPartialPojoSubClass }
@@ -99,133 +95,98 @@ export class FunctionInfo extends Info {
     return false
   }
 
-  getOwnStaticMember(key) {
-    const es6ClassInfo = this.#es6ClassInfo
-    const es6Member = es6ClassInfo.getOwnStaticMember(key)
-    return this.#getMember(es6Member)
-  }
-  getOwnMember(key) {
-    const es6ClassInfo = this.#es6ClassInfo
-    const es6Member = es6ClassInfo.getOwnMember(key)
-    return this.#getMember(es6Member)
-  }
-
-  getStaticMember(key) {
-    const es6ClassInfo = this.#es6ClassInfo
-    const es6Member = es6ClassInfo.getStaticMember(key)
-    return this.#getMember(es6Member)
-  }
-  getMember(key) {
-    const es6ClassInfo = this.#es6ClassInfo
-    const es6Member = es6ClassInfo.getMember(key)
-    return this.#getMember(es6Member)
-  }
-
-  *ownMembers() {
-    const es6ClassInfo = this.#es6ClassInfo
-    const members = [...es6ClassInfo.ownMembers()]
-    yield *this.#members(members)
-  }
-  *ownStaticMembers() {
-    const es6ClassInfo = this.#es6ClassInfo
-    const members = [...es6ClassInfo.ownStaticMembers()]
-    yield *this.#members(members)
-  }
-
-  *members() {
-    const es6ClassInfo = this.#es6ClassInfo
-    const members = [...es6ClassInfo.members()]
-    yield *this.#members(members)
-  }
-  *staticMembers() {
-    const es6ClassInfo = this.#es6ClassInfo
-    const members = [...es6ClassInfo.staticMembers()]
-    yield *this.#members(members)
-  }
-
-  *ownPartialClasses() {
-    const groups = [...PartialClassReflect.ownPartialClasses(this.ctor)]
-    yield *groups.map(group => Info.from(group))
-  }
-  *ownConcepts() {
-    const concepts = [...ConceptReflect.ownConcepts(this.ctor)]
-    yield *concepts.map(concept => Info.from(concept))
-  }
-
-  *partialClasses() {
+  getOwnMember(key, { isStatic } = { }) {
     const fn = this.ctor
-    const groups = [...PartialClassReflect.partialClasses(fn)]
-    yield *groups.map(group => Info.from(group))
+    const descriptor = PartialReflect.getOwnDescriptor(fn, key, { isStatic })
+    if (!descriptor) return null
+    return this.#createMembmer(fn, key, descriptor, { isStatic })
+  }
+  getMember(key, { isStatic } = { }) {
+    const fn = this.ctor
+    const [descriptor, owner] = PartialReflect.getDescriptor(
+      fn, key, { isStatic, includeContext: true }) || []
+    if (!descriptor) return null
+    return this.#createMembmer(owner, key, descriptor, { isStatic })
+  }
+  *ownMembers({ isStatic } = { }) {
+    const fn = this.ctor
+    const descriptors = PartialReflect.getOwnDescriptors(fn, { isStatic })
+    for (const key of Reflect.ownKeys(descriptors)) {
+      const descriptor = descriptors[key]
+      yield this.#createMembmer(fn, key, descriptor, { isStatic })
+    }
+  }
+  *members({ isStatic } = { }) {
+    const fn = this.ctor
+    const descriptors = PartialReflect.getDescriptors(
+      fn, { isStatic, includeContext: true })
+    for (const key of Reflect.ownKeys(descriptors)) {
+      const [descriptor, owner] = descriptors[key]
+      yield this.#createMembmer(owner, key, descriptor, { isStatic })
+    }
+  }
+
+  getOwnStaticMember(key) { return this.getOwnMember(key, { isStatic: true }) }
+  getStaticMember(key) { return this.getMember(key, { isStatic: true }) }
+  *ownStaticMembers() { yield* this.ownMembers({ isStatic: true }) }
+  *staticMembers() { yield* this.members({ isStatic: true }) }
+
+  // partial classes
+  *ownPartialClasses() {
+    yield *PartialClassReflect.ownPartialClasses(this.ctor)
+      .map(partialClass => Info.from(partialClass))
+  }
+  *partialClasses() {
+    yield *PartialClassReflect.partialClasses(this.ctor)
+      .map(partialClass => Info.from(partialClass))
+  }
+
+  // concepts
+  *ownConcepts() {
+    yield *ConceptReflect.ownConcepts(this.ctor)
+      .map(concept => Info.from(concept))
   }
   *concepts() {
-    const fn = this.ctor
-    const concepts = [...ConceptReflect.concepts(fn)]
-    yield *concepts.map(concept => Info.from(concept))
-  }
-
-  *associatedConcepts() {
-    const fn = this.ctor
-    const concepts = [...ConceptReflect.associatedConcepts(fn)]
-    yield *concepts.map(([name, concept]) => [name, Info.from(concept)])
+    yield *ConceptReflect.concepts(this.ctor)
+      .map(concept => Info.from(concept))
   }
   *ownAssociatedConcepts() {
-    const fn = this.ctor
-    const concepts = [...ConceptReflect.ownAssociatedConcepts(fn)]
-    yield *concepts.map(([name, concept]) => [name, Info.from(concept)])
+    yield* ConceptReflect.ownAssociatedConcepts(this.ctor)
+      .map(([name, concept]) => [name, Info.from(concept)])
+  }
+  *associatedConcepts() {
+    yield* ConceptReflect.associatedConcepts(this.ctor)
+      .map(([name, concept]) => [name, Info.from(concept)])
   }
 
-  equals(other) {
-    if (!(other instanceof FunctionInfo)) return false
-    return this.#es6ClassInfo.equals(other.#es6ClassInfo)
-  }
+  equals(other) { return this == other }
 
   //[util.inspect.custom]() { return this.toString() }
 }
 export class ClassInfo extends FunctionInfo { 
-  #_
-
-  constructor(type) {
-    super(type)
-  
-    this.#_ = this.toString()
-  }
-
   toString() { return `[classInfo ${this.id.toString()}]` }
 }
 export class PartialObjectInfo extends FunctionInfo { 
-  #_
-  #es6ClassInfo
-
-  constructor(type) {
-    const prototypicalHost = PartialReflect.getPrototypicalType$(type)
-    assert(prototypicalHost instanceof Function)
-    super(prototypicalHost)
-    this.#es6ClassInfo = Es6ClassInfo.from(type)
-    this.#_ = this.toString()
-  }
-
-  get md$() { return this.#es6ClassInfo }
-
   toString() { return `[classInfo ${this.id.toString()}]` }
 }
 export class PartialPojoSubclassInfo extends PartialObjectInfo {
-  constructor(type) {
+  constructor(type, idInfo) {
     assert(type.prototype instanceof PartialPojo)
-    super(type)
+    super(type, idInfo)
   }
   toString() { return `[partialPojoInfo]` }
 }
 export class PartialClassSubclassInfo extends PartialObjectInfo {
-  constructor(type) {
+  constructor(type, idInfo) {
     assert(type.prototype instanceof PartialClass)
-    super(type)
+    super(type, idInfo)
   }
   toString() { return `[partialClassInfo ${this.id.toString()}]` }
 }
 export class ConceptSubclassInfo extends PartialObjectInfo {
-  constructor(type) {
+  constructor(type, idInfo) {
     assert(type.prototype instanceof Concept)
-    super(type)
+    super(type, idInfo)
   }
   toString() { return `[conceptInfo ${this.id.toString()}]` }
 }
@@ -242,72 +203,98 @@ Info.PartialClass = Info.from(PartialClass)
 Info.Concept = Info.from(Concept)
 
 export class MemberInfo extends Info {
-  static from$(es6MemberInfo) {
-    if (!es6MemberInfo) return null
+  static from$(fn, key, descriptor, { isStatic } = { }) {
+    const type = Es6Reflect.typeof(fn, key, descriptor, { isStatic })
+    const keyInfo = Es6KeyInfo.create(key)
+    const descriptorInfo = Es6DescriptorInfo.create(descriptor)
+    const host = Info.from(fn)
 
-    assert(es6MemberInfo instanceof Es6MemberInfo, 
-      'descriptor must be a Es6MemberInfo')
-    
-    return new MemberInfo(es6MemberInfo)
+    return new MemberInfo(
+      host, keyInfo, descriptorInfo, { isStatic, type })
   }
 
   #_
-  #es6MemberInfo
-
-  constructor(es6MemberInfo) {
+  #host
+  #type
+  #keyInfo
+  #descriptorInfo
+  #isStatic
+  
+  constructor(host, keyInfo, descriptorInfo, { 
+    isStatic, type } = { }) {
     super()
-    this.#es6MemberInfo = es6MemberInfo
+    this.#host = host
+    this.#keyInfo = keyInfo
+    this.#descriptorInfo = descriptorInfo
+    this.#isStatic = !!isStatic
+    this.#type = type
+
     this.#_ = this.toString()
   }
 
-  get name() { return this.#es6MemberInfo.name }
-  get keyInfo() { return this.#es6MemberInfo.keyInfo }
+  get #isEnumerable() { return this.#descriptorInfo.isEnumerable }
+  get #isConfigurable() { return this.#descriptorInfo.isConfigurable }
+  get #isWritable() { return this.#descriptorInfo.isWritable }
 
-  get host() { 
-    let es6Host = this.#es6MemberInfo.host
-    const fn = PartialReflect.getPrototypicalHost$(es6Host.ctor)
-    return Info.from(fn)
+  get name() { return this.#keyInfo.value }
+  get keyInfo() { return this.#keyInfo }
+
+  get host() { return this.#host }
+  get fieldType() { 
+    if (!this.isField) return null
+    return this.#descriptorInfo.fieldType 
   }
-  get fieldType() { return this.#es6MemberInfo.fieldType }
   
   // pivots
-  get isStatic() { return this.#es6MemberInfo.isStatic }
-  get isKnown() { return this.#es6MemberInfo.isKnown }
-  get isNonPublic() { return this.#es6MemberInfo.isNonPublic }
-  get isAbstract() { return this.#es6MemberInfo.isAbstract }
+  get isStatic() { return this.#isStatic }
+  get isKnown() { return false }
+  get isNonPublic() { return this.#keyInfo.isNonPublic }
+  get isAbstract() { return this.#descriptorInfo.isAbstract }
   
   // member type
-  get type() { return this.#es6MemberInfo.type }
-  get isConstructor() { return this.#es6MemberInfo.isConstructor }
-  get isMethod() { return this.#es6MemberInfo.isMethod }
-  get isField() { return this.#es6MemberInfo.isField }
-  get isProperty() { return this.#es6MemberInfo.isProperty }
-  get isGetter() { return this.#es6MemberInfo.isGetter }
-  get isSetter() { return this.#es6MemberInfo.isSetter }  
+  get type() { return this.#type }
+  get isConstructor() { return this.type == 'constructor' }
+  get isMethod() { return this.type == 'method' }
+  get isField() { return this.type == 'field' }
+  get isProperty() { return this.type == 'property' }
+  get isGetter() { return this.type == 'getter' }
+  get isSetter() { return this.type == 'setter' }  
 
   // member modifiers
-  get isVisible() { return this.#es6MemberInfo.isVisible }
-  get isHidden() { return this.#es6MemberInfo.isHidden }
-  get isSealed() { return this.#es6MemberInfo.isSealed }
-  get isConst() { return this.#es6MemberInfo.isConst }
+  get isVisible() { return this.#isEnumerable }
+  get isHidden() { return !this.isVisible }
+  get isSealed() { return !this.#isConfigurable }
+  get isConst() { return !this.isAccessor && !this.#isWritable }
 
   // member values
-  get getter() { return this.#es6MemberInfo.getter }
-  get setter() { return this.#es6MemberInfo.setter }
-  get value() { return this.#es6MemberInfo.value }
-  get method() { return this.#es6MemberInfo.method }
-  get ctor() { return this.#es6MemberInfo.ctor }
+  get getter() { return this.#descriptorInfo.getter }
+  get setter() { return this.#descriptorInfo.setter }
+  get value() { return this.#descriptorInfo.value }
+  get method() { return this.#descriptorInfo.value }
+  get ctor() { return this.#descriptorInfo.value }
   
-  // descriptor
-  get descriptorInfo() { return this.#es6MemberInfo.descriptorInfo }
+  // member type groups
+  get isAccessor() { return this.isGetter || this.isSetter || this.isProperty }
+  get isFunction() { return this.isMethod || this.isConstructor }
 
-  parent() { return MemberInfo.from$(this.#es6MemberInfo.parent()) }
-  root() { return MemberInfo.from$(this.#es6MemberInfo.root()) }
-  rootHost() { return FunctionInfo.from(this.#es6MemberInfo.rootHost()) }
+  // descriptor
+  get descriptorInfo() { return this.#descriptorInfo }
+
+  parent() { 
+    const parent = this.host.base
+    if (!parent) return null
+
+    const isStatic = this.isStatic
+    return parent.getOwnMember(this.name, { isStatic })
+  }
 
   equals(other) {
     if (!(other instanceof MemberInfo)) return false
-    return this.#es6MemberInfo.equals(other.#es6MemberInfo)
+    if (this.#isStatic !== other.#isStatic) return false
+    if (!this.#host.equals(other.#host)) return false
+    if (!this.#descriptorInfo.equals(other.#descriptorInfo)) return false
+    if (!this.#keyInfo.equals(other.#keyInfo)) return false
+    return true  
   }
 
   get partialClass() {
@@ -342,10 +329,18 @@ export class MemberInfo extends Info {
     yield *[...seen].map(fn => Info.from(fn))
   }
 
-  *modifiers() { yield* this.#es6MemberInfo.modifiers() }
-  *pivots() { yield* this.#es6MemberInfo.pivots() }
+  *modifiers() { 
+    yield* Es6Descriptor.modifiers(
+      this.#descriptorInfo.descriptor, 
+      Es6Reflect.getMetadata(this.type))     
+  }
+  *pivots() { 
+    if (this.isStatic) yield 'static' 
+    if (this.isNonPublic) yield 'non-public'
+    if (this.isKnown) yield 'known'
+    yield* this.#descriptorInfo.pivots()
+  }
 
-  toStringType() { return this.#es6MemberInfo.toStringType() }
   toString() {
     const keyInfo = this.keyInfo
 
@@ -360,9 +355,11 @@ export class MemberInfo extends Info {
         // e.g. 'sealed', 'enumerable', 'const', 'hidden'
         ...this.modifiers(),
 
-        // e.g. 'method', 'constructor, 'getter', 'setter', 'property'
-        // or when field 'string', 'number', 'function', 'array' etc.
-        this.toStringType(), 
+        // e.g. 'getter', 'setter', 'property', 'method', 'field'
+        this.type,
+
+        // 'string', 'number', 'function', 'array' etc.
+        this.fieldType ? `[${this.fieldType}]` : null,   
 
       ].filter(Boolean).join(' '),
 
