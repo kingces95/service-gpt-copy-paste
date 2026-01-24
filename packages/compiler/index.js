@@ -85,8 +85,8 @@ export class Compiler {
   }
 
   // Emit converts a "partial" descriptor into a full descriptor. 
-  // - Emit assigns metadata to any procedural descriptor if not already 
-  //   assigned to match that applied by typical source code member declaration:
+  // - Emit assigns metadata to any procedural descriptor not already 
+  //   assigned to match a typical source code member declaration:
   //    - Accessors: enumerable: false, configurable: true
   //    - Methods: enumerable: false, configurable: true, writable: true
   //    - Data: enumerable: true, configurable: true, writable: true

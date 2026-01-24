@@ -51,6 +51,11 @@ const MyClassMd = {
   static: {
     chain: [ MyClass ],
     ownKeys: [ 'staticMember', 'staticBaseMember' ],
+    keys: [ 'staticMember', 'staticBaseMember' ],
+    ownMembers: [ 
+      [ 'staticMember', MyClass ],
+      [ 'staticBaseMember', MyClass ],
+    ],
     members: [ 
       [ 'staticMember', MyClass ],
       [ 'staticBaseMember', MyClass ],
@@ -59,6 +64,11 @@ const MyClassMd = {
   instance: {
     chain: [ MyClass, Object ],
     ownKeys: [ 'member', 'baseMember' ],
+    keys: [ 'member', 'baseMember' ],
+    ownMembers: [ 
+      [ 'member', MyClass ],
+      [ 'baseMember', MyClass ],
+    ],
     members: [ 
       [ 'member', MyClass ],
       [ 'baseMember', MyClass ],
@@ -79,6 +89,11 @@ const MyExtendedClassMd = {
   static: {
     chain: [ MyExtendedClass, MyClass ],
     ownKeys: [ 'staticMember', 'extendedStaticMember' ],
+    keys: [ 'staticMember', 'extendedStaticMember', 'staticBaseMember' ],
+    ownMembers: [
+      [ 'staticMember', MyExtendedClass ],
+      [ 'extendedStaticMember', MyExtendedClass ],
+    ],
     members: [
       [ 'staticMember', MyExtendedClass ],
       [ 'extendedStaticMember', MyExtendedClass ],
@@ -88,6 +103,11 @@ const MyExtendedClassMd = {
   instance: {
     chain: [ MyExtendedClass, MyClass, Object ],
     ownKeys: [ 'member', 'extendedMember' ],
+    keys: [ 'member', 'extendedMember', 'baseMember' ],
+    ownMembers: [
+      [ 'member', MyExtendedClass ],
+      [ 'extendedMember', MyExtendedClass ],
+    ],
     members: [
       [ 'member', MyExtendedClass ],
       [ 'extendedMember', MyExtendedClass ],
@@ -149,26 +169,115 @@ describe.each(Classes)('%s', (_, classMd) => {
 
     it('has correct members', () => {
       const expected = classMd[label].members || []
-      const actual = [...Es6Reflect.keys(type, { 
-        isStatic, 
-        excludeKnown: true,
-        includeContext: true })]
-      // sort for comparison
-      expected.sort(([lhs], [rhs]) => lhs.localeCompare(rhs))
-      actual.sort(([lhs], [rhs]) => lhs.localeCompare(rhs))
+      const actual = []
+      let owner
+      for (const current of Es6Reflect.keys(
+        type, { isStatic, excludeKnown: true })) {
+        switch (typeof current) {
+          case 'function': owner = current; continue
+          case 'string':
+          case 'symbol': actual.push([current, owner]); break
+          default: assert(false, `Unexpected type: ${typeof current}`)
+        }
+      }
       expect(actual).toEqual(expected)
     })
 
     it('has correct members including known ones', () => {
       const expected = keys(type, isStatic)
+      const actual = {}
+      let owner
+      for (const current of Es6Reflect.keys(
+        type, { isStatic, excludeKnown: false })) {
+        switch (typeof current) {
+          case 'function': owner = current; continue
+          case 'string':
+          case 'symbol': 
+            // so __proto__ shows up in the keys
+            Object.defineProperty(
+              actual, current, { value: true, enumerable: true })
+            break
+          default: assert(false, `Unexpected type: ${typeof current}`)
+        }
+      }
 
-      const actual = Object.fromEntries(
-        [...Es6Reflect.keys(type, { 
-          isStatic,
-          excludeKnown: false })]
-        .map((name) => [name, true])
-      )
       expect(actual).toEqual(expected)
+    })
+
+    it('has correct own descriptors', () => {
+      const expected = {}
+      for (const [name] of classMd[label].members || [])
+        expected[name] = Object.getOwnPropertyDescriptor(
+          isStatic ? type : type.prototype,
+          name)
+
+      const actual = {}
+      let key, descriptor
+      for (const current of Es6Reflect.ownDescriptors(
+        type, { isStatic, excludeKnown: true })) {
+        switch (typeof current) {
+          case 'string': key = current; continue
+          case 'symbol': key = current; continue
+          case 'object': descriptor = current; break
+          default: assert(false, `Unexpected type: ${typeof current}`)
+        }
+        actual[key] = descriptor
+      }
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('has correct descriptors', () => {
+      const expected = {}
+      for (const [name, owner] of classMd[label].members || [])
+        expected[name] = Object.getOwnPropertyDescriptor(
+          isStatic ? owner : owner.prototype,
+          name)
+
+      const actual = {}
+      let key, owner, descriptor
+      for (const current of Es6Reflect.descriptors(
+        type, { isStatic, excludeKnown: true })) {
+        switch (typeof current) {
+          case 'string': key = current; continue
+          case 'symbol': key = current; continue
+          case 'function': owner = current; continue
+          case 'object': descriptor = current; break
+          default: assert(false, `Unexpected type: ${typeof current}`)
+        }
+        actual[key] = descriptor
+      }
+
+      expect(actual).toEqual(expected)
+    })
+
+    it('can get each own descriptor', () => {
+      for (const [name, owner] of classMd[label].ownMembers || []) {
+        const expected = Object.getOwnPropertyDescriptor(
+          isStatic ? owner : owner.prototype,
+          name)
+        const actual = Es6Reflect.getOwnDescriptor(
+          type, name, { isStatic, excludeKnown: true })
+        expect(actual).toEqual(expected)
+      }
+    })
+
+    it('can get each descriptor', () => {
+      for (const [name, owner] of classMd[label].members || []) {
+        const expected = Object.getOwnPropertyDescriptor(
+          isStatic ? owner : owner.prototype,
+          name)
+        let actual
+        for (const current of Es6Reflect.getDescriptor(
+          type, name, { isStatic, excludeKnown: true })) {
+          switch (typeof current) {
+            case 'function': actual = null; continue
+            case 'object': actual = current; break
+            default: assert(false, `Unexpected type: ${typeof current}`)
+          }
+        }
+        expect(actual).toEqual(expected)
+      }
     })
   })
 })

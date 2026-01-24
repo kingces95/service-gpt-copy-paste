@@ -1,0 +1,15 @@
+{
+  "name": "@kingjs/user-reflect",
+  "version": "1.0.0",
+  "description": ".",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "peerDependencies": {},
+  "author": "Chris King",
+  "license": "MIT"
+}

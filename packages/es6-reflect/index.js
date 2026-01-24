@@ -96,16 +96,14 @@ export class Es6Reflect {
     }
   }
 
-  static *keys(type, { isStatic, excludeKnown, includeContext } = { }) {
+  static *keys(type, { isStatic, excludeKnown } = { }) {
     const visited = new Set()
     for (const owner of Es6Reflect.hierarchy(type, { isStatic })) {
+      yield owner
       for (const key of Es6Reflect.ownKeys(owner, { isStatic, excludeKnown })) {
         if (visited.has(key)) continue
         visited.add(key)
-        
-        yield includeContext 
-          ? [ key, owner ]
-          : key
+        yield key
       }
     }
   }
@@ -133,29 +131,39 @@ export class Es6Reflect {
     for (const key of ownKeys) {
       const descriptor = Es6Reflect.getOwnDescriptor(
         type, key, { isStatic, excludeKnown })
-      yield [key, descriptor]
+      yield key
+      yield descriptor
     }
-  }
+  }  
 
-  static getDescriptor(type, name, { isStatic, excludeKnown, includeContext } = { }) {
+  static *getDescriptor(type, name, { isStatic, excludeKnown } = { }) {
     for (const owner of Es6Reflect.hierarchy(type, { isStatic })) {
       const descriptor = Es6Reflect.getOwnDescriptor(
         owner, name, { isStatic, excludeKnown })
       if (!descriptor) continue
-      return includeContext
-        ? [descriptor, owner]
-        : descriptor
+      yield owner
+      return yield descriptor
     }
     return null
   }
-  static *descriptors(type, { isStatic, excludeKnown, includeContext } = { }) {
-    for (const [name, owner] of Es6Reflect.keys(
-      type, { isStatic, includeContext: true })) {
-      const descriptor = Es6Reflect.getOwnDescriptor(
-        owner, name, { isStatic, excludeKnown })
-      yield includeContext
-        ? [descriptor, name, owner]
-        : descriptor
+  static *descriptors(type, { isStatic, excludeKnown } = { }) {
+    let owner
+    for (const current of Es6Reflect.keys(type, { isStatic, excludeKnown })) {
+      switch (typeof current) {
+        case 'function': 
+          owner = current
+          yield owner
+          continue
+        case 'string':
+        case 'symbol': {
+          const descriptor = Es6Reflect.getOwnDescriptor(
+            owner, current, { isStatic, excludeKnown })
+          yield current
+          yield descriptor
+          continue
+        }
+        default: assert(false, `Unexpected type: ${typeof current}`)
+      }
     }
   }
 

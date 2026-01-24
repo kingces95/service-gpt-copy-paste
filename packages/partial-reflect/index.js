@@ -6,6 +6,7 @@ import { Es6Associate } from '@kingjs/es6-associate'
 import { PartialPojo } from '@kingjs/partial-pojo'
 import { PartialObject } from '@kingjs/partial-object'
 import { Descriptor } from '@kingjs/descriptor'
+import { UserReflect } from '@kingjs/user-reflect'
 
 // The PartialReflect API provides reflection over PartialObject. For
 // example, to verify that a type is a PartialObject use:
@@ -254,10 +255,7 @@ export class PartialReflect {
       }
     }
     else {
-      for (const key of Es6Reflect.ownKeys(type)) {
-        if (Es6Reflect.isKnownKey(type, key)) continue
-        yield key
-      }
+      yield* UserReflect.ownKeys(type)
     }
   }
   static *keys(type, { isStatic, includeContext } = { }) { 
@@ -266,16 +264,24 @@ export class PartialReflect {
       yield* PartialReflect.keys(prototypicalType, { isStatic, includeContext } )    
     }
     else {
-      for (const key of Es6Reflect.keys(
-        type, { isStatic, includeContext, excludeKnown: true })) {
-        yield key
+      let owner
+      for (const current of UserReflect.keys(type, { isStatic })) {
+        switch (typeof current) {
+          case 'function': owner = current; continue
+          case 'string':
+          case 'symbol': 
+            yield includeContext
+              ? [ current, owner ]
+              : current
+            break
+          default: assert(false, `Unexpected type: ${typeof current}`)
+        }
       }
     }
   }
 
   static getOwnDescriptor(type, key, { isStatic } = { }) {
-    const descriptor = Es6Reflect.getOwnDescriptor(
-      type, key, { isStatic, excludeKnown: true })
+    const descriptor = UserReflect.getOwnDescriptor(type, key, { isStatic })
     if (!descriptor) return null
     if (!PartialReflect.isPartialObject(type)) return descriptor
     return type[PartialObject.Compile](descriptor) 
@@ -283,7 +289,7 @@ export class PartialReflect {
   static getOwnDescriptors(type, { isStatic } = { }) {
     const descriptors = { }
     if (isStatic && PartialReflect.isKnown(type)) return descriptors
-    for (const key of Es6Reflect.ownKeys(type, { isStatic, excludeKnown: true })) {
+    for (const key of UserReflect.ownKeys(type, { isStatic })) {
       const descriptor = PartialReflect.getOwnDescriptor(type, key, { isStatic })
       assert(descriptor,
         `Expected descriptor for key '${String(key)}'.`)
@@ -294,15 +300,24 @@ export class PartialReflect {
   
   static getDescriptor(type, key, { isStatic, includeContext } = { }) {
     const prototypicalType = PartialReflect.getPrototypicalType$(type)
-    const result = Es6Reflect.getDescriptor(
-      prototypicalType, key, { isStatic, includeContext, excludeKnown: true })
-    if (includeContext) {
-      const [descriptor, owner$] = result || []
-      if (!descriptor) return result || []
-      const owner = PartialReflect.getPrototypicalHost$(owner$)
-      return [descriptor, owner]
+
+    let owner = null
+    for (const current of UserReflect.getDescriptor(
+      prototypicalType, key, { isStatic })) {
+      switch (typeof current) {
+        case 'function': owner = current; continue
+        case 'object': {
+          const descriptor = current
+          if (includeContext) {
+            const host = PartialReflect.getPrototypicalHost$(owner)
+            return [descriptor, host]
+          }
+          return descriptor
+        }
+        default: assert(false, `Unexpected type: ${typeof current}`)
+      }
     }
-    return result
+    return null
   }
   static getDescriptors(type, { isStatic, includeContext } = { }) {
     if (isStatic && PartialReflect.isKnown(type)) return { }
@@ -425,11 +440,7 @@ export class PartialReflect {
   }
   static getHost(type, key) {
     const prototypicalType = PartialReflect.getPrototypicalType$(type)
-
-    const host = Es6Reflect.getHost(prototypicalType, key, {
-      excludeKnown: true
-    })
-    
+    const host = UserReflect.getHost(prototypicalType, key)
     if (!host) return null
 
     const associate = Es6Associate.mapGet(

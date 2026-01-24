@@ -52,9 +52,16 @@ export class Es6ClassInfo {
 
   *ownMembers({ isStatic = false } = { }) {
     const type = this.ctor
-    yield* Es6Reflect.ownDescriptors(type, { isStatic })
-      .map(([key, descriptor]) => Es6MemberInfo.create(
-        type, key, descriptor, { isStatic }))
+    let key, descriptor
+    for (const current of Es6Reflect.ownDescriptors(type, { isStatic })) {
+      switch (typeof current) {
+        case 'string': key = current; continue
+        case 'symbol': key = current; continue
+        case 'object': descriptor = current; break
+        default: assert(false, `Unexpected type: ${typeof current}`)
+      }
+      yield Es6MemberInfo.create(type, key, descriptor, { isStatic })
+    }
   }
   getOwnMember(key, { isStatic = false } = { }) {
     const type = this.ctor
@@ -67,18 +74,34 @@ export class Es6ClassInfo {
 
   *members({ isStatic = false } = { }) {
     const type = this.ctor
-    yield* Es6Reflect.descriptors(
-      type, { isStatic, includeContext: true })
-      .map(([descriptor, key, owner]) => Es6MemberInfo.create(
-        owner, key, descriptor, { isStatic }))
+    let key, owner, descriptor
+    for (const current of Es6Reflect.descriptors(
+      type, { isStatic })) {
+      switch (typeof current) {
+        case 'function': owner = current; continue
+        case 'string': key = current; continue
+        case 'symbol': key = current; continue
+        case 'object': descriptor = current; break
+        default: assert(false, `Unexpected type: ${typeof current}`)
+      }
+      yield Es6MemberInfo.create(owner, key, descriptor, { isStatic })
+    }
   }
   getMember(key, { isStatic = false } = { }) {
     const type = this.ctor
-    const [descriptor, owner] = Es6Reflect.getDescriptor(
-      type, key, { isStatic, includeContext: true }) || []
-    if (!descriptor) return null
-    return Es6MemberInfo.create(
-      owner, key, descriptor, { isStatic })
+
+    let owner
+    for (const current of Es6Reflect.getDescriptor(
+      type, key, { isStatic })) {
+      switch (typeof current) {
+        case 'function': owner = current; continue
+        case 'object': 
+          return Es6MemberInfo.create(owner, key, current, { isStatic })
+        default: assert(false, `Unexpected type: ${typeof current}`)
+      }
+    }
+    
+    return null
   }
 
   *ownStaticMembers() { yield* this.ownMembers({ isStatic: true }) }
