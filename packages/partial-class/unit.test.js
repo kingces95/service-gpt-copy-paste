@@ -99,7 +99,9 @@ describe('An extension', () => {
     expect(keys).toHaveLength(0)
   })
   it('should have no names or symbols', () => {
-    const keys = [...PartialReflect.keys(extension)]
+    const keys = [...PartialReflect.keys(extension)
+      .filter(PartialReflect.isKey)
+    ]
     expect(keys).toHaveLength(0)
   })
   describe('with a sub extension', () => {
@@ -120,7 +122,9 @@ describe('An extension', () => {
         subExtension.prototype.subMember = subMember
       })
       it('should have the subMember as a key', () => {
-        const keys = [...PartialReflect.keys(extension)]
+        const keys = [...PartialReflect.keys(extension)
+          .filter(PartialReflect.isKey)
+        ]
         expect(keys).toHaveLength(1)
         expect(keys[0]).toBe('subMember')
       })
@@ -162,7 +166,9 @@ describe('An extension', () => {
         expect(keys).toHaveLength(0)
       })
       it('should have the member as a name or symbol', () => {
-        const keys = [...PartialReflect.keys(extension)]
+        const keys = [...PartialReflect.keys(extension)
+          .filter(PartialReflect.isKey)
+        ]
         expect(keys).toHaveLength(1)
         expect(keys[0]).toBe('member')
       })
@@ -195,7 +201,9 @@ describe('An extension', () => {
       expect(keys[0]).toBe('member')
     })
     it('should have the member as a name or symbol', () => {
-      const keys = [...PartialReflect.keys(extension)]
+      const keys = [...PartialReflect.keys(extension)
+        .filter(PartialReflect.isKey)
+      ]
       expect(keys).toHaveLength(1)
       expect(keys[0]).toBe('member')
     })

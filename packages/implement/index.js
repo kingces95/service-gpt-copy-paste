@@ -14,8 +14,11 @@ export function implement(type, concept, implementation = { }) {
   implementation = PartialReflect.defineType(implementation)
 
   // restrict implementation to members defined by the concept.
-  const conceptMembers = new Set(PartialReflect.keys(concept))
-  for (const name of PartialReflect.keys(implementation)) {
+  const conceptMembers = new Set(PartialReflect.keys(concept)
+    .filter(PartialReflect.isKey))
+
+  for (const name of PartialReflect.keys(implementation)
+    .filter(PartialReflect.isKey)) {
     if (conceptMembers.has(name)) continue
     throw new Error(`Concept '${concept.name}' does not define member '${name}'.`)
   }

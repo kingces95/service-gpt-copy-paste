@@ -130,7 +130,8 @@ export class ConceptReflect {
         return false 
     }
 
-    for (const name of PartialReflect.keys(concept)) {
+    for (const name of PartialReflect.keys(concept)
+      .filter(PartialReflect.isKey)) {
       if (name in instance) continue 
       return false
     }

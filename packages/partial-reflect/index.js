@@ -164,6 +164,18 @@ function prototypicalCreate(type) {
   return prototypicalType
 }
 
+export class InfoReflect {
+  static getPartialObjectType(fn, idInfo) { }
+  static isKnown(fn) { }
+
+  static *ownKeys(fn, { isStatic } = { }) { }
+  static *keys(fn, { isStatic } = { }) { }
+  static getOwnDescriptor(fn, key, { isStatic } = { }) { }
+  static getDescriptor(fn, key, { isStatic } = { }) { }
+  static *getOwnDescriptors(fn, { isStatic } = { }) { }
+  static *getDescriptors(fn, { isStatic } = { }) { }
+}
+
 export class PartialReflect {
 
   // The loader tracks the following assoications during loading. Note: 
@@ -248,43 +260,51 @@ export class PartialReflect {
 
   static *ownKeys(type) { 
     if (PartialReflect.isPartialObject(type)) {
-      for (const key of PartialReflect.keys(type)) {
-        const host = PartialReflect.getHost(type, key)
-        if (host != type) continue
-        yield key
+      for (const current of PartialReflect.keys(type)) {
+        switch (typeof current) {
+          case 'function': break
+          case 'string':
+          case 'symbol': 
+            const host = PartialReflect.getHost(type, current)
+            if (host != type) continue
+            yield current
+            break
+          default: assert(false, `Unexpected type: ${typeof current}`)
+        }
       }
     }
     else {
       yield* UserReflect.ownKeys(type)
     }
   }
-  static *keys(type, { isStatic, includeContext } = { }) { 
+  static *keys(type, { isStatic } = { }) { 
     if (PartialReflect.isPartialObject(type)) {
       const prototypicalType = PartialReflect.getPrototypicalType$(type)
-      yield* PartialReflect.keys(prototypicalType, { isStatic, includeContext } )    
-    }
-    else {
-      let owner
-      for (const current of UserReflect.keys(type, { isStatic })) {
+      for (const current of PartialReflect.keys(prototypicalType, { isStatic })) {
         switch (typeof current) {
-          case 'function': owner = current; continue
-          case 'string':
-          case 'symbol': 
-            yield includeContext
-              ? [ current, owner ]
-              : current
-            break
-          default: assert(false, `Unexpected type: ${typeof current}`)
+          case 'function': yield PartialReflect.getPrototypicalHost$(current); break
+          default: yield current
         }
       }
     }
+    else {
+      yield* UserReflect.keys(type, { isStatic })
+    }
+  }
+  static isKey(key) {
+    return typeof key === 'string' || typeof key === 'symbol'
   }
 
   static getOwnDescriptor(type, key, { isStatic } = { }) {
     const descriptor = UserReflect.getOwnDescriptor(type, key, { isStatic })
     if (!descriptor) return null
-    if (!PartialReflect.isPartialObject(type)) return descriptor
-    return type[PartialObject.Compile](descriptor) 
+
+    if (PartialReflect.isPartialObject(type)) {
+      return type[PartialObject.Compile](descriptor) 
+    } 
+    else {
+      return descriptor
+    }
   }
   static getOwnDescriptors(type, { isStatic } = { }) {
     const descriptors = { }
@@ -319,33 +339,45 @@ export class PartialReflect {
     }
     return null
   }
-  static getDescriptors(type, { isStatic, includeContext } = { }) {
-    if (isStatic && PartialReflect.isKnown(type)) return { }
+  static *getDescriptors(type, { isStatic } = { }) {
+    if (isStatic && PartialReflect.isKnown(type)) return
+
     if (PartialReflect.isPartialObject(type)) {
-      const prototypicalType = PartialReflect.getPrototypicalType$(type)
-      return Es6Associate.objectInitialize(type, isStatic
-        ? PartialReflect.StaticDescriptors
-        : PartialReflect.Descriptors, 
-        () => PartialReflect.getDescriptors(
-          prototypicalType, { isStatic, includeContext }))
+      for (const current of PartialReflect.getDescriptors(
+        PartialReflect.getPrototypicalType$(type), { isStatic })) {
+        switch (typeof current) {
+          case 'function': 
+            yield PartialReflect.getPrototypicalHost$(current) 
+            break
+          case 'string':
+          case 'symbol': 
+          case 'object': yield current; break
+          default: assert(false, `Unexpected type: ${typeof current}`)
+        }
+      }
     }
     else {
-      const descriptors = { }
-      for (const [key, owner$] of PartialReflect.keys(
-        type, { isStatic, includeContext: true })) {
-          const owner = PartialReflect.getPrototypicalHost$(owner$)
-          const descriptor = PartialReflect.getDescriptor(type, key, { isStatic })
-          descriptors[key] = includeContext
-            ? [descriptor, owner]
-            : descriptor
+      let owner
+      for (const current of PartialReflect.keys(type, { isStatic })) {
+        switch (typeof current) {
+          case 'function': owner = current; yield owner; break
+          case 'string':
+          case 'symbol': {
+            const descriptor = UserReflect.getOwnDescriptor(
+              owner, current, { isStatic })
+            yield current
+            yield descriptor              
+            break
+          }
+          default: assert(false, `Unexpected type: ${typeof current}`)
+        }
       }
-      return descriptors
     }
   }
 
   static defineProperty(type, key, descriptor) {
     const prototype = type.prototype
-    
+
     // only overwrite existing abstract members and then only
     // if the new member is not also abstract.
     if (key in prototype) {
@@ -353,7 +385,7 @@ export class PartialReflect {
       // const existingDescriptor = Descriptor.get(prototype, key)
       // if (!isAbstract(existingDescriptor)) return false
     }
-      
+
     Object.defineProperty(prototype, key, descriptor)
     return true
   }
@@ -394,7 +426,19 @@ export class PartialReflect {
       `Expected partialObject to indirectly extend PartialObject.`)
 
     for (const child of PartialReflect.ownPartialObjects(partialObject)) {
-      const descriptors = PartialReflect.getDescriptors(child)
+      const descriptors = { }
+
+      let key
+      for (const current of PartialReflect.getDescriptors(child)) {
+        switch (typeof current) {
+          case 'function': break
+          case 'string':
+          case 'symbol': key = current; break
+          case 'object': descriptors[key] = current; break
+          default: assert(false, `Unexpected type: ${typeof current}`)
+        }
+      }
+
       const keys = PartialReflect.defineProperties(type, descriptors)
 
       // PartialPojo members are transparent.

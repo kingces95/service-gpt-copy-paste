@@ -118,11 +118,18 @@ export class FunctionInfo extends Info {
   }
   *members({ isStatic } = { }) {
     const fn = this.ctor
-    const descriptors = PartialReflect.getDescriptors(
-      fn, { isStatic, includeContext: true })
-    for (const key of Reflect.ownKeys(descriptors)) {
-      const [descriptor, owner] = descriptors[key]
-      yield this.#createMembmer(owner, key, descriptor, { isStatic })
+    let owner, key
+    for (const current of PartialReflect.getDescriptors(fn, { isStatic })) {
+      switch (typeof current) {
+        case 'function': owner = current; break
+        case 'string':
+        case 'symbol': key = current; break
+        case 'object': {
+          yield this.#createMembmer(owner, key, current, { isStatic })
+          continue
+        }
+        default: assert(false, `Unexpected type: ${typeof current}`)
+      }
     }
   }
 

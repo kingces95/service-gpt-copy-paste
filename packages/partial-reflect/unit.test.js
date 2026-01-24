@@ -113,7 +113,9 @@ describe('MyPojoType', () => {
         expect(declarations).toHaveLength(0)
       })
       it('should have method as member name or symbol', () => {
-        const keys = [...PartialReflect.keys(myType)]
+        const keys = [...PartialReflect.keys(myType)
+          .filter(PartialReflect.isKey)
+        ]
         expect(keys).toContain('method')
       })
     })
@@ -179,7 +181,9 @@ describe('PartialClass', () => {
       expect(keys).toHaveLength(0)
     })
     it('should have no member names or symbols', () => {
-      const keys = [...PartialReflect.keys(MyExtension)]
+      const keys = [...PartialReflect.keys(MyExtension)
+        .filter(PartialReflect.isKey)
+      ]
       expect(keys).toHaveLength(0)
     })
     it('should return nothing for missing member hosts', () => {
@@ -308,7 +312,9 @@ describe('PartialClass', () => {
             })
             it('should have method as memberKey', () => {
               const keys = 
-                [...PartialReflect.keys(MyExtension)]
+                [...PartialReflect.keys(MyExtension)
+                  .filter(PartialReflect.isKey)
+                ]
               expect(keys).toContain('method')
             })
             it('should have mySubExtension as declaration', () => {
@@ -331,7 +337,9 @@ describe('PartialClass', () => {
               })
               it('should have method and subMethod as memberKeys', () => {
                 const keys = 
-                  [...PartialReflect.keys(MyExtension)]
+                  [...PartialReflect.keys(MyExtension)
+                    .filter(PartialReflect.isKey)
+                  ]
                 expect(keys).toContain('method')
                 expect(keys).toContain('subMethod')
                 expect(keys).toHaveLength(2)
@@ -364,7 +372,9 @@ describe('PartialClass', () => {
                   })
                   it('should have method, subMethod, and subSubMethod as memberKeys', () => {
                     const keys = 
-                      [...PartialReflect.keys(MyExtension)]
+                      [...PartialReflect.keys(MyExtension)
+                        .filter(PartialReflect.isKey)
+                      ]
                     expect(keys).toContain('method')
                     expect(keys).toContain('subMethod')
                     expect(keys).toContain('subSubMethod')
@@ -451,7 +461,9 @@ describe('PartialClass', () => {
                 expect(keys).toHaveLength(0)
               })
               it('should have method as member name or symbol', () => {
-                const keys = [...PartialReflect.keys(mySubType)]
+                const keys = [...PartialReflect.keys(mySubType)
+                  .filter(PartialReflect.isKey)
+                ]
                 expect(keys).toContain('method')
               })
             })
@@ -472,7 +484,9 @@ describe('PartialClass', () => {
                 expect(keys).toHaveLength(1)
               })
               it('should have method as member name or symbol', () => {
-                const keys = [...PartialReflect.keys(myType)]
+                const keys = [...PartialReflect.keys(myType)
+                  .filter(PartialReflect.isKey)
+                ]
                 expect(keys).toContain('method')
                 expect(keys).toHaveLength(1)
               })
