@@ -445,6 +445,17 @@ const MyPojoMemberMd = {
   hasValue: true,
 }
 
+const MyPojoLambdaMd = {
+  name: 'member',
+  cls: PartialReflect.defineType({ member: () => { } }),
+  type: 'method',
+  isMethod: true,
+  toString: 'member, method, [partialPojoInfo]',
+  isConfigurable: true,
+  isWritable: true,
+  hasValue: true,
+}
+
 const MyClassMemberMd = {
   name: 'member',
   cls: class MyClass { member() { } },
@@ -529,6 +540,29 @@ const MyFieldMd = {
   hasValue: true,
 }
 
+const MyConstFieldMd = {
+  name: 'member',
+  cls: class MyClass { 
+    static { 
+      // this.prototype.member = 42 
+      Object.defineProperty(this.prototype, 'member', {
+        value: 42,
+        writable: false,
+        configurable: false,
+        enumerable: true,
+      })
+    } 
+  },
+  toString: 'member, sealed const field [number], [classInfo MyClass]',
+  type: 'field',
+  isField: true,
+  isData: true,
+  isConfigurable: false,
+  isEnumerable: true,
+  isWritable: false,
+  hasValue: true,
+}
+
 const MyGetterMd = {
   name: 'member',
   cls: class MyClass { get member() { } },
@@ -572,6 +606,7 @@ describe('Member', () => {
     ['MyPartialClassMember', MyPartialClassMemberMd],
     ['MyPartialClassExtensionMember', MyPartialClassExtensionMemberMd],
     ['MyPojoMember', MyPojoMemberMd],
+    ['MyPojoLambda', MyPojoLambdaMd],
     ['MyClassMember', MyClassMemberMd],
     // ['MyClassConstructor', MyClassConstructorMd],
     ['MyAnonMember', MyAnonMemberMd],
@@ -579,6 +614,7 @@ describe('Member', () => {
     ['MySymbolMember', MySymbolMemberMd],
     ['MyStaticSymbolMember', MyStaticSymbolMemberMd],
     ['MyField', MyFieldMd],
+    ['MyConstField', MyConstFieldMd],
     ['MyGetter', MyGetterMd],
     ['MySetter', MySetterMd],
     ['MyAccessor', MyAccessorMd],

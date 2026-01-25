@@ -3,6 +3,7 @@ import { beforeEach } from 'vitest'
 import { abstract } from '@kingjs/abstract'
 import { PartialPojo } from '@kingjs/partial-pojo'
 import { PartialReflect } from '@kingjs/partial-reflect'
+import { UserReflect } from '@kingjs/user-reflect'
 import { 
   PartialObject, 
   Compile,
@@ -56,7 +57,7 @@ describe('A type', () => {
 
     it('should return method as own descriptor', () => {
       const descriptor = 
-        PartialReflect.getOwnDescriptor(type, 'method')
+        UserReflect.getOwnDescriptor(type, 'method')
       expect(descriptor.value).toBe(method)
       expect(methodResult).toBe(true)
     })
@@ -113,7 +114,7 @@ describe('MyPojoType', () => {
         expect(declarations).toHaveLength(0)
       })
       it('should have method as member name or symbol', () => {
-        const keys = [...PartialReflect.keys(myType)
+        const keys = [...UserReflect.keys(myType)
           .filter(PartialReflect.isKey)
         ]
         expect(keys).toContain('method')
@@ -197,8 +198,15 @@ describe('PartialClass', () => {
       expect(host).toBe(null)
     })
     it('should return null for missing member descriptor', () => {
-      const descriptor = PartialReflect.getDescriptor(
-        MyExtension, 'missingMember')
+      let descriptor = null
+      for (const current of PartialReflect.getDescriptor(
+        MyExtension, 'missingMember')) {
+          switch (typeof current) {
+            case 'function': /*owner = current*/ break
+            case 'object': descriptor = current; break
+            default: assert(false, `Unexpected type: ${typeof current}`)
+          }
+      }
       expect(descriptor).toBe(null)
     })
 
@@ -237,8 +245,14 @@ describe('PartialClass', () => {
           MyAnonymousSubExtension.prototype.method = method
         })
         it('should have a descriptor for method', () => {
-          const descriptor = 
-            PartialReflect.getDescriptor(MyExtension, 'method')
+          let descriptor = null
+          for (const current of PartialReflect.getDescriptor(MyExtension, 'method')) {
+            switch (typeof current) {
+              case 'function': /*owner = current*/ break
+              case 'object': descriptor = current; break
+              default: assert(false, `Unexpected type: ${typeof current}`)
+            }
+          }
           expect(descriptor.value).toBe(method)
         })
         
@@ -457,11 +471,11 @@ describe('PartialClass', () => {
               })
               it('should have no ownMemberKeys', () => {
                 const keys = 
-                  [...PartialReflect.ownKeys(mySubType)]
+                  [...UserReflect.ownKeys(mySubType)]
                 expect(keys).toHaveLength(0)
               })
               it('should have method as member name or symbol', () => {
-                const keys = [...PartialReflect.keys(mySubType)
+                const keys = [...UserReflect.keys(mySubType)
                   .filter(PartialReflect.isKey)
                 ]
                 expect(keys).toContain('method')
@@ -479,12 +493,12 @@ describe('PartialClass', () => {
                 expect(actual).toEqual(expected)
               })
               it('should have method as own member name or symbol', () => {
-                const keys = [...PartialReflect.ownKeys(myType)]
+                const keys = [...UserReflect.ownKeys(myType)]
                 expect(keys).toContain('method')
                 expect(keys).toHaveLength(1)
               })
               it('should have method as member name or symbol', () => {
-                const keys = [...PartialReflect.keys(myType)
+                const keys = [...UserReflect.keys(myType)
                   .filter(PartialReflect.isKey)
                 ]
                 expect(keys).toContain('method')

@@ -49,8 +49,10 @@ export class Es6Reflect {
   }
   static isExtensionOf(cls, targetCls) {
     const hierarchy = Es6Reflect.hierarchy(cls, { isStatic: true })
-    for (const current of hierarchy)
+    for (const current of hierarchy) {
+      if (current == cls) continue
       if (current == targetCls) return true
+    }
     return false
   }
 
@@ -144,23 +146,19 @@ export class Es6Reflect {
       yield owner
       return yield descriptor
     }
-    return null
   }
   static *descriptors(type, { isStatic, excludeKnown } = { }) {
     let owner
     for (const current of Es6Reflect.keys(type, { isStatic, excludeKnown })) {
       switch (typeof current) {
-        case 'function': 
-          owner = current
-          yield owner
-          continue
+        case 'function': owner = current; yield owner; break
         case 'string':
         case 'symbol': {
           const descriptor = Es6Reflect.getOwnDescriptor(
             owner, current, { isStatic, excludeKnown })
           yield current
           yield descriptor
-          continue
+          break
         }
         default: assert(false, `Unexpected type: ${typeof current}`)
       }

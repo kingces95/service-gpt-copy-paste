@@ -26,6 +26,8 @@ export class Concept extends PartialObject {
   // instanceof to test if an instance satisfies the concept. For reflection, use
   // Es6Reflect.isExtensionOf(type, concept).
   static [Symbol.hasInstance](instance) {
+    if (this == Concept) 
+      return super[Symbol.hasInstance](instance)
     return ConceptReflect.satisfies(instance, this)
   }
 

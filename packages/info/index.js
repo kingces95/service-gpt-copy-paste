@@ -14,6 +14,7 @@ import {
 import { es6BaseType } from '@kingjs/es6-base-type'
 import { Concept, ConceptReflect } from "@kingjs/concept"
 import { PartialClass, PartialClassReflect } from '@kingjs/partial-class'
+import { InfoReflect } from './info-reflect.js'
 
 const FunctionInfoCache = new WeakMap()
 
@@ -41,7 +42,7 @@ export class Info {
     if (collectionType == PartialPojo) return new PartialPojoSubclassInfo(fn, idInfo)
     if (collectionType == PartialClass) return new PartialClassSubclassInfo(fn, idInfo)
     if (collectionType == Concept) return new ConceptSubclassInfo(fn, idInfo)
-        
+
     return new ClassInfo(fn, idInfo)
   }
 }
@@ -76,7 +77,7 @@ export class FunctionInfo extends Info {
     return base
   }
 
-  get isKnown() { return PartialReflect.isKnown(this.ctor) }
+  get isKnown() { return InfoReflect.isKnown(this.ctor) }
   get isNonPublic() { return this.id.isNonPublic }
   get isAbstract() { return this instanceof PartialObjectInfo }
   get isAnonymous() { return this.id.isAnonymous }
@@ -97,29 +98,41 @@ export class FunctionInfo extends Info {
 
   getOwnMember(key, { isStatic } = { }) {
     const fn = this.ctor
-    const descriptor = PartialReflect.getOwnDescriptor(fn, key, { isStatic })
+    const descriptor = InfoReflect.getOwnDescriptor(fn, key, { isStatic })
     if (!descriptor) return null
     return this.#createMembmer(fn, key, descriptor, { isStatic })
   }
   getMember(key, { isStatic } = { }) {
     const fn = this.ctor
-    const [descriptor, owner] = PartialReflect.getDescriptor(
-      fn, key, { isStatic, includeContext: true }) || []
+    let owner, descriptor
+    for (const current of InfoReflect.getDescriptor(fn, key, { isStatic })) {
+      switch (typeof current) {
+        case 'function': owner = current; break
+        case 'object': descriptor = current; break
+        default: assert(false, `Unexpected type: ${typeof current}`)
+      }
+    }
     if (!descriptor) return null
     return this.#createMembmer(owner, key, descriptor, { isStatic })
   }
   *ownMembers({ isStatic } = { }) {
     const fn = this.ctor
-    const descriptors = PartialReflect.getOwnDescriptors(fn, { isStatic })
-    for (const key of Reflect.ownKeys(descriptors)) {
-      const descriptor = descriptors[key]
-      yield this.#createMembmer(fn, key, descriptor, { isStatic })
+    let key
+    for (const current of InfoReflect.ownDescriptors(fn, { isStatic })) {
+      switch (typeof current) {
+        case 'string':
+        case 'symbol': key = current; break
+        case 'object':
+          yield this.#createMembmer(fn, key, current, { isStatic })
+          break
+        default: assert(false, `Unexpected type: ${typeof current}`)
+      }
     }
   }
   *members({ isStatic } = { }) {
     const fn = this.ctor
     let owner, key
-    for (const current of PartialReflect.getDescriptors(fn, { isStatic })) {
+    for (const current of InfoReflect.descriptors(fn, { isStatic })) {
       switch (typeof current) {
         case 'function': owner = current; break
         case 'string':
