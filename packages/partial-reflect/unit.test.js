@@ -4,6 +4,7 @@ import { abstract } from '@kingjs/abstract'
 import { PartialPojo } from '@kingjs/partial-pojo'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { UserReflect } from '@kingjs/user-reflect'
+import { Define } from '@kingjs/define'
 import { 
   PartialObject, 
   Compile,
@@ -52,7 +53,7 @@ describe('A type', () => {
     beforeEach(() => {
       method = function method() { }
       methodResult = 
-        PartialReflect.defineProperty(type, 'method', { value: method })
+        Define.property(type, 'method', { value: method })
     })
 
     it('should return method as own descriptor', () => {
@@ -66,7 +67,7 @@ describe('A type', () => {
       let abstractResult
       beforeEach(() => {
         abstractResult = 
-          PartialReflect.defineProperty(type, 'method', { value: abstract })
+          Define.property(type, 'method', { value: abstract })
       })
 
       it('should not change the method', () => {

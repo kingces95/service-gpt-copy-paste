@@ -5,6 +5,7 @@ import { PartialClass, Extends } from '@kingjs/partial-class'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { Concept, Implements, ConceptReflect } from '@kingjs/concept'
 import { abstract } from '@kingjs/abstract'
+import { InfoReflect } from '@kingjs/info-reflect'
 
 describe('Concept', () => {
   it('should compile function descriptor to abstract', () => {
@@ -78,7 +79,7 @@ describe('MyConcept', () => {
       expect(MyConcept.prototype).toBeInstanceOf(MyConcept)
     })
     it('should have MySubConcept', () => {
-      const actual = [...ConceptReflect.getConceptHosts(MyConcept, 'member')]
+      const actual = [...InfoReflect.getConceptHosts(MyConcept, 'member')]
       const expected = [ MyConcept ]
       expect(actual).toEqual(expected)
     })
@@ -104,12 +105,12 @@ describe('MyConcept', () => {
       MyConcept[Implements] = [ MySubConcept ]
     })
     it('should have inherited concepts', () => {
-      const actual = [...ConceptReflect.concepts(MyConcept)]
+      const actual = [...InfoReflect.concepts(MyConcept)]
       const expected = [ MySubConcept ]
       expect(actual).toEqual(expected)
     })
     it('should have own concepts', () => {
-      const actual = [...ConceptReflect.ownConcepts(MyConcept)]
+      const actual = [...InfoReflect.ownConcepts(MyConcept)]
       const expected = [ MySubConcept ]
       expect(actual).toEqual(expected)
     })

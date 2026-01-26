@@ -1,9 +1,12 @@
 import { assert } from '@kingjs/assert'
+import { PartialReflect } from '@kingjs/partial-reflect'
+import { Concept } from "@kingjs/concept"
 import { PartialPojo } from '@kingjs/partial-pojo'
 import { PartialObject } from '@kingjs/partial-object'
-import { PartialReflect } from '@kingjs/partial-reflect'
-import { Es6Reflect } from '@kingjs/es6-reflect'
+import { PartialClass } from '@kingjs/partial-class'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
+import { InfoReflect } from '@kingjs/info-reflect'
+import { es6BaseType } from '@kingjs/es6-base-type'
 import { 
   Es6ClassInfo, 
   Es6MemberInfo,
@@ -11,10 +14,6 @@ import {
   Es6KeyInfo,
   Es6DescriptorInfo,
 } from "@kingjs/es6-info"
-import { es6BaseType } from '@kingjs/es6-base-type'
-import { Concept, ConceptReflect } from "@kingjs/concept"
-import { PartialClass, PartialClassReflect } from '@kingjs/partial-class'
-import { InfoReflect } from './info-reflect.js'
 
 const FunctionInfoCache = new WeakMap()
 
@@ -60,7 +59,7 @@ export class FunctionInfo extends Info {
     this.#_ = this.toString()
   }
 
-  #createMembmer(fn, key, descriptor, { isStatic } = { }) {
+  #createMember(fn, key, descriptor, { isStatic } = { }) {
     assert(fn == PartialReflect.getPrototypicalHost$(fn),
       'fn must be the prototypical host of the member.')
     // fn = PartialReflect.getPrototypicalHost$(fn)
@@ -100,7 +99,7 @@ export class FunctionInfo extends Info {
     const fn = this.ctor
     const descriptor = InfoReflect.getOwnDescriptor(fn, key, { isStatic })
     if (!descriptor) return null
-    return this.#createMembmer(fn, key, descriptor, { isStatic })
+    return this.#createMember(fn, key, descriptor, { isStatic })
   }
   getMember(key, { isStatic } = { }) {
     const fn = this.ctor
@@ -113,7 +112,7 @@ export class FunctionInfo extends Info {
       }
     }
     if (!descriptor) return null
-    return this.#createMembmer(owner, key, descriptor, { isStatic })
+    return this.#createMember(owner, key, descriptor, { isStatic })
   }
   *ownMembers({ isStatic } = { }) {
     const fn = this.ctor
@@ -123,7 +122,7 @@ export class FunctionInfo extends Info {
         case 'string':
         case 'symbol': key = current; break
         case 'object':
-          yield this.#createMembmer(fn, key, current, { isStatic })
+          yield this.#createMember(fn, key, current, { isStatic })
           break
         default: assert(false, `Unexpected type: ${typeof current}`)
       }
@@ -138,7 +137,7 @@ export class FunctionInfo extends Info {
         case 'string':
         case 'symbol': key = current; break
         case 'object': {
-          yield this.#createMembmer(owner, key, current, { isStatic })
+          yield this.#createMember(owner, key, current, { isStatic })
           continue
         }
         default: assert(false, `Unexpected type: ${typeof current}`)
@@ -153,29 +152,29 @@ export class FunctionInfo extends Info {
 
   // partial classes
   *ownPartialClasses() {
-    yield *PartialClassReflect.ownPartialClasses(this.ctor)
+    yield *InfoReflect.ownPartialClasses(this.ctor)
       .map(partialClass => Info.from(partialClass))
   }
   *partialClasses() {
-    yield *PartialClassReflect.partialClasses(this.ctor)
+    yield *InfoReflect.partialClasses(this.ctor)
       .map(partialClass => Info.from(partialClass))
   }
 
   // concepts
   *ownConcepts() {
-    yield *ConceptReflect.ownConcepts(this.ctor)
+    yield *InfoReflect.ownConcepts(this.ctor)
       .map(concept => Info.from(concept))
   }
   *concepts() {
-    yield *ConceptReflect.concepts(this.ctor)
+    yield *InfoReflect.concepts(this.ctor)
       .map(concept => Info.from(concept))
   }
   *ownAssociatedConcepts() {
-    yield* ConceptReflect.ownAssociatedConcepts(this.ctor)
+    yield* InfoReflect.ownAssociatedConcepts(this.ctor)
       .map(([name, concept]) => [name, Info.from(concept)])
   }
   *associatedConcepts() {
-    yield* ConceptReflect.associatedConcepts(this.ctor)
+    yield* InfoReflect.associatedConcepts(this.ctor)
       .map(([name, concept]) => [name, Info.from(concept)])
   }
 
@@ -224,7 +223,7 @@ Info.Concept = Info.from(Concept)
 
 export class MemberInfo extends Info {
   static from$(fn, key, descriptor, { isStatic } = { }) {
-    const type = Es6Reflect.typeof(fn, key, descriptor, { isStatic })
+    const type = InfoReflect.typeof(fn, key, descriptor, { isStatic })
     const keyInfo = Es6KeyInfo.create(key)
     const descriptorInfo = Es6DescriptorInfo.create(descriptor)
     const host = Info.from(fn)
@@ -320,7 +319,7 @@ export class MemberInfo extends Info {
   get partialClass() {
     if (this.isStatic) return null
     const fn = this.host.ctor
-    const partialClass = PartialClassReflect.getPartialClass(fn, this.name)
+    const partialClass = InfoReflect.getPartialClass(fn, this.name)
     return Info.from(partialClass)
   }
 
@@ -339,7 +338,7 @@ export class MemberInfo extends Info {
     const host = this.host
     for (let member = this; member; member = member.parent()) {
       const fn = member.host.ctor
-      for (const concept of ConceptReflect.getConceptHosts(fn, member.name)) {
+      for (const concept of InfoReflect.getConceptHosts(fn, member.name)) {
         if (concept == host.ctor) continue
         seen.add(concept)
       }
@@ -352,7 +351,7 @@ export class MemberInfo extends Info {
   *modifiers() { 
     yield* Es6Descriptor.modifiers(
       this.#descriptorInfo.descriptor, 
-      Es6Reflect.getMetadata(this.type))     
+      InfoReflect.getMetadata(this.type))     
   }
   *pivots() { 
     if (this.isStatic) yield 'static' 

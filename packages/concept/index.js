@@ -1,6 +1,7 @@
 import { assert } from '@kingjs/assert'
 import { abstract } from '@kingjs/abstract'
 import { Es6Reflect } from '@kingjs/es6-reflect'
+import { UserReflect } from '@kingjs/user-reflect'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { PartialObject } from '@kingjs/partial-object'
 import { PartialReflect } from '@kingjs/partial-reflect'
@@ -66,34 +67,35 @@ export class ConceptReflect {
   }
 
   static *concepts(type) {
-    for (const collection of PartialReflect.partialObjects(type)) {
-      if (!ConceptReflect.isConcept(collection)) continue
-      yield collection
+    for (const object of PartialReflect.partialObjects(type)) {
+      if (!ConceptReflect.isConcept(object)) continue
+      yield object
     }
   }
   static *ownConcepts(type) {
-    for (const collection of PartialReflect.ownPartialObjects(type)) {
-      if (!ConceptReflect.isConcept(collection)) continue
-      yield collection
+    for (const object of PartialReflect.ownPartialObjects(type)) {
+      if (!ConceptReflect.isConcept(object)) continue
+      yield object
     }
   }
   static *getConceptHosts(type, name) {
-    const hosts = [...PartialReflect.hosts(type, name)]
-    yield* hosts.filter(host => ConceptReflect.isConcept(host))
+    for (const host of PartialReflect.hosts(type, name)) {
+      if (!ConceptReflect.isConcept(host)) continue
+      yield host
+    }
   }
 
   static *associatedConcepts(type) {
-    const map = new Map()
-    
+    if (!ConceptReflect.isConcept(type)) return
+
     yield* ConceptReflect.ownAssociatedConcepts(type)
-    for (const concept of PartialReflect.partialObjects(type))
+    for (const concept of ConceptReflect.concepts(type))
       yield *ConceptReflect.associatedConcepts(concept)
   }
   static *ownAssociatedConcepts(type) {
-    if (!ConceptReflect.isConcept(type))
-      return
+    if (!ConceptReflect.isConcept(type)) return
 
-    for (const name of Es6Reflect.ownKeys(type, { isStatic: true })) {
+    for (const name of UserReflect.ownKeys(type, { isStatic: true })) {
       if (KnownStaticMembers.has(name)) continue
 
       const concept = type[name]
@@ -105,8 +107,8 @@ export class ConceptReflect {
   }
 
   static satisfies(instance, concept) {
-    if (typeof instance != 'object' || instance == null)
-      return false
+    if (!ConceptReflect.isConcept(concept)) return false
+    if (typeof instance != 'object' || instance == null) return false
 
     assert(Es6Reflect.isExtensionOf(concept, Concept),
       `Argument concept must extend Concept.`)

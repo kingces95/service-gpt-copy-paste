@@ -6,6 +6,7 @@ import { Es6Associate } from '@kingjs/es6-associate'
 import { PartialPojo } from '@kingjs/partial-pojo'
 import { PartialObject } from '@kingjs/partial-object'
 import { UserReflect } from '@kingjs/user-reflect'
+import { Define } from '@kingjs/define'
 
 // The PartialReflect API provides reflection over PartialObject. For
 // example, to verify that a type is a PartialObject use:
@@ -202,21 +203,6 @@ export class PartialReflect {
     return Es6Associate.objectGet(type, PartialReflect.PrototypicalHost)
   }
 
-  static getPartialObjectType(type) {
-    const prototype = Object.getPrototypeOf(type)
-    if (prototype == PartialObject) return null
-    if (Object.getPrototypeOf(prototype) != PartialObject) {
-      assert(!(prototype.prototype instanceof PartialObject),
-        `Expected type to indirectly extend PartialObject.`)
-      return null
-    }
-
-    return prototype
-  }
-  static isPartialObject(type) {
-    return PartialReflect.getPartialObjectType(type) != null
-  }
-
   static *ownPartialObjects(type) {
     if (PartialReflect.isPartialObject(type)) {
       yield* Es6Associate.ownTypes(type, 
@@ -238,6 +224,42 @@ export class PartialReflect {
     }
   }
 
+  static *hosts(type, key) {
+    // returns partial classes that could have defined the key
+    // For example, all concepts that defined the key
+    const prototypicalType = PartialReflect.getPrototypicalType$(type)
+    if (!(key in prototypicalType.prototype)) return null
+    const result = [...Es6Associate.lookupGet(
+      prototypicalType, PartialReflect.HostLookup, key)]
+    if (result.length == 0) yield type
+    else yield* result
+  }
+  static getHost(type, key) {
+    const prototypicalType = PartialReflect.getPrototypicalType$(type)
+    const host = UserReflect.getHost(prototypicalType, key)
+    if (!host) return null
+
+    const associate = Es6Associate.mapGet(
+      prototypicalType, PartialReflect.HostMap, key)
+
+    return associate || type
+  }
+
+  static isPartialObject(type) {
+    return PartialReflect.getPartialObjectType(type) != null
+  }
+  static getPartialObjectType(type) {
+    const prototype = Object.getPrototypeOf(type)
+    if (prototype == PartialObject) return null
+    if (Object.getPrototypeOf(prototype) != PartialObject) {
+      assert(!(prototype.prototype instanceof PartialObject),
+        `Expected type to indirectly extend PartialObject.`)
+      return null
+    }
+
+    return prototype
+  }
+
   static *ownKeys(type) {
     assert(PartialReflect.isPartialObject(type))
     for (const current of PartialReflect.keys(type)) {
@@ -253,10 +275,10 @@ export class PartialReflect {
       }
     }    
   }
-  static *keys(type, { isStatic } = { }) { 
+  static *keys(type) { 
     assert(PartialReflect.isPartialObject(type))
     const prototypicalType = PartialReflect.getPrototypicalType$(type)
-    for (const current of UserReflect.keys(prototypicalType, { isStatic })) {
+    for (const current of UserReflect.keys(prototypicalType)) {
       switch (typeof current) {
         case 'function': yield PartialReflect.getPrototypicalHost$(current); break
         default: yield current
@@ -267,26 +289,26 @@ export class PartialReflect {
     return typeof key === 'string' || typeof key === 'symbol'
   }
 
-  static getOwnDescriptor(type, key, { isStatic } = { }) {
+  static getOwnDescriptor(type, key) {
     assert(PartialReflect.isPartialObject(type))
-    const descriptor = UserReflect.getOwnDescriptor(type, key, { isStatic })
+    const descriptor = UserReflect.getOwnDescriptor(type, key)
     if (!descriptor) return null
     return type[PartialObject.Compile](descriptor) 
   }
-  static *ownDescriptors(type, { isStatic } = { }) {
+  static *ownDescriptors(type) {
     assert(PartialReflect.isPartialObject(type))
-    for (const key of UserReflect.ownKeys(type, { isStatic })) {
-      const descriptor = PartialReflect.getOwnDescriptor(type, key, { isStatic })
+    for (const key of UserReflect.ownKeys(type)) {
+      const descriptor = PartialReflect.getOwnDescriptor(type, key)
       yield key
       yield descriptor
     }
   }
   
-  static *getDescriptor(type, key, { isStatic } = { }) {
+  static *getDescriptor(type, key) {
     assert(PartialReflect.isPartialObject(type))
     let owner = null
     for (const current of UserReflect.getDescriptor(
-      PartialReflect.getPrototypicalType$(type), key, { isStatic })) {
+      PartialReflect.getPrototypicalType$(type), key)) {
       switch (typeof current) {
         case 'function': owner = current; break
         case 'object':
@@ -296,10 +318,10 @@ export class PartialReflect {
       }
     }
   }
-  static *descriptors(type, { isStatic } = { }) {
+  static *descriptors(type) {
     assert(PartialReflect.isPartialObject(type))
     for (const current of UserReflect.descriptors(
-      PartialReflect.getPrototypicalType$(type), { isStatic })) {
+      PartialReflect.getPrototypicalType$(type))) {
       switch (typeof current) {
         case 'function': 
           yield PartialReflect.getPrototypicalHost$(current) 
@@ -310,29 +332,6 @@ export class PartialReflect {
         default: assert(false, `Unexpected type: ${typeof current}`)
       }
     }
-  }
-
-  static defineProperty(type, key, descriptor) {
-    const prototype = type.prototype
-
-    // only overwrite existing abstract members and then only
-    // if the new member is not also abstract.
-    if (key in prototype) {
-      if (isAbstract(descriptor)) return false
-      // const existingDescriptor = Descriptor.get(prototype, key)
-      // if (!isAbstract(existingDescriptor)) return false
-    }
-
-    Object.defineProperty(prototype, key, descriptor)
-    return true
-  }
-  static defineProperties(type, descriptors) {
-    const keys = []
-    for (const key of Reflect.ownKeys(descriptors)) {
-      const defined = PartialReflect.defineProperty(type, key, descriptors[key])
-      keys.push([key, defined])
-    }
-    return keys
   }
 
   static associateKeys$(type, partialObject, keys) {
@@ -376,7 +375,7 @@ export class PartialReflect {
         }
       }
 
-      const keys = PartialReflect.defineProperties(type, descriptors)
+      const keys = Define.properties(type, descriptors)
 
       // PartialPojo members are transparent.
       if (child.prototype instanceof PartialPojo) {
@@ -406,7 +405,7 @@ export class PartialReflect {
       }
     }
 
-    const keys = PartialReflect.defineProperties(type, descriptors)
+    const keys = Define.properties(type, descriptors)
 
     // PartialPojo members are transparent.
     if (partialObject.prototype instanceof PartialPojo) return
@@ -419,44 +418,9 @@ export class PartialReflect {
     PartialReflect.mergeOwn$(type, partialObject)
   }
 
-  static *hosts(type, key) {
-    // returns partial classes that could have defined the key
-    // For example, all concepts that defined the key
-    const prototypicalType = PartialReflect.getPrototypicalType$(type)
-    if (!(key in prototypicalType.prototype)) return null
-    const result = [...Es6Associate.lookupGet(
-      prototypicalType, PartialReflect.HostLookup, key)]
-    if (result.length == 0) yield type
-    else yield* result
-  }
-  static getHost(type, key) {
-    const prototypicalType = PartialReflect.getPrototypicalType$(type)
-    const host = UserReflect.getHost(prototypicalType, key)
-    if (!host) return null
-
-    const associate = Es6Associate.mapGet(
-      prototypicalType, PartialReflect.HostMap, key)
-
-    return associate || type
-  }
-
   static defineType(pojoOrType) {
-    if (isPojo(pojoOrType)) {
-      const [type] = [class extends PartialPojo { }]
-      const prototype = type.prototype
-  
-      for (const key of Reflect.ownKeys(pojoOrType)) {
-        if (key === 'constructor') continue
-        const descriptor = Object.getOwnPropertyDescriptor(pojoOrType, key)
-        Object.defineProperty(prototype, key, descriptor)
-      }
-  
-      return type
-    }
-
-    assert(Es6Reflect.isExtensionOf(pojoOrType, PartialObject),
-      `Expected arg to be a PartialObject.`)
-
-    return pojoOrType
+    const type = Define.type(pojoOrType, PartialPojo)
+    assert(PartialReflect.isPartialObject(type))
+    return type
   }
 }
