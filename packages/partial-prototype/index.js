@@ -4,9 +4,9 @@ import { PartialAssociate } from '@kingjs/partial-associate'
 import { PartialLoader } from '@kingjs/partial-loader'
 
 // Creates an empty "prototypical" class that extends Prototypical
-// and merges the given partial object type into it. This allows
-// us to reflect over the merged result so the reflection layer can
-// faithfully report what the loader (merge) actually did.
+// and merges a given partial object type into it. This allows
+// reflection over the merged result which will faithfully report 
+// what the loader (PartialLoader.merge) actually did.
 
 function defineName(type, name) {
   Object.defineProperties(type, {
@@ -34,28 +34,19 @@ function prototypicalCreate(type) {
   return prototypicalType
 }
 
-const PrototypicalHostMap = new Map()
 const PrototypicalTypeMap = new Map()
 
 function getPrototypicalType(type) {
   assert(PartialLoader.isPartialObject(type))
   let prototypicalType = PrototypicalTypeMap.get(type)
+
   if (!prototypicalType) {
     prototypicalType = prototypicalCreate(type)
     PrototypicalTypeMap.set(type, prototypicalType)
-    PrototypicalHostMap.set(prototypicalType, type)
-    PrototypicalHostMap.set(
-      Object.getPrototypeOf(prototypicalType), type)
   }
+  
   return prototypicalType
 }
-
-function getPrototypicalHost(type) {
-  if (!(type.prototype instanceof Prototypical)) return type
-  return PrototypicalHostMap.get(type)
-}
-
-const Declarations = Symbol.for('PartialReflect.Declarations')
 
 export class PartialPrototype {
 
@@ -84,7 +75,9 @@ export class PartialPrototype {
     const prototypicalType = getPrototypicalType(type)
     for (const current of UserReflect.keys(prototypicalType)) {
       switch (typeof current) {
-        case 'function': yield getPrototypicalHost(current); break
+        case 'function': 
+          yield current == prototypicalType ? type : current
+          break
         default: yield current
       }
     }    
@@ -93,12 +86,12 @@ export class PartialPrototype {
   static *getDescriptor(type, key) {
     assert(PartialLoader.isPartialObject(type))
     let owner = null
-    for (const current of UserReflect.getDescriptor(
-      getPrototypicalType(type), key)) {
+    const prototypicalType = getPrototypicalType(type)
+    for (const current of UserReflect.getDescriptor(prototypicalType, key)) {
       switch (typeof current) {
         case 'function': owner = current; break
         case 'object':
-          yield getPrototypicalHost(owner)
+          yield owner == prototypicalType ? type : owner
           return yield current
         default: assert(false, `Unexpected type: ${typeof current}`)
       }
@@ -107,11 +100,11 @@ export class PartialPrototype {
 
   static *descriptors(type) {
     assert(PartialLoader.isPartialObject(type))
-    for (const current of UserReflect.descriptors(
-      getPrototypicalType(type))) {
+    const prototypicalType = getPrototypicalType(type)
+    for (const current of UserReflect.descriptors(prototypicalType)) {
       switch (typeof current) {
         case 'function': 
-          yield getPrototypicalHost(current) 
+          yield current == prototypicalType ? type : current
           break
         case 'string':
         case 'symbol': 

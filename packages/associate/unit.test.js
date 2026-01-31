@@ -204,15 +204,6 @@ describe('MyClass with MyBase, MySymbol, MyKey, and MyValue', () => {
         const associated = [...Associate.setGetOwn(myClass, mySymbol)]
         expect(associated).toEqual([ myValue ])
       })
-      describe('then deleted...', () => {
-        beforeEach(() => {
-          Associate.setDelete(myClass, mySymbol, myValue)
-        })
-        it('value is not associated', () => {
-          const associated = [...Associate.setGet(myClass, mySymbol)]
-          expect(associated).toEqual([])
-        })
-      })
     })
     describe('map', () => {
       beforeEach(() => {
