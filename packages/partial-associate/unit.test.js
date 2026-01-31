@@ -1,0 +1,7 @@
+import { describe, it, expect } from 'vitest'
+import { beforeEach } from 'vitest'
+import { abstract } from '@kingjs/abstract'
+import { PartialPojo } from '@kingjs/partial-pojo'
+import { PartialReflect } from '@kingjs/partial-reflect'
+import { UserReflect } from '@kingjs/user-reflect'
+import { Define } from '@kingjs/define'
