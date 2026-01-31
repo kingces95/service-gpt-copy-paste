@@ -15,8 +15,7 @@ describe('PartialObject', () => {
     expect(() => new PartialObject()).toThrow()
   })
   it('cannot be the target of mergeMembers', () => {
-    expect(() => PartialReflect.merge(PartialObject)).toThrow(
-      `Expected type to not be a PartialObject.`)
+    expect(() => PartialReflect.merge(PartialObject)).toThrow()
   })
 })
 

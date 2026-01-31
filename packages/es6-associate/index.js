@@ -1,207 +1,90 @@
-import { getOwn } from '@kingjs/get-own'
+import { Associate } from '@kingjs/associate'
 import { asIterable } from '@kingjs/as-iterable'
-import { assert } from '@kingjs/assert'
-import { Es6Reflect } from '@kingjs/es6-reflect'
 
-// A general purpose global map of type to associated metadata
-const Associations = new Map()
+// Associates typed objects with types and members.
 
-function objectLoad(type, symbol, fn) {
+//  Parameters:
+//    type: A class function
+//      A type or object to reflect upon.
+//    key: (optional) String or symbol
+//      A member key.
+//    symbol: A symbol
+//      The associate symbol.
+//    defaultValue: (optional) Value
+//      A default value to return or yield if no associate is found.
+//    symbols: A pojo like { 
+//      [SymbolA]: { map, type },
+//      [SymbolB]: { map, type },
+//      ...
+//    }
+//      map: (optional) Function 
+//        Transforms the associate before returning or yielding it.
+//      type: (optional) Type 
+//        Filter associates by this type.
 
-  // get type cache
-  let typeCache = Associations.get(type)
-  if (!typeCache) {
+// Type Implementation maps from Associate:
+//    getOwnAssociate: Associate.objectGetOwn
+//    getAssociate: Associate.objectGet
+//    *ownAssociates: Associate.setGetOwn
+//    *associates: Associate.associates
 
-    // create type cache
-    typeCache = new Map()
-    Associations.set(type, typeCache)
-  }
-
-  // try declared cache
-  const declaredCache = getOwn(type, symbol)
-  if (declaredCache) return declaredCache
-
-  // get runtime cache
-  let cache = typeCache.get(symbol)
-  if (!cache) {
-
-    // no fn, no cache
-    if (!fn) return undefined
-
-    // create and cache
-    cache = fn(type)
-    typeCache.set(symbol, cache)
-  }
-
-  return cache
-}
-function setLoad(type, symbol) {
-  return objectLoad(type, symbol, () => new Set())
-}
-function mapLoad(type, symbol) {
-  return objectLoad(type, symbol, () => new Map())
-}
-function lookupLoad(type, symbol, key) {
-  // returns set of associated types for key
-  const map = mapLoad(type, symbol)
-  let set = map.get(key)
-  if (!set) {
-    set = new Set()
-    map.set(key, set)
-  }
-  return set
-}
+// Member Implementation maps from Associate:
+//    getOwnMemberAssociate: Associate.mapGetOwn
+//    getMemberAssociate: Associate.mapGet
+//    *ownMemberAssociates: Associate.lookupGetOwn
+//    *memberAssociates: Associate.lookupGet
 
 export class Es6Associate {
-
-  static *ownTypes(type, symbols) {
-
-    // if symbols typeof symbol, pull metadata off of type
-    if (typeof symbols == 'symbol') symbols = type[symbols]
-    assert(symbols != null, 'failed to find metadata symbols on type.')
-    
-    // symbols like { [TheSymbol]: { expectedType, map } }
-    for (const symbol of Object.getOwnPropertySymbols(symbols)) {
-      const options = symbols[symbol]
-      const { expectedType, map } = options
-      const expectedTypes = [...asIterable(expectedType)]
-
-      const metadata = Es6Associate.iterable(type, symbol)
-      for (let associatedType of asIterable(metadata)) {
-        if (map) associatedType = map(associatedType)
-  
-        // assert if associated type fails to extend any expected type
-        const isValid = !expectedTypes.length || 
-          expectedTypes.filter(expectedType => 
-            Es6Reflect.isExtensionOf(associatedType, expectedType)
-          ).length > 0
-          
-        if (!isValid) 
-          throw `Es6Associate type "${associatedType.name}" is of an unexpected type.`
-       
-        yield associatedType
-      }
-    }
+  static assembleOwnAssociates(type, symbols) {
+    return Associate.ownTypes(type, symbols)  
   }
-  static *types(type, symbols, options = { }) {
-    if (!options.visited) options = { ...options, visited: new Set() }
-    const { traverse, visited } = options
-    
-    for (const current of Es6Reflect.hierarchy(type)) {
-      for (const associatedType of Es6Associate.ownTypes(current, symbols)) {
-
-        if (visited.has(associatedType)) continue
-        visited.add(associatedType)
-        yield associatedType
-
-        if (traverse)
-          yield* Es6Associate.types(associatedType, symbols, options)
-      }
-    }
+  static assembleAssociates(type, symbols) {
+    return Associate.types(type, symbols)  
   }
 
-  static iterable(type, symbol) {
-    return objectLoad(type, symbol) || []
+  static loadAssociate(type, symbol, fn) {
+    return Associate.objectInitialize(type, symbol, fn)
+  }
+  static getOwnAssociate(type, symbol, { defaultValue } = { }) { 
+    return Associate.objectGetOwn(type, symbol) ?? defaultValue
+  }
+  static getAssociate(type, symbol, { defaultValue } = { }) { 
+    return Associate.objectGet(type, symbol) ?? defaultValue
   }
 
-  static objectInitialize(type, symbol, fn) {
-    return objectLoad(type, symbol, fn)
+  static addAssociates(type, symbol, values) {
+    Associate.setAdd(type, symbol, ...asIterable(values))
   }
-  static setAdd(type, symbol, ...values) {
-    const set = setLoad(type, symbol)
-    for (const value of values) {
-      assert(value != null, 'value must be non-null')
-      set.add(value)
-    }
+  static *ownAssociates(type, symbol) { 
+    yield* Associate.setGetOwn(type, symbol)
   }
-  static mapSet(type, symbol, key, value) {
-    assert(value != null, 'value must be non-null')
-    assert(key != null, 'key must be non-null')
-
-    const map = mapLoad(type, symbol)
-    map.set(key, value)
-  }
-  static lookupAdd(type, symbol, key, ...values) {
-    const set = lookupLoad(type, symbol, key)
-    for (const value of values) {
-      assert(value != null, 'value must be non-null')
-      set.add(value)
-    }
+  static *associates(type, symbol) { 
+    yield* Associate.setGet(type, symbol)
   }
 
-  static objectCopy(type, sourceType, symbol) {
-    const value = Es6Associate.objectGet(sourceType, symbol)
-    Es6Associate.objectInitialize(type, symbol, () => value)
+  static addMemberAssociate(type, key, symbol, value, { isStatic } = { }) {
+    Associate.mapSet(
+      isStatic ? type : type.prototype, symbol, key, value)
   }
-  static setCopy(type, sourceType, symbol) {
-    const values = Es6Associate.setGet(sourceType, symbol)
-    Es6Associate.setAdd(type, symbol, ...values)
+  static getOwnMemberAssociate(type, key, symbol, { isStatic, defaultValue } = { }) {
+    return Associate.mapGetOwn(
+      isStatic ? type : type.prototype, symbol, key) ?? defaultValue
   }
-  static mapCopy(type, sourceType, symbol, key) {
-    const value = Es6Associate.mapGet(sourceType, symbol, key)
-    Es6Associate.mapSet(type, symbol, key, value)
-  }
-  static lookupCopy(type, sourceType, symbol, key) {
-    const values = Es6Associate.lookupGet(sourceType, symbol, key)
-    Es6Associate.lookupAdd(type, symbol, key, ...values)
+  static getMemberAssociate(type, key, symbol, { isStatic, defaultValue } = { }) { 
+    return Associate.mapGet(
+      isStatic ? type : type.prototype, symbol, key) ?? defaultValue
   }
 
-  static objectGetOwn(type, symbol) {
-    return objectLoad(type, symbol)
+  static addMemberAssociates(type, key, symbol, values, { isStatic } = { }) {
+    Associate.lookupAdd(
+      isStatic ? type : type.prototype, symbol, key, ...asIterable(values))
   }
-  static *setGetOwn(type, symbol) {
-    const set = objectLoad(type, symbol)
-    if (!set) return
-    yield* set
+  static *ownMemberAssociates(type, key, symbol, { isStatic } = { }) { 
+    yield* Associate.lookupGetOwn(
+      isStatic ? type : type.prototype, symbol, key)
   }
-  static mapGetOwn(type, symbol, key) {
-    const map = objectLoad(type, symbol)
-    return map?.get(key)
-  }
-  static *lookupGetOwn(type, symbol, key) {
-    const map = objectLoad(type, symbol)
-    yield* map?.get(key) || []
-  }
-
-  static objectGet(type, symbol) {
-    while (type) {
-      const value = Es6Associate.objectGetOwn(type, symbol)
-      if (value) return value
-      type = Object.getPrototypeOf(type)
-    }
-  }
-  static *setGet(type, symbol) {
-    const set = new Set()
-    while (type) {
-      for (const value of Es6Associate.setGetOwn(type, symbol)) {
-        if (set.has(value)) continue
-        yield value
-        set.add(value)
-      }
-      type = Object.getPrototypeOf(type)
-    }
-  }
-  static mapGet(type, symbol, key) {
-    while (type) {
-      const value = Es6Associate.mapGetOwn(type, symbol, key)
-      if (value) return value
-      type = Object.getPrototypeOf(type)
-    }
-  }
-  static *lookupGet(type, symbol, key) {
-    const set = new Set()
-    while (type) {
-      for (const value of Es6Associate.lookupGetOwn(type, symbol, key)) {
-        if (set.has(value)) continue
-        yield value
-        set.add(value)
-      }
-      type = Object.getPrototypeOf(type)
-    }
-  }
-
-  static setDelete(type, symbol, value) {
-    const set = objectLoad(type, symbol)
-    set?.delete(value)
+  static *memberAssociates(type, key, symbol, { isStatic } = { }) { 
+    yield* Associate.lookupGet(
+      isStatic ? type : type.prototype, symbol, key)
   }
 }

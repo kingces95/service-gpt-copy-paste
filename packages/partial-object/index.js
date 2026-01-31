@@ -1,4 +1,6 @@
+import { assert } from '@kingjs/assert'
 import { Compiler } from '@kingjs/compiler'
+import { Es6Reflect } from '@kingjs/es6-reflect'
 
 // PartialObject in conjction with PartialReflect.merge is like 
 // Object.defineProperties but with richer descriptors. For example,
@@ -154,5 +156,35 @@ export class PartialObject {
   static [OwnCollectionSymbols] = { }
   static [Compile](descriptor) { 
     return Compiler.compile(descriptor) 
+  }
+}
+
+export class PartialObjectReflect {
+  static isKnown(type) {
+    if (!type) return false
+    if (Es6Reflect.isKnown(type)) return true
+    if (type == PartialObject) return true
+    if (Object.getPrototypeOf(type) == PartialObject) return true
+    
+    return false
+  }
+  static isKnownKey(type, key, { isStatic } = { }) {
+    if (PartialObjectReflect.isKnown(type)) return true
+    return Es6Reflect.isKnownKey(type, key, { isStatic })
+  }
+
+  static isPartialObject(type) {
+    return PartialObjectReflect.getPartialObjectType(type) != null
+  }
+  static getPartialObjectType(type) {
+    const prototype = Object.getPrototypeOf(type)
+    if (prototype == PartialObject) return null
+    if (Object.getPrototypeOf(prototype) != PartialObject) {
+      assert(!(prototype.prototype instanceof PartialObject),
+        `Expected type to indirectly extend PartialObject.`)
+      return null
+    }
+
+    return prototype
   }
 }

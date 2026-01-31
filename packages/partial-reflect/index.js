@@ -1,273 +1,48 @@
 import { assert } from '@kingjs/assert'
-import { isPojo } from '@kingjs/pojo-test'
 import { Es6Reflect } from '@kingjs/es6-reflect'
-import { isAbstract } from '@kingjs/abstract'
-import { Es6Associate } from '@kingjs/es6-associate'
 import { PartialPojo } from '@kingjs/partial-pojo'
-import { PartialObject } from '@kingjs/partial-object'
-import { UserReflect } from '@kingjs/user-reflect'
 import { Define } from '@kingjs/define'
+import { PartialAssociate } from '@kingjs/partial-associate'
+import { PartialLoader } from '@kingjs/partial-loader'
+import { PartialPrototype } from '@kingjs/partial-prototype'
+import { UserReflect } from '@kingjs/user-reflect'
 
-// The PartialReflect API provides reflection over PartialObject. For
-// example, to verify that a type is a PartialObject use:
-//    PartialReflect.isPartialObject(type)
-
-// To get the type of the PartialObject use:
-//    PartialReflect.getPartialObjectType(type)
-// For example, given the PartialObject defined above:
-//    PartialReflect.getPartialObjectType(MyPartial) 
-//      === PartialPojo
-
-// Suppose we reflect on a PartialObject defined like this:
-//    const MyPartial = PartialReflect.defineType({
-//      myMethod() { ... }
-//    }) 
-
-// To get the member keys defined on the PartialObject use:
-//    PartialReflect.ownKeys(type)
-// Continuing the example:
-//    PartialReflect.ownKeys(MyPartial) yields 'myMethod'
-
-// To get a member descriptor defined on the PartialObject use:
-//    PartialReflect.getOwnDescriptor(type, key)
-// Continuing the example:
-//    PartialReflect.getOwnDescriptor(MyPartial, 'myMethod')
-// returns the descriptor for myMethod
-
-// To get all member descriptors defined on the PartialObject use:
-//    PartialReflect.ownDescriptors(type)
-// Continuing the example:
-//    PartialReflect.ownDescriptors(MyPartial)
-// returns an object with the myMethod descriptor as a member.
-
-// To define a member using a standalone descriptor use:
-//    PartialReflect.defineProperty(type, key, descriptor)
-// Continuing the example:
-//    PartialReflect.defineProperty(MyPartial, 'myMethod', descriptor)
-// defines myMethod on MyPartial.prototype *except* if the descriptor
-// is abstract and myMethod already exists on MyPartial.prototype.
-
-// PartialReflect.merge(type, partialType) makes repeated calls
-// to defineMember to copy the descriptors defined on partialType to the type. 
-// Continuing the example:
-//    class MyType { }
-//    PartialReflect.merge(MyType, MyPartial)
-// Now MyType.prototype has myMethod.
-
-// PartialReflect provides methods for reflection over the resulting 
-// merged type:
-// 1. PartialReflect.partialObjects(type) returns set of 
-//    PartialObject that contributed members to the type.
-// 2. PartialReflect.hosts(type, key) returns, for each member 
-//    key, the set of PartialObject that defined the key.
-// 3. PartialReflect.getHost(type, key) returns, for each member 
-//    key, the PartialObject that actually defined the key.
-
-// PartialPojo PartialObject are well-known. They are transparent. 
-// Their members will appear to be defined by the type itself. Continuing 
-// the example:
-//    PartialReflect.partialObjects(MyType) yields MyType
-//    PartialReflect.hosts(MyType, 'myMethod') yields MyType
-//    PartialReflect.getHost(MyType, 'myMethod') is MyType 
-
-// Other well known PartialObjects are be defined as extensions of PartialObject. 
-// For example, Concept extends PartialObject. These are not transparent and when
-// merged onto a type their members are reported as defined by the PartialObject
-// and not the type.
-
-// Extends of PartialObject can override Compile to transform descriptors
-// before being defined on the target type. For example, Concept overrides
-// Compile to make all its members abstract. See Concept for more details.
-
-// Extends of PartialObject can reference other PartialObject types and so form a 
-// poset of PartialObject types. OwnCollectionSymbols describes how to declare
-// the PartialObject types associated with a type of PartialObject. For example,
-// if OwnCollectionSymbols is defined like this:
-//   static [OwnDeclaraitionSymbols] = {
-//     [MyPartials]: { expectedType: MyPartialType },
-//   }
-// then a PartialObject can declare its associated PartialObject types like this:
-//   static [MyPartials] = [ MyPartialType1, MyPartialType2 ]
-// or
-//   static [MyPartials] = MyPartialType1
-// PartialReflect will return the associated PartialObject types:
-//   PartialReflect.ownPartialObjects(type)
-// OwnCollectionSymbols essentially defines "edges" in the poset of partial 
-// types.
-
-// PartialReflect has non-"own" variants that will walk the poset of
-// PartialObject. See collections, keys, descriptors, etc.
-
-// PartialReflect non-"own" variants can also gather information
-// for a merged type. For example, given:
-//   class MyType { }
-//   PartialReflect.merge(MyType, MyPartialType1)
-//   PartialReflect.merge(MyType, MyPartialType2)
-// then
-//   PartialReflect.partialObjects(MyType)
-// yields MyPartialType1 and MyPartialType2
-//   PartialReflect.keys(MyType)
-// yields the union of the member keys defined by MyPartialType1 and
-// MyPartialType2
-//   PartialReflect.descriptors(MyType)
-// yields the merged set of member descriptors defined by MyPartialType1
-// and MyPartialType2
-//   PartialReflect.getDescriptor(MyType, key)
-// yields the member descriptor for key defined by either MyPartialType1
-// or MyPartialType2 depending on which PartialObject actually defined
-// the member.
-//   PartialReflect.getHost(MyType, key)
-// yields the PartialObject that actually defined key on MyType.
-//   PartialReflect.hosts(MyType, key)
-// yields the set of PartialObject types that attempted to define key on MyType.
-// For example, if both MyPartialType1 and MyPartialType2 defined key,
-// then both PartialObject types will be yielded even though only one of them
-// actually defined key on MyType.
-
-class Prototypical { }
-
-function defineName(type, name) {
-  Object.defineProperties(type, {
-    name: {
-      value: name,
-      configurable: true,
-      enumerable: false,
-      writable: false,
-    }
-  })
-}
-
-// Could be a static on Prototypical, but the point of Prototypical is to
-// simplify the reflection Info layer by providing an object which has no
-// known members other than those defined by PartialObject.
-function prototypicalCreate(type) {
-
-  let inheritedPrototypicalType = class extends Prototypical { }
-  let prototypicalType = class extends inheritedPrototypicalType { }
-  
-  defineName(inheritedPrototypicalType, '$inheritedPrototypical_' + type.name)
-  defineName(prototypicalType, '$prototypical_' + type.name)
-
-  PartialReflect.mergeInherited$(inheritedPrototypicalType, type)
-  PartialReflect.mergeOwn$(prototypicalType, type)
-  
-  Es6Associate.objectInitialize(inheritedPrototypicalType, 
-    PartialReflect.PrototypicalHost, 
-    () => type)
-  
-  // HACK: A PartialObject should not report being merged with itself.
-  Es6Associate.setDelete(
-    prototypicalType, 
-    PartialReflect.Declarations, 
-    type)
-    
-  return prototypicalType
-}
+// Dispatches reflection operations to either PartialLoader/PartialPrototype
+// or UserReflect based on whether the type is a PartialObject.
+// Filters out known types. For known types, no reflection is performed.
+// Filters out knnow keys. For known keys, no reflection is performed.
 
 export class PartialReflect {
-
-  // The loader tracks the following assoications during loading. Note: 
-  // reflection uses these association to ensure reflection accurately 
-  // reflects what the loader actually did instead of trying to simulate it. 
-  static Declarations = Symbol('PartialObject.declarations')
-  static HostLookup = Symbol('PartialReflect.hostLookup')
-  static HostMap = Symbol('PartialReflect.hostMap')
-
-  // Loading will cache intermediate transforms of PartialObject types: 
-
-  // First, for each PartialObject, a POJO of descriptors is created from 
-  // the members defined on the PartialObject. 
-  static Descriptors = Symbol('PartialReflect.descriptors')
-  static StaticDescriptors = Symbol('PartialReflect.staticDescriptors')
-
-  // Second, for each PartialObject, a prototypical type is created that
-  // hosts all members defined by the PartialObject and its associated
-  // PartialObject types.
-  static PrototypicalType = Symbol('PartialReflect.prototypicalType')
-
-  // Third, for each prototypical type, a reverse mapping back to the
-  // PartialObject that defined each member is created.
-  static PrototypicalHost = Symbol('PartialReflect.prototypicalHost')
-
-  static getPrototypicalType$(type) {
-    if (!PartialReflect.isPartialObject(type)) return type
-
-    const prototypicalType = Es6Associate.objectInitialize(
-      type, PartialReflect.PrototypicalType, prototypicalCreate)
-
-    return prototypicalType
+  static isKnown(type) {
+    return PartialLoader.isKnown(type)
   }
-
-  static getPrototypicalHost$(type) {
-    if (!(type.prototype instanceof Prototypical)) return type
-    return Es6Associate.objectGet(type, PartialReflect.PrototypicalHost)
+  static isKnownKey(type, key, { isStatic } = { }) {
+    return Es6Reflect.isKnownKey(type, key, { isStatic })
   }
-
-  static *ownPartialObjects(type) {
-    if (PartialReflect.isPartialObject(type)) {
-      yield* Es6Associate.ownTypes(type, 
-        PartialObject.OwnCollectionSymbols)
-    }
-    else {
-      yield* Es6Associate.ownTypes(type, 
-        { [PartialReflect.Declarations]: { } })
-    }
-  }
-  static *partialObjects(type) {
-    if (PartialReflect.isPartialObject(type)) {
-      const prototypicalType = PartialReflect.getPrototypicalType$(type)
-      yield* PartialReflect.partialObjects(prototypicalType)
-    }
-    else {
-      yield* Es6Associate.types(type, 
-        { [PartialReflect.Declarations]: { } })
-    }
-  }
-
-  static *hosts(type, key) {
-    // returns partial classes that could have defined the key
-    // For example, all concepts that defined the key
-    const prototypicalType = PartialReflect.getPrototypicalType$(type)
-    if (!(key in prototypicalType.prototype)) return null
-    const result = [...Es6Associate.lookupGet(
-      prototypicalType, PartialReflect.HostLookup, key)]
-    if (result.length == 0) yield type
-    else yield* result
-  }
-  static getHost(type, key) {
-    const prototypicalType = PartialReflect.getPrototypicalType$(type)
-    const host = UserReflect.getHost(prototypicalType, key)
-    if (!host) return null
-
-    const associate = Es6Associate.mapGet(
-      prototypicalType, PartialReflect.HostMap, key)
-
-    return associate || type
-  }
-
   static isPartialObject(type) {
-    return PartialReflect.getPartialObjectType(type) != null
+    return PartialLoader.isPartialObject(type)
   }
   static getPartialObjectType(type) {
-    const prototype = Object.getPrototypeOf(type)
-    if (prototype == PartialObject) return null
-    if (Object.getPrototypeOf(prototype) != PartialObject) {
-      assert(!(prototype.prototype instanceof PartialObject),
-        `Expected type to indirectly extend PartialObject.`)
-      return null
-    }
-
-    return prototype
+    return PartialLoader.getPartialObjectType(type)
   }
 
-  static *ownKeys(type) {
+  static *keys(type, { isStatic } = { }) { 
+    if (PartialReflect.isPartialObject(type)) {
+      if (isStatic) return
+      return yield* PartialPrototype.keys(type)
+    }
+    
+    if (PartialReflect.isKnown(type)) return
+    yield* UserReflect.keys(type, { isStatic })
+  }
+  static *ownKeys(type, { isStatic } = { }) {
     assert(PartialReflect.isPartialObject(type))
-    for (const current of PartialReflect.keys(type)) {
+    for (const current of PartialReflect.keys(type, { isStatic })) {
       switch (typeof current) {
         case 'function': break
         case 'string':
         case 'symbol': 
-          const host = PartialReflect.getHost(type, current)
+          const host = PartialReflect.getHost(type, current, { isStatic })
           if (host != type) continue
           yield current
           break
@@ -275,152 +50,86 @@ export class PartialReflect {
       }
     }    
   }
-  static *keys(type) { 
-    assert(PartialReflect.isPartialObject(type))
-    const prototypicalType = PartialReflect.getPrototypicalType$(type)
-    for (const current of UserReflect.keys(prototypicalType)) {
-      switch (typeof current) {
-        case 'function': yield PartialReflect.getPrototypicalHost$(current); break
-        default: yield current
-      }
-    }    
-  }
   static isKey(key) {
     return typeof key === 'string' || typeof key === 'symbol'
   }
 
-  static getOwnDescriptor(type, key) {
-    assert(PartialReflect.isPartialObject(type))
-    const descriptor = UserReflect.getOwnDescriptor(type, key)
-    if (!descriptor) return null
-    return type[PartialObject.Compile](descriptor) 
-  }
-  static *ownDescriptors(type) {
-    assert(PartialReflect.isPartialObject(type))
-    for (const key of UserReflect.ownKeys(type)) {
-      const descriptor = PartialReflect.getOwnDescriptor(type, key)
-      yield key
-      yield descriptor
+  static getOwnDescriptor(type, key, { isStatic } = { }) {
+    if (PartialReflect.isPartialObject(type)) {
+      if (isStatic) return
+      return PartialLoader.getOwnDescriptor(type, key) 
     }
+    
+    if (PartialReflect.isKnownKey(type, key, { isStatic })) return
+    return UserReflect.getOwnDescriptor(type, key, { isStatic })
+  }
+  static *ownDescriptors(type, { isStatic } = { }) {
+    if (PartialReflect.isPartialObject(type)) {
+      if (isStatic) return
+      return yield *PartialLoader.ownDescriptors(type)
+    }
+
+    if (PartialReflect.isKnown(type)) return
+    yield* UserReflect.ownDescriptors(type, { isStatic })
   }
   
-  static *getDescriptor(type, key) {
-    assert(PartialReflect.isPartialObject(type))
-    let owner = null
-    for (const current of UserReflect.getDescriptor(
-      PartialReflect.getPrototypicalType$(type), key)) {
-      switch (typeof current) {
-        case 'function': owner = current; break
-        case 'object':
-          yield PartialReflect.getPrototypicalHost$(owner)
-          return yield current
-        default: assert(false, `Unexpected type: ${typeof current}`)
-      }
-    }
-  }
-  static *descriptors(type) {
-    assert(PartialReflect.isPartialObject(type))
-    for (const current of UserReflect.descriptors(
-      PartialReflect.getPrototypicalType$(type))) {
-      switch (typeof current) {
-        case 'function': 
-          yield PartialReflect.getPrototypicalHost$(current) 
-          break
-        case 'string':
-        case 'symbol': 
-        case 'object': yield current; break
-        default: assert(false, `Unexpected type: ${typeof current}`)
-      }
-    }
-  }
-
-  static associateKeys$(type, partialObject, keys) {
-    assert(!(partialObject.prototype instanceof PartialPojo)) 
-
-    for (const [key, defined] of keys) {
-      Es6Associate.lookupAdd(type, PartialReflect.HostLookup, key, partialObject)
-      if (!defined) continue
-      Es6Associate.mapSet(type, PartialReflect.HostMap, key, partialObject)
-    }
-  }
-  static mergeAssociations$(type, partialObject, keys) {
-    assert(!(partialObject.prototype instanceof PartialPojo)) 
-    
-    const prototypicalType = PartialReflect.getPrototypicalType$(partialObject)
-    Es6Associate.setCopy(type, prototypicalType, PartialReflect.Declarations)
-    for (const [key, defined] of keys) {
-      Es6Associate.lookupCopy(type, prototypicalType, PartialReflect.HostLookup, key)
-      if (!defined) continue
-      Es6Associate.mapCopy(type, prototypicalType, PartialReflect.HostMap, key)
-    }
-  }
-  static mergeInherited$(type, partialObject) {
-    if(type == PartialObject || type.prototype instanceof PartialObject) 
-      throw `Expected type to not be a PartialObject.`
-
-    assert(PartialReflect.isPartialObject(partialObject),
-      `Expected partialObject to indirectly extend PartialObject.`)
-
-    for (const child of PartialReflect.ownPartialObjects(partialObject)) {
-      const descriptors = { }
-
-      let key
-      for (const current of PartialReflect.descriptors(child)) {
-        switch (typeof current) {
-          case 'function': break
-          case 'string':
-          case 'symbol': key = current; break
-          case 'object': descriptors[key] = current; break
-          default: assert(false, `Unexpected type: ${typeof current}`)
-        }
-      }
-
-      const keys = Define.properties(type, descriptors)
-
-      // PartialPojo members are transparent.
-      if (child.prototype instanceof PartialPojo) {
-        PartialReflect.associateKeys$(type, partialObject, keys)
-        continue
-      }
-
-      Es6Associate.setAdd(type, PartialReflect.Declarations, child)
-      PartialReflect.mergeAssociations$(type, child, keys)
-    }
-  }
-  static mergeOwn$(type, partialObject) {
-    if (type == PartialObject || type.prototype instanceof PartialObject) 
-      throw `Expected type to not be a PartialObject.`
-
-    assert(PartialReflect.isPartialObject(partialObject),
-      `Expected partialObject to indirectly extend PartialObject.`)
-
-    const descriptors = { }
-    let key
-    for (const current of PartialReflect.ownDescriptors(partialObject)) {
-      switch (typeof current) {
-        case 'string':
-        case 'symbol': key = current; break
-        case 'object': descriptors[key] = current; break
-        default: assert(false, `Unexpected type: ${typeof current}`)
-      }
+  static *getDescriptor(type, key, { isStatic } = { }) {
+    if (PartialReflect.isPartialObject(type)) {
+      if (isStatic) return
+      return yield *PartialPrototype.getDescriptor(type, key)
     }
 
-    const keys = Define.properties(type, descriptors)
+    if (PartialReflect.isKnownKey(type, key, { isStatic })) return
+    yield* UserReflect.getDescriptor(type, key, { isStatic })
 
-    // PartialPojo members are transparent.
-    if (partialObject.prototype instanceof PartialPojo) return
-
-    Es6Associate.setAdd(type, PartialReflect.Declarations, partialObject)
-    PartialReflect.associateKeys$(type, partialObject, keys)
   }
-  static merge(type, partialObject) {
-    PartialReflect.mergeInherited$(type, partialObject)
-    PartialReflect.mergeOwn$(type, partialObject)
+  static *descriptors(type, { isStatic } = { }) {
+    if (PartialReflect.isPartialObject(type)) {
+      if (isStatic) return
+      return yield* PartialPrototype.descriptors(type)
+    }
+
+    if (PartialReflect.isKnown(type)) return
+    yield* UserReflect.descriptors(type, { isStatic })
+  }
+
+  static *ownPartialObjects(type) {
+    if (PartialReflect.isPartialObject(type))
+      return yield* PartialLoader.ownPartialObjects(type)
+
+    yield* PartialAssociate.ownPartialObjects(type)
+  }
+  static *partialObjects(type) {
+    if (PartialReflect.isPartialObject(type))
+      return yield* PartialPrototype.partialObjects(type)
+
+    yield* PartialAssociate.partialObjects(type)
+  }
+
+  static *hosts(type, key, { isStatic } = { }) {
+    if (PartialReflect.isPartialObject(type)) {
+      if (isStatic) return
+      return yield* PartialPrototype.hosts(type, key)
+    }
+
+    yield* PartialAssociate.hosts(type, key, { isStatic })
+  }
+  static getHost(type, key, { isStatic } = { }) {
+    if (PartialReflect.isPartialObject(type)) {
+      if (isStatic) return
+      return PartialPrototype.getHost(type, key)
+    }
+
+    return PartialAssociate.getHost(type, key, { isStatic })
+  }
+
+  static merge(type, partialType) {
+    return PartialLoader.merge(type, partialType)
   }
 
   static defineType(pojoOrType) {
     const type = Define.type(pojoOrType, PartialPojo)
-    assert(PartialReflect.isPartialObject(type))
+    assert(PartialLoader.isPartialObject(type))
     return type
   }
 }

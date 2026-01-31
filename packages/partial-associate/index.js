@@ -1,9 +1,6 @@
 import { assert } from '@kingjs/assert'
-import { isPojo } from '@kingjs/pojo-test'
-import { Es6Reflect } from '@kingjs/es6-reflect'
-import { isAbstract } from '@kingjs/abstract'
-import { Associate } from '@kingjs/associate'
 import { Es6Associate } from '@kingjs/es6-associate'
+import { PartialObjectReflect } from '@kingjs/partial-object'
 
 const Declarations = Symbol.for('PartialReflect.Declarations')
 const HostMap = Symbol.for('PartialReflect.HostMap')
@@ -12,6 +9,8 @@ const HostLookup = Symbol.for('PartialReflect.HostLookup')
 export class PartialAssociate {
 
   static addPartialObject(type, partialObject) {
+    assert(!PartialObjectReflect.isKnown(type))
+    assert(PartialObjectReflect.isPartialObject(partialObject))
     Es6Associate.addAssociates(type, Declarations, partialObject)
   }
   static *ownPartialObjects(type) {
@@ -24,10 +23,14 @@ export class PartialAssociate {
   }
 
   static addHost(type, key, host, { isStatic } = { }) {
+    assert(!PartialObjectReflect.isKnownKey(type, key, { isStatic }))
     Es6Associate.addMemberAssociate(
       type, key, HostMap, host, { isStatic })
   }
   static getHost(type, key, { isStatic } = { }) {
+    if (PartialObjectReflect.isKnownKey(type, key, { isStatic }))
+      return null
+
     if (key in (isStatic ? type : type.prototype) === false) return null
 
     const associate = Es6Associate.getMemberAssociate(
@@ -37,10 +40,13 @@ export class PartialAssociate {
   }
 
   static addHosts(type, key, hosts, { isStatic } = { }) {
+    assert(!PartialObjectReflect.isKnownKey(type, key, { isStatic }))
     Es6Associate.addMemberAssociates(
       type, key, HostLookup, hosts, { isStatic })
   }
   static *hosts(type, key, { isStatic } = { }) {
+    if (PartialObjectReflect.isKnownKey(type, key, { isStatic })) return
+
     if (key in (isStatic ? type : type.prototype) === false) return null
     
     const result = Es6Associate.memberAssociates(

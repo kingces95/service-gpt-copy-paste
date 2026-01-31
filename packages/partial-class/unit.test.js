@@ -184,7 +184,7 @@ describe('An extension', () => {
         it('should assert that MyPartialClass is not an PartialClass', () => {
           expect(() => {
             [...PartialReflect.partialObjects(extension)]
-          }).toThrow(`Es6Associate type "myPartialClass" is of an unexpected type.`)
+          }).toThrow(`Associate type "myPartialClass" is of an unexpected type.`)
         })
       })
     })

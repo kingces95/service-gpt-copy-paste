@@ -1,12 +1,12 @@
 import { assert } from '@kingjs/assert'
-import { PartialReflect } from '@kingjs/partial-reflect'
-import { Concept } from "@kingjs/concept"
-import { PartialPojo } from '@kingjs/partial-pojo'
-import { PartialObject } from '@kingjs/partial-object'
-import { PartialClass } from '@kingjs/partial-class'
-import { Es6Descriptor } from '@kingjs/es6-descriptor'
-import { InfoReflect } from '@kingjs/info-reflect'
 import { es6BaseType } from '@kingjs/es6-base-type'
+import { Es6Descriptor } from '@kingjs/es6-descriptor'
+import { PartialReflect } from '@kingjs/partial-reflect'
+import { InfoReflect } from '@kingjs/info-reflect'
+import { PartialObject } from '@kingjs/partial-object'
+import { PartialPojo } from '@kingjs/partial-pojo'
+import { Concept } from "@kingjs/concept"
+import { PartialClass } from '@kingjs/partial-class'
 import { 
   Es6ClassInfo, 
   Es6MemberInfo,
@@ -60,9 +60,6 @@ export class FunctionInfo extends Info {
   }
 
   #createMember(fn, key, descriptor, { isStatic } = { }) {
-    assert(fn == PartialReflect.getPrototypicalHost$(fn),
-      'fn must be the prototypical host of the member.')
-    // fn = PartialReflect.getPrototypicalHost$(fn)
     return MemberInfo.from$(fn, key, descriptor, { isStatic })
   }
 

@@ -186,9 +186,4 @@ export class Associate {
     if (set.size == 0 && dfaultValue !== undefined)
       yield dfaultValue
   }
-
-  static setDelete(type, symbol, value) {
-    const set = objectLoad(type, symbol)
-    set?.delete(value)
-  }
 }

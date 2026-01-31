@@ -1,7 +1,7 @@
 import { assert } from '@kingjs/assert'
 import { Associate } from '@kingjs/associate'
 import { PartialPojo } from '@kingjs/partial-pojo'
-import { PartialObject } from '@kingjs/partial-object'
+import { PartialObject, PartialObjectReflect } from '@kingjs/partial-object'
 import { UserReflect } from '@kingjs/user-reflect'
 import { Define } from '@kingjs/define'
 import { PartialAssociate } from '@kingjs/partial-associate'
@@ -12,30 +12,13 @@ import { PartialAssociate } from '@kingjs/partial-associate'
 
 export class PartialLoader {
   static isKnown(type) {
-    if (!type) return false
-    if (Es6Reflect.isKnown(type)) return true
-    if (type == PartialObject) return true
-    if (PartialLoader.getPartialObjectType(type) == type) return true
-    return false
+    return PartialObjectReflect.isKnown(type)
   }
-  // static isKnownKey(type, key, { isStatic } = { }) {
-  //   if (PartialLoader.isKnown(type)) return true
-  //   return Es6Reflect.isKnownKey(type, key, { isStatic })
-  // }
-
   static isPartialObject(type) {
-    return PartialLoader.getPartialObjectType(type) != null
+    return PartialObjectReflect.isPartialObject(type)
   }
   static getPartialObjectType(type) {
-    const prototype = Object.getPrototypeOf(type)
-    if (prototype == PartialObject) return null
-    if (Object.getPrototypeOf(prototype) != PartialObject) {
-      assert(!(prototype.prototype instanceof PartialObject),
-        `Expected type to indirectly extend PartialObject.`)
-      return null
-    }
-
-    return prototype
+    return PartialObjectReflect.getPartialObjectType(type)
   }
 
   static *ownPartialObjects(type) {
@@ -58,17 +41,25 @@ export class PartialLoader {
     }
   }
 
-  static merge(type, partialType, parentType = type) {
-    if (type == PartialObject || type.prototype instanceof PartialObject) 
-      throw `Expected type to not be a PartialObject.`
+  static merge(type, partialType, { 
+    parentType = type, 
+    isTransparent = partialType?.prototype instanceof PartialPojo
+  } = { }) {
 
+    assert(!PartialLoader.isKnown(type),
+      `Expected type to not be a known type.`)
+    assert(!PartialLoader.isPartialObject(type),
+      `Expected type to not be a PartialObject.`)
     assert(PartialLoader.isPartialObject(partialType),
       `Expected partialObject to indirectly extend PartialObject.`)
 
-    for (const baseType of PartialLoader.ownPartialObjects(partialType))
-      PartialLoader.merge(type, baseType, partialType)
+    for (const baseType of PartialLoader.ownPartialObjects(partialType)) {
+      PartialLoader.merge(type, baseType, { 
+        parentType: partialType,
+        isTransparent: baseType.prototype instanceof PartialPojo
+      })
+    }
 
-    const isTransparent = partialType.prototype instanceof PartialPojo
     if (!isTransparent) 
       PartialAssociate.addPartialObject(type, partialType)
 

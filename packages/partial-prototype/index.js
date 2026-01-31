@@ -1,8 +1,12 @@
 import { assert } from '@kingjs/assert'
-import { Associate } from '@kingjs/associate'
 import { UserReflect } from '@kingjs/user-reflect'
 import { PartialAssociate } from '@kingjs/partial-associate'
 import { PartialLoader } from '@kingjs/partial-loader'
+
+// Creates an empty "prototypical" class that extends Prototypical
+// and merges the given partial object type into it. This allows
+// us to reflect over the merged result so the reflection layer can
+// faithfully report what the loader (merge) actually did.
 
 function defineName(type, name) {
   Object.defineProperties(type, {
@@ -20,11 +24,13 @@ class Prototypical { }
 function prototypicalCreate(type) {
   let prototypicalType = class extends Prototypical { }
   defineName(prototypicalType, '$prototypical_' + type.name)
-  PartialLoader.merge(prototypicalType, type)
-  
-  // HACK: A PartialObject should not report being merged with itself.
-  Associate.setDelete(prototypicalType, Declarations, type)
 
+  PartialLoader.merge(prototypicalType, type, { 
+    // HACK: A PartialObject should not report being merged with itself.
+    isTransparent: true,
+    parentType: type
+  })
+  
   return prototypicalType
 }
 
@@ -49,9 +55,6 @@ function getPrototypicalHost(type) {
   return PrototypicalHostMap.get(type)
 }
 
-// The loader tracks the following assoications during loading. Note: 
-// reflection uses these association to ensure reflection accurately 
-// reflects what the loader actually did instead of trying to simulate it. 
 const Declarations = Symbol.for('PartialReflect.Declarations')
 
 export class PartialPrototype {
@@ -101,7 +104,7 @@ export class PartialPrototype {
       }
     }
   }
-  
+
   static *descriptors(type) {
     assert(PartialLoader.isPartialObject(type))
     for (const current of UserReflect.descriptors(
