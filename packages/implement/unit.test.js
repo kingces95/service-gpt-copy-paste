@@ -14,7 +14,7 @@ describe('A type', () => {
     type = class { }
   })
   it('should have no declared concepts', () => {
-    const actual = [...PartialReflect.ownPartialObjects(type)]
+    const actual = [...PartialReflect.ownPartialExtensions(type)]
     const expected = [ ]
     expect(actual).toEqual(expected)
   })
@@ -32,7 +32,7 @@ describe('A type', () => {
     })
     it('should throw implementing itself', () => {
       expect(() => implement(MyConcept, MyConcept)).toThrow([
-        "Expected type to not be a PartialObject."
+        "Expected type to not be a PartialType."
       ].join(' '))
     })
     describe('already implemented by the type', () => {
@@ -60,7 +60,7 @@ describe('A type', () => {
       it('should throw when implemented', () => {
         const cls = class { }
         expect(() => implement(cls, extendedConcept)).toThrow([
-          'Assertion failed: Expected type to indirectly extend PartialObject.',
+          'Assertion failed: Expected type to indirectly extend PartialType.',
         ].join(' '))
       })
     })
@@ -73,7 +73,7 @@ describe('A type', () => {
         expect(type.prototype).toBeInstanceOf(MyConcept)
       })
       it('should be an own declared concept', () => {
-        const actual = [...PartialReflect.ownPartialObjects(type)]
+        const actual = [...PartialReflect.ownPartialExtensions(type)]
         const expected = [MyConcept]
         expect(actual).toEqual(expected)
       })
@@ -194,7 +194,7 @@ describe('A type', () => {
           expect(type.prototype.method).toBe(emptyMethod)
         })
         it('should be an own declared concept', () => {
-          const actual = [...PartialReflect.ownPartialObjects(type)]
+          const actual = [...PartialReflect.ownPartialExtensions(type)]
           const expected = [MyConcept]
           expect(actual).toEqual(expected)
         })

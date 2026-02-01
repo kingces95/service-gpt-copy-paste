@@ -24,7 +24,7 @@ function dump(fn) {
 // dump(Object)
 // dump(Function)
 
-// dump(PartialObject)
+// dump(PartialType)
 // dump(PartialClass)
 // dump(Concept)
 // dump(PartialPojo)

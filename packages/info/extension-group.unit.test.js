@@ -6,7 +6,7 @@ import { PartialClass } from '@kingjs/partial-class'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { abstract } from '@kingjs/abstract'
 
-describe('FunctionInfo for PartialClass', () => {
+describe('TypeInfo for PartialClass', () => {
   let fn
   let fnInfo
   beforeEach(() => {
@@ -32,7 +32,7 @@ describe('FunctionInfo for PartialClass', () => {
     })
   })
   it('has ExtensionsInfo as base', () => {
-    const ExtensionInfo = Info.PartialObject
+    const ExtensionInfo = Info.PartialType
     expect(fnInfo.base).toEqual(ExtensionInfo)
   })
   it('has no own names or symbols', () => {

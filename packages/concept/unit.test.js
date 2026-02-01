@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { PartialObject } from '@kingjs/partial-object'
+import { PartialType } from '@kingjs/partial-type'
 import { PartialClass, Extends } from '@kingjs/partial-class'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { Concept, Implements, ConceptReflect } from '@kingjs/concept'
@@ -9,7 +9,7 @@ import { InfoReflect } from '@kingjs/info-reflect'
 
 describe('Concept', () => {
   it('should compile function descriptor to abstract', () => {
-    const Compile = PartialObject.Compile
+    const Compile = PartialType.Compile
     const descriptor = {
       value: () => { }
     }
@@ -17,7 +17,7 @@ describe('Concept', () => {
     expect(compiled.value).toBe(abstract)
   })
   it('should compile getter descriptor to abstract', () => {
-    const Compile = PartialObject.Compile
+    const Compile = PartialType.Compile
     const descriptor = {
       get: () => { }
     }
@@ -25,7 +25,7 @@ describe('Concept', () => {
     expect(compiled.get).toBe(abstract)
   })
   it('should compile setter descriptor to abstract', () => {
-    const Compile = PartialObject.Compile
+    const Compile = PartialType.Compile
     const descriptor = {
       set: (value) => { }
     }
@@ -43,12 +43,12 @@ describe('MyConcept', () => {
     expect(ConceptReflect.isConcept(MyConcept)).toBe(true)
   })
   it('should have no own concepts', () => {
-    const actual = [...PartialReflect.ownPartialObjects(MyConcept)]
+    const actual = [...PartialReflect.ownPartialExtensions(MyConcept)]
     const expected = [ ]
     expect(actual).toEqual(expected)
   })
   it('should have not inherited concepts', () => {
-    const actual = [...PartialReflect.partialObjects(MyConcept)]
+    const actual = [...PartialReflect.partialExtensions(MyConcept)]
     const expected = [ ]
     expect(actual).toEqual(expected)
   })

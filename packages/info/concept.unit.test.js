@@ -7,7 +7,7 @@ import { implement } from '@kingjs/implement'
 import { Concept, Implements } from '@kingjs/concept'
 import { } from "@kingjs/info-to-pojo"
 
-describe('FunctionInfo for Concept', () => {
+describe('TypeInfo for Concept', () => {
   let fnInfo
   beforeEach(() => {
     fnInfo = Info.from(Concept)
@@ -22,7 +22,7 @@ describe('FunctionInfo for Concept', () => {
     expect(fnInfo.ctor).toBe(Concept)
   })
   it('is not a partial class', () => {
-    expect(!fnInfo.isPartialObject).toBe(true)
+    expect(!fnInfo.isPartialType).toBe(true)
   })
   it('is a concept', () => {
     expect(fnInfo.isConceptSubclass).toBe(false)
@@ -32,7 +32,7 @@ describe('FunctionInfo for Concept', () => {
     expect(Array.from(concepts)).toEqual([])
   })
   it('has PartialPojoInfo base', () => {
-    const ExtensionInfo = Info.PartialObject
+    const ExtensionInfo = Info.PartialType
     expect(fnInfo.base).toEqual(ExtensionInfo)
   })
 })
@@ -353,7 +353,7 @@ describe('A bespoke concept', () => {
       it('should throw while loading', async () => {
         expect(() => Info.from(myExtendedConcept)).toThrow([
           `Assertion failed:`,
-          `Expected type to indirectly extend PartialObject.`
+          `Expected type to indirectly extend PartialType.`
         ].join(' '))
       })
     })

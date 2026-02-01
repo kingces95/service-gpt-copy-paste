@@ -3,25 +3,25 @@ import { PartialAssociate } from '@kingjs/partial-associate'
 import { PartialLoader } from '@kingjs/partial-loader'
 import { PartialPrototype } from '@kingjs/partial-prototype'
 import { UserReflect } from '@kingjs/user-reflect'
-import { PartialObjectReflect } from '@kingjs/partial-object'
+import { PartialTypeReflect } from '@kingjs/partial-type'
 
 // Unfies reflection operations over PartialObjects and Es6 types.
 
-// PartialObject reflection is dispatched to PartialLoader/PartialPrototype
+// PartialType reflection is dispatched to PartialLoader/PartialPrototype
 // while Es6 type reflection is dispatched to UserReflect.
 
 // Known types/keys are filtered out. 
 
 // The set of known types includes all Es6 built-in types (e.g. Object, 
-// Array, Function, etc) as well as PartialObject and all types that 
-// directly extend PartialObject (i.e. PartialPojo, PartialClass, etc).
+// Array, Function, etc) as well as PartialType and all types that 
+// directly extend PartialType (i.e. PartialPojo, PartialClass, etc).
 
 // Known keys include all keys defined on known types as well as some
 // Es6 keys like 'length' and 'constructor' which are automatically
 // defined on functions.
 
 // Load() enters the monade. Load returns the type except when the type
-// is a pojo, in which case an anonymous PartialObject type is created
+// is a pojo, in which case an anonymous PartialType type is created
 // from the pojo.
 
 export function isKey(key) {
@@ -31,16 +31,16 @@ export function isKey(key) {
 export class PartialReflect {
 
   static *keys(type, { isStatic } = { }) { 
-    if (PartialObjectReflect.isPartialObject(type)) {
+    if (PartialTypeReflect.isPartialType(type)) {
       if (isStatic) return
       return yield* PartialPrototype.keys(type)
     }
     
-    if (PartialObjectReflect.isKnown(type)) return
+    if (PartialTypeReflect.isKnown(type)) return
     yield* UserReflect.keys(type, { isStatic })
   }
   static *ownKeys(type, { isStatic } = { }) {
-    assert(PartialObjectReflect.isPartialObject(type))
+    assert(PartialTypeReflect.isPartialType(type))
     for (const current of PartialReflect.keys(type, { isStatic })) {
       switch (typeof current) {
         case 'function': break
@@ -56,59 +56,59 @@ export class PartialReflect {
   }
 
   static getOwnDescriptor(type, key, { isStatic } = { }) {
-    if (PartialObjectReflect.isPartialObject(type)) {
+    if (PartialTypeReflect.isPartialType(type)) {
       if (isStatic) return
       return PartialLoader.getOwnDescriptor(type, key) 
     }
     
-    if (PartialObjectReflect.isKnownKey(type, key, { isStatic })) return
+    if (PartialTypeReflect.isKnownKey(type, key, { isStatic })) return
     return UserReflect.getOwnDescriptor(type, key, { isStatic })
   }
   static *ownDescriptors(type, { isStatic } = { }) {
-    if (PartialObjectReflect.isPartialObject(type)) {
+    if (PartialTypeReflect.isPartialType(type)) {
       if (isStatic) return
       return yield *PartialLoader.ownDescriptors(type)
     }
 
-    if (PartialObjectReflect.isKnown(type)) return
+    if (PartialTypeReflect.isKnown(type)) return
     yield* UserReflect.ownDescriptors(type, { isStatic })
   }
   
   static *getDescriptor(type, key, { isStatic } = { }) {
-    if (PartialObjectReflect.isPartialObject(type)) {
+    if (PartialTypeReflect.isPartialType(type)) {
       if (isStatic) return
       return yield *PartialPrototype.getDescriptor(type, key)
     }
 
-    if (PartialObjectReflect.isKnownKey(type, key, { isStatic })) return
+    if (PartialTypeReflect.isKnownKey(type, key, { isStatic })) return
     yield* UserReflect.getDescriptor(type, key, { isStatic })
 
   }
   static *descriptors(type, { isStatic } = { }) {
-    if (PartialObjectReflect.isPartialObject(type)) {
+    if (PartialTypeReflect.isPartialType(type)) {
       if (isStatic) return
       return yield* PartialPrototype.descriptors(type)
     }
 
-    if (PartialObjectReflect.isKnown(type)) return
+    if (PartialTypeReflect.isKnown(type)) return
     yield* UserReflect.descriptors(type, { isStatic })
   }
 
-  static *ownPartialObjects(type) {
-    if (PartialObjectReflect.isPartialObject(type))
-      return yield* PartialLoader.ownPartialObjects(type)
+  static *ownPartialExtensions(type) {
+    if (PartialTypeReflect.isPartialType(type))
+      return yield* PartialLoader.ownPartialExtensions(type)
 
-    yield* PartialAssociate.ownPartialObjects(type)
+    yield* PartialAssociate.ownPartialExtensions(type)
   }
-  static *partialObjects(type) {
-    if (PartialObjectReflect.isPartialObject(type))
-      return yield* PartialPrototype.partialObjects(type)
+  static *partialExtensions(type) {
+    if (PartialTypeReflect.isPartialType(type))
+      return yield* PartialPrototype.partialExtensions(type)
 
-    yield* PartialAssociate.partialObjects(type)
+    yield* PartialAssociate.partialExtensions(type)
   }
 
   static *hosts(type, key, { isStatic } = { }) {
-    if (PartialObjectReflect.isPartialObject(type)) {
+    if (PartialTypeReflect.isPartialType(type)) {
       if (isStatic) return
       return yield* PartialPrototype.hosts(type, key)
     }
@@ -116,7 +116,7 @@ export class PartialReflect {
     yield* PartialAssociate.hosts(type, key, { isStatic })
   }
   static getHost(type, key, { isStatic } = { }) {
-    if (PartialObjectReflect.isPartialObject(type)) {
+    if (PartialTypeReflect.isPartialType(type)) {
       if (isStatic) return
       return PartialPrototype.getHost(type, key)
     }

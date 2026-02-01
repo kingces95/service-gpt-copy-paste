@@ -1,2 +1,2 @@
-import { PartialObject } from '@kingjs/partial-object'
-export class PartialPojo extends PartialObject { }
+import { PartialType } from '@kingjs/partial-type'
+export class PartialPojo extends PartialType { }

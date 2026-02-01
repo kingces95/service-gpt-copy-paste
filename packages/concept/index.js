@@ -3,7 +3,7 @@ import { abstract } from '@kingjs/abstract'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { UserReflect } from '@kingjs/user-reflect'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
-import { PartialObject, PartialObjectReflect } from '@kingjs/partial-object'
+import { PartialType, PartialTypeReflect } from '@kingjs/partial-type'
 import { PartialReflect, isKey } from '@kingjs/partial-reflect'
 import { PartialClass, Extends } from '@kingjs/partial-class'
 
@@ -14,15 +14,15 @@ const KnownStaticMembers = new Set([
   Implements,
 ])
 
-export class Concept extends PartialObject {
-  static [PartialObject.OwnCollectionSymbols] = {
-    ...PartialClass[PartialObject.OwnCollectionSymbols],
+export class Concept extends PartialType {
+  static [PartialType.OwnCollectionSymbols] = {
+    ...PartialClass[PartialType.OwnCollectionSymbols],
     [Implements]: { expectedType: Concept },
   }
 
   // `myInstance instanceof myConcept` tests if an instance satsifies a concept.
   // Justification to override Symbol.hasInstance: There should never exist an
-  // instance of a PartialObject much less a Concept (except for the prototype of
+  // instance of a PartialType much less a Concept (except for the prototype of
   // the class itself). So it is reasonable to override the behavior of
   // instanceof to test if an instance satisfies the concept. For reflection, use
   // Es6Reflect.isExtensionOf(type, concept).
@@ -32,8 +32,8 @@ export class Concept extends PartialObject {
     return ConceptReflect.satisfies(instance, this)
   }
 
-  static [PartialObject.Compile](descriptor) {
-    const result = super[PartialObject.Compile](descriptor)
+  static [PartialType.Compile](descriptor) {
+    const result = super[PartialType.Compile](descriptor)
 
     const type = Es6Descriptor.typeof(result)
     switch (type) { 
@@ -62,18 +62,18 @@ export class Concept extends PartialObject {
 
 export class ConceptReflect {
   static isConcept(type) {
-    const collectionType = PartialObjectReflect.getPartialObjectType(type)
+    const collectionType = PartialTypeReflect.getPartialType(type)
     return collectionType == Concept
   }
 
   static *concepts(type) {
-    for (const object of PartialReflect.partialObjects(type)) {
+    for (const object of PartialReflect.partialExtensions(type)) {
       if (!ConceptReflect.isConcept(object)) continue
       yield object
     }
   }
   static *ownConcepts(type) {
-    for (const object of PartialReflect.ownPartialObjects(type)) {
+    for (const object of PartialReflect.ownPartialExtensions(type)) {
       if (!ConceptReflect.isConcept(object)) continue
       yield object
     }

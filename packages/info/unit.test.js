@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Info } from "@kingjs/info"
 import { Concept, Implements } from '@kingjs/concept'
-import { PartialObject } from '@kingjs/partial-object'
+import { PartialType } from '@kingjs/partial-type'
 import { PartialClass, Extends } from '@kingjs/partial-class'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { PartialPojo } from '@kingjs/partial-pojo'
@@ -14,8 +14,8 @@ expect.extend({ toEqualAsSet })
 const MySymbol = Symbol('test-symbol')
 
 const PartialObjectMd = {
-  ctor: PartialObject,
-  toString: '[classInfo PartialObject]',
+  ctor: PartialType,
+  toString: '[classInfo PartialType]',
   isKnown: true,
   isTransparent: false,
   isAbstract: true,
@@ -36,7 +36,7 @@ const PartialPojoMd = {
   isPartialClassSubclass: false,
   isConceptSubclass: false,
   isAnonymous: false,
-  base: PartialObject,
+  base: PartialType,
 }
 
 const PartialClassMd = {
@@ -49,7 +49,7 @@ const PartialClassMd = {
   isPartialClassSubclass: false,
   isConceptSubclass: false,
   isAnonymous: false,
-  base: PartialObject,
+  base: PartialType,
 }
 
 const ConceptMd = {
@@ -62,7 +62,7 @@ const ConceptMd = {
   isPartialClassSubclass: false,
   isConceptSubclass: false,
   isAnonymous: false,
-  base: PartialObject,
+  base: PartialType,
 }
 
 const MyPartialPojoMd = {
@@ -178,7 +178,7 @@ describe('Given', () => {
   describe.each([
       ['Es6Object', Es6Object],
       ['Es6Function', Es6Function],
-      ['PartialObject', PartialObjectMd],
+      ['PartialType', PartialObjectMd],
       ['PartialPojo', PartialPojoMd],
       ['PartialClass',  PartialClassMd],
       ['Concept', ConceptMd],

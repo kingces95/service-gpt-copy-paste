@@ -2,9 +2,9 @@ import { assert } from '@kingjs/assert'
 import { Compiler } from '@kingjs/compiler'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 
-// PartialObject in conjction with extend is like 
+// PartialType in conjction with extend is like 
 // Object.defineProperties but with richer descriptors. For example,
-// PartialPojo which extends PartialObject, can be crated with a 
+// PartialPojo which extends PartialType, can be crated with a 
 // POJO whose properties are "compiled" into property descriptors. For 
 // example, a method can be defined like this:
 //    const MyPartial = PartialReflect.load({
@@ -53,18 +53,18 @@ import { Es6Reflect } from '@kingjs/es6-reflect'
 // has a concrete implementation of the method, it is not overwritten.
 
 // OwnCollectionSymbols is a static symbol applied to extensions of 
-// PartialObject which describes how those extensions form a poset of 
-// PartialObject types.
-const OwnCollectionSymbols = Symbol('PartialObject.ownCollectionSymbols')
+// PartialType which describes how those extensions form a poset of 
+// PartialType types.
+const OwnCollectionSymbols = Symbol('PartialType.ownCollectionSymbols')
 
 // For example, OwnCollectionSymbols is used by PartialClass to designate
-// the Extends symbol as containing an adjacency list to other PartialObject
+// the Extends symbol as containing an adjacency list to other PartialType
 // types of type PartialClass and PartialPojo. Also specified is
 // a coercion method PartialReflect.load is used to transform POJOs 
 // into PartialClass types:
 
-//    class PartialClass extends PartialObject {
-//      static [PartialObject.OwnCollectionSymbols] = {
+//    class PartialClass extends PartialType {
+//      static [PartialType.OwnCollectionSymbols] = {
 //        [Extends]: { 
 //          expectedType: [ PartialClass, PartialPojo ],
 //          map: PartialReflect.load,
@@ -103,19 +103,19 @@ const OwnCollectionSymbols = Symbol('PartialObject.ownCollectionSymbols')
 
 // Now MyType.prototype has myMethod and myOtherMethod defined on it. 
 
-// Compile is a static symbol applied to extensions of PartialObject which
+// Compile is a static symbol applied to extensions of PartialType which
 // designates a function that can be used to "compile" member descriptors.
-const Compile = Symbol('PartialObject.compile')
+const Compile = Symbol('PartialType.compile')
 
-// For example, Concept PartialObject uses Compile to transform its
+// For example, Concept PartialType uses Compile to transform its
 // descriptors so thay are "abstract" by setting all get/set/value to abstract
 // for non-data members. Compile is called with the descriptor and returns 
 // a descriptor:
 
 //    import { abstract } from '@kingjs/abstract'
-//    class Concept extends PartialObject {
-//      static [PartialObject.Compile](descriptor) {
-//        const result = super[PartialObject.Compile](descriptor)
+//    class Concept extends PartialType {
+//      static [PartialType.Compile](descriptor) {
+//        const result = super[PartialType.Compile](descriptor)
 //        ... modify result so that all members are abstract ...
 //        return result
 //      }
@@ -145,12 +145,12 @@ const Compile = Symbol('PartialObject.compile')
 //     equals(other) { }
 //   }
 
-export class PartialObject {
+export class PartialType {
   static Compile = Compile
   static OwnCollectionSymbols = OwnCollectionSymbols
 
   constructor() { 
-    throw new TypeError('PartialObject cannot be instantiated.') 
+    throw new TypeError('PartialType cannot be instantiated.') 
   }
 
   static [OwnCollectionSymbols] = { }
@@ -159,30 +159,27 @@ export class PartialObject {
   }
 }
 
-export class PartialObjectReflect {
+export class PartialTypeReflect {
   static isKnown(type) {
     if (!type) return false
     if (Es6Reflect.isKnown(type)) return true
-    if (type == PartialObject) return true
-    return PartialObjectReflect.isPartialObjectType(type)
+    if (type == PartialType) return true
+    return Object.getPrototypeOf(type) == PartialType
   }
   static isKnownKey(type, key, { isStatic } = { }) {
-    if (PartialObjectReflect.isKnown(type)) return true
+    if (PartialTypeReflect.isKnown(type)) return true
     return Es6Reflect.isKnownKey(type, key, { isStatic })
   }
 
-  static isPartialObject(type) {
-    return PartialObjectReflect.getPartialObjectType(type) != null
+  static isPartialType(type) {
+    return PartialTypeReflect.getPartialType(type) != null
   }
-  static isPartialObjectType(type) {
-    return Object.getPrototypeOf(type) == PartialObject
-  }
-  static getPartialObjectType(type) {
+  static getPartialType(type) {
     const prototype = Object.getPrototypeOf(type)
-    if (prototype == PartialObject) return null
-    if (Object.getPrototypeOf(prototype) != PartialObject) {
-      assert(!(prototype.prototype instanceof PartialObject),
-        `Expected type to indirectly extend PartialObject.`)
+    if (prototype == PartialType) return null
+    if (Object.getPrototypeOf(prototype) != PartialType) {
+      assert(!(prototype.prototype instanceof PartialType),
+        `Expected type to indirectly extend PartialType.`)
       return null
     }
 

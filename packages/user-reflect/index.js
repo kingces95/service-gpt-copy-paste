@@ -3,7 +3,7 @@ import { isPojo } from '@kingjs/pojo-test'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { isAbstract } from '@kingjs/abstract'
 import { PartialPojo } from '@kingjs/partial-pojo'
-import { PartialObject } from '@kingjs/partial-object'
+import { PartialType } from '@kingjs/partial-type'
 
 const Filter = { excludeKnown: true }
 

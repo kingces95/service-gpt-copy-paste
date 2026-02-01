@@ -14,7 +14,7 @@ import {
 
 
 // Functions are also instances so can self-reflect. These members would
-// typically only exist in a reflection system ala FunctionInfo.call() but
+// typically only exist in a reflection system ala TypeInfo.call() but
 // javascript is dynamic so entities that represent types are themselves instances
 // of the Function type. These self-reflection-ish members should not be
 // conflated with user-defined members or even system defined members available

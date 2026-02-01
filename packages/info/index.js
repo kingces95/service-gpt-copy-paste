@@ -6,9 +6,9 @@ import { PartialPojo } from '@kingjs/partial-pojo'
 import { Concept } from "@kingjs/concept"
 import { PartialClass } from '@kingjs/partial-class'
 import { 
-  PartialObject, 
-  PartialObjectReflect 
-} from '@kingjs/partial-object'
+  PartialType, 
+  PartialTypeReflect 
+} from '@kingjs/partial-type'
 import { 
   Es6ClassInfo, 
   Es6MemberInfo,
@@ -34,22 +34,22 @@ export class Info {
   static #from(fn) {
     const idInfo = Es6IdInfo.create(fn.name)
 
-    if (fn == PartialObject) return new PartialObjectInfo(fn, idInfo)
-    if (fn == PartialPojo) return new PartialObjectInfo(fn, idInfo)
-    if (fn == PartialClass) return new PartialObjectInfo(fn, idInfo)
-    if (fn == Concept) return new PartialObjectInfo(fn, idInfo)
+    if (fn == PartialType) return new PartialTypeInfo(fn, idInfo)
+    if (fn == PartialPojo) return new PartialTypeInfo(fn, idInfo)
+    if (fn == PartialClass) return new PartialTypeInfo(fn, idInfo)
+    if (fn == Concept) return new PartialTypeInfo(fn, idInfo)
 
     const collectionType = 
-      PartialObjectReflect.getPartialObjectType(fn, idInfo)
-    if (collectionType == PartialPojo) return new PartialPojoSubclassInfo(fn, idInfo)
-    if (collectionType == PartialClass) return new PartialClassSubclassInfo(fn, idInfo)
-    if (collectionType == Concept) return new ConceptSubclassInfo(fn, idInfo)
+      PartialTypeReflect.getPartialType(fn, idInfo)
+    if (collectionType == PartialPojo) return new PartialPojoInfo(fn, idInfo)
+    if (collectionType == PartialClass) return new PartialClassInfo(fn, idInfo)
+    if (collectionType == Concept) return new ConceptInfo(fn, idInfo)
 
     return new ClassInfo(fn, idInfo)
   }
 }
 
-export class FunctionInfo extends Info {
+export class TypeInfo extends Info {
 
   #_
   #idInfo
@@ -78,16 +78,16 @@ export class FunctionInfo extends Info {
 
   get isKnown() { return InfoReflect.isKnown(this.ctor) }
   get isNonPublic() { return this.id.isNonPublic }
-  get isAbstract() { return this instanceof PartialObjectInfo }
+  get isAbstract() { return this instanceof PartialTypeInfo }
   get isAnonymous() { return this.id.isAnonymous }
   get isTransparentPartialObject() { return this.isPartialPojoSubClass }
 
-  get isPartialClassSubclass() { return this instanceof PartialClassSubclassInfo }
-  get isPartialPojoSubClass() { return this instanceof PartialPojoSubclassInfo }
-  get isConceptSubclass() { return this instanceof ConceptSubclassInfo }
+  get isPartialClassSubclass() { return this instanceof PartialClassInfo }
+  get isPartialPojoSubClass() { return this instanceof PartialPojoInfo }
+  get isConceptSubclass() { return this instanceof ConceptInfo }
 
   isSubclassOf(other) {
-    assert(other instanceof FunctionInfo, 'other must be a FunctionInfo')
+    assert(other instanceof TypeInfo, 'other must be a TypeInfo')
 
     let current = this
     while (current = current.base)
@@ -182,27 +182,27 @@ export class FunctionInfo extends Info {
 
   //[util.inspect.custom]() { return this.toString() }
 }
-export class ClassInfo extends FunctionInfo { 
+export class ClassInfo extends TypeInfo { 
   toString() { return `[classInfo ${this.id.toString()}]` }
 }
-export class PartialObjectInfo extends FunctionInfo { 
+export class PartialTypeInfo extends TypeInfo { 
   toString() { return `[classInfo ${this.id.toString()}]` }
 }
-export class PartialPojoSubclassInfo extends PartialObjectInfo {
+export class PartialPojoInfo extends PartialTypeInfo {
   constructor(type, idInfo) {
     assert(type.prototype instanceof PartialPojo)
     super(type, idInfo)
   }
   toString() { return `[partialPojoInfo]` }
 }
-export class PartialClassSubclassInfo extends PartialObjectInfo {
+export class PartialClassInfo extends PartialTypeInfo {
   constructor(type, idInfo) {
     assert(type.prototype instanceof PartialClass)
     super(type, idInfo)
   }
   toString() { return `[partialClassInfo ${this.id.toString()}]` }
 }
-export class ConceptSubclassInfo extends PartialObjectInfo {
+export class ConceptInfo extends PartialTypeInfo {
   constructor(type, idInfo) {
     assert(type.prototype instanceof Concept)
     super(type, idInfo)
@@ -216,7 +216,7 @@ Info.Array = Info.from(Array)
 Info.String = Info.from(String)
 Info.Number = Info.from(Number)
 Info.Boolean = Info.from(Boolean)
-Info.PartialObject = Info.from(PartialObject)
+Info.PartialType = Info.from(PartialType)
 Info.PartialPojo = Info.from(PartialPojo)
 Info.PartialClass = Info.from(PartialClass)
 Info.Concept = Info.from(Concept)

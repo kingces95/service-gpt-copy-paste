@@ -1,5 +1,5 @@
 import {
-  FunctionInfo,
+  TypeInfo,
   MemberInfo,
 } from '@kingjs/info'
 import { trimPojo } from '@kingjs/pojo-trim'
@@ -10,7 +10,7 @@ import { isAbstract } from '@kingjs/abstract'
 
 function metadata({ ownOnly, isStatic } = { }) {
   return new PojoMetadata([
-    [FunctionInfo, {
+    [TypeInfo, {
       name: 'string',
       base: 'name',
       isAnonymous: 'boolean',
@@ -67,7 +67,7 @@ const conceptualPivotMd = {
   ...knownPivotMd
 }
 
-FunctionInfo.prototype.toPojo = async function({ 
+TypeInfo.prototype.toPojo = async function({ 
   ownOnly, ...filter } = { }) {
 
   const pojo = await toPojo(this, { 
@@ -79,7 +79,7 @@ FunctionInfo.prototype.toPojo = async function({
   const trimmedPojo = trimPojo(pojo)
   return trimmedPojo
 }
-FunctionInfo.prototype.dump = async function(options = { }) {
+TypeInfo.prototype.dump = async function(options = { }) {
   const pojo = await this.toPojo(options)
   dumpPojo(pojo)
 }

@@ -2,7 +2,7 @@ import { PartialReflect } from '@kingjs/partial-reflect'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { ConceptReflect } from "@kingjs/concept"
 import { PartialClassReflect } from '@kingjs/partial-class'
-import { PartialObjectReflect } from '@kingjs/partial-object'
+import { PartialTypeReflect } from '@kingjs/partial-type'
 
 export class InfoReflect {
 
@@ -14,9 +14,9 @@ export class InfoReflect {
     return Es6Reflect.getMetadata(type)
   }
 
-  // PartialObjectReflect proxies
+  // PartialTypeReflect proxies
   static isKnown(type) { 
-    return PartialObjectReflect.isKnown(type)
+    return PartialTypeReflect.isKnown(type)
   }
   
   // PartialReflect proxies
@@ -41,11 +41,11 @@ export class InfoReflect {
     yield* PartialReflect.descriptors(type, { isStatic })
   }
 
-  static *ownPartialObjects(type) {
-    yield* PartialReflect.ownPartialObjects(type)
+  static *ownPartialExtensions(type) {
+    yield* PartialReflect.ownPartialExtensions(type)
   }
-  static *partialObjects(type) {
-    yield* PartialReflect.partialObjects(type)
+  static *partialExtensions(type) {
+    yield* PartialReflect.partialExtensions(type)
   }
 
   // PartialClassReflect proxies

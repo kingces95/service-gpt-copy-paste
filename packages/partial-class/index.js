@@ -1,4 +1,4 @@
-import { PartialObject, PartialObjectReflect } from '@kingjs/partial-object'
+import { PartialType, PartialTypeReflect } from '@kingjs/partial-type'
 import { PartialPojo } from '@kingjs/partial-pojo'
 import { PartialReflect } from '@kingjs/partial-reflect'
 
@@ -13,8 +13,8 @@ export const Extends = Symbol('PartialClass.Extends')
 //    class Dumpper extends PartialClass { dump() { Console.log(this) } }
 //    extend(MyType, Dumpper)
 
-export class PartialClass extends PartialObject {
-  static [PartialObject.OwnCollectionSymbols] = {
+export class PartialClass extends PartialType {
+  static [PartialType.OwnCollectionSymbols] = {
     [Extends]: { 
       expectedType: [ PartialClass, PartialPojo ],
       map: PartialReflect.load,
@@ -25,20 +25,20 @@ export class PartialClass extends PartialObject {
 export class PartialClassReflect {
   static isPartialClass(type) {
     if (!type) return false
-    const collectionType = PartialObjectReflect.getPartialObjectType(type)
+    const collectionType = PartialTypeReflect.getPartialType(type)
     return collectionType == PartialClass
   }
 
   static *partialClasses(type) {
-    for (const collection of PartialReflect.partialObjects(type)) {
+    for (const collection of PartialReflect.partialExtensions(type)) {
       const collectionType = 
-        PartialObjectReflect.getPartialObjectType(collection)
+        PartialTypeReflect.getPartialType(collection)
       if (collectionType != PartialClass) continue
       yield collection
     }
   }
   static *ownPartialClasses(type) {
-    for (const collection of PartialReflect.ownPartialObjects(type)) {
+    for (const collection of PartialReflect.ownPartialExtensions(type)) {
       if (!PartialClassReflect.isPartialClass(collection)) continue 
       yield collection
     }

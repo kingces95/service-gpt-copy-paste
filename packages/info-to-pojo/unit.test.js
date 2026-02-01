@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 
-import { PartialObject } from '@kingjs/partial-object'
+import { PartialType } from '@kingjs/partial-type'
 import { PartialClass } from '@kingjs/partial-class'
 import { Concept } from '@kingjs/concept'
 import { PartialPojo } from '@kingjs/partial-pojo'
@@ -53,15 +53,15 @@ describe('Function members', () => {
   })
 })
 
-describe('PartialObject members', () => {
+describe('PartialType members', () => {
   let pojo
   beforeEach(async () => {
-    const fnInfo = Info.from(PartialObject)
+    const fnInfo = Info.from(PartialType)
     pojo = await fnInfo.toPojo()
   })
 
   it('matches expected', () => {
-    expect(pojo).toEqual({ name: 'PartialObject' })
+    expect(pojo).toEqual({ name: 'PartialType' })
   })
 })
 
@@ -73,7 +73,7 @@ describe('PartialClass members', () => {
   })
 
   it('matches expected', () => {
-    expect(pojo).toEqual({ name: 'PartialClass', base: 'PartialObject' })
+    expect(pojo).toEqual({ name: 'PartialClass', base: 'PartialType' })
   })
 })
 
@@ -85,7 +85,7 @@ describe('Concept members', () => {
   })
 
   it('matches expected', () => {
-    expect(pojo).toEqual({ name: 'Concept', base: 'PartialObject' })
+    expect(pojo).toEqual({ name: 'Concept', base: 'PartialType' })
   })
 })
 
@@ -97,7 +97,7 @@ describe('PartialPojo members', () => {
   })
 
   it('matches expected', () => {
-    expect(pojo).toEqual({ name: 'PartialPojo', base: 'PartialObject' })
+    expect(pojo).toEqual({ name: 'PartialPojo', base: 'PartialType' })
   })
 })
 

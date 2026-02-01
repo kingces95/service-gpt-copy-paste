@@ -1,7 +1,7 @@
 import { assert } from '@kingjs/assert'
 import { UserReflect } from '@kingjs/user-reflect'
 import { PartialAssociate } from '@kingjs/partial-associate'
-import { PartialObjectReflect } from '@kingjs/partial-object'
+import { PartialTypeReflect } from '@kingjs/partial-type'
 import { extend } from '@kingjs/partial-extend'
 
 // Creates an empty "prototypical" class that extends Prototypical
@@ -23,7 +23,7 @@ function prototypicalCreate(type) {
   })
 
   extend(prototypicalType, type, { 
-    // HACK: A PartialObject should not report being merged with itself.
+    // HACK: A PartialType should not report being merged with itself.
     isTransparent: true,
     parentType: type
   })
@@ -34,7 +34,7 @@ function prototypicalCreate(type) {
 const PrototypicalTypeMap = new Map()
 
 function getPrototypicalType(type) {
-  assert(PartialObjectReflect.isPartialObject(type))
+  assert(PartialTypeReflect.isPartialType(type))
   let prototypicalType = PrototypicalTypeMap.get(type)
 
   if (!prototypicalType) {
@@ -47,28 +47,28 @@ function getPrototypicalType(type) {
 
 export class PartialPrototype {
 
-  static *partialObjects(type) {
-    assert(PartialObjectReflect.isPartialObject(type))
+  static *partialExtensions(type) {
+    assert(PartialTypeReflect.isPartialType(type))
     type = getPrototypicalType(type)
-    yield* PartialAssociate.partialObjects(type)
+    yield* PartialAssociate.partialExtensions(type)
   }
 
   // returns partial classes that could have defined the key
   // for example, all concepts that defined the key
   static *hosts(type, key) {
-    assert(PartialObjectReflect.isPartialObject(type))
+    assert(PartialTypeReflect.isPartialType(type))
     type = getPrototypicalType(type)
     yield* PartialAssociate.hosts(type, key)
   }
   
   static getHost(type, key) {
-    assert(PartialObjectReflect.isPartialObject(type))
+    assert(PartialTypeReflect.isPartialType(type))
     type = getPrototypicalType(type)
     return PartialAssociate.getHost(type, key)
   }
 
   static *keys(type) { 
-    assert(PartialObjectReflect.isPartialObject(type))
+    assert(PartialTypeReflect.isPartialType(type))
     const prototypicalType = getPrototypicalType(type)
     for (const current of UserReflect.keys(prototypicalType)) {
       switch (typeof current) {
@@ -81,7 +81,7 @@ export class PartialPrototype {
   }
   
   static *getDescriptor(type, key) {
-    assert(PartialObjectReflect.isPartialObject(type))
+    assert(PartialTypeReflect.isPartialType(type))
     let owner = null
     const prototypicalType = getPrototypicalType(type)
     for (const current of UserReflect.getDescriptor(prototypicalType, key)) {
@@ -96,7 +96,7 @@ export class PartialPrototype {
   }
 
   static *descriptors(type) {
-    assert(PartialObjectReflect.isPartialObject(type))
+    assert(PartialTypeReflect.isPartialType(type))
     const prototypicalType = getPrototypicalType(type)
     for (const current of UserReflect.descriptors(prototypicalType)) {
       switch (typeof current) {

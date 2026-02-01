@@ -1,6 +1,6 @@
 import { assert } from '@kingjs/assert'
 import { PartialLoader } from '@kingjs/partial-loader'
-import { PartialObjectReflect } from '@kingjs/partial-object'
+import { PartialTypeReflect } from '@kingjs/partial-type'
 import { PartialAssociate } from '@kingjs/partial-associate'
 import { Define } from '@kingjs/define'
 import { PartialPojo } from '@kingjs/partial-pojo'
@@ -37,14 +37,14 @@ export function extend(type, partialType, {
 
     partialType = PartialLoader.load(partialType)
 
-    assert(!PartialObjectReflect.isKnown(type),
+    assert(!PartialTypeReflect.isKnown(type),
       `Expected type to not be a known type.`)
-    assert(!PartialObjectReflect.isPartialObject(type),
-      `Expected type to not be a PartialObject.`)
-    assert(PartialObjectReflect.isPartialObject(partialType),
-      `Expected partialObject to indirectly extend PartialObject.`)
+    assert(!PartialTypeReflect.isPartialType(type),
+      `Expected type to not be a PartialType.`)
+    assert(PartialTypeReflect.isPartialType(partialType),
+      `Expected partialType to indirectly extend PartialType.`)
 
-    for (const baseType of PartialLoader.ownPartialObjects(partialType)) {
+    for (const baseType of PartialLoader.ownPartialExtensions(partialType)) {
       extend(type, baseType, { 
         parentType: partialType,
         isTransparent: baseType.prototype instanceof PartialPojo
@@ -52,7 +52,7 @@ export function extend(type, partialType, {
     }
 
     if (!isTransparent) 
-      PartialAssociate.addPartialObject(type, partialType)
+      PartialAssociate.addPartialExtension(type, partialType)
 
     let key
     for (const current of PartialLoader.ownDescriptors(partialType)) {

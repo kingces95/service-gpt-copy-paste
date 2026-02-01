@@ -3,7 +3,7 @@ import { beforeEach } from 'vitest'
 import { abstract } from '@kingjs/abstract'
 import { extend } from '@kingjs/partial-extend'
 import { PartialClass, Extends } from '@kingjs/partial-class'
-import { PartialObject } from '@kingjs/partial-object'
+import { PartialType } from '@kingjs/partial-type'
 
 describe('A type', () => {
   let type
@@ -125,7 +125,7 @@ describe('A type', () => {
       let compiledMember = function() { return 'compiled' }
       beforeEach(() => {
         didCompile = false
-        partialType[PartialObject.Compile] = function(descriptor) {
+        partialType[PartialType.Compile] = function(descriptor) {
           expect(this).toBe(partialType)
           expect(descriptor.value).toBe(partialType.prototype.member)
           descriptor.value = compiledMember
