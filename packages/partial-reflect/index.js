@@ -11,6 +11,9 @@ import { PartialObjectReflect } from '@kingjs/partial-object'
 // or UserReflect based on whether the type is a PartialObject.
 // Filters out known types. For known types, no reflection is performed.
 // Filters out knnow keys. For known keys, no reflection is performed.
+export function isKey(key) {
+  return typeof key === 'string' || typeof key === 'symbol'
+}
 
 export class PartialReflect {
 
@@ -37,9 +40,6 @@ export class PartialReflect {
         default: assert(false, `Unexpected type: ${typeof current}`)
       }
     }    
-  }
-  static isKey(key) {
-    return typeof key === 'string' || typeof key === 'symbol'
   }
 
   static getOwnDescriptor(type, key, { isStatic } = { }) {
@@ -109,10 +109,6 @@ export class PartialReflect {
     }
 
     return PartialAssociate.getHost(type, key, { isStatic })
-  }
-
-  static merge(type, partialType) {
-    return PartialLoader.merge(type, partialType)
   }
 
   static defineType(pojoOrType) {

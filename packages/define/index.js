@@ -6,8 +6,7 @@ export class Define {
   static property(type, key, descriptor) {
     const prototype = type.prototype
 
-    // only overwrite existing abstract members and then only
-    // if the new member is not also abstract.
+    // do not override non-abstract members
     if (key in prototype) {
       if (isAbstract(descriptor)) return false
       // const existingDescriptor = Descriptor.get(prototype, key)

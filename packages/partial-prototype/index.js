@@ -1,13 +1,14 @@
 import { assert } from '@kingjs/assert'
 import { UserReflect } from '@kingjs/user-reflect'
 import { PartialAssociate } from '@kingjs/partial-associate'
-import { PartialLoader } from '@kingjs/partial-loader'
 import { PartialObjectReflect } from '@kingjs/partial-object'
+import { PartialLoader } from '@kingjs/partial-loader'
+import { extend } from '@kingjs/partial-extend'
 
 // Creates an empty "prototypical" class that extends Prototypical
 // and merges a given partial object type into it. This allows
 // reflection over the merged result which will faithfully report 
-// what the loader (PartialLoader.merge) actually did.
+// what the loader (extend) actually did.
 
 class Prototypical { }
 
@@ -22,7 +23,7 @@ function prototypicalCreate(type) {
     }
   })
 
-  PartialLoader.merge(prototypicalType, type, { 
+  extend(prototypicalType, type, { 
     // HACK: A PartialObject should not report being merged with itself.
     isTransparent: true,
     parentType: type

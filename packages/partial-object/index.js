@@ -2,7 +2,7 @@ import { assert } from '@kingjs/assert'
 import { Compiler } from '@kingjs/compiler'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 
-// PartialObject in conjction with PartialReflect.merge is like 
+// PartialObject in conjction with extend is like 
 // Object.defineProperties but with richer descriptors. For example,
 // PartialPojo which extends PartialObject, can be crated with a 
 // POJO whose properties are "compiled" into property descriptors. For 
@@ -45,7 +45,7 @@ import { Es6Reflect } from '@kingjs/es6-reflect'
 
 // The PartialPojo can then be merged into a type like this:
 //    class MyType { }
-//    PartialReflect.merge(MyType, MyPartial)
+//    extend(MyType, MyPartial)
 // Now MyType.prototype has myMethod, or myProperty, or myConstant
 // defined on it. 
 
@@ -95,11 +95,11 @@ const OwnCollectionSymbols = Symbol('PartialObject.ownCollectionSymbols')
 //      ]
 //    }
 
-// The Extends can then be merged into a type using PartialReflect.merge
+// The Extends can then be merged into a type using extend
 // like so:
 
 //    class MyType { }
-//    PartialReflect.merge(MyType, MyExtension)
+//    extend(MyType, MyExtension)
 
 // Now MyType.prototype has myMethod and myOtherMethod defined on it. 
 
@@ -129,7 +129,7 @@ const Compile = Symbol('PartialObject.compile')
 // The EqualityConcept could then be merged into a type like this:
 
 //    class MyType { }
-//    PartialReflect.merge(MyType, EqualityConcept)
+//    extend(MyType, EqualityConcept)
 
 // Now MyType.prototype has an abstract equals method defined on it.
 

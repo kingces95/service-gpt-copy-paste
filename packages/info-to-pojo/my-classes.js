@@ -1,6 +1,6 @@
 import { abstract } from "@kingjs/abstract"
 import { PartialClass, Extends } from "@kingjs/partial-class"
-import { extend } from "@kingjs/extend"
+import { extend } from "@kingjs/partial-extend"
 import { implement } from "@kingjs/implement"
 import { Concept, Implements } from "@kingjs/concept"
 

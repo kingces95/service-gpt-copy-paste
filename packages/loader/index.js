@@ -1,5 +1,5 @@
 // import { assert } from '@kingjs/assert'
-// import { extend } from '@kingjs/extend'
+// import { extend } from '@kingjs/partial-extend'
 // import { extensions } from '@kingjs/partial-class'
 // import { concepts } from '@kingjs/concept'
 

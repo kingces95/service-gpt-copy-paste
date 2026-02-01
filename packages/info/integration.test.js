@@ -1,13 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Info, FunctionInfo } from "@kingjs/info"
+import { Info } from "@kingjs/info"
 import { Concept, Implements } from '@kingjs/concept'
-import { PartialObject } from '@kingjs/partial-object'
-import { PartialClass, Extends } from '@kingjs/partial-class'
+import { PartialClass } from '@kingjs/partial-class'
 import { PartialReflect } from '@kingjs/partial-reflect'
-import { PartialPojo } from '@kingjs/partial-pojo'
 import { } from "@kingjs/info-to-pojo"
 import { toEqualAsSet } from '@kingjs/vitest'
+import { extend } from '@kingjs/partial-extend'
 
 expect.extend({ toEqualAsSet })
 
@@ -34,7 +33,7 @@ describe('MyClass', () => {
         myPartialClass = class MyPartialClass extends PartialClass { }
         myPartialClass.prototype.myMethod = methodFn
         myPartialClassInfo = Info.from(myPartialClass)
-        PartialReflect.merge(cls, myPartialClass)
+        extend(cls, myPartialClass)
         info = Info.from(cls)
       })
       describe('has a member', () => {
@@ -61,7 +60,7 @@ describe('MyClass', () => {
     beforeEach(() => {
       myPartialClass = class MyPartialClass extends PartialClass { }
       myPartialClass.prototype.myMethod = partialClassFn
-      PartialReflect.merge(cls, myPartialClass)
+      extend(cls, myPartialClass)
       info = Info.from(cls)
       myPartialClassInfo = Info.from(myPartialClass)
     })
@@ -143,7 +142,7 @@ describe('MyClass', () => {
       describe('merged with MyExtendedConcept', () => {
         let info
         beforeEach(() => {
-          PartialReflect.merge(cls, myExtendedConcept)
+          extend(cls, myExtendedConcept)
           info = Info.from(cls)
         })
         it('should report having the merged member', () => {
@@ -185,7 +184,7 @@ describe('MyClass', () => {
     describe('merged with MyConcept', () => {
       let info
       beforeEach(() => {
-        PartialReflect.merge(cls, myConcept)
+        extend(cls, myConcept)
         info = Info.from(cls)
       })
       it('should report having the merged member', () => {
@@ -245,8 +244,8 @@ describe('MyClass', () => {
         myPartialClass = class MyPartialClass extends PartialClass { }
         myPartialClass.prototype.myMethod = conceptualFn
         myPartialClassInfo = Info.from(myPartialClass)
-        PartialReflect.merge(cls, myPartialClass)
-        PartialReflect.merge(cls, myConcept)
+        extend(cls, myPartialClass)
+        extend(cls, myConcept)
         info = Info.from(cls)
       })
       it('should report being merged with MyPartialClass', () => {
@@ -278,8 +277,8 @@ describe('MyClass', () => {
         myPartialClass = class MyPartialClass extends PartialClass { }
         myPartialClass.prototype.myMethod = conceptualFn
         myPartialClassInfo = Info.from(myPartialClass)
-        PartialReflect.merge(cls, myConcept)
-        PartialReflect.merge(cls, myPartialClass)
+        extend(cls, myConcept)
+        extend(cls, myPartialClass)
         info = Info.from(cls)
       })
       it('should report being merged with MyPartialClass', () => {

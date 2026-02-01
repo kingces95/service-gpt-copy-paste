@@ -1,7 +1,7 @@
 import { assert } from '@kingjs/assert'
-import { extend } from '@kingjs/extend'
+import { extend } from '../partial-extend'
 import { Es6Reflect } from '@kingjs/es6-reflect'
-import { PartialReflect } from '@kingjs/partial-reflect'
+import { PartialReflect, isKey } from '@kingjs/partial-reflect'
 import { Concept } from '@kingjs/concept'
 
 export function implement(type, concept, implementation = { }) {
@@ -14,14 +14,13 @@ export function implement(type, concept, implementation = { }) {
   implementation = PartialReflect.defineType(implementation)
 
   // restrict implementation to members defined by the concept.
-  const conceptMembers = new Set(PartialReflect.keys(concept)
-    .filter(PartialReflect.isKey))
+  const conceptMembers = new Set(PartialReflect.keys(concept).filter(isKey))
 
-  for (const name of PartialReflect.keys(implementation)
-    .filter(PartialReflect.isKey)) {
+  for (const name of PartialReflect.keys(implementation).filter(isKey)) {
     if (conceptMembers.has(name)) continue
     throw new Error(`Concept '${concept.name}' does not define member '${name}'.`)
   }
 
-  extend(type, concept, implementation)
+  extend(type, concept)
+  extend(type, implementation)
 }

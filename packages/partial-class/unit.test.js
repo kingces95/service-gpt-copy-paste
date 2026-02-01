@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { PartialObject } from '@kingjs/partial-object'
-import { PartialReflect } from '@kingjs/partial-reflect'
+import { PartialReflect, isKey } from '@kingjs/partial-reflect'
 import { PartialClass, Extends } from '@kingjs/partial-class'
+import { extend } from '@kingjs/partial-extend'
 
 describe('A type', () => {
   let type
@@ -20,7 +21,7 @@ describe('A type', () => {
       extension = class MyExtension extends PartialClass { 
         static [Extends] = [ subExtension, subExtension ]
       }
-      PartialReflect.merge(type, extension)
+      extend(type, extension)
     })
     it('should yield the extensions', () => {
       const declarations = [...PartialReflect.ownPartialObjects(type)]
@@ -35,7 +36,7 @@ describe('A type', () => {
       member = function member() { }
       extension = class MyExtension extends PartialClass { }
       extension.prototype.member = member
-      PartialReflect.merge(type, extension)
+      extend(type, extension)
     })
     it('should have the member', () => {
       expect(type.prototype.member).toBe(member)
@@ -45,7 +46,7 @@ describe('A type', () => {
     let extension
     beforeEach(() => {
       extension = class MyExtension extends PartialClass { }
-      PartialReflect.merge(type, extension)
+      extend(type, extension)
     })
     it('should yield the extension as an own PartialClass declaration', () => {
       const declarations = [...PartialReflect.ownPartialObjects(type)]
@@ -64,7 +65,7 @@ describe('A type', () => {
       })
       describe('which is also extended by an PartialClass', () => {
         beforeEach(() => {
-          PartialReflect.merge(derived, extension)
+          extend(derived, extension)
         })
         it('should yield the extension as own', () => {
           const declarations = [...PartialReflect.ownPartialObjects(derived)]
@@ -99,9 +100,7 @@ describe('An extension', () => {
     expect(keys).toHaveLength(0)
   })
   it('should have no names or symbols', () => {
-    const keys = [...PartialReflect.keys(extension)
-      .filter(PartialReflect.isKey)
-    ]
+    const keys = [...PartialReflect.keys(extension).filter(isKey)]
     expect(keys).toHaveLength(0)
   })
   describe('with a sub extension', () => {
@@ -122,9 +121,7 @@ describe('An extension', () => {
         subExtension.prototype.subMember = subMember
       })
       it('should have the subMember as a key', () => {
-        const keys = [...PartialReflect.keys(extension)
-          .filter(PartialReflect.isKey)
-        ]
+        const keys = [...PartialReflect.keys(extension).filter(isKey)]
         expect(keys).toHaveLength(1)
         expect(keys[0]).toBe('subMember')
       })
@@ -166,9 +163,7 @@ describe('An extension', () => {
         expect(keys).toHaveLength(0)
       })
       it('should have the member as a name or symbol', () => {
-        const keys = [...PartialReflect.keys(extension)
-          .filter(PartialReflect.isKey)
-        ]
+        const keys = [...PartialReflect.keys(extension).filter(isKey)]
         expect(keys).toHaveLength(1)
         expect(keys[0]).toBe('member')
       })
@@ -201,9 +196,7 @@ describe('An extension', () => {
       expect(keys[0]).toBe('member')
     })
     it('should have the member as a name or symbol', () => {
-      const keys = [...PartialReflect.keys(extension)
-        .filter(PartialReflect.isKey)
-      ]
+      const keys = [...PartialReflect.keys(extension).filter(isKey)]
       expect(keys).toHaveLength(1)
       expect(keys[0]).toBe('member')
     })

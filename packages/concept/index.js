@@ -4,7 +4,7 @@ import { Es6Reflect } from '@kingjs/es6-reflect'
 import { UserReflect } from '@kingjs/user-reflect'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { PartialObject, PartialObjectReflect } from '@kingjs/partial-object'
-import { PartialReflect } from '@kingjs/partial-reflect'
+import { PartialReflect, isKey } from '@kingjs/partial-reflect'
 import { PartialClass, Extends } from '@kingjs/partial-class'
 
 export const Implements = Symbol('Concept.Implements')
@@ -135,7 +135,7 @@ export class ConceptReflect {
     }
 
     for (const name of PartialReflect.keys(concept)
-      .filter(PartialReflect.isKey)) {
+      .filter(isKey)) {
       if (name in instance) continue 
       return false
     }

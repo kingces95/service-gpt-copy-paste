@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Info, FunctionInfo } from "@kingjs/info"
 import { PartialClass, Extends } from '@kingjs/partial-class'
-import { extend } from '@kingjs/extend'
+import { extend } from '@kingjs/partial-extend'
 import { PartialPojo } from '@kingjs/partial-pojo'
 import { abstract } from '@kingjs/abstract'
 import { } from "@kingjs/info-to-pojo"

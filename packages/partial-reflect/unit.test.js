@@ -2,19 +2,18 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { abstract } from '@kingjs/abstract'
 import { PartialPojo } from '@kingjs/partial-pojo'
-import { PartialReflect } from '@kingjs/partial-reflect'
+import { PartialReflect, isKey } from '@kingjs/partial-reflect'
 import { UserReflect } from '@kingjs/user-reflect'
 import { Define } from '@kingjs/define'
-import { 
-  PartialObject, PartialObjectReflect
-} from '@kingjs/partial-object'
+import { PartialObject, PartialObjectReflect } from '@kingjs/partial-object'
+import { extend } from '@kingjs/partial-extend'
 
 describe('PartialObject', () => {
   it('cannot be instantiated', () => {
     expect(() => new PartialObject()).toThrow()
   })
   it('cannot be the target of mergeMembers', () => {
-    expect(() => PartialReflect.merge(PartialObject)).toThrow()
+    expect(() => extend(PartialObject)).toThrow()
   })
 })
 
@@ -36,7 +35,7 @@ describe('A type', () => {
     let method
     beforeEach(() => {
       method = function method() { }
-      PartialReflect.merge(type, 
+      extend(type, 
         PartialReflect.defineType({ method }))
     })
 
@@ -93,7 +92,7 @@ describe('MyPojoType', () => {
       let myType
       beforeEach(() => {
         myType = class { }
-        PartialReflect.merge(myType, MyPojoType)
+        extend(myType, MyPojoType)
       })
 
       it('should have the method on type', () => {
@@ -113,9 +112,7 @@ describe('MyPojoType', () => {
         expect(declarations).toHaveLength(0)
       })
       it('should have method as member name or symbol', () => {
-        const keys = [...UserReflect.keys(myType)
-          .filter(PartialReflect.isKey)
-        ]
+        const keys = [...UserReflect.keys(myType).filter(isKey)]
         expect(keys).toContain('method')
       })
     })
@@ -181,9 +178,7 @@ describe('PartialClass', () => {
       expect(keys).toHaveLength(0)
     })
     it('should have no member names or symbols', () => {
-      const keys = [...PartialReflect.keys(MyExtension)
-        .filter(PartialReflect.isKey)
-      ]
+      const keys = [...PartialReflect.keys(MyExtension).filter(isKey)]
       expect(keys).toHaveLength(0)
     })
     it('should return nothing for missing member hosts', () => {
@@ -221,7 +216,7 @@ describe('PartialClass', () => {
           type = class { }
           method = function() { }
           type.prototype.method = method
-          PartialReflect.merge(type, MyExtension)
+          extend(type, MyExtension)
         })
 
         it('should have have the concrete method on type', () => {
@@ -259,7 +254,7 @@ describe('PartialClass', () => {
           let myType
           beforeEach(() => {
             myType = class { }
-            PartialReflect.merge(myType, MyExtension)
+            extend(myType, MyExtension)
           })
   
           it('should have method as own member name or symbol', () => {
@@ -325,9 +320,7 @@ describe('PartialClass', () => {
             })
             it('should have method as memberKey', () => {
               const keys = 
-                [...PartialReflect.keys(MyExtension)
-                  .filter(PartialReflect.isKey)
-                ]
+                [...PartialReflect.keys(MyExtension).filter(isKey)]
               expect(keys).toContain('method')
             })
             it('should have mySubExtension as declaration', () => {
@@ -350,9 +343,7 @@ describe('PartialClass', () => {
               })
               it('should have method and subMethod as memberKeys', () => {
                 const keys = 
-                  [...PartialReflect.keys(MyExtension)
-                    .filter(PartialReflect.isKey)
-                  ]
+                  [...PartialReflect.keys(MyExtension).filter(isKey)]
                 expect(keys).toContain('method')
                 expect(keys).toContain('subMethod')
                 expect(keys).toHaveLength(2)
@@ -384,10 +375,7 @@ describe('PartialClass', () => {
                     MySubSubExtension.prototype.subSubMethod = subSubMethod
                   })
                   it('should have method, subMethod, and subSubMethod as memberKeys', () => {
-                    const keys = 
-                      [...PartialReflect.keys(MyExtension)
-                        .filter(PartialReflect.isKey)
-                      ]
+                    const keys = [...PartialReflect.keys(MyExtension).filter(isKey)]
                     expect(keys).toContain('method')
                     expect(keys).toContain('subMethod')
                     expect(keys).toContain('subSubMethod')
@@ -396,7 +384,7 @@ describe('PartialClass', () => {
 
                   describe('after defining on myType', () => {
                     beforeEach(() => {
-                      PartialReflect.merge(myType, MyExtension)
+                      extend(myType, MyExtension)
                     })
                     it('should have MySubSubExtension as member host for subSubMethod', () => {
                       const host = 
@@ -414,7 +402,7 @@ describe('PartialClass', () => {
 
               describe('after defining on myType', () => {
                 beforeEach(() => {
-                  PartialReflect.merge(myType, MyExtension)
+                  extend(myType, MyExtension)
                 })
 
                 it('should have MySubExtension as member host for subMethod', () => {
@@ -433,7 +421,7 @@ describe('PartialClass', () => {
       
           describe('after defining on myType', () => {
             beforeEach(() => {
-              PartialReflect.merge(myType, MyExtension)
+              extend(myType, MyExtension)
             })
 
             describe('method', () => {
@@ -474,9 +462,7 @@ describe('PartialClass', () => {
                 expect(keys).toHaveLength(0)
               })
               it('should have method as member name or symbol', () => {
-                const keys = [...UserReflect.keys(mySubType)
-                  .filter(PartialReflect.isKey)
-                ]
+                const keys = [...UserReflect.keys(mySubType).filter(isKey)]
                 expect(keys).toContain('method')
               })
             })
@@ -497,9 +483,7 @@ describe('PartialClass', () => {
                 expect(keys).toHaveLength(1)
               })
               it('should have method as member name or symbol', () => {
-                const keys = [...UserReflect.keys(myType)
-                  .filter(PartialReflect.isKey)
-                ]
+                const keys = [...UserReflect.keys(myType).filter(isKey)]
                 expect(keys).toContain('method')
                 expect(keys).toHaveLength(1)
               })
@@ -524,7 +508,7 @@ describe('PartialClass', () => {
               return descriptor 
             }
         
-            PartialReflect.merge(myType, MyExtension)
+            extend(myType, MyExtension)
           })
           it('should have the method', () => {
             expect(myType.prototype.method).toBe(mySubExtensionMethod)
@@ -547,7 +531,7 @@ describe('PartialClass', () => {
             type = class { }
             method = function() { }
             type.prototype.method = method
-            PartialReflect.merge(type, MyExtension)
+            extend(type, MyExtension)
           })
           
           it('should have have the concrete method on type', () => {

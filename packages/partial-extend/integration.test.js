@@ -1,7 +1,7 @@
 import { beforeEach } from 'vitest'
 import { describe, it, expect } from 'vitest'
 import { Info } from "@kingjs/info"
-import { extend } from '@kingjs/extend'
+import { extend } from '@kingjs/partial-extend'
 import { } from "@kingjs/info-to-pojo"
 import { PartialClass } from '@kingjs/partial-class'
 import { PartialReflect } from '@kingjs/partial-reflect'

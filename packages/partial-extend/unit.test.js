@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { abstract } from '@kingjs/abstract'
-import { extend } from '@kingjs/extend'
+import { extend } from '@kingjs/partial-extend'
 import { PartialClass, Extends } from '@kingjs/partial-class'
 import { PartialObject } from '@kingjs/partial-object'
 
@@ -9,9 +9,6 @@ describe('A type', () => {
   let type
   beforeEach(() => {
     type = class { }
-  })
-  it('can extend nothing', () => {
-    expect(() => extend(type)).not.toThrow()
   })
   it('can extend null', () => {
     expect(() => extend(type, null)).toThrow()
@@ -87,7 +84,8 @@ describe('A type', () => {
           member() { return 'override' } }
       })
       it('can extend both partial types', () => {
-        extend(type, partialType, anotherPartialType)
+        extend(type, partialType)
+        extend(type, anotherPartialType)
         expect(type.prototype.member).toBe(anotherPartialType.prototype.member)
       })
     })
