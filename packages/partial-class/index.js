@@ -1,4 +1,4 @@
-import { PartialObject } from '@kingjs/partial-object'
+import { PartialObject, PartialObjectReflect } from '@kingjs/partial-object'
 import { PartialPojo } from '@kingjs/partial-pojo'
 import { PartialReflect } from '@kingjs/partial-reflect'
 
@@ -25,13 +25,14 @@ export class PartialClass extends PartialObject {
 export class PartialClassReflect {
   static isPartialClass(type) {
     if (!type) return false
-    const collectionType = PartialReflect.getPartialObjectType(type)
+    const collectionType = PartialObjectReflect.getPartialObjectType(type)
     return collectionType == PartialClass
   }
 
   static *partialClasses(type) {
     for (const collection of PartialReflect.partialObjects(type)) {
-      const collectionType = PartialReflect.getPartialObjectType(collection)
+      const collectionType = 
+        PartialObjectReflect.getPartialObjectType(collection)
       if (collectionType != PartialClass) continue
       yield collection
     }

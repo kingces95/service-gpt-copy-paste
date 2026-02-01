@@ -6,8 +6,7 @@ import { PartialReflect } from '@kingjs/partial-reflect'
 import { UserReflect } from '@kingjs/user-reflect'
 import { Define } from '@kingjs/define'
 import { 
-  PartialObject, 
-  Compile,
+  PartialObject, PartialObjectReflect
 } from '@kingjs/partial-object'
 
 describe('PartialObject', () => {
@@ -138,10 +137,10 @@ describe('PartialClass', () => {
   })
 
   it('should not be recognized as a partial class', () => {
-    expect(PartialReflect.isPartialObject(PartialClass)).toBe(false)
+    expect(PartialObjectReflect.isPartialObject(PartialClass)).toBe(false)
   })
   it('should return null for its partial class', () => {
-    expect(PartialReflect.getPartialObjectType(PartialClass)).toBe(null)
+    expect(PartialObjectReflect.getPartialObjectType(PartialClass)).toBe(null)
   })
 
   describe('MyNamelessExtension', () => {
@@ -151,7 +150,7 @@ describe('PartialClass', () => {
     })
     it('should not throw when verified as a PartialObject', () => {
       expect(() => {
-        PartialReflect.getPartialObjectType(MyNamelessExtension)
+        PartialObjectReflect.getPartialObjectType(MyNamelessExtension)
       }).not.toThrow()
     })
   })
@@ -164,10 +163,10 @@ describe('PartialClass', () => {
     })
 
     it('should be recognized as partial classes', () => {
-      expect(PartialReflect.isPartialObject(MyExtension)).toBe(true)
+      expect(PartialObjectReflect.isPartialObject(MyExtension)).toBe(true)
     })
     it('should return PartialClass as their partial class', () => {
-      expect(PartialReflect.getPartialObjectType(MyExtension)).toBe(PartialClass)
+      expect(PartialObjectReflect.getPartialObjectType(MyExtension)).toBe(PartialClass)
     })
     it('should have no own declarations', () => {
       const declarations = [...PartialReflect.ownPartialObjects(MyExtension)]

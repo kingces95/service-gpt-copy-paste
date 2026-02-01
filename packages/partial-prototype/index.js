@@ -2,28 +2,25 @@ import { assert } from '@kingjs/assert'
 import { UserReflect } from '@kingjs/user-reflect'
 import { PartialAssociate } from '@kingjs/partial-associate'
 import { PartialLoader } from '@kingjs/partial-loader'
+import { PartialObjectReflect } from '@kingjs/partial-object'
 
 // Creates an empty "prototypical" class that extends Prototypical
 // and merges a given partial object type into it. This allows
 // reflection over the merged result which will faithfully report 
 // what the loader (PartialLoader.merge) actually did.
 
-function defineName(type, name) {
-  Object.defineProperties(type, {
+class Prototypical { }
+
+function prototypicalCreate(type) {
+  let prototypicalType = class extends Prototypical { }
+  Object.defineProperties(prototypicalType, {
     name: {
-      value: name,
+      value: '$prototypical_' + type.name,
       configurable: true,
       enumerable: false,
       writable: false,
     }
   })
-}
-
-class Prototypical { }
-
-function prototypicalCreate(type) {
-  let prototypicalType = class extends Prototypical { }
-  defineName(prototypicalType, '$prototypical_' + type.name)
 
   PartialLoader.merge(prototypicalType, type, { 
     // HACK: A PartialObject should not report being merged with itself.
@@ -37,7 +34,7 @@ function prototypicalCreate(type) {
 const PrototypicalTypeMap = new Map()
 
 function getPrototypicalType(type) {
-  assert(PartialLoader.isPartialObject(type))
+  assert(PartialObjectReflect.isPartialObject(type))
   let prototypicalType = PrototypicalTypeMap.get(type)
 
   if (!prototypicalType) {
@@ -51,7 +48,7 @@ function getPrototypicalType(type) {
 export class PartialPrototype {
 
   static *partialObjects(type) {
-    assert(PartialLoader.isPartialObject(type))
+    assert(PartialObjectReflect.isPartialObject(type))
     type = getPrototypicalType(type)
     yield* PartialAssociate.partialObjects(type)
   }
@@ -59,19 +56,19 @@ export class PartialPrototype {
   // returns partial classes that could have defined the key
   // for example, all concepts that defined the key
   static *hosts(type, key) {
-    assert(PartialLoader.isPartialObject(type))
+    assert(PartialObjectReflect.isPartialObject(type))
     type = getPrototypicalType(type)
     yield* PartialAssociate.hosts(type, key)
   }
   
   static getHost(type, key) {
-    assert(PartialLoader.isPartialObject(type))
+    assert(PartialObjectReflect.isPartialObject(type))
     type = getPrototypicalType(type)
     return PartialAssociate.getHost(type, key)
   }
 
   static *keys(type) { 
-    assert(PartialLoader.isPartialObject(type))
+    assert(PartialObjectReflect.isPartialObject(type))
     const prototypicalType = getPrototypicalType(type)
     for (const current of UserReflect.keys(prototypicalType)) {
       switch (typeof current) {
@@ -84,7 +81,7 @@ export class PartialPrototype {
   }
   
   static *getDescriptor(type, key) {
-    assert(PartialLoader.isPartialObject(type))
+    assert(PartialObjectReflect.isPartialObject(type))
     let owner = null
     const prototypicalType = getPrototypicalType(type)
     for (const current of UserReflect.getDescriptor(prototypicalType, key)) {
@@ -99,7 +96,7 @@ export class PartialPrototype {
   }
 
   static *descriptors(type) {
-    assert(PartialLoader.isPartialObject(type))
+    assert(PartialObjectReflect.isPartialObject(type))
     const prototypicalType = getPrototypicalType(type)
     for (const current of UserReflect.descriptors(prototypicalType)) {
       switch (typeof current) {

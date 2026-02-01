@@ -3,7 +3,7 @@ import { abstract } from '@kingjs/abstract'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { UserReflect } from '@kingjs/user-reflect'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
-import { PartialObject } from '@kingjs/partial-object'
+import { PartialObject, PartialObjectReflect } from '@kingjs/partial-object'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { PartialClass, Extends } from '@kingjs/partial-class'
 
@@ -62,7 +62,7 @@ export class Concept extends PartialObject {
 
 export class ConceptReflect {
   static isConcept(type) {
-    const collectionType = PartialReflect.getPartialObjectType(type)
+    const collectionType = PartialObjectReflect.getPartialObjectType(type)
     return collectionType == Concept
   }
 

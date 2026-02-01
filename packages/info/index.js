@@ -1,12 +1,14 @@
 import { assert } from '@kingjs/assert'
 import { es6BaseType } from '@kingjs/es6-base-type'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
-import { PartialReflect } from '@kingjs/partial-reflect'
 import { InfoReflect } from '@kingjs/info-reflect'
-import { PartialObject } from '@kingjs/partial-object'
 import { PartialPojo } from '@kingjs/partial-pojo'
 import { Concept } from "@kingjs/concept"
 import { PartialClass } from '@kingjs/partial-class'
+import { 
+  PartialObject, 
+  PartialObjectReflect 
+} from '@kingjs/partial-object'
 import { 
   Es6ClassInfo, 
   Es6MemberInfo,
@@ -37,7 +39,8 @@ export class Info {
     if (fn == PartialClass) return new PartialObjectInfo(fn, idInfo)
     if (fn == Concept) return new PartialObjectInfo(fn, idInfo)
 
-    const collectionType = PartialReflect.getPartialObjectType(fn, idInfo)
+    const collectionType = 
+      PartialObjectReflect.getPartialObjectType(fn, idInfo)
     if (collectionType == PartialPojo) return new PartialPojoSubclassInfo(fn, idInfo)
     if (collectionType == PartialClass) return new PartialClassSubclassInfo(fn, idInfo)
     if (collectionType == Concept) return new ConceptSubclassInfo(fn, idInfo)
