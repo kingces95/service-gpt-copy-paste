@@ -1,6 +1,6 @@
 import { beforeEach } from 'vitest'
 import { describe, it, expect } from 'vitest'
-import { Info } from "@kingjs/info"
+import { TypeInfo } from "@kingjs/info"
 import { extend } from '@kingjs/partial-extend'
 import { } from "@kingjs/info-to-pojo"
 import { PartialClass } from '@kingjs/partial-class'
@@ -30,7 +30,7 @@ describe('PartialPojo with non-standard properties', () => {
     })
 
     it('should have and info pojo', async () => {
-      const pojo = await Info.from(cls).toPojo(filter)
+      const pojo = await TypeInfo.from(cls).toPojo(filter)
       expect(pojo).toEqual({
         members: { fields: {
           writableFalse: { host: '.', modifiers: [ 'const' ] },
@@ -88,7 +88,7 @@ describe('Kitchen sink', () => {
     })
 
     it('should have expected info pojo', async () => {
-      const pojo = await Info.from(partialClass).toPojo(filter)
+      const pojo = await TypeInfo.from(partialClass).toPojo(filter)
       expect(pojo.members).toEqual(expectedMembers)
     })
 
@@ -100,7 +100,7 @@ describe('Kitchen sink', () => {
       })
       
       it('should have expected info pojo', async () => {
-        const pojo = await Info.from(cls).toPojo(filter)
+        const pojo = await TypeInfo.from(cls).toPojo(filter)
         expect(pojo).toEqual({
           members: expectedMembers,
           isAnonymous: true,

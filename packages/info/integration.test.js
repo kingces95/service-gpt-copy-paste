@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Info } from "@kingjs/info"
+import { TypeInfo } from "@kingjs/info"
 import { Concept, Implements } from '@kingjs/concept'
 import { PartialClass } from '@kingjs/partial-class'
 import { PartialReflect } from '@kingjs/partial-reflect'
@@ -32,9 +32,9 @@ describe('MyClass', () => {
       beforeEach(() => {
         myPartialClass = class MyPartialClass extends PartialClass { }
         myPartialClass.prototype.myMethod = methodFn
-        myPartialClassInfo = Info.from(myPartialClass)
+        myPartialClassInfo = TypeInfo.from(myPartialClass)
         extend(cls, myPartialClass)
-        info = Info.from(cls)
+        info = TypeInfo.from(cls)
       })
       describe('has a member', () => {
         let memberInfo
@@ -61,8 +61,8 @@ describe('MyClass', () => {
       myPartialClass = class MyPartialClass extends PartialClass { }
       myPartialClass.prototype.myMethod = partialClassFn
       extend(cls, myPartialClass)
-      info = Info.from(cls)
-      myPartialClassInfo = Info.from(myPartialClass)
+      info = TypeInfo.from(cls)
+      myPartialClassInfo = TypeInfo.from(myPartialClass)
     })
     it('should report having the merged member', () => {
       const member = info.getMember('myMethod')
@@ -70,7 +70,7 @@ describe('MyClass', () => {
     })  
     it('should report being merged directly with MyPartialClass', () => {
       const actual = [...info.ownPartialClasses()]
-      const expected = [Info.from(myPartialClass)]
+      const expected = [TypeInfo.from(myPartialClass)]
       expect(actual).toEqual(expected)
     })
     describe('has a merged member', () => {
@@ -105,7 +105,7 @@ describe('MyClass', () => {
       let myExtendedClass
       beforeEach(() => {
         myExtendedClass = class MyExtendedClass extends cls { }
-        info = Info.from(myExtendedClass)
+        info = TypeInfo.from(myExtendedClass)
       })
       it('should report no own partial classes', () => {
         const actual = [...info.ownPartialClasses()]
@@ -114,7 +114,7 @@ describe('MyClass', () => {
       })
       it('should report being merged indirectly with MyPartialClass', () => {
         const actual = [...info.partialClasses()]
-        const expected = [Info.from(myPartialClass)]
+        const expected = [TypeInfo.from(myPartialClass)]
         expect(actual).toEqual(expected)
       })
     })
@@ -126,7 +126,7 @@ describe('MyClass', () => {
     beforeEach(() => {
       myConcept = class MyConcept extends Concept { }
       myConcept.prototype.myMethod = conceptualFn
-      myConceptInfo = Info.from(myConcept)
+      myConceptInfo = TypeInfo.from(myConcept)
     })
     describe('with myExtendedConcept', () => {
       let myExtendedConcept
@@ -137,13 +137,13 @@ describe('MyClass', () => {
           static [Implements] = myConcept
         }
         myExtendedConcept.prototype.myMethod = extendedConceptualFn
-        myExtendedConceptInfo = Info.from(myExtendedConcept)
+        myExtendedConceptInfo = TypeInfo.from(myExtendedConcept)
       })
       describe('merged with MyExtendedConcept', () => {
         let info
         beforeEach(() => {
           extend(cls, myExtendedConcept)
-          info = Info.from(cls)
+          info = TypeInfo.from(cls)
         })
         it('should report having the merged member', () => {
           const member = info.getMember('myMethod')
@@ -152,8 +152,8 @@ describe('MyClass', () => {
         it('should report being merged MyExtendedConcept and MyConcept', () => {
           const actual = [...info.ownConcepts()]
           const expected = [
-            Info.from(myExtendedConcept),
-            Info.from(myConcept)]
+            TypeInfo.from(myExtendedConcept),
+            TypeInfo.from(myConcept)]
           expect(new Set(actual)).toEqual(new Set(expected))
         })
         describe('has a merged member', () => {
@@ -174,8 +174,8 @@ describe('MyClass', () => {
           it('should report MyExtendedConcept ad MyConcept as concept hosts', () => {
             const concepts = [...memberInfo.concepts()]
             const expected = [
-              Info.from(myExtendedConcept),
-              Info.from(myConcept)]
+              TypeInfo.from(myExtendedConcept),
+              TypeInfo.from(myConcept)]
             expect(new Set(concepts)).toEqual(new Set(expected))
           })
         })
@@ -185,7 +185,7 @@ describe('MyClass', () => {
       let info
       beforeEach(() => {
         extend(cls, myConcept)
-        info = Info.from(cls)
+        info = TypeInfo.from(cls)
       })
       it('should report having the merged member', () => {
         const member = info.getMember('myMethod')
@@ -193,7 +193,7 @@ describe('MyClass', () => {
       })
       it('should report being merged directly with MyConcept', () => {
         const actual = [...info.ownConcepts()]
-        const expected = [Info.from(myConcept)]
+        const expected = [TypeInfo.from(myConcept)]
         expect(actual).toEqual(expected)
       })
       describe('has a merged member', () => {
@@ -210,7 +210,7 @@ describe('MyClass', () => {
         })
         it('should report MyConcept as one of its concepts', () => {
           const concepts = [...memberInfo.concepts()]
-          const expected = [Info.from(myConcept)]
+          const expected = [TypeInfo.from(myConcept)]
           expect(concepts).toEqual(expected)
         })
         it('should report no partial class', () => {
@@ -222,7 +222,7 @@ describe('MyClass', () => {
         let myExtendedClass
         beforeEach(() => {
           myExtendedClass = class MyExtendedClass extends cls { }
-          info = Info.from(myExtendedClass)
+          info = TypeInfo.from(myExtendedClass)
         })
         it('should report no own concepts', () => {
           const actual = [...info.ownConcepts()]
@@ -231,7 +231,7 @@ describe('MyClass', () => {
         })
         it('should report being merged indirectly with MyConcept', () => {
           const actual = [...info.concepts()]
-          const expected = [Info.from(myConcept)]
+          const expected = [TypeInfo.from(myConcept)]
           expect(actual).toEqual(expected)
         })
       })
@@ -243,10 +243,10 @@ describe('MyClass', () => {
       beforeEach(() => {
         myPartialClass = class MyPartialClass extends PartialClass { }
         myPartialClass.prototype.myMethod = conceptualFn
-        myPartialClassInfo = Info.from(myPartialClass)
+        myPartialClassInfo = TypeInfo.from(myPartialClass)
         extend(cls, myPartialClass)
         extend(cls, myConcept)
-        info = Info.from(cls)
+        info = TypeInfo.from(cls)
       })
       it('should report being merged with MyPartialClass', () => {
         const actualPartialClasses = [...info.ownPartialClasses()]
@@ -255,7 +255,7 @@ describe('MyClass', () => {
       })
       it('should report being merged with MyConcept', () => {
         const actualConcepts = [...info.ownConcepts()]
-        const expectedConcepts = [Info.from(myConcept)]
+        const expectedConcepts = [TypeInfo.from(myConcept)]
         expect(actualConcepts).toEqual(expectedConcepts)
       })
       describe('has a merged member', () => {
@@ -276,10 +276,10 @@ describe('MyClass', () => {
       beforeEach(() => {
         myPartialClass = class MyPartialClass extends PartialClass { }
         myPartialClass.prototype.myMethod = conceptualFn
-        myPartialClassInfo = Info.from(myPartialClass)
+        myPartialClassInfo = TypeInfo.from(myPartialClass)
         extend(cls, myConcept)
         extend(cls, myPartialClass)
-        info = Info.from(cls)
+        info = TypeInfo.from(cls)
       })
       it('should report being merged with MyPartialClass', () => {
         const actualPartialClasses = [...info.ownPartialClasses()]
@@ -288,7 +288,7 @@ describe('MyClass', () => {
       })
       it('should report being merged with MyConcept', () => {
         const actualConcepts = [...info.ownConcepts()]
-        const expectedConcepts = [Info.from(myConcept)]
+        const expectedConcepts = [TypeInfo.from(myConcept)]
         expect(actualConcepts).toEqual(expectedConcepts)
       })
       describe('has a merged member', () => {
@@ -318,7 +318,7 @@ describe('A class', () => {
       cls = class MyClass { }
     })
     it('has a toString of MyClass', () => {
-      const info = Info.from(cls)
+      const info = TypeInfo.from(cls)
       expect(info.toString()).toBe('[classInfo MyClass]')
     })
   })
@@ -328,7 +328,7 @@ describe('A class', () => {
       [cls] = [class { }]
     })
     it('has a toString of <anonymous>', () => {
-      const info = Info.from(cls)
+      const info = TypeInfo.from(cls)
       expect(info.toString()).toBe('[classInfo <anonymous>]')
     })
   })
@@ -357,7 +357,7 @@ describe('A class', () => {
     }],
   ])('with %s', (description, cls, expected) => {
     it('has a pojo', async () => {
-      const fnInfo = Info.from(cls)
+      const fnInfo = TypeInfo.from(cls)
       const pojo = await fnInfo.toPojo(pojoFilter)
       expected.isAnonymous = true
       expect(pojo).toEqual({
@@ -393,7 +393,7 @@ describe('A bespoke class', () => {
         } },
         base: 'Object'
       }
-      const fnInfo = Info.from(myClass)
+      const fnInfo = TypeInfo.from(myClass)
 
       // expect base to be object
       expect(fnInfo.base.ctor).toBe(Object)
@@ -433,7 +433,7 @@ describe('A bespoke class', () => {
         base: 'Object'
       }
 
-      const fnInfo = Info.from(myClass)
+      const fnInfo = TypeInfo.from(myClass)
       const actual = await fnInfo.toPojo(pojoFilter)
       expect(actual).toEqual(pojo)
     })
@@ -460,7 +460,7 @@ describe('A bespoke class', () => {
         } },
         base: 'Object'
       }
-      const fnInfo = Info.from(myClass)
+      const fnInfo = TypeInfo.from(myClass)
       const actual = await fnInfo.toPojo(pojoFilter)
       expect(actual).toEqual(pojo)
     })
@@ -487,7 +487,7 @@ describe('A bespoke class', () => {
         } } },
         base: 'Object'
       }
-      const fnInfo = Info.from(myClass)
+      const fnInfo = TypeInfo.from(myClass)
       const actual = await fnInfo.toPojo(pojoFilter)
       expect(actual).toEqual(pojo)
     })
@@ -508,7 +508,7 @@ describe('A bespoke class', () => {
         base: 'Object'
       }
   
-      const fnInfo = Info.from(myClass)
+      const fnInfo = TypeInfo.from(myClass)
       const actual = await fnInfo.toPojo(pojoFilter)
       expect(actual).toEqual(pojo)
     })
@@ -548,7 +548,7 @@ describe('A bespoke class', () => {
         base: 'Object'
       }
   
-      const fnInfo = Info.from(myClass)
+      const fnInfo = TypeInfo.from(myClass)
       const actual = await fnInfo.toPojo(pojoFilter)
       expect(actual).toEqual(pojo)
     })
@@ -585,7 +585,7 @@ describe('A bespoke class', () => {
         },
         base: 'Object'
       }
-      const fnInfo = Info.from(myClass)
+      const fnInfo = TypeInfo.from(myClass)
       const actual = await fnInfo.toPojo(pojoFilter)
       expect(actual).toEqual(pojo)
     })

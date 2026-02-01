@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Info } from "@kingjs/info"
+import { TypeInfo } from "@kingjs/info"
 import { Concept, Implements } from '@kingjs/concept'
 import { PartialType } from '@kingjs/partial-type'
 import { PartialClass, Extends } from '@kingjs/partial-class'
@@ -189,7 +189,7 @@ describe('Given', () => {
     ])('%s', (_, md) => {
     let info
     beforeEach(() => {
-      info = Info.from(md.ctor)
+      info = TypeInfo.from(md.ctor)
     })
     it('should have matching name', () => {
       const expectedName = md.ctor.name
@@ -206,14 +206,14 @@ describe('Given', () => {
       expect(info.toString()).toBe(md.toString)
     })
     it('should have matching base', () => {
-      const expectedBase = Info.from(md.base)
+      const expectedBase = TypeInfo.from(md.base)
       const actualBase = info.base
       expect(expectedBase == actualBase).toBe(true)
     })
     it('should be subclass of its base and not vice-versa', () => {
       const expectedBase = md.base
       if (!expectedBase) return
-      const baseInfo = Info.from(expectedBase)
+      const baseInfo = TypeInfo.from(expectedBase)
       expect(info.isSubclassOf(baseInfo)).toBe(true)
       expect(baseInfo.isSubclassOf(info)).toBe(false)
     })
@@ -622,7 +622,7 @@ describe('Member', () => {
     let typeInfo
     let info
     beforeEach(() => {
-      typeInfo = Info.from(md.cls)
+      typeInfo = TypeInfo.from(md.cls)
       info = typeInfo.getMember(md.name)
       if (!info)
         info = typeInfo.getStaticMember(md.name)
@@ -631,7 +631,7 @@ describe('Member', () => {
       expect(info.equals(info)).toBe(true)
     })
     it('should equal a different instance of itself', () => {
-      const typeInfo = Info.from(md.cls)
+      const typeInfo = TypeInfo.from(md.cls)
       let otherInfo = typeInfo.getMember(md.name)
       if (!otherInfo)
         otherInfo = typeInfo.getStaticMember(md.name)
@@ -646,12 +646,12 @@ describe('Member', () => {
     it('should have expected implemented concept', () => {
       const actual = [...info.concepts()]
       const expected = [...md.concepts || []]
-        .map(concept => Info.from(concept))
+        .map(concept => TypeInfo.from(concept))
       expect(actual).toEqualAsSet(expected)
     })
     it('should have expected merged PartialClass', () => {
       const actual = info.partialClass
-      const expected = Info.from(md.partialClass)
+      const expected = TypeInfo.from(md.partialClass)
       expect(actual).toBe(expected)
     })
     it('has expected predicates', () => {
@@ -691,10 +691,10 @@ describe('Member', () => {
         return
       }
 
-      const expectedParentHost = Info.from(md.parentHost)
+      const expectedParentHost = TypeInfo.from(md.parentHost)
       const expectedParent = expectedParentHost.getMember(md.name)
 
-      const expectedRootHost = Info.from(md.rootHost)
+      const expectedRootHost = TypeInfo.from(md.rootHost)
       const expectedRoot = expectedRootHost.getMember(md.name)
 
       const parent = info.parent()

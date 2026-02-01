@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Info } from "@kingjs/info"
+import { ClassInfo } from "@kingjs/info"
 import { } from "@kingjs/info-to-pojo"
 import { PartialClass } from '@kingjs/partial-class'
 import { PartialReflect } from '@kingjs/partial-reflect'
@@ -11,13 +11,13 @@ describe('TypeInfo for PartialClass', () => {
   let fnInfo
   beforeEach(() => {
     fn = class MyExGrp extends PartialClass { }
-    fnInfo = Info.from(fn)
+    fnInfo = ClassInfo.from(fn)
   })
   it('equals itself', () => {
     expect(fnInfo.equals(fnInfo)).toBe(true)
   })
   it('eqauls a different instance of itself', () => {
-    expect(fnInfo.equals(Info.from(fn))).toBe(true)
+    expect(fnInfo.equals(ClassInfo.from(fn))).toBe(true)
   })
   it('should have a ctor which is PartialClass', () => {
     expect(fnInfo.ctor).toBe(fn)
@@ -32,7 +32,7 @@ describe('TypeInfo for PartialClass', () => {
     })
   })
   it('has ExtensionsInfo as base', () => {
-    const ExtensionInfo = Info.PartialType
+    const ExtensionInfo = ClassInfo.PartialType
     expect(fnInfo.base).toEqual(ExtensionInfo)
   })
   it('has no own names or symbols', () => {
@@ -59,7 +59,7 @@ describe('A PartialClass', () => {
       cls = class MyPartialClass extends PartialClass { }
     })
     it('has a toString of MyClass', () => {
-      const fnInfo = Info.from(cls)
+      const fnInfo = ClassInfo.from(cls)
       expect(fnInfo.toString()).toBe(
         '[partialClassInfo MyPartialClass]')
     })
@@ -70,12 +70,12 @@ describe('A PartialClass', () => {
       [cls] = [class extends PartialClass { }]
     })
     it('has a toString of MyClass', () => {
-      const fnInfo = Info.from(cls)
+      const fnInfo = ClassInfo.from(cls)
       expect(fnInfo.toString()).toBe(
         '[partialClassInfo <anonymous>]')
     })
     it('Info.from does not throw', () => {
-      expect(() => Info.from(cls)).not.toThrow()
+      expect(() => ClassInfo.from(cls)).not.toThrow()
     })
   })
 })
@@ -111,16 +111,16 @@ describe('A member', () => {
     //   'static const hidden sealed prototype { value: object }' ],
     ])('%s', (_, name, cls, expected) => {
     it('has a toString', async () => {
-      const fnInfo = Info.from(PartialReflect.load(cls))
+      const fnInfo = ClassInfo.from(PartialReflect.load(cls))
       const member = fnInfo.getOwnMember(name) 
         ?? fnInfo.getOwnStaticMember(name)
       expect(member.toString()).toBe(expected) 
     })
     it('does not equal Object.toString member', async () => {
-      const fnInfo = Info.from(PartialReflect.load(cls))
+      const fnInfo = ClassInfo.from(PartialReflect.load(cls))
       const member = fnInfo.getOwnMember(name) 
         ?? fnInfo.getOwnStaticMember(name)
-      const objectFnInfo = Info.from(Object)
+      const objectFnInfo = ClassInfo.from(Object)
       const objectToStringMember = objectFnInfo.getOwnMember('toString')
       expect(member.equals(objectToStringMember)).toBe(false)
     })
@@ -132,7 +132,7 @@ describe('A prototype member', () => {
   let prototypeMember
   beforeEach(() => {
     type = class { }
-    const fnInfo = Info.from(type)
+    const fnInfo = ClassInfo.from(type)
     prototypeMember = fnInfo.getOwnStaticMember('prototype')
   })
   it('is missing', () => {
@@ -163,7 +163,7 @@ describe('A bespoke partial class', () => {
         name: 'MyClass',
         base: 'PartialClass'
       }
-      const fnInfo = Info.from(myPartialClass)
+      const fnInfo = ClassInfo.from(myPartialClass)
       const actual = await fnInfo.toPojo(pojoFilter)
       expect(actual).toEqual(pojo)
     })
@@ -180,7 +180,7 @@ describe('A bespoke partial class', () => {
       }
 
       // Constructors are ignored by the DSL
-      const fnInfo = Info.from(myPartialClass)
+      const fnInfo = ClassInfo.from(myPartialClass)
       const actual = await fnInfo.toPojo(pojoFilter)
       expect(actual).toEqual(pojo)
     })
@@ -200,7 +200,7 @@ describe('A bespoke partial class', () => {
       }
 
       // Constructors are ignored by the DSL
-      const fnInfo = Info.from(myPartialClass)
+      const fnInfo = ClassInfo.from(myPartialClass)
       const actual = await fnInfo.toPojo(pojoFilter)
       expect(actual).toEqual(pojo)
     })
@@ -220,7 +220,7 @@ describe('A bespoke partial class', () => {
         name: 'MyClass',
         base: 'PartialClass'
       }
-      const fnInfo = Info.from(myPartialClass)
+      const fnInfo = ClassInfo.from(myPartialClass)
       const actual = await fnInfo.toPojo(pojoFilter)
       expect(actual).toEqual(pojo)
     })
@@ -240,7 +240,7 @@ describe('A bespoke partial class', () => {
         name: 'MyClass',
         base: 'PartialClass'
       }
-      const fnInfo = Info.from(myPartialClass)
+      const fnInfo = ClassInfo.from(myPartialClass)
       const actual = await fnInfo.toPojo(pojoFilter)
       expect(actual).toEqual(pojo)
     })
@@ -261,7 +261,7 @@ describe('A bespoke partial class', () => {
         name: 'MyEg',
       }
   
-      const fnInfo = Info.from(myPartialClass)
+      const fnInfo = ClassInfo.from(myPartialClass)
       const actual = await fnInfo.toPojo(pojoFilter)
       expect(actual).toEqual(pojo)
     })
@@ -293,7 +293,7 @@ describe('A bespoke partial class', () => {
         name: 'MyEg',
       }
   
-      const fnInfo = Info.from(myPartialClass)
+      const fnInfo = ClassInfo.from(myPartialClass)
       const actual = await fnInfo.toPojo(pojoFilter)
       expect(actual).toEqual(pojo)
     })
@@ -330,7 +330,7 @@ describe('A bespoke partial class', () => {
         name: 'MyClass',
         base: 'PartialClass'
       }
-      const fnInfo = Info.from(myPartialClass)
+      const fnInfo = ClassInfo.from(myPartialClass)
       const actual = await fnInfo.toPojo(pojoFilter)
       expect(actual).toEqual(pojo)
     })

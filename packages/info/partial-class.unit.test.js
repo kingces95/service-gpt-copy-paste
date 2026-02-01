@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Info, TypeInfo } from "@kingjs/info"
+import { TypeInfo, TypeInfo } from "@kingjs/info"
 import { PartialClass, Extends } from '@kingjs/partial-class'
 import { extend } from '@kingjs/partial-extend'
 import { PartialPojo } from '@kingjs/partial-pojo'
@@ -9,7 +9,7 @@ import { } from "@kingjs/info-to-pojo"
 import { PartialReflect } from '@kingjs/partial-reflect'
 
 function getMemberValue(cls) {
-  const info = Info.from(cls)
+  const info = TypeInfo.from(cls)
   const member = info.getMember('member')
   const value = member?.method
   return value
@@ -62,7 +62,7 @@ describe('A partial class', () => {
   ])('with %s', (_, cls, expected) => {
     it('has a pojo', async () => {
       const partialClass = PartialReflect.load(cls)
-      const fnInfo = Info.from(partialClass)
+      const fnInfo = TypeInfo.from(partialClass)
       const actual = await fnInfo.toPojo(pojoFilter) 
       expect(actual).toEqual({
         ...expected,

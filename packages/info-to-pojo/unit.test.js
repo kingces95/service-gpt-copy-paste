@@ -6,16 +6,11 @@ import { PartialClass } from '@kingjs/partial-class'
 import { Concept } from '@kingjs/concept'
 import { PartialPojo } from '@kingjs/partial-pojo'
 
-import { Info } from "@kingjs/info"
+import { ClassInfo } from "@kingjs/info"
 import { } from "@kingjs/info-to-pojo"
 
-import { objectPojo } from "./pojo/object.pojo.js"
-import { functionPojo } from "./pojo/function.pojo.js"
 import { myClassPojo } from "./pojo/my-class.pojo.js"
 import { myConceptPojo } from "./pojo/my-concept.pojo.js"
-
-// import { myClassStaticPojo } from "./pojo/my-class-static.pojo.js"
-// import { myClassInstancePojo } from "./pojo/my-class-instance.pojo.js"
 
 import {
   MyBaseConcept,
@@ -32,7 +27,7 @@ import {
 describe('Object members', () => {
   let pojo
   beforeEach(async () => {
-    const objInfo = Info.from(Object)
+    const objInfo = ClassInfo.from(Object)
     pojo = await objInfo.toPojo()
   })
 
@@ -44,7 +39,7 @@ describe('Object members', () => {
 describe('Function members', () => {
   let pojo
   beforeEach(async () => {
-    const fnInfo = Info.from(Function)
+    const fnInfo = ClassInfo.from(Function)
     pojo = await fnInfo.toPojo()
   })
 
@@ -56,7 +51,7 @@ describe('Function members', () => {
 describe('PartialType members', () => {
   let pojo
   beforeEach(async () => {
-    const fnInfo = Info.from(PartialType)
+    const fnInfo = ClassInfo.from(PartialType)
     pojo = await fnInfo.toPojo()
   })
 
@@ -68,7 +63,7 @@ describe('PartialType members', () => {
 describe('PartialClass members', () => {
   let pojo
   beforeEach(async () => {
-    const fnInfo = Info.from(PartialClass)
+    const fnInfo = ClassInfo.from(PartialClass)
     pojo = await fnInfo.toPojo()
   })
 
@@ -80,7 +75,7 @@ describe('PartialClass members', () => {
 describe('Concept members', () => {
   let pojo
   beforeEach(async () => {
-    const fnInfo = Info.from(Concept)
+    const fnInfo = ClassInfo.from(Concept)
     pojo = await fnInfo.toPojo()
   })
 
@@ -92,7 +87,7 @@ describe('Concept members', () => {
 describe('PartialPojo members', () => {
   let pojo
   beforeEach(async () => {
-    const fnInfo = Info.from(PartialPojo)
+    const fnInfo = ClassInfo.from(PartialPojo)
     pojo = await fnInfo.toPojo()
   })
 
@@ -104,7 +99,7 @@ describe('PartialPojo members', () => {
 describe('MyClass members', () => {
   let pojo
   beforeEach(async () => {
-    const fnInfo = Info.from(MyClass)
+    const fnInfo = ClassInfo.from(MyClass)
     pojo = await fnInfo.toPojo({
       isKnown: false,
       isNonPublic: false,
@@ -119,7 +114,7 @@ describe('MyClass members', () => {
 describe('MyConcept members', () => {
   let pojo
   beforeEach(async () => {
-    const fnInfo = Info.from(MyConcept)
+    const fnInfo = ClassInfo.from(MyConcept)
     pojo = await fnInfo.toPojo()
   })
 

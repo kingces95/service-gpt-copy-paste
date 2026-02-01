@@ -163,14 +163,21 @@ export class PartialTypeReflect {
   static isKnown(type) {
     if (!type) return false
     if (Es6Reflect.isKnown(type)) return true
-    if (type == PartialType) return true
-    return Object.getPrototypeOf(type) == PartialType
+    return PartialTypeReflect.isPartialUrType(type)
   }
   static isKnownKey(type, key, { isStatic } = { }) {
     if (PartialTypeReflect.isKnown(type)) return true
     return Es6Reflect.isKnownKey(type, key, { isStatic })
   }
 
+  static isAbstract(type) {
+    if (PartialTypeReflect.isPartialUrType(type)) return true
+    return PartialTypeReflect.isPartialType(type)
+  }
+  static isPartialUrType(type) {
+    if (type == PartialType) return true
+    return Object.getPrototypeOf(type) == PartialType
+  }
   static isPartialType(type) {
     return PartialTypeReflect.getPartialType(type) != null
   }

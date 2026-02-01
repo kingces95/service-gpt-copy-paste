@@ -10,8 +10,6 @@ import {
   PartialTypeReflect 
 } from '@kingjs/partial-type'
 import { 
-  Es6ClassInfo, 
-  Es6MemberInfo,
   Es6IdInfo,
   Es6KeyInfo,
   Es6DescriptorInfo,
@@ -19,66 +17,51 @@ import {
 
 const FunctionInfoCache = new WeakMap()
 
-export class Info {
+export class TypeInfo {
 
   static from(fn) {
     if (!fn) return null
-    if (fn instanceof Es6ClassInfo) fn = fn.ctor
-    assert(typeof fn == 'function', 'fn must be a function')
+    assert(typeof fn == 'function', 
+      'fn must be a function')
 
     if (!FunctionInfoCache.has(fn))
-      FunctionInfoCache.set(fn, Info.#from(fn))
-
+      FunctionInfoCache.set(fn, TypeInfo.#create(fn))
     return FunctionInfoCache.get(fn)
   }
-  static #from(fn) {
-    const idInfo = Es6IdInfo.create(fn.name)
-
-    if (fn == PartialType) return new PartialTypeInfo(fn, idInfo)
-    if (fn == PartialPojo) return new PartialTypeInfo(fn, idInfo)
-    if (fn == PartialClass) return new PartialTypeInfo(fn, idInfo)
-    if (fn == Concept) return new PartialTypeInfo(fn, idInfo)
-
-    const collectionType = 
-      PartialTypeReflect.getPartialType(fn, idInfo)
-    if (collectionType == PartialPojo) return new PartialPojoInfo(fn, idInfo)
-    if (collectionType == PartialClass) return new PartialClassInfo(fn, idInfo)
-    if (collectionType == Concept) return new ConceptInfo(fn, idInfo)
-
-    return new ClassInfo(fn, idInfo)
+  static #create(fn) {
+    const partialType = PartialTypeReflect.getPartialType(fn)
+    switch (partialType) {
+      case PartialPojo: return new PartialPojoInfo(fn)
+      case PartialClass: return new PartialClassInfo(fn)
+      case Concept: return new ConceptInfo(fn)
+    }
+    
+    return new ClassInfo(fn)
   }
-}
-
-export class TypeInfo extends Info {
 
   #_
   #idInfo
   #fn
 
-  constructor(type, idInfo) {
-    super()
+  constructor(type) {
     this.#fn = type
-    this.#idInfo = idInfo
+    this.#idInfo = Es6IdInfo.create(type.name)
     this.#_ = this.toString()
-  }
-
-  #createMember(fn, key, descriptor, { isStatic } = { }) {
-    return MemberInfo.from$(fn, key, descriptor, { isStatic })
   }
 
   get ctor() { return this.#fn }
   get id() { return this.#idInfo }
   get name() { return this.id.value }
   get base() { 
-    const base = Info.from(es6BaseType(this.ctor)) 
+    const base = TypeInfo.from(es6BaseType(this.ctor)) 
     if (!this.isAbstract) return base
-    if (base == Info.Object) return null
+    if (base == TypeInfo.Object) return null
     return base
   }
 
   get isKnown() { return InfoReflect.isKnown(this.ctor) }
   get isNonPublic() { return this.id.isNonPublic }
-  get isAbstract() { return this instanceof PartialTypeInfo }
+  get isAbstract() { return InfoReflect.isAbstract(this.ctor) }
   get isAnonymous() { return this.id.isAnonymous }
   get isTransparentPartialObject() { return this.isPartialPojoSubClass }
 
@@ -99,7 +82,7 @@ export class TypeInfo extends Info {
     const fn = this.ctor
     const descriptor = InfoReflect.getOwnDescriptor(fn, key, { isStatic })
     if (!descriptor) return null
-    return this.#createMember(fn, key, descriptor, { isStatic })
+    return MemberInfo.create$(fn, key, descriptor, { isStatic })
   }
   getMember(key, { isStatic } = { }) {
     const fn = this.ctor
@@ -112,7 +95,7 @@ export class TypeInfo extends Info {
       }
     }
     if (!descriptor) return null
-    return this.#createMember(owner, key, descriptor, { isStatic })
+    return MemberInfo.create$(owner, key, descriptor, { isStatic })
   }
   *ownMembers({ isStatic } = { }) {
     const fn = this.ctor
@@ -122,7 +105,7 @@ export class TypeInfo extends Info {
         case 'string':
         case 'symbol': key = current; break
         case 'object':
-          yield this.#createMember(fn, key, current, { isStatic })
+          yield MemberInfo.create$(fn, key, current, { isStatic })
           break
         default: assert(false, `Unexpected type: ${typeof current}`)
       }
@@ -137,7 +120,7 @@ export class TypeInfo extends Info {
         case 'string':
         case 'symbol': key = current; break
         case 'object': {
-          yield this.#createMember(owner, key, current, { isStatic })
+          yield MemberInfo.create$(owner, key, current, { isStatic })
           continue
         }
         default: assert(false, `Unexpected type: ${typeof current}`)
@@ -153,29 +136,29 @@ export class TypeInfo extends Info {
   // partial classes
   *ownPartialClasses() {
     yield *InfoReflect.ownPartialClasses(this.ctor)
-      .map(partialClass => Info.from(partialClass))
+      .map(partialClass => TypeInfo.from(partialClass))
   }
   *partialClasses() {
     yield *InfoReflect.partialClasses(this.ctor)
-      .map(partialClass => Info.from(partialClass))
+      .map(partialClass => TypeInfo.from(partialClass))
   }
 
   // concepts
   *ownConcepts() {
     yield *InfoReflect.ownConcepts(this.ctor)
-      .map(concept => Info.from(concept))
+      .map(concept => TypeInfo.from(concept))
   }
   *concepts() {
     yield *InfoReflect.concepts(this.ctor)
-      .map(concept => Info.from(concept))
+      .map(concept => TypeInfo.from(concept))
   }
   *ownAssociatedConcepts() {
     yield* InfoReflect.ownAssociatedConcepts(this.ctor)
-      .map(([name, concept]) => [name, Info.from(concept)])
+      .map(([name, concept]) => [name, TypeInfo.from(concept)])
   }
   *associatedConcepts() {
     yield* InfoReflect.associatedConcepts(this.ctor)
-      .map(([name, concept]) => [name, Info.from(concept)])
+      .map(([name, concept]) => [name, TypeInfo.from(concept)])
   }
 
   equals(other) { return this == other }
@@ -185,48 +168,33 @@ export class TypeInfo extends Info {
 export class ClassInfo extends TypeInfo { 
   toString() { return `[classInfo ${this.id.toString()}]` }
 }
-export class PartialTypeInfo extends TypeInfo { 
-  toString() { return `[classInfo ${this.id.toString()}]` }
-}
-export class PartialPojoInfo extends PartialTypeInfo {
-  constructor(type, idInfo) {
-    assert(type.prototype instanceof PartialPojo)
-    super(type, idInfo)
-  }
+export class PartialPojoInfo extends TypeInfo {
   toString() { return `[partialPojoInfo]` }
 }
-export class PartialClassInfo extends PartialTypeInfo {
-  constructor(type, idInfo) {
-    assert(type.prototype instanceof PartialClass)
-    super(type, idInfo)
-  }
+export class PartialClassInfo extends TypeInfo {
   toString() { return `[partialClassInfo ${this.id.toString()}]` }
 }
-export class ConceptInfo extends PartialTypeInfo {
-  constructor(type, idInfo) {
-    assert(type.prototype instanceof Concept)
-    super(type, idInfo)
-  }
+export class ConceptInfo extends TypeInfo {
   toString() { return `[conceptInfo ${this.id.toString()}]` }
 }
 
-Info.Object = Info.from(Object)
-Info.Function = Info.from(Function)
-Info.Array = Info.from(Array)
-Info.String = Info.from(String)
-Info.Number = Info.from(Number)
-Info.Boolean = Info.from(Boolean)
-Info.PartialType = Info.from(PartialType)
-Info.PartialPojo = Info.from(PartialPojo)
-Info.PartialClass = Info.from(PartialClass)
-Info.Concept = Info.from(Concept)
+TypeInfo.Object = TypeInfo.from(Object)
+TypeInfo.Function = TypeInfo.from(Function)
+TypeInfo.Array = TypeInfo.from(Array)
+TypeInfo.String = TypeInfo.from(String)
+TypeInfo.Number = TypeInfo.from(Number)
+TypeInfo.Boolean = TypeInfo.from(Boolean)
+TypeInfo.PartialType = TypeInfo.from(PartialType)
+TypeInfo.PartialPojo = TypeInfo.from(PartialPojo)
+TypeInfo.PartialClass = TypeInfo.from(PartialClass)
+TypeInfo.Concept = TypeInfo.from(Concept)
 
-export class MemberInfo extends Info {
-  static from$(fn, key, descriptor, { isStatic } = { }) {
+export class MemberInfo {
+  static create$(fn, key, descriptor, { isStatic } = { }) {
     const type = InfoReflect.typeof(fn, key, descriptor, { isStatic })
     const keyInfo = Es6KeyInfo.create(key)
     const descriptorInfo = Es6DescriptorInfo.create(descriptor)
-    const host = Info.from(fn)
+    const host = TypeInfo.from(fn)
 
     return new MemberInfo(
       host, keyInfo, descriptorInfo, { isStatic, type })
@@ -241,7 +209,7 @@ export class MemberInfo extends Info {
   
   constructor(host, keyInfo, descriptorInfo, { 
     isStatic, type } = { }) {
-    super()
+
     this.#host = host
     this.#keyInfo = keyInfo
     this.#descriptorInfo = descriptorInfo
@@ -320,7 +288,7 @@ export class MemberInfo extends Info {
     if (this.isStatic) return null
     const fn = this.host.ctor
     const partialClass = InfoReflect.getPartialClass(fn, this.name)
-    return Info.from(partialClass)
+    return TypeInfo.from(partialClass)
   }
 
   get isConceptual() {
@@ -345,7 +313,7 @@ export class MemberInfo extends Info {
     }
 
     // Map to Info instances
-    yield *[...seen].map(fn => Info.from(fn))
+    yield *[...seen].map(fn => TypeInfo.from(fn))
   }
 
   *modifiers() { 
