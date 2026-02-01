@@ -111,13 +111,13 @@ describe('A member', () => {
     //   'static const hidden sealed prototype { value: object }' ],
     ])('%s', (_, name, cls, expected) => {
     it('has a toString', async () => {
-      const fnInfo = Info.from(PartialReflect.defineType(cls))
+      const fnInfo = Info.from(PartialReflect.load(cls))
       const member = fnInfo.getOwnMember(name) 
         ?? fnInfo.getOwnStaticMember(name)
       expect(member.toString()).toBe(expected) 
     })
     it('does not equal Object.toString member', async () => {
-      const fnInfo = Info.from(PartialReflect.defineType(cls))
+      const fnInfo = Info.from(PartialReflect.load(cls))
       const member = fnInfo.getOwnMember(name) 
         ?? fnInfo.getOwnStaticMember(name)
       const objectFnInfo = Info.from(Object)

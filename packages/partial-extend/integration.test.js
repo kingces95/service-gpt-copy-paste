@@ -55,7 +55,7 @@ describe('Kitchen sink', () => {
       member1() { return 42 }
       member2() { return 42 }
     }],
-    ['lambda', PartialReflect.defineType({
+    ['lambda', PartialReflect.load({
       getter0: { get: () => { } },
       get getter1() { },
 

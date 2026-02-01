@@ -17,7 +17,7 @@ export class PartialClass extends PartialObject {
   static [PartialObject.OwnCollectionSymbols] = {
     [Extends]: { 
       expectedType: [ PartialClass, PartialPojo ],
-      map: PartialReflect.defineType,
+      map: PartialReflect.load,
     }
   }
 }

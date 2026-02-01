@@ -7,34 +7,34 @@ import { Es6Reflect } from '@kingjs/es6-reflect'
 // PartialPojo which extends PartialObject, can be crated with a 
 // POJO whose properties are "compiled" into property descriptors. For 
 // example, a method can be defined like this:
-//    const MyPartial = PartialReflect.defineType({
+//    const MyPartial = PartialReflect.load({
 //      myMethod() { ... }
 //    }) 
 
 // The method could also be defined using a descriptor:
-//    const MyPartial = PartialReflect.defineType({
+//    const MyPartial = PartialReflect.load({
 //      myMethod: { value: function() { ... } }
 //    })
 
 // Or as a lambda:
-//    const MyPartial = PartialReflect.defineType({
+//    const MyPartial = PartialReflect.load({
 //      myMethod: () => { ... }
 //    })
 
 // Or using a named function like 'abstract':
 //    import { abstract } from '@kingjs/abstract'
-//    const MyPartial = PartialReflect.defineType({
+//    const MyPartial = PartialReflect.load({
 //      myMethod: abstract
 //    })
 
 // An accessor can be defined like this:
-//    const MyPartial = PartialReflect.defineType({
+//    const MyPartial = PartialReflect.load({
 //      get myProperty() { ... },
 //      set myProperty(value) { ... },
 //    })
 
 // A constant can be defined like this:
-//    const MyPartial = PartialReflect.defineType({
+//    const MyPartial = PartialReflect.load({
 //      myConstant: { 
 //        value: 42, 
 //        enumerable: true, 
@@ -60,14 +60,14 @@ const OwnCollectionSymbols = Symbol('PartialObject.ownCollectionSymbols')
 // For example, OwnCollectionSymbols is used by PartialClass to designate
 // the Extends symbol as containing an adjacency list to other PartialObject
 // types of type PartialClass and PartialPojo. Also specified is
-// a coercion method PartialReflect.defineType is used to transform POJOs 
+// a coercion method PartialReflect.load is used to transform POJOs 
 // into PartialClass types:
 
 //    class PartialClass extends PartialObject {
 //      static [PartialObject.OwnCollectionSymbols] = {
 //        [Extends]: { 
 //          expectedType: [ PartialClass, PartialPojo ],
-//          map: PartialReflect.defineType,
+//          map: PartialReflect.load,
 //        }
 //      }
 //    }

@@ -36,7 +36,7 @@ describe('A type', () => {
     beforeEach(() => {
       method = function method() { }
       extend(type, 
-        PartialReflect.defineType({ method }))
+        PartialReflect.load({ method }))
     })
 
     it('should have the method', () => {
@@ -78,7 +78,7 @@ describe('A type', () => {
 describe('MyPojoType', () => {
   let MyPojoType
   beforeEach(() => {
-    MyPojoType = PartialReflect.defineType({ })
+    MyPojoType = PartialReflect.load({ })
   })
 
   describe('with method', () => {
@@ -228,7 +228,7 @@ describe('PartialClass', () => {
     describe('with MyAnonymousSubExtension', () => {
       let MyAnonymousSubExtension
       beforeEach(() => {
-        MyAnonymousSubExtension = PartialReflect.defineType({ })
+        MyAnonymousSubExtension = PartialReflect.load({ })
         MyExtension[ExtensionSymbol] = [ MyAnonymousSubExtension ]
       })
 

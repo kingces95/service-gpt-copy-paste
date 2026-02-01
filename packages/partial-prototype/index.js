@@ -2,7 +2,6 @@ import { assert } from '@kingjs/assert'
 import { UserReflect } from '@kingjs/user-reflect'
 import { PartialAssociate } from '@kingjs/partial-associate'
 import { PartialObjectReflect } from '@kingjs/partial-object'
-import { PartialLoader } from '@kingjs/partial-loader'
 import { extend } from '@kingjs/partial-extend'
 
 // Creates an empty "prototypical" class that extends Prototypical

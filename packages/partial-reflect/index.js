@@ -1,16 +1,29 @@
 import { assert } from '@kingjs/assert'
-import { PartialPojo } from '@kingjs/partial-pojo'
-import { Define } from '@kingjs/define'
 import { PartialAssociate } from '@kingjs/partial-associate'
 import { PartialLoader } from '@kingjs/partial-loader'
 import { PartialPrototype } from '@kingjs/partial-prototype'
 import { UserReflect } from '@kingjs/user-reflect'
 import { PartialObjectReflect } from '@kingjs/partial-object'
 
-// Dispatches reflection operations to either PartialLoader/PartialPrototype
-// or UserReflect based on whether the type is a PartialObject.
-// Filters out known types. For known types, no reflection is performed.
-// Filters out knnow keys. For known keys, no reflection is performed.
+// Unfies reflection operations over PartialObjects and Es6 types.
+
+// PartialObject reflection is dispatched to PartialLoader/PartialPrototype
+// while Es6 type reflection is dispatched to UserReflect.
+
+// Known types/keys are filtered out. 
+
+// The set of known types includes all Es6 built-in types (e.g. Object, 
+// Array, Function, etc) as well as PartialObject and all types that 
+// directly extend PartialObject (i.e. PartialPojo, PartialClass, etc).
+
+// Known keys include all keys defined on known types as well as some
+// Es6 keys like 'length' and 'constructor' which are automatically
+// defined on functions.
+
+// Load() enters the monade. Load returns the type except when the type
+// is a pojo, in which case an anonymous PartialObject type is created
+// from the pojo.
+
 export function isKey(key) {
   return typeof key === 'string' || typeof key === 'symbol'
 }
@@ -111,9 +124,7 @@ export class PartialReflect {
     return PartialAssociate.getHost(type, key, { isStatic })
   }
 
-  static defineType(pojoOrType) {
-    const type = Define.type(pojoOrType, PartialPojo)
-    assert(PartialObjectReflect.isPartialObject(type))
-    return type
+  static load(pojoOrType) {
+    return PartialLoader.load(pojoOrType)
   }
 }

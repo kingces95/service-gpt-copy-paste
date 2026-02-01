@@ -61,7 +61,7 @@ describe('A partial class', () => {
     }],
   ])('with %s', (_, cls, expected) => {
     it('has a pojo', async () => {
-      const partialClass = PartialReflect.defineType(cls)
+      const partialClass = PartialReflect.load(cls)
       const fnInfo = Info.from(partialClass)
       const actual = await fnInfo.toPojo(pojoFilter) 
       expect(actual).toEqual({

@@ -15,10 +15,10 @@ describe('A method', () => {
       extension = class extends PartialClass { }
       extension.prototype.method = method
     })
-    describe('converted by PartialReflect.defineType', () => {
+    describe('converted by PartialReflect.load', () => {
       let arg
       beforeEach(() => {
-        arg = PartialReflect.defineType(extension)
+        arg = PartialReflect.load(extension)
       })
       it('should be the extension class', () => {
         expect(arg).toBe(extension)
@@ -30,10 +30,10 @@ describe('A method', () => {
     beforeEach(() => {
       pojo = { method }
     })
-    describe('converted by PartialReflect.defineType', () => {
+    describe('converted by PartialReflect.load', () => {
       let arg
       beforeEach(() => {
-        arg = PartialReflect.defineType(pojo)
+        arg = PartialReflect.load(pojo)
       })
       it('should be a type that extends PartialPojo', () => {
         expect(arg.prototype).toBeInstanceOf(PartialPojo)
@@ -42,10 +42,10 @@ describe('A method', () => {
         expect(arg.prototype.method).toBe(method)
       })
     })
-    describe('converted by PartialReflect.defineType', () => {
+    describe('converted by PartialReflect.load', () => {
       let extension
       beforeEach(() => {
-        extension = PartialReflect.defineType(pojo)
+        extension = PartialReflect.load(pojo)
       })
       it('should be a type that extends PartialClass', () => {
         expect(extension.prototype).toBeInstanceOf(PartialPojo)

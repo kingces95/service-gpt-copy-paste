@@ -11,7 +11,7 @@ export function implement(type, concept, implementation = { }) {
     'Argument concept must extend Concept.')
 
   // if pojo, create anonymous partial class from pojo
-  implementation = PartialReflect.defineType(implementation)
+  implementation = PartialReflect.load(implementation)
 
   // restrict implementation to members defined by the concept.
   const conceptMembers = new Set(PartialReflect.keys(concept).filter(isKey))

@@ -66,7 +66,7 @@ const ConceptMd = {
 }
 
 const MyPartialPojoMd = {
-  ctor: PartialReflect.defineType({ }),
+  ctor: PartialReflect.load({ }),
   toString: '[partialPojoInfo]',
   isKnown: false,
   isTransparent: true,
@@ -436,7 +436,7 @@ const MyPartialClassExtensionMemberMd = {
 
 const MyPojoMemberMd = {
   name: 'member',
-  cls: PartialReflect.defineType({ member() { } }),
+  cls: PartialReflect.load({ member() { } }),
   type: 'method',
   isMethod: true,
   toString: 'member, method, [partialPojoInfo]',
@@ -447,7 +447,7 @@ const MyPojoMemberMd = {
 
 const MyPojoLambdaMd = {
   name: 'member',
-  cls: PartialReflect.defineType({ member: () => { } }),
+  cls: PartialReflect.load({ member: () => { } }),
   type: 'method',
   isMethod: true,
   toString: 'member, method, [partialPojoInfo]',
