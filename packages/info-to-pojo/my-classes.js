@@ -1,8 +1,8 @@
 import { abstract } from "@kingjs/abstract"
 import { PartialClass, Extends } from "@kingjs/partial-class"
-import { extend } from "@kingjs/partial-extend"
 import { implement } from "@kingjs/implement"
 import { Concept, Implements } from "@kingjs/concept"
+import { extend } from "@kingjs/partial-extend"
 
 const MySymbol = Symbol.for('my-symbol')
 const MyStaticSymbol = Symbol.for('my-static-symbol')

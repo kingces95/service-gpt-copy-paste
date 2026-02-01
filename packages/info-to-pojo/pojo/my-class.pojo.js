@@ -4,6 +4,32 @@ const MyStaticSymbol = Symbol.for('my-static-symbol')
 export const myClassPojo = {
   name: 'MyClass',
   base: 'MyBase',
+  members: {
+    conceptual: {
+      MyConcept: { methods: { myConceptMethod: { host: '.' } } },
+      MyBaseConcept: { methods: { myBaseConceptMethod: { host: 'MyBase' } } },
+      MyLeftConcept: {
+        methods: {
+          myLeftConceptMethod: { host: 'MyBase' },
+          myAmbidextrousMethod: { host: 'MyBase' }
+        }
+      },
+      MyRightConcept: {
+        methods: {
+          myAmbidextrousMethod: { host: 'MyBase' },
+          myRightConceptMethod: { host: 'MyBase' }
+        }
+      }
+    },
+    methods: {
+      myMethod: { host: '.' },
+      myAbstractMethod: { host: '.', isAbstract: true },
+      myBaseMethod: { host: '.' },
+      myNewMethod: { host: '.' },
+      [MySymbol]: { host: '.' }
+    },
+    properties: { myAccessor: { host: '.' } }
+  },
   staticMembers: {
     methods: {
       myStaticMethod: { host: '.' },
@@ -11,31 +37,5 @@ export const myClassPojo = {
       [MyStaticSymbol]: { host: '.' }
     },
     properties: { myStaticAccessor: { host: '.' } }
-  },
-  members: {
-    conceptual: {
-      MyConcept: { methods: { myConceptMethod: { host: '.' } } },
-      MyLeftConcept: {
-        methods: {
-          myLeftConceptMethod: { isAbstract: true, host: 'MyBase' },
-          myAmbidextrousMethod: { isAbstract: true, host: 'MyBase' }
-        }
-      },
-      MyRightConcept: {
-        methods: {
-          myAmbidextrousMethod: { isAbstract: true, host: 'MyBase' },
-          myRightConceptMethod: { isAbstract: true, host: 'MyBase' }
-        }
-      },
-      MyBaseConcept: { methods: { myBaseConceptMethod: { host: 'MyBase' } } }
-    },
-    methods: {
-      myMethod: { host: '.' },
-      myAbstractMethod: { isAbstract: true, host: '.' },
-      myBaseMethod: { host: '.' },
-      myNewMethod: { host: '.' },
-      [MySymbol]: { host: '.' }
-    },
-    properties: { myAccessor: { host: '.' } }
   }
 }

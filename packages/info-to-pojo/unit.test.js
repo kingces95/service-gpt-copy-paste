@@ -123,21 +123,19 @@ describe('MyConcept members', () => {
   })
 })
 
-// describe('MyClass instance members', () => {
-//   let pojo
-//   beforeEach(async () => {
-//     const fnInfo = Es6ClassInfo.from(MyClass)
-//     pojo = await fnInfo.toPojo({
-//       isStatic: false,
-//       isKnown: false,
-//       isNonPublic: false,
-//     })
-//   })
+describe('MyClass members', () => {
+  let pojo
+  beforeEach(async () => {
+    const fnInfo = ClassInfo.from(MyClass)
+    pojo = await fnInfo.toPojo({
+      isNonPublic: false,
+    })
+  })
 
-//   it('matches expected', () => {
-//     expect(pojo).toEqual(myClassInstancePojo)
-//   })
-// })
+  it('matches expected', () => {
+    expect(pojo).toEqual(myClassPojo)
+  })
+})
 
 // describe('MyClass static members', () => {
 //   let pojo

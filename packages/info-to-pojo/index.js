@@ -22,7 +22,6 @@ function metadata({ ownOnly, isStatic } = { }) {
     [MemberInfo, {
       name: 'key',
       modifiers: 'list',
-      isAbstract: 'boolean',
       host: ({ name }, [ context ]) => 
         name == context.name ? '.' : name,
 
@@ -32,6 +31,8 @@ function metadata({ ownOnly, isStatic } = { }) {
       isKnown: 'boolean',
       isNonPublic: 'boolean',
       isConceptual: 'boolean',
+      isAbstract: (isAbstract, [ _, { isConceptual } ]) => 
+        !isConceptual && isAbstract ? true : null,
       concepts: 'names',
     }],
   ])

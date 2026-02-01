@@ -1,4 +1,4 @@
-import { Info } from "@kingjs/info"
+import { ClassInfo } from "@kingjs/info"
 import { } from "@kingjs/info-to-pojo"
 import {
   MyBaseConcept,
@@ -13,7 +13,7 @@ import {
 } from "./my-classes.js"
 
 function dump(fn) {
-  const fnInfo = Info.from(fn)
+  const fnInfo = ClassInfo.from(fn)
   fnInfo.dump({
     ownOnly: false,
     isKnown: false,
@@ -33,8 +33,8 @@ function dump(fn) {
 // dump(MyExtensionClass)
 // dump(MyBaseConcept)
 // dump(MyLeftConcept)
-dump(MyConcept)
+// dump(MyConcept)
 
 // dump(MyEmptyClass)
 // dump(MyBase)
-// dump(MyClass)
+dump(MyClass)
