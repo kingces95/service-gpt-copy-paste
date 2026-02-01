@@ -4,7 +4,7 @@ import { ClassInfo } from "@kingjs/info"
 import { } from "@kingjs/info-to-pojo"
 import { PartialClass } from '@kingjs/partial-class'
 import { PartialReflect } from '@kingjs/partial-reflect'
-import { abstract } from '@kingjs/abstract'
+import { abstract, isAbstract } from '@kingjs/abstract'
 
 describe('TypeInfo for PartialClass', () => {
   let fn
@@ -147,7 +147,7 @@ describe('A prototype member', () => {
 describe('A bespoke partial class', () => {
   let myPartialClass
   beforeEach(() => {
-    [myPartialClass] = [class MyClass extends PartialClass { }]
+    [myPartialClass] = [class MyPartialClass extends PartialClass { }]
   })
   describe('that implements MySymbol', () => {
     beforeEach(() => {
@@ -160,8 +160,9 @@ describe('A bespoke partial class', () => {
             host: '.',
           },
         } },
-        name: 'MyClass',
-        base: 'PartialClass'
+        name: 'MyPartialClass',
+        base: 'PartialClass',
+        isAbstract: true,
       }
       const fnInfo = ClassInfo.from(myPartialClass)
       const actual = await fnInfo.toPojo(pojoFilter)
@@ -175,8 +176,9 @@ describe('A bespoke partial class', () => {
     })
     it('has a pojo', async () => {
       const pojo = {
-        name: 'MyClass',
-        base: 'PartialClass'
+        name: 'MyPartialClass',
+        base: 'PartialClass',
+        isAbstract: true,
       }
 
       // Constructors are ignored by the DSL
@@ -192,8 +194,9 @@ describe('A bespoke partial class', () => {
     })
     it('has a pojo that ignores the static member', async () => {
       const pojo = {
-        name: 'MyClass',
+        name: 'MyPartialClass',
         base: 'PartialClass',
+        isAbstract: true,
         members: { methods: {
           method: { host: '.' }
         } },
@@ -217,8 +220,9 @@ describe('A bespoke partial class', () => {
     })
     it('has a pojo that ignores the static data member', async () => {
       const pojo = {
-        name: 'MyClass',
-        base: 'PartialClass'
+        name: 'MyPartialClass',
+        base: 'PartialClass',
+        isAbstract: true,
       }
       const fnInfo = ClassInfo.from(myPartialClass)
       const actual = await fnInfo.toPojo(pojoFilter)
@@ -237,8 +241,9 @@ describe('A bespoke partial class', () => {
               host: '.',
           } },
         },
-        name: 'MyClass',
-        base: 'PartialClass'
+        name: 'MyPartialClass',
+        base: 'PartialClass',
+        isAbstract: true,
       }
       const fnInfo = ClassInfo.from(myPartialClass)
       const actual = await fnInfo.toPojo(pojoFilter)
@@ -259,6 +264,7 @@ describe('A bespoke partial class', () => {
       const pojo = {
         base: 'PartialClass',
         name: 'MyEg',
+        isAbstract: true,
       }
   
       const fnInfo = ClassInfo.from(myPartialClass)
@@ -291,6 +297,7 @@ describe('A bespoke partial class', () => {
         },
         base: 'PartialClass',
         name: 'MyEg',
+        isAbstract: true,
       }
   
       const fnInfo = ClassInfo.from(myPartialClass)
@@ -318,17 +325,15 @@ describe('A bespoke partial class', () => {
       const pojo = {
         members: {
           properties: {
-            myAccessor: { 
-              host: '.',
-              isAbstract: true 
-            }
+            myAccessor: { host: '.' }
           },
           methods: {
-            myMethod: { host: '.', isAbstract: true }
+            myMethod: { host: '.' }
           }
         },
-        name: 'MyClass',
-        base: 'PartialClass'
+        name: 'MyPartialClass',
+        base: 'PartialClass',
+        isAbstract: true,
       }
       const fnInfo = ClassInfo.from(myPartialClass)
       const actual = await fnInfo.toPojo(pojoFilter)

@@ -13,6 +13,7 @@ function metadata({ ownOnly, isStatic } = { }) {
     [TypeInfo, {
       name: 'string',
       base: 'name',
+      isAbstract: 'boolean',
       isAnonymous: 'boolean',
       [ownOnly ? 'ownMembers' : 'members']: 
         isStatic == true ? 'ignore' : 'records',
@@ -31,8 +32,9 @@ function metadata({ ownOnly, isStatic } = { }) {
       isKnown: 'boolean',
       isNonPublic: 'boolean',
       isConceptual: 'boolean',
-      isAbstract: (isAbstract, [ _, { isConceptual } ]) => 
-        !isConceptual && isAbstract ? true : null,
+      isAbstract: (
+        isAbstract, [ { isAbstract: hostIsAbstract }, { isConceptual } ]) => 
+          !isConceptual && !hostIsAbstract && isAbstract ? true : null,
       concepts: 'names',
     }],
   ])
@@ -53,19 +55,12 @@ const nonPublicPivotMd = {
   },
   ...typePivotMd
 }
-const knownPivotMd = {
-  __known: { 
-    predicate: 'isKnown', 
-    pivot: nonPublicPivotMd,
-  },
-  ...nonPublicPivotMd
-}
 const conceptualPivotMd = {
   conceptual: {
     predicate: 'isConceptual',
-    copyPivot: [ 'concepts', typePivotMd ],
+    copyPivot: [ 'concepts', nonPublicPivotMd ],
   },
-  ...knownPivotMd
+  ...nonPublicPivotMd
 }
 
 TypeInfo.prototype.toPojo = async function({ 

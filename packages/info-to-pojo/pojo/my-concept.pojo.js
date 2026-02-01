@@ -1,24 +1,27 @@
+import { isAbstract } from "@kingjs/abstract";
+
 export const myConceptPojo = {
   name: 'MyConcept',
   base: 'Concept',
+  isAbstract: true,
   members: { 
     conceptual: {
       MyLeftConcept: {
         methods: {
-          myLeftConceptMethod: { isAbstract: true, host: '.' },
-          myAmbidextrousMethod: { isAbstract: true, host: '.' }
+          myLeftConceptMethod: { host: '.' },
+          myAmbidextrousMethod: { host: '.' }
         }
       },
       MyRightConcept: {
         methods: {
-          myAmbidextrousMethod: { isAbstract: true, host: '.' },
-          myRightConceptMethod: { isAbstract: true, host: '.' }
+          myAmbidextrousMethod: { host: '.' },
+          myRightConceptMethod: { host: '.' }
         }
       },
       MyBaseConcept: {
-        methods: { myBaseConceptMethod: { isAbstract: true, host: '.' } }
+        methods: { myBaseConceptMethod: { host: '.' } }
       }
     },
-    methods: { myConceptMethod: { isAbstract: true, host: '.' } } 
+    methods: { myConceptMethod: { host: '.' } } 
   }
 }

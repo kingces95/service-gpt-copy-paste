@@ -6,6 +6,7 @@ import { extend } from '@kingjs/partial-extend'
 import { implement } from '@kingjs/implement'
 import { Concept, Implements } from '@kingjs/concept'
 import { } from "@kingjs/info-to-pojo"
+import { isAbstract } from '@kingjs/abstract'
 
 describe('TypeInfo for Concept', () => {
   let fnInfo
@@ -25,7 +26,7 @@ describe('TypeInfo for Concept', () => {
     expect(!fnInfo.isPartialType).toBe(true)
   })
   it('is a concept', () => {
-    expect(fnInfo.isConceptSubclass).toBe(false)
+    expect(fnInfo.isConcept).toBe(false)
   })
   it('has no declared or inherited concepts', () => {
     const concepts = fnInfo.concepts()
@@ -61,7 +62,7 @@ describe('A concept', () => {
         fnInfo = TypeInfo.from(cls)
       })
       it('is a concept', () => {
-        expect(fnInfo.isConceptSubclass).toBe(true)
+        expect(fnInfo.isConcept).toBe(true)
       })
       describe.each([
         'toString',
@@ -102,7 +103,6 @@ describe('A concept', () => {
       members: { setters: {
         member: { 
           host: '.',
-          isAbstract: true
         }
       } },
     }],
@@ -114,6 +114,7 @@ describe('A concept', () => {
         ...expected,
         base: 'Concept',
         name: 'MyConcept',
+        isAbstract: true,
       })
     })
   })
@@ -306,11 +307,11 @@ describe('A bespoke concept', () => {
         members: { methods: {
           [MySymbol]: { 
             host: '.',
-            isAbstract: true,
           },
         } },
         name: 'MyConcept',
-        base: 'Concept'
+        base: 'Concept',
+        isAbstract: true,
       }
       const fnInfo = TypeInfo.from(myConcept)
       const actual = await fnInfo.toPojo(pojoFilter)
@@ -328,7 +329,6 @@ describe('A bespoke concept', () => {
           base: 'Object',
           members: { conceptual: { MyConcept: { methods: {
             [MySymbol]: { 
-              isAbstract: true,
               host: '.',
             },
           } } } },
@@ -367,8 +367,9 @@ describe('A bespoke concept', () => {
       const pojo = {
         name: 'MyConcept',
         base: 'Concept',
+        isAbstract: true,
         members: { methods: {
-          method: { host: '.', isAbstract: true }
+          method: { host: '.' }
         } },
       }
 
@@ -427,16 +428,15 @@ describe('A bespoke concept', () => {
       const pojo = {
         name: 'MyConcept',
         base: 'Concept',
+        isAbstract: true,
         members: {
           properties: {
             myAccessor: { 
-              isAbstract: true,
               host: '.'
             }
           },
           methods: {
             myMethod: { 
-              isAbstract: true,
               host: '.'
             }
           }

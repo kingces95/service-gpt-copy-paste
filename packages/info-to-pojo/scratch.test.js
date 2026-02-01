@@ -16,7 +16,6 @@ function dump(fn) {
   const fnInfo = ClassInfo.from(fn)
   fnInfo.dump({
     ownOnly: false,
-    isKnown: false,
     isNonPublic: false,
   })
 }
@@ -33,8 +32,8 @@ function dump(fn) {
 // dump(MyExtensionClass)
 // dump(MyBaseConcept)
 // dump(MyLeftConcept)
-// dump(MyConcept)
+dump(MyConcept)
 
 // dump(MyEmptyClass)
 // dump(MyBase)
-dump(MyClass)
+// dump(MyClass)

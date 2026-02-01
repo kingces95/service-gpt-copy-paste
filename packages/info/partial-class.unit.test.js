@@ -46,7 +46,7 @@ describe('A partial class', () => {
     }],
     ['abstract method', { myMethod: abstract }, { 
       members: { methods: {
-        myMethod: { host: '.', isAbstract: true } 
+        myMethod: { host: '.' } 
       } }
     }],
     ['descriptor member', { myMethod: { value: 1 } }, {
@@ -68,6 +68,7 @@ describe('A partial class', () => {
         ...expected,
         base: 'PartialPojo',
         isAnonymous: true,
+        isAbstract: true,
       })
     })
   })

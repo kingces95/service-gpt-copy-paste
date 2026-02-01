@@ -63,11 +63,11 @@ export class TypeInfo {
   get isNonPublic() { return this.id.isNonPublic }
   get isAbstract() { return InfoReflect.isAbstract(this.ctor) }
   get isAnonymous() { return this.id.isAnonymous }
-  get isTransparentPartialObject() { return this.isPartialPojoSubClass }
+  get isTransparentPartialObject() { return this.isPartialPojo }
 
-  get isPartialClassSubclass() { return this instanceof PartialClassInfo }
-  get isPartialPojoSubClass() { return this instanceof PartialPojoInfo }
-  get isConceptSubclass() { return this instanceof ConceptInfo }
+  get isPartialClass() { return this instanceof PartialClassInfo }
+  get isPartialPojo() { return this instanceof PartialPojoInfo }
+  get isConcept() { return this instanceof ConceptInfo }
 
   isSubclassOf(other) {
     assert(other instanceof TypeInfo, 'other must be a TypeInfo')
@@ -234,7 +234,6 @@ export class MemberInfo {
   
   // pivots
   get isStatic() { return this.#isStatic }
-  get isKnown() { return false }
   get isNonPublic() { return this.#keyInfo.isNonPublic }
   get isAbstract() { return this.#descriptorInfo.isAbstract }
   
@@ -324,7 +323,6 @@ export class MemberInfo {
   *pivots() { 
     if (this.isStatic) yield 'static' 
     if (this.isNonPublic) yield 'non-public'
-    if (this.isKnown) yield 'known'
     yield* this.#descriptorInfo.pivots()
   }
 
@@ -336,7 +334,7 @@ export class MemberInfo {
       keyInfo.toString(), 
       
       [
-        // e.g. 'static', 'non-public', 'known', 'conceptual', 'abstract'
+        // e.g. 'static', 'non-public', 'conceptual', 'abstract'
         ...this.pivots(), 
 
         // e.g. 'sealed', 'enumerable', 'const', 'hidden'

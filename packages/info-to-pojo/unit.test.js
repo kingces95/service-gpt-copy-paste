@@ -23,6 +23,7 @@ import {
   MyEmptyClass,
   MyClass
 } from "./my-classes.js"
+import { isAbstract } from '@kingjs/abstract'
 
 describe('Object members', () => {
   let pojo
@@ -56,7 +57,10 @@ describe('PartialType members', () => {
   })
 
   it('matches expected', () => {
-    expect(pojo).toEqual({ name: 'PartialType' })
+    expect(pojo).toEqual({ 
+      name: 'PartialType',
+      isAbstract: true,
+    })
   })
 })
 
@@ -68,7 +72,11 @@ describe('PartialClass members', () => {
   })
 
   it('matches expected', () => {
-    expect(pojo).toEqual({ name: 'PartialClass', base: 'PartialType' })
+    expect(pojo).toEqual({ 
+      name: 'PartialClass', 
+      base: 'PartialType',
+      isAbstract: true,
+    })
   })
 })
 
@@ -80,7 +88,11 @@ describe('Concept members', () => {
   })
 
   it('matches expected', () => {
-    expect(pojo).toEqual({ name: 'Concept', base: 'PartialType' })
+    expect(pojo).toEqual({ 
+      name: 'Concept', 
+      base: 'PartialType',
+      isAbstract: true,
+    })
   })
 })
 
@@ -92,7 +104,11 @@ describe('PartialPojo members', () => {
   })
 
   it('matches expected', () => {
-    expect(pojo).toEqual({ name: 'PartialPojo', base: 'PartialType' })
+    expect(pojo).toEqual({ 
+      name: 'PartialPojo', 
+      base: 'PartialType',
+      isAbstract: true,
+    })
   })
 })
 

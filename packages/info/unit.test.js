@@ -19,9 +19,9 @@ const PartialObjectMd = {
   isKnown: true,
   isTransparent: false,
   isAbstract: true,
-  isPartialPojoSubClass: false,
-  isPartialClassSubclass: false,
-  isConceptSubclass: false,
+  isPartialPojo: false,
+  isPartialClass: false,
+  isConcept: false,
   isAnonymous: false,
   base: null,
 }
@@ -32,9 +32,9 @@ const PartialPojoMd = {
   isKnown: true,
   isTransparent: false,
   isAbstract: true,
-  isPartialPojoSubClass: false,
-  isPartialClassSubclass: false,
-  isConceptSubclass: false,
+  isPartialPojo: false,
+  isPartialClass: false,
+  isConcept: false,
   isAnonymous: false,
   base: PartialType,
 }
@@ -45,9 +45,9 @@ const PartialClassMd = {
   isKnown: true,
   isTransparent: false,
   isAbstract: true,
-  isPartialPojoSubClass: false,
-  isPartialClassSubclass: false,
-  isConceptSubclass: false,
+  isPartialPojo: false,
+  isPartialClass: false,
+  isConcept: false,
   isAnonymous: false,
   base: PartialType,
 }
@@ -58,9 +58,9 @@ const ConceptMd = {
   isKnown: true,
   isTransparent: false,
   isAbstract: true,
-  isPartialPojoSubClass: false,
-  isPartialClassSubclass: false,
-  isConceptSubclass: false,
+  isPartialPojo: false,
+  isPartialClass: false,
+  isConcept: false,
   isAnonymous: false,
   base: PartialType,
 }
@@ -71,9 +71,9 @@ const MyPartialPojoMd = {
   isKnown: false,
   isTransparent: true,
   isAbstract: true,
-  isPartialPojoSubClass: true,
-  isPartialClassSubclass: false,
-  isConceptSubclass: false,
+  isPartialPojo: true,
+  isPartialClass: false,
+  isConcept: false,
   isAnonymous: true,
   base: PartialPojo,
 }
@@ -84,9 +84,9 @@ const MyPartialClassMd = {
   isKnown: false,
   isTransparent: false,
   isAbstract: true,
-  isPartialPojoSubClass: false,
-  isPartialClassSubclass: true,
-  isConceptSubclass: false,
+  isPartialPojo: false,
+  isPartialClass: true,
+  isConcept: false,
   isAnonymous: false,
   base: PartialClass,
 }
@@ -97,9 +97,9 @@ const MyConceptMd = {
   isKnown: false,
   isTransparent: false,
   isAbstract: true,
-  isPartialPojoSubClass: false,
-  isPartialClassSubclass: false,
-  isConceptSubclass: true,
+  isPartialPojo: false,
+  isPartialClass: false,
+  isConcept: true,
   isAnonymous: false,
   base: Concept,
 }
@@ -110,9 +110,9 @@ const Es6Object = {
   isKnown: true,
   isTransparent: false,
   isAbstract: false,
-  isPartialPojoSubClass: false,
-  isPartialClassSubclass: false,
-  isConceptSubclass: false,
+  isPartialPojo: false,
+  isPartialClass: false,
+  isConcept: false,
   isAnonymous: false,
   // ownMembers: [
   //   ...Reflect.ownKeys(Object.prototype)]
@@ -133,9 +133,9 @@ const Es6Function = {
   isKnown: true,
   isTransparent: false,
   isAbstract: false,
-  isPartialPojoSubClass: false,
-  isPartialClassSubclass: false,
-  isConceptSubclass: false,
+  isPartialPojo: false,
+  isPartialClass: false,
+  isConcept: false,
   isAnonymous: false,
   // ownMembers: [
   //   ...Reflect.ownKeys(Function.prototype)],
@@ -157,9 +157,9 @@ const MyClassMd = {
   isKnown: false,
   isTransparent: false,
   isAbstract: false,
-  isPartialPojoSubClass: false,
-  isPartialClassSubclass: false,
-  isConceptSubclass: false,
+  isPartialPojo: false,
+  isPartialClass: false,
+  isConcept: false,
   isAnonymous: false,
   // ownMembers: [
   //   ...Reflect.ownKeys(MyClass.prototype)],
@@ -225,11 +225,11 @@ describe('Given', () => {
     })
     it('should have have expected predicates', () => {
       expect(info.isKnown).toBe(md.isKnown)
-      expect(info.isPartialPojoSubClass).toBe(md.isPartialPojoSubClass)
+      expect(info.isPartialPojo).toBe(md.isPartialPojo)
       expect(info.isAbstract).toBe(md.isAbstract)
       expect(info.isTransparentPartialObject).toBe(md.isTransparent)
-      expect(info.isPartialClassSubclass).toBe(md.isPartialClassSubclass)
-      expect(info.isConceptSubclass).toBe(md.isConceptSubclass)
+      expect(info.isPartialClass).toBe(md.isPartialClass)
+      expect(info.isConcept).toBe(md.isConcept)
       expect(info.isAnonymous).toBe(md.isAnonymous)
     })
     it('should have matching own instance members', () => {
@@ -655,7 +655,6 @@ describe('Member', () => {
       expect(actual).toBe(expected)
     })
     it('has expected predicates', () => {
-      expect(info.isKnown).toBe(!!md.isKnown)
       expect(info.isNonPublic).toBe(!!md.isNonPublic)
       expect(info.isAbstract).toBe(!!md.isAbstract)
       expect(info.isConceptual).toBe(!!md.isConceptual)
