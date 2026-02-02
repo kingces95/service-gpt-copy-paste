@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { abstract } from '@kingjs/abstract'
-import { PartialPojo } from '@kingjs/partial-pojo'
+import { Extensions } from '@kingjs/extensions'
 import { PartialReflect, isKey } from '@kingjs/partial-reflect'
 import { UserReflect } from '@kingjs/user-reflect'
 import { Define } from '@kingjs/define'
@@ -127,7 +127,7 @@ describe('PartialClass', () => {
     PartialClass = class PartialClass extends PartialType { 
       static [PartialType.OwnCollectionSymbols] = { 
         [ExtensionSymbol]: { 
-          expectedType: [PartialClass, PartialPojo] 
+          expectedType: [PartialClass, Extensions] 
         } 
       }
     }

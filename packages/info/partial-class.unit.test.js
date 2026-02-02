@@ -3,7 +3,7 @@ import { beforeEach } from 'vitest'
 import { TypeInfo, TypeInfo } from "@kingjs/info"
 import { PartialClass, Extends } from '@kingjs/partial-class'
 import { extend } from '@kingjs/partial-extend'
-import { PartialPojo } from '@kingjs/partial-pojo'
+import { Extensions } from '@kingjs/extensions'
 import { abstract, isAbstract } from '@kingjs/abstract'
 import { } from "@kingjs/info-to-pojo"
 import { PartialReflect } from '@kingjs/partial-reflect'
@@ -66,7 +66,7 @@ describe('A partial class', () => {
       const actual = await fnInfo.toPojo(pojoFilter) 
       expect(actual).toEqual({
         ...expected,
-        base: 'PartialPojo',
+        base: 'Extensions',
         isAnonymous: true,
         isAbstract: true,
       })

@@ -26,20 +26,16 @@ export class Define {
     return keys
   }
   
-  static type(pojoOrType, base = Object) {
-    if (isPojo(pojoOrType)) {
-      const [type] = [class extends base { }]
-      const prototype = type.prototype
-  
-      for (const key of Reflect.ownKeys(pojoOrType)) {
-        if (key === 'constructor') continue
-        const descriptor = Object.getOwnPropertyDescriptor(pojoOrType, key)
-        Object.defineProperty(prototype, key, descriptor)
-      }
-  
-      return type
+  static type(pojo, base = Object) {
+    const [type] = [class extends base { }]
+    const prototype = type.prototype
+
+    for (const key of Reflect.ownKeys(pojo)) {
+      if (key === 'constructor') continue
+      const descriptor = Object.getOwnPropertyDescriptor(pojo, key)
+      Object.defineProperty(prototype, key, descriptor)
     }
 
-    return pojoOrType
+    return type
   }
 }

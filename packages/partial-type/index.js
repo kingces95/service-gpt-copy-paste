@@ -2,55 +2,7 @@ import { assert } from '@kingjs/assert'
 import { Compiler } from '@kingjs/compiler'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 
-// PartialType in conjction with extend is like 
-// Object.defineProperties but with richer descriptors. For example,
-// PartialPojo which extends PartialType, can be crated with a 
-// POJO whose properties are "compiled" into property descriptors. For 
-// example, a method can be defined like this:
-//    const MyPartial = PartialReflect.load({
-//      myMethod() { ... }
-//    }) 
-
-// The method could also be defined using a descriptor:
-//    const MyPartial = PartialReflect.load({
-//      myMethod: { value: function() { ... } }
-//    })
-
-// Or as a lambda:
-//    const MyPartial = PartialReflect.load({
-//      myMethod: () => { ... }
-//    })
-
-// Or using a named function like 'abstract':
-//    import { abstract } from '@kingjs/abstract'
-//    const MyPartial = PartialReflect.load({
-//      myMethod: abstract
-//    })
-
-// An accessor can be defined like this:
-//    const MyPartial = PartialReflect.load({
-//      get myProperty() { ... },
-//      set myProperty(value) { ... },
-//    })
-
-// A constant can be defined like this:
-//    const MyPartial = PartialReflect.load({
-//      myConstant: { 
-//        value: 42, 
-//        enumerable: true, 
-//        configurable: false, 
-//        writable: false 
-//      }
-//    })
-
-// The PartialPojo can then be merged into a type like this:
-//    class MyType { }
-//    extend(MyType, MyPartial)
-// Now MyType.prototype has myMethod, or myProperty, or myConstant
-// defined on it. 
-
-// The method 'abstract' is known and if a type already
-// has a concrete implementation of the method, it is not overwritten.
+// PartialType + extend is Object.defineProperties with richer descriptors. 
 
 // OwnCollectionSymbols is a static symbol applied to extensions of 
 // PartialType which describes how those extensions form a poset of 
@@ -59,20 +11,20 @@ const OwnCollectionSymbols = Symbol('PartialType.ownCollectionSymbols')
 
 // For example, OwnCollectionSymbols is used by PartialClass to designate
 // the Extends symbol as containing an adjacency list to other PartialType
-// types of type PartialClass and PartialPojo. Also specified is
+// types of type PartialClass and Extensions. Also specified is
 // a coercion method PartialReflect.load is used to transform POJOs 
 // into PartialClass types:
 
 //    class PartialClass extends PartialType {
 //      static [PartialType.OwnCollectionSymbols] = {
 //        [Extends]: { 
-//          expectedType: [ PartialClass, PartialPojo ],
+//          expectedType: [ PartialClass, Extensions ],
 //          map: PartialReflect.load,
 //        }
 //      }
 //    }
 
-// The simplest use of the Extends symbol is to apply a PartialPojo 
+// The simplest use of the Extends symbol is to apply a Extensions 
 // type expressed as a POJO. A single extension can exist as a single element of an
 // array or unwrapped like this:
 
@@ -187,8 +139,6 @@ export class PartialTypeReflect {
   static isPartialType(type) {
     if (!Es6Reflect.isExtensionOf(type, PartialType)) return false
     if (PartialTypeReflect.isPartialUrType(type)) return false
-    // assert(PartialTypeReflect.isPartialUrType(Object.getPrototypeOf(type)),
-    //   `Expected type to indirectly extend PartialType.`)
     return true
   }
   static getPartialType(type) {
@@ -197,7 +147,7 @@ export class PartialTypeReflect {
     let baseType = type
     while (baseType = Es6Reflect.baseType(baseType)) 
       if (PartialTypeReflect.isPartialUrType(baseType)) return baseType
-    
+
     return null
   }
 }

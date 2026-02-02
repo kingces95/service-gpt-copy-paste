@@ -5,7 +5,7 @@ import { Concept, Implements } from '@kingjs/concept'
 import { PartialType } from '@kingjs/partial-type'
 import { PartialClass, Extends } from '@kingjs/partial-class'
 import { PartialReflect } from '@kingjs/partial-reflect'
-import { PartialPojo } from '@kingjs/partial-pojo'
+import { Extensions } from '@kingjs/extensions'
 import { } from "@kingjs/info-to-pojo"
 import { toEqualAsSet } from '@kingjs/vitest'
 
@@ -19,7 +19,7 @@ const PartialObjectMd = {
   isKnown: true,
   isTransparent: false,
   isAbstract: true,
-  isPartialPojo: false,
+  isExtensions: false,
   isPartialClass: false,
   isConcept: false,
   isAnonymous: false,
@@ -27,12 +27,12 @@ const PartialObjectMd = {
 }
 
 const PartialPojoMd = {
-  ctor: PartialPojo,
-  toString: '[classInfo PartialPojo]',
+  ctor: Extensions,
+  toString: '[classInfo Extensions]',
   isKnown: true,
   isTransparent: false,
   isAbstract: true,
-  isPartialPojo: false,
+  isExtensions: false,
   isPartialClass: false,
   isConcept: false,
   isAnonymous: false,
@@ -45,7 +45,7 @@ const PartialClassMd = {
   isKnown: true,
   isTransparent: false,
   isAbstract: true,
-  isPartialPojo: false,
+  isExtensions: false,
   isPartialClass: false,
   isConcept: false,
   isAnonymous: false,
@@ -58,7 +58,7 @@ const ConceptMd = {
   isKnown: true,
   isTransparent: false,
   isAbstract: true,
-  isPartialPojo: false,
+  isExtensions: false,
   isPartialClass: false,
   isConcept: false,
   isAnonymous: false,
@@ -71,11 +71,11 @@ const MyPartialPojoMd = {
   isKnown: false,
   isTransparent: true,
   isAbstract: true,
-  isPartialPojo: true,
+  isExtensions: true,
   isPartialClass: false,
   isConcept: false,
   isAnonymous: true,
-  base: PartialPojo,
+  base: Extensions,
 }
 
 const MyPartialClassMd = {
@@ -84,7 +84,7 @@ const MyPartialClassMd = {
   isKnown: false,
   isTransparent: false,
   isAbstract: true,
-  isPartialPojo: false,
+  isExtensions: false,
   isPartialClass: true,
   isConcept: false,
   isAnonymous: false,
@@ -97,7 +97,7 @@ const MyConceptMd = {
   isKnown: false,
   isTransparent: false,
   isAbstract: true,
-  isPartialPojo: false,
+  isExtensions: false,
   isPartialClass: false,
   isConcept: true,
   isAnonymous: false,
@@ -110,7 +110,7 @@ const Es6Object = {
   isKnown: true,
   isTransparent: false,
   isAbstract: false,
-  isPartialPojo: false,
+  isExtensions: false,
   isPartialClass: false,
   isConcept: false,
   isAnonymous: false,
@@ -133,7 +133,7 @@ const Es6Function = {
   isKnown: true,
   isTransparent: false,
   isAbstract: false,
-  isPartialPojo: false,
+  isExtensions: false,
   isPartialClass: false,
   isConcept: false,
   isAnonymous: false,
@@ -157,7 +157,7 @@ const MyClassMd = {
   isKnown: false,
   isTransparent: false,
   isAbstract: false,
-  isPartialPojo: false,
+  isExtensions: false,
   isPartialClass: false,
   isConcept: false,
   isAnonymous: false,
@@ -179,7 +179,7 @@ describe('Given', () => {
       ['Es6Object', Es6Object],
       ['Es6Function', Es6Function],
       ['PartialType', PartialObjectMd],
-      ['PartialPojo', PartialPojoMd],
+      ['Extensions', PartialPojoMd],
       ['PartialClass',  PartialClassMd],
       ['Concept', ConceptMd],
       ['MyPartialPojo', MyPartialPojoMd],
@@ -225,7 +225,7 @@ describe('Given', () => {
     })
     it('should have have expected predicates', () => {
       expect(info.isKnown).toBe(md.isKnown)
-      expect(info.isPartialPojo).toBe(md.isPartialPojo)
+      expect(info.isExtensions).toBe(md.isExtensions)
       expect(info.isAbstract).toBe(md.isAbstract)
       expect(info.isTransparent).toBe(md.isTransparent)
       expect(info.isPartialClass).toBe(md.isPartialClass)

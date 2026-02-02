@@ -10,7 +10,7 @@ const filter = {
   isNonPublic: false, isKnown: false,
 }
 
-describe('PartialPojo with non-standard properties', () => {
+describe('Extensions with non-standard properties', () => {
   let pojo
   beforeEach(() => {
     pojo = {

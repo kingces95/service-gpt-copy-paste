@@ -3,7 +3,7 @@ import { PartialLoader } from '@kingjs/partial-loader'
 import { PartialTypeReflect } from '@kingjs/partial-type'
 import { PartialAssociate } from '@kingjs/partial-associate'
 import { Define } from '@kingjs/define'
-import { PartialPojo } from '@kingjs/partial-pojo'
+import { Extensions } from '@kingjs/extensions'
 
 // Extend takes a targets type and a partial type and merges the 
 // partial type into the target type.
@@ -26,13 +26,13 @@ import { PartialPojo } from '@kingjs/partial-pojo'
 // (PartialAssociate.getHosts). 
 
 // Transparent partial types are merged but not associated. A transparent
-// partial type is one whose prototype extends PartialPojo. Members of
+// partial type is one whose prototype extends Extensions. Members of
 // a transparent partial type are logically considered to be defined by 
 // the partial type that "extended" it (parentType).
 
 export function extend(type, partialType, { 
     parentType = type, 
-    isTransparent = partialType?.prototype instanceof PartialPojo
+    isTransparent = partialType?.prototype instanceof Extensions
   } = { }) {
 
     partialType = PartialLoader.load(partialType)
@@ -47,7 +47,7 @@ export function extend(type, partialType, {
     for (const extension of PartialLoader.ownPartialExtensions(partialType)) {
       extend(type, extension, { 
         parentType: partialType,
-        isTransparent: extension.prototype instanceof PartialPojo
+        isTransparent: extension.prototype instanceof Extensions
       })
     }
 

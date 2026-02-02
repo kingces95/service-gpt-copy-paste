@@ -24,6 +24,9 @@ export class InfoReflect {
   static isKnown(type) { 
     return PartialTypeReflect.isKnown(type)
   }
+  // static baseType(type) { 
+  //   return PartialTypeReflect.baseType(type)
+  // }
 
   // PartialReflect proxies
   static *keys(type, { isStatic } = { }) {

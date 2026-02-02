@@ -1,7 +1,7 @@
 import { assert } from '@kingjs/assert'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { InfoReflect } from '@kingjs/info-reflect'
-import { PartialPojo } from '@kingjs/partial-pojo'
+import { Extensions } from '@kingjs/extensions'
 import { Concept } from "@kingjs/concept"
 import { PartialClass } from '@kingjs/partial-class'
 import { 
@@ -30,7 +30,7 @@ export class TypeInfo {
   static #create(fn) {
     const partialType = PartialTypeReflect.getPartialType(fn)
     switch (partialType) {
-      case PartialPojo: return new PartialPojoInfo(fn)
+      case Extensions: return new ExtensionsInfo(fn)
       case PartialClass: return new PartialClassInfo(fn)
       case Concept: return new ConceptInfo(fn)
     }
@@ -48,25 +48,26 @@ export class TypeInfo {
     this.#_ = this.toString()
   }
 
+  get isPartialClass() { return this instanceof PartialClassInfo }
+  get isExtensions() { return this instanceof ExtensionsInfo }
+  get isConcept() { return this instanceof ConceptInfo }
+
   get ctor() { return this.#fn }
+  get isKnown() { return InfoReflect.isKnown(this.ctor) }
+  get isAbstract() { return InfoReflect.isAbstract(this.ctor) }
+
   get id() { return this.#idInfo }
   get name() { return this.id.value }
+  get isNonPublic() { return this.id.isNonPublic }
+  get isAnonymous() { return this.id.isAnonymous }
+  get isTransparent() { return this.isExtensions }
+
   get base() { 
     const base = TypeInfo.from(InfoReflect.baseType(this.ctor)) 
     if (!this.isAbstract) return base
     if (base == TypeInfo.Object) return null
     return base
   }
-
-  get isKnown() { return InfoReflect.isKnown(this.ctor) }
-  get isAbstract() { return InfoReflect.isAbstract(this.ctor) }
-  get isNonPublic() { return this.id.isNonPublic }
-  get isAnonymous() { return this.id.isAnonymous }
-  get isTransparent() { return this.isPartialPojo }
-
-  get isPartialClass() { return this instanceof PartialClassInfo }
-  get isPartialPojo() { return this instanceof PartialPojoInfo }
-  get isConcept() { return this instanceof ConceptInfo }
 
   isSubclassOf(other) {
     assert(other instanceof TypeInfo, 'other must be a TypeInfo')
@@ -167,7 +168,7 @@ export class TypeInfo {
 export class ClassInfo extends TypeInfo { 
   toString() { return `[classInfo ${this.id.toString()}]` }
 }
-export class PartialPojoInfo extends TypeInfo {
+export class ExtensionsInfo extends TypeInfo {
   toString() { return `[partialPojoInfo]` }
 }
 export class PartialClassInfo extends TypeInfo {
@@ -184,7 +185,7 @@ TypeInfo.String = TypeInfo.from(String)
 TypeInfo.Number = TypeInfo.from(Number)
 TypeInfo.Boolean = TypeInfo.from(Boolean)
 TypeInfo.PartialType = TypeInfo.from(PartialType)
-TypeInfo.PartialPojo = TypeInfo.from(PartialPojo)
+TypeInfo.Extensions = TypeInfo.from(Extensions)
 TypeInfo.PartialClass = TypeInfo.from(PartialClass)
 TypeInfo.Concept = TypeInfo.from(Concept)
 

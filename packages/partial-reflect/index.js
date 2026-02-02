@@ -14,7 +14,7 @@ import { PartialTypeReflect } from '@kingjs/partial-type'
 
 // The set of known types includes all Es6 built-in types (e.g. Object, 
 // Array, Function, etc) as well as PartialType and all types that 
-// directly extend PartialType (i.e. PartialPojo, PartialClass, etc).
+// directly extend PartialType (i.e. Extensions, PartialClass, etc).
 
 // Known keys include all keys defined on known types as well as some
 // Es6 keys like 'length' and 'constructor' which are automatically

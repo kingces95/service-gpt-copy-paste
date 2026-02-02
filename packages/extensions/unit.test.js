@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { PartialPojo } from '@kingjs/partial-pojo'
+import { Extensions } from '@kingjs/extensions'
 import { PartialClass } from '@kingjs/partial-class'
 import { PartialReflect } from '@kingjs/partial-reflect'
 
@@ -35,8 +35,8 @@ describe('A method', () => {
       beforeEach(() => {
         arg = PartialReflect.load(pojo)
       })
-      it('should be a type that extends PartialPojo', () => {
-        expect(arg.prototype).toBeInstanceOf(PartialPojo)
+      it('should be a type that extends Extensions', () => {
+        expect(arg.prototype).toBeInstanceOf(Extensions)
       })
       it('should have the method', () => {
         expect(arg.prototype.method).toBe(method)
@@ -48,7 +48,7 @@ describe('A method', () => {
         extension = PartialReflect.load(pojo)
       })
       it('should be a type that extends PartialClass', () => {
-        expect(extension.prototype).toBeInstanceOf(PartialPojo)
+        expect(extension.prototype).toBeInstanceOf(Extensions)
       })
       it('should have the method', () => {
         expect(extension.prototype.method).toBe(method)

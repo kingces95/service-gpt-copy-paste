@@ -4,7 +4,7 @@ import { beforeEach } from 'vitest'
 import { PartialType } from '@kingjs/partial-type'
 import { PartialClass } from '@kingjs/partial-class'
 import { Concept } from '@kingjs/concept'
-import { PartialPojo } from '@kingjs/partial-pojo'
+import { Extensions } from '@kingjs/extensions'
 
 import { ClassInfo } from "@kingjs/info"
 import { } from "@kingjs/info-to-pojo"
@@ -96,16 +96,16 @@ describe('Concept members', () => {
   })
 })
 
-describe('PartialPojo members', () => {
+describe('Extensions members', () => {
   let pojo
   beforeEach(async () => {
-    const fnInfo = ClassInfo.from(PartialPojo)
+    const fnInfo = ClassInfo.from(Extensions)
     pojo = await fnInfo.toPojo()
   })
 
   it('matches expected', () => {
     expect(pojo).toEqual({ 
-      name: 'PartialPojo', 
+      name: 'Extensions', 
       base: 'PartialType',
       isAbstract: true,
     })

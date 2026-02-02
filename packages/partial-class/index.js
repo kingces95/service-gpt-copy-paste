@@ -1,5 +1,5 @@
 import { PartialType, PartialTypeReflect } from '@kingjs/partial-type'
-import { PartialPojo } from '@kingjs/partial-pojo'
+import { Extensions } from '@kingjs/extensions'
 import { PartialReflect } from '@kingjs/partial-reflect'
 
 export const Extends = Symbol('PartialClass.Extends')
@@ -16,7 +16,7 @@ export const Extends = Symbol('PartialClass.Extends')
 export class PartialClass extends PartialType {
   static [PartialType.OwnCollectionSymbols] = {
     [Extends]: { 
-      expectedType: [ PartialClass, PartialPojo ],
+      expectedType: [ PartialClass, Extensions ],
       map: PartialReflect.load,
     }
   }
