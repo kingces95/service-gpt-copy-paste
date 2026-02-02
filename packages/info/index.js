@@ -1,5 +1,4 @@
 import { assert } from '@kingjs/assert'
-import { es6BaseType } from '@kingjs/es6-base-type'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { InfoReflect } from '@kingjs/info-reflect'
 import { PartialPojo } from '@kingjs/partial-pojo'
@@ -53,7 +52,7 @@ export class TypeInfo {
   get id() { return this.#idInfo }
   get name() { return this.id.value }
   get base() { 
-    const base = TypeInfo.from(es6BaseType(this.ctor)) 
+    const base = TypeInfo.from(InfoReflect.baseType(this.ctor)) 
     if (!this.isAbstract) return base
     if (base == TypeInfo.Object) return null
     return base

@@ -1,5 +1,4 @@
 import { assert } from '@kingjs/assert'
-import { es6BaseType } from '@kingjs/es6-base-type'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { 
@@ -48,7 +47,7 @@ export class Es6ClassInfo {
   get isAnonymous() { return this.id.isAnonymous }
   get isKnown() { return Es6Reflect.isKnown(this.ctor) }
 
-  get base() { return Es6ClassInfo.from(es6BaseType(this.ctor)) }
+  get base() { return Es6ClassInfo.from(Es6Reflect.baseType(this.ctor)) }
 
   *ownMembers({ isStatic = false } = { }) {
     const type = this.ctor

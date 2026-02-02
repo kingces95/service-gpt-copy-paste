@@ -8,15 +8,22 @@ const KnownStaticMembers = new Set([ 'length', 'name', 'prototype' ])
 // Es6Reflect, like Reflect but operates on Type and is static aware.
 
 export class Es6Reflect {
-  static *#prototypeChain(type, { isStatic } = { }) {
-    let object = isStatic
-      ? type
-      : type.prototype
+  static baseType$(type, { isStatic } = { }) {
+    const result = Es6Reflect.baseType(type)
+    if (isStatic && result == Object)
+      return null
+    return result
+  }
+  static baseType(type) {
+    if (type == null) type = Object
 
-    while (object) {
-      yield object
-      object = Object.getPrototypeOf(object)
-    }
+    let prototype = type.prototype
+
+    prototype = Object.getPrototypeOf(prototype)
+    if (prototype == Function.prototype) 
+      prototype = Object.prototype
+      
+    return prototype?.constructor ?? null
   }
 
   static typeof(fn, key, descriptor, { isStatic } = { }) {
@@ -48,30 +55,17 @@ export class Es6Reflect {
       : KnownInstanceMembers.has(name)
   }
   static isExtensionOf(cls, targetCls) {
-    const hierarchy = Es6Reflect.hierarchy(cls, { isStatic: true })
-    for (const current of hierarchy) {
-      if (current == cls) continue
-      if (current == targetCls) return true
-    }
+    let base = cls
+    while (base = Es6Reflect.baseType(base))
+      if (base == targetCls) return true
     return false
   }
 
-  static *hierarchy(type, { isStatic } = { }) {
-    if (isStatic) {
-      for (const object of Es6Reflect.#prototypeChain(type, { isStatic })) {
-
-        // Suppress Function.prototype; the fact that an Es6 
-        // class is a function is not relevant to static hierarchy 
-        // declared in source code; Effect is to exclude methods 
-        // like call, bind, apply, etc.
-        if (object == Function.prototype) break
-        
-        yield object
-      }
-    }
-    else {
-      for (const object of Es6Reflect.#prototypeChain(type, { isStatic }))
-        yield object.constructor
+  static *hierarchy(type) {
+    let current = type
+    while (current) {
+      yield current
+      current = Es6Reflect.baseType(current)
     }
   }
 
@@ -83,7 +77,7 @@ export class Es6Reflect {
       ? type
       : type.prototype
 
-    return object.hasOwnProperty(name)
+    return Object.prototype.hasOwnProperty.call(object, name)
   }
 
   static *ownKeys(type, { isStatic, excludeKnown } = { }) {
@@ -100,22 +94,28 @@ export class Es6Reflect {
 
   static *keys(type, { isStatic, excludeKnown } = { }) {
     const visited = new Set()
-    for (const owner of Es6Reflect.hierarchy(type, { isStatic })) {
-      yield owner
-      for (const key of Es6Reflect.ownKeys(owner, { isStatic, excludeKnown })) {
+
+    let current = type
+    while (current) {
+      yield current
+      for (const key of Es6Reflect.ownKeys(current, { isStatic, excludeKnown })) {
         if (visited.has(key)) continue
         visited.add(key)
         yield key
       }
+      current = Es6Reflect.baseType$(current, { isStatic })
     }
   }
 
   static getHost(type, name, { isStatic, excludeKnown } = { }) {
-    for (const owner of Es6Reflect.hierarchy(type, { isStatic })) {
-      if (!Es6Reflect.hasOwnKey(owner, name, { isStatic, excludeKnown })) 
-        continue
-      return owner
+    let current = type
+    while (current) {
+      if (Es6Reflect.hasOwnKey(current, name, { isStatic, excludeKnown }))
+        return current
+
+      current = Es6Reflect.baseType$(current, { isStatic })
     }
+    return null
   }
 
   static getOwnDescriptor(type, name, { isStatic, excludeKnown } = { }) {
@@ -139,12 +139,16 @@ export class Es6Reflect {
   }  
 
   static *getDescriptor(type, name, { isStatic, excludeKnown } = { }) {
-    for (const owner of Es6Reflect.hierarchy(type, { isStatic })) {
+    let current = type
+    while (current) {
       const descriptor = Es6Reflect.getOwnDescriptor(
-        owner, name, { isStatic, excludeKnown })
-      if (!descriptor) continue
-      yield owner
-      return yield descriptor
+        current, name, { isStatic, excludeKnown })
+      if (descriptor) {
+        yield current
+        return yield descriptor
+      }
+
+      current = Es6Reflect.baseType$(current, { isStatic })
     }
   }
   static *descriptors(type, { isStatic, excludeKnown } = { }) {

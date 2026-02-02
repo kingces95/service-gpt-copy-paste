@@ -37,13 +37,13 @@ describe('A kitchen sink definition', () => {
         conceptual: {
           MyConcept: {
             methods: { 
-              method: { host: '.', isAbstract: true } },
+              method: { host: '.' } },
             getters: { 
-              getter: { host: '.', isAbstract: true } },
+              getter: { host: '.' } },
             setters: { 
-              setter: { host: '.', isAbstract: true } },
+              setter: { host: '.' } },
             properties: {
-              accessor: { host: '.', isAbstract: true } }
+              accessor: { host: '.' } }
           }
         }
       }

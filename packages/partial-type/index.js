@@ -145,7 +145,7 @@ const Compile = Symbol('PartialType.compile')
 //     equals(other) { }
 //   }
 
-export class PartialType {
+export class PartialType extends null {
   static Compile = Compile
   static OwnCollectionSymbols = OwnCollectionSymbols
 
