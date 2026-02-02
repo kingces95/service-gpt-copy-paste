@@ -26,6 +26,15 @@ export class Es6Reflect {
     return prototype?.constructor ?? null
   }
 
+  static isAbstract(type) {
+    let current = type
+    while (current) {
+      if (current == Object) return false
+      current = Es6Reflect.baseType(current)
+    }
+    return true
+  }
+
   static typeof(fn, key, descriptor, { isStatic } = { }) {
     const descriptorType = Es6Descriptor.typeof(descriptor)
     if (descriptorType != 'field')

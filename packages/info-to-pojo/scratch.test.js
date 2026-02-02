@@ -11,6 +11,15 @@ import {
   MyEmptyClass,
   MyClass
 } from "./my-classes.js"
+import { 
+  CursorConcept,
+  InputCursorConcept,
+  OutputCursorConcept,
+  ForwardCursorConcept,
+  BidirectionalCursorConcept,
+  RandomAccessCursorConcept,
+  ContiguousCursorConcept
+} from "@kingjs/cursor"
 
 function dump(fn) {
   const fnInfo = ClassInfo.from(fn)
@@ -32,8 +41,16 @@ function dump(fn) {
 // dump(MyExtensionClass)
 // dump(MyBaseConcept)
 // dump(MyLeftConcept)
-dump(MyConcept)
+// dump(MyConcept)
 
 // dump(MyEmptyClass)
 // dump(MyBase)
 // dump(MyClass)
+
+dump(CursorConcept)
+dump(InputCursorConcept)
+dump(OutputCursorConcept)
+dump(ForwardCursorConcept)
+dump(BidirectionalCursorConcept)
+dump(RandomAccessCursorConcept)
+dump(ContiguousCursorConcept)

@@ -16,15 +16,15 @@ export class InfoReflect {
   static baseType(type) {
     return Es6Reflect.baseType(type)
   }
+  static isAbstract(type) {
+    return Es6Reflect.isAbstract(type)
+  }
 
   // PartialTypeReflect proxies
   static isKnown(type) { 
     return PartialTypeReflect.isKnown(type)
   }
-  static isAbstract(type) {
-    return PartialTypeReflect.isAbstract(type)
-  }
-  
+
   // PartialReflect proxies
   static *keys(type, { isStatic } = { }) {
     yield* PartialReflect.keys(type, { isStatic })

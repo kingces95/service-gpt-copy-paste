@@ -227,7 +227,7 @@ describe('Given', () => {
       expect(info.isKnown).toBe(md.isKnown)
       expect(info.isPartialPojo).toBe(md.isPartialPojo)
       expect(info.isAbstract).toBe(md.isAbstract)
-      expect(info.isTransparentPartialObject).toBe(md.isTransparent)
+      expect(info.isTransparent).toBe(md.isTransparent)
       expect(info.isPartialClass).toBe(md.isPartialClass)
       expect(info.isConcept).toBe(md.isConcept)
       expect(info.isAnonymous).toBe(md.isAnonymous)

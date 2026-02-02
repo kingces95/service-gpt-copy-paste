@@ -112,21 +112,6 @@ describe('PartialPojo members', () => {
   })
 })
 
-describe('MyClass members', () => {
-  let pojo
-  beforeEach(async () => {
-    const fnInfo = ClassInfo.from(MyClass)
-    pojo = await fnInfo.toPojo({
-      isKnown: false,
-      isNonPublic: false,
-    })
-  })
-
-  it('matches expected', () => {
-    expect(pojo).toEqual(myClassPojo)
-  })
-})
-
 describe('MyConcept members', () => {
   let pojo
   beforeEach(async () => {

@@ -14,6 +14,7 @@ function metadata({ ownOnly, isStatic } = { }) {
       name: 'string',
       base: 'name',
       isAbstract: 'boolean',
+      isConcept: 'boolean',
       isAnonymous: 'boolean',
       [ownOnly ? 'ownMembers' : 'members']: 
         isStatic == true ? 'ignore' : 'records',
@@ -32,9 +33,12 @@ function metadata({ ownOnly, isStatic } = { }) {
       isKnown: 'boolean',
       isNonPublic: 'boolean',
       isConceptual: 'boolean',
-      isAbstract: (
-        isAbstract, [ { isAbstract: hostIsAbstract }, { isConceptual } ]) => 
-          !isConceptual && !hostIsAbstract && isAbstract ? true : null,
+      isAbstract: function(
+        isAbstract, [ { isConcept }, { isConceptual } ]) {
+          if (isConcept) return isAbstract ? null : false
+          if (isConceptual) return isAbstract ? null : false
+          return isAbstract ? true : null
+        },
       concepts: 'names',
     }],
   ])

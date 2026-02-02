@@ -54,14 +54,20 @@ describe('A type', () => {
     })
     describe('and a type that extends the concept', () => {
       let extendedConcept
+      let extendedMethodFn
+      let cls
       beforeEach(() => {
+        extendedMethodFn = () => { }
         extendedConcept = class ExtendedConcept extends MyConcept { }
+        extendedConcept.prototype.method = extendedMethodFn
+        cls = class { }
+        implement(cls, extendedConcept)
       })
-      it('should throw when implemented', () => {
-        const cls = class { }
-        expect(() => implement(cls, extendedConcept)).toThrow([
-          'Assertion failed: Expected type to indirectly extend PartialType.',
-        ].join(' '))
+      it('should satisfy the extended concept', () => {
+        expect(cls.prototype).toBeInstanceOf(extendedConcept)
+      })
+      it('should satisfy MyConcept', () => {
+        expect(cls.prototype).toBeInstanceOf(MyConcept)
       })
     })
     describe('implmented by the type', () => {

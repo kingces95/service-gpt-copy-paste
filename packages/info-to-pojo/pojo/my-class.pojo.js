@@ -1,3 +1,5 @@
+import { isAbstract } from "@kingjs/abstract"
+
 const MySymbol = Symbol.for('my-symbol')
 const MyStaticSymbol = Symbol.for('my-static-symbol')
 
@@ -6,8 +8,10 @@ export const myClassPojo = {
   base: 'MyBase',
   members: {
     conceptual: {
-      MyConcept: { methods: { myConceptMethod: { host: '.' } } },
-      MyBaseConcept: { methods: { myBaseConceptMethod: { host: 'MyBase' } } },
+      MyConcept: { methods: { myConceptMethod: { 
+        host: '.', isAbstract: false } } },
+      MyBaseConcept: { methods: { myBaseConceptMethod: { 
+        host: 'MyBase', isAbstract: false } } },
       MyLeftConcept: {
         methods: {
           myLeftConceptMethod: { host: 'MyBase' },

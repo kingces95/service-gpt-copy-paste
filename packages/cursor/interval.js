@@ -1,6 +1,6 @@
 import { DebugProxy } from '@kingjs/debug-proxy'
-import { define } from '@kingjs/member'
-import { abstract as toRange } from '@kingjs/abstract'
+import { extend } from '@kingjs/partial-extend'
+import { abstract } from '@kingjs/abstract'
 
 // Interval is the base class for Container, View, and Range. Strictly
 // speaking, Container and View both extend CursorFactory, but that
@@ -13,6 +13,6 @@ import { abstract as toRange } from '@kingjs/abstract'
 
 export class Interval extends DebugProxy {  
   static {
-    define(this, { toRange })
+    extend(this, { toRange: abstract })
   }
 }

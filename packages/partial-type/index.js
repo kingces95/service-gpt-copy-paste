@@ -170,26 +170,34 @@ export class PartialTypeReflect {
     return Es6Reflect.isKnownKey(type, key, { isStatic })
   }
 
-  static isAbstract(type) {
-    if (PartialTypeReflect.isPartialUrType(type)) return true
-    return PartialTypeReflect.isPartialType(type)
-  }
   static isPartialUrType(type) {
     if (type == PartialType) return true
     return Object.getPrototypeOf(type) == PartialType
   }
+  static baseType(type) {
+    if (PartialTypeReflect.isPartialUrType(type))
+      return Es6Reflect.baseType(type)
+
+    const result = Es6Reflect.baseType(type)
+    if (PartialTypeReflect.isPartialUrType(result))
+      return null
+
+    return result
+  }
   static isPartialType(type) {
-    return PartialTypeReflect.getPartialType(type) != null
+    if (!Es6Reflect.isExtensionOf(type, PartialType)) return false
+    if (PartialTypeReflect.isPartialUrType(type)) return false
+    // assert(PartialTypeReflect.isPartialUrType(Object.getPrototypeOf(type)),
+    //   `Expected type to indirectly extend PartialType.`)
+    return true
   }
   static getPartialType(type) {
-    const prototype = Object.getPrototypeOf(type)
-    if (prototype == PartialType) return null
-    if (Object.getPrototypeOf(prototype) != PartialType) {
-      assert(!(prototype.prototype instanceof PartialType),
-        `Expected type to indirectly extend PartialType.`)
-      return null
-    }
+    if (!PartialTypeReflect.isPartialType(type)) return null
 
-    return prototype
+    let baseType = type
+    while (baseType = Es6Reflect.baseType(baseType)) 
+      if (PartialTypeReflect.isPartialUrType(baseType)) return baseType
+    
+    return null
   }
 }

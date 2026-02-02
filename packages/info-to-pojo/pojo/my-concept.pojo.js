@@ -4,6 +4,7 @@ export const myConceptPojo = {
   name: 'MyConcept',
   base: 'Concept',
   isAbstract: true,
+  isConcept: true,
   members: { 
     conceptual: {
       MyLeftConcept: {

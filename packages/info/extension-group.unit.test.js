@@ -325,10 +325,10 @@ describe('A bespoke partial class', () => {
       const pojo = {
         members: {
           properties: {
-            myAccessor: { host: '.' }
+            myAccessor: { host: '.', isAbstract: true }
           },
           methods: {
-            myMethod: { host: '.' }
+            myMethod: { host: '.', isAbstract: true }
           }
         },
         name: 'MyPartialClass',

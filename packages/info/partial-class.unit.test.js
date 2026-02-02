@@ -4,7 +4,7 @@ import { TypeInfo, TypeInfo } from "@kingjs/info"
 import { PartialClass, Extends } from '@kingjs/partial-class'
 import { extend } from '@kingjs/partial-extend'
 import { PartialPojo } from '@kingjs/partial-pojo'
-import { abstract } from '@kingjs/abstract'
+import { abstract, isAbstract } from '@kingjs/abstract'
 import { } from "@kingjs/info-to-pojo"
 import { PartialReflect } from '@kingjs/partial-reflect'
 
@@ -46,7 +46,7 @@ describe('A partial class', () => {
     }],
     ['abstract method', { myMethod: abstract }, { 
       members: { methods: {
-        myMethod: { host: '.' } 
+        myMethod: { host: '.', isAbstract: true } 
       } }
     }],
     ['descriptor member', { myMethod: { value: 1 } }, {

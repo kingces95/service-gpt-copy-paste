@@ -1,13 +1,11 @@
 import { Range } from "./range.js"
 import { Interval } from "./interval.js"
-import { Member } from '@kingjs/es6-info'
 import { get } from '@kingjs/abstract'
-
-const { define } = Member
+import { extend } from '@kingjs/partial-extend'
 
 export class CursorFactory extends Interval {  
   static {
-    define(this, {
+    extend(this, {
       cursorType: { get },
     })
   }

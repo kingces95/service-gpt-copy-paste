@@ -115,6 +115,7 @@ describe('A concept', () => {
         base: 'Concept',
         name: 'MyConcept',
         isAbstract: true,
+        isConcept: true,
       })
     })
   })
@@ -312,6 +313,7 @@ describe('A bespoke concept', () => {
         name: 'MyConcept',
         base: 'Concept',
         isAbstract: true,
+        isConcept: true,
       }
       const fnInfo = TypeInfo.from(myConcept)
       const actual = await fnInfo.toPojo(pojoFilter)
@@ -340,21 +342,29 @@ describe('A bespoke concept', () => {
       })
     })  
   })  
-  describe('extended by an extended concept', () => {
+  describe('extended by a concept', () => {
     let myExtendedConcept
     beforeEach(() => {
       myExtendedConcept = class MyExtendedConcept extends myConcept { }
     })
-    describe('which overrides toString on both the base and extended concept', () => {
+    describe('with myMethod on the bespoke concept', () => {
       beforeEach(() => {
-        myConcept.prototype.toString = function() { }
-        myExtendedConcept.prototype.toString = function() { }
+        myConcept.prototype.myMethod = function() { }
       })
-      it('should throw while loading', async () => {
-        expect(() => TypeInfo.from(myExtendedConcept)).toThrow([
-          `Assertion failed:`,
-          `Expected type to indirectly extend PartialType.`
-        ].join(' '))
+      it('should have the expected pojo', async () => {
+        const pojo = {
+          name: 'MyExtendedConcept',
+          base: 'MyConcept',
+          isAbstract: true,
+          isConcept: true,
+          members: { conceptual: { MyConcept: { methods: {
+            myMethod: { host: '.' }
+          } } } },
+        }
+
+        const fnInfo = TypeInfo.from(myExtendedConcept)
+        const actual = await fnInfo.toPojo(pojoFilter)
+        expect(actual).toEqual(pojo)
       })
     })
   }) 
@@ -368,6 +378,7 @@ describe('A bespoke concept', () => {
         name: 'MyConcept',
         base: 'Concept',
         isAbstract: true,
+        isConcept: true,
         members: { methods: {
           method: { host: '.' }
         } },
@@ -429,6 +440,7 @@ describe('A bespoke concept', () => {
         name: 'MyConcept',
         base: 'Concept',
         isAbstract: true,
+        isConcept: true,
         members: {
           properties: {
             myAccessor: { 

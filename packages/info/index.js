@@ -59,10 +59,10 @@ export class TypeInfo {
   }
 
   get isKnown() { return InfoReflect.isKnown(this.ctor) }
-  get isNonPublic() { return this.id.isNonPublic }
   get isAbstract() { return InfoReflect.isAbstract(this.ctor) }
+  get isNonPublic() { return this.id.isNonPublic }
   get isAnonymous() { return this.id.isAnonymous }
-  get isTransparentPartialObject() { return this.isPartialPojo }
+  get isTransparent() { return this.isPartialPojo }
 
   get isPartialClass() { return this instanceof PartialClassInfo }
   get isPartialPojo() { return this instanceof PartialPojoInfo }

@@ -21,6 +21,13 @@ export class PartialLoader {
   static *ownPartialExtensions(type) {
     assert(PartialTypeReflect.isPartialType(type))
     yield* Associate.ownTypes(type, PartialType.OwnCollectionSymbols)
+    yield* PartialLoader.ownPartialExtensions$(type)
+  }
+  static *ownPartialExtensions$(type) {
+    const baseType = PartialTypeReflect.baseType(type)
+    if (!baseType) return
+    yield* PartialLoader.ownPartialExtensions$(baseType)
+    yield baseType
   }
 
   static getOwnDescriptor(type, key) {

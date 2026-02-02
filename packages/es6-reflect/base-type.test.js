@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Es6Reflect } from '@kingjs/es6-reflect'
+import { isAbstract } from '@kingjs/abstract'
 
 const NullTest = {
   name: 'null',
@@ -34,6 +35,7 @@ const MyClassExtendsNullTest = {
   name: 'MyClassExtendsNull',
   type: MyClassExtendsNull,
   baseType: null,
+  isAbstract: true,
 }
 
 const MyExtendedClassTest = {
@@ -59,5 +61,11 @@ describe.each(tests)('%s', (_, test) => {
   it(`should have correct base type`, () => {
     const result = Es6Reflect.baseType(type)
     expect(result).toBe(baseType)
+  })
+  it('should have correct isAbstract result', () => {
+    if (!type) return
+    const expected = !!test.isAbstract
+    const actual = Es6Reflect.isAbstract(type)
+    expect(actual).toBe(expected)
   })
 })

@@ -44,10 +44,10 @@ export function extend(type, partialType, {
     assert(PartialTypeReflect.isPartialType(partialType),
       `Expected partialType to indirectly extend PartialType.`)
 
-    for (const baseType of PartialLoader.ownPartialExtensions(partialType)) {
-      extend(type, baseType, { 
+    for (const extension of PartialLoader.ownPartialExtensions(partialType)) {
+      extend(type, extension, { 
         parentType: partialType,
-        isTransparent: baseType.prototype instanceof PartialPojo
+        isTransparent: extension.prototype instanceof PartialPojo
       })
     }
 

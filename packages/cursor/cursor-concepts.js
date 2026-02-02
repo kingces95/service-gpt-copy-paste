@@ -18,29 +18,23 @@ export class CursorConcept extends Concept {
   equatableTo(other) { }
 }
 
-export class InputCursorConcept extends Concept {
-  static [Implements] = CursorConcept
+export class InputCursorConcept extends CursorConcept {
   get value() { }
 }
 
-export class OutputCursorConcept extends Concept {
-  static [Implements] = CursorConcept
+export class OutputCursorConcept extends CursorConcept {
   set value(value) { }
 }
 
-export class ForwardCursorConcept extends Concept {
-  static [Implements] = CursorConcept
+export class ForwardCursorConcept extends CursorConcept {
   clone() { }
 }
 
-export class BidirectionalCursorConcept extends Concept {
-  static [Implements] = ForwardCursorConcept
+export class BidirectionalCursorConcept extends ForwardCursorConcept {
   stepBack() { }
 }
 
-export class RandomAccessCursorConcept extends Concept {
-  static [Implements] = BidirectionalCursorConcept
-
+export class RandomAccessCursorConcept extends BidirectionalCursorConcept {
   static [Preconditions] = 
     class extends BidirectionalCursorConcept[Preconditions] {
       compareTo(other) {
@@ -58,9 +52,7 @@ export class RandomAccessCursorConcept extends Concept {
   subtract(other) { }
 }
 
-export class ContiguousCursorConcept extends Concept {
-  static [Implements] = RandomAccessCursorConcept
-
+export class ContiguousCursorConcept extends RandomAccessCursorConcept {
   static [Preconditions] = 
     class extends RandomAccessCursorConcept[Preconditions] {
       data(other) {
