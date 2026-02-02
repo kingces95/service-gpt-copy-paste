@@ -1,6 +1,7 @@
 import { ClassInfo } from "@kingjs/info"
 import { } from "@kingjs/info-to-pojo"
 import {
+  MyExtensions,
   MyBaseConcept,
   MyLeftConcept,
   MyRightConcept,
@@ -32,6 +33,8 @@ function dump(fn) {
 // dump(Object)
 // dump(Function)
 
+// dump(MyExtensions)
+
 // dump(PartialType)
 // dump(PartialClass)
 // dump(Concept)
@@ -44,13 +47,13 @@ function dump(fn) {
 // dump(MyConcept)
 
 // dump(MyEmptyClass)
-// dump(MyBase)
+dump(MyBase)
 // dump(MyClass)
 
-dump(CursorConcept)
-dump(InputCursorConcept)
-dump(OutputCursorConcept)
-dump(ForwardCursorConcept)
-dump(BidirectionalCursorConcept)
-dump(RandomAccessCursorConcept)
-dump(ContiguousCursorConcept)
+// dump(CursorConcept)
+// dump(InputCursorConcept)
+// dump(OutputCursorConcept)
+// dump(ForwardCursorConcept)
+// dump(BidirectionalCursorConcept)
+// dump(RandomAccessCursorConcept)
+// dump(ContiguousCursorConcept)

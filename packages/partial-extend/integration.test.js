@@ -33,9 +33,12 @@ describe('Extensions with non-standard properties', () => {
       const pojo = await TypeInfo.from(cls).toPojo(filter)
       expect(pojo).toEqual({
         members: { fields: {
-          writableFalse: { host: '.', modifiers: [ 'const' ] },
-          enumerableFalse: { host: '.', modifiers: [ 'hidden' ] },
-          configurableFalse: { host: '.', modifiers: [ 'sealed' ]},
+          writableFalse: { 
+            host: '.', modifiers: [ 'const' ], fieldType: 'number' },
+          enumerableFalse: { 
+            host: '.', modifiers: [ 'hidden' ], fieldType: 'number' },
+          configurableFalse: { 
+            host: '.', modifiers: [ 'sealed' ], fieldType: 'number' },
         } },
         isAnonymous: true,
         base: 'Object',

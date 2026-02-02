@@ -39,7 +39,7 @@ const PartialPojoMd = {
   base: PartialType,
 }
 
-const PartialClassMd = {
+const ExtensionsMd = {
   ctor: PartialClass,
   toString: '[classInfo PartialClass]',
   isKnown: true,
@@ -65,7 +65,7 @@ const ConceptMd = {
   base: PartialType,
 }
 
-const MyPartialPojoMd = {
+const MyExtensionsMd = {
   ctor: PartialReflect.load({ }),
   toString: '[partialPojoInfo]',
   isKnown: false,
@@ -75,7 +75,7 @@ const MyPartialPojoMd = {
   isPartialClass: false,
   isConcept: false,
   isAnonymous: true,
-  base: Extensions,
+  base: null,
 }
 
 const MyPartialClassMd = {
@@ -88,7 +88,7 @@ const MyPartialClassMd = {
   isPartialClass: true,
   isConcept: false,
   isAnonymous: false,
-  base: PartialClass,
+  base: null,
 }
 
 const MyConceptMd = {
@@ -101,7 +101,7 @@ const MyConceptMd = {
   isPartialClass: false,
   isConcept: true,
   isAnonymous: false,
-  base: Concept,
+  base: null,
 }
 
 const Es6Object = {
@@ -180,9 +180,9 @@ describe('Given', () => {
       ['Es6Function', Es6Function],
       ['PartialType', PartialObjectMd],
       ['Extensions', PartialPojoMd],
-      ['PartialClass',  PartialClassMd],
+      ['PartialClass',  ExtensionsMd],
       ['Concept', ConceptMd],
-      ['MyPartialPojo', MyPartialPojoMd],
+      ['MyPartialPojo', MyExtensionsMd],
       ['MyPartialClass', MyPartialClassMd],
       ['MyConcept', MyConceptMd],
       ['MyClass', MyClassMd],

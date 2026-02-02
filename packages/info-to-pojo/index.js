@@ -6,7 +6,6 @@ import { trimPojo } from '@kingjs/pojo-trim'
 import { toPojo } from '@kingjs/pojo'
 import { dumpPojo } from "@kingjs/pojo-dump"
 import { PojoMetadata } from '@kingjs/pojo-metadata'
-import { isAbstract } from '@kingjs/abstract'
 
 function metadata({ ownOnly, isStatic } = { }) {
   return new PojoMetadata([
@@ -22,24 +21,25 @@ function metadata({ ownOnly, isStatic } = { }) {
         isStatic == false ? 'ignore' : 'records',
     }],
     [MemberInfo, {
+      // pivots
+      type: 'string',
+      isKnown: 'boolean',
+      isNonPublic: 'boolean',
+      isConceptual: 'boolean',
+      concepts: 'names',
+
+      // properties
       name: 'key',
       modifiers: 'list',
       host: ({ name }, [ context ]) => 
         name == context.name ? '.' : name,
-
-      // pivots
-      type: 'string',
-      // isStatic: 'boolean',
-      isKnown: 'boolean',
-      isNonPublic: 'boolean',
-      isConceptual: 'boolean',
+      fieldType: 'string',
       isAbstract: function(
         isAbstract, [ { isConcept }, { isConceptual } ]) {
           if (isConcept) return isAbstract ? null : false
           if (isConceptual) return isAbstract ? null : false
           return isAbstract ? true : null
         },
-      concepts: 'names',
     }],
   ])
 }

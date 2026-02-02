@@ -31,9 +31,9 @@ describe('TypeInfo for PartialClass', () => {
       expect(member).toBeNull()
     })
   })
-  it('has ExtensionsInfo as base', () => {
+  it('has null as base', () => {
     const ExtensionInfo = ClassInfo.PartialType
-    expect(fnInfo.base).toEqual(ExtensionInfo)
+    expect(fnInfo.base).toEqual(null)
   })
   it('has no own names or symbols', () => {
     const members = Array.from(fnInfo.ownMembers())
@@ -161,7 +161,6 @@ describe('A bespoke partial class', () => {
           },
         } },
         name: 'MyPartialClass',
-        base: 'PartialClass',
         isAbstract: true,
       }
       const fnInfo = ClassInfo.from(myPartialClass)
@@ -177,7 +176,6 @@ describe('A bespoke partial class', () => {
     it('has a pojo', async () => {
       const pojo = {
         name: 'MyPartialClass',
-        base: 'PartialClass',
         isAbstract: true,
       }
 
@@ -195,7 +193,6 @@ describe('A bespoke partial class', () => {
     it('has a pojo that ignores the static member', async () => {
       const pojo = {
         name: 'MyPartialClass',
-        base: 'PartialClass',
         isAbstract: true,
         members: { methods: {
           method: { host: '.' }
@@ -221,7 +218,6 @@ describe('A bespoke partial class', () => {
     it('has a pojo that ignores the static data member', async () => {
       const pojo = {
         name: 'MyPartialClass',
-        base: 'PartialClass',
         isAbstract: true,
       }
       const fnInfo = ClassInfo.from(myPartialClass)
@@ -239,10 +235,10 @@ describe('A bespoke partial class', () => {
           fields: {
             myInstanceData: {
               host: '.',
+              fieldType: 'number',
           } },
         },
         name: 'MyPartialClass',
-        base: 'PartialClass',
         isAbstract: true,
       }
       const fnInfo = ClassInfo.from(myPartialClass)
@@ -262,7 +258,6 @@ describe('A bespoke partial class', () => {
   
     it('has a pojo', async () => {
       const pojo = {
-        base: 'PartialClass',
         name: 'MyEg',
         isAbstract: true,
       }
@@ -295,7 +290,6 @@ describe('A bespoke partial class', () => {
             myMethod: { host: '.' }
           }
         },
-        base: 'PartialClass',
         name: 'MyEg',
         isAbstract: true,
       }
@@ -331,9 +325,8 @@ describe('A bespoke partial class', () => {
             myMethod: { host: '.', isAbstract: true }
           }
         },
-        name: 'MyPartialClass',
-        base: 'PartialClass',
         isAbstract: true,
+        name: 'MyPartialClass',
       }
       const fnInfo = ClassInfo.from(myPartialClass)
       const actual = await fnInfo.toPojo(pojoFilter)

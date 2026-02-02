@@ -112,7 +112,6 @@ describe('A concept', () => {
       // const members = [...info.members()]
       expect(await info.toPojo(pojoFilter)).toEqual({
         ...expected,
-        base: 'Concept',
         name: 'MyConcept',
         isAbstract: true,
         isConcept: true,
@@ -311,7 +310,6 @@ describe('A bespoke concept', () => {
           },
         } },
         name: 'MyConcept',
-        base: 'Concept',
         isAbstract: true,
         isConcept: true,
       }
@@ -376,7 +374,6 @@ describe('A bespoke concept', () => {
     it('has a pojo that ignores the static member', async () => {
       const pojo = {
         name: 'MyConcept',
-        base: 'Concept',
         isAbstract: true,
         isConcept: true,
         members: { methods: {
@@ -438,7 +435,6 @@ describe('A bespoke concept', () => {
     it('has a pojo', async () => {
       const pojo = {
         name: 'MyConcept',
-        base: 'Concept',
         isAbstract: true,
         isConcept: true,
         members: {

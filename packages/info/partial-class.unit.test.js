@@ -3,8 +3,7 @@ import { beforeEach } from 'vitest'
 import { TypeInfo, TypeInfo } from "@kingjs/info"
 import { PartialClass, Extends } from '@kingjs/partial-class'
 import { extend } from '@kingjs/partial-extend'
-import { Extensions } from '@kingjs/extensions'
-import { abstract, isAbstract } from '@kingjs/abstract'
+import { abstract } from '@kingjs/abstract'
 import { } from "@kingjs/info-to-pojo"
 import { PartialReflect } from '@kingjs/partial-reflect'
 
@@ -41,7 +40,7 @@ describe('A partial class', () => {
     }],
     ['data', { myData: 1 }, { 
       members: { fields: {
-        myData: { host: '.' } 
+        myData: { host: '.', fieldType: 'number' } 
       } },
     }],
     ['abstract method', { myMethod: abstract }, { 
@@ -51,12 +50,12 @@ describe('A partial class', () => {
     }],
     ['descriptor member', { myMethod: { value: 1 } }, {
       members: { fields: {
-        myMethod: { host: '.' } 
+        myMethod: { host: '.', fieldType: 'number'} 
       } },
     }],
     ['const field', { myField: { value: 3.141, writable: false } }, {
       members: { fields: {
-        myField: { host: '.', modifiers: [ 'const' ] } 
+        myField: { host: '.', modifiers: [ 'const' ], fieldType: 'number' } 
       } },
     }],
   ])('with %s', (_, cls, expected) => {
@@ -66,7 +65,6 @@ describe('A partial class', () => {
       const actual = await fnInfo.toPojo(pojoFilter) 
       expect(actual).toEqual({
         ...expected,
-        base: 'Extensions',
         isAnonymous: true,
         isAbstract: true,
       })

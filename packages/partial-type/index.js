@@ -123,10 +123,13 @@ export class PartialTypeReflect {
   }
 
   static isPartialUrType(type) {
+    if (!type) return false
     if (type == PartialType) return true
     return Object.getPrototypeOf(type) == PartialType
   }
   static baseType(type) {
+    if (!type) return null
+
     if (PartialTypeReflect.isPartialUrType(type))
       return Es6Reflect.baseType(type)
 

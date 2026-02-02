@@ -1,7 +1,7 @@
 import { assert } from '@kingjs/assert'
 import { Associate } from '@kingjs/associate'
 import { UserReflect } from '@kingjs/user-reflect'
-import { Extensions, ExtensionsReflect } from '@kingjs/extensions'
+import { ExtensionsReflect } from '@kingjs/extensions'
 import { 
   PartialType, 
   PartialTypeReflect 
@@ -12,7 +12,7 @@ import {
 export class PartialLoader {
 
   static load(pojoOrType) {
-    const type = ExtensionsReflect.define(pojoOrType, Extensions)
+    const type = ExtensionsReflect.define(pojoOrType)
     assert(PartialTypeReflect.isPartialType(type))
     return type
   }

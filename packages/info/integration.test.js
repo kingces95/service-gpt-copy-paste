@@ -337,7 +337,7 @@ describe('A class', () => {
     ['no members', class { }, { }],
     ['static data', class { static myStaticMember = 1 }, {
       staticMembers: { fields: {
-        myStaticMember: { host: '.' } 
+        myStaticMember: { host: '.', fieldType: 'number'} 
       } },
     }],
     ['instance member', class { myInstanceMember = 1 }, { }],
@@ -427,7 +427,7 @@ describe('A bespoke class', () => {
         staticMembers: {
           // Instance ctor is known so excluded by filter 
           fields: {
-            constructor: { host: '.' }
+            constructor: { host: '.', fieldType: 'function'  }
           }
         },
         base: 'Object'
@@ -456,6 +456,7 @@ describe('A bespoke class', () => {
           myStaticConst: { 
             host: '.',
             modifiers: [ 'sealed', 'const' ],
+            fieldType: 'number',
           }
         } },
         base: 'Object'
@@ -478,12 +479,12 @@ describe('A bespoke class', () => {
         members: { 
           fields: {
             myInstanceData: { 
-              host: '.', 
+              host: '.', fieldType: 'number'
           } },
         },
         staticMembers: { fields: {
           myStaticData: { 
-            host: '.', 
+            host: '.', fieldType: 'number'
         } } },
         base: 'Object'
       }

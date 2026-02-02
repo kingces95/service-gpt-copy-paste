@@ -11,8 +11,10 @@ import { } from "@kingjs/info-to-pojo"
 
 import { myClassPojo } from "./pojo/my-class.pojo.js"
 import { myConceptPojo } from "./pojo/my-concept.pojo.js"
+import { myExtensionsPojo } from "./pojo/my-extensions.pojo.js"
 
 import {
+  MyExtensions,
   MyBaseConcept,
   MyLeftConcept,
   MyRightConcept,
@@ -121,6 +123,18 @@ describe('MyConcept members', () => {
 
   it('matches expected', () => {
     expect(pojo).toEqual(myConceptPojo)
+  })
+})
+
+describe('MyExtensions members', () => {
+  let pojo
+  beforeEach(async () => {
+    const fnInfo = ClassInfo.from(MyExtensions)
+    pojo = await fnInfo.toPojo()
+  })
+
+  it('matches expected', () => {
+    expect(pojo).toEqual(myExtensionsPojo)
   })
 })
 

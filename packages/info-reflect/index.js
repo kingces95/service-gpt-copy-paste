@@ -13,9 +13,6 @@ export class InfoReflect {
   static getMetadata(type) {
     return Es6Reflect.getMetadata(type)
   }
-  static baseType(type) {
-    return Es6Reflect.baseType(type)
-  }
   static isAbstract(type) {
     return Es6Reflect.isAbstract(type)
   }
@@ -24,9 +21,9 @@ export class InfoReflect {
   static isKnown(type) { 
     return PartialTypeReflect.isKnown(type)
   }
-  // static baseType(type) { 
-  //   return PartialTypeReflect.baseType(type)
-  // }
+  static baseType(type) { 
+    return PartialTypeReflect.baseType(type)
+  }
 
   // PartialReflect proxies
   static *keys(type, { isStatic } = { }) {

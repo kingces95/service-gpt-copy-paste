@@ -1,11 +1,41 @@
-import { abstract } from "@kingjs/abstract"
+import { abstract, value } from "@kingjs/abstract"
 import { PartialClass, Extends } from "@kingjs/partial-class"
 import { implement } from "@kingjs/implement"
 import { Concept, Implements } from "@kingjs/concept"
 import { extend } from "@kingjs/partial-extend"
+import { ExtensionsReflect } from "@kingjs/extensions"
 
 const MySymbol = Symbol.for('my-symbol')
 const MyStaticSymbol = Symbol.for('my-static-symbol')
+
+export const MyExtensions = ExtensionsReflect.define({
+  myMethod() { },
+  get myGetter() { },
+  myAbstractGetter: { get: abstract },
+  myOddGetter: {
+    get: () => { },
+    configurable: false,
+    enumerable: true,
+  },
+  set mySetter(value) { },
+  myAbstractSetter: { set: abstract },
+  myAbstractMethod: abstract,
+  myLambda: () => { },
+  myField: 42,
+  myConstant: {
+    value: 3.14159,
+    enumerable: true,
+    configurable: false,
+    writable: false,
+  },
+  myClassField: class { },
+  get myProperty() { },
+  set myProperty(value) { },
+  myAbstractProperty: {
+    get: abstract,
+    set: abstract,
+  },
+})
 
 export class MyBaseConcept extends Concept { 
   myBaseConceptMethod() { } 
