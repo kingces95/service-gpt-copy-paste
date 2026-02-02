@@ -22,7 +22,7 @@ export class Es6Reflect {
     prototype = Object.getPrototypeOf(prototype)
     if (prototype == Function.prototype) 
       prototype = Object.prototype
-      
+
     return prototype?.constructor ?? null
   }
 
