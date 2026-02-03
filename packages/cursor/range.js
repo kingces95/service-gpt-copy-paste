@@ -1,7 +1,5 @@
 import { Interval } from "./interval.js"
-import {
-  throwNotEquatableTo,
-} from '@kingjs/cursor'
+import { throwNotEquatableTo } from '@kingjs/cursor'
 
 export class Range extends Interval {
   #begin
@@ -15,31 +13,25 @@ export class Range extends Interval {
     if (!begin.equatableTo(end)) throwNotEquatableTo()
   }
 
-  toRange$() { return new Range(this.begin, this.end) }
-  split$(cursor) {
+  get begin() { return this.#begin }
+  get end() { return this.#end }
+
+  // interval
+  toRange() { return this }
+
+  data() { return this.begin.data(this.end) }
+  mayContain(cursor) { return this.begin.equatableTo(cursor) }
+  split(cursor) {
+    if (!this.mayContain(cursor)) throwNotEquatableTo()
     return [
       new Range(this.begin, cursor),
       new Range(cursor, this.end)
     ]
-  }
-
-  get begin() { return this.#begin }
-  get end() { return this.#end }
-
-  data() { return this.begin.data(this.end) }
-
-  mayContain(cursor) {
-    return this.begin.equatableTo(cursor)
-  }
-
-  split(cursor) {
-    if (!this.mayContain(cursor)) throwNotEquatableTo()
-    return this.split$(cursor)
   } 
-
   equals(other) {
     if (!(other instanceof Range)) return false
-    return this.begin.equatableTo(other.begin) &&
-           this.end.equatableTo(other.end)
+    if (!this.begin.equals(other.begin)) return false
+    if (!this.end.equals(other.end)) return false
+    return true
   }
 }

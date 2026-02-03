@@ -11,9 +11,9 @@ export class Vector extends IndexableContainer {
 
   #array
 
-  constructor() { 
+  constructor(elements = []) { 
     super()
-    this.#array = []
+    this.#array = elements
   }
 
   // indexable cursor

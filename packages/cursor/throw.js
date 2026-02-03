@@ -6,7 +6,7 @@ export function throwNotImplemented() { throw new Error(
 export function throwNull() { throw new TypeError(
   'Cursor cannot be null or undefined.') }
 export function throwNotEquatableTo() { throw new TypeError(
-  'Cursor is not an equatable cursor in this context.') }
+  'Cursor is from another container.') }
 
 export function throwStale() { throw new Error(
   'Cursor is stale and cannot be used.') }

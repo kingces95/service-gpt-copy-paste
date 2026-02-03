@@ -59,8 +59,7 @@ describe('MyConcept', () => {
   })
   it('should have no own associated concepts', () => {
     const actual = ConceptReflect.ownAssociatedConcepts(MyConcept)
-    const expected = [ ]
-    expect([...actual]).toEqual(expected)
+    expect([...actual]).toEqual([])
   })
   it('should be found on an empty object', () => {
     expect({ }).toBeInstanceOf(MyConcept)
@@ -94,6 +93,26 @@ describe('MyConcept', () => {
       expect({ }).not.toBeInstanceOf(MyConcept)
     })
   })
+  describe('with a getter named value', () => {
+    beforeEach(() => {
+      Object.defineProperty(MyConcept.prototype, 'value', {
+        get: abstract,
+      })
+    })
+    it('should have prototype that is instance of itself', () => {
+      expect(MyConcept.prototype).toBeInstanceOf(MyConcept)
+    })
+    it('should be found on an object with the getter', () => {
+      expect({ get value() { } }).toBeInstanceOf(MyConcept)
+    })
+    it('should not be found on an object without the getter', () => {
+      expect({ }).not.toBeInstanceOf(MyConcept)
+    })
+    it('should not be found on an object with just a setter', () => {
+      expect({ set value(value) { } }).not.toBeInstanceOf(MyConcept)
+    })
+  })
+
   describe('with MySubConcept and PartialClass', () => {
     let MySubConcept
     let MyPartialClass
@@ -133,12 +152,12 @@ describe('MyConcept', () => {
       })
       it('should have associated concept', () => {
         const actual = [...ConceptReflect.associatedConcepts(MyConcept)]
-        const expected = [ ['associatedType', AssociatedConcept] ]
+        const expected = [ 'associatedType', AssociatedConcept ]
         expect(actual).toEqual(expected)
       })
       it('should have own associated concept', () => {
         const actual = [...ConceptReflect.ownAssociatedConcepts(MyConcept)]
-        const expected = [ ['associatedType', AssociatedConcept] ]
+        const expected = [ 'associatedType', AssociatedConcept ]
         expect(actual).toEqual(expected)
       })
       it('should not be found on an empty object', () => {

@@ -1,5 +1,7 @@
-import { Concept, Implements } from '@kingjs/concept'
+import { Concept } from '@kingjs/concept'
+import { Extends } from '@kingjs/partial-class'
 import {
+  Range,
   CursorConcept,
   InputCursorConcept,
   OutputCursorConcept,
@@ -12,39 +14,32 @@ import {
 export class RangeConcept extends Concept {
   toRange() { }
 }
-export class ContainerConcept extends Concept {
+export class ContainerConcept extends RangeConcept {
+  static cursorType = CursorConcept
   static [Extends] = {
     toRange() { return new Range(this.begin(), this.end()) },
     get isEmpty() { return this.begin().equals(this.end()) }
   }
-  static [Implements] = [ RangeConcept ]
-  static cursorType = CursorConcept
 
   get begin() { }
   get end() { }
 }
-export class InputContainerConcept extends Concept {
-  static [Implements] = [ ContainerConcept ]
+export class InputContainerConcept extends ContainerConcept {
   static cursorType = InputCursorConcept
 }
-export class OutputContainerConcept extends Concept {
-  static [Implements] = [ ContainerConcept ]
+export class OutputContainerConcept extends ContainerConcept {
   static cursorType = OutputCursorConcept
 }
-export class ForwardContainerConcept extends Concept {
-  static [Implements] = [ InputContainerConcept ]
+export class ForwardContainerConcept extends InputContainerConcept {
   static cursorType = ForwardCursorConcept
 }
-export class BidirectionalContainerConcept extends Concept {
-  static [Implements] = [ ForwardContainerConcept ]
+export class BidirectionalContainerConcept extends ForwardContainerConcept {
   static cursorType = BidirectionalCursorConcept
 }
-export class RandomAccessContainerConcept extends Concept {
-  static [Implements] = [ BidirectionalContainerConcept ]
+export class RandomAccessContainerConcept extends BidirectionalContainerConcept {
   static cursorType = RandomAccessCursorConcept
 }
-export class ContiguousContainerConcept extends Concept {
-  static [Implements] = [ RandomAccessContainerConcept ]
+export class ContiguousContainerConcept extends RandomAccessContainerConcept {
   static cursorType = ContiguousCursorConcept
 }
 

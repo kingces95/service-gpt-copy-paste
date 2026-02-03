@@ -153,12 +153,24 @@ export class TypeInfo {
       .map(concept => TypeInfo.from(concept))
   }
   *ownAssociatedConcepts() {
-    yield* InfoReflect.ownAssociatedConcepts(this.ctor)
-      .map(([name, concept]) => [name, TypeInfo.from(concept)])
+    for (const current of InfoReflect.ownAssociatedConcepts(this.ctor)) {
+      switch (typeof current) {
+        case 'string': yield current; break
+        case 'function': yield TypeInfo.from(current); break
+        default: 
+          assert(false, `Unexpected type: ${typeof current}`)
+      }  
+    }
   }
   *associatedConcepts() {
-    yield* InfoReflect.associatedConcepts(this.ctor)
-      .map(([name, concept]) => [name, TypeInfo.from(concept)])
+    for (const current of InfoReflect.associatedConcepts(this.ctor)) {
+      switch (typeof current) {
+        case 'string': yield current; break
+        case 'function': yield TypeInfo.from(current); break
+        default: 
+          assert(false, `Unexpected type: ${typeof current}`)
+      }  
+    }
   }
 
   equals(other) { return this == other }

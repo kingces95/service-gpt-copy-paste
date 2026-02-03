@@ -6,6 +6,7 @@ import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { PartialType, PartialTypeReflect } from '@kingjs/partial-type'
 import { PartialReflect, isKey } from '@kingjs/partial-reflect'
 import { PartialClass, Extends } from '@kingjs/partial-class'
+import { Descriptor } from '@kingjs/descriptor'
 
 export const Implements = Symbol('Concept.Implements')
 
@@ -102,7 +103,8 @@ export class ConceptReflect {
       if (typeof concept != 'function') continue
       if (!Es6Reflect.isExtensionOf(concept, Concept)) continue
 
-      yield [name, concept]
+      yield name
+      yield concept
     }
   }
 
@@ -119,25 +121,52 @@ export class ConceptReflect {
     //   static cursorType = InputCursor
     // and InputContainerConcept declares associated concept as
     //   static cursorType = InputCursorConcept
-    for (const [name, associatedConcept] of 
-      ConceptReflect.associatedConcepts(concept)) {
-        
-      const type = instance?.constructor
-      if (!(name in type)) 
-        return false
+    const ctor = instance?.constructor
+    let associatedType
+    for (const current of ConceptReflect.associatedConcepts(concept)) {
+      if (!ctor) return false
 
-      const associatedType = type?.[name]
-      if (!(typeof associatedType == 'function')) 
-        return false
-
-      if (!(associatedType.prototype instanceof associatedConcept)) 
-        return false 
+      switch (typeof current) {
+        case 'string': 
+          const name = current
+          if (!(name in ctor)) return false
+          associatedType = ctor[name]
+          if (!(typeof associatedType == 'function')) return false
+          break
+        case 'function': 
+          const associatedConcept = current
+          if (!(associatedType.prototype instanceof associatedConcept)) 
+            return false 
+          break
+        default: 
+          assert(false, `Unexpected type: ${typeof current}`)
+      }  
     }
 
-    for (const name of PartialReflect.keys(concept)
-      .filter(isKey)) {
-      if (name in instance) continue 
-      return false
+    let owner
+    let name
+    let descriptor, descriptorType
+    for (const current of PartialReflect.descriptors(concept)) {
+      switch (typeof current) {
+        case 'function': owner = current; break
+        case 'string': 
+        case 'symbol': 
+          name = current
+          if (!(name in instance)) return false 
+          descriptor = Descriptor.get(instance, name)
+          descriptorType = Descriptor.typeof(descriptor)
+          break
+        case 'object': {
+          const thisDescriptor = current
+          const thisDescriptorType = Descriptor.typeof(thisDescriptor)
+          if (descriptorType == thisDescriptorType) continue
+          if (descriptorType == 'property') {
+            if (thisDescriptorType == 'getter') continue
+            if (thisDescriptorType == 'setter') continue
+          }
+          return false
+        }
+      }
     }
 
     return true

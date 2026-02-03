@@ -45,7 +45,7 @@ class MyType {
   }
   get value() { return this.value$ }
   set value(value) { this.value$ = value }
-  get method() { return this.readOnly$ }
+  method() { return this.readOnly$ }
 }
 
 describe('An instance of a type', () => {

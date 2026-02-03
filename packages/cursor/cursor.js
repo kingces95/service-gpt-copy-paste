@@ -15,15 +15,19 @@ export class Cursor extends DebugProxy {
   get scope$() { return this.#scope }
 
   static {
-    extend(this, { equals$: abstract })
+    extend(this, { 
+      equals$: abstract,
+      step$: abstract,
+    })
 
     implement(this, CursorConcept, {
+      step() { return this.step$() },
       equals(other) {
         if (!this.equatableTo(other)) return false
         return this.equals$(other)
       },
       equatableTo(other) {
-        if (!(other instanceof Cursor)) return false
+        if (other?.constructor != this.constructor) return false
         return this.scope$ == other.scope$
       },
     })

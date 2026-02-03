@@ -1,15 +1,9 @@
 import { Range } from "./range.js"
 import { Interval } from "./interval.js"
-import { get } from '@kingjs/abstract'
+import { abstract } from '@kingjs/abstract'
 import { extend } from '@kingjs/partial-extend'
 
 export class CursorFactory extends Interval {  
-  static {
-    extend(this, {
-      cursorType: { get },
-    })
-  }
-
   #cursorType
 
   constructor() { 
@@ -29,6 +23,10 @@ export class CursorFactory extends Interval {
 
   // cursor factory
   get isEmpty() { return this.begin().equals(this.end()) }
-  begin() { return this.cursor$() }
-  end() { return this.cursor$() }
+  static {
+    extend(this, {
+      begin: abstract,
+      end: abstract,
+    })
+  }
 }

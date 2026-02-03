@@ -1,8 +1,9 @@
-import { implement } from '@kingjs/implement'
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
+import { implement } from '@kingjs/implement'
 import { Cursor } from './cursor.js'
 import { Preconditions } from '@kingjs/debug-proxy'
+import { extend } from '@kingjs/partial-extend'
 import { 
   CursorConcept,
   InputCursorConcept,
@@ -97,7 +98,7 @@ class TrivialBidirectionalCursor extends TrivialForwardCursor {
 
 class TrivialRandomAccessCursor extends TrivialBidirectionalCursor {
   static [Preconditions] = class extends TrivialBidirectionalCursor[Preconditions] {
-    static { implement(this, RandomAccessCursorConcept[Preconditions]) }
+    static { extend(this, RandomAccessCursorConcept[Preconditions]) }
     setAt(offset, value) {
       throwWriteOutOfBounds()
     }
@@ -105,7 +106,7 @@ class TrivialRandomAccessCursor extends TrivialBidirectionalCursor {
       throwReadOutOfBounds()
     }
   }
-  static { implement(this, RandomAccessCursorConcept) }
+  static { extend(this, RandomAccessCursorConcept) }
   move$(offset) { 
     if (offset === 0) return this
     throwMoveOutOfBounds()
@@ -124,9 +125,9 @@ class TrivialRandomAccessCursor extends TrivialBidirectionalCursor {
 
 class TrivialContiguousCursor extends TrivialRandomAccessCursor {
   static [Preconditions] = class extends TrivialRandomAccessCursor[Preconditions] {
-    static { implement(this, ContiguousCursorConcept[Preconditions]) }
+    static { extend(this, ContiguousCursorConcept[Preconditions]) }
   }
-  static { implement(this, ContiguousCursorConcept) }
+  static { extend(this, ContiguousCursorConcept) }
   readAt$(offset = 0, length = 1, signed = false, littleEndian = false) { 
     throw new RangeError()
   }  
@@ -291,7 +292,7 @@ describe.each(cases)('%s', (_, concepts, begin0, end0, begin1) => {
   it('should throw if subtracting null', () => {
     if (!(begin instanceof RandomAccessCursorConcept)) return
     expect(() => begin.subtract(null)).toThrow(
-      "Cursor is not an equatable cursor in this context."
+      "Cursor is from another container."
     )
   })
   it('should return 0 on compareTo', () => {
@@ -301,7 +302,7 @@ describe.each(cases)('%s', (_, concepts, begin0, end0, begin1) => {
   it('should throw if compared to null', () => {
     if (!(begin instanceof RandomAccessCursorConcept)) return
     expect(() => begin.compareTo(null)).toThrow(
-      "Cursor is not an equatable cursor in this context."
+      "Cursor is from another container."
     )
   })
   it('should throw RangeError on read 1', () => {
@@ -357,7 +358,7 @@ describe.each(cases)('%s', (_, concepts, begin0, end0, begin1) => {
   it('should throw if data called with null cursor', () => {
     if (!(begin instanceof ContiguousCursorConcept)) return
     expect(() => begin.data(null)).toThrow(
-      "Cursor is not an equatable cursor in this context."
+      "Cursor is from another container."
     )
   })
 
@@ -435,19 +436,19 @@ describe.each(cases)('%s', (_, concepts, begin0, end0, begin1) => {
     it('should throw subtracting from other cursor', () => {
       if (!(begin instanceof RandomAccessCursorConcept)) return
       expect(() => begin.subtract(otherCursor)).toThrow(
-        "Cursor is not an equatable cursor in this context."
+        "Cursor is from another container."
       )
     })
     it('should throw comparing to other cursor', () => {
       if (!(begin instanceof RandomAccessCursorConcept)) return
       expect(() => begin.compareTo(otherCursor)).toThrow(
-        "Cursor is not an equatable cursor in this context."
+        "Cursor is from another container."
       )
     })
     it('should throw data with other cursor', () => {
       if (!(begin instanceof ContiguousCursorConcept)) return
       expect(() => begin.data(otherCursor)).toThrow(
-        "Cursor is not an equatable cursor in this context."
+        "Cursor is from another container."
       )
     })
   })

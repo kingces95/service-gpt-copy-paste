@@ -136,8 +136,8 @@ describe('A type', () => {
             expect(descriptor.get).toBe(undefined)
             expect(descriptor.set).toBe(abstract)
           })
-          it('should still satisfy the concept', () => {
-            expect(ConceptReflect.satisfies(type.prototype, MyConcept)).toBe(true)
+          it('should not satisfy the concept', () => {
+            expect(ConceptReflect.satisfies(type.prototype, MyConcept)).toBe(false)
           })
         })
         describe('and removes the setter', () => {
@@ -152,8 +152,8 @@ describe('A type', () => {
             expect(descriptor.get).toBe(abstract)
             expect(descriptor.set).toBe(undefined)
           })
-          it('should still satisfy the concept', () => {
-            expect(ConceptReflect.satisfies(type.prototype, MyConcept)).toBe(true)
+          it('should not satisfy the concept', () => {
+            expect(ConceptReflect.satisfies(type.prototype, MyConcept)).toBe(false)
           })
         })
       })
@@ -182,9 +182,9 @@ describe('A type', () => {
               get: abstract,
             })
           }) 
-          it('should still satisfy the concept', () => {
-            expect(ConceptReflect.satisfies(type.prototype, MyConcept)).toBe(true)
-            expect(type.prototype instanceof MyConcept).toBe(true)
+          it('should not satisfy the concept', () => {
+            expect(ConceptReflect.satisfies(type.prototype, MyConcept)).toBe(false)
+            expect(type.prototype instanceof MyConcept).toBe(false)
           })
         })
       })

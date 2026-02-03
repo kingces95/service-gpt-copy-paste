@@ -34,7 +34,7 @@ describe.each([
       const begin = container.begin()
       const end = container.end()
       expect(() => distance(end, begin)).toThrow(
-        "Cannot calculate distance: failed to find end."
+        "Cannot move cursor out of bounds."
       )
     })
   })
@@ -53,7 +53,7 @@ describe.each([
     it('should throw an error if the count exceeds the container size', () => {
       const end = container.end()
       expect(() => advance(end, 1)).toThrow(
-        "Cannot step: cursor is at the end."
+        "Cannot move cursor out of bounds."
       )
     })
   })

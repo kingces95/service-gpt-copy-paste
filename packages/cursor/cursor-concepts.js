@@ -1,4 +1,4 @@
-import { Concept, Implements } from '@kingjs/concept'
+import { Concept } from '@kingjs/concept'
 import { PartialClass, Extends } from '@kingjs/partial-class'
 import { Preconditions } from '@kingjs/debug-proxy'
 import { throwNotEquatableTo } from './throw.js'
