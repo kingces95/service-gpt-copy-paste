@@ -1,10 +1,15 @@
 import { Container } from '../container.js'
 import { SequenceCursor } from './sequence-cursor.js'
+import { implement } from '@kingjs/implement'
 import {
   throwNotImplemented,
   throwEmpty,
 } from '@kingjs/cursor'
 import { Preconditions } from '@kingjs/debug-proxy'
+import { 
+  SequenceContainerConcept,
+  SequenceContainerConcept$,
+} from '../container-concepts.js'
 
 export class SequenceContainer extends Container {
   static [Preconditions] = class extends Container[Preconditions] {
@@ -21,23 +26,28 @@ export class SequenceContainer extends Container {
   constructor() {
     super()
   }
+
+  static {
+    implement(this, SequenceContainerConcept$, {
+      // basic cursor
+      // equals$(token, other) { }
+
+      // step cursor
+      // step$(token) { }
+
+      // input cursor
+      // value$(token) { }
+
+      // output cursor
+      // setValue$(token, value) { }
+    })
+
+    implement(this, SequenceContainerConcept, {
+      // get front() { }
+      // unshift(value) { }
+      // shift() { }
+    })
+  }
   
   __isActive$(token) { return true } 
-
-  // basic cursor
-  // equals$(token, other) { throwNotImplemented() }
-
-  // step cursor
-  // step$(token) { throwNotImplemented() }
-
-  // input cursor
-  // value$(token) { throwNotImplemented() }
-
-  // output cursor
-  // setValue$(token, value) { throwNotImplemented() }
-
-  // sequence container
-  // get front() { throwNotImplemented() }
-  // unshift(value) { throwNotImplemented() }
-  // shift() { throwNotImplemented() }
 }

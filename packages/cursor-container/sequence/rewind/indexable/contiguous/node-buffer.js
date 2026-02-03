@@ -1,4 +1,15 @@
+import { implement } from '@kingjs/implement'
 import { ContiguousContainer } from "./contiguous-container.js"
+import {
+  SequenceContainerConcept,
+  RewindContainerConcept,
+  IndexableContainerConcept,
+  ContiguousContainerConcept,
+  SequenceContainerConcept$,
+  RewindContainerConcept$,
+  IndexableContainerConcept$,
+  ContiguousContainerConcept$,
+} from '../../../../container-concepts.js'
 
 export class NodeBuffer extends ContiguousContainer {
   #buffer
@@ -6,6 +17,42 @@ export class NodeBuffer extends ContiguousContainer {
   constructor() {
     super()
     this.#buffer = Buffer.alloc(8)
+  }
+
+  static {
+    implement(this, IndexableContainerConcept$, {
+      at$(index, offset) { return this.buffer$[index + offset] },
+      setAt$(index, offset, value) { this.buffer$[index + offset] = value }
+    })
+    implement(this, ContiguousContainerConcept$, {
+      readAt$(index, offset, length, signed, littleEndian) {
+        const { buffer$: buffer } = this
+        const indexOffset = index + offset
+
+        switch (length) {
+          case 1:
+            return signed 
+              ? buffer.readInt8(indexOffset) 
+              : buffer.readUInt8(indexOffset)
+          case 2:
+            return signed ? (littleEndian 
+              ? buffer.readInt16LE(indexOffset) 
+              : buffer.readInt16BE(indexOffset)
+            ) : (littleEndian 
+              ? buffer.readUInt16LE(indexOffset) 
+              : buffer.readUInt16BE(indexOffset)
+            )
+          case 4:
+            return signed ? (littleEndian 
+              ? buffer.readInt32LE(indexOffset) 
+              : buffer.readInt32BE(indexOffset)
+            ) : (littleEndian 
+              ? buffer.readUInt32LE(indexOffset) 
+              : buffer.readUInt32BE(indexOffset)
+            )
+        }
+      }    
+    })
   }
 
   get buffer$() { return this.#buffer }
@@ -18,38 +65,7 @@ export class NodeBuffer extends ContiguousContainer {
     return capacity
   }
 
-  // indexable cursor
-  at$(index, offset) { return this.buffer$[index + offset] }
-  setAt$(index, offset, value) { this.buffer$[index + offset] = value }
-
   // contiguous cursor
-  readAt$(index, offset, length, signed, littleEndian) {
-    const { buffer$: buffer } = this
-    const indexOffset = index + offset
-
-    switch (length) {
-      case 1:
-        return signed 
-          ? buffer.readInt8(indexOffset) 
-          : buffer.readUInt8(indexOffset)
-      case 2:
-        return signed ? (littleEndian 
-          ? buffer.readInt16LE(indexOffset) 
-          : buffer.readInt16BE(indexOffset)
-        ) : (littleEndian 
-          ? buffer.readUInt16LE(indexOffset) 
-          : buffer.readUInt16BE(indexOffset)
-        )
-      case 4:
-        return signed ? (littleEndian 
-          ? buffer.readInt32LE(indexOffset) 
-          : buffer.readInt32BE(indexOffset)
-        ) : (littleEndian 
-          ? buffer.readUInt32LE(indexOffset) 
-          : buffer.readUInt32BE(indexOffset)
-        )
-    }
-  }
   data$(index, cursor) { 
     const buffer = this.buffer$
     const endIndex = cursor.index$

@@ -1,4 +1,15 @@
+import { implement } from '@kingjs/implement'
 import { ContiguousContainer } from "./contiguous-container.js"
+import {
+  SequenceContainerConcept,
+  RewindContainerConcept,
+  IndexableContainerConcept,
+  ContiguousContainerConcept,
+  SequenceContainerConcept$,
+  RewindContainerConcept$,
+  IndexableContainerConcept$,
+  ContiguousContainerConcept$,
+} from '../../../../container-concepts.js'
 
 export class EcmaBuffer extends ContiguousContainer {
   #dataView 
@@ -7,6 +18,36 @@ export class EcmaBuffer extends ContiguousContainer {
     super()
 
     this.#dataView = new DataView(new ArrayBuffer(8))
+  }
+
+  static {
+    implement(this, IndexableContainerConcept$, {
+      at$(index, offset) { return this.dataView$.getUint8(index + offset) },
+      setAt$(index, offset, value) { this.dataView$.setUint8(index + offset, value) }
+    })
+    implement(this, ContiguousContainerConcept$, {
+      readAt$(index, offset, length, signed, littleEndian) {
+        const { dataView$: dataView } = this
+        const indexOffset = index + offset
+
+        switch (length) {
+          case 1:
+            return signed
+              ? dataView.getInt8(indexOffset)
+              : dataView.getUint8(indexOffset)
+
+          case 2:
+            return signed
+              ? dataView.getInt16(indexOffset, littleEndian)
+              : dataView.getUint16(indexOffset, littleEndian)
+
+          case 4:
+            return signed
+              ? dataView.getInt32(indexOffset, littleEndian)
+              : dataView.getUint32(indexOffset, littleEndian)
+        }
+      }    
+    })
   }
 
   get dataView$() { return this.#dataView }
@@ -19,32 +60,7 @@ export class EcmaBuffer extends ContiguousContainer {
     this.#dataView = newDataView
   }
 
-  // indexable cursor
-  at$(index, offset) { return this.dataView$.getUint8(index + offset) }
-  setAt$(index, offset, value) { this.dataView$.setUint8(index + offset, value) }
-
   // contiguous cursor
-  readAt$(index, offset, length, signed, littleEndian) {
-    const { dataView$: dataView } = this
-    const indexOffset = index + offset
-
-    switch (length) {
-      case 1:
-        return signed
-          ? dataView.getInt8(indexOffset)
-          : dataView.getUint8(indexOffset)
-
-      case 2:
-        return signed
-          ? dataView.getInt16(indexOffset, littleEndian)
-          : dataView.getUint16(indexOffset, littleEndian)
-
-      case 4:
-        return signed
-          ? dataView.getInt32(indexOffset, littleEndian)
-          : dataView.getUint32(indexOffset, littleEndian)
-    }
-  }
   data$(index, cursor) {
     const dataView = this.dataView$;
     const { buffer, byteOffset } = dataView;

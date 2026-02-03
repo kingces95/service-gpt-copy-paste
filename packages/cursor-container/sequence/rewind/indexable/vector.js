@@ -1,38 +1,35 @@
 import { implement } from '@kingjs/implement'
 import { IndexableContainer } from "./indexable-container.js"
 import {
-  IndexableContainerConcept
-} from "../../../container-concepts.js"
+  SequenceContainerConcept,
+  RewindContainerConcept,
+  IndexableContainerConcept$,
+} from '../../../container-concepts.js'
 
 export class Vector extends IndexableContainer {
-  static {
-    implement(this, IndexableContainerConcept)
-  }
-
-  #array
+  _array
 
   constructor(elements = []) { 
     super()
-    this.#array = elements
+    this._array = elements
   }
 
-  // indexable cursor
-  at$(index, offset) { return this.#array[index + offset] }
-  setAt$(index, offset, value) { this.#array[index + offset] = value }
+  static {
+    implement(this, IndexableContainerConcept$, {
+      at$(index, offset) { return this._array[index + offset] },
+      setAt$(index, offset, value) { this._array[index + offset] = value },
+    })
+    implement(this, SequenceContainerConcept, {
+      shift() { return this._array.shift() },
+      unshift(value) { this._array.unshift(value) },
+    })
+    implement(this, RewindContainerConcept, {
+      get count() { return this._array.length },
+      push(value) { this._array.push(value) },
+      pop() { return this._array.pop() },
+    })
+  }
 
   // container
-  dispose$() { this.#array.length = 0 }
-  
-  // sequence container
-  shift() { return this.#array.shift() }
-  unshift(value) { this.#array.unshift(value) }
-  
-  // rewind container
-  get count() { return this.#array.length }
-  push(value) { this.#array.push(value) }
-  pop() { return this.#array.pop() }
-
-  // indexable container
-  at(index) { return this.#array[index] }
-  setAt(index, value) { this.#array[index] = value }
+  dispose$() { this._array.length = 0 }
 }

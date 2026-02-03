@@ -1,5 +1,6 @@
 import { implement } from '@kingjs/implement'
 import { Preconditions } from '@kingjs/debug-proxy'
+import { implement } from '@kingjs/implement'
 import {
   throwNotEquatableTo,
   throwWriteOutOfBounds,
@@ -11,7 +12,10 @@ import { RewindContainer } from "./rewind-container.js"
 import { ChainNode } from "./chain-node.js"
 import { 
   PrologContainerConcept,
+  SequenceContainerConcept,
   RewindContainerConcept,
+  SequenceContainerConcept$,
+  RewindContainerConcept$,
 } from "../../container-concepts.js"
 
 export class Chain extends RewindContainer {
@@ -50,21 +54,60 @@ export class Chain extends RewindContainer {
     }
   }
 
-  static {
-    implement(this, PrologContainerConcept)
-    implement(this, RewindContainerConcept)
-  }
-
-  #count
-  #root
-  #end
+  _count
+  _root
+  _end
 
   constructor() { 
     super()
-    this.#root = new ChainNode()
-    this.#end = this.#root.insertAfter() 
-    this.#count = 0
+    this._root = new ChainNode()
+    this._end = this._root.insertAfter() 
+    this._count = 0
     this.__check()
+  }
+
+  static {
+    implement(this, SequenceContainerConcept$, {
+      equals$(link, otherLink) { return link == otherLink.token$ },
+      step$(link) { return link.next },
+      value$(link) { return link.value },
+      setValue$(link, value) { link.value = value },
+    })
+    
+    implement(this, RewindContainerConcept$, {
+      stepBack$(link) { return link.previous }
+    })
+
+    implement(this, PrologContainerConcept, {
+      beforeBegin() { return this.cursor$(this._root) },
+      insertAfter(cursor, value) {
+        cursor.token$.insertAfter(value)
+        this._count++
+        this.__check()
+      },
+      removeAfter(cursor) {
+        const result = cursor.token$.removeAfter()
+        this._count--
+        this.__check()
+        return result
+      },
+    })
+
+    implement(this, SequenceContainerConcept, {
+      get front() { return this._root.next.value },
+      unshift(value) { this.insertAfter(this.beforeBegin(), value) },
+      shift() { return this.removeAfter(this.beforeBegin()) },
+    })
+
+    implement(this, RewindContainerConcept, {
+      get back() { return this._root.previous.previous.value },
+      push(value) { this.insert(this.end(), value) },
+      pop() { 
+        const cursor = this.end()
+        cursor.stepBack()
+        return this.remove(cursor) 
+      },
+    })
   }
 
   __check() {
@@ -84,74 +127,31 @@ export class Chain extends RewindContainer {
     //   'Chain is not properly linked in reverse')
   }
 
-  isEnd$(link) { return link == this.#end }
-  isBeforeBegin$(link) { return link == this.#root }
+  isEnd$(link) { return link == this._end }
+  isBeforeBegin$(link) { return link == this._root }
   
   __isActive$(link) { return !!link.next }
 
-  // basic cursor
-  equals$(link, otherLink) { return link == otherLink.token$ }
-
-  // step cursor
-  step$(link) { return link.next }
-
-  // input cursor
-  value$(link) { return link.value }
-
-  // output cursor
-  setValue$(link, value) { link.value = value }
-
-  // rewind cursor
-  stepBack$(link) { return link.previous }
-
   // cursor factory
-  get isEmpty() { return this.#end == this.#root.next }
-  begin() { return this.cursor$(this.#root.next) }
-  end() { return this.cursor$(this.#end) }
+  get isEmpty() { return this._end == this._root.next }
+  begin() { return this.cursor$(this._root.next) }
+  end() { return this.cursor$(this._end) }
 
   // container
   dispose$() { 
-    this.#root = null 
-    this.#end = null
-  }
-
-  // sequence container
-  get front() { return this.#root.next.value }
-  unshift(value) { this.insertAfter(this.beforeBegin(), value) }
-  shift() { return this.removeAfter(this.beforeBegin()) }
-
-  // rewind container
-  get back() { return this.#root.previous.previous.value }
-  push(value) { this.insert(this.end(), value) }
-  pop() { 
-    const cursor = this.end()
-    cursor.stepBack()
-    return this.remove(cursor) 
-  }
-
-  // prolog container
-  beforeBegin() { return this.cursor$(this.#root) }
-  insertAfter(cursor, value) {
-    cursor.token$.insertAfter(value)
-    this.#count++
-    this.__check()
-  }
-  removeAfter(cursor) {
-    const result = cursor.token$.removeAfter()
-    this.#count--
-    this.__check()
-    return result
+    this._root = null 
+    this._end = null
   }
 
   // chain container
   insert(cursor, value) {
     cursor.token$.insert(value)
-    this.#count++
+    this._count++
     this.__check()
   }
   remove(cursor) {
     const result = cursor.token$.remove()
-    this.#count--
+    this._count--
     this.__check()
     return result
   }

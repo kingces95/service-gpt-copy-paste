@@ -7,34 +7,35 @@ import {
   IndexableContainer 
 } from "./indexable-container.js"
 import {
-  IndexableContainerConcept,
+  SequenceContainerConcept,
+  RewindContainerConcept,
+  IndexableContainerConcept$,
 } from "../../../container-concepts.js"
 
 export class Deque extends IndexableContainer {
-  static {
-    implement(this, IndexableContainerConcept)
-  }
+  _denque
   
-  #denque
-
   constructor() { 
     super()
-    this.#denque = new Denque()
+    this._denque = new Denque()
   }
   
-  // indexable cursor
-  at$(index) { return this.#denque.get(index) }
-  setAt$(index, offset, value) { throwNotSupported() }
-
-  // container
-  dispose$() { this.#denque.clear() }
+  static {
+    implement(this, IndexableContainerConcept$, {
+      at$(index) { return this._denque.get(index) },
+      setAt$(index, offset, value) { throwNotSupported() },
+    })
+    implement(this, SequenceContainerConcept, {
+      unshift(value) { this._denque.unshift(value) },
+      shift() { return this._denque.shift() },
+    })
+    implement(this, RewindContainerConcept, {
+      get count() { return this._denque.length },
+      push(value) { this._denque.push(value) },
+      pop() { return this._denque.pop() },
+    })
+  }
   
-  // sequence container
-  unshift(value) { this.#denque.unshift(value) }
-  shift() { return this.#denque.shift() }
-
-  // rewind container
-  get count() { return this.#denque.length }
-  push(value) { this.#denque.push(value) }
-  pop() { return this.#denque.pop() }
+  // container
+  dispose$() { this._denque.clear() }
 }

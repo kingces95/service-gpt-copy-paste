@@ -11,10 +11,34 @@ export class IndexableCursor extends RewindCursor {
     static { extend(this, RandomAccessCursorConcept[Preconditions]) }
   }
 
-  static { implement(this, RandomAccessCursorConcept) }
-
   constructor(indexable, index) {
     super(indexable, index)
+  }
+
+  static { 
+    implement(this, RandomAccessCursorConcept, {
+      move(offset) {
+        const { container$: indexable, index$: index } = this
+        this.index$ = indexable.move$(index, offset)
+        return this
+      },
+      at(offset) {
+        const { container$: indexable, index$: index } = this
+        return indexable.at$(index, offset)
+      },
+      setAt(offset, value) {
+        const { container$: indexable, index$: index } = this
+        return indexable.setAt$(index, offset, value)
+      },
+      subtract(other) {
+        const { container$: indexable, index$: index } = this
+        return indexable.subtract$(index, other)
+      },
+      compareTo(other) {
+        const { container$: indexable, index$: index } = this
+        return indexable.compareTo$(index, other)
+      }      
+    }) 
   }
 
   // random access cursor 
@@ -25,28 +49,5 @@ export class IndexableCursor extends RewindCursor {
   equals$(other) {
     const { container$: indexable, index$: index } = this
     return indexable.equals$(index, other)
-  }
-
-  // random access cursor
-  move(offset) {
-    const { container$: indexable, index$: index } = this
-    this.index$ = indexable.move$(index, offset)
-    return this
-  }
-  at(offset) {
-    const { container$: indexable, index$: index } = this
-    return indexable.at$(index, offset)
-  }
-  setAt(offset, value) {
-    const { container$: indexable, index$: index } = this
-    return indexable.setAt$(index, offset, value)
-  }
-  subtract(other) {
-    const { container$: indexable, index$: index } = this
-    return indexable.subtract$(index, other)
-  }
-  compareTo(other) {
-    const { container$: indexable, index$: index } = this
-    return indexable.compareTo$(index, other)
   }
 }

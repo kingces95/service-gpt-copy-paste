@@ -1,3 +1,4 @@
+import { implement } from '@kingjs/implement'
 import { ContiguousCursor } from './contiguous-cursor.js'
 import { IndexableContainer } from "../indexable-container.js"
 import { Preconditions } from '@kingjs/debug-proxy'
@@ -5,6 +6,16 @@ import { copyBackward, copyForward } from '@kingjs/cursor-algorithm'
 import {
   throwNotImplemented,
 } from '@kingjs/cursor'
+import {
+  SequenceContainerConcept,
+  RewindContainerConcept,
+  IndexableContainerConcept,
+  ContiguousContainerConcept,
+  SequenceContainerConcept$,
+  RewindContainerConcept$,
+  IndexableContainerConcept$,
+  ContiguousContainerConcept$,
+} from '../../../../container-concepts.js'
 
 export class ContiguousContainer extends IndexableContainer {
   static [Preconditions] = class extends IndexableContainer[Preconditions] {
@@ -28,41 +39,55 @@ export class ContiguousContainer extends IndexableContainer {
 
   static get cursorType() { return ContiguousCursor }
 
-  #length
+  _length
 
   constructor(buffer) {
     super()
-    this.#length = 0
+    this._length = 0
+  }
+
+  static {
+    // implement(this, SequenceContainerConcept$, {
+    // })
+    // implement(this, RewindContainerConcept$, {
+    // })
+    // implement(this, IndexableContainerConcept$, {
+    // })
+    implement(this, ContiguousContainerConcept$, {
+      // readAt$(index, offset, length, signed, littleEndian) { }
+    })
+
+    implement(this, SequenceContainerConcept, {
+      unshift(value) { this.insert(this.begin(), value) },
+      shift() { return this.remove(this.begin()) },
+    })
+    implement(this, RewindContainerConcept, {
+      get count() { return this._length },
+      push(value) { this.insert(this.end(), value) },
+      pop() { 
+        const end = this.end()
+        end.stepBack()
+        return this.remove(end)
+      }    
+    })
+    // implement(this, IndexableContainerConcept, {
+    // })
+    // implement(this, ContiguousContainerConcept, {
+    // })
   }
 
   get capacity() { throwNotImplemented() }
 
-  // contiguous cursor
-  readAt$(index, offset, length, signed, littleEndian) { throwNotImplemented() }
-
-  // forward container
-  unshift(value) { this.insert(this.begin(), value) }
-  shift() { return this.remove(this.begin()) }
-
-  // rewind container
-  get count() { return this.#length }
-  push(value) { this.insert(this.end(), value) }
-  pop() { 
-    const end = this.end()
-    end.stepBack()
-    return this.remove(end)
-  }
-  
   // contiguous container
   expand$(count) { throwNotImplemented() }
   expand() {
-    this.#length = this.expand$(this.capacity * 2)
+    this._length = this.expand$(this.capacity * 2)
   }
 
   insert(cursor, value) {
-    if (this.#length >= this.capacity$) this.expand()
+    if (this._length >= this.capacity$) this.expand()
     const end = this.end()
-    this.#length++
+    this._length++
     const result = this.end()
     copyBackward(cursor, end, result)
     cursor.value = value    
@@ -73,7 +98,7 @@ export class ContiguousContainer extends IndexableContainer {
     const after = cursor.clone()
     after.step()
     copyForward(after, end, cursor)
-    this.#length--
+    this._length--
     return value
   }
 }

@@ -1,3 +1,4 @@
+import { implement } from '@kingjs/implement'
 import { RewindContainer } from '../rewind-container.js'
 import { IndexableCursor } from './indexable-cursor.js'
 import { Preconditions } from '@kingjs/debug-proxy'
@@ -8,6 +9,14 @@ import {
   throwMoveOutOfBounds,
   throwReadOutOfBounds,
 } from '@kingjs/cursor'
+import {
+  SequenceContainerConcept,
+  RewindContainerConcept,
+  IndexableContainerConcept,
+  SequenceContainerConcept$,
+  RewindContainerConcept$,
+  IndexableContainerConcept$,
+} from '../../../container-concepts.js'
 
 export class IndexableContainer extends RewindContainer {
   static [Preconditions] = class extends RewindContainer[Preconditions] {
@@ -42,6 +51,44 @@ export class IndexableContainer extends RewindContainer {
     super()
   }
 
+  static {
+    implement(this, SequenceContainerConcept$, {
+      equals$(index, otherCursor) { return index === otherCursor.index$ },
+      step$(index) { return this.move$(index, 1) },
+      value$(index) { return this.at$(index, 0) },
+      setValue$(index, value) { this.setAt$(index, 0, value) },
+    })
+    implement(this, RewindContainerConcept$, {
+      stepBack$(index) { return this.move$(index, -1) }
+    })
+    implement(this, IndexableContainerConcept$, {
+      subtract$(index, otherCursor) { return index - otherCursor.index$ },
+      move$(index, offset) { return index + offset },
+      compareTo$(index, otherCursor) {
+        if (index < otherCursor.index$) return -1
+        if (index > otherCursor.index$) return 1
+        return 0
+      },
+      // at$(index, offset) { },
+      // setAt$(index, offset, value) { },
+    })
+    implement(this, SequenceContainerConcept, {
+      get front() { return this.at$(0, 0) },
+      // shift() { },
+      // unshift(value) { },
+    })
+    implement(this, RewindContainerConcept, {
+      get back() { return this.at$(this.count - 1, 0) },
+      // get count() { },
+      // pop() { },
+      // push(value) { },
+    })
+    implement(this, IndexableContainerConcept, {
+      at(index) { return this.at$(index, 0) },
+      setAt(index, value) { this.setAt$(index, 0, value) },
+    })
+  }
+
   isInBounds$(index, offset) {
     const indexOffset = index + offset
     if (indexOffset < 0) return false
@@ -53,47 +100,7 @@ export class IndexableContainer extends RewindContainer {
     return indexOffset == this.count || this.isInBounds$(index, offset)
   }
 
-  // basic cursor
-  equals$(index, otherCursor) { return index === otherCursor.index$ }
-
-  // step cursor
-  step$(index) { return this.move$(index, 1) }
-
-  // input cursor
-  value$(index) { return this.at$(index, 0) }
-
-  // output cursor
-  setValue$(index, value) {
-    this.setAt$(index, 0, value)
-  }
-
-  // rewind cursor
-  stepBack$(index) { return this.move$(index, -1) }
-
-  // random access cursor
-  subtract$(index, otherCursor) { return index - otherCursor.index$ }
-  move$(index, offset) { return index + offset }
-  compareTo$(index, otherCursor) {
-    if (index < otherCursor.index$) return -1
-    if (index > otherCursor.index$) return 1
-    return 0
-  }
-  at$(index, offset) { throwNotImplemented() }
-  setAt$(index, offset, value) { throwNotImplemented() }
-
-  // cursor factor
+  // cursor factory
   begin() { return this.cursor$(0) }
   end() { return this.cursor$(this.count) }
-
-  // sequence container
-  get front() { return this.at$(0, 0) }
-  shift() { throwNotImplemented() }
-  unshift(value) { throwNotImplemented() }
-
-  // rewind container
-  get back() { return this.at$(this.count - 1, 0) }
-
-  // indexable container
-  at(index) { return this.at$(index, 0) }
-  setAt(index, value) { this.setAt$(index, 0, value) }
 }

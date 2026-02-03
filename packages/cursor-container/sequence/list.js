@@ -12,6 +12,7 @@ import { SequenceContainer } from "./sequence-container.js"
 import { 
   PrologContainerConcept,
   SequenceContainerConcept,
+  SequenceContainerConcept$,
 } from "../container-concepts.js"
 
 export class List extends SequenceContainer {
@@ -37,56 +38,50 @@ export class List extends SequenceContainer {
       if (this.isEnd$(cursor.token$)) throwUpdateOutOfBounds()
     }
   }
-
-  static {
-    implement(this, PrologContainerConcept)
-    implement(this, SequenceContainerConcept)
-  }
   
-  #root
-  #end
+  _root
+  _end
 
   constructor() { 
     super()
-    this.#root = new ListNode()
-    this.#end = this.#root.insertAfter() 
+    this._root = new ListNode()
+    this._end = this._root.insertAfter() 
   }
 
-  isEnd$(link) { return link == this.#end }
-  isBeforeBegin$(link) { return link == this.#root }
+  static {
+    implement(this, SequenceContainerConcept$, {
+      equals$(link, otherLink) { return link == otherLink.token$ },
+      step$(link) { return link.next },
+      value$(link) { return link.value },
+      setValue$(link, value) { link.value = value },
+    })
+
+    implement(this, PrologContainerConcept, {
+      beforeBegin() { return this.cursor$(this._root) },
+      insertAfter(cursor, value) { cursor.token$.insertAfter(value) },
+      removeAfter(cursor) { return cursor.token$.removeAfter() },
+    })
+
+    implement(this, SequenceContainerConcept, {
+      get front() { return this._root.next.value },
+      unshift(value) { this.insertAfter(this.beforeBegin(), value) },
+      shift() { return this.removeAfter(this.beforeBegin()) },
+    })
+  }
+
+  isEnd$(link) { return link == this._end }
+  isBeforeBegin$(link) { return link == this._root }
   
   __isActive$(link) { return !!link.next }
 
-  // basic cursor
-  equals$(link, otherLink) { return link == otherLink.token$ }
-
-  // step cursor
-  step$(link) { return link.next }
-
-  // input cursor
-  value$(link) { return link.value }
-
-  // output cursor
-  setValue$(link, value) { link.value = value }
-
   // cursor factory
-  get isEmpty() { return this.#end == this.#root.next }
-  begin() { return this.cursor$(this.#root.next) }
-  end() { return this.cursor$(this.#end) }
+  get isEmpty() { return this._end == this._root.next }
+  begin() { return this.cursor$(this._root.next) }
+  end() { return this.cursor$(this._end) }
 
   // container
   dispose$() { 
-    this.#root = null 
-    this.#end = null
+    this._root = null 
+    this._end = null
   }
-
-  // sequence container
-  get front() { return this.#root.next.value }
-  unshift(value) { this.insertAfter(this.beforeBegin(), value) }
-  shift() { return this.removeAfter(this.beforeBegin()) }
-
-  // prolog container
-  beforeBegin() { return this.cursor$(this.#root) }
-  insertAfter(cursor, value) { cursor.token$.insertAfter(value) }
-  removeAfter(cursor) { return cursor.token$.removeAfter() }
 }

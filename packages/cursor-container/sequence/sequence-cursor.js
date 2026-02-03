@@ -1,8 +1,12 @@
+import { implement } from '@kingjs/implement'
 import { ContainerCursor } from '../container-cursor.js'
 import { implement } from '@kingjs/implement'
 import { GlobalPrecondition } from '@kingjs/proxy'
 import { Preconditions } from '@kingjs/debug-proxy'
 import {
+  CursorConcept,
+  InputCursorConcept,
+  OutputCursorConcept,
   ForwardCursorConcept,
   throwStale,
 } from '@kingjs/cursor'
@@ -16,13 +20,32 @@ export class SequenceCursor extends ContainerCursor {
     }
   }
 
-  static { implement(this, ForwardCursorConcept) }
-
   #token
 
   constructor(container, token) {
     super(container)
     this.#token = token
+  }
+
+  static { 
+    implement(this, CursorConcept, { })
+    implement(this, InputCursorConcept, { 
+      get value() { return this.container$.value$(this.token$) }
+    })
+    implement(this, OutputCursorConcept, { 
+      set value(value) { this.container$.setValue$(this.token$, value) }
+    })
+    implement(this, ForwardCursorConcept, {
+      clone() {
+        const {
+          constructor, 
+          container$: sequence, 
+          token$: token 
+        } = this
+
+        return new constructor(sequence, token)
+      }
+    }) 
   }
 
   get __isActive$() { return this.container$.__isActive$(this.token$) }
@@ -33,27 +56,8 @@ export class SequenceCursor extends ContainerCursor {
 
   // basic cursor
   equals$(other) { return this.container$.equals$(this.token$, other) }
-  
-  // step cursor
-  step() { 
+  step$() { 
     this.token$ = this.container$.step$(this.token$)
     return this
-  }
-
-  // input cursor
-  get value() { return this.container$.value$(this.token$) }
-
-  // output cursor
-  set value(value) { this.container$.setValue$(this.token$, value) }
-
-  // forward cursor
-  clone() {
-    const {
-      constructor, 
-      container$: sequence, 
-      token$: token 
-    } = this
-
-    return new constructor(sequence, token)
   }
 }

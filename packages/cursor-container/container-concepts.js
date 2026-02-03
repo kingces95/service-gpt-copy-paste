@@ -54,6 +54,11 @@ export class SequenceContainerConcept extends ForwardContainerConcept {
 // A rewind container is a bidirectional container that supports a back and
 // push/pop operations.
 export class RewindContainerConcept extends BidirectionalContainerConcept {
+  static [Extends] = {
+    get isEmpty() { return this.count == 0 }
+  }
+  
+  get count() { }
   get back() { }
   pop() { }
   push(value) { }
@@ -74,3 +79,46 @@ export class PrologContainerConcept extends Concept {
   removeAfter(cursor) { }
 }
 
+// Implementation detail: dollar-suffixed concepts capture the interface
+// between a container and its cursors via tokens as used by this 
+// implementation.
+export class ContainerConcept$ extends Concept {
+  get __version$() { }
+}
+
+export class SequenceContainerConcept$ extends ContainerConcept$ {
+
+  // basic cursor
+  equals$(token, other) { }
+
+  // step cursor
+  step$(token) { }
+
+  // input cursor
+  value$(token) { }
+
+  // output cursor
+  setValue$(token, value) { }
+}
+
+export class RewindContainerConcept$ extends SequenceContainerConcept$ {
+
+  // rewind cursor
+  stepBack$(token) { } 
+}
+
+export class IndexableContainerConcept$ extends RewindContainerConcept$ {
+
+  // indexable cursor
+  at$(index, offset) { }
+  setAt$(index, offset, value) { }
+  subtract$(index, otherCursor) { }
+  move$(index, offset) { }
+  compareTo$(index, otherCursor) { }
+}
+
+export class ContiguousContainerConcept$ extends IndexableContainerConcept$ {
+
+  // contiguous cursor
+  readAt$(index, offset, length, signed, littleEndian) { throwNotImplemented() }
+}
