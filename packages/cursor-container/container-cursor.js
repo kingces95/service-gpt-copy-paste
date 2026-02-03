@@ -1,17 +1,19 @@
 import { implement } from '@kingjs/implement'
-import { Preconditions } from '@kingjs/debug-proxy'
+import { Concept } from '@kingjs/concept'
 import {
   Cursor,
+  InputCursorConcept,
+  OutputCursorConcept,
 } from '@kingjs/cursor'
-import {
-  InputContainerConcept,
-  OutputContainerConcept,
-} from './container-concepts.js'
+
+export class ContainerConcept$ extends Concept {
+  get __version$() { }
+}
 
 export class ContainerCursor extends Cursor {
   static { 
-    implement(this, InputContainerConcept)
-    implement(this, OutputContainerConcept) 
+    implement(this, InputCursorConcept)
+    implement(this, OutputCursorConcept) 
   }
   
   #version
