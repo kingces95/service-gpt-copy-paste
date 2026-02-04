@@ -21,8 +21,8 @@ export class ContainerConcept extends RangeConcept {
     get isEmpty() { return this.begin().equals(this.end()) }
   }
 
-  get begin() { }
-  get end() { }
+  begin() { }
+  end() { }
 }
 export class InputContainerConcept extends ContainerConcept {
   static cursorType = InputCursorConcept

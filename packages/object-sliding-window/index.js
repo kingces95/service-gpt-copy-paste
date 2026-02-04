@@ -76,12 +76,6 @@ export class ObjectSlidingWindowCursor extends IterableCursor {
     this.#innerIndex = innerIndex
   }
 
-  recycle$(window, innerIndex) {
-    super.recycle$(window)
-    this.#initialize(innerIndex)
-    return this
-  }
-
   get window$() { return this.#window }
   get innerIndex$() { return this.#innerIndex }
 

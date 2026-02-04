@@ -129,12 +129,6 @@ class TrimmedSlidingWindowCursor extends IterableCursor {
 
   get innerCursor$() { return this.#innerCursor }
 
-  recycle$(window, innerCursor) {
-    super.recycle$(window)
-    this.#innerCursor = innerCursor
-    return this
-  }
-
   get isEnd() {
     if (!this.__isActive) this.__throwStale$() 
     const window = this.container$

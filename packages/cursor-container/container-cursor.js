@@ -1,33 +1,47 @@
+import { DebugProxy } from '@kingjs/debug-proxy'
 import { implement } from '@kingjs/implement'
+import { Preconditions } from '@kingjs/debug-proxy'
 import {
-  Cursor,
+  ScopeConcept,
+  EquatableConcept,
+  CursorConcept, 
   InputCursorConcept,
   OutputCursorConcept,
 } from '@kingjs/cursor'
 
-export class ContainerCursor extends Cursor {
-  #version
+export class ContainerCursor extends DebugProxy {
+  static [Preconditions] = class { }
+
+  _container
 
   constructor(container) {
-    super(container)
-    this.#version = container.__version$
+    super()
+    this._container = container
   }
 
   static { 
-    implement(this, InputCursorConcept)
-    implement(this, OutputCursorConcept) 
+    implement(this, ScopeConcept, {
+      equatableTo(other) {
+        if (other?.constructor != this.constructor) return false
+        return this._container == other._container
+      }
+    })
+    implement(this, EquatableConcept, { 
+      // equals(other) { }
+    })
+    implement(this, CursorConcept, { 
+      // step() { }
+    })
+    implement(this, InputCursorConcept, {
+      // get value() { }
+    })
+    implement(this, OutputCursorConcept, {
+      // set value(value) { }
+    }) 
   }
 
-  get __version$() { return this.#version }
-
-  // cursor lifecycle
-  recycle$(container) {
-    if (container != this.container$) throw new Error(
-      "Cursor cannot be recycled to a different container.")
-
-    super.recycle$()
-  }
+  get __version$() { return this._version }
 
   // container cursor
-  get container$() { return this.scope$ }
+  get container$() { return this._container }
 }

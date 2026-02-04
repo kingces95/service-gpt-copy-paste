@@ -2,6 +2,7 @@ import { implement } from '@kingjs/implement'
 import { Preconditions } from '@kingjs/debug-proxy'
 import { implement } from '@kingjs/implement'
 import {
+  throwStale,
   throwNotEquatableTo,
   throwWriteOutOfBounds,
   throwMoveOutOfBounds,
@@ -21,34 +22,38 @@ import {
 export class Chain extends RewindContainer {
   static [Preconditions] = class extends RewindContainer[Preconditions] {
     setValue$(link, value) {
+      if (!this.__isActive$(link)) throwStale()
       if (this.isEnd$(link)) throwWriteOutOfBounds()
       if (this.isBeforeBegin$(link)) throwWriteOutOfBounds()
     }
     value$(link) {
+      if (!this.__isActive$(link)) throwStale()
       if (this.isEnd$(link)) throwReadOutOfBounds()
       if (this.isBeforeBegin$(link)) throwReadOutOfBounds()
     }
     step$(link) {
+      if (!this.__isActive$(link)) throwStale()
       if (this.isEnd$(link)) throwMoveOutOfBounds()
     }
     stepBack$(link) {
+      if (!this.__isActive$(link)) throwStale()
       if (this.isBeforeBegin$(link)) throwMoveOutOfBounds()
     }
 
     insertAfter(cursor, value) {
-      if (cursor.scope$ != this) throwNotEquatableTo()
+      if (cursor.container$ != this) throwNotEquatableTo()
       if (this.isEnd$(cursor.token$)) throwUpdateOutOfBounds()
     }
     removeAfter(cursor) {
-      if (cursor.scope$ != this) throwNotEquatableTo()
+      if (cursor.container$ != this) throwNotEquatableTo()
       if (this.isEnd$(cursor.token$)) throwUpdateOutOfBounds()
     }
     insert(cursor, value) {
-      if (cursor.scope$ != this) throwNotEquatableTo()
+      if (cursor.container$ != this) throwNotEquatableTo()
       if (this.isBeforeBegin$(cursor.token$)) throwUpdateOutOfBounds()
     }
     remove(cursor) {
-      if (cursor.scope$ != this) throwNotEquatableTo()
+      if (cursor.container$ != this) throwNotEquatableTo()
       if (this.isEnd$(cursor.token$)) throwUpdateOutOfBounds()
       if (this.isBeforeBegin$(cursor.token$)) throwUpdateOutOfBounds()
     }

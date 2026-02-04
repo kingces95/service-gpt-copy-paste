@@ -10,12 +10,6 @@ export class UnitViewCursor extends Cursor {
 
   get unit$() { return this.#unit }
 
-  recycle$(view, cursor, unit) {
-    super.recycle$(view, cursor)
-    this.#unit = unit
-    return this
-  }
-
   get isEnd() { 
     const { cursor$: innerCursor } = this
     return !innerCursor

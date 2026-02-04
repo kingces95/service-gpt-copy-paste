@@ -9,10 +9,4 @@ export class ViewCursor extends Cursor {
   }
 
   get view$() { return this.#view }
-
-  recycle$(view) {
-    super.recycle$()
-    this.#view = view
-    return this
-  }
 }

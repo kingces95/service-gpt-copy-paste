@@ -3,7 +3,15 @@ import { PartialClass, Extends } from '@kingjs/partial-class'
 import { Preconditions } from '@kingjs/debug-proxy'
 import { throwNotEquatableTo } from './throw.js'
 
-export class CursorConcept extends Concept {
+export class ScopeConcept extends Concept {
+  equatableTo(other) { }
+}
+
+export class EquatableConcept extends ScopeConcept {
+  equals(other) { }
+}
+
+export class CursorConcept extends EquatableConcept {
   static [Preconditions] = PartialClass
   static [Extends] = {
     next() {
@@ -14,8 +22,6 @@ export class CursorConcept extends Concept {
   }
 
   step() { }
-  equals(other) { }
-  equatableTo(other) { }
 }
 
 export class InputCursorConcept extends CursorConcept {

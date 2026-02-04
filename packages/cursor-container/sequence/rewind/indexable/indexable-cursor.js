@@ -2,17 +2,29 @@ import { RewindCursor } from '../rewind-cursor.js'
 import { implement } from '@kingjs/implement'
 import { Preconditions } from '@kingjs/debug-proxy'
 import { extend } from '@kingjs/partial-extend'
+import { GlobalPrecondition } from '@kingjs/proxy'
 import { 
   RandomAccessCursorConcept,
+} from '@kingjs/cursor'
+import {
+  throwStale,
 } from '@kingjs/cursor'
 
 export class IndexableCursor extends RewindCursor {
   static [Preconditions] = class extends RewindCursor[Preconditions] {
     static { extend(this, RandomAccessCursorConcept[Preconditions]) }
+
+    [GlobalPrecondition]() {
+      const { container$, __version$ } = this
+      if (container$.__version$ !== __version$) throwStale()
+    }
   }
+
+  _version
 
   constructor(indexable, index) {
     super(indexable, index)
+    this._version = indexable.__version$
   }
 
   static { 

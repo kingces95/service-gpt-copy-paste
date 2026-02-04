@@ -11,12 +11,6 @@ export class JoinViewCursor extends ComposedViewCursor {
   get outterCursor$() { return this.cursor$ }
   get innerCursor$() { return this.#innerCursor }
 
-  recycle$(view, outterCursor, innerCursor) {
-    super.recycle$(view, outterCursor)
-    this.#innerCursor = innerCursor
-    return this
-  }
-
   get isEnd() { 
     const { innerCursor$: innerCursor } = this
     return !innerCursor

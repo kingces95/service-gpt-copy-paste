@@ -36,13 +36,6 @@ export class JoinViewCursor extends Cursor {
   get outterCursor$() { return this.#outterCursor }
   get innerCursor$() { return this.#innerCursor }
 
-  recycle$(view, outterCursor, innerCursor) {
-    super.recycle$(view)
-    this.#outterCursor = outterCursor
-    this.#innerCursor = innerCursor
-    return this
-  }
-
   get isEnd() { 
     const { innerCursor$: innerCursor } = this
     return !innerCursor

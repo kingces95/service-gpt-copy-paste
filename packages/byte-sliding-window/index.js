@@ -99,12 +99,6 @@ export class ByteSlidingWindowCursor extends IterableCursor {
     this.#offset = offset
   }
 
-  recycle$(window, innerCursor, offset = 0) {
-    super.recycle$(window)
-    this.#initialize(innerCursor, offset)
-    return this
-  }
-
   get window$ () { return this.#window }
   get offset$() { return this.#offset }
   get innerCursor$() { return this.#innerCursor }

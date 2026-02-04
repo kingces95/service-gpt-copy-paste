@@ -40,8 +40,8 @@ class TrivialCursor extends Cursor {
     super(scope)
   }
   get __isActive$() { return true }
-  step$() { throwMoveOutOfBounds() }
-  equals$(other) { return true }
+  step() { throwMoveOutOfBounds() }
+  equals(other) { return this.equatableTo(other) }
 }
 
 class TrivialInputCursor extends TrivialCursor {
@@ -205,8 +205,8 @@ describe.each(cases)('%s', (_, concepts, begin0, end0, begin1) => {
     begin = begin0()
     end = end0()
   })
-  it('should be a cursor', () => {
-    expect(begin).toBeInstanceOf(Cursor)
+  it('should be a cursor concept', () => {
+    expect(begin).toBeInstanceOf(CursorConcept)
   })
   it('should satisfy concepts', () => {
     for (const concept of concepts) {

@@ -21,13 +21,13 @@ import {
 export class IndexableContainer extends RewindContainer {
   static [Preconditions] = class extends RewindContainer[Preconditions] {
     subtract$(index, otherCursor) {
-      if (otherCursor.scope$ != this) throwNotEquatableTo()
+      if (otherCursor.container$ != this) throwNotEquatableTo()
     }
     move$(index, offset) {
       if (!this.isInBoundsOrEnd$(index, offset)) throwMoveOutOfBounds()
     }
     compareTo$(index, otherCursor) {
-      if (otherCursor.scope$ != this) throwNotEquatableTo()
+      if (otherCursor.container$ != this) throwNotEquatableTo()
     }
     at$(index, offset) {
       if (!this.isInBounds$(index, offset)) throwReadOutOfBounds()

@@ -10,6 +10,7 @@ import {
   ContiguousCursorConcept,
 } from './cursor-concepts.js'
 import {
+  ContainerConcept,
   InputContainerConcept,
   OutputContainerConcept,
   ForwardContainerConcept,
@@ -61,8 +62,8 @@ describe.each(cases)('A %s', (name, type, cursorType, concepts) => {
       expect(cursorType.prototype).toBeInstanceOf(concept)
     }
   })
-  it('has a cursor type whose prototype extends Cursor', () => {
-    expect(f0.constructor.cursorType.prototype).toBeInstanceOf(Cursor)
+  it('is instanceof ContainerConcept', () => {
+    expect(f0).toBeInstanceOf(ContainerConcept)
   })
   it('should be empty', () => {
     expect(f0.isEmpty).toBe(true)
