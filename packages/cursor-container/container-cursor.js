@@ -44,8 +44,6 @@ export class ContainerCursor extends DebugProxy {
     })
   }
 
-  get __version$() { return this._version }
-
   // container cursor
   get container$() { return this._container }
 }

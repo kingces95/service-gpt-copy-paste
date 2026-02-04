@@ -47,9 +47,14 @@ export class IndexableContainer extends RewindContainer {
 
   static get cursorType() { return IndexableCursor }
 
+  __version
+
   constructor() {
     super()
+    this.__version = 0
   }
+
+  __bumpVersion$() { this.__version++ }
 
   static {
     implement(this, SequenceContainerConcept$, {

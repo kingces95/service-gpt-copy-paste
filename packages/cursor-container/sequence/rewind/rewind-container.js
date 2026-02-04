@@ -22,10 +22,6 @@ export class RewindContainer extends SequenceContainer {
   
   static get cursorType() { return RewindCursor }
 
-  constructor() {
-    super()
-  }
-
   static {
     implement(this, RewindContainerConcept$, {
       // stepBack$(token) { }

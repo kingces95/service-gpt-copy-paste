@@ -24,12 +24,10 @@ export class Container extends DebugProxy {
 
   static get cursorType() { return ContainerCursor }
 
-  _version
   _disposed
 
   constructor() { 
     super()
-    this._version = 0
     this._disposed = false
   }
 
@@ -45,13 +43,11 @@ export class Container extends DebugProxy {
       // as that operation invalidates all index cursors. Cursors that 
       // reference a node cannot be invalidated so those containers 
       // will not bump the version.
-      get __version$() { return this._version }
+      get __version$() { return this.__version }
     })
   }
 
   get isDisposed$() { return this._disposed }
-
-  __bumpVersion$() { this._version++ }
 
   // container methods
   // dispose$() { }

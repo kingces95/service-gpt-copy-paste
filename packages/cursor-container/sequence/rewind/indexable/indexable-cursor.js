@@ -20,11 +20,11 @@ export class IndexableCursor extends RewindCursor {
     }
   }
 
-  _version
+  __version
 
   constructor(indexable, index) {
     super(indexable, index)
-    this._version = indexable.__version$
+    this.__version = indexable.__version$
   }
 
   static { 
@@ -52,6 +52,8 @@ export class IndexableCursor extends RewindCursor {
       }      
     }) 
   }
+
+  get __version$() { return this.__version }
 
   // random access cursor 
   get index$() { return this.token$ }
