@@ -1,22 +1,28 @@
-import { Concept } from '@kingjs/concept'
-import { CursorFactory } from '../cursor/cursor-factory.js'
+import { DebugProxy } from '@kingjs/debug-proxy'
 import { GlobalPrecondition } from '@kingjs/proxy'
 import { Preconditions } from '@kingjs/debug-proxy'
 import { implement } from '@kingjs/implement'
 import {
   throwDisposed,
 } from '@kingjs/cursor'
+import { 
+  CursorFactory,
+  IntervalConcept, 
+} from '../cursor/cursor-factory.js'
+import { ContainerCursor } from './container-cursor.js'
 import {
   ContainerConcept$,
 } from './container-concepts.js'
 
-export class Container extends CursorFactory {
+export class Container extends DebugProxy {
   static [Preconditions] = class extends CursorFactory[Preconditions] { 
     [GlobalPrecondition]() {
       const container = this
       if (container.isDisposed$) throwDisposed()
     }
   }
+
+  static get cursorType() { return ContainerCursor }
 
   _version
   _disposed
@@ -28,6 +34,11 @@ export class Container extends CursorFactory {
   }
 
   static {
+    implement(this, IntervalConcept, {
+      get cursorType() { return this.constructor.cursorType },
+      // begin() { }
+      // end() { }
+    })
     implement(this, ContainerConcept$, {
       // A debug helper which detects when a cursor is invalidated. 
       // Typically, this happens during an unshift of shift operation 

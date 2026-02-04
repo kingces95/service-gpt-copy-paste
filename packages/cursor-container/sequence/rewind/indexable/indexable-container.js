@@ -101,6 +101,6 @@ export class IndexableContainer extends RewindContainer {
   }
 
   // cursor factory
-  begin() { return this.cursor$(0) }
-  end() { return this.cursor$(this.count) }
+  begin() { return new this.cursorType(this, 0) }
+  end() { return new this.cursorType(this, this.count) }
 }

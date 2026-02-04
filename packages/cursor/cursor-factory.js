@@ -12,11 +12,13 @@ export class IntervalConcept extends Concept {
     toRange() { return new Range(this.begin(), this.end()) },
   }
 
+  get cursorType() { }
+  
   begin() { }
   end() { }
 }
 
-export class CursorFactory extends Interval {  
+export class CursorFactory extends Interval {
   #cursorType
 
   constructor() { 

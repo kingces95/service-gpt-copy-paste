@@ -32,7 +32,7 @@ export class OutputCursorConcept extends CursorConcept {
   set value(value) { }
 }
 
-export class ForwardCursorConcept extends CursorConcept {
+export class ForwardCursorConcept extends InputCursorConcept {
   clone() { }
 }
 

@@ -7,6 +7,7 @@ import {
   CursorConcept, 
   InputCursorConcept,
   OutputCursorConcept,
+  ForwardCursorConcept,
 } from '@kingjs/cursor'
 
 export class ContainerCursor extends DebugProxy {
@@ -38,6 +39,9 @@ export class ContainerCursor extends DebugProxy {
     implement(this, OutputCursorConcept, {
       // set value(value) { }
     }) 
+    implement(this, ForwardCursorConcept, {
+      // clone() { }
+    })
   }
 
   get __version$() { return this._version }

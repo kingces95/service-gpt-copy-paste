@@ -61,7 +61,7 @@ export class List extends SequenceContainer {
     })
 
     implement(this, PrologContainerConcept, {
-      beforeBegin() { return this.cursor$(this._root) },
+      beforeBegin() { return new this.cursorType(this, this._root) },
       insertAfter(cursor, value) { cursor.token$.insertAfter(value) },
       removeAfter(cursor) { return cursor.token$.removeAfter() },
     })
@@ -80,8 +80,8 @@ export class List extends SequenceContainer {
 
   // cursor factory
   get isEmpty() { return this._end == this._root.next }
-  begin() { return this.cursor$(this._root.next) }
-  end() { return this.cursor$(this._end) }
+  begin() { return new this.cursorType(this, this._root.next) }
+  end() { return new this.cursorType(this, this._end) }
 
   // container
   dispose$() { 
