@@ -83,12 +83,12 @@ describe.each(tests)('A %s thunk', (_, { descriptor, ...flags }) => {
     this.push([...arguments])
   }
 
-  const memberPrecondition = function() { 
-    this.push('memberPrecondition')
+  const precondition = function() { 
+    this.push('precondition')
     this.push([...arguments])
   }
-  const memberPostcondition = function() { 
-    this.push('memberPostcondition') 
+  const postcondition = function() { 
+    this.push('postcondition') 
     this.push([...arguments])
   }
 
@@ -145,13 +145,13 @@ describe.each(tests)('A %s thunk', (_, { descriptor, ...flags }) => {
           hasTypePostcondition ? typePostcondition : 
             null,
 
-        memberPrecondition: 
-          hasMemberPrecondition ? memberPrecondition : 
+        precondition: 
+          hasMemberPrecondition ? precondition : 
             hasGetterPrecondition ? { get: getterPrecondition } : 
               hasSetterPrecondition ? { set: setterPrecondition } : 
                 null,
-        memberPostcondition: 
-          hasMemberPostcondition ? memberPostcondition :
+        postcondition: 
+          hasMemberPostcondition ? postcondition :
             hasGetterPostcondition ? { get: getterPostcondition } :
               hasSetterPostcondition ? { set: setterPostcondition } : 
                 null,
@@ -217,7 +217,7 @@ describe.each(tests)('A %s thunk', (_, { descriptor, ...flags }) => {
           if (hasTypePrecondition) 
             expected.push('typePrecondition', [])
           if (hasMemberPrecondition) 
-            expected.push('memberPrecondition', [])
+            expected.push('precondition', [])
           if (hasGetterPrecondition)
             expected.push('getterPrecondition', [])
 
@@ -225,7 +225,7 @@ describe.each(tests)('A %s thunk', (_, { descriptor, ...flags }) => {
           
           if (!throws) {
             if (hasMemberPostcondition) 
-              expected.push('memberPostcondition', ['result'])
+              expected.push('postcondition', ['result'])
             if (hasGetterPostcondition)
               expected.push('getterPostcondition', ['result'])
           }
@@ -249,7 +249,7 @@ describe.each(tests)('A %s thunk', (_, { descriptor, ...flags }) => {
           if (hasTypePrecondition) 
             expected.push('typePrecondition', [])
           if (hasMemberPrecondition) 
-            expected.push('memberPrecondition', ['a0'])
+            expected.push('precondition', ['a0'])
           if (hasSetterPrecondition)
             expected.push('setterPrecondition', ['a0'])
 
@@ -257,7 +257,7 @@ describe.each(tests)('A %s thunk', (_, { descriptor, ...flags }) => {
           
           if (!throws) {
             if (hasMemberPostcondition) 
-              expected.push('memberPostcondition', [])
+              expected.push('postcondition', [])
             if (hasSetterPostcondition)
               expected.push('setterPostcondition', [])
           }
@@ -284,13 +284,13 @@ describe.each(tests)('A %s thunk', (_, { descriptor, ...flags }) => {
           if (hasTypePrecondition) 
             expected.push('typePrecondition', [])
           if (hasMemberPrecondition) 
-            expected.push('memberPrecondition', ['a0', 'a1'])
+            expected.push('precondition', ['a0', 'a1'])
           
           expected.push('method', ['a0', 'a1'])
           
           if (!throws) {
             if (hasMemberPostcondition) 
-              expected.push('memberPostcondition', ['result'])
+              expected.push('postcondition', ['result'])
           }
           if (hasTypePostcondition) 
             expected.push('typePostcondition', [])

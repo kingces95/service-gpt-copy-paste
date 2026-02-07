@@ -4,10 +4,10 @@ import { PartialReflect } from '@kingjs/partial-reflect'
 import { FunctionBuilder } from '@kingjs/function-builder'
 
 export const Compile = Symbol('PartialProxy.Compile')
+export const Preconditions = Symbol('PartialProxy.Preconditions')
+export const Postconditions = Symbol('PartialProxy.Postconditions')
 export const TypePrecondition = Symbol('PartialProxy.TypePrecondition')
 export const TypePostcondition = Symbol('PartialProxy.TypePostcondition')
-export const MemberPreconditions = Symbol('PartialProxy.MemberPreconditions')
-export const MemberPostconditions = Symbol('PartialProxy.MemberPostconditions')
 
 export class PartialProxy {
   [Compile](type, key, descriptor) {
@@ -16,15 +16,15 @@ export class PartialProxy {
     const {
       typePrecondition, 
       typePostcondition,
-      memberPrecondition,
-      memberPostcondition,
+      precondition,
+      postcondition,
     } = PartialProxyReflect
 
     const stub = es6CreateThunk(descriptor, { 
       typePrecondition: typePrecondition(type),
       typePostcondition: typePostcondition(type),
-      memberPrecondition: memberPrecondition(type, key),
-      memberPostcondition: memberPostcondition(type, key),
+      precondition: precondition(type, key),
+      postcondition: postcondition(type, key),
     })
 
     return stub
@@ -32,8 +32,8 @@ export class PartialProxy {
 }
 
 export class PartialProxyReflect {
-  static *#memberConditionDescriptors(type, key, symbol) {
-    for (const host of PartialReflect.getHosts(type, key)) {
+  static *conditionDescriptors$(type, key, symbol) {
+    for (const host of PartialReflect.hosts(type, key)) {
       const conditions = host[symbol]
       if (!conditions) continue
 
@@ -43,9 +43,9 @@ export class PartialProxyReflect {
       yield condition
     }
   }
-  static #getMemberConditionFns(type, key, symbol) {
+  static getConditions$(type, key, symbol) {
     const descriptors = 
-      PartialProxyReflect.#memberConditionDescriptors(type, key, symbol)
+      PartialProxyReflect.conditionDescriptors$(type, key, symbol)
 
     return {
       value: FunctionBuilder.require(descriptors.map(o => o.value)),
@@ -64,12 +64,10 @@ export class PartialProxyReflect {
   static typePostcondition(type) {
     return type[TypePostcondition]
   }
-  static memberPrecondition(type, key) {
-    return PartialProxyReflect.#getMemberConditionFns(
-      type, key, MemberPreconditions)
+  static precondition(type, key) {
+    return PartialProxyReflect.getConditions$(type, key, Preconditions)
   }
-  static memberPostcondition(type, key) {
-    return PartialProxyReflect.#getMemberConditionFns(
-      type, key, MemberPostconditions)
+  static postcondition(type, key) {
+    return PartialProxyReflect.getConditions$(type, key, Postconditions)
   }
 }

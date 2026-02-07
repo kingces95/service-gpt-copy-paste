@@ -16,8 +16,8 @@ const KnownStaticMembers = new Set([
 ])
 
 export class Concept extends PartialType {
-  static [PartialType.OwnSymbols] = {
-    ...PartialClass[PartialType.OwnSymbols],
+  static [PartialType.PartialTypes] = {
+    ...PartialClass[PartialType.PartialTypes],
     [Implements]: { expectedType: Concept },
   }
 

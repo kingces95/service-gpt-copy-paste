@@ -1,7 +1,7 @@
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { Es6Compiler } from '@kingjs/es6-compiler'
 
-function coerceMemberCondition(condition) {
+function coerceCondition(condition) {
   if (typeof condition === 'function')
     condition = { value: condition }
 
@@ -14,7 +14,7 @@ function coerceMemberCondition(condition) {
   return condition
 }
 
-function isMemberConditionEmpty(condition) {
+function isEmptyCondition(condition) {
   if (!condition) return true
   if (condition.value) return false
   if (condition.get) return false
@@ -25,25 +25,25 @@ function isMemberConditionEmpty(condition) {
 export function es6CreateThunk(descriptor, {
     typePrecondition, // function
     typePostcondition, // function
-    memberPrecondition, // function or { value, get, set }
-    memberPostcondition, // function or { value, get, set }
+    precondition, // function or { value, get, set }
+    postcondition, // function or { value, get, set }
   } = { }) {
 
-  memberPrecondition = coerceMemberCondition(memberPrecondition)
-  memberPostcondition = coerceMemberCondition(memberPostcondition)
+  precondition = coerceCondition(precondition)
+  postcondition = coerceCondition(postcondition)
 
   if (!typePrecondition &&
       !typePostcondition &&
-      isMemberConditionEmpty(memberPrecondition) &&
-      isMemberConditionEmpty(memberPostcondition))
+      isEmptyCondition(precondition) &&
+      isEmptyCondition(postcondition))
     return Es6Compiler.emit({ ...descriptor })
 
   const method = function() {
     try { 
       typePrecondition?.call(this) 
-      memberPrecondition?.value?.apply(this, arguments)
+      precondition?.value?.apply(this, arguments)
       const result = descriptor.value.apply(this, arguments)
-      memberPostcondition?.value?.call(this, result)
+      postcondition?.value?.call(this, result)
       return result
     } finally { 
       typePostcondition?.call(this) 
@@ -52,9 +52,9 @@ export function es6CreateThunk(descriptor, {
   const getter = function() {
     try { 
       typePrecondition?.call(this)
-      memberPrecondition?.get?.call(this)
+      precondition?.get?.call(this)
       const result = descriptor.get.call(this)
-      memberPostcondition?.get?.call(this, result)
+      postcondition?.get?.call(this, result)
       return result
     } finally { 
       typePostcondition?.call(this) 
@@ -63,9 +63,9 @@ export function es6CreateThunk(descriptor, {
   const setter = function(value) {
     try { 
       typePrecondition?.call(this)
-      memberPrecondition?.set?.call(this, value)
+      precondition?.set?.call(this, value)
       descriptor.set?.call(this, value)
-      memberPostcondition?.set?.call(this)
+      postcondition?.set?.call(this)
     } finally { 
       typePostcondition?.call(this) 
     }

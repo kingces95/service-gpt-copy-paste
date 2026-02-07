@@ -3,8 +3,8 @@ import { beforeEach } from 'vitest'
 import {
   TypePrecondition,
   TypePostcondition,
-  MemberPrecondition,
-  MemberPostcondition,
+  Precondition,
+  Postcondition,
   PartialProxyReflect,
   PartialProxy
 } from '@kingjs/partial-proxy'
@@ -17,12 +17,12 @@ function typePostcondition() {
   this.push('typePostcondition')
 }
 
-function memberPrecondition() {
-  this.push('memberPrecondition')
+function precondition() {
+  this.push('precondition')
 }
 
-function memberPostcondition() {
-  this.push('memberPostcondition')
+function postcondition() {
+  this.push('postcondition')
 }
 
 class MyEmptyType {
@@ -68,5 +68,9 @@ describe.each(Tests)('%s',
   it('should have correct type precondition', () => {
     const actual = PartialProxyReflect.typePrecondition(type)
     expect(actual == typePrecondition).toBe(true)
+  })
+  it('should have correct type postcondition', () => {
+    const actual = PartialProxyReflect.typePostcondition(type)
+    expect(actual == typePostcondition).toBe(true)
   })
 })

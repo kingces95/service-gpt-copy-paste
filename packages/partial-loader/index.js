@@ -1,10 +1,24 @@
 import { assert } from '@kingjs/assert'
-import { Associate } from '@kingjs/associate'
 import { UserReflect } from '@kingjs/user-reflect'
 import { ExtensionsReflect } from '@kingjs/extensions'
 import { PartialType, PartialTypeReflect } from '@kingjs/partial-type'
+import { getOwn } from '@kingjs/get-own'
+import { asIterable } from '@kingjs/as-iterable'
+import { Es6Reflect } from '@kingjs/es6-reflect'
 
 // Operations supporting @kingjs/extend.
+
+function isExtensionOfAny(type, expectedType) {
+  if (!expectedType) return true
+  
+  const expectedTypes = [...asIterable(expectedType)]
+  if (!expectedTypes.length) return true
+
+  for (const expectedType of expectedTypes)
+    if (Es6Reflect.isExtensionOf(type, expectedType))
+      return true
+  return false
+}
 
 export class PartialLoader {
 
@@ -16,13 +30,32 @@ export class PartialLoader {
 
   static *ownPartialExtensions(type) {
     assert(PartialTypeReflect.isPartialType(type))
-    yield* Associate.ownTypes(type, PartialType.OwnSymbols)
-    yield* PartialLoader.ownPartialExtensions$(type)
+    yield* PartialLoader.declaredOwnPartialTypes$(type, PartialType.PartialTypes)
+    yield* PartialLoader.inheritedPartialTypes$(type)
   }
-  static *ownPartialExtensions$(type) {
+  static *declaredOwnPartialTypes$(type, symbols) {
+
+    // if symbols typeof symbol, pull metadata off of type
+    if (typeof symbols == 'symbol') symbols = type[symbols]
+    assert(symbols != null, 'failed to find metadata symbols on type.')
+    
+    // symbols like { [TheSymbol]: { expectedType, map } }
+    for (const symbol of Object.getOwnPropertySymbols(symbols)) {
+      const options = symbols[symbol]
+      const { expectedType, map = o => o } = options
+      const associatedTypes = getOwn(type, symbol)
+
+      for (let associatedType of asIterable(associatedTypes).map(map)) {
+        assert(isExtensionOfAny(associatedType, expectedType),
+          `Associate type "${associatedType.name}" is of an unexpected type.`)
+        yield associatedType
+      }
+    }
+  }
+  static *inheritedPartialTypes$(type) {
     const baseType = PartialTypeReflect.baseType(type)
     if (!baseType) return
-    yield* PartialLoader.ownPartialExtensions$(baseType)
+    yield* PartialLoader.inheritedPartialTypes$(baseType)
     yield baseType
   }
 

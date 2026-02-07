@@ -38,9 +38,6 @@ export class Es6Associate {
   static assembleOwnAssociates(type, symbols) {
     return Associate.ownTypes(type, symbols)  
   }
-  static assembleAssociates(type, symbols) {
-    return Associate.types(type, symbols)  
-  }
 
   static loadAssociate(type, symbol, fn) {
     return Associate.objectInitialize(type, symbol, fn)

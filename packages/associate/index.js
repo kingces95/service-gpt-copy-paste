@@ -1,7 +1,4 @@
 import assert from 'assert'
-import { getOwn } from '@kingjs/get-own'
-import { asIterable } from '@kingjs/as-iterable'
-import { Es6Reflect } from '@kingjs/es6-reflect'
 
 // A general purpose global map of type to associated metadata
 const Associations = new Map()
@@ -16,10 +13,6 @@ function objectLoad(type, symbol, fn) {
     typeMap = new Map()
     Associations.set(type, typeMap)
   }
-
-  // try declared
-  const declaredCache = getOwn(type, symbol)
-  if (declaredCache) return declaredCache
 
   // get runtime map
   let object = typeMap.get(symbol)
@@ -52,108 +45,7 @@ function lookupLoad(type, symbol, key) {
   return set
 }
 
-function isExtensionOfAny(type, expectedType) {
-  if (!expectedType) return true
-  
-  const expectedTypes = [...asIterable(expectedType)]
-  if (!expectedTypes.length) return true
-
-  for (const expectedType of expectedTypes)
-    if (Es6Reflect.isExtensionOf(type, expectedType))
-      return true
-  return false
-}
-
 export class Associate {
-  static *ownDescriptors(type, symbols) {
-
-    // if symbols typeof symbol, pull metadata off of type
-    if (typeof symbols == 'symbol') symbols = type[symbols]
-    assert(symbols != null, 'failed to find metadata symbols on type.')
-    
-    // symbols like { [TheSymbol]: { ...options } }
-    for (const symbol of Object.getOwnPropertySymbols(symbols)) {
-      yield symbol
-
-      const descriptor = Object.getOwnPropertyDescriptor(type, symbol)
-      if (!descriptor) continue
-
-      yield descriptor
-    }
-  }
-  
-  static *ownTypes(type, symbols) {
-    if (typeof symbols == 'symbol') symbols = type[symbols]
-
-    let symbol, options
-    for (const current of Associate.ownDescriptors(type, symbols)) {
-      switch (typeof current) {
-        case 'symbol': 
-          symbol = current
-          options = symbols[symbol] || { }
-          break
-        case 'object':
-          const { value } = current
-          const { expectedType, map = o => o } = options
-          const types = asIterable(value).map(map)
-
-          for (const type of types) {
-            assert(isExtensionOfAny(type, expectedType),
-              `Associate type "${type.name}" is of an unexpected type.`)
-            yield type
-          }
-          break
-        default: assert(false, `Unexpected type: ${typeof current}`)
-      }
-    }
-  }
-  // static *ownTypes2(type, symbols) {
-
-  //   // if symbols typeof symbol, pull metadata off of type
-  //   if (typeof symbols == 'symbol') symbols = type[symbols]
-  //   assert(symbols != null, 'failed to find metadata symbols on type.')
-    
-  //   // symbols like { [TheSymbol]: { expectedType, map } }
-  //   for (const symbol of Object.getOwnPropertySymbols(symbols)) {
-  //     const options = symbols[symbol]
-  //     const { expectedType, map } = options
-  //     const expectedTypes = [...asIterable(expectedType)]
-
-  //     const associatedTypes = Associate.iterable(type, symbol)
-  //     for (let associatedType of asIterable(associatedTypes)) {
-  //       if (map) associatedType = map(associatedType)
-  
-  //       // assert if associated type fails to extend any expected type
-  //       const isValid = !expectedTypes.length || 
-  //         expectedTypes.filter(expectedType => 
-  //           Es6Reflect.isExtensionOf(associatedType, expectedType)
-  //         ).length > 0
-          
-  //       if (!isValid) 
-  //         throw `Associate type "${associatedType.name}" is of an unexpected type.`
-       
-  //       yield associatedType
-  //     }
-  //   }
-  // }
-  static *types(type, symbols, options = { }) {
-    if (!options.visited) options = { ...options, visited: new Set() }
-    const { visited } = options
-    
-    for (const current of Es6Reflect.hierarchy(type)) {
-      for (const associatedType of Associate.ownTypes(current, symbols)) {
-
-        if (visited.has(associatedType)) continue
-        visited.add(associatedType)
-        yield associatedType
-      }
-    }
-  }
-
-  static iterable(type, symbol) {
-    // return objectLoad(type, symbol) || []
-    return getOwn(type, symbol) || []
-  }
 
   static objectInitialize(type, symbol, fn) {
     return objectLoad(type, symbol, fn)

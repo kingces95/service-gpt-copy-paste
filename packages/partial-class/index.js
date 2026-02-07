@@ -14,7 +14,7 @@ export const Extends = Symbol('PartialClass.Extends')
 //    extend(MyType, Dumpper)
 
 export class PartialClass extends PartialType {
-  static [PartialType.OwnSymbols] = {
+  static [PartialType.PartialTypes] = {
     [Extends]: { 
       expectedType: [ PartialClass, Extensions ],
       map: PartialReflect.load,

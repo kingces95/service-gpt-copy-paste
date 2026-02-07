@@ -4,19 +4,19 @@ import { Es6Reflect } from '@kingjs/es6-reflect'
 
 // PartialType + extend is Object.defineProperties with richer descriptors. 
 
-// OwnSymbols is a static symbol applied to extensions of 
+// PartialTypes is a static symbol applied to extensions of 
 // PartialType which describes how those extensions form a poset of 
 // PartialType types.
-const OwnSymbols = Symbol('PartialType.ownSymbols')
+const PartialTypes = Symbol('PartialType.partialTypes')
 
-// For example, OwnSymbols is used by PartialClass to designate
+// For example, PartialTypes is used by PartialClass to designate
 // the Extends symbol as containing an adjacency list to other PartialType
 // types of type PartialClass and Extensions. Also specified is
 // a coercion method PartialReflect.load is used to transform POJOs 
 // into PartialClass types:
 
 //    class PartialClass extends PartialType {
-//      static [PartialType.OwnSymbols] = {
+//      static [PartialType.PartialTypes] = {
 //        [Extends]: { 
 //          expectedType: [ PartialClass, Extensions ],
 //          map: PartialReflect.load,
@@ -99,13 +99,13 @@ const Compile = Symbol('PartialType.compile')
 
 export class PartialType extends null {
   static Compile = Compile
-  static OwnSymbols = OwnSymbols
+  static PartialTypes = PartialTypes
 
   constructor() { 
     throw new TypeError('PartialType cannot be instantiated.') 
   }
 
-  static [OwnSymbols] = { }
+  static [PartialTypes] = { }
   static [Compile](descriptor) { 
     return Es6Compiler.compile(descriptor) 
   }
