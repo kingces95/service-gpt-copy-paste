@@ -14,12 +14,10 @@ export class PartialAssociate {
     Es6Associate.addAssociates(type, PartialExtensions, partialType)
   }
   static *ownPartialExtensions(type) {
-    yield *Es6Associate.assembleOwnAssociates(
-      type, { [PartialExtensions]: { } })
+    yield* Es6Associate.ownAssociates(type, PartialExtensions)
   }
   static *partialExtensions(type) {
-    yield *Es6Associate.assembleAssociates(
-      type, { [PartialExtensions]: { } })
+    yield* Es6Associate.associates(type, PartialExtensions)
   }
 
   static addHost(type, key, host, { isStatic } = { }) {
@@ -34,30 +32,17 @@ export class PartialAssociate {
     if (key in (isStatic ? type : type.prototype) === false) return null
 
     const associate = Es6Associate.getMemberAssociate(
-      type, key, HostMap)
+      type, key, HostMap, { isStatic })
 
     return associate || type
   }
 
   static addHosts(type, key, hosts, { isStatic } = { }) {
     assert(!PartialTypeReflect.isKnownKey(type, key, { isStatic }))
-    Es6Associate.addMemberAssociates(
-      type, key, HostLookup, hosts, { isStatic })
+    Es6Associate.addMemberAssociates(type, key, HostLookup, hosts, { isStatic })
   }
   static *hosts(type, key, { isStatic } = { }) {
     if (PartialTypeReflect.isKnownKey(type, key, { isStatic })) return
-
-    if (key in (isStatic ? type : type.prototype) === false) return null
-    
-    const result = Es6Associate.memberAssociates(
-      type, key, HostLookup, { isStatic })
-
-    const first = result.next()
-    if (first.done)
-      // todo: this type is wrong; coult be a base type 
-      return yield type
-
-    yield first.value
-    yield* result
+    yield* Es6Associate.memberAssociates(type, key, HostLookup, { isStatic })
   }
 }

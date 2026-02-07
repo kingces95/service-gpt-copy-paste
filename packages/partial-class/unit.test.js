@@ -14,7 +14,7 @@ describe('A type', () => {
     const declarations = [...PartialReflect.ownPartialExtensions(type)]
     expect(declarations).toHaveLength(0)
   })
-  describe('after being extended by an PartialClass with a SubExtension', () => {
+  describe('after being extended by a PartialClass with a declared Extension', () => {
     let extension, subExtension
     beforeEach(() => {
       subExtension = class SubExtension extends PartialClass { }
@@ -133,10 +133,9 @@ describe('An extension', () => {
         const host = PartialReflect.getHost(extension, 'subMember')
         expect(host).toBe(subExtension)
       })
-      it('should report subExtension as only host for subMember', () => {
+      it('should report no hosts for subMember', () => {
         const hosts = [...PartialReflect.hosts(extension, 'subMember')]
-        expect(hosts).toHaveLength(1)
-        expect(hosts[0]).toBe(subExtension)
+        expect(hosts).toHaveLength(0)
       })
     })
     describe('that also has a sub extension with a member', () => {
@@ -176,7 +175,7 @@ describe('An extension', () => {
           myPartialClass.prototype.differentMember = myMember
           extension[Extends].push(myPartialClass)
         })
-        it('should assert that MyPartialClass is not an PartialClass', () => {
+        it('should assert that MyPartialClass is not a PartialClass', () => {
           expect(() => {
             [...PartialReflect.partialExtensions(extension)]
           }).toThrow(`Associate type "myPartialClass" is of an unexpected type.`)

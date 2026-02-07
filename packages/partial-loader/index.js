@@ -2,10 +2,7 @@ import { assert } from '@kingjs/assert'
 import { Associate } from '@kingjs/associate'
 import { UserReflect } from '@kingjs/user-reflect'
 import { ExtensionsReflect } from '@kingjs/extensions'
-import { 
-  PartialType, 
-  PartialTypeReflect 
-} from '@kingjs/partial-type'
+import { PartialType, PartialTypeReflect } from '@kingjs/partial-type'
 
 // Operations supporting @kingjs/extend.
 
@@ -19,7 +16,7 @@ export class PartialLoader {
 
   static *ownPartialExtensions(type) {
     assert(PartialTypeReflect.isPartialType(type))
-    yield* Associate.ownTypes(type, PartialType.OwnCollectionSymbols)
+    yield* Associate.ownTypes(type, PartialType.OwnSymbols)
     yield* PartialLoader.ownPartialExtensions$(type)
   }
   static *ownPartialExtensions$(type) {

@@ -1,22 +1,22 @@
 import { assert } from '@kingjs/assert'
-import { Compiler } from '@kingjs/compiler'
+import { Es6Compiler } from '@kingjs/es6-compiler'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 
 // PartialType + extend is Object.defineProperties with richer descriptors. 
 
-// OwnCollectionSymbols is a static symbol applied to extensions of 
+// OwnSymbols is a static symbol applied to extensions of 
 // PartialType which describes how those extensions form a poset of 
 // PartialType types.
-const OwnCollectionSymbols = Symbol('PartialType.ownCollectionSymbols')
+const OwnSymbols = Symbol('PartialType.ownSymbols')
 
-// For example, OwnCollectionSymbols is used by PartialClass to designate
+// For example, OwnSymbols is used by PartialClass to designate
 // the Extends symbol as containing an adjacency list to other PartialType
 // types of type PartialClass and Extensions. Also specified is
 // a coercion method PartialReflect.load is used to transform POJOs 
 // into PartialClass types:
 
 //    class PartialClass extends PartialType {
-//      static [PartialType.OwnCollectionSymbols] = {
+//      static [PartialType.OwnSymbols] = {
 //        [Extends]: { 
 //          expectedType: [ PartialClass, Extensions ],
 //          map: PartialReflect.load,
@@ -99,15 +99,15 @@ const Compile = Symbol('PartialType.compile')
 
 export class PartialType extends null {
   static Compile = Compile
-  static OwnCollectionSymbols = OwnCollectionSymbols
+  static OwnSymbols = OwnSymbols
 
   constructor() { 
     throw new TypeError('PartialType cannot be instantiated.') 
   }
 
-  static [OwnCollectionSymbols] = { }
+  static [OwnSymbols] = { }
   static [Compile](descriptor) { 
-    return Compiler.compile(descriptor) 
+    return Es6Compiler.compile(descriptor) 
   }
 }
 
@@ -138,6 +138,12 @@ export class PartialTypeReflect {
       return null
 
     return result
+  }
+  static *hierarchy(type) {
+    while (type) {
+      yield type
+      type = PartialTypeReflect.baseType(type)
+    }
   }
   static isPartialType(type) {
     if (!Es6Reflect.isExtensionOf(type, PartialType)) return false

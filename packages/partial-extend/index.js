@@ -4,6 +4,9 @@ import { PartialTypeReflect } from '@kingjs/partial-type'
 import { PartialAssociate } from '@kingjs/partial-associate'
 import { Define } from '@kingjs/define'
 import { Extensions } from '@kingjs/extensions'
+import { PartialProxyReflect, Compile } from '@kingjs/partial-proxy'
+import { Descriptor } from '@kingjs/descriptor'
+import { isAbstract } from '@kingjs/abstract'
 
 // Extend takes a targets type and a partial type and merges the 
 // partial type into the target type.
@@ -35,40 +38,41 @@ export function extend(type, partialType, {
     isTransparent = partialType?.prototype instanceof Extensions
   } = { }) {
 
-    partialType = PartialLoader.load(partialType)
+  partialType = PartialLoader.load(partialType)
 
-    assert(!PartialTypeReflect.isKnown(type),
-      `Expected type to not be a known type.`)
-    assert(!PartialTypeReflect.isPartialType(type),
-      `Expected type to not be a PartialType.`)
-    assert(PartialTypeReflect.isPartialType(partialType),
-      `Expected partialType to indirectly extend PartialType.`)
+  assert(!PartialTypeReflect.isKnown(type),
+    `Expected type to not be a known type.`)
+  assert(!PartialTypeReflect.isPartialType(type),
+    `Expected type to not be a PartialType.`)
+  assert(PartialTypeReflect.isPartialType(partialType),
+    `Expected partialType to indirectly extend PartialType.`)
 
-    for (const extension of PartialLoader.ownPartialExtensions(partialType)) {
-      extend(type, extension, { 
-        parentType: partialType,
-        isTransparent: extension.prototype instanceof Extensions
-      })
-    }
+  for (const extension of PartialLoader.ownPartialExtensions(partialType)) {
+    extend(type, extension, { 
+      parentType: partialType,
+      isTransparent: extension.prototype instanceof Extensions
+    })
+  }
 
-    if (!isTransparent) 
-      PartialAssociate.addPartialExtension(type, partialType)
+  if (!isTransparent) 
+    PartialAssociate.addPartialExtension(type, partialType)
 
-    let key
-    for (const current of PartialLoader.ownDescriptors(partialType)) {
-      switch (typeof current) {
-        case 'string':
-        case 'symbol': key = current; break
-        case 'object': 
-          const descriptor = current
-          const defined = Define.property(type, key, descriptor)
-          const hostType = isTransparent ? parentType : partialType
-
+  let key
+  for (const current of PartialLoader.ownDescriptors(partialType)) {
+    switch (typeof current) {
+      case 'string':
+      case 'symbol': key = current; break
+      case 'object': 
+        const hostType = isTransparent ? parentType : partialType
+        if (isAbstract(current))
           PartialAssociate.addHosts(type, key, hostType)
-          if (!defined) continue
-          PartialAssociate.addHost(type, key, hostType)
-          break
-        default: assert(false, `Unexpected type: ${typeof current}`)
-      }
+
+        const descriptor = PartialProxyReflect.isPartialProxy(type)
+          ? type[Compile](type, key, current) : current
+        if (!Define.property(type, key, descriptor)) continue
+        PartialAssociate.addHost(type, key, hostType)
+        break
+      default: assert(false, `Unexpected type: ${typeof current}`)
     }
   }
+}

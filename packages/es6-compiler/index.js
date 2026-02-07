@@ -8,7 +8,7 @@ const {
   hasAccessor,
 } = Descriptor
 
-// Compiler transforms a descriptor to a descriptor. 
+// Es6Compiler transforms a descriptor to a descriptor. 
 //  - procedural descriptors are transformed such so their metadata is 
 //    consistent with typical source code declaration defaults. For example, 
 //    methods declared in source code have enumerable: false, configurable: 
@@ -37,14 +37,14 @@ const {
 //      writable: false 
 //    },
 //  } 
-export class Compiler {
+export class Es6Compiler {
 
   // compile takes a descriptor from a POJO written in the DSL, parses it,
   // emits it, and returns a descriptor that, joined with the name, can be 
   // used with Object.defineProperty. 
   static compile(declaration) {
-    const partialDescriptor = Compiler.parse(declaration)
-    const descriptor = Compiler.emit(partialDescriptor)    
+    const partialDescriptor = Es6Compiler.parse(declaration)
+    const descriptor = Es6Compiler.emit(partialDescriptor)    
     return descriptor  
   }
 

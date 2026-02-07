@@ -4,7 +4,7 @@ import { Es6Reflect } from '@kingjs/es6-reflect'
 import { UserReflect } from '@kingjs/user-reflect'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { PartialType, PartialTypeReflect } from '@kingjs/partial-type'
-import { PartialReflect, isKey } from '@kingjs/partial-reflect'
+import { PartialReflect } from '@kingjs/partial-reflect'
 import { PartialClass, Extends } from '@kingjs/partial-class'
 import { Descriptor } from '@kingjs/descriptor'
 
@@ -16,8 +16,8 @@ const KnownStaticMembers = new Set([
 ])
 
 export class Concept extends PartialType {
-  static [PartialType.OwnCollectionSymbols] = {
-    ...PartialClass[PartialType.OwnCollectionSymbols],
+  static [PartialType.OwnSymbols] = {
+    ...PartialClass[PartialType.OwnSymbols],
     [Implements]: { expectedType: Concept },
   }
 

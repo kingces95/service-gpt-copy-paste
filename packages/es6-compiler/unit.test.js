@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Compiler } from '@kingjs/compiler'
+import { Es6Compiler } from '@kingjs/es6-compiler'
 
 const {
   compile,
   parse,
   emit,
-} = Compiler
+} = Es6Compiler
 
 function getterFn() { }
 function setterFn() { }

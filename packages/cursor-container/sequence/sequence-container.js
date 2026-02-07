@@ -43,6 +43,4 @@ export class SequenceContainer extends Container {
       // shift() { }
     })
   }
-  
-  __isActive$(token) { return true } 
 }

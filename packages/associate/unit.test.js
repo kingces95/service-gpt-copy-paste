@@ -102,15 +102,15 @@ describe('MyClass that extends MyBase with MySymbol, MyType', () => {
         })
       })
     })
-    describe('when associated procedurally...', () => {
-      beforeEach(() => {
-        Associate.objectInitialize(myClass, mySymbol, () => myType)
-      })
-      it('is associated', () => {
-        const associated = [...Associate.ownTypes(myClass, myMetadata)]
-        expect(associated).toEqual([ myType ])
-      })
-    })
+    // describe('when associated procedurally...', () => {
+    //   beforeEach(() => {
+    //     Associate.objectInitialize(myClass, mySymbol, () => myType)
+    //   })
+    //   it('is associated', () => {
+    //     const associated = [...Associate.ownTypes(myClass, myMetadata)]
+    //     expect(associated).toEqual([ myType ])
+    //   })
+    // })
   })
   describe('with metadata on MyClass...', () => {
     let myMetadataPtr

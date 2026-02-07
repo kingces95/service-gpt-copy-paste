@@ -1,4 +1,3 @@
-import { isPojo } from '@kingjs/pojo-test'
 import { isAbstract } from '@kingjs/abstract'
 
 export class Define {
@@ -6,12 +5,7 @@ export class Define {
   static property(type, key, descriptor) {
     const prototype = type.prototype
 
-    // do not override non-abstract members
-    if (key in prototype) {
-      if (isAbstract(descriptor)) return false
-      // const existingDescriptor = Descriptor.get(prototype, key)
-      // if (!isAbstract(existingDescriptor)) return false
-    }
+    if (key in prototype && isAbstract(descriptor)) return false
 
     Object.defineProperty(prototype, key, descriptor)
     return true

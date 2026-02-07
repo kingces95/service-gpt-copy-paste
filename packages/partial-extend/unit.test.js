@@ -23,6 +23,8 @@ describe('A type', () => {
     })
     it('can extend the member', () => {
       extend(type, partialType)
+      const object = new type()
+      object.member()
       expect(type.prototype.member).toBe(partialType.member.value)
     })
   })

@@ -8,32 +8,32 @@ const Associations = new Map()
 
 function objectLoad(type, symbol, fn) {
 
-  // get type cache
-  let typeCache = Associations.get(type)
-  if (!typeCache) {
+  // get type map
+  let typeMap = Associations.get(type)
+  if (!typeMap) {
 
-    // create type cache
-    typeCache = new Map()
-    Associations.set(type, typeCache)
+    // create type map
+    typeMap = new Map()
+    Associations.set(type, typeMap)
   }
 
-  // try declared cache
+  // try declared
   const declaredCache = getOwn(type, symbol)
   if (declaredCache) return declaredCache
 
-  // get runtime cache
-  let cache = typeCache.get(symbol)
-  if (!cache) {
+  // get runtime map
+  let object = typeMap.get(symbol)
+  if (!object) {
 
-    // no fn, no cache
+    // no fn, no value
     if (!fn) return undefined
 
-    // create and cache
-    cache = fn(type)
-    typeCache.set(symbol, cache)
+    // create and load value
+    object = fn(type)
+    typeMap.set(symbol, object)
   }
 
-  return cache
+  return object
 }
 function setLoad(type, symbol) {
   return objectLoad(type, symbol, () => new Set())
@@ -52,40 +52,92 @@ function lookupLoad(type, symbol, key) {
   return set
 }
 
-export class Associate {
+function isExtensionOfAny(type, expectedType) {
+  if (!expectedType) return true
+  
+  const expectedTypes = [...asIterable(expectedType)]
+  if (!expectedTypes.length) return true
 
-  static *ownTypes(type, symbols) {
+  for (const expectedType of expectedTypes)
+    if (Es6Reflect.isExtensionOf(type, expectedType))
+      return true
+  return false
+}
+
+export class Associate {
+  static *ownDescriptors(type, symbols) {
 
     // if symbols typeof symbol, pull metadata off of type
     if (typeof symbols == 'symbol') symbols = type[symbols]
     assert(symbols != null, 'failed to find metadata symbols on type.')
     
-    // symbols like { [TheSymbol]: { expectedType, map } }
+    // symbols like { [TheSymbol]: { ...options } }
     for (const symbol of Object.getOwnPropertySymbols(symbols)) {
-      const options = symbols[symbol]
-      const { expectedType, map } = options
-      const expectedTypes = [...asIterable(expectedType)]
+      yield symbol
 
-      const metadata = Associate.iterable(type, symbol)
-      for (let associatedType of asIterable(metadata)) {
-        if (map) associatedType = map(associatedType)
+      const descriptor = Object.getOwnPropertyDescriptor(type, symbol)
+      if (!descriptor) continue
+
+      yield descriptor
+    }
+  }
   
-        // assert if associated type fails to extend any expected type
-        const isValid = !expectedTypes.length || 
-          expectedTypes.filter(expectedType => 
-            Es6Reflect.isExtensionOf(associatedType, expectedType)
-          ).length > 0
-          
-        if (!isValid) 
-          throw `Associate type "${associatedType.name}" is of an unexpected type.`
-       
-        yield associatedType
+  static *ownTypes(type, symbols) {
+    if (typeof symbols == 'symbol') symbols = type[symbols]
+
+    let symbol, options
+    for (const current of Associate.ownDescriptors(type, symbols)) {
+      switch (typeof current) {
+        case 'symbol': 
+          symbol = current
+          options = symbols[symbol] || { }
+          break
+        case 'object':
+          const { value } = current
+          const { expectedType, map = o => o } = options
+          const types = asIterable(value).map(map)
+
+          for (const type of types) {
+            assert(isExtensionOfAny(type, expectedType),
+              `Associate type "${type.name}" is of an unexpected type.`)
+            yield type
+          }
+          break
+        default: assert(false, `Unexpected type: ${typeof current}`)
       }
     }
   }
+  // static *ownTypes2(type, symbols) {
+
+  //   // if symbols typeof symbol, pull metadata off of type
+  //   if (typeof symbols == 'symbol') symbols = type[symbols]
+  //   assert(symbols != null, 'failed to find metadata symbols on type.')
+    
+  //   // symbols like { [TheSymbol]: { expectedType, map } }
+  //   for (const symbol of Object.getOwnPropertySymbols(symbols)) {
+  //     const options = symbols[symbol]
+  //     const { expectedType, map } = options
+  //     const expectedTypes = [...asIterable(expectedType)]
+
+  //     const associatedTypes = Associate.iterable(type, symbol)
+  //     for (let associatedType of asIterable(associatedTypes)) {
+  //       if (map) associatedType = map(associatedType)
+  
+  //       // assert if associated type fails to extend any expected type
+  //       const isValid = !expectedTypes.length || 
+  //         expectedTypes.filter(expectedType => 
+  //           Es6Reflect.isExtensionOf(associatedType, expectedType)
+  //         ).length > 0
+          
+  //       if (!isValid) 
+  //         throw `Associate type "${associatedType.name}" is of an unexpected type.`
+       
+  //       yield associatedType
+  //     }
+  //   }
+  // }
   static *types(type, symbols, options = { }) {
     if (!options.visited) options = { ...options, visited: new Set() }
-    // const { traverse, visited } = options
     const { visited } = options
     
     for (const current of Es6Reflect.hierarchy(type)) {
@@ -94,16 +146,13 @@ export class Associate {
         if (visited.has(associatedType)) continue
         visited.add(associatedType)
         yield associatedType
-
-        // assert(!traverse)
-        // if (traverse)
-        //   yield* Associate.types(associatedType, symbols, options)
       }
     }
   }
 
   static iterable(type, symbol) {
-    return objectLoad(type, symbol) || []
+    // return objectLoad(type, symbol) || []
+    return getOwn(type, symbol) || []
   }
 
   static objectInitialize(type, symbol, fn) {
@@ -173,7 +222,7 @@ export class Associate {
       type = Object.getPrototypeOf(type)
     }
   }
-  static *lookupGet(type, symbol, key, dfaultValue) {
+  static *lookupGet(type, symbol, key) {
     const set = new Set()
     while (type) {
       for (const value of Associate.lookupGetOwn(type, symbol, key)) {
@@ -183,7 +232,5 @@ export class Associate {
       }
       type = Object.getPrototypeOf(type)
     }
-    if (set.size == 0 && dfaultValue !== undefined)
-      yield dfaultValue
   }
 }
