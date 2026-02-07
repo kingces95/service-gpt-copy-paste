@@ -33,7 +33,7 @@ export class PartialProxy {
 
 export class PartialProxyReflect {
   static *conditionDescriptors$(type, key, symbol) {
-    for (const host of PartialReflect.hosts(type, key)) {
+    for (const host of PartialReflect.abstractHosts(type, key)) {
       const conditions = host[symbol]
       if (!conditions) continue
 

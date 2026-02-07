@@ -10,8 +10,6 @@ import { asIterable } from '@kingjs/as-iterable'
 //      A member key.
 //    symbol: A symbol
 //      The associate symbol.
-//    defaultValue: (optional) Value
-//      A default value to return or yield if no associate is found.
 //    symbols: A pojo like { 
 //      [SymbolA]: { map, type },
 //      [SymbolB]: { map, type },
@@ -42,11 +40,11 @@ export class Es6Associate {
   static loadAssociate(type, symbol, fn) {
     return Associate.objectInitialize(type, symbol, fn)
   }
-  static getOwnAssociate(type, symbol, { defaultValue } = { }) { 
-    return Associate.objectGetOwn(type, symbol) ?? defaultValue
+  static getOwnAssociate(type, symbol) { 
+    return Associate.objectGetOwn(type, symbol)
   }
-  static getAssociate(type, symbol, { defaultValue } = { }) { 
-    return Associate.objectGet(type, symbol) ?? defaultValue
+  static getAssociate(type, symbol) { 
+    return Associate.objectGet(type, symbol)
   }
 
   static addAssociates(type, symbol, values) {
@@ -63,13 +61,13 @@ export class Es6Associate {
     Associate.mapSet(
       isStatic ? type : type.prototype, symbol, key, value)
   }
-  static getOwnMemberAssociate(type, key, symbol, { isStatic, defaultValue } = { }) {
+  static getOwnMemberAssociate(type, key, symbol, { isStatic } = { }) {
     return Associate.mapGetOwn(
-      isStatic ? type : type.prototype, symbol, key) ?? defaultValue
+      isStatic ? type : type.prototype, symbol, key)
   }
-  static getMemberAssociate(type, key, symbol, { isStatic, defaultValue } = { }) { 
+  static getMemberAssociate(type, key, symbol, { isStatic } = { }) { 
     return Associate.mapGet(
-      isStatic ? type : type.prototype, symbol, key) ?? defaultValue
+      isStatic ? type : type.prototype, symbol, key)
   }
 
   static addMemberAssociates(type, key, symbol, values, { isStatic } = { }) {

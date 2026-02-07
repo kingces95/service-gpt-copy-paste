@@ -107,13 +107,13 @@ export class PartialReflect {
     yield* PartialAssociate.partialExtensions(type)
   }
 
-  static *hosts(type, key, { isStatic } = { }) {
+  static *abstractHosts(type, key, { isStatic } = { }) {
     if (PartialTypeReflect.isPartialType(type)) {
       if (isStatic) return
-      return yield* PartialPrototype.hosts(type, key)
+      return yield* PartialPrototype.abstractHosts(type, key)
     }
 
-    yield* PartialAssociate.hosts(type, key, { isStatic })
+    yield* PartialAssociate.abstractHosts(type, key, { isStatic })
   }
   static getHost(type, key, { isStatic } = { }) {
     if (PartialTypeReflect.isPartialType(type)) {
@@ -121,7 +121,9 @@ export class PartialReflect {
       return PartialPrototype.getHost(type, key)
     }
 
-    return PartialAssociate.getHost(type, key, { isStatic })
+    if (key in (isStatic ? type : type.prototype) === false) return null
+
+    return PartialAssociate.getHost(type, key, { isStatic }) || type
   }
 
   static load(pojoOrType) {

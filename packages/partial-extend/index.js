@@ -65,7 +65,7 @@ export function extend(type, partialType, {
       case 'object': 
         const hostType = isTransparent ? parentType : partialType
         if (isAbstract(current))
-          PartialAssociate.addHosts(type, key, hostType)
+          PartialAssociate.addAbstractHost(type, key, hostType)
 
         const descriptor = PartialProxyReflect.isPartialProxy(type)
           ? type[Compile](type, key, current) : current

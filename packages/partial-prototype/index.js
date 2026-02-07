@@ -55,10 +55,10 @@ export class PartialPrototype {
 
   // returns partial classes that could have defined the key
   // for example, all concepts that defined the key
-  static *hosts(type, key) {
+  static *abstractHosts(type, key) {
     assert(PartialTypeReflect.isPartialType(type))
     type = getPrototypicalType(type)
-    yield* PartialAssociate.hosts(type, key)
+    yield* PartialAssociate.abstractHosts(type, key)
   }
   
   static getHost(type, key) {

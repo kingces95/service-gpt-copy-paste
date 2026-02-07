@@ -80,7 +80,7 @@ export class ConceptReflect {
     }
   }
   static *getConceptHosts(type, name) {
-    for (const host of PartialReflect.hosts(type, name)) {
+    for (const host of PartialReflect.abstractHosts(type, name)) {
       if (!ConceptReflect.isConcept(host)) continue
       yield host
     }

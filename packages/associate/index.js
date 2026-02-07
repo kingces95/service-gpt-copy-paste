@@ -19,7 +19,7 @@ function objectLoad(type, symbol, fn) {
   if (!object) {
 
     // no fn, no value
-    if (!fn) return undefined
+    if (!fn) return null
 
     // create and load value
     object = fn(type)
@@ -82,7 +82,7 @@ export class Associate {
   }
   static mapGetOwn(type, symbol, key) {
     const map = objectLoad(type, symbol)
-    return map?.get(key)
+    return map?.get(key) || null
   }
   static *lookupGetOwn(type, symbol, key) {
     const map = objectLoad(type, symbol)
@@ -95,6 +95,7 @@ export class Associate {
       if (value) return value
       type = Object.getPrototypeOf(type)
     }
+    return null
   }
   static *setGet(type, symbol) {
     const set = new Set()
@@ -113,6 +114,7 @@ export class Associate {
       if (value) return value
       type = Object.getPrototypeOf(type)
     }
+    return null
   }
   static *lookupGet(type, symbol, key) {
     const set = new Set()

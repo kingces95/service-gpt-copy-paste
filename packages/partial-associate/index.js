@@ -6,6 +6,15 @@ const PartialExtensions = Symbol.for('PartialReflect.PartialExtensions')
 const HostMap = Symbol.for('PartialReflect.HostMap')
 const HostLookup = Symbol.for('PartialReflect.HostLookup')
 
+// PartialAssociate is like Es6Associate but filters out types known
+// to the PartialType system and restricts associates to just those
+// used by the PartialType system (e.g. PartialExtensions, HostMap, 
+// and HostLookup). 
+
+// PartialAssociate is internal. PartialAssociate is used by several 
+// partial packages to expose via PartialReflect the final semanitc 
+// for partial extensions, abstract hosts, and hosts.
+
 export class PartialAssociate {
 
   static addPartialExtension(type, partialType) {
@@ -22,26 +31,18 @@ export class PartialAssociate {
 
   static addHost(type, key, host, { isStatic } = { }) {
     assert(!PartialTypeReflect.isKnownKey(type, key, { isStatic }))
-    Es6Associate.addMemberAssociate(
-      type, key, HostMap, host, { isStatic })
+    Es6Associate.addMemberAssociate(type, key, HostMap, host, { isStatic })
   }
   static getHost(type, key, { isStatic } = { }) {
-    if (PartialTypeReflect.isKnownKey(type, key, { isStatic }))
-      return null
-
-    if (key in (isStatic ? type : type.prototype) === false) return null
-
-    const associate = Es6Associate.getMemberAssociate(
-      type, key, HostMap, { isStatic })
-
-    return associate || type
+    if (PartialTypeReflect.isKnownKey(type, key, { isStatic })) return null
+    return Es6Associate.getMemberAssociate(type, key, HostMap, { isStatic })
   }
 
-  static addHosts(type, key, hosts, { isStatic } = { }) {
+  static addAbstractHost(type, key, host, { isStatic } = { }) {
     assert(!PartialTypeReflect.isKnownKey(type, key, { isStatic }))
-    Es6Associate.addMemberAssociates(type, key, HostLookup, hosts, { isStatic })
+    Es6Associate.addMemberAssociates(type, key, HostLookup, host, { isStatic })
   }
-  static *hosts(type, key, { isStatic } = { }) {
+  static *abstractHosts(type, key, { isStatic } = { }) {
     if (PartialTypeReflect.isKnownKey(type, key, { isStatic })) return
     yield* Es6Associate.memberAssociates(type, key, HostLookup, { isStatic })
   }

@@ -52,7 +52,7 @@ describe.each(Tests)('%s', (name, api, isStatic) => {
       let MySymbol = Symbol('MySymbol')
       const associate = 'associate'
       const associate2 = 'assoicate2'
-      const defaultValue = 'default value'
+      const defaultValue = null
 
       let expected
       let args
@@ -68,7 +68,6 @@ describe.each(Tests)('%s', (name, api, isStatic) => {
         if (api.key) args.push(api.key)
         args.push(MySymbol)
 
-        options.defaultValue = defaultValue
         if (isStatic) options.isStatic = true
 
         if (on) {
