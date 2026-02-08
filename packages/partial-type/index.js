@@ -24,9 +24,9 @@ const PartialTypes = Symbol('PartialType.partialTypes')
 //      }
 //    }
 
-// The simplest use of the Extends symbol is to apply a Extensions 
-// type expressed as a POJO. A single extension can exist as a single element of an
-// array or unwrapped like this:
+// The simplest use of the Extends symbol is to apply an Extensions 
+// type expressed as a POJO. A single extension can exist as a single 
+// element of an array or unwrapped like this:
 
 //    class MyExtension extends PartialClass {
 //      static [Extends] = { 
@@ -96,6 +96,11 @@ const Compile = Symbol('PartialType.compile')
 //     }
 //     equals(other) { }
 //   }
+export const Thunk = Symbol('PartialType.Thunk')
+export const Preconditions = Symbol('PartialType.Preconditions')
+export const Postconditions = Symbol('PartialType.Postconditions')
+export const TypePrecondition = Symbol('PartialType.TypePrecondition')
+export const TypePostcondition = Symbol('PartialType.TypePostcondition')
 
 export class PartialType extends null {
   static Compile = Compile
@@ -119,6 +124,11 @@ export class PartialTypeReflect {
   }
   static isKnownKey(type, key, { isStatic } = { }) {
     if (PartialTypeReflect.isKnown(type)) return true
+    if (key == Thunk) return true
+    if (key == Preconditions) return true
+    if (key == Postconditions) return true
+    if (key == TypePrecondition) return true
+    if (key == TypePostcondition) return true
     return Es6Reflect.isKnownKey(type, key, { isStatic })
   }
 

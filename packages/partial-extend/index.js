@@ -1,11 +1,9 @@
 import { assert } from '@kingjs/assert'
 import { PartialLoader } from '@kingjs/partial-loader'
-import { PartialTypeReflect } from '@kingjs/partial-type'
+import { PartialTypeReflect, Thunk } from '@kingjs/partial-type'
 import { PartialAssociate } from '@kingjs/partial-associate'
 import { Define } from '@kingjs/define'
 import { Extensions } from '@kingjs/extensions'
-import { PartialProxyReflect, Compile } from '@kingjs/partial-proxy'
-import { Descriptor } from '@kingjs/descriptor'
 import { isAbstract } from '@kingjs/abstract'
 
 // Extend takes a targets type and a partial type and merges the 
@@ -67,8 +65,8 @@ export function extend(type, partialType, {
         if (isAbstract(current))
           PartialAssociate.addAbstractHost(type, key, hostType)
 
-        const descriptor = PartialProxyReflect.isPartialProxy(type)
-          ? type[Compile](type, key, current) : current
+        const descriptor = Thunk in type
+          ? type[Thunk](key, current) : current
         if (!Define.property(type, key, descriptor)) continue
         PartialAssociate.addHost(type, key, hostType)
         break

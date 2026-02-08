@@ -1,49 +1,49 @@
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { Es6Compiler } from '@kingjs/es6-compiler'
-
-function coerceCondition(condition) {
-  if (typeof condition === 'function')
-    condition = { value: condition }
-
-  if (condition?.value)
-    condition = { ...condition,
-      get: condition.value,
-      set: condition.value,
-    }
-
-  return condition
-}
-
-function isEmptyCondition(condition) {
-  if (!condition) return true
-  if (condition.value) return false
-  if (condition.get) return false
-  if (condition.set) return false
-  return true
-}
+import { FunctionBuilder } from '@kingjs/function-builder'
 
 export function es6CreateThunk(descriptor, {
-    typePrecondition, // function
-    typePostcondition, // function
-    precondition, // function or { value, get, set }
-    postcondition, // function or { value, get, set }
+    type: { 
+      precondition: typePrecondition, 
+      postcondition: typePostcondition, 
+    } = { },
+    precondition: {
+      value: preconditionValue,
+      get: preconditionGet,
+      set: preconditionSet,
+    } = { },
+    postcondition: {
+      value: postconditionValue,
+      get: postconditionGet,
+      set: postconditionSet,
+    } = { },
   } = { }) {
 
-  precondition = coerceCondition(precondition)
-  postcondition = coerceCondition(postcondition)
+  typePrecondition = FunctionBuilder.require(typePrecondition)
+  typePostcondition = FunctionBuilder.require(typePostcondition)
 
-  if (!typePrecondition &&
-      !typePostcondition &&
-      isEmptyCondition(precondition) &&
-      isEmptyCondition(postcondition))
+  preconditionValue = FunctionBuilder.require(preconditionValue)
+  postconditionValue = FunctionBuilder.require(postconditionValue)
+  
+  preconditionGet = FunctionBuilder.require(preconditionGet)
+  postconditionGet = FunctionBuilder.require(postconditionGet)
+  
+  preconditionSet = FunctionBuilder.require(preconditionSet)
+  postconditionSet = FunctionBuilder.require(postconditionSet)
+
+  if (!typePrecondition && !typePostcondition 
+    && !preconditionValue && !preconditionGet && !preconditionSet
+    && !postconditionValue && !postconditionGet && !postconditionSet)
     return Es6Compiler.emit({ ...descriptor })
+
+  const { value, get, set } = descriptor
 
   const method = function() {
     try { 
       typePrecondition?.call(this) 
-      precondition?.value?.apply(this, arguments)
-      const result = descriptor.value.apply(this, arguments)
-      postcondition?.value?.call(this, result)
+      preconditionValue?.apply(this, arguments)
+      const result = value.apply(this, arguments)
+      postconditionValue?.call(this, result)
       return result
     } finally { 
       typePostcondition?.call(this) 
@@ -52,9 +52,11 @@ export function es6CreateThunk(descriptor, {
   const getter = function() {
     try { 
       typePrecondition?.call(this)
-      precondition?.get?.call(this)
-      const result = descriptor.get.call(this)
-      postcondition?.get?.call(this, result)
+      preconditionValue?.call(this)
+      preconditionGet?.call(this)
+      const result = get.call(this)
+      postconditionGet?.call(this, result)
+      postconditionValue?.call(this, result)
       return result
     } finally { 
       typePostcondition?.call(this) 
@@ -63,9 +65,11 @@ export function es6CreateThunk(descriptor, {
   const setter = function(value) {
     try { 
       typePrecondition?.call(this)
-      precondition?.set?.call(this, value)
-      descriptor.set?.call(this, value)
-      postcondition?.set?.call(this)
+      preconditionValue?.call(this, value)
+      preconditionSet?.call(this, value)
+      set.call(this, value)
+      postconditionSet?.call(this)
+      postconditionValue?.call(this)
     } finally { 
       typePostcondition?.call(this) 
     }

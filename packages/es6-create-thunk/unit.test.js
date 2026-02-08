@@ -114,14 +114,14 @@ describe.each(tests)('A %s thunk', (_, { descriptor, ...flags }) => {
     ['all conditions', { 
       hasTypePrecondition: true,
       hasTypePostcondition: true,
-      hasMemberPrecondition: true,
-      hasMemberPostcondition: true,
+      hasPrecondition: true,
+      hasPostcondition: true,
     }],
     ['type precondition', { hasTypePrecondition: true }],
     ['type postcondition', { hasTypePostcondition: true }],
 
-    ['member precondition', { hasMemberPrecondition: true }],
-    ['member postcondition', { hasMemberPostcondition: true }],
+    ['member precondition', { hasPrecondition: true }],
+    ['member postcondition', { hasPostcondition: true }],
 
     ['getter precondition', { hasGetterPrecondition: true }],
     ['getter postcondition', { hasGetterPostcondition: true }],
@@ -131,30 +131,27 @@ describe.each(tests)('A %s thunk', (_, { descriptor, ...flags }) => {
 
   ])('with %s', (_, {
     hasTypePrecondition, hasTypePostcondition,
-    hasMemberPrecondition, hasMemberPostcondition,
+    hasPrecondition, hasPostcondition,
     hasGetterPrecondition, hasGetterPostcondition,
     hasSetterPrecondition, hasSetterPostcondition,
   }) => {
     let thunk
     beforeEach(() => {
       thunk = es6CreateThunk(descriptor, {
-        typePrecondition: 
-          hasTypePrecondition ? typePrecondition : 
-            null,
-        typePostcondition: 
-          hasTypePostcondition ? typePostcondition : 
-            null,
-
-        precondition: 
-          hasMemberPrecondition ? precondition : 
-            hasGetterPrecondition ? { get: getterPrecondition } : 
-              hasSetterPrecondition ? { set: setterPrecondition } : 
-                null,
-        postcondition: 
-          hasMemberPostcondition ? postcondition :
-            hasGetterPostcondition ? { get: getterPostcondition } :
-              hasSetterPostcondition ? { set: setterPostcondition } : 
-                null,
+        type: { 
+          precondition: hasTypePrecondition ? [typePrecondition] : null,
+          postcondition: hasTypePostcondition ? [typePostcondition] : null,
+        },
+        precondition: {
+          value: hasPrecondition ? [precondition] : null,
+          get: hasGetterPrecondition ? [getterPrecondition] : null, 
+          set: hasSetterPrecondition ? [setterPrecondition] : null,
+        },
+        postcondition: {
+          value: hasPostcondition ? [postcondition] : null,
+          get: hasGetterPostcondition ? [getterPostcondition] : null, 
+          set: hasSetterPostcondition ? [setterPostcondition] : null,
+        }
       })
     })
   
@@ -162,7 +159,7 @@ describe.each(tests)('A %s thunk', (_, { descriptor, ...flags }) => {
       ['get', descriptor.get],
       ['set', descriptor.set],
       ['value', descriptor.value],
-    ])('%s property', (key, value) => {
+    ])('property %s', (key, value) => {
   
       // getter, setter, property, method
       if (typeof value == 'function') {
@@ -216,7 +213,7 @@ describe.each(tests)('A %s thunk', (_, { descriptor, ...flags }) => {
 
           if (hasTypePrecondition) 
             expected.push('typePrecondition', [])
-          if (hasMemberPrecondition) 
+          if (hasPrecondition) 
             expected.push('precondition', [])
           if (hasGetterPrecondition)
             expected.push('getterPrecondition', [])
@@ -224,7 +221,7 @@ describe.each(tests)('A %s thunk', (_, { descriptor, ...flags }) => {
           expected.push('get', [])
           
           if (!throws) {
-            if (hasMemberPostcondition) 
+            if (hasPostcondition) 
               expected.push('postcondition', ['result'])
             if (hasGetterPostcondition)
               expected.push('getterPostcondition', ['result'])
@@ -248,7 +245,7 @@ describe.each(tests)('A %s thunk', (_, { descriptor, ...flags }) => {
 
           if (hasTypePrecondition) 
             expected.push('typePrecondition', [])
-          if (hasMemberPrecondition) 
+          if (hasPrecondition) 
             expected.push('precondition', ['a0'])
           if (hasSetterPrecondition)
             expected.push('setterPrecondition', ['a0'])
@@ -256,7 +253,7 @@ describe.each(tests)('A %s thunk', (_, { descriptor, ...flags }) => {
           expected.push('set', ['a0'])
           
           if (!throws) {
-            if (hasMemberPostcondition) 
+            if (hasPostcondition) 
               expected.push('postcondition', [])
             if (hasSetterPostcondition)
               expected.push('setterPostcondition', [])
@@ -283,13 +280,13 @@ describe.each(tests)('A %s thunk', (_, { descriptor, ...flags }) => {
 
           if (hasTypePrecondition) 
             expected.push('typePrecondition', [])
-          if (hasMemberPrecondition) 
+          if (hasPrecondition) 
             expected.push('precondition', ['a0', 'a1'])
           
           expected.push('method', ['a0', 'a1'])
           
           if (!throws) {
-            if (hasMemberPostcondition) 
+            if (hasPostcondition) 
               expected.push('postcondition', ['result'])
           }
           if (hasTypePostcondition) 

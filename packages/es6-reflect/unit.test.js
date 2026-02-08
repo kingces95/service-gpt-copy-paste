@@ -45,6 +45,14 @@ const MyClassMd = {
       [ 'staticMember', MyClass ],
       [ 'staticBaseMember', MyClass ],
     ],
+    hierarchy: {
+      staticMember: [ 
+        MyClass, MyClass.staticMember, 
+        Object ],
+      staticBaseMember: [ 
+        MyClass, MyClass.staticBaseMember, 
+        Object ],
+    },
   },
   instance: {
     ownKeys: [ 'member', 'baseMember' ],
@@ -57,6 +65,14 @@ const MyClassMd = {
       [ 'member', MyClass ],
       [ 'baseMember', MyClass ],
     ],
+    hierarchy: {
+      member: [ 
+        MyClass, MyClass.prototype.member, 
+        Object ],
+      baseMember: [ 
+        MyClass, MyClass.prototype.baseMember, 
+        Object ],
+    },
   },
 }
 
@@ -83,6 +99,20 @@ const MyExtendedClassMd = {
       [ 'extendedStaticMember', MyExtendedClass ],
       [ 'staticBaseMember', MyClass ],
     ],
+    hierarchy: {
+      staticMember: [ 
+        MyExtendedClass, MyExtendedClass.staticMember, 
+        MyClass, MyClass.staticMember, 
+        Object ],
+      staticBaseMember: [ 
+        MyExtendedClass, 
+        MyClass, MyClass.staticBaseMember, 
+        Object ],
+      extendedStaticMember: [ 
+        MyExtendedClass, MyExtendedClass.extendedStaticMember, 
+        MyClass, 
+        Object ],
+    },
   },
   instance: {
     ownKeys: [ 'member', 'extendedMember' ],
@@ -96,6 +126,20 @@ const MyExtendedClassMd = {
       [ 'extendedMember', MyExtendedClass ],
       [ 'baseMember', MyClass ],
     ],
+    hierarchy: {
+      member: [ 
+        MyExtendedClass, MyExtendedClass.prototype.member, 
+        MyClass, MyClass.prototype.member, 
+        Object ],
+      baseMember: [ 
+        MyExtendedClass, 
+        MyClass, MyClass.prototype.baseMember, 
+        Object ],
+      extendedMember: [ 
+        MyExtendedClass, MyExtendedClass.prototype.extendedMember, 
+        MyClass, 
+        Object ],
+    },
   },
 }
 
@@ -140,9 +184,28 @@ describe.each(Classes)('%s', (_, classMd) => {
     ['static', true], 
     ['instance', false]
   ])('%s', (label, isStatic) => {
+    let prototype
+    let md
+    beforeEach(() => {
+      prototype = isStatic ? type : type.prototype
+      md = classMd?.[label]
+    })
+
+    it('has correct member hierarchy', () => {
+      const members = md?.hierarchy || { }
+      for (const key in members) {
+        const expected = members[key]
+        const actual = [...Es6Reflect.hierarchy(
+          type, key, { isStatic, excludeKnown: true })].map(value => {
+            if (typeof value == 'object') return value.value
+            return value
+          })
+        expect(actual).toEqual(expected)
+      }
+    })
 
     it('has correct own keys', () => {
-      const expected = classMd?.[label]?.ownKeys || []
+      const expected = md?.ownKeys || []
       const actual = [...Es6Reflect.ownKeys(type, { isStatic })]
         .filter(name => Es6Reflect.isKnownKey(type, name, { isStatic }) === false)
       // sort for comparison
@@ -152,7 +215,7 @@ describe.each(Classes)('%s', (_, classMd) => {
     })
 
     it('has correct members', () => {
-      const expected = classMd?.[label]?.members || []
+      const expected = md?.members || []
       const actual = []
       let owner
       for (const current of Es6Reflect.keys(
@@ -190,7 +253,7 @@ describe.each(Classes)('%s', (_, classMd) => {
 
     it('has correct own descriptors', () => {
       const expected = {}
-      for (const [name] of classMd?.[label]?.members || [])
+      for (const [name] of md?.members || [])
         expected[name] = Object.getOwnPropertyDescriptor(
           isStatic ? type : type.prototype,
           name)
@@ -213,7 +276,7 @@ describe.each(Classes)('%s', (_, classMd) => {
 
     it('has correct descriptors', () => {
       const expected = {}
-      for (const [name, owner] of classMd?.[label]?.members || [])
+      for (const [name, owner] of md?.members || [])
         expected[name] = Object.getOwnPropertyDescriptor(
           isStatic ? owner : owner.prototype,
           name)
@@ -236,7 +299,7 @@ describe.each(Classes)('%s', (_, classMd) => {
     })
 
     it('can get each own descriptor', () => {
-      for (const [name, owner] of classMd?.[label]?.ownMembers || []) {
+      for (const [name, owner] of md?.ownMembers || []) {
         const expected = Object.getOwnPropertyDescriptor(
           isStatic ? owner : owner.prototype,
           name)
@@ -247,7 +310,7 @@ describe.each(Classes)('%s', (_, classMd) => {
     })
 
     it('can get each descriptor', () => {
-      for (const [name, owner] of classMd?.[label]?.members || []) {
+      for (const [name, owner] of md?.members || []) {
         const expected = Object.getOwnPropertyDescriptor(
           isStatic ? owner : owner.prototype,
           name)

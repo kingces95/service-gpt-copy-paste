@@ -134,7 +134,7 @@ describe('An extension', () => {
         expect(host).toBe(subExtension)
       })
       it('should report no hosts for subMember', () => {
-        const hosts = [...PartialReflect.abstractHosts(extension, 'subMember')]
+        const hosts = [...PartialReflect.virtualHosts(extension, 'subMember')]
         expect(hosts).toHaveLength(0)
       })
     })

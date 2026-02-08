@@ -70,10 +70,16 @@ export class Es6Reflect {
     return false
   }
 
-  static *hierarchy(type) {
+  static *hierarchy(type, key = null, { isStatic, excludeKnown } = { }) {
     let current = type
     while (current) {
       yield current
+      if (key) {
+        const descriptor = Es6Reflect.getOwnDescriptor(current, key, { 
+          isStatic, excludeKnown })
+        if (descriptor)
+          yield descriptor
+      }
       current = Es6Reflect.baseType(current)
     }
   }

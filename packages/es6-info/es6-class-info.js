@@ -11,7 +11,6 @@ import {
 } from './es6-descriptor-info.js'
 import { Es6IdInfo } from './es6-id-info.js'
 import { Es6KeyInfo } from './es6-key-info.js'
-import { es6Typeof } from '@kingjs/es6-typeof'
 import util from 'util'
 
 const Es6ClassWeakMap = new WeakMap()
@@ -204,7 +203,7 @@ export class Es6MemberInfo {
     if (!parent) return null
 
     const isStatic = this.isStatic
-    return parent.getOwnMember(this.name, { isStatic })
+    return parent.getMember(this.name, { isStatic })
   }
 
   equals(other) {

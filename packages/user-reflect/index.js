@@ -10,6 +10,9 @@ export class UserReflect {
   static *keys(type, { isStatic } = { }) {
     yield* Es6Reflect.keys(type, { isStatic, ...Filter })
   } 
+  static *hierarchy(type, key, { isStatic } = { }) {
+    yield* Es6Reflect.hierarchy(type, key, { isStatic, ...Filter })
+  }
   static getOwnDescriptor(type, key, { isStatic } = { }) {
     return Es6Reflect.getOwnDescriptor(type, key, { isStatic, ...Filter })
   }

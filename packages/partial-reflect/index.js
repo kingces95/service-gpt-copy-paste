@@ -4,6 +4,7 @@ import { PartialLoader } from '@kingjs/partial-loader'
 import { PartialPrototype } from '@kingjs/partial-prototype'
 import { UserReflect } from '@kingjs/user-reflect'
 import { PartialTypeReflect } from '@kingjs/partial-type'
+import { isAbstract } from '@kingjs/abstract'
 
 // Unfies reflection operations over PartialObjects and Es6 types.
 
@@ -107,13 +108,21 @@ export class PartialReflect {
     yield* PartialAssociate.partialExtensions(type)
   }
 
-  static *abstractHosts(type, key, { isStatic } = { }) {
-    if (PartialTypeReflect.isPartialType(type)) {
-      if (isStatic) return
+  static *virtualHosts(type, key) {
+    if (PartialTypeReflect.isPartialType(type))
       return yield* PartialPrototype.abstractHosts(type, key)
-    }
 
-    yield* PartialAssociate.abstractHosts(type, key, { isStatic })
+    yield* PartialAssociate.abstractHosts(type, key)
+
+    // yield types in the hiearchy that host members assigned to the key.
+    let host
+    for (const current of UserReflect.hierarchy(type, key)) {
+      switch (typeof current) {
+        case 'function': host = current; break
+        case 'object': yield host; break
+        default: assert(false, `Unexpected type: ${typeof current}`)
+      }
+    }
   }
   static getHost(type, key, { isStatic } = { }) {
     if (PartialTypeReflect.isPartialType(type)) {

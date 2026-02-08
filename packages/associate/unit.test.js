@@ -19,7 +19,7 @@ describe('MyClass with MyBase, MySymbol, MyKey, and MyValue', () => {
   describe('has no associated...', () => {
     it('object', () => {
       const associated = Associate.objectGet(myClass, mySymbol)
-      expect(associated).toBeUndefined()
+      expect(associated).toBeNull()
     })
     it('set', () => {
       const associated = [...Associate.setGet(myClass, mySymbol)]
@@ -27,7 +27,7 @@ describe('MyClass with MyBase, MySymbol, MyKey, and MyValue', () => {
     })
     it('map', () => {
       const associated = Associate.mapGet(myClass, mySymbol, myKey)
-      expect(associated).toBeUndefined()
+      expect(associated).toBeNull()
     })
     it('lookup', () => {
       const associated = [...Associate.lookupGet(myClass, mySymbol, myKey)]
@@ -101,7 +101,7 @@ describe('MyClass with MyBase, MySymbol, MyKey, and MyValue', () => {
       })
       it('value is not directly associated', () => {
         const associated = Associate.objectGetOwn(myClass, mySymbol)
-        expect(associated).toBeUndefined()
+        expect(associated).toBeNull()
       })
     })
     describe('set', () => {
@@ -127,7 +127,7 @@ describe('MyClass with MyBase, MySymbol, MyKey, and MyValue', () => {
       })
       it('value is not directly associated', () => {
         const associated = Associate.mapGetOwn(myClass, mySymbol, myKey)
-        expect(associated).toBeUndefined()
+        expect(associated).toBeNull()
       })
     })
     describe('lookup', () => {

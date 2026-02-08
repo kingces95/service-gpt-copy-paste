@@ -2,9 +2,9 @@ import { assert } from '@kingjs/assert'
 import { Es6Associate } from '@kingjs/es6-associate'
 import { PartialTypeReflect } from '@kingjs/partial-type'
 
-const PartialExtensions = Symbol.for('PartialReflect.PartialExtensions')
-const HostMap = Symbol.for('PartialReflect.HostMap')
-const HostLookup = Symbol.for('PartialReflect.HostLookup')
+const PartialExtensions = Symbol.for('PartialReflect.partialExtensions')
+const HostMap = Symbol.for('PartialReflect.hostMap')
+const AbstractHostLookup = Symbol.for('PartialReflect.abstractHostLookup')
 
 // PartialAssociate is like Es6Associate but filters out types known
 // to the PartialType system and restricts associates to just those
@@ -40,10 +40,10 @@ export class PartialAssociate {
 
   static addAbstractHost(type, key, host, { isStatic } = { }) {
     assert(!PartialTypeReflect.isKnownKey(type, key, { isStatic }))
-    Es6Associate.addMemberAssociates(type, key, HostLookup, host, { isStatic })
+    Es6Associate.addMemberAssociates(type, key, AbstractHostLookup, host, { isStatic })
   }
   static *abstractHosts(type, key, { isStatic } = { }) {
     if (PartialTypeReflect.isKnownKey(type, key, { isStatic })) return
-    yield* Es6Associate.memberAssociates(type, key, HostLookup, { isStatic })
+    yield* Es6Associate.memberAssociates(type, key, AbstractHostLookup, { isStatic })
   }
 }
