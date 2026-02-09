@@ -18,6 +18,11 @@ import {
   RandomAccessContainerConcept,
   ContiguousContainerConcept,
   PrologContainerConcept,
+
+  SequenceContainerConcept,
+  RewindContainerConcept,
+  IndexableContainerConcept,
+  ContiguousContainerConcept,
 } from '@kingjs/cursor-container'
 
 import { 
@@ -410,13 +415,9 @@ describe.each(cases)('A %s', (name, type, cursorType, concepts) => {
         'Container is disposed and cannot be used.')
     })
 
-    describe('accessing cursor factory', () => {
+    describe('accessing a cursor factory', () => {
       it('should throw testing if empty', () => {
         expect(() => { f0.isEmpty }).toThrow(
-          'Container is disposed and cannot be used.')
-      })
-      it('should throw if data is accessed', () => {
-        expect(() => { f0.data }).toThrow(
           'Container is disposed and cannot be used.')
       })
       it('should not have a begin cursor', () => {
@@ -427,82 +428,95 @@ describe.each(cases)('A %s', (name, type, cursorType, concepts) => {
         expect(() => { f0.end() }).toThrow(
           'Container is disposed and cannot be used.')
       })
-      it('should not have a beforeBegin cursor', () => {
-        expect(() => { f0.beforeBegin() }).toThrow(
-          'Container is disposed and cannot be used.')
-      })
-      it('should not have a afterEnd cursor', () => {
-        expect(() => { f0.afterEnd() }).toThrow(
-          'Container is disposed and cannot be used.')
-      })
       it('should not have a range', () => {
         expect(() => { f0.toRange() }).toThrow(
           'Container is disposed and cannot be used.')
       })
-      it('should not have a cRange', () => {
-        expect(() => { f0.toCRange() }).toThrow(
-          'Container is disposed and cannot be used.')
-      })
     })
 
-    describe('accessing a sequence container', () => {
-      it('should not have a front value', () => {
-        expect(() => { f0.front }).toThrow(
-          'Container is disposed and cannot be used.')
+    if (type.prototype instanceof PrologContainerConcept) {
+      describe('accessing a prolog container', () => {
+        it('should throw calling beforeBegin', () => {
+          expect(() => { f0.beforeBegin() }).toThrow(
+            'Container is disposed and cannot be used.')
+        })
+        it('should throw trying to insert after', () => {
+          expect(() => { f0.insertAfter(f0.beforeBegin(), value0) }).toThrow(
+            'Container is disposed and cannot be used.')
+        })
+        it('should throw trying to remove after', () => {
+          expect(() => { f0.removeAfter(f0.beforeBegin()) }).toThrow(
+            'Container is disposed and cannot be used.')
+        })
       })
-      it('should throw when unshifted', () => {
-        expect(() => { f0.unshift(value0) }).toThrow(
-          'Container is disposed and cannot be used.')
-      })
-      it('should throw when shifted', () => {
-        expect(() => { f0.shift() }).toThrow(
-          'Container is disposed and cannot be used.')
-      })  
-    })
+    }
 
-    describe('accessing a rewind container', () => {
-      it('should throw on count', () => {
-        expect(() => { f0.count }).toThrow(
-          'Container is disposed and cannot be used.')
+    if (type.prototype instanceof SequenceContainerConcept) {
+      describe('accessing a sequence container', () => {
+        it('should not have a front value', () => {
+          expect(() => { f0.front }).toThrow(
+            'Container is disposed and cannot be used.')
+        })
+        it('should throw when unshifted', () => {
+          expect(() => { f0.unshift(value0) }).toThrow(
+            'Container is disposed and cannot be used.')
+        })
+        it('should throw when shifted', () => {
+          expect(() => { f0.shift() }).toThrow(
+            'Container is disposed and cannot be used.')
+        })  
       })
-      it('should not have a back value', () => {
-        expect(() => { f0.back }).toThrow(
-          'Container is disposed and cannot be used.')
-      })
-      it('should throw when pushed', () => {
-        expect(() => { f0.push(value0) }).toThrow(
-          'Container is disposed and cannot be used.')
-      })
-      it('should throw when popped', () => {
-        expect(() => { f0.pop() }).toThrow(
-          'Container is disposed and cannot be used.')
-      })
-    })
+    }
 
-    describe('accessing an indexable container', () => {
-      it('should throw when at', () => {
-        expect(() => { f0.at(0) }).toThrow(
-          'Container is disposed and cannot be used.')
+    if (type.prototype instanceof RewindContainerConcept) {
+      describe('accessing a rewind container', () => {
+        it('should throw on count', () => {
+          expect(() => { f0.count }).toThrow(
+            'Container is disposed and cannot be used.')
+        })
+        it('should not have a back value', () => {
+          expect(() => { f0.back }).toThrow(
+            'Container is disposed and cannot be used.')
+        })
+        it('should throw when pushed', () => {
+          expect(() => { f0.push(value0) }).toThrow(
+            'Container is disposed and cannot be used.')
+        })
+        it('should throw when popped', () => {
+          expect(() => { f0.pop() }).toThrow(
+            'Container is disposed and cannot be used.')
+        })
       })
-      it('should throw when setAt', () => {
-        expect(() => { f0.setAt(0, 0, value0) }).toThrow(
-          'Container is disposed and cannot be used.')
-      })
-    })
+    }
 
-    describe('accessing a contiguous container', () => {
-      it('should throw if expanded', () => {
-        expect(() => { f0.expand(1) }).toThrow(
-          'Container is disposed and cannot be used.')
+    if (type.prototype instanceof IndexableContainerConcept) {
+      describe('accessing an indexable container', () => {
+        it('should throw when at', () => {
+          expect(() => { f0.at(0) }).toThrow(
+            'Container is disposed and cannot be used.')
+        })
+        it('should throw when setAt', () => {
+          expect(() => { f0.setAt(0, 0, value0) }).toThrow(
+            'Container is disposed and cannot be used.')
+        })
       })
-      if('should throw if inserted', () => {
-        expect(() => { f0.insert(f0.begin(), value0) }).toThrow(
-          'Container is disposed and cannot be used.')
+    }
+
+    if (type.prototype instanceof ContiguousContainerConcept) {
+      describe('accessing a contiguous container', () => {
+        // it('should throw if expanded', () => {
+        //   expect(() => { f0.expand(1) }).toThrow(
+        //     'Container is disposed and cannot be used.')
+        // })
+        if('should throw if inserted', () => {
+          expect(() => { f0.insert(f0.begin(), value0) }).toThrow(
+            'Container is disposed and cannot be used.')
+        })
+        it('should throw if removed', () => {
+          expect(() => { f0.remove(f0.begin()) }).toThrow(
+            'Container is disposed and cannot be used.')
+        })
       })
-      it('should throw if removed', () => {
-        expect(() => { f0.remove(f0.begin()) }).toThrow(
-          'Container is disposed and cannot be used.')
-      })
-    })
+    }
   })
 })

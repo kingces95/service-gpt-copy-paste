@@ -1,16 +1,10 @@
 import { IndexableCursor } from '../indexable-cursor.js'
-import { extend } from '@kingjs/partial-extend'
 import { implement } from '@kingjs/implement'
-import { Preconditions } from '@kingjs/debug-proxy'
 import { 
   ContiguousCursorConcept,
 } from '@kingjs/cursor'
 
 export class ContiguousCursor extends IndexableCursor {
-  static [Preconditions] = class extends IndexableCursor[Preconditions] {
-    static { extend(this, ContiguousCursorConcept[Preconditions]) }
-  }
-
   constructor(contiguous, index) {
     super(contiguous, index)
   }

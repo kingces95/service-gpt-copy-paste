@@ -1,5 +1,5 @@
 import { implement } from '@kingjs/implement'
-import { Preconditions } from '@kingjs/debug-proxy'
+import { Preconditions } from '@kingjs/partial-proxy'
 import { implement } from '@kingjs/implement'
 import {
   throwStale,
@@ -20,43 +20,43 @@ import {
 } from "../../container-concepts.js"
 
 export class Chain extends RewindContainer {
-  static [Preconditions] = class extends RewindContainer[Preconditions] {
+  static [Preconditions] = {
     setValue$(link, value) {
       if (!this.__isActive$(link)) throwStale()
       if (this.isEnd$(link)) throwWriteOutOfBounds()
       if (this.isBeforeBegin$(link)) throwWriteOutOfBounds()
-    }
+    },
     value$(link) {
       if (!this.__isActive$(link)) throwStale()
       if (this.isEnd$(link)) throwReadOutOfBounds()
       if (this.isBeforeBegin$(link)) throwReadOutOfBounds()
-    }
+    },
     step$(link) {
       if (!this.__isActive$(link)) throwStale()
       if (this.isEnd$(link)) throwMoveOutOfBounds()
-    }
+    },
     stepBack$(link) {
       if (!this.__isActive$(link)) throwStale()
       if (this.isBeforeBegin$(link)) throwMoveOutOfBounds()
-    }
+    },
 
     insertAfter(cursor, value) {
       if (cursor.container$ != this) throwNotEquatableTo()
       if (this.isEnd$(cursor.token$)) throwUpdateOutOfBounds()
-    }
+    },
     removeAfter(cursor) {
       if (cursor.container$ != this) throwNotEquatableTo()
       if (this.isEnd$(cursor.token$)) throwUpdateOutOfBounds()
-    }
+    },
     insert(cursor, value) {
       if (cursor.container$ != this) throwNotEquatableTo()
       if (this.isBeforeBegin$(cursor.token$)) throwUpdateOutOfBounds()
-    }
+    },
     remove(cursor) {
       if (cursor.container$ != this) throwNotEquatableTo()
       if (this.isEnd$(cursor.token$)) throwUpdateOutOfBounds()
       if (this.isBeforeBegin$(cursor.token$)) throwUpdateOutOfBounds()
-    }
+    },
   }
 
   _count
@@ -105,6 +105,7 @@ export class Chain extends RewindContainer {
     })
 
     implement(this, RewindContainerConcept, {
+      get count() { return this._count },
       get back() { return this._root.previous.previous.value },
       push(value) { this.insert(this.end(), value) },
       pop() { 

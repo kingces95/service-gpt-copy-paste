@@ -74,7 +74,7 @@ export class IndexableContainerConcept extends RewindContainerConcept {
 // A prolog containers implements a beforeBegin iterator. A beforeBegin 
 // cursor is used for implementing insertAfter and removeAfter methods.
 export class PrologContainerConcept extends Concept {
-  get beforeBegin() { }
+  beforeBegin() { }
   insertAfter(cursor, value) { }
   removeAfter(cursor) { }
 }

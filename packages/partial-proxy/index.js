@@ -12,6 +12,14 @@ import {
   TypePostcondition,
 } from '@kingjs/partial-type'
 
+export {
+  Thunk,
+  Preconditions,
+  Postconditions,
+  TypePrecondition,
+  TypePostcondition,
+} from '@kingjs/partial-type'
+
 export class PartialProxy {
   static [Thunk](key, descriptor) {
     if (isAbstract(descriptor)) return descriptor

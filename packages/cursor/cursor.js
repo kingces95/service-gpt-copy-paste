@@ -5,8 +5,17 @@ import {
   EquatableConcept,
   CursorConcept 
 } from './cursor-concepts.js'
+import { PartialProxy } from '@kingjs/partial-proxy'
+import {
+  Thunk,
+  TypePrecondition,
+} from '@kingjs/partial-type'
 
 export class Cursor extends DebugProxy {
+  static [Thunk](key, descriptor) {
+    return PartialProxy[Thunk].call(this, key, descriptor)
+  }
+  
   #scope
 
   constructor(scope) {

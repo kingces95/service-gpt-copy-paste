@@ -1,7 +1,7 @@
 import { Concept } from '@kingjs/concept'
 import { PartialClass, Extends } from '@kingjs/partial-class'
-import { Preconditions } from '@kingjs/debug-proxy'
 import { throwNotEquatableTo } from './throw.js'
+import { Preconditions } from '@kingjs/partial-type'
 
 export class ScopeConcept extends Concept {
   equatableTo(other) { }
@@ -12,7 +12,6 @@ export class EquatableConcept extends ScopeConcept {
 }
 
 export class CursorConcept extends EquatableConcept {
-  static [Preconditions] = PartialClass
   static [Extends] = {
     next() {
       const value = this.value 
@@ -41,15 +40,14 @@ export class BidirectionalCursorConcept extends ForwardCursorConcept {
 }
 
 export class RandomAccessCursorConcept extends BidirectionalCursorConcept {
-  static [Preconditions] = 
-    class extends BidirectionalCursorConcept[Preconditions] {
-      compareTo(other) {
-        if (!this.equatableTo(other)) throwNotEquatableTo(other)
-      }
-      subtract(other) {
-        if (!this.equatableTo(other)) throwNotEquatableTo(other)
-      }
+  static [Preconditions] = {
+    compareTo(other) {
+      if (!this.equatableTo(other)) throwNotEquatableTo(other)
+    },
+    subtract(other) {
+      if (!this.equatableTo(other)) throwNotEquatableTo(other)
     }
+  }
 
   move(offset) { }
   at(offset) { }
@@ -59,12 +57,11 @@ export class RandomAccessCursorConcept extends BidirectionalCursorConcept {
 }
 
 export class ContiguousCursorConcept extends RandomAccessCursorConcept {
-  static [Preconditions] = 
-    class extends RandomAccessCursorConcept[Preconditions] {
-      data(other) {
-        if (!this.equatableTo(other)) throwNotEquatableTo(other)
-      }
+  static [Preconditions] = {
+    data(other) {
+      if (!this.equatableTo(other)) throwNotEquatableTo(other)
     }
+  }
 
   static [Extends] = {
     read(length = 1, signed = false, littleEndian = false) {

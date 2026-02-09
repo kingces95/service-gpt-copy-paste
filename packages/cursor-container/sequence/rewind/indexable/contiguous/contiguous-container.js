@@ -1,7 +1,7 @@
 import { implement } from '@kingjs/implement'
 import { ContiguousCursor } from './contiguous-cursor.js'
 import { IndexableContainer } from "../indexable-container.js"
-import { Preconditions } from '@kingjs/debug-proxy'
+import { Preconditions } from '@kingjs/partial-proxy'
 import { copyBackward, copyForward } from '@kingjs/cursor-algorithm'
 import {
   throwNotImplemented,
@@ -18,7 +18,7 @@ import {
 } from '../../../../container-concepts.js'
 
 export class ContiguousContainer extends IndexableContainer {
-  static [Preconditions] = class extends IndexableContainer[Preconditions] {
+  static [Preconditions] = {
     readAt$(index, offset, length, signed, littleEndian) {
       switch (length) {
         case 2: 
@@ -72,8 +72,8 @@ export class ContiguousContainer extends IndexableContainer {
     })
     // implement(this, IndexableContainerConcept, {
     // })
-    // implement(this, ContiguousContainerConcept, {
-    // })
+    implement(this, ContiguousContainerConcept, {
+    })
   }
 
   get capacity() { throwNotImplemented() }

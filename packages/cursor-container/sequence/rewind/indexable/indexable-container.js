@@ -1,7 +1,8 @@
 import { implement } from '@kingjs/implement'
 import { RewindContainer } from '../rewind-container.js'
 import { IndexableCursor } from './indexable-cursor.js'
-import { Preconditions } from '@kingjs/debug-proxy'
+import { Preconditions as Preconditions$ } from '@kingjs/debug-proxy'
+import { Preconditions } from '@kingjs/partial-proxy'
 import {
   throwNotImplemented,
   throwNotEquatableTo,
@@ -19,23 +20,7 @@ import {
 } from '../../../container-concepts.js'
 
 export class IndexableContainer extends RewindContainer {
-  static [Preconditions] = class extends RewindContainer[Preconditions] {
-    subtract$(index, otherCursor) {
-      if (otherCursor.container$ != this) throwNotEquatableTo()
-    }
-    move$(index, offset) {
-      if (!this.isInBoundsOrEnd$(index, offset)) throwMoveOutOfBounds()
-    }
-    compareTo$(index, otherCursor) {
-      if (otherCursor.container$ != this) throwNotEquatableTo()
-    }
-    at$(index, offset) {
-      if (!this.isInBounds$(index, offset)) throwReadOutOfBounds()
-    }
-    setAt$(index, offset, value) {
-      if (!this.isInBounds$(index, offset)) throwWriteOutOfBounds()
-    }
-
+  static [Preconditions$] = class extends RewindContainer[Preconditions$] {
     shift() {
       super.shift()
       this.__bumpVersion$()
@@ -43,6 +28,30 @@ export class IndexableContainer extends RewindContainer {
     unshift(value) {
       this.__bumpVersion$()
     }
+  }
+  static [Preconditions] = {
+    subtract$(index, otherCursor) {
+      if (otherCursor.container$ != this) throwNotEquatableTo()
+    },
+    move$(index, offset) {
+      if (!this.isInBoundsOrEnd$(index, offset)) throwMoveOutOfBounds()
+    },
+    compareTo$(index, otherCursor) {
+      if (otherCursor.container$ != this) throwNotEquatableTo()
+    },
+    at$(index, offset) {
+      if (!this.isInBounds$(index, offset)) throwReadOutOfBounds()
+    },
+    setAt$(index, offset, value) {
+      if (!this.isInBounds$(index, offset)) throwWriteOutOfBounds()
+    },
+
+    shift() {
+      this.__bumpVersion$()
+    },
+    unshift(value) {
+      this.__bumpVersion$()
+    }  
   }
 
   static get cursorType() { return IndexableCursor }
@@ -55,6 +64,17 @@ export class IndexableContainer extends RewindContainer {
   }
 
   __bumpVersion$() { this.__version++ }
+
+  isInBounds$(index, offset) {
+    const indexOffset = index + offset
+    if (indexOffset < 0) return false
+    if (indexOffset >= this.count) return false
+    return true
+  }
+  isInBoundsOrEnd$(index, offset) {
+    const indexOffset = index + offset
+    return indexOffset == this.count || this.isInBounds$(index, offset)
+  }
 
   static {
     implement(this, SequenceContainerConcept$, {
@@ -79,8 +99,8 @@ export class IndexableContainer extends RewindContainer {
     })
     implement(this, SequenceContainerConcept, {
       get front() { return this.at$(0, 0) },
-      // shift() { },
-      // unshift(value) { },
+      shift() { super.shift() },
+      unshift(value) { super.unshift(value) },
     })
     implement(this, RewindContainerConcept, {
       get back() { return this.at$(this.count - 1, 0) },
@@ -92,17 +112,6 @@ export class IndexableContainer extends RewindContainer {
       at(index) { return this.at$(index, 0) },
       setAt(index, value) { this.setAt$(index, 0, value) },
     })
-  }
-
-  isInBounds$(index, offset) {
-    const indexOffset = index + offset
-    if (indexOffset < 0) return false
-    if (indexOffset >= this.count) return false
-    return true
-  }
-  isInBoundsOrEnd$(index, offset) {
-    const indexOffset = index + offset
-    return indexOffset == this.count || this.isInBounds$(index, offset)
   }
 
   // cursor factory

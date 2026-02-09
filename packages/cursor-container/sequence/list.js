@@ -1,5 +1,5 @@
 import { implement } from '@kingjs/implement'
-import { Preconditions } from '@kingjs/debug-proxy'
+import { Preconditions } from '@kingjs/partial-proxy'
 import {
   throwStale,
   throwNotEquatableTo,
@@ -17,26 +17,26 @@ import {
 } from "../container-concepts.js"
 
 export class List extends SequenceContainer {
-  static [Preconditions] = class extends SequenceContainer[Preconditions] {
+  static [Preconditions] = {
     setValue$(link, value) {
       if (!this.__isActive$(link)) throwStale()
       if (this.isEnd$(link)) throwWriteOutOfBounds()
       if (this.isBeforeBegin$(link)) throwWriteOutOfBounds()
-    }
+    },
     value$(link) {
       if (!this.__isActive$(link)) throwStale()
       if (this.isEnd$(link)) throwReadOutOfBounds()
       if (this.isBeforeBegin$(link)) throwReadOutOfBounds()
-    }
+    },
     step$(link) {
       if (!this.__isActive$(link)) throwStale()
       if (this.isEnd$(link)) throwMoveOutOfBounds()
-    }
-
+    }, 
+  
     insertAfter(cursor, value) {
       if (cursor.container$ != this) throwNotEquatableTo()
       if (this.isEnd$(cursor.token$)) throwUpdateOutOfBounds()
-    }
+    },
     removeAfter(cursor) {
       if (cursor.container$ != this) throwNotEquatableTo()
       if (this.isEnd$(cursor.token$)) throwUpdateOutOfBounds()

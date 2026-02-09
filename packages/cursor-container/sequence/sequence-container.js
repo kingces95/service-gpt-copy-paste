@@ -4,20 +4,29 @@ import { implement } from '@kingjs/implement'
 import {
   throwEmpty,
 } from '@kingjs/cursor'
-import { Preconditions } from '@kingjs/debug-proxy'
+import { Preconditions as Preconditions$ } from '@kingjs/debug-proxy'
+import { Preconditions } from '@kingjs/partial-proxy'
 import { 
   SequenceContainerConcept,
   SequenceContainerConcept$,
 } from '../container-concepts.js'
 
 export class SequenceContainer extends Container {
-  static [Preconditions] = class extends Container[Preconditions] {
+  static [Preconditions$] = class extends Container[Preconditions$] {
     shift() {
       if (this.isEmpty) throwEmpty()
     }
     get front() {
       if (this.isEmpty) throwEmpty()
     }
+  }
+  static [Preconditions] = {
+    shift() {
+      if (this.isEmpty) throwEmpty()
+    },
+    get front() {
+      if (this.isEmpty) throwEmpty()
+    }    
   }
 
   static get cursorType() { return SequenceCursor }

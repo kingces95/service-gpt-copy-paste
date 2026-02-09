@@ -1,5 +1,5 @@
 import { SequenceContainer } from '../sequence-container.js'
-import { Preconditions } from '@kingjs/debug-proxy'
+import { Preconditions } from '@kingjs/partial-proxy'
 import { RewindCursor } from './rewind-cursor.js'
 import { implement } from '@kingjs/implement'
 import {
@@ -11,13 +11,13 @@ import {
 } from '../../container-concepts.js'
 
 export class RewindContainer extends SequenceContainer {
-  static [Preconditions] = class extends SequenceContainer[Preconditions] {
+  static [Preconditions] = {
     pop() {
       if (this.isEmpty) throwEmpty()
-    }
+    },
     get back() {
       if (this.isEmpty) throwEmpty()
-    }
+    }  
   }
   
   static get cursorType() { return RewindCursor }
@@ -27,10 +27,10 @@ export class RewindContainer extends SequenceContainer {
       // stepBack$(token) { }
     })
     implement(this, RewindContainerConcept, {
-      // get back() { throwNotImplemented() }
-      // push(value) { throwNotImplemented() }
-      // pop() { throwNotImplemented() }
-      // get count() { throwNotImplemented() }
+      // get back() { }
+      // push(value) { }
+      // pop() { }
+      // get count() { }
     })
   }
 }
