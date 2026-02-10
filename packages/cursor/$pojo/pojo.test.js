@@ -10,9 +10,9 @@ import {
   BidirectionalCursorConcept,
   RandomAccessCursorConcept,
   ContiguousCursorConcept,
+  CursorFactoryConcept,
 
   Cursor,
-  CursorFactory,
   Range,
   Interval,
 } from "@kingjs/cursor"
@@ -75,7 +75,7 @@ function dump(fn) {
 // dumpToFile(ContiguousCursorConcept, 'contiguous-cursor-concept')
 
 // dumpToFile(Cursor, 'cursor')
-// dumpToFile(CursorFactory, 'cursor-factory')
+// dumpToFile(CursorFactoryConcept, 'cursor-factory-concept')
 // dumpToFile(Range, 'range')
 // dumpToFile(Interval, 'interval')
 

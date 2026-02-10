@@ -24,6 +24,9 @@ export class ContainerCursor {
     this._container = container
   }
 
+  // container cursor
+  get container$() { return this._container }
+
   static { 
     implement(this, ScopeConcept, {
       equatableTo(other) {
@@ -47,7 +50,4 @@ export class ContainerCursor {
       // clone() { }
     })
   }
-
-  // container cursor
-  get container$() { return this._container }
 }

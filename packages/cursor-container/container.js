@@ -1,34 +1,22 @@
-import { DebugProxy } from '@kingjs/debug-proxy'
 import { implement } from '@kingjs/implement'
-import { extend } from '@kingjs/partial-extend'
+import { DisposeConcept } from '@kingjs/concept'
+import { Interval } from '@kingjs/cursor'
+import { TypePrecondition } from '@kingjs/partial-proxy'
 import {
   throwDisposed,
 } from '@kingjs/cursor'
-import { 
-  CursorFactory,
-  IntervalConcept, 
-} from '../cursor/cursor-factory.js'
+
 import { ContainerCursor } from './container-cursor.js'
+import { 
+  CursorFactoryConcept, 
+} from '../cursor/cursor-factory.js'
 import {
   ContainerConcept$,
 } from './container-concepts.js'
-import {
-  PartialProxy
-} from '@kingjs/partial-proxy'
-import {
-  Thunk,
-  TypePrecondition,
-} from '@kingjs/partial-type'
 
-export class Container extends DebugProxy {
-  static [Thunk](key, descriptor) {
-    return PartialProxy[Thunk].call(this, key, descriptor)
-  }
-
+export class Container extends Interval {
   static [TypePrecondition]() {
-    const container = this
-    if (container.isDisposed$) 
-      throwDisposed()
+    if (this.isDisposed$) throwDisposed()
   }
 
   static get cursorType() { return ContainerCursor }
@@ -40,12 +28,16 @@ export class Container extends DebugProxy {
     this._disposed = false
   }
 
+  dispose$() { }
+  get isDisposed$() { return this._disposed }
+
   static {
-    implement(this, IntervalConcept, {
+    implement(this, CursorFactoryConcept, {
       get cursorType() { return this.constructor.cursorType },
       // begin() { }
       // end() { }
     })
+
     implement(this, ContainerConcept$, {
       // A debug helper which detects when a cursor is invalidated. 
       // Typically, this happens during an unshift of shift operation 
@@ -55,7 +47,7 @@ export class Container extends DebugProxy {
       get __version$() { return this.__version }
     })
 
-    extend(this, {
+    implement(this, DisposeConcept, {
       dispose() {
         this.dispose$()
         this._disposed = true
@@ -63,14 +55,4 @@ export class Container extends DebugProxy {
       }
     })
   }
-
-  get isDisposed$() { return this._disposed }
-
-  // container methods
-  // dispose$() { }
-  // dispose() {
-  //   this.dispose$()
-  //   this._disposed = true
-  //   return this
-  // }
 }

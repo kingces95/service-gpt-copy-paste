@@ -15,6 +15,10 @@ export class SequenceCursor extends ContainerCursor {
     this.#token = token
   }
 
+  // sequence cursor
+  get token$() { return this.#token }
+  set token$(token) { this.#token = token }
+
   static { 
     implement(this, EquatableConcept, { 
       equals(other) { 
@@ -48,8 +52,4 @@ export class SequenceCursor extends ContainerCursor {
       }
     }) 
   }
-
-  // sequence cursor
-  get token$() { return this.#token }
-  set token$(token) { this.#token = token }
 }

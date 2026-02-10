@@ -79,6 +79,11 @@ export class PrologContainerConcept extends Concept {
   removeAfter(cursor) { }
 }
 
+export class EpilogContainerConcept extends Concept {
+  insert(cursor, value) { }
+  remove(cursor) { }
+}
+
 // Implementation detail: dollar-suffixed concepts capture the interface
 // between a container and its cursors via tokens as used by this 
 // implementation.

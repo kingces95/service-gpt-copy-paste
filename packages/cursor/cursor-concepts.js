@@ -1,7 +1,7 @@
 import { Concept, Implements } from '@kingjs/concept'
 import { Extends } from '@kingjs/partial-class'
 import { throwNotEquatableTo } from './throw.js'
-import { Preconditions } from '@kingjs/partial-type'
+import { Preconditions } from '@kingjs/partial-proxy'
 
 export class ScopeConcept extends Concept {
   equatableTo(other) { }
@@ -32,10 +32,7 @@ export class OutputCursorConcept extends CursorConcept {
 }
 
 export class MutableCursorConcept extends CursorConcept {
-  static [Implements] = [
-    InputCursorConcept,
-    OutputCursorConcept,
-  ]
+  static [Implements] = [ InputCursorConcept, OutputCursorConcept ]
 }
 
 export class ForwardCursorConcept extends InputCursorConcept {

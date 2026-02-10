@@ -172,3 +172,7 @@ export class ConceptReflect {
     return true
   }
 }
+
+export class DisposeConcept extends Concept {
+  dispose() { }
+}

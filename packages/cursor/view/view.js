@@ -1,7 +1,13 @@
-import { CursorFactory } from "../cursor-factory.js"
+import { Interval } from "../interval.js"
+import { CursorFactoryConcept } from "../cursor-factory.js"
+import { implement } from '@kingjs/implement'
 
-export class View extends CursorFactory {
-  constructor() { }
-
-  get isEmpty() { return this.begin().isEnd }
+export class View extends Interval {
+  static {
+    implement(this, CursorFactoryConcept, {
+      // get cursorType() { return ViewCursor },
+      // begin() { },
+      // end() { },
+    })
+  }
 }

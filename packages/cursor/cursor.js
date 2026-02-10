@@ -1,21 +1,13 @@
-import { DebugProxy } from '@kingjs/debug-proxy'
 import { implement } from '@kingjs/implement'
+import { PartialProxy } from '@kingjs/partial-proxy'
 import { 
   ScopeConcept,
   EquatableConcept,
   CursorConcept 
 } from './cursor-concepts.js'
 import { PartialProxy } from '@kingjs/partial-proxy'
-import {
-  Thunk,
-  TypePrecondition,
-} from '@kingjs/partial-type'
 
-export class Cursor extends DebugProxy {
-  static [Thunk](key, descriptor) {
-    return PartialProxy[Thunk].call(this, key, descriptor)
-  }
-  
+export class Cursor extends PartialProxy { 
   #scope
 
   constructor(scope) {

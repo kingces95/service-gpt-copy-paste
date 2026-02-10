@@ -1,5 +1,6 @@
 import { implement } from '@kingjs/implement'
 import { Preconditions } from '@kingjs/partial-proxy'
+import { CursorFactoryConcept } from '@kingjs/cursor'
 import {
   throwStale,
   throwNotEquatableTo,
@@ -20,26 +21,26 @@ export class List extends SequenceContainer {
   static [Preconditions] = {
     setValue$(link, value) {
       if (!this.__isActive$(link)) throwStale()
-      if (this.isEnd$(link)) throwWriteOutOfBounds()
-      if (this.isBeforeBegin$(link)) throwWriteOutOfBounds()
+      if (this.__isEnd$(link)) throwWriteOutOfBounds()
+      if (this.__isBeforeBegin$(link)) throwWriteOutOfBounds()
     },
     value$(link) {
       if (!this.__isActive$(link)) throwStale()
-      if (this.isEnd$(link)) throwReadOutOfBounds()
-      if (this.isBeforeBegin$(link)) throwReadOutOfBounds()
+      if (this.__isEnd$(link)) throwReadOutOfBounds()
+      if (this.__isBeforeBegin$(link)) throwReadOutOfBounds()
     },
     step$(link) {
       if (!this.__isActive$(link)) throwStale()
-      if (this.isEnd$(link)) throwMoveOutOfBounds()
+      if (this.__isEnd$(link)) throwMoveOutOfBounds()
     }, 
   
     insertAfter(cursor, value) {
       if (cursor.container$ != this) throwNotEquatableTo()
-      if (this.isEnd$(cursor.token$)) throwUpdateOutOfBounds()
+      if (this.__isEnd$(cursor.token$)) throwUpdateOutOfBounds()
     },
     removeAfter(cursor) {
       if (cursor.container$ != this) throwNotEquatableTo()
-      if (this.isEnd$(cursor.token$)) throwUpdateOutOfBounds()
+      if (this.__isEnd$(cursor.token$)) throwUpdateOutOfBounds()
     }
   }
   
@@ -52,12 +53,29 @@ export class List extends SequenceContainer {
     this._end = this._root.insertAfter() 
   }
 
+  __isActive$(link) { return !!link.next }
+  __isEnd$(link) { return link == this._end }
+  __isBeforeBegin$(link) { return link == this._root }
+  
+  dispose$() { 
+    this._root = null 
+    this._end = null
+  }
+
   static {
     implement(this, SequenceContainerConcept$, {
       equals$(link, otherLink) { return link == otherLink.token$ },
       step$(link) { return link.next },
       value$(link) { return link.value },
       setValue$(link, value) { link.value = value },
+    })
+  }
+
+  static {
+    implement(this, CursorFactoryConcept, {
+      get isEmpty() { return this._end == this._root.next },
+      begin() { return new this.cursorType(this, this._root.next) },
+      end() { return new this.cursorType(this, this._end) },
     })
 
     implement(this, PrologContainerConcept, {
@@ -71,21 +89,5 @@ export class List extends SequenceContainer {
       unshift(value) { this.insertAfter(this.beforeBegin(), value) },
       shift() { return this.removeAfter(this.beforeBegin()) },
     })
-  }
-
-  isEnd$(link) { return link == this._end }
-  isBeforeBegin$(link) { return link == this._root }
-  
-  __isActive$(link) { return !!link.next }
-
-  // cursor factory
-  get isEmpty() { return this._end == this._root.next }
-  begin() { return new this.cursorType(this, this._root.next) }
-  end() { return new this.cursorType(this, this._end) }
-
-  // container
-  dispose$() { 
-    this._root = null 
-    this._end = null
   }
 }

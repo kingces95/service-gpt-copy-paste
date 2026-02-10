@@ -6,18 +6,15 @@ import {
   throwEmpty,
 } from '@kingjs/cursor'
 import { 
+  EpilogContainerConcept,
   RewindContainerConcept, 
   RewindContainerConcept$, 
 } from '../../container-concepts.js'
 
 export class RewindContainer extends SequenceContainer {
   static [Preconditions] = {
-    pop() {
-      if (this.isEmpty) throwEmpty()
-    },
-    get back() {
-      if (this.isEmpty) throwEmpty()
-    }  
+    pop() { if (this.isEmpty) throwEmpty() },
+    get back() { if (this.isEmpty) throwEmpty() }  
   }
   
   static get cursorType() { return RewindCursor }
@@ -31,6 +28,10 @@ export class RewindContainer extends SequenceContainer {
       // push(value) { }
       // pop() { }
       // get count() { }
+    })
+    implement(this, EpilogContainerConcept, {
+      // insert(cursor, value) { }
+      // remove(cursor) { }
     })
   }
 }

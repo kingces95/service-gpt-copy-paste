@@ -1,7 +1,6 @@
 import { implement } from '@kingjs/implement'
 import { RewindContainer } from '../rewind-container.js'
 import { IndexableCursor } from './indexable-cursor.js'
-import { Preconditions as Preconditions$ } from '@kingjs/debug-proxy'
 import { Preconditions } from '@kingjs/partial-proxy'
 import {
   throwNotImplemented,
@@ -20,15 +19,6 @@ import {
 } from '../../../container-concepts.js'
 
 export class IndexableContainer extends RewindContainer {
-  static [Preconditions$] = class extends RewindContainer[Preconditions$] {
-    shift() {
-      super.shift()
-      this.__bumpVersion$()
-    }
-    unshift(value) {
-      this.__bumpVersion$()
-    }
-  }
   static [Preconditions] = {
     subtract$(index, otherCursor) {
       if (otherCursor.container$ != this) throwNotEquatableTo()
