@@ -151,6 +151,7 @@ const cases = [
 describe.each(cases)('%s', (_, { type, concepts }) => {
   let begin0, end0, begin1
   let begin, end
+  let cursorType, cursorPrototype
   beforeEach(() => {
     const container0 = new type()
     const container1 = new type()
@@ -159,179 +160,192 @@ describe.each(cases)('%s', (_, { type, concepts }) => {
     begin0 = () => container0.begin()
     end0 = () => container0.end()
     begin1 = () => container1.begin()
+
+    cursorType = type.cursorType
+    cursorPrototype = cursorType.prototype
   })
-  it('should be a cursor concept', () => {
-    expect(begin).toBeInstanceOf(CursorConcept)
-  })
+
   it('should satisfy concepts', () => {
+    expect(cursorPrototype).toBeInstanceOf(CursorConcept)
     for (const concept of concepts) {
-      expect(begin).toBeInstanceOf(concept)
+      expect(cursorPrototype).toBeInstanceOf(concept)
     }
   })
-  it('should throw on step', () => {
-    expect(() => end.step()).toThrow(
-      "Cannot move cursor out of bounds."
-    )
-  })
-  it('should be equatable to itself', () => {
-    expect(begin.equatableTo(begin)).toBe(true)
-  })
-  it('should not be equatable to null', () => {
-    expect(begin.equatableTo(null)).toBe(false)
-  })
-  it('should equal itself', () => {
-    expect(begin.equals(begin)).toBe(true)
-  })
-  it('should not be equal to null', () => {
-    expect(begin.equals(null)).toBe(false)
+
+  describe('uses a container factory', () => {
+    let container
+    beforeEach(() => {
+      container = new type()
+    })
+
+    describe('to activate itself as a(n)', () => {
+      let begin
+      beforeEach(() => {
+        begin = container.begin()
+      })
+
+      describe('cursor', () => {
+        it('should throw on step', () => {
+          expect(() => begin.step()).toThrow(
+            "Cannot move cursor out of bounds."
+          )
+        })
+        it('should be equatable to itself', () => {
+          expect(begin.equatableTo(begin)).toBe(true)
+        })
+        it('should not be equatable to null', () => {
+          expect(begin.equatableTo(null)).toBe(false)
+        })
+        it('should equal itself', () => {
+          expect(begin.equals(begin)).toBe(true)
+        })
+        it('should not be equal to null', () => {
+          expect(begin.equals(null)).toBe(false)
+        })
+      })
+
+      if (concepts.includes(InputCursorConcept)) {
+        describe('input cursor', () => {
+          it('should throw read out of bounds if read', () => {
+            expect(() => begin.value).toThrow(
+              'Cannot read value out of bounds of cursor.'
+            )
+          })
+          it('should throw on next', () => { 
+            expect(() => end.next()).toThrow(
+              "Cannot read value out of bounds of cursor."
+            )
+          })
+        })
+      }
+    
+      if (concepts.includes(OutputCursorConcept)) {
+        describe('output cursor', () => {
+          it('should throw RangeError if set', () => {
+            if (!(begin instanceof OutputCursorConcept)) return
+            expect(() => begin.value = 42).toThrow(RangeError)
+          })
+        })
+      }
+    
+      if (concepts.includes(ForwardCursorConcept)) {
+        describe('forward cursor', () => {
+          it('should be equal to its clone', () => {
+            const clone = begin.clone()
+            expect(begin.equals(clone)).toBe(true)
+          })
+        })
+      }
+    
+      if (concepts.includes(BidirectionalCursorConcept)) {
+        describe('bidirectional cursor', () => {
+          it('should throw on stepBack', () => {
+            expect(() => {
+              begin.stepBack()
+              begin.stepBack()
+            }).toThrow("Cannot move cursor out of bounds.")
+          })
+        })
+      }
+    
+      if (concepts.includes(RandomAccessCursorConcept)) {
+        describe('random access cursor', () => {
+          it('should throw if moving forward', () => {
+            expect(() => begin.move(1)).toThrow(
+              "Cannot move cursor out of bounds."
+            )
+          })
+          it('should throw if moving backward', () => {
+            expect(() => begin.move(-1)).toThrow(
+              "Cannot move cursor out of bounds."
+            )
+          })
+          it('should return true if moving 0', () => {
+            expect(begin.move(0)).toBe(begin)
+          })
+          it('should throw at 0', () => {
+            expect(() => begin.at(0)).toThrow(
+              "Cannot read value out of bounds of cursor."
+            )
+          })
+          it('should throw if set at offset', () => {
+            expect(() => begin.setAt(0, 42)).toThrow(RangeError)
+          })
+          it('should return 0 on subtract', () => {
+            expect(begin.subtract(begin)).toBe(0)
+          })
+          it('should throw if subtracting null', () => {
+            expect(() => begin.subtract(null)).toThrow(
+              "Cursor is from another container.")
+          })
+          it('should return 0 on compareTo', () => {
+            expect(begin.compareTo(begin)).toBe(0)
+          })
+          it('should throw if compared to null', () => {
+            expect(() => begin.compareTo(null)).toThrow(
+              "Cursor is from another container."
+            )
+          })
+        })
+      }
+      
+      if (concepts.includes(ContiguousCursorConcept)) {
+        describe('contiguous cursor', () => {
+          it('should throw RangeError on read 1', () => {
+            expect(() => begin.read(1)).toThrow(RangeError)
+          })
+          it('should throw RangeError on read 2', () => {
+            expect(() => begin.read(2)).toThrow(RangeError)
+          })
+          it('should throw RangeError on read 4', () => {
+            expect(() => begin.read(4)).toThrow(RangeError)
+          })
+          it('should throw on read 8', () => {
+            expect(() => begin.read(8)).toThrow(Error)
+          })
+          it('should throw for named reads (e.g. readUInt8)', () => {
+            expect(() => begin.readUInt8()).toThrow(RangeError)
+            expect(() => begin.readInt8()).toThrow(RangeError)
+        
+            expect(() => begin.readUInt16()).toThrow(RangeError)
+            expect(() => begin.readUInt16BE()).toThrow(RangeError)
+            expect(() => begin.readUInt16LE()).toThrow(RangeError)
+        
+            expect(() => begin.readInt16()).toThrow(RangeError)
+            expect(() => begin.readInt16BE()).toThrow(RangeError)
+            expect(() => begin.readInt16LE()).toThrow(RangeError)
+        
+            expect(() => begin.readUInt32()).toThrow(RangeError)
+            expect(() => begin.readUInt32BE()).toThrow(RangeError)
+            expect(() => begin.readUInt32LE()).toThrow(RangeError)
+        
+            expect(() => begin.readInt32()).toThrow(RangeError)
+            expect(() => begin.readInt32BE()).toThrow(RangeError)
+            expect(() => begin.readInt32LE()).toThrow(RangeError)
+          })
+          it('should return an empty buffer for data', () => {
+            const buffer = begin.data(begin)
+        
+            if (Buffer.isBuffer(buffer)) {
+              expect(buffer.length).toBe(0)
+            }
+            else if (buffer instanceof DataView) {
+              expect(buffer.byteLength).toBe(0)
+            } else {
+              throw new Error("data() did not return a Buffer or DataView.")
+            }
+          })
+          it('should throw if data called with null cursor', () => {
+            expect(() => begin.data(null)).toThrow(
+              "Cursor is from another container."
+            )
+          })
+        })
+      }
+    })
   })
 
-  // operations that throw if cursor does not support them
-  it('should throw read out of bounds if read', () => {
-    if (!(begin instanceof InputCursorConcept)) return
-    expect(() => begin.value).toThrow(
-      'Cannot read value out of bounds of cursor.'
-    )
-  })
-  it('should throw on next', () => { 
-    if (!(begin instanceof InputCursorConcept)) return
-    expect(() => end.next()).toThrow(
-      "Cannot read value out of bounds of cursor."
-    )
-  })
-  it('should throw RangeError if set', () => {
-    if (!(begin instanceof OutputCursorConcept)) return
-    expect(() => begin.value = 42).toThrow(RangeError)
-  })
-  it('should be equal to its clone', () => {
-    if (!(begin instanceof ForwardCursorConcept)) return
-    const clone = begin.clone()
-    expect(begin.equals(clone)).toBe(true)
-  })
-  // it('should throw on stepBack', () => {
-  //   if (!(begin instanceof BidirectionalCursorConcept)) return
-  //   expect(() => begin.stepBack()).toThrow(
-  //     "Cannot move cursor out of bounds."
-  //   )
-  // })
-  it('should throw if moving forward', () => {
-    if (!(begin instanceof RandomAccessCursorConcept)) return
-    expect(() => begin.move(1)).toThrow(
-      "Cannot move cursor out of bounds."
-    )
-  })
-  it('should throw if moving backward', () => {
-    if (!(begin instanceof RandomAccessCursorConcept)) return
-    expect(() => begin.move(-1)).toThrow(
-      "Cannot move cursor out of bounds."
-    )
-  })
-  it('should return true if moving 0', () => {
-    if (!(begin instanceof RandomAccessCursorConcept)) return
-    expect(begin.move(0)).toBe(begin)
-  })
-  it('should throw at 0', () => {
-    if (!(begin instanceof RandomAccessCursorConcept)) return
-    expect(() => begin.at(0)).toThrow(
-      "Cannot read value out of bounds of cursor."
-    )
-  })
-  it('should throw if set at offset', () => {
-    if (!(begin instanceof RandomAccessCursorConcept)) return
-    expect(() => begin.setAt(0, 42)).toThrow(RangeError)
-  })
-  it('should return 0 on subtract', () => {
-    if (!(begin instanceof RandomAccessCursorConcept)) return
-    expect(begin.subtract(begin)).toBe(0)
-  })
-  it('should throw if subtracting null', () => {
-    if (!(begin instanceof RandomAccessCursorConcept)) return
-    expect(() => begin.subtract(null)).toThrow(
-      "Cursor is from another container."
-    )
-  })
-  it('should return 0 on compareTo', () => {
-    if (!(begin instanceof RandomAccessCursorConcept)) return
-    expect(begin.compareTo(begin)).toBe(0)
-  })
-  it('should throw if compared to null', () => {
-    if (!(begin instanceof RandomAccessCursorConcept)) return
-    expect(() => begin.compareTo(null)).toThrow(
-      "Cursor is from another container."
-    )
-  })
-  it('should throw RangeError on read 1', () => {
-    if (!(begin instanceof ContiguousCursorConcept)) return
-    expect(() => begin.read(1)).toThrow(RangeError)
-  })
-  it('should throw RangeError on read 2', () => {
-    if (!(begin instanceof ContiguousCursorConcept)) return
-    expect(() => begin.read(2)).toThrow(RangeError)
-  })
-  it('should throw RangeError on read 4', () => {
-    if (!(begin instanceof ContiguousCursorConcept)) return
-    expect(() => begin.read(4)).toThrow(RangeError)
-  })
-  it('should throw on read 8', () => {
-    if (!(begin instanceof ContiguousCursorConcept)) return
-    expect(() => begin.read(8)).toThrow(Error)
-  })
-  it('should throw for named reads (e.g. readUInt8)', () => {
-    if (!(begin instanceof ContiguousCursorConcept)) return
-    expect(() => begin.readUInt8()).toThrow(RangeError)
-    expect(() => begin.readInt8()).toThrow(RangeError)
 
-    expect(() => begin.readUInt16()).toThrow(RangeError)
-    expect(() => begin.readUInt16BE()).toThrow(RangeError)
-    expect(() => begin.readUInt16LE()).toThrow(RangeError)
-
-    expect(() => begin.readInt16()).toThrow(RangeError)
-    expect(() => begin.readInt16BE()).toThrow(RangeError)
-    expect(() => begin.readInt16LE()).toThrow(RangeError)
-
-    expect(() => begin.readUInt32()).toThrow(RangeError)
-    expect(() => begin.readUInt32BE()).toThrow(RangeError)
-    expect(() => begin.readUInt32LE()).toThrow(RangeError)
-
-    expect(() => begin.readInt32()).toThrow(RangeError)
-    expect(() => begin.readInt32BE()).toThrow(RangeError)
-    expect(() => begin.readInt32LE()).toThrow(RangeError)
-  })
-  it('should return an empty buffer for data', () => {
-    if (!(begin instanceof ContiguousCursorConcept)) return
-    const buffer = begin.data(begin)
-
-    if (Buffer.isBuffer(buffer)) {
-      expect(buffer.length).toBe(0)
-    }
-    else if (buffer instanceof DataView) {
-      expect(buffer.byteLength).toBe(0)
-    } else {
-      throw new Error("data() did not return a Buffer or DataView.")
-    }
-  })
-  it('should throw if data called with null cursor', () => {
-    if (!(begin instanceof ContiguousCursorConcept)) return
-    expect(() => begin.data(null)).toThrow(
-      "Cursor is from another container."
-    )
-  })
-
-  // describe.each([ hasProxy ].filter(Boolean))('that is stale', (useProxy) => {
-  //   beforeEach(() => {
-  //     container.__version$ = 1
-  //   })
-  //   it('should throw cursor is stale on method call (step)', () => {
-  //     expect(() => begin.step()).toThrow(
-  //       "Cursor is stale and cannot be used."
-  //     )
-  //   })
-  //   it('should throw cursor is stale on property access (abilities)', () => {
-  //     expect(() => begin.abilities).toThrow(
-  //       "Cursor is stale and cannot be used."
-  //     )
-  //   })
-  // })
   describe('and another cursor from a different container', () => {
     let otherCursor
     beforeEach(() => {

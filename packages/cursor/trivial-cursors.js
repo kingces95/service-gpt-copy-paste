@@ -38,42 +38,6 @@ export class TrivialCursor extends Cursor {
   }
 }
 
-export class TrivialContainer extends PartialProxy {
-  constructor(cursorType) {
-    super()
-    this._cursorType = cursorType
-  }
-
-  static {
-    implement(this, CursorFactoryConcept, {
-      get cursorType() { return this._cursorType },
-      begin() { return new this._cursorType(this) },
-      end() { return new this._cursorType(this) },
-    })
-  }
-}
-export class TrivialInputContainer extends TrivialContainer {
-  constructor() { super(TrivialInputCursor) }
-}
-export class TrivialOutputContainer extends TrivialContainer {
-  constructor() { super(TrivialOutputCursor) }
-}
-export class TrivialMutableContainer extends TrivialContainer {
-  constructor() { super(TrivialMutableCursor) }
-}
-export class TrivialForwardContainer extends TrivialContainer {
-  constructor() { super(TrivialForwardCursor) }
-}
-export class TrivialBidirectionalContainer extends TrivialContainer {
-  constructor() { super(TrivialBidirectionalCursor) }
-}
-export class TrivialRandomAccessContainer extends TrivialContainer {
-  constructor() { super(TrivialRandomAccessCursor) }
-}
-export class TrivialContiguousContainer extends TrivialContainer {
-  constructor() { super(TrivialContiguousCursor) }
-}
-
 export class TrivialInputCursor extends TrivialCursor {
   static [Preconditions] = {
     get value() { throwReadOutOfBounds() }
@@ -163,4 +127,33 @@ export class TrivialContiguousCursor extends TrivialRandomAccessCursor {
 
 export class OtherTrivialCursor extends TrivialCursor { }
 
-  
+export class TrivialContainer extends PartialProxy {
+  static {
+    implement(this, CursorFactoryConcept, {
+      get cursorType() { return this.constructor.cursorType },
+      begin() { return new this.cursorType(this) },
+      end() { return new this.cursorType(this) },
+    })
+  }
+}
+export class TrivialInputContainer extends TrivialContainer {
+  static cursorType = TrivialInputCursor
+}
+export class TrivialOutputContainer extends TrivialContainer {
+  static cursorType = TrivialOutputCursor
+}
+export class TrivialMutableContainer extends TrivialContainer {
+  static cursorType = TrivialMutableCursor
+}
+export class TrivialForwardContainer extends TrivialContainer {
+  static cursorType = TrivialForwardCursor
+}
+export class TrivialBidirectionalContainer extends TrivialContainer {
+  static cursorType = TrivialBidirectionalCursor
+}
+export class TrivialRandomAccessContainer extends TrivialContainer {
+  static cursorType = TrivialRandomAccessCursor
+}
+export class TrivialContiguousContainer extends TrivialContainer {
+  static cursorType = TrivialContiguousCursor
+}
