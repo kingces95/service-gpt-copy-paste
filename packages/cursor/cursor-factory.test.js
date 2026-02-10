@@ -240,7 +240,8 @@ describe.each(cases)('A %s', (name, type, cursorType, concepts) => {
           cursor.value = value1
         })
         it('should have the new value', () => {
-          expect(cursor.value).toBe(value1)
+          const value = cursor.value
+          expect(value).toBe(value1)
         })
         it('should have the new front value', () => {
           expect(f0.front).toBe(value1)

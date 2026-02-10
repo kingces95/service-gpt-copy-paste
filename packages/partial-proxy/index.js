@@ -1,6 +1,9 @@
 import { assert } from '@kingjs/assert'
 import { isAbstract } from '@kingjs/abstract'
 import { es6CreateThunk } from '@kingjs/es6-create-thunk'
+import { Descriptor } from '@kingjs/descriptor'
+import { Es6Descriptor } from '@kingjs/es6-descriptor'
+import { Es6Compiler } from '@kingjs/es6-compiler'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { UserReflect } from '@kingjs/user-reflect'
 import { trimPojo } from '@kingjs/pojo-trim'
@@ -20,12 +23,94 @@ export {
   TypePostcondition,
 } from '@kingjs/partial-type'
 
+function createThunk(type, key, descriptor) {
+  const conditions = PartialProxyReflect.getConditions(type, key)
+  if (!conditions) return descriptor
+  return es6CreateThunk(descriptor, conditions)
+}
+
+function installStub(type, key, descriptor) {
+  const stub = createStub(type, key, descriptor)
+  Object.defineProperty(type.prototype, key, stub)
+}
+
+function createStub(type, key, descriptor) {
+  const loadThunk = () => createThunk(type, key, descriptor)
+
+  let thunk
+
+  const method = function() { 
+    const ctor = this.constructor
+    if (ctor != type) { 
+      installStub(ctor, key, descriptor)
+      return this[key](...arguments)
+    }
+    const { value } = thunk || (thunk = loadThunk()) 
+    return value.apply(this, arguments)
+  }
+  const getter = function() { 
+    const ctor = this.constructor
+    if (ctor != type) { 
+      installStub(ctor, key, descriptor)
+      return this[key]
+    }
+    const { get } = thunk || (thunk = loadThunk())
+    return get.call(this)
+  }
+  const setter = function(value) { 
+    const ctor = this.constructor
+    if (ctor != type) { 
+      installStub(ctor, key, descriptor)
+      this[key] = value
+      return
+    }
+    const { set } = thunk || (thunk = loadThunk())
+    return set.call(this, value)
+  }
+
+  const { value, get, set } = descriptor
+
+  function setName(fn, name) {
+    Object.defineProperty(fn, 'name', {
+      value: name + '_stub',
+      configurable: true,
+    })
+  }
+
+  setName(method, value?.name)
+  setName(getter, get?.name)
+  setName(setter, set?.name)
+
+  method.__target = value
+  getter.__target = get
+  setter.__target = set
+  
+  const stub = Es6Compiler.emit({ ...descriptor })
+  switch (Es6Descriptor.typeof(stub)) {
+    case 'method': 
+      stub.value = method
+      break
+    case 'getter':
+      stub.get = getter
+      break
+    case 'setter':
+      stub.set = setter
+      break
+    case 'property':
+      stub.get = getter
+      stub.set = setter
+      break
+    case 'field':
+    default:
+  }
+
+  return stub
+}
+
 export class PartialProxy {
   static [Thunk](key, descriptor) {
     if (isAbstract(descriptor)) return descriptor
-    const conditions = PartialProxyReflect.getConditions(this, key)
-    if (!conditions) return descriptor
-    return es6CreateThunk(descriptor, conditions)
+    return createStub(this, key, descriptor)
   }
 }
 

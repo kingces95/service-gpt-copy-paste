@@ -3,9 +3,9 @@ import { isPojo } from '@kingjs/pojo-test'
 
 export class Descriptor {
 
-  static get(prototype, property) {
+  static get(prototype, key) {
     while (prototype) {
-      const descriptor = Object.getOwnPropertyDescriptor(prototype, property)
+      const descriptor = Object.getOwnPropertyDescriptor(prototype, key)
       if (descriptor) return descriptor
       prototype = Object.getPrototypeOf(prototype)
     }

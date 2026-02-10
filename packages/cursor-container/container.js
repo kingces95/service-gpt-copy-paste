@@ -1,5 +1,4 @@
 import { DebugProxy } from '@kingjs/debug-proxy'
-import { GlobalPrecondition } from '@kingjs/proxy'
 import { implement } from '@kingjs/implement'
 import { extend } from '@kingjs/partial-extend'
 import {

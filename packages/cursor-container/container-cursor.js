@@ -1,4 +1,4 @@
-import { DebugProxy } from '@kingjs/debug-proxy'
+import { Preconditions } from '@kingjs/debug-proxy'
 import { implement } from '@kingjs/implement'
 import {
   ScopeConcept,
@@ -11,7 +11,9 @@ import {
 import { Thunk } from '@kingjs/partial-type'
 import { PartialProxy } from '@kingjs/partial-proxy'
 
-export class ContainerCursor extends DebugProxy {
+export class ContainerCursor {
+  static [Preconditions] = class { }
+  
   static [Thunk](key, descriptor) {
     return PartialProxy[Thunk].call(this, key, descriptor)
   }
@@ -19,7 +21,6 @@ export class ContainerCursor extends DebugProxy {
   _container
 
   constructor(container) {
-    super()
     this._container = container
   }
 

@@ -8,6 +8,7 @@ import {
   CursorConcept,
   InputCursorConcept,
   OutputCursorConcept,
+  MutableCursorConcept,
   ForwardCursorConcept,
   BidirectionalCursorConcept,
   RandomAccessCursorConcept,
@@ -79,11 +80,9 @@ class TrivialMutableCursor extends TrivialCursor {
   }
 
   static {
-    implement(this, InputCursorConcept, {
-      get value() { return this.value$ }
-    })
-    implement(this, OutputCursorConcept, {
-      set value(value) { this.value$ = value }
+    implement(this, MutableCursorConcept, {
+      get value() { return this.value$ },
+      set value(value) { this.value$ = value },
     })
   }
 

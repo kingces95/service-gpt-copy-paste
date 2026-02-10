@@ -1,11 +1,9 @@
 import { implement } from '@kingjs/implement'
 import { ContainerCursor } from '../container-cursor.js'
-import { implement } from '@kingjs/implement'
 import {
   EquatableConcept,
   CursorConcept,
-  InputCursorConcept,
-  OutputCursorConcept,
+  MutableCursorConcept,
   ForwardCursorConcept,
 } from '@kingjs/cursor'
 
@@ -30,12 +28,10 @@ export class SequenceCursor extends ContainerCursor {
         return this
       }
     })
-    implement(this, InputCursorConcept, { 
+    implement(this, MutableCursorConcept, { 
       get value() { 
         return this.container$.value$(this.token$) 
-      }
-    })
-    implement(this, OutputCursorConcept, { 
+      },
       set value(value) { 
         this.container$.setValue$(this.token$, value) 
       }

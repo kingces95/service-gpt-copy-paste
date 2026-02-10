@@ -82,33 +82,32 @@ export function es6CreateThunk(descriptor, {
     })
   }
 
-  setName(method, descriptor.value?.name)
-  setName(getter, descriptor.get?.name)
-  setName(setter, descriptor.set?.name)
+  setName(method, value?.name)
+  setName(getter, get?.name)
+  setName(setter, set?.name)
 
-  method.__target = descriptor.value
-  getter.__target = descriptor.get
-  setter.__target = descriptor.set
+  method.__target = value
+  getter.__target = get
+  setter.__target = set
 
-  const stub = Es6Compiler.emit({ ...descriptor })
-  const type = Es6Descriptor.typeof(stub)
-  switch (type) {
+  const thunk = Es6Compiler.emit({ ...descriptor })
+  switch (Es6Descriptor.typeof(thunk)) {
     case 'method': 
-      stub.value = method
+      thunk.value = method
       break
     case 'getter':
-      stub.get = getter
+      thunk.get = getter
       break
     case 'setter':
-      stub.set = setter
+      thunk.set = setter
       break
     case 'property':
-      stub.get = getter
-      stub.set = setter
+      thunk.get = getter
+      thunk.set = setter
       break
     case 'field':
     default:
   }
 
-  return stub
+  return thunk
 }

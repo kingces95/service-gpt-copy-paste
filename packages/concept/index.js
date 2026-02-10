@@ -145,7 +145,7 @@ export class ConceptReflect {
 
     let owner
     let name
-    let descriptor, descriptorType
+    let instanceDescriptor, instanceType
     for (const current of PartialReflect.descriptors(concept)) {
       switch (typeof current) {
         case 'function': owner = current; break
@@ -153,16 +153,16 @@ export class ConceptReflect {
         case 'symbol': 
           name = current
           if (!(name in instance)) return false 
-          descriptor = Descriptor.get(instance, name)
-          descriptorType = Descriptor.typeof(descriptor)
+          instanceDescriptor = Descriptor.get(instance, name)
+          instanceType = Descriptor.typeof(instanceDescriptor)
           break
         case 'object': {
-          const thisDescriptor = current
-          const thisDescriptorType = Descriptor.typeof(thisDescriptor)
-          if (descriptorType == thisDescriptorType) continue
-          if (descriptorType == 'property') {
-            if (thisDescriptorType == 'getter') continue
-            if (thisDescriptorType == 'setter') continue
+          const conceptDescriptor = current
+          const conceptType = Descriptor.typeof(conceptDescriptor)
+          if (instanceType == conceptType) continue
+          if (instanceType == 'property') {
+            if (conceptType == 'getter') continue
+            if (conceptType == 'setter') continue
           }
           return false
         }
