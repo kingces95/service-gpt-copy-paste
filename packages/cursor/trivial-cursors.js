@@ -1,12 +1,11 @@
 import { implement } from '@kingjs/implement'
 import { Preconditions } from '@kingjs/partial-type'
+import { PartialProxy } from '@kingjs/partial-proxy'
+import { EquatableConcept } from '@kingjs/concept'
 import { Cursor } from './cursor.js'
-import { Interval } from '@kingjs/interval'
-import {
-  EquatableConcept,
-} from '@kingjs/concept'
 import { 
   CursorConcept,
+  CursorFactoryConcept,
   InputCursorConcept,
   OutputCursorConcept,
   MutableCursorConcept,
@@ -39,7 +38,7 @@ export class TrivialCursor extends Cursor {
   }
 }
 
-export class TrivialContainer extends Interval {
+export class TrivialContainer extends PartialProxy {
   constructor(cursorType) {
     super()
     this._cursorType = cursorType
@@ -116,7 +115,7 @@ export class TrivialMutableCursor extends TrivialCursor {
 export class TrivialForwardCursor extends TrivialMutableCursor {
   static { 
     implement(this, ForwardCursorConcept, {
-      clone() { return new this.constructor() }
+      clone() { return new this.constructor(this.scope$) }
     }) 
   }
 }

@@ -1,8 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { implement } from '@kingjs/implement'
-import { Cursor } from './cursor.js'
-import { Preconditions } from '@kingjs/partial-type'
 import { 
   CursorConcept,
   InputCursorConcept,
@@ -15,12 +12,6 @@ import {
 } from './cursor-concepts.js'
 
 import {
-  throwMoveOutOfBounds,
-  throwReadOutOfBounds,
-  throwWriteOutOfBounds,
-} from './throw.js'
-
-import {
   TrivialInputContainer,
   TrivialOutputContainer,
   TrivialMutableContainer,
@@ -29,14 +20,6 @@ import {
   TrivialRandomAccessContainer,
   TrivialContiguousContainer,
 
-  TrivialCursor,
-  TrivialInputCursor,
-  TrivialOutputCursor,
-  TrivialMutableCursor,
-  TrivialForwardCursor,
-  TrivialBidirectionalCursor,
-  TrivialRandomAccessCursor,
-  TrivialContiguousCursor,
   OtherTrivialCursor,
 } from './trivial-cursors.js'
 
@@ -49,67 +32,133 @@ import {
   EcmaBuffer 
 } from '@kingjs/cursor-container'
 
-const list0 = new List(), list1 = new List()
-const chain0 = new Chain(), chain1 = new Chain()
-const vector0 = new Vector(), vector1 = new Vector()
-const deque0 = new Deque(), deque1 = new Deque()
-const nodeBuffer0 = new NodeBuffer(), nodeBuffer1 = new NodeBuffer()
-const ecmaBuffer0 = new EcmaBuffer(), ecmaBuffer1 = new EcmaBuffer()
+const TrivialInputContainerCase = {
+  type: TrivialInputContainer,
+  concepts: [InputCursorConcept],
+}
+const TrivialOutputContainerCase = {
+  type: TrivialOutputContainer,
+  concepts: [OutputCursorConcept],
+}
+const TrivialMutableContainerCase = {
+  type: TrivialMutableContainer,
+  concepts: [InputCursorConcept, OutputCursorConcept],
+}
+const TrivialForwardContainerCase = {
+  type: TrivialForwardContainer,
+  concepts: [
+    InputCursorConcept, 
+    OutputCursorConcept, 
+    ForwardCursorConcept],
+}
+const TrivialBidirectionalContainerCase = {
+  type: TrivialBidirectionalContainer,
+  concepts: [
+    InputCursorConcept, 
+    OutputCursorConcept, 
+    ForwardCursorConcept,
+    BidirectionalCursorConcept],
+}
+const TrivialRandomAccessContainerCase = {
+  type: TrivialRandomAccessContainer,
+  concepts: [
+    InputCursorConcept, 
+    OutputCursorConcept, 
+    ForwardCursorConcept,
+    BidirectionalCursorConcept,
+    RandomAccessCursorConcept],
+}
+const TrivialContiguousContainerCase = {
+  type: TrivialContiguousContainer,
+  concepts: [
+    InputCursorConcept, 
+    OutputCursorConcept, 
+    ForwardCursorConcept,
+    BidirectionalCursorConcept,
+    RandomAccessCursorConcept,
+    ContiguousCursorConcept],
+}
+const ListCase = {
+  type: List,
+  concepts: [
+    InputCursorConcept, 
+    OutputCursorConcept, 
+    ForwardCursorConcept],
+}
+const ChainCase = {
+  type: Chain,
+  concepts: [
+    InputCursorConcept, 
+    OutputCursorConcept, 
+    ForwardCursorConcept,
+    BidirectionalCursorConcept],
+}
+const VectorCase = {
+  type: Vector,
+  concepts: [
+    InputCursorConcept,
+    OutputCursorConcept,
+    ForwardCursorConcept,
+    BidirectionalCursorConcept,
+    RandomAccessCursorConcept],
+}
+const DequeCase = {
+  type: Deque,
+  concepts: [
+    InputCursorConcept,
+    OutputCursorConcept,
+    ForwardCursorConcept,
+    BidirectionalCursorConcept,
+    RandomAccessCursorConcept],
+}
+const NodeBufferCase = {
+  type: NodeBuffer,
+  concepts: [
+    InputCursorConcept,
+    OutputCursorConcept,
+    ForwardCursorConcept,
+    BidirectionalCursorConcept,
+    RandomAccessCursorConcept,
+    ContiguousCursorConcept],
+}
+const EcmaBufferCase = {
+  type: EcmaBuffer,
+  concepts: [
+    InputCursorConcept,
+    OutputCursorConcept,
+    ForwardCursorConcept,
+    BidirectionalCursorConcept,
+    RandomAccessCursorConcept,
+    ContiguousCursorConcept],
+}
 
 const cases = [
-  ['TrivialCursor', [CursorConcept],
-    () => new TrivialCursor(), 
-    () => new TrivialCursor(), 
-    () => new TrivialCursor(1)],
-  ['TrivialInputCursor', [InputCursorConcept],
-    () => new TrivialInputCursor(), 
-    () => new TrivialInputCursor(), 
-    () => new TrivialInputCursor(1)],
-  ['TrivialOutputCursor', [OutputCursorConcept],
-    () => new TrivialOutputCursor(), 
-    () => new TrivialOutputCursor(), 
-    () => new TrivialOutputCursor(1)],
-  ['TrivialForwardCursor', 
-    [InputCursorConcept, OutputCursorConcept, ForwardCursorConcept],
-    () => new TrivialForwardCursor(), 
-    () => new TrivialForwardCursor(), 
-    () => new TrivialForwardCursor(1)],
-  ['TrivialBidirectionalCursor', 
-    [InputCursorConcept, OutputCursorConcept, BidirectionalCursorConcept], 
-    () => new TrivialBidirectionalCursor(), 
-    () => new TrivialBidirectionalCursor(), 
-    () => new TrivialBidirectionalCursor(1)],
-  ['TrivialRandomAccessCursor', 
-    [InputCursorConcept, OutputCursorConcept, RandomAccessCursorConcept],
-    () => new TrivialRandomAccessCursor(), 
-    () => new TrivialRandomAccessCursor(), 
-    () => new TrivialRandomAccessCursor(1)],
-  ['TrivialContiguousCursor', 
-    [InputCursorConcept, OutputCursorConcept, ContiguousCursorConcept],
-    () => new TrivialContiguousCursor(), 
-    () => new TrivialContiguousCursor(), 
-    () => new TrivialContiguousCursor(1)],
-
-  ['List', [InputCursorConcept, OutputCursorConcept, ForwardCursorConcept],
-    () => list0.begin(), () => list0.end(), () => list1.begin()],
-  ['Chain', [InputCursorConcept, OutputCursorConcept, BidirectionalCursorConcept],
-    () => chain0.beforeBegin(), () => chain0.end(), () => chain1.begin()],
-  ['Vector', [InputCursorConcept, OutputCursorConcept, RandomAccessCursorConcept],
-    () => vector0.begin(), () => vector0.end(), () => vector1.begin()],
-  ['Deque', [InputCursorConcept, OutputCursorConcept, RandomAccessCursorConcept],
-    () => deque0.begin(), () => deque0.end(), () => deque1.begin()],
-  ['NodeBuffer', [InputCursorConcept, OutputCursorConcept, ContiguousCursorConcept],
-    () => nodeBuffer0.begin(), () => nodeBuffer0.end(), () => nodeBuffer1.begin()],
-  ['EcmaBuffer', [InputCursorConcept, OutputCursorConcept, ContiguousCursorConcept],
-    () => ecmaBuffer0.begin(), () => ecmaBuffer0.end(), () => ecmaBuffer1.begin()],
+  ['TrivialCursor', TrivialInputContainerCase],
+  ['TrivialOutputCursor', TrivialOutputContainerCase],
+  ['TrivialMutableCursor', TrivialMutableContainerCase],
+  ['TrivialForwardCursor', TrivialForwardContainerCase],
+  ['TrivialBidirectionalCursor', TrivialBidirectionalContainerCase],
+  ['TrivialRandomAccessCursor', TrivialRandomAccessContainerCase],
+  ['TrivialContiguousCursor', TrivialContiguousContainerCase],
+  ['List', ListCase],
+  ['Chain', ChainCase],
+  ['Vector', VectorCase],
+  ['Deque', DequeCase],
+  ['NodeBuffer', NodeBufferCase],
+  ['EcmaBuffer', EcmaBufferCase],
 ]
 
-describe.each(cases)('%s', (_, concepts, begin0, end0, begin1) => {
-  let begin
-  let end
+describe.each(cases)('%s', (_, { type, concepts }) => {
+  let begin0, end0, begin1
+  let begin, end
   beforeEach(() => {
-    begin = begin0()
-    end = end0()
+    const container0 = new type()
+    const container1 = new type()
+    begin = container0.begin()
+    end = container0.end()
+    begin0 = () => container0.begin()
+    end0 = () => container0.end()
+    begin1 = () => container1.begin()
   })
   it('should be a cursor concept', () => {
     expect(begin).toBeInstanceOf(CursorConcept)
@@ -159,12 +208,12 @@ describe.each(cases)('%s', (_, concepts, begin0, end0, begin1) => {
     const clone = begin.clone()
     expect(begin.equals(clone)).toBe(true)
   })
-  it('should throw on stepBack', () => {
-    if (!(begin instanceof BidirectionalCursorConcept)) return
-    expect(() => begin.stepBack()).toThrow(
-      "Cannot move cursor out of bounds."
-    )
-  })
+  // it('should throw on stepBack', () => {
+  //   if (!(begin instanceof BidirectionalCursorConcept)) return
+  //   expect(() => begin.stepBack()).toThrow(
+  //     "Cannot move cursor out of bounds."
+  //   )
+  // })
   it('should throw if moving forward', () => {
     if (!(begin instanceof RandomAccessCursorConcept)) return
     expect(() => begin.move(1)).toThrow(

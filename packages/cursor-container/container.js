@@ -1,6 +1,6 @@
 import { implement } from '@kingjs/implement'
 import { DisposeConcept } from '@kingjs/concept'
-import { Interval } from '@kingjs/cursor'
+import { PartialProxy } from '@kingjs/partial-proxy'
 import { TypePrecondition } from '@kingjs/partial-proxy'
 import {
   throwDisposed,
@@ -14,7 +14,7 @@ import {
   ContainerConcept$,
 } from './container-concepts.js'
 
-export class Container extends Interval {
+export class Container extends PartialProxy {
   static [TypePrecondition]() {
     if (this.isDisposed$) throwDisposed()
   }

@@ -1,23 +1,30 @@
-import { Interval } from "./interval.js"
+import { implement } from '@kingjs/implement'
+import { Concept } from '@kingjs/concept'
 import { throwNotEquatableTo } from './throw.js'
 
-export class Range extends Interval {
+export class IntervalConcept extends Concept {
+  toRange() { }
+}
+
+export class Range {
   #begin
   #end
 
   constructor(begin, end) {
-    super()
     this.#begin = begin
     this.#end = end
 
     if (!begin.equatableTo(end)) throwNotEquatableTo()
   }
 
+  static {
+    implement(this, IntervalConcept, {
+      toRange() { return this }
+    })
+  }
+
   get begin() { return this.#begin }
   get end() { return this.#end }
-
-  // interval
-  toRange() { return this }
 
   data() { return this.begin.data(this.end) }
   mayContain(cursor) { return this.begin.equatableTo(cursor) }

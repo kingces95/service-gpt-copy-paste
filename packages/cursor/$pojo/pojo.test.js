@@ -3,6 +3,7 @@ import { ClassInfo } from "@kingjs/info"
 import { } from "@kingjs/info-to-pojo"
 
 import {
+  IntervalConcept,
   CursorConcept,
   InputCursorConcept,
   OutputCursorConcept,
@@ -14,7 +15,6 @@ import {
 
   Cursor,
   Range,
-  Interval,
 } from "@kingjs/cursor"
 
 import {
@@ -77,7 +77,7 @@ function dump(fn) {
 // dumpToFile(Cursor, 'cursor')
 // dumpToFile(CursorFactoryConcept, 'cursor-factory-concept')
 // dumpToFile(Range, 'range')
-// dumpToFile(Interval, 'interval')
+// dumpToFile(IntervalConcept, 'interval-concept')
 
 // dumpToFile(ContainerConcept, 'container-concept')
 // dumpToFile(InputContainerConcept, 'input-container-concept')
