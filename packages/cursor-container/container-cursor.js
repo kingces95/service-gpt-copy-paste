@@ -3,6 +3,8 @@ import { implement } from '@kingjs/implement'
 import {
   ScopeConcept,
   EquatableConcept,
+} from '@kingjs/concept'
+import {
   CursorConcept, 
   InputCursorConcept,
   OutputCursorConcept,

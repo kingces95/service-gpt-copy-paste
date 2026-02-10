@@ -2,6 +2,8 @@ import { implement } from '@kingjs/implement'
 import { ContainerCursor } from '../container-cursor.js'
 import {
   EquatableConcept,
+} from '@kingjs/concept'
+import {
   CursorConcept,
   MutableCursorConcept,
   ForwardCursorConcept,

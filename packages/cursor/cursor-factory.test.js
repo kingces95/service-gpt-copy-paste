@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Cursor } from './cursor.js'
 import { 
   InputCursorConcept,
   OutputCursorConcept,
@@ -16,11 +15,8 @@ import {
   ForwardContainerConcept,
   RewindContainerConcept,
   RandomAccessContainerConcept,
-  ContiguousContainerConcept,
   PrologContainerConcept,
-
   SequenceContainerConcept,
-  RewindContainerConcept,
   IndexableContainerConcept,
   ContiguousContainerConcept,
 } from '@kingjs/cursor-container'

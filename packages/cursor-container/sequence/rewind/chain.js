@@ -1,6 +1,5 @@
 import { implement } from '@kingjs/implement'
 import { Preconditions } from '@kingjs/partial-proxy'
-import { implement } from '@kingjs/implement'
 import { CursorFactoryConcept } from '@kingjs/cursor'
 import {
   throwStale,

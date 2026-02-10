@@ -1,5 +1,5 @@
 import { Interval } from "./interval.js"
-import { throwNotEquatableTo } from '@kingjs/cursor'
+import { throwNotEquatableTo } from './throw.js'
 
 export class Range extends Interval {
   #begin

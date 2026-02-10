@@ -1,6 +1,5 @@
 export * from "./view/index.js"
 export * from "./cursor-concepts.js"
-export * from "./cursor-factory.js"
 export * from "./cursor.js"
 export * from "./interval.js"
 export * from "./range.js"

@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { implement } from '@kingjs/implement'
 import { Cursor } from './cursor.js'
-import { extend } from '@kingjs/partial-extend'
 import { Preconditions } from '@kingjs/partial-type'
 import { 
   CursorConcept,
@@ -21,6 +20,26 @@ import {
   throwWriteOutOfBounds,
 } from './throw.js'
 
+import {
+  TrivialInputContainer,
+  TrivialOutputContainer,
+  TrivialMutableContainer,
+  TrivialForwardContainer,
+  TrivialBidirectionalContainer,
+  TrivialRandomAccessContainer,
+  TrivialContiguousContainer,
+
+  TrivialCursor,
+  TrivialInputCursor,
+  TrivialOutputCursor,
+  TrivialMutableCursor,
+  TrivialForwardCursor,
+  TrivialBidirectionalCursor,
+  TrivialRandomAccessCursor,
+  TrivialContiguousCursor,
+  OtherTrivialCursor,
+} from './trivial-cursors.js'
+
 import { 
   List,
   Chain,
@@ -29,128 +48,6 @@ import {
   NodeBuffer,
   EcmaBuffer 
 } from '@kingjs/cursor-container'
-
-// For testing purposes, we define a set of trivial cursor implementations
-// which are are always empty and do not move but which claim to be input,
-// output, forward, bidirectional, random access, and contiguous.
-
-class TrivialCursor extends Cursor {
-  static { implement(this, CursorConcept) }
-  
-  constructor(scope) {
-    super(scope)
-  }
-  get __isActive$() { return true }
-  step() { throwMoveOutOfBounds() }
-  equals(other) { return this.equatableTo(other) }
-}
-
-class TrivialInputCursor extends TrivialCursor {
-  static [Preconditions] = {
-    get value() { throwReadOutOfBounds() }
-  }
-
-  static { 
-    implement(this, InputCursorConcept, {
-      get value() { return this.value$ }
-    }) 
-  }
-
-  get value$() { return undefined }
-}
-
-class TrivialOutputCursor extends TrivialCursor {
-  static [Preconditions] = {
-    set value(value) { throwWriteOutOfBounds() }
-  }
-
-  static { 
-    implement(this, OutputCursorConcept, {
-      set value(value) { this.value$ = value }
-    }) 
-  }
-
-  set value$(value) { throw new RangeError() }
-}
-
-class TrivialMutableCursor extends TrivialCursor {
-  static [Preconditions] = {
-    get value() { throwReadOutOfBounds() },
-    set value(value) { throwWriteOutOfBounds() }
-  }
-
-  static {
-    implement(this, MutableCursorConcept, {
-      get value() { return this.value$ },
-      set value(value) { this.value$ = value },
-    })
-  }
-
-  get value$() { return undefined }
-  set value$(value) { throw new RangeError() }
-}
-
-class TrivialForwardCursor extends TrivialMutableCursor {
-  static { implement(this, ForwardCursorConcept) }
-  clone$() { return new this.constructor() }
-  clone() { return this.clone$() }
-}
-
-class TrivialBidirectionalCursor extends TrivialForwardCursor {
-  static { implement(this, BidirectionalCursorConcept) }
-  stepBack$() { throwMoveOutOfBounds() }
-  stepBack() { return this.stepBack$() }
-}
-
-class TrivialRandomAccessCursor extends TrivialBidirectionalCursor {
-  static [Preconditions] = {
-    setAt(offset, value) {
-      throwWriteOutOfBounds()
-    },
-    at(offset) {
-      throwReadOutOfBounds()
-    },
-  }
-
-  static { 
-    implement(this, RandomAccessCursorConcept, {
-      move(offset) { return this.move$(offset) },
-      at(offset) { return this.at$(offset) },
-      setAt(offset, value) { this.setAt$(offset, value) },
-      subtract(other) { return this.subtract$(other) },
-      compareTo(other) { return this.compareTo$(other) },     
-    }) 
-  }
-
-  move$(offset) { 
-    if (offset === 0) return this
-    throwMoveOutOfBounds()
-  }
-  at$(offset) { return undefined }
-  setAt$(offset, value) { throw new RangeError() }
-  subtract$(other) { return 0 }
-  compareTo$(other) { return 0 }
-}
-
-class TrivialContiguousCursor extends TrivialRandomAccessCursor {
-  static { 
-    implement(this, ContiguousCursorConcept, {
-      readAt(offset, length = 1, signed = false, littleEndian = false) {
-        return this.readAt$(offset, length, signed, littleEndian)
-      },
-      data(other) { return this.data$(other) }
-    }) 
-  }
-
-  readAt$(offset = 0, length = 1, signed = false, littleEndian = false) { 
-    throw new RangeError()
-  }  
-  data$(other) { 
-    return Buffer.alloc(0)
-  }
-}
-
-class OtherTrivialCursor extends TrivialCursor { }
 
 const list0 = new List(), list1 = new List()
 const chain0 = new Chain(), chain1 = new Chain()

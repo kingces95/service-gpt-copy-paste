@@ -3,9 +3,10 @@ import { PartialProxy } from '@kingjs/partial-proxy'
 import { 
   ScopeConcept,
   EquatableConcept,
+} from '@kingjs/concept'
+import { 
   CursorConcept 
 } from './cursor-concepts.js'
-import { PartialProxy } from '@kingjs/partial-proxy'
 
 export class Cursor extends PartialProxy { 
   #scope

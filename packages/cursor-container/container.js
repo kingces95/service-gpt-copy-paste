@@ -9,7 +9,7 @@ import {
 import { ContainerCursor } from './container-cursor.js'
 import { 
   CursorFactoryConcept, 
-} from '../cursor/cursor-factory.js'
+} from '../cursor/cursor-concepts.js'
 import {
   ContainerConcept$,
 } from './container-concepts.js'

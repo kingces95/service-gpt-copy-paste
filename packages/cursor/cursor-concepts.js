@@ -1,14 +1,23 @@
-import { Concept, Implements } from '@kingjs/concept'
+import { 
+  Concept, 
+  Implements,
+  EquatableConcept,
+} from '@kingjs/concept'
 import { Extends } from '@kingjs/partial-class'
 import { throwNotEquatableTo } from './throw.js'
 import { Preconditions } from '@kingjs/partial-proxy'
+import { Range } from "./range.js"
 
-export class ScopeConcept extends Concept {
-  equatableTo(other) { }
-}
+export class CursorFactoryConcept extends Concept {
+  static [Extends] = {
+    isEmpty() { return this.begin().equals(this.end()) },
+    toRange() { return new Range(this.begin(), this.end()) },
+  }
 
-export class EquatableConcept extends ScopeConcept {
-  equals(other) { }
+  get cursorType() { }
+  
+  begin() { }
+  end() { }
 }
 
 export class CursorConcept extends EquatableConcept {
