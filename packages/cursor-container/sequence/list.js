@@ -64,7 +64,7 @@ export class List extends SequenceContainer {
 
   static {
     implement(this, SequenceContainerConcept$, {
-      equals$(link, otherLink) { return link == otherLink.token$ },
+      equals$(link, { $token: otherLink }) { return link == otherLink },
       step$(link) { return link.next },
       value$(link) { return link.value },
       setValue$(link, value) { link.value = value },

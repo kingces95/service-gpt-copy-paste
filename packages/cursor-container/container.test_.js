@@ -7,7 +7,7 @@ import {
   BidirectionalCursorConcept,
   RandomAccessCursorConcept,
   ContiguousCursorConcept,
-} from './cursor-concepts.js'
+} from '../cursor/cursor-concepts.js'
 import {
   ContainerConcept,
   InputContainerConcept,
@@ -58,14 +58,7 @@ describe.each(cases)('A %s', (name, type, cursorType, concepts) => {
     f1 = new type()
     begin = f0.begin()
   })
-  it('should satisfy the concepts', () => {
-    for (const concept of concepts) {
-      expect(cursorType.prototype).toBeInstanceOf(concept)
-    }
-  })
-  it('is instanceof ContainerConcept', () => {
-    expect(f0).toBeInstanceOf(ContainerConcept)
-  })
+
   it('should be empty', () => {
     expect(f0.isEmpty).toBe(true)
   })

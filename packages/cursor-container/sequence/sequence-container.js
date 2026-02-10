@@ -1,21 +1,12 @@
 import { Container } from '../container.js'
 import { SequenceCursor } from './sequence-cursor.js'
 import { implement } from '@kingjs/implement'
-import {
-  throwEmpty,
-} from '@kingjs/cursor'
-import { Preconditions } from '@kingjs/partial-proxy'
 import { 
   SequenceContainerConcept,
   SequenceContainerConcept$,
 } from '../container-concepts.js'
 
 export class SequenceContainer extends Container {
-  static [Preconditions] = {
-    shift() { if (this.isEmpty) throwEmpty() },
-    get front() { if (this.isEmpty) throwEmpty() }    
-  }
-
   static get cursorType() { return SequenceCursor }
 
   static {

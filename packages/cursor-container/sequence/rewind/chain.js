@@ -151,7 +151,7 @@ export class Chain extends RewindContainer {
     })
 
     implement(this, EpilogContainerConcept, {
-       insert(cursor, value) {
+      insert(cursor, value) {
         cursor.token$.insert(value)
         this._count++
         this.__check()

@@ -46,6 +46,11 @@ export class IndexableContainer extends RewindContainer {
 
   static get cursorType() { return IndexableCursor }
 
+  // A debug helper which detects when a cursor is invalidated. 
+  // Typically, this happens during an unshift of shift operation 
+  // as that operation invalidates all index cursors. Cursors that 
+  // reference a node cannot be invalidated so those containers 
+  // will not bump the version.
   __version
 
   constructor() {

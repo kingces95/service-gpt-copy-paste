@@ -125,7 +125,7 @@ export class TrivialContiguousCursor extends TrivialRandomAccessCursor {
   }
 }
 
-export class OtherTrivialCursor extends TrivialCursor { }
+export class TrivialOtherCursor extends TrivialCursor { }
 
 export class TrivialContainer extends PartialProxy {
   static {
@@ -135,6 +135,9 @@ export class TrivialContainer extends PartialProxy {
       end() { return new this.cursorType(this) },
     })
   }
+}
+export class TrivialOtherContainer extends TrivialContainer { 
+  static cursorType = TrivialOtherCursor
 }
 export class TrivialInputContainer extends TrivialContainer {
   static cursorType = TrivialInputCursor

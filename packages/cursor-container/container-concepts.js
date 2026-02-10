@@ -1,7 +1,8 @@
-import { Concept } from '@kingjs/concept'
+import { Concept, DisposeConcept } from '@kingjs/concept'
 import { Extends } from '@kingjs/partial-class'
+import { Preconditions } from '@kingjs/partial-proxy'
 import {
-  Range,
+  CursorFactoryConcept,
   CursorConcept,
   InputCursorConcept,
   OutputCursorConcept,
@@ -11,18 +12,12 @@ import {
   ContiguousCursorConcept,
 } from '@kingjs/cursor'
 
-export class RangeConcept extends Concept {
-  toRange() { }
-}
-export class ContainerConcept extends RangeConcept {
-  static cursorType = CursorConcept
-  static [Extends] = {
-    toRange() { return new Range(this.begin(), this.end()) },
-    get isEmpty() { return this.begin().equals(this.end()) }
+export class ContainerConcept extends CursorFactoryConcept {
+  [Extends] = {
+    get cursorType() { return this.constructor.cursorType }
   }
 
-  begin() { }
-  end() { }
+  static cursorType = CursorConcept
 }
 export class InputContainerConcept extends ContainerConcept {
   static cursorType = InputCursorConcept
@@ -46,6 +41,11 @@ export class ContiguousContainerConcept extends RandomAccessContainerConcept {
 // A sequence container is a forward container that supports a front and
 // unshift/shift operations.
 export class SequenceContainerConcept extends ForwardContainerConcept {
+  static [Preconditions] = {
+    shift() { if (this.isEmpty) throwEmpty() },
+    get front() { if (this.isEmpty) throwEmpty() }    
+  }
+  
   get front() { }
   unshift(value) { }
   shift() { }
@@ -87,11 +87,8 @@ export class EpilogContainerConcept extends Concept {
 // Implementation detail: dollar-suffixed concepts capture the interface
 // between a container and its cursors via tokens as used by this 
 // implementation.
-export class ContainerConcept$ extends Concept {
-  get __version$() { }
-}
 
-export class SequenceContainerConcept$ extends ContainerConcept$ {
+export class SequenceContainerConcept$ {
 
   // basic cursor
   equals$(token, other) { }
