@@ -9,7 +9,7 @@ import {
   throwUpdateOutOfBounds,
   throwReadOutOfBounds,
 } from '@kingjs/cursor'
-import { RewindContainer } from "./rewind-container.js"
+import { RewindContainer } from "../rewind-container.js"
 import { ChainNode } from "./chain-node.js"
 import { 
   PrologContainerConcept,

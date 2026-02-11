@@ -1,5 +1,5 @@
 import { implement } from '@kingjs/implement'
-import { IndexableContainer } from "./indexable-container.js"
+import { IndexableContainer } from "../indexable-container.js"
 import { extend } from '@kingjs/partial-extend'
 import {
   SequenceContainerConcept,

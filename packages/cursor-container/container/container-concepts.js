@@ -83,3 +83,7 @@ export class EpilogContainerConcept extends Concept {
   insert(cursor, value) { }
   remove(cursor) { }
 }
+
+// export class ContiguousContainerConcept extends IndexableContainerConcept {
+//   readAt(cursor, offset, length, signed, littleEndian) { }
+// }

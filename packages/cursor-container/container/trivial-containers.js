@@ -1,11 +1,8 @@
 import { implement } from '@kingjs/implement'
-import { 
-  Cursor,
-  ForwardCursorConcept,
-  BidirectionalCursorConcept,
-  RandomAccessCursorConcept,
-  ContiguousCursorConcept,
-} from '@kingjs/cursor'
+import { SequenceCursor } from '../cursor/sequence-cursor.js'
+import { RewindCursor } from '../cursor/rewind-cursor.js'
+import { IndexableCursor } from '../cursor/indexable-cursor.js'
+import { ContiguousCursor } from '../cursor/contiguous-cursor.js'
 import { Container } from './container.js'
 import { 
   SequenceContainerConcept$,
@@ -20,27 +17,6 @@ import {
   ContiguousContainerConcept,
 } from './container-concepts.js'
 
-export class SingletonSequenceCursor extends Cursor {
-  static {
-    implement(this, ForwardCursorConcept)
-  }
-}
-export class SingletonRewindCursor extends SingletonSequenceCursor {
-  static {
-    implement(this, BidirectionalCursorConcept)
-  }
-}
-export class SingletonIndexableCursor extends SingletonRewindCursor {
-  static {
-    implement(this, RandomAccessCursorConcept)
-  }
-}
-export class SingletonContiguousCursor extends SingletonIndexableCursor {
-  static {
-    implement(this, ContiguousCursorConcept)
-  }
-}
-
 export class SingletonContainer extends Container {
   constructor(singleton) {
     super()
@@ -50,14 +26,19 @@ export class SingletonContainer extends Container {
   get singleton$() { return this._singleton }
   set singleton$(value) { this._singleton = value }
 }
-export class SingletonSequenceContainer extends SingletonContainer {
-  static cursorType = SingletonSequenceCursor
+export class SequenceSingletonContainer extends SingletonContainer {
+  static cursorType = SequenceCursor
 
   static {
     implement(this, SequenceContainerConcept$, {
-
+      equals$: (cursor, other) => cursor.value$ === other.value$,
+      step$(cursor) { },
+      value$(cursor) { },
+      setValue$(cursor, value) { },
     })
+  }
 
+  static {
     implement(this, SequenceContainerConcept, {
       get front() { return this.singleton$ },
       unshift(value) { this.singleton$ = value },
@@ -69,27 +50,56 @@ export class SingletonSequenceContainer extends SingletonContainer {
     })
   }
 }
-export class SingletonRewindContainer extends SingletonContainer {
-  static cursorType = SingletonRewindCursor
+export class RewindSingletonContainer extends SingletonContainer {
+  static cursorType = RewindCursor
 
   static {
-    implement(this, RewindContainerConcept$, { })
-    implement(this, RewindContainerConcept, { })
+    implement(this, RewindContainerConcept$, { 
+      stepBack$(cursor) { } 
+    })
+  }
+
+  static {
+    implement(this, RewindContainerConcept, { 
+      // get count() { },
+      // get back() { },
+      // pop() { },
+      // push(value) { },      
+    })
   }
 }
-export class SingletonIndexableContainer extends SingletonContainer {
-  static cursorType = SingletonIndexableCursor
+export class IndexableSingletonContainer extends SingletonContainer {
+  static cursorType = IndexableCursor
 
   static {
-    implement(this, IndexableContainerConcept$, { })
-    implement(this, IndexableContainerConcept, { })
+    implement(this, IndexableContainerConcept$, { 
+      at$(cursor, offset) { },
+      setAt$(cursor, offset, value) { },
+      subtract$(cursor, otherCursor) { },
+      move$(cursor, offset) { },
+      compareTo$(cursor, otherCursor) { },
+    })
+  }
+
+  static {
+    implement(this, IndexableContainerConcept, { 
+      // at(index) { },
+      // setAt(index, value) { },
+    })
   }
 }
-export class SingletonContiguousContainer extends SingletonContainer {
-  static cursorType = SingletonContiguousCursor
+export class ContiguousSingletonContainer extends SingletonContainer {
+  static cursorType = ContiguousCursor
 
   static {
-    implement(this, ContiguousContainerConcept$, { })
-    implement(this, ContiguousContainerConcept, { })
+    implement(this, ContiguousContainerConcept$, { 
+      readAt$(cursor, offset, length, signed, littleEndian) { }
+    })
+  }
+
+  static {
+    implement(this, ContiguousContainerConcept, { 
+      // readAt( offset, length, signed, littleEndian) { }
+    })
   }
 }

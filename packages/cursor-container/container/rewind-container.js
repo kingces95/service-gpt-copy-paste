@@ -1,6 +1,6 @@
-import { SequenceContainer } from '../sequence/sequence-container.js'
+import { SequenceContainer } from './sequence-container.js'
 import { Preconditions } from '@kingjs/partial-proxy'
-import { RewindCursor } from '../../cursor/rewind-cursor.js'
+import { RewindCursor } from '../cursor/rewind-cursor.js'
 import { implement } from '@kingjs/implement'
 import {
   throwEmpty,
@@ -9,10 +9,10 @@ import {
   SequenceContainerConcept,
   EpilogContainerConcept,
   RewindContainerConcept, 
-} from '../container-concepts.js'
+} from './container-concepts.js'
 import {
   RewindContainerConcept$, 
-} from '../../cursor/container-cursor-api.js'
+} from '../cursor/container-cursor-api.js'
 
 export class RewindContainer extends SequenceContainer {
   static [Preconditions] = {

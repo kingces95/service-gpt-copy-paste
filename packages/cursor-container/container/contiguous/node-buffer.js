@@ -1,6 +1,6 @@
 import { implement } from '@kingjs/implement'
 import { extend } from '@kingjs/partial-extend'
-import { ContiguousContainer } from "./contiguous-container.js"
+import { ContiguousContainer } from "../contiguous-container.js"
 import {
   ContiguousContainerConcept$,
 } from "../../cursor/container-cursor-api.js"
@@ -15,7 +15,7 @@ export class NodeBuffer extends ContiguousContainer {
 
   // container
   dispose$() { this.#buffer = null }
-  
+
   static {
     extend(this, {
       at$$({ index$: index }, offset) { 

@@ -2,6 +2,11 @@
 // export * from "./multi-pass/index.js"
 // export * from "./segment/index.js"
 export * from "./container/container.js"
+export * from "./container/contiguous-container.js"
+export * from "./container/indexable-container.js"
+export * from "./container/rewind-container.js"
+export * from "./container/sequence-container.js"
+
 export * from "./container/rewind/index.js"
 export * from "./container/sequence/index.js"
 export * from "./container/container-concepts.js"

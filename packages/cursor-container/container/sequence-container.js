@@ -1,12 +1,12 @@
-import { Container } from '../container.js'
-import { SequenceCursor } from '../../cursor/sequence-cursor.js'
+import { Container } from './container.js'
 import { implement } from '@kingjs/implement'
+import { SequenceCursor } from '../cursor/sequence-cursor.js'
 import { 
   SequenceContainerConcept,
-} from '../container-concepts.js'
+} from './container-concepts.js'
 import {
   SequenceContainerConcept$,
-} from '../../cursor/container-cursor-api.js'
+} from '../cursor/container-cursor-api.js'
 
 export class SequenceContainer extends Container {
   static get cursorType() { return SequenceCursor }

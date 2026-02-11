@@ -10,7 +10,7 @@ import {
   throwReadOutOfBounds,
 } from '@kingjs/cursor'
 import { ListNode } from "./list-node.js"
-import { SequenceContainer } from "./sequence-container.js"
+import { SequenceContainer } from "../sequence-container.js"
 import {
   PrologContainerConcept,
   SequenceContainerConcept,
