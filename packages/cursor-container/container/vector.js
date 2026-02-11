@@ -22,16 +22,19 @@ export class Vector extends IndexableContainer {
       at$$(index) { return this._array[index] },
       setAt$$(index, value) { this._array[index] = value },
     })
+
     implement(this, IndexableContainerConcept$, {
       at$({ index$: index }, offset) { 
         return this.at$$(index, offset) },
       setAt$({ index$: index }, offset, value) { 
         this.setAt$$(index, offset, value) },
     })
+
     implement(this, SequenceContainerConcept, {
       shift() { return this._array.shift() },
       unshift(value) { this._array.unshift(value) },
     })
+    
     implement(this, RewindContainerConcept, {
       get count() { return this._array.length },
       push(value) { this._array.push(value) },

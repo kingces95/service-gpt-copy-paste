@@ -25,10 +25,12 @@ export class Deque extends IndexableContainer {
       at$$(index) { return this._denque.get(index) },
       setAt$$(index, offset, value) { throwNotSupported() },
     })
+
     implement(this, SequenceContainerConcept, {
       unshift(value) { this._denque.unshift(value) },
       shift() { return this._denque.shift() },
     })
+    
     implement(this, RewindContainerConcept, {
       get count() { return this._denque.length },
       push(value) { this._denque.push(value) },

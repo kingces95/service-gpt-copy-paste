@@ -49,7 +49,9 @@ export class IndexableContainer extends RewindContainer {
     }  
   }
 
-  static cursorType = class IndexableCursor extends RewindContainer.cursorType {
+  static cursorType = class IndexableCursor 
+    extends RewindContainer.cursorType {
+      
     static [TypePrecondition] = function() {
       const { container$, __version$ } = this
       if (container$.__version$ !== __version$) throwStale()
@@ -141,9 +143,11 @@ export class IndexableContainer extends RewindContainer {
       value$({ index$: index}) { return this.at$$(index, 0) },
       setValue$({ token$: index }, value) { this.setAt$$(index, 0, value) },
     })
+
     implement(this, RewindContainerConcept$, {
       stepBack$(cursor) { return this.move$(cursor, -1) }
     })
+
     implement(this, IndexableContainerConcept$, {
       subtract$({ index$: index }, { index$: otherIndex }) { 
         return index - otherIndex },

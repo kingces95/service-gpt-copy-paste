@@ -24,6 +24,7 @@ export class EcmaBuffer extends ContiguousContainer {
       setAt$$(index, offset, value) { 
         this.dataView$.setUint8(index + offset, value) }
     })
+    
     implement(this, ContiguousContainerConcept$, {
       readAt$({ index$: index }, offset, length, signed, littleEndian) {
         const { dataView$: dataView } = this

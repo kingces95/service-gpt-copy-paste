@@ -23,6 +23,7 @@ export class NodeBuffer extends ContiguousContainer {
       setAt$$({ index$: index }, offset, value) { 
         this.buffer$[index + offset] = value }
     })
+    
     implement(this, ContiguousContainerConcept$, {
       readAt$({ index$: index }, offset, length, signed, littleEndian) {
         const { buffer$: buffer } = this
