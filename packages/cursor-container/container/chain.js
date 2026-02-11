@@ -9,6 +9,7 @@ import {
   throwUpdateOutOfBounds,
   throwReadOutOfBounds,
 } from '@kingjs/cursor'
+import { SequenceContainer } from '../helpers/sequence-container.js'
 import { RewindContainer } from "../helpers/rewind-container.js"
 import { ChainNode } from "./chain-node.js"
 import { 
@@ -17,10 +18,6 @@ import {
   SequenceContainerConcept,
   RewindContainerConcept,
 } from "../container-concepts.js"
-import {
-  SequenceContainerConcept$,
-  RewindContainerConcept$,
-} from "../helpers/container-cursor-api.js"
 
 export class Chain extends RewindContainer {
   static [Preconditions] = {
@@ -101,7 +98,7 @@ export class Chain extends RewindContainer {
   }
 
   static {
-    implement(this, SequenceContainerConcept$, {
+    implement(this, SequenceContainer.cursorType.api$, {
       equals$({ token$: link}, { token$: otherLink }) { 
         return link == otherLink },
       step$({ token$: link }) { return link.next },
@@ -109,7 +106,7 @@ export class Chain extends RewindContainer {
       setValue$({ token$: link }, value) { link.value = value },
     })
 
-    implement(this, RewindContainerConcept$, {
+    implement(this, RewindContainer.cursorType.api$, {
       stepBack$({ token$: link }) { return link.previous }
     })
   }

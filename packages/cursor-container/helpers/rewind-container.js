@@ -1,4 +1,4 @@
-import { SequenceContainer } from './sequence-container.js'
+import { SequenceContainer } from '../helpers/sequence-container.js'
 import { Preconditions } from '@kingjs/partial-proxy'
 import { implement } from '@kingjs/implement'
 import {
@@ -10,9 +10,6 @@ import {
   EpilogContainerConcept,
   RewindContainerConcept, 
 } from '../container-concepts.js'
-import {
-  RewindContainerConcept$, 
-} from './container-cursor-api.js'
 
 export class RewindContainer extends SequenceContainer {
   static [Preconditions] = {
@@ -20,8 +17,15 @@ export class RewindContainer extends SequenceContainer {
     get back() { if (this.isEmpty) throwEmpty() }  
   }
   
-  static cursorType = class RewindCursor extends SequenceContainer.cursorType {
+  static cursorType = class RewindCursor 
+    extends SequenceContainer.cursorType {
     
+    static api$ = class RewindContainerConcept$ 
+      extends SequenceContainer.cursorType.api$ {
+
+      stepBack$(cursor) { } // rewind cursor
+    }
+
     constructor(reversible, token) {
       super(reversible, token)
     }
@@ -38,7 +42,7 @@ export class RewindContainer extends SequenceContainer {
   }
 
   static {
-    implement(this, RewindContainerConcept$, {
+    implement(this, RewindContainer.cursorType.api$, {
       // stepBack$(cursor) { }
     })
   }

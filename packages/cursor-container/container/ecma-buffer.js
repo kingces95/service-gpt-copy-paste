@@ -1,9 +1,6 @@
 import { implement } from '@kingjs/implement'
 import { extend } from '@kingjs/partial-extend'
 import { ContiguousContainer } from "../helpers/contiguous-container.js"
-import {
-  ContiguousContainerConcept$,
-} from "../helpers/container-cursor-api.js"
 
 export class EcmaBuffer extends ContiguousContainer {
   #dataView 
@@ -24,8 +21,8 @@ export class EcmaBuffer extends ContiguousContainer {
       setAt$$(index, offset, value) { 
         this.dataView$.setUint8(index + offset, value) }
     })
-    
-    implement(this, ContiguousContainerConcept$, {
+
+    implement(this, ContiguousContainer.cursorType.api$, {
       readAt$({ index$: index }, offset, length, signed, littleEndian) {
         const { dataView$: dataView } = this
         const indexOffset = index + offset

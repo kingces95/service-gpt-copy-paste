@@ -7,7 +7,6 @@ export * from "./helpers/contiguous-container.js"
 export * from "./helpers/indexable-container.js"
 export * from "./helpers/rewind-container.js"
 export * from "./helpers/sequence-container.js"
-export * from "./helpers/container-cursor-api.js"
 
 export * from "./container/list.js"
 export * from "./container/list-node.js"

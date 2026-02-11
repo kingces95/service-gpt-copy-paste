@@ -1,15 +1,14 @@
 import { implement } from '@kingjs/implement'
+import { SequenceContainer } from '../helpers/sequence-container.js'
+import { RewindContainer } from '../helpers/rewind-container.js'
+import { IndexableContainer } from '../helpers/indexable-container.js'
+import { ContiguousContainer } from '../helpers/contiguous-container.js'
 import { SequenceCursor } from '../helpers/sequence-cursor.js'
 import { RewindCursor } from '../helpers/rewind-cursor.js'
 import { IndexableCursor } from '../helpers/indexable-cursor.js'
 import { ContiguousCursor } from '../helpers/contiguous-cursor.js'
 import { Container } from '../helpers/container.js'
-import { 
-  SequenceContainerConcept$,
-  RewindContainerConcept$,
-  IndexableContainerConcept$,
-  ContiguousContainerConcept$,
-} from '../helpers/container-cursor-api.js'
+
 import {
   SequenceContainerConcept,
   RewindContainerConcept,
@@ -30,7 +29,7 @@ export class SequenceSingletonContainer extends SingletonContainer {
   static cursorType = SequenceCursor
 
   static {
-    implement(this, SequenceContainerConcept$, {
+    implement(this, SequenceContainer.cursorType.api$, {
       equals$: (cursor, other) => cursor.value$ === other.value$,
       step$(cursor) { },
       value$(cursor) { },
@@ -54,7 +53,7 @@ export class RewindSingletonContainer extends SingletonContainer {
   static cursorType = RewindCursor
 
   static {
-    implement(this, RewindContainerConcept$, { 
+    implement(this, RewindContainer.cursorType.api$, { 
       stepBack$(cursor) { } 
     })
   }
@@ -72,7 +71,7 @@ export class IndexableSingletonContainer extends SingletonContainer {
   static cursorType = IndexableCursor
 
   static {
-    implement(this, IndexableContainerConcept$, { 
+    implement(this, IndexableContainer.cursorType.api$, { 
       at$(cursor, offset) { },
       setAt$(cursor, offset, value) { },
       subtract$(cursor, otherCursor) { },
@@ -92,7 +91,7 @@ export class ContiguousSingletonContainer extends SingletonContainer {
   static cursorType = ContiguousCursor
 
   static {
-    implement(this, ContiguousContainerConcept$, { 
+    implement(this, ContiguousContainer.cursorType.api$, { 
       readAt$(cursor, offset, length, signed, littleEndian) { }
     })
   }

@@ -1,5 +1,6 @@
-import { Container } from './container.js'
+import { Concept } from '@kingjs/concept'
 import { implement } from '@kingjs/implement'
+import { Container } from './container.js'
 import {
   EquatableConcept,
 } from '@kingjs/concept'
@@ -11,13 +12,18 @@ import {
 import { 
   SequenceContainerConcept,
 } from '../container-concepts.js'
-import {
-  SequenceContainerConcept$,
-} from './container-cursor-api.js'
 
 export class SequenceContainer extends Container {
 
   static cursorType = class SequenceCursor extends Container.cursorType {
+
+    static api$ = class SequenceContainerConcept$ extends Concept {
+      equals$(cursor, other) { } // basic cursor
+      step$(cursor) { } // step cursor
+      value$(cursor) { } // input cursor
+      setValue$(cursor, value) { } // output cursor
+    }
+
     #token
   
     constructor(container, token) {
@@ -69,20 +75,15 @@ export class SequenceContainer extends Container {
   }
 
   static {
-    implement(this, SequenceContainerConcept$, {
-      // basic cursor
+    implement(this, SequenceContainer.cursorType.api$, {
       // equals$(cursor, other) { }
-
-      // step cursor
       // step$(cursor) { }
-
-      // input cursor
       // value$(cursor) { }
-
-      // output cursor
       // setValue$(cursor, value) { }
     })
+  }
 
+  static {
     implement(this, SequenceContainerConcept, {
       // get front() { }
       // unshift(value) { }

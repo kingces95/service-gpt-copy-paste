@@ -15,9 +15,6 @@ import {
   PrologContainerConcept,
   SequenceContainerConcept,
 } from "../container-concepts.js"
-import { 
-  SequenceContainerConcept$,
-} from '../helpers/container-cursor-api.js'
 
 export class List extends SequenceContainer {
   static [Preconditions] = {
@@ -65,7 +62,7 @@ export class List extends SequenceContainer {
   }
 
   static {
-    implement(this, SequenceContainerConcept$, {
+    implement(this, SequenceContainer.cursorType.api$, {
       equals$({ token$: link }, { token$: otherLink }) { 
         return link == otherLink },
       step$({ token$: link }) { return link.next },

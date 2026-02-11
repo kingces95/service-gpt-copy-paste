@@ -1,9 +1,6 @@
 import { implement } from '@kingjs/implement'
 import { extend } from '@kingjs/partial-extend'
 import { ContiguousContainer } from "../helpers/contiguous-container.js"
-import {
-  ContiguousContainerConcept$,
-} from "../helpers/container-cursor-api.js"
 
 export class NodeBuffer extends ContiguousContainer {
   #buffer
@@ -23,8 +20,8 @@ export class NodeBuffer extends ContiguousContainer {
       setAt$$({ index$: index }, offset, value) { 
         this.buffer$[index + offset] = value }
     })
-    
-    implement(this, ContiguousContainerConcept$, {
+
+    implement(this, ContiguousContainer.cursorType.api$, {
       readAt$({ index$: index }, offset, length, signed, littleEndian) {
         const { buffer$: buffer } = this
         const indexOffset = index + offset

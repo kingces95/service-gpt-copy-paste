@@ -1,7 +1,8 @@
 import { implement } from '@kingjs/implement'
 import { abstract } from '@kingjs/abstract'
 import { extend } from '@kingjs/partial-extend'
-import { RewindContainer } from './rewind-container.js'
+import { SequenceContainer } from '../helpers/sequence-container.js'
+import { RewindContainer } from '../helpers/rewind-container.js'
 import { Preconditions, TypePrecondition } from '@kingjs/partial-proxy'
 import {
   throwStale,
@@ -16,11 +17,6 @@ import {
   RewindContainerConcept,
   IndexableContainerConcept,
 } from '../container-concepts.js'
-import {
-  SequenceContainerConcept$,
-  RewindContainerConcept$,
-  IndexableContainerConcept$,
-} from './container-cursor-api.js'
 
 export class IndexableContainer extends RewindContainer {
   static [Preconditions] = {
@@ -51,7 +47,17 @@ export class IndexableContainer extends RewindContainer {
 
   static cursorType = class IndexableCursor 
     extends RewindContainer.cursorType {
-      
+
+    static api$ = class IndexableContainerConcept$ 
+      extends RewindContainer.cursorType.api$ {
+        
+      at$(cursor, offset) { }
+      setAt$(cursor, offset, value) { }
+      subtract$(cursor, otherCursor) { }
+      move$(cursor, offset) { }
+      compareTo$(cursor, otherCursor) { }
+    }
+
     static [TypePrecondition] = function() {
       const { container$, __version$ } = this
       if (container$.__version$ !== __version$) throwStale()
@@ -136,7 +142,7 @@ export class IndexableContainer extends RewindContainer {
   }
 
   static {
-    implement(this, SequenceContainerConcept$, {
+    implement(this, SequenceContainer.cursorType.api$, {
       equals$({ index$: index}, { index$: otherIndex }) { 
         return index === otherIndex },
       step$(cursor) { return this.move$(cursor, 1) },
@@ -144,11 +150,11 @@ export class IndexableContainer extends RewindContainer {
       setValue$({ token$: index }, value) { this.setAt$$(index, 0, value) },
     })
 
-    implement(this, RewindContainerConcept$, {
+    implement(this, RewindContainer.cursorType.api$, {
       stepBack$(cursor) { return this.move$(cursor, -1) }
     })
 
-    implement(this, IndexableContainerConcept$, {
+    implement(this, IndexableContainer.cursorType.api$, {
       subtract$({ index$: index }, { index$: otherIndex }) { 
         return index - otherIndex },
       move$({ index$: index }, offset) { return index + offset },
