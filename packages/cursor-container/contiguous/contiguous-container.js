@@ -1,6 +1,6 @@
 import { implement } from '@kingjs/implement'
-import { ContiguousCursor } from './contiguous-cursor.js'
-import { IndexableContainer } from "../indexable-container.js"
+import { ContiguousCursor } from '../cursor/contiguous-cursor.js'
+import { IndexableContainer } from "../indexable/indexable-container.js"
 import { Preconditions } from '@kingjs/partial-proxy'
 import { copyBackward, copyForward } from '@kingjs/cursor-algorithm'
 import {
@@ -11,11 +11,13 @@ import {
   RewindContainerConcept,
   IndexableContainerConcept,
   ContiguousContainerConcept,
+} from '../container-concepts.js'
+import {
   SequenceContainerConcept$,
   RewindContainerConcept$,
   IndexableContainerConcept$,
   ContiguousContainerConcept$,
-} from '../../../../container-concepts.js'
+} from '../cursor/container-cursor-api.js'
 
 export class ContiguousContainer extends IndexableContainer {
   static [Preconditions] = {

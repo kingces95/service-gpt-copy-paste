@@ -1,8 +1,8 @@
 import { implement } from '@kingjs/implement'
 import { abstract } from '@kingjs/abstract'
 import { extend } from '@kingjs/partial-extend'
-import { RewindContainer } from '../rewind-container.js'
-import { IndexableCursor } from './indexable-cursor.js'
+import { RewindContainer } from '../rewind/rewind-container.js'
+import { IndexableCursor } from '../cursor/indexable-cursor.js'
 import { Preconditions } from '@kingjs/partial-proxy'
 import {
   throwNotImplemented,
@@ -15,10 +15,12 @@ import {
   SequenceContainerConcept,
   RewindContainerConcept,
   IndexableContainerConcept,
+} from '../container-concepts.js'
+import {
   SequenceContainerConcept$,
   RewindContainerConcept$,
   IndexableContainerConcept$,
-} from '../../../container-concepts.js'
+} from '../cursor/container-cursor-api.js'
 
 export class IndexableContainer extends RewindContainer {
   static [Preconditions] = {

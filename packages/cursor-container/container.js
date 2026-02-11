@@ -6,7 +6,7 @@ import {
   throwDisposed,
 } from '@kingjs/cursor'
 
-import { ContainerCursor } from './container-cursor.js'
+import { ContainerCursor } from './cursor/container-cursor.js'
 import {
   ContainerConcept,
 } from './container-concepts.js'

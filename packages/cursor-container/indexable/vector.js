@@ -4,8 +4,10 @@ import { extend } from '@kingjs/partial-extend'
 import {
   SequenceContainerConcept,
   RewindContainerConcept,
+} from '../container-concepts.js'
+import {
   IndexableContainerConcept$,
-} from '../../../container-concepts.js'
+} from '../cursor/container-cursor-api.js'
 
 export class Vector extends IndexableContainer {
   _array

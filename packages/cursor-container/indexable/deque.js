@@ -10,8 +10,7 @@ import {
 import {
   SequenceContainerConcept,
   RewindContainerConcept,
-  IndexableContainerConcept$,
-} from "../../../container-concepts.js"
+} from "../container-concepts.js"
 
 export class Deque extends IndexableContainer {
   _denque

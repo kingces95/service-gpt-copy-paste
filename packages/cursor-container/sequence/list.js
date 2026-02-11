@@ -11,11 +11,13 @@ import {
 } from '@kingjs/cursor'
 import { ListNode } from "./list-node.js"
 import { SequenceContainer } from "./sequence-container.js"
-import { 
+import {
   PrologContainerConcept,
   SequenceContainerConcept,
-  SequenceContainerConcept$,
 } from "../container-concepts.js"
+import { 
+  SequenceContainerConcept$,
+} from '../cursor/container-cursor-api.js'
 
 export class List extends SequenceContainer {
   static [Preconditions] = {

@@ -12,12 +12,12 @@ import {
   RewindContainerConcept$,
   IndexableContainerConcept$,
   ContiguousContainerConcept$,
-
+} from './cursor/container-cursor-api.js'
+import {
   SequenceContainerConcept,
   RewindContainerConcept,
   IndexableContainerConcept,
   ContiguousContainerConcept,
-  ContainerConcept$,
 } from './container-concepts.js'
 
 export class SingletonSequenceCursor extends Cursor {

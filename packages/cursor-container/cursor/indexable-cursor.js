@@ -1,4 +1,4 @@
-import { RewindCursor } from '../rewind-cursor.js'
+import { RewindCursor } from './rewind-cursor.js'
 import { implement } from '@kingjs/implement'
 import { 
   RandomAccessCursorConcept,

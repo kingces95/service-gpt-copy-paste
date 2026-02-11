@@ -1,4 +1,4 @@
-import { IndexableCursor } from '../indexable-cursor.js'
+import { IndexableCursor } from './indexable-cursor.js'
 import { implement } from '@kingjs/implement'
 import { 
   ContiguousCursorConcept,

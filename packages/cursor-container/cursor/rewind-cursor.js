@@ -1,4 +1,4 @@
-import { SequenceCursor } from '../sequence-cursor.js'
+import { SequenceCursor } from './sequence-cursor.js'
 import { implement } from '@kingjs/implement'
 import { 
   BidirectionalCursorConcept,

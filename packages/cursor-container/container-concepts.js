@@ -1,4 +1,4 @@
-import { Concept, DisposeConcept } from '@kingjs/concept'
+import { Concept } from '@kingjs/concept'
 import { Extends } from '@kingjs/partial-class'
 import { Preconditions } from '@kingjs/partial-proxy'
 import {
@@ -101,26 +101,4 @@ export class SequenceContainerConcept$ extends Concept {
 
   // output cursor
   setValue$(cursor, value) { }
-}
-
-export class RewindContainerConcept$ extends SequenceContainerConcept$ {
-
-  // rewind cursor
-  stepBack$(cursor) { } 
-}
-
-export class IndexableContainerConcept$ extends RewindContainerConcept$ {
-
-  // indexable cursor
-  at$(cursor, offset) { }
-  setAt$(cursor, offset, value) { }
-  subtract$(cursor, otherCursor) { }
-  move$(cursor, offset) { }
-  compareTo$(cursor, otherCursor) { }
-}
-
-export class ContiguousContainerConcept$ extends IndexableContainerConcept$ {
-
-  // contiguous cursor
-  readAt$(cursor, offset, length, signed, littleEndian) { throwNotImplemented() }
 }
