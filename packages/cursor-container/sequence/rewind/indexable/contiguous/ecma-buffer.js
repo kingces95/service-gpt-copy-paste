@@ -1,4 +1,5 @@
 import { implement } from '@kingjs/implement'
+import { extend } from '@kingjs/partial-extend'
 import { ContiguousContainer } from "./contiguous-container.js"
 import {
   SequenceContainerConcept,
@@ -21,12 +22,14 @@ export class EcmaBuffer extends ContiguousContainer {
   }
 
   static {
-    implement(this, IndexableContainerConcept$, {
-      at$(index, offset) { return this.dataView$.getUint8(index + offset) },
-      setAt$(index, offset, value) { this.dataView$.setUint8(index + offset, value) }
+    extend(this, {
+      at$$(index, offset) { 
+        return this.dataView$.getUint8(index + offset) },
+      setAt$$(index, offset, value) { 
+        this.dataView$.setUint8(index + offset, value) }
     })
     implement(this, ContiguousContainerConcept$, {
-      readAt$(index, offset, length, signed, littleEndian) {
+      readAt$({ index$: index }, offset, length, signed, littleEndian) {
         const { dataView$: dataView } = this
         const indexOffset = index + offset
 

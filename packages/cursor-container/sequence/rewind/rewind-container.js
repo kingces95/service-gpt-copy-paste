@@ -21,7 +21,7 @@ export class RewindContainer extends SequenceContainer {
 
   static {
     implement(this, RewindContainerConcept$, {
-      // stepBack$(token) { }
+      // stepBack$(cursor) { }
     })
     implement(this, RewindContainerConcept, {
       // get back() { }

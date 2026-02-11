@@ -72,7 +72,7 @@ class TrivialCursor extends Cursor {
   
   get __isActive$() { return true }
   step() { throwMoveOutOfBounds() }
-  equals$(other) { return true }
+  equals$(cursor, other) { return true }
 }
 class TrivialCursorFactory extends CursorFactory {
   static { implement(this, ContainerConcept) }

@@ -24,25 +24,25 @@ export class IndexableCursor extends RewindCursor {
   static { 
     implement(this, RandomAccessCursorConcept, {
       move(offset) {
-        const { container$: indexable, index$: index } = this
-        this.index$ = indexable.move$(index, offset)
+        const { container$: indexable } = this
+        this.index$ = indexable.move$(this, offset)
         return this
       },
       at(offset) {
-        const { container$: indexable, index$: index } = this
-        return indexable.at$(index, offset)
+        const { container$: indexable } = this
+        return indexable.at$(this, offset)
       },
       setAt(offset, value) {
-        const { container$: indexable, index$: index } = this
-        return indexable.setAt$(index, offset, value)
+        const { container$: indexable } = this
+        return indexable.setAt$(this, offset, value)
       },
       subtract(other) {
-        const { container$: indexable, index$: index } = this
-        return indexable.subtract$(index, other)
+        const { container$: indexable } = this
+        return indexable.subtract$(this, other)
       },
       compareTo(other) {
-        const { container$: indexable, index$: index } = this
-        return indexable.compareTo$(index, other)
+        const { container$: indexable } = this
+        return indexable.compareTo$(this, other)
       }      
     }) 
   }
@@ -55,7 +55,7 @@ export class IndexableCursor extends RewindCursor {
 
   // basic cursor
   equals$(other) {
-    const { container$: indexable, index$: index } = this
-    return indexable.equals$(index, other)
+    const { container$: indexable } = this
+    return indexable.equals$(this, other)
   }
 }

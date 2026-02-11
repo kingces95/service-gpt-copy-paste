@@ -12,8 +12,8 @@ export class ContiguousCursor extends IndexableCursor {
   static {
     implement(this, ContiguousCursorConcept, {
       readAt(offset = 0, length = 1, signed = false, littleEndian = false) {
-        const { container$: contiguous, index$: index } = this
-        return contiguous.readAt$(index, offset, length, signed, littleEndian)
+        const { container$: contiguous } = this
+        return contiguous.readAt$(this, offset, length, signed, littleEndian)
       },
       data(other) {
         const { container$: contiguous, index$: index } = this

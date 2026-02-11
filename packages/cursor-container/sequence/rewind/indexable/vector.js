@@ -1,5 +1,6 @@
 import { implement } from '@kingjs/implement'
 import { IndexableContainer } from "./indexable-container.js"
+import { extend } from '@kingjs/partial-extend'
 import {
   SequenceContainerConcept,
   RewindContainerConcept,
@@ -15,9 +16,15 @@ export class Vector extends IndexableContainer {
   }
 
   static {
+    extend(this, {
+      at$$(index) { return this._array[index] },
+      setAt$$(index, value) { this._array[index] = value },
+    })
     implement(this, IndexableContainerConcept$, {
-      at$(index, offset) { return this._array[index + offset] },
-      setAt$(index, offset, value) { this._array[index + offset] = value },
+      at$({ index$: index }, offset) { 
+        return this.at$$(index, offset) },
+      setAt$({ index$: index }, offset, value) { 
+        this.setAt$$(index, offset, value) },
     })
     implement(this, SequenceContainerConcept, {
       shift() { return this._array.shift() },

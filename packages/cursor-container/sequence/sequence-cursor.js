@@ -25,21 +25,25 @@ export class SequenceCursor extends ContainerCursor {
     implement(this, EquatableConcept, { 
       equals(other) { 
         if (!this.equatableTo(other)) return false
-        return this.container$.equals$(this.token$, other) 
+        const { container$: container } = this
+        return container.equals$(this, other) 
       }
     })
     implement(this, CursorConcept, { 
       step() { 
-        this.token$ = this.container$.step$(this.token$)
+        const { container$: container } = this
+        this.token$ = container.step$(this)
         return this
       }
     })
     implement(this, MutableCursorConcept, { 
       get value() { 
-        return this.container$.value$(this.token$) 
+        const { container$: container } = this
+        return container.value$(this) 
       },
       set value(value) { 
-        this.container$.setValue$(this.token$, value) 
+        const { container$: container } = this
+        container.setValue$(this, value) 
       }
     })
     implement(this, ForwardCursorConcept, {

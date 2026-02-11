@@ -88,39 +88,39 @@ export class EpilogContainerConcept extends Concept {
 // between a container and its cursors via tokens as used by this 
 // implementation.
 
-export class SequenceContainerConcept$ {
+export class SequenceContainerConcept$ extends Concept {
 
   // basic cursor
-  equals$(token, other) { }
+  equals$(cursor, other) { }
 
   // step cursor
-  step$(token) { }
+  step$(cursor) { }
 
   // input cursor
-  value$(token) { }
+  value$(cursor) { }
 
   // output cursor
-  setValue$(token, value) { }
+  setValue$(cursor, value) { }
 }
 
 export class RewindContainerConcept$ extends SequenceContainerConcept$ {
 
   // rewind cursor
-  stepBack$(token) { } 
+  stepBack$(cursor) { } 
 }
 
 export class IndexableContainerConcept$ extends RewindContainerConcept$ {
 
   // indexable cursor
-  at$(index, offset) { }
-  setAt$(index, offset, value) { }
-  subtract$(index, otherCursor) { }
-  move$(index, offset) { }
-  compareTo$(index, otherCursor) { }
+  at$(cursor, offset) { }
+  setAt$(cursor, offset, value) { }
+  subtract$(cursor, otherCursor) { }
+  move$(cursor, offset) { }
+  compareTo$(cursor, otherCursor) { }
 }
 
 export class ContiguousContainerConcept$ extends IndexableContainerConcept$ {
 
   // contiguous cursor
-  readAt$(index, offset, length, signed, littleEndian) { throwNotImplemented() }
+  readAt$(cursor, offset, length, signed, littleEndian) { throwNotImplemented() }
 }

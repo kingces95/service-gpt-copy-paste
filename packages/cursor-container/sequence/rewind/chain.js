@@ -22,21 +22,21 @@ import {
 
 export class Chain extends RewindContainer {
   static [Preconditions] = {
-    setValue$(link, value) {
+    setValue$({ token$: link }, value) {
       if (!this.__isActive$(link)) throwStale()
       if (this.__isEnd$(link)) throwWriteOutOfBounds()
       if (this.__isBeforeBegin$(link)) throwWriteOutOfBounds()
     },
-    value$(link) {
+    value$({ token$: link }) {
       if (!this.__isActive$(link)) throwStale()
       if (this.__isEnd$(link)) throwReadOutOfBounds()
       if (this.__isBeforeBegin$(link)) throwReadOutOfBounds()
     },
-    step$(link) {
+    step$({ token$: link }) {
       if (!this.__isActive$(link)) throwStale()
       if (this.__isEnd$(link)) throwMoveOutOfBounds()
     },
-    stepBack$(link) {
+    stepBack$({ token$: link }) {
       if (!this.__isActive$(link)) throwStale()
       if (this.__isBeforeBegin$(link)) throwMoveOutOfBounds()
     },
@@ -100,14 +100,15 @@ export class Chain extends RewindContainer {
 
   static {
     implement(this, SequenceContainerConcept$, {
-      equals$(link, otherLink) { return link == otherLink.token$ },
-      step$(link) { return link.next },
-      value$(link) { return link.value },
-      setValue$(link, value) { link.value = value },
+      equals$({ token$: link}, { token$: otherLink }) { 
+        return link == otherLink },
+      step$({ token$: link }) { return link.next },
+      value$({ token$: link }) { return link.value },
+      setValue$({ token$: link }, value) { link.value = value },
     })
 
     implement(this, RewindContainerConcept$, {
-      stepBack$(link) { return link.previous }
+      stepBack$({ token$: link }) { return link.previous }
     })
   }
 

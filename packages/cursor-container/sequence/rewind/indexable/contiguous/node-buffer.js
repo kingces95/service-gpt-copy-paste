@@ -1,4 +1,5 @@
 import { implement } from '@kingjs/implement'
+import { extend } from '@kingjs/partial-extend'
 import { ContiguousContainer } from "./contiguous-container.js"
 import {
   SequenceContainerConcept,
@@ -20,12 +21,14 @@ export class NodeBuffer extends ContiguousContainer {
   }
 
   static {
-    implement(this, IndexableContainerConcept$, {
-      at$(index, offset) { return this.buffer$[index + offset] },
-      setAt$(index, offset, value) { this.buffer$[index + offset] = value }
+    extend(this, {
+      at$$({ index$: index }, offset) { 
+        return this.buffer$[index + offset] },
+      setAt$$({ index$: index }, offset, value) { 
+        this.buffer$[index + offset] = value }
     })
     implement(this, ContiguousContainerConcept$, {
-      readAt$(index, offset, length, signed, littleEndian) {
+      readAt$({ index$: index }, offset, length, signed, littleEndian) {
         const { buffer$: buffer } = this
         const indexOffset = index + offset
 

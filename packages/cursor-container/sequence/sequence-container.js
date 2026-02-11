@@ -12,16 +12,16 @@ export class SequenceContainer extends Container {
   static {
     implement(this, SequenceContainerConcept$, {
       // basic cursor
-      // equals$(token, other) { }
+      // equals$(cursor, other) { }
 
       // step cursor
-      // step$(token) { }
+      // step$(cursor) { }
 
       // input cursor
-      // value$(token) { }
+      // value$(cursor) { }
 
       // output cursor
-      // setValue$(token, value) { }
+      // setValue$(cursor, value) { }
     })
 
     implement(this, SequenceContainerConcept, {

@@ -19,17 +19,17 @@ import {
 
 export class List extends SequenceContainer {
   static [Preconditions] = {
-    setValue$(link, value) {
+    setValue$({ token$: link }, value) {
       if (!this.__isActive$(link)) throwStale()
       if (this.__isEnd$(link)) throwWriteOutOfBounds()
       if (this.__isBeforeBegin$(link)) throwWriteOutOfBounds()
     },
-    value$(link) {
+    value$({ token$: link }) {
       if (!this.__isActive$(link)) throwStale()
       if (this.__isEnd$(link)) throwReadOutOfBounds()
       if (this.__isBeforeBegin$(link)) throwReadOutOfBounds()
     },
-    step$(link) {
+    step$({ token$: link }) {
       if (!this.__isActive$(link)) throwStale()
       if (this.__isEnd$(link)) throwMoveOutOfBounds()
     }, 
@@ -64,10 +64,11 @@ export class List extends SequenceContainer {
 
   static {
     implement(this, SequenceContainerConcept$, {
-      equals$(link, { $token: otherLink }) { return link == otherLink },
-      step$(link) { return link.next },
-      value$(link) { return link.value },
-      setValue$(link, value) { link.value = value },
+      equals$({ token$: link }, { token$: otherLink }) { 
+        return link == otherLink },
+      step$({ token$: link }) { return link.next },
+      value$({ token$: link }) { return link.value },
+      setValue$({ token$: link }, value) { link.value = value },
     })
   }
 

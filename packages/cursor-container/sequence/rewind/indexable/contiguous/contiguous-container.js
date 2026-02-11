@@ -19,7 +19,7 @@ import {
 
 export class ContiguousContainer extends IndexableContainer {
   static [Preconditions] = {
-    readAt$(index, offset, length, signed, littleEndian) {
+    readAt$({ index$:index }, offset, length, signed, littleEndian) {
       switch (length) {
         case 2: 
         case 4:
@@ -54,7 +54,7 @@ export class ContiguousContainer extends IndexableContainer {
     // implement(this, IndexableContainerConcept$, {
     // })
     implement(this, ContiguousContainerConcept$, {
-      // readAt$(index, offset, length, signed, littleEndian) { }
+      // readAt$(cursor, offset, length, signed, littleEndian) { }
     })
 
     implement(this, SequenceContainerConcept, {

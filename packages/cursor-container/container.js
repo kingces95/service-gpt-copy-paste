@@ -30,6 +30,7 @@ export class Container extends PartialProxy {
 
   static {
     implement(this, ContainerConcept, {
+      get cursorType() { return this.constructor.cursorType }
       // begin() { }
       // end() { }
     })

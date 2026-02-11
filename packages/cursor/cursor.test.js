@@ -152,13 +152,13 @@ describe.each(cases)('%s', (_, { type, concepts }) => {
   let begin, end
   let cursorType, cursorPrototype
   beforeEach(() => {
-    const container0 = new type()
-    const container1 = new type()
-    begin = container0.begin()
-    end = container0.end()
-    begin0 = () => container0.begin()
-    end0 = () => container0.end()
-    begin1 = () => container1.begin()
+    // const container0 = new type()
+    // const container1 = new type()
+    // begin = container0.begin()
+    // end = container0.end()
+    // begin0 = () => container0.begin()
+    // end0 = () => container0.end()
+    // begin1 = () => container1.begin()
 
     cursorType = type.cursorType
     cursorPrototype = cursorType.prototype
@@ -208,7 +208,7 @@ describe.each(cases)('%s', (_, { type, concepts }) => {
           )
         })
         it('should throw on next', () => { 
-          expect(() => end.next()).toThrow(
+          expect(() => begin.next()).toThrow(
             "Cannot read value out of bounds of cursor."
           )
         })
@@ -407,7 +407,7 @@ describe.each(cases)('%s', (_, { type, concepts }) => {
       it('should not be equal', () => {
         expect(begin.equals(otherCursor)).toBe(false)
       })
-      
+
       if (concepts.includes(RandomAccessCursorConcept)) {
         describe('as a random access cursor', () => {
           it('should throw subtracting from other cursor', () => {

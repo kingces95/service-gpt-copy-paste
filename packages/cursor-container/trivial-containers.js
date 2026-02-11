@@ -42,13 +42,13 @@ export class SingletonContiguousCursor extends SingletonIndexableCursor {
 }
 
 export class SingletonContainer extends Container {
-  constructor(value) {
+  constructor(singleton) {
     super()
-    this._value = value
+    this._singleton = singleton
   }
 
-  get value$() { return this._value }
-  set value$(value) { this._value = value }
+  get singleton$() { return this._singleton }
+  set singleton$(value) { this._singleton = value }
 }
 export class SingletonSequenceContainer extends SingletonContainer {
   static cursorType = SingletonSequenceCursor
@@ -59,11 +59,11 @@ export class SingletonSequenceContainer extends SingletonContainer {
     })
 
     implement(this, SequenceContainerConcept, {
-      get front() { return this.value$ },
-      unshift(value) { this.value$ = value },
+      get front() { return this.singleton$ },
+      unshift(value) { this.singleton$ = value },
       shift() { 
-        const value = this.value$
-        this.value$ = undefined
+        const value = this.singleton$
+        this.singleton$ = undefined
         return value
       },
     })

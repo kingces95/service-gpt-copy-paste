@@ -1,4 +1,5 @@
 import Denque from "denque"
+import { extend } from '@kingjs/partial-extend'
 import { implement } from '@kingjs/implement'
 import {
   throwNotSupported,
@@ -21,9 +22,9 @@ export class Deque extends IndexableContainer {
   }
   
   static {
-    implement(this, IndexableContainerConcept$, {
-      at$(index) { return this._denque.get(index) },
-      setAt$(index, offset, value) { throwNotSupported() },
+    extend(this, {
+      at$$(index) { return this._denque.get(index) },
+      setAt$$(index, offset, value) { throwNotSupported() },
     })
     implement(this, SequenceContainerConcept, {
       unshift(value) { this._denque.unshift(value) },
