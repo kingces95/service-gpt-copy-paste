@@ -1,20 +1,20 @@
 import { implement } from '@kingjs/implement'
-import { SequenceContainer } from '../helpers/sequence-container.js'
-import { RewindContainer } from '../helpers/rewind-container.js'
-import { IndexableContainer } from '../helpers/indexable-container.js'
-import { ContiguousContainer } from '../helpers/contiguous-container.js'
+import { SequenceContainer } from './helpers/sequence-container.js'
+import { RewindContainer } from './helpers/rewind-container.js'
+import { IndexableContainer } from './helpers/indexable-container.js'
+import { ContiguousContainer } from './helpers/contiguous-container.js'
 import { SequenceCursor } from '../helpers/sequence-cursor.js'
 import { RewindCursor } from '../helpers/rewind-cursor.js'
 import { IndexableCursor } from '../helpers/indexable-cursor.js'
 import { ContiguousCursor } from '../helpers/contiguous-cursor.js'
-import { Container } from '../helpers/container.js'
+import { Container } from './helpers/container.js'
 
 import {
   SequenceContainerConcept,
   RewindContainerConcept,
   IndexableContainerConcept,
   ContiguousContainerConcept,
-} from '../container-concepts.js'
+} from './container-concepts.js'
 
 export class SingletonContainer extends Container {
   constructor(singleton) {

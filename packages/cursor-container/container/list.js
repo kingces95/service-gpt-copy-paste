@@ -1,6 +1,7 @@
 import { implement } from '@kingjs/implement'
 import { Preconditions } from '@kingjs/partial-proxy'
 import { CursorFactoryConcept } from '@kingjs/cursor'
+import { extend } from '@kingjs/partial-extend'
 import {
   throwStale,
   throwNotEquatableTo,
@@ -72,10 +73,13 @@ export class List extends SequenceContainer {
   }
 
   static {
+    extend(this, {
+      beginToken$() { return this._root.next },
+      endToken$() { return this._end },
+    })
+
     implement(this, CursorFactoryConcept, {
       get isEmpty() { return this._end == this._root.next },
-      begin() { return new this.cursorType(this, this._root.next) },
-      end() { return new this.cursorType(this, this._end) },
     })
 
     implement(this, PrologContainerConcept, {

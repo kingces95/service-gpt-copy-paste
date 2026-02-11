@@ -1,6 +1,7 @@
 import { implement } from '@kingjs/implement'
 import { Preconditions } from '@kingjs/partial-proxy'
 import { CursorFactoryConcept } from '@kingjs/cursor'
+import { extend } from '@kingjs/partial-extend'
 import {
   throwStale,
   throwNotEquatableTo,
@@ -35,6 +36,7 @@ export class Chain extends RewindContainer {
       if (!this.__isActive$(link)) throwStale()
       if (this.__isEnd$(link)) throwMoveOutOfBounds()
     },
+  
     stepBack$({ token$: link }) {
       if (!this.__isActive$(link)) throwStale()
       if (this.__isBeforeBegin$(link)) throwMoveOutOfBounds()
@@ -48,6 +50,7 @@ export class Chain extends RewindContainer {
       if (cursor.container$ != this) throwNotEquatableTo()
       if (this.__isEnd$(cursor.token$)) throwUpdateOutOfBounds()
     },
+
     insert(cursor, value) {
       if (cursor.container$ != this) throwNotEquatableTo()
       if (this.__isBeforeBegin$(cursor.token$)) throwUpdateOutOfBounds()
@@ -112,10 +115,13 @@ export class Chain extends RewindContainer {
   }
 
   static {
+    extend(this, {
+      beginToken$() { return this._root.next },
+      endToken$() { return this._end },
+    })
+
     implement(this, CursorFactoryConcept, {
       get isEmpty() { return this._end == this._root.next },
-      begin() { return new this.cursorType(this, this._root.next) },
-      end() { return new this.cursorType(this, this._end) },
     })
 
     implement(this, SequenceContainerConcept, {

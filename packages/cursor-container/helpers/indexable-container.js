@@ -172,6 +172,11 @@ export class IndexableContainer extends RewindContainer {
   }
 
   static {
+    extend(this, {
+      beginToken$() { return 0 },
+      endToken$() { return this.count },
+    })
+
     implement(this, SequenceContainerConcept, {
       get front() { return this.at$$(0, 0) },
       // shift() { },
@@ -188,8 +193,4 @@ export class IndexableContainer extends RewindContainer {
       setAt(index, value) { this.setAt$$(0, index, value) },
     })
   }
-
-  // cursor factory
-  begin() { return new this.cursorType(this, 0) }
-  end() { return new this.cursorType(this, this.count) }
 }
