@@ -1,9 +1,9 @@
 import { implement } from '@kingjs/implement'
-import { ContiguousCursor } from '../cursor/contiguous-cursor.js'
 import { IndexableContainer } from "./indexable-container.js"
 import { Preconditions } from '@kingjs/partial-proxy'
 import { copyBackward, copyForward } from '@kingjs/cursor-algorithm'
 import {
+  ContiguousCursorConcept,
   throwNotImplemented,
 } from '@kingjs/cursor'
 import {
@@ -39,7 +39,26 @@ export class ContiguousContainer extends IndexableContainer {
     }
   }
 
-  static get cursorType() { return ContiguousCursor }
+  static cursorType = class ContiguousCursor 
+    extends IndexableContainer.cursorType {
+
+    constructor(contiguous, index) {
+      super(contiguous, index)
+    }
+    
+    static {
+      implement(this, ContiguousCursorConcept, {
+        readAt(offset = 0, length = 1, signed = false, littleEndian = false) {
+          const { container$: contiguous } = this
+          return contiguous.readAt$(this, offset, length, signed, littleEndian)
+        },
+        data(other) {
+          const { container$: contiguous, index$: index } = this
+          return contiguous.data$(index, other)
+        }      
+      }) 
+    }
+  }
 
   _length
 

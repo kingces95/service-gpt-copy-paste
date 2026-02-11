@@ -1,9 +1,9 @@
 import { SequenceContainer } from './sequence-container.js'
 import { Preconditions } from '@kingjs/partial-proxy'
-import { RewindCursor } from '../cursor/rewind-cursor.js'
 import { implement } from '@kingjs/implement'
 import {
   throwEmpty,
+  BidirectionalCursorConcept,
 } from '@kingjs/cursor'
 import { 
   SequenceContainerConcept,
@@ -20,7 +20,22 @@ export class RewindContainer extends SequenceContainer {
     get back() { if (this.isEmpty) throwEmpty() }  
   }
   
-  static get cursorType() { return RewindCursor }
+  static cursorType = class RewindCursor extends SequenceContainer.cursorType {
+    
+    constructor(reversible, token) {
+      super(reversible, token)
+    }
+  
+    static { 
+      implement(this, BidirectionalCursorConcept, {
+        stepBack() {
+          const { container$: container } = this
+          this.token$ = container.stepBack$(this)
+          return this
+        }    
+      }) 
+    }
+  }
 
   static {
     implement(this, RewindContainerConcept$, {

@@ -2,14 +2,14 @@ import { implement } from '@kingjs/implement'
 import { abstract } from '@kingjs/abstract'
 import { extend } from '@kingjs/partial-extend'
 import { RewindContainer } from './rewind-container.js'
-import { IndexableCursor } from '../cursor/indexable-cursor.js'
-import { Preconditions } from '@kingjs/partial-proxy'
+import { Preconditions, TypePrecondition } from '@kingjs/partial-proxy'
 import {
-  throwNotImplemented,
+  throwStale,
   throwNotEquatableTo,
   throwWriteOutOfBounds,
   throwMoveOutOfBounds,
   throwReadOutOfBounds,
+  RandomAccessCursorConcept,
 } from '@kingjs/cursor'
 import {
   SequenceContainerConcept,
@@ -49,7 +49,57 @@ export class IndexableContainer extends RewindContainer {
     }  
   }
 
-  static get cursorType() { return IndexableCursor }
+  static cursorType = class IndexableCursor extends RewindContainer.cursorType {
+    static [TypePrecondition] = function() {
+      const { container$, __version$ } = this
+      if (container$.__version$ !== __version$) throwStale()
+    }
+  
+    __version
+  
+    constructor(indexable, index) {
+      super(indexable, index)
+      this.__version = indexable.__version$
+    }
+  
+    static { 
+      implement(this, RandomAccessCursorConcept, {
+        move(offset) {
+          const { container$: indexable } = this
+          this.index$ = indexable.move$(this, offset)
+          return this
+        },
+        at(offset) {
+          const { container$: indexable } = this
+          return indexable.at$(this, offset)
+        },
+        setAt(offset, value) {
+          const { container$: indexable } = this
+          return indexable.setAt$(this, offset, value)
+        },
+        subtract(other) {
+          const { container$: indexable } = this
+          return indexable.subtract$(this, other)
+        },
+        compareTo(other) {
+          const { container$: indexable } = this
+          return indexable.compareTo$(this, other)
+        }      
+      }) 
+    }
+  
+    get __version$() { return this.__version }
+  
+    // random access cursor 
+    get index$() { return this.token$ }
+    set index$(index) { this.token$ = index }
+  
+    // basic cursor
+    equals$(other) {
+      const { container$: indexable } = this
+      return indexable.equals$(this, other)
+    }
+  }
 
   // A debug helper which detects when a cursor is invalidated. 
   // Typically, this happens during an unshift of shift operation 
