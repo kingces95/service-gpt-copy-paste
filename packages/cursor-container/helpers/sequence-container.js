@@ -1,4 +1,5 @@
 import { Concept } from '@kingjs/concept'
+import { Preconditions } from '@kingjs/partial-proxy'
 import { implement } from '@kingjs/implement'
 import { Container } from './container.js'
 import {
@@ -8,6 +9,13 @@ import {
   CursorConcept,
   MutableCursorConcept,
   ForwardCursorConcept,
+
+  throwStale,
+  throwNotEquatableTo,
+  throwWriteOutOfBounds,
+  throwMoveOutOfBounds,
+  throwUpdateOutOfBounds,
+  throwReadOutOfBounds,
 } from '@kingjs/cursor'
 import { 
   SequenceContainerConcept,
@@ -18,6 +26,39 @@ export class SequenceContainer extends Container {
   static cursorType = class SequenceCursor extends Container.cursorType {
 
     static api$ = class SequenceContainerConcept$ extends Concept {
+
+      static checked$ = class SequenceContainerCheckedConcept$ extends this {
+        static [Preconditions] = {
+          setValue$({ token$: link }, value) {
+            if (!this.__isActive$(link)) throwStale()
+            if (this.__isEnd$(link)) throwWriteOutOfBounds()
+            if (this.__isBeforeBegin$(link)) throwWriteOutOfBounds()
+          },
+          value$({ token$: link }) {
+            if (!this.__isActive$(link)) throwStale()
+            if (this.__isEnd$(link)) throwReadOutOfBounds()
+            if (this.__isBeforeBegin$(link)) throwReadOutOfBounds()
+          },
+          step$({ token$: link }) {
+            if (!this.__isActive$(link)) throwStale()
+            if (this.__isEnd$(link)) throwMoveOutOfBounds()
+          }, 
+        
+          insertAfter(cursor, value) {
+            if (cursor.container$ != this) throwNotEquatableTo()
+            if (this.__isEnd$(cursor.token$)) throwUpdateOutOfBounds()
+          },
+          removeAfter(cursor) {
+            if (cursor.container$ != this) throwNotEquatableTo()
+            if (this.__isEnd$(cursor.token$)) throwUpdateOutOfBounds()
+          }
+        }
+
+        __isActive$(link) { }
+        __isEnd$(link) { }
+        __isBeforeBegin$(link) { }        
+      }
+
       equals$(cursor, other) { } // basic cursor
       step$(cursor) { } // step cursor
       value$(cursor) { } // input cursor

@@ -11,7 +11,7 @@ describe('A type', () => {
     type = class { }
   })
   it('should yield no own extensions', () => {
-    const declarations = [...PartialReflect.ownPartialExtensions(type)]
+    const declarations = [...PartialReflect.ownPartialTypes(type)]
     expect(declarations).toHaveLength(0)
   })
   describe('after being extended by a PartialClass with a declared Extension', () => {
@@ -24,7 +24,7 @@ describe('A type', () => {
       extend(type, extension)
     })
     it('should yield the extensions', () => {
-      const declarations = [...PartialReflect.ownPartialExtensions(type)]
+      const declarations = [...PartialReflect.ownPartialTypes(type)]
       expect(declarations).toHaveLength(2)
       expect(declarations).toContain(extension)
       expect(declarations).toContain(subExtension)
@@ -49,7 +49,7 @@ describe('A type', () => {
       extend(type, extension)
     })
     it('should yield the extension as an own PartialClass declaration', () => {
-      const declarations = [...PartialReflect.ownPartialExtensions(type)]
+      const declarations = [...PartialReflect.ownPartialTypes(type)]
       expect(declarations).toHaveLength(1)
       expect(declarations[0]).toBe(extension)
     })
@@ -68,7 +68,7 @@ describe('A type', () => {
           extend(derived, extension)
         })
         it('should yield the extension as own', () => {
-          const declarations = [...PartialReflect.ownPartialExtensions(derived)]
+          const declarations = [...PartialReflect.ownPartialTypes(derived)]
           expect(declarations).toHaveLength(1)
           expect(declarations[0]).toBe(extension)
         })
@@ -88,7 +88,7 @@ describe('An extension', () => {
     extension = class MyExtension extends PartialClass { }
   })
   it('should have no own declarations', () => {
-    const declarations = [...PartialReflect.ownPartialExtensions(extension)]
+    const declarations = [...PartialReflect.ownPartialTypes(extension)]
     expect(declarations).toHaveLength(0)
   })
   it('should have no declarations', () => {
@@ -110,7 +110,7 @@ describe('An extension', () => {
       extension[Extends] = [ subExtension ]
     })
     it('should have the sub extension as an own declaration', () => {
-      const declarations = [...PartialReflect.ownPartialExtensions(extension)]
+      const declarations = [...PartialReflect.ownPartialTypes(extension)]
       expect(declarations).toHaveLength(1)
       expect(declarations[0]).toBe(subExtension)
     })
@@ -148,7 +148,7 @@ describe('An extension', () => {
         subSubExtension.prototype.member = subSubMember
       })
       it('should not have the sub sub extension as an own declaration', () => {
-        const declarations = [...PartialReflect.ownPartialExtensions(extension)]
+        const declarations = [...PartialReflect.ownPartialTypes(extension)]
         expect(declarations).toHaveLength(1)
         expect(declarations[0]).toBe(subExtension)
       })

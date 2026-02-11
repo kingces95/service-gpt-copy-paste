@@ -95,11 +95,11 @@ export class PartialReflect {
     yield* UserReflect.descriptors(type, { isStatic })
   }
 
-  static *ownPartialExtensions(type) {
+  static *ownPartialTypes(type) {
     if (PartialTypeReflect.isPartialType(type))
-      return yield* PartialLoader.ownPartialExtensions(type)
+      return yield* PartialLoader.ownPartialTypes(type)
 
-    yield* PartialAssociate.ownPartialExtensions(type)
+    yield* PartialAssociate.ownPartialTypes(type)
   }
   static *partialExtensions(type) {
     if (PartialTypeReflect.isPartialType(type))

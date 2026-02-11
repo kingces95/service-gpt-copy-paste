@@ -32,8 +32,9 @@ import { isAbstract } from '@kingjs/abstract'
 // the partial type that "extended" it (parentType).
 
 export function extend(type, partialType, { 
+    keys = new Set(),
     parentType = type, 
-    isTransparent = partialType?.prototype instanceof Extensions
+    isTransparent = partialType?.prototype instanceof Extensions,
   } = { }) {
 
   partialType = PartialLoader.load(partialType)
@@ -45,32 +46,42 @@ export function extend(type, partialType, {
   assert(PartialTypeReflect.isPartialType(partialType),
     `Expected partialType to indirectly extend PartialType.`)
 
-  for (const extension of PartialLoader.ownPartialExtensions(partialType)) {
+  for (const extension of PartialLoader.ownPartialTypes(partialType)) {
     extend(type, extension, { 
+      keys,
       parentType: partialType,
-      isTransparent: extension.prototype instanceof Extensions
+      isTransparent: extension.prototype instanceof Extensions,
     })
   }
 
   if (!isTransparent) 
-    PartialAssociate.addPartialExtension(type, partialType)
+    PartialAssociate.addPartialType(type, partialType)
+
+  const hostType = isTransparent ? parentType : partialType
 
   let key
   for (const current of PartialLoader.ownDescriptors(partialType)) {
     switch (typeof current) {
       case 'string':
-      case 'symbol': key = current; break
+      case 'symbol': 
+        key = current
+        keys.add(key)
+        break
       case 'object': 
-        const hostType = isTransparent ? parentType : partialType
         if (isAbstract(current))
           PartialAssociate.addAbstractHost(type, key, hostType)
 
-        const descriptor = Thunk in type
-          ? type[Thunk](key, current) : current
+        let descriptor = current
+        if (Thunk in type)
+          descriptor = type[Thunk](key, current)
+
         if (!Define.property(type, key, descriptor)) continue
         PartialAssociate.addHost(type, key, hostType)
         break
       default: assert(false, `Unexpected type: ${typeof current}`)
     }
   }
+
+  PartialAssociate.addHost$(type, keys, hostType)
+  return keys
 }

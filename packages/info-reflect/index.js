@@ -47,8 +47,8 @@ export class InfoReflect {
     yield* PartialReflect.descriptors(type, { isStatic })
   }
 
-  static *ownPartialExtensions(type) {
-    yield* PartialReflect.ownPartialExtensions(type)
+  static *ownPartialTypes(type) {
+    yield* PartialReflect.ownPartialTypes(type)
   }
   static *partialExtensions(type) {
     yield* PartialReflect.partialExtensions(type)

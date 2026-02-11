@@ -63,7 +63,7 @@ export class List extends SequenceContainer {
   }
 
   static {
-    implement(this, SequenceContainer.cursorType.api$, {
+    implement(this, SequenceContainer.cursorType.api$.checked$, {
       equals$({ token$: link }, { token$: otherLink }) { 
         return link == otherLink },
       step$({ token$: link }) { return link.next },

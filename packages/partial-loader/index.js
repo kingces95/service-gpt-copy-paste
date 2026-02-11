@@ -28,7 +28,7 @@ export class PartialLoader {
     return type
   }
 
-  static *ownPartialExtensions(type) {
+  static *ownPartialTypes(type) {
     assert(PartialTypeReflect.isPartialType(type))
     yield* PartialLoader.declaredOwnPartialTypes$(type, PartialType.PartialTypes)
     yield* PartialLoader.inheritedPartialTypes$(type)

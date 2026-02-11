@@ -74,7 +74,7 @@ export class ConceptReflect {
     }
   }
   static *ownConcepts(type) {
-    for (const object of PartialReflect.ownPartialExtensions(type)) {
+    for (const object of PartialReflect.ownPartialTypes(type)) {
       if (!ConceptReflect.isConcept(object)) continue
       yield object
     }

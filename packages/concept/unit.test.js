@@ -43,7 +43,7 @@ describe('MyConcept', () => {
     expect(ConceptReflect.isConcept(MyConcept)).toBe(true)
   })
   it('should have no own concepts', () => {
-    const actual = [...PartialReflect.ownPartialExtensions(MyConcept)]
+    const actual = [...PartialReflect.ownPartialTypes(MyConcept)]
     const expected = [ ]
     expect(actual).toEqual(expected)
   })

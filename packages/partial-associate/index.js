@@ -2,13 +2,14 @@ import { assert } from '@kingjs/assert'
 import { Es6Associate } from '@kingjs/es6-associate'
 import { PartialTypeReflect } from '@kingjs/partial-type'
 
-const PartialExtensions = Symbol.for('PartialReflect.partialExtensions')
+const PartialTypes = Symbol.for('PartialReflect.partialTypes')
 const HostMap = Symbol.for('PartialReflect.hostMap')
 const AbstractHostLookup = Symbol.for('PartialReflect.abstractHostLookup')
+const HostLookup = Symbol.for('PartialReflect.hostLookup')
 
 // PartialAssociate is like Es6Associate but filters out types known
 // to the PartialType system and restricts associates to just those
-// used by the PartialType system (e.g. PartialExtensions, HostMap, 
+// used by the PartialType system (e.g. PartialTypes, HostMap, 
 // and HostLookup). 
 
 // PartialAssociate is internal. PartialAssociate is used by several 
@@ -17,16 +18,16 @@ const AbstractHostLookup = Symbol.for('PartialReflect.abstractHostLookup')
 
 export class PartialAssociate {
 
-  static addPartialExtension(type, partialType) {
+  static addPartialType(type, partialType) {
     assert(!PartialTypeReflect.isKnown(type))
     assert(PartialTypeReflect.isPartialType(partialType))
-    Es6Associate.addAssociates(type, PartialExtensions, partialType)
+    Es6Associate.addAssociates(type, PartialTypes, partialType)
   }
-  static *ownPartialExtensions(type) {
-    yield* Es6Associate.ownAssociates(type, PartialExtensions)
+  static *ownPartialTypes(type) {
+    yield* Es6Associate.ownAssociates(type, PartialTypes)
   }
   static *partialExtensions(type) {
-    yield* Es6Associate.associates(type, PartialExtensions)
+    yield* Es6Associate.associates(type, PartialTypes)
   }
 
   static addHost(type, key, host, { isStatic } = { }) {
@@ -45,5 +46,14 @@ export class PartialAssociate {
   static *abstractHosts(type, key, { isStatic } = { }) {
     if (PartialTypeReflect.isKnownKey(type, key, { isStatic })) return
     yield* Es6Associate.memberAssociates(type, key, AbstractHostLookup, { isStatic })
+  }
+
+  static addHost$(type, key, hosts, { isStatic } = { }) {
+    assert(!PartialTypeReflect.isKnownKey(type, key, { isStatic }))
+    Es6Associate.addMemberAssociates(type, key, HostLookup, hosts, { isStatic })
+  }
+  static *hosts$(type, key, { isStatic } = { }) {
+    if (PartialTypeReflect.isKnownKey(type, key, { isStatic })) return
+    yield* Es6Associate.memberAssociates(type, key, HostLookup, { isStatic })
   }
 }

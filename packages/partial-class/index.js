@@ -38,7 +38,7 @@ export class PartialClassReflect {
     }
   }
   static *ownPartialClasses(type) {
-    for (const collection of PartialReflect.ownPartialExtensions(type)) {
+    for (const collection of PartialReflect.ownPartialTypes(type)) {
       if (!PartialClassReflect.isPartialClass(collection)) continue 
       yield collection
     }

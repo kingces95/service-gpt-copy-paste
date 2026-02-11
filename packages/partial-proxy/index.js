@@ -130,7 +130,7 @@ export class PartialProxyReflect {
     const isStatic = { isStatic: true }
 
     const hosts = new Set([
-      type, // assume key is in the process of being defined on type
+      // type, // assume key is in the process of being defined on type
       ...PartialReflect.virtualHosts(type, key)
     ])
 
