@@ -15,12 +15,12 @@ import {
   SequenceContainerConcept,
   RewindContainerConcept,
   IndexableContainerConcept,
-} from './container-concepts.js'
+} from '../container-concepts.js'
 import {
   SequenceContainerConcept$,
   RewindContainerConcept$,
   IndexableContainerConcept$,
-} from '../cursor/container-cursor-api.js'
+} from './container-cursor-api.js'
 
 export class IndexableContainer extends RewindContainer {
   static [Preconditions] = {

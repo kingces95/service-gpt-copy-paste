@@ -6,7 +6,7 @@ import {
 } from '@kingjs/cursor'
 import { 
   IndexableContainer 
-} from "../indexable-container.js"
+} from "../helpers/indexable-container.js"
 import {
   SequenceContainerConcept,
   RewindContainerConcept,

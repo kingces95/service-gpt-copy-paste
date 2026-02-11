@@ -1,4 +1,4 @@
-import { ListNode } from "../sequence/list-node.js"
+import { ListNode } from "./list-node.js"
 
 export class ChainNode extends ListNode {
   #previous

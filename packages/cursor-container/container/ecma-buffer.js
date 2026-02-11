@@ -1,9 +1,9 @@
 import { implement } from '@kingjs/implement'
 import { extend } from '@kingjs/partial-extend'
-import { ContiguousContainer } from "../contiguous-container.js"
+import { ContiguousContainer } from "../helpers/contiguous-container.js"
 import {
   ContiguousContainerConcept$,
-} from "../../cursor/container-cursor-api.js"
+} from "../helpers/container-cursor-api.js"
 
 export class EcmaBuffer extends ContiguousContainer {
   #dataView 

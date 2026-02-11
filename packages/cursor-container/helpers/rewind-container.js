@@ -9,10 +9,10 @@ import {
   SequenceContainerConcept,
   EpilogContainerConcept,
   RewindContainerConcept, 
-} from './container-concepts.js'
+} from '../container-concepts.js'
 import {
   RewindContainerConcept$, 
-} from '../cursor/container-cursor-api.js'
+} from './container-cursor-api.js'
 
 export class RewindContainer extends SequenceContainer {
   static [Preconditions] = {

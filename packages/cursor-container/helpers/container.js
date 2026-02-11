@@ -16,7 +16,7 @@ import {
 
 import {
   ContainerConcept,
-} from './container-concepts.js'
+} from '../container-concepts.js'
 
 export class Container extends PartialProxy {
   static [TypePrecondition]() {

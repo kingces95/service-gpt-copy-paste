@@ -10,14 +10,14 @@ import {
   throwReadOutOfBounds,
 } from '@kingjs/cursor'
 import { ListNode } from "./list-node.js"
-import { SequenceContainer } from "../sequence-container.js"
+import { SequenceContainer } from "../helpers/sequence-container.js"
 import {
   PrologContainerConcept,
   SequenceContainerConcept,
 } from "../container-concepts.js"
 import { 
   SequenceContainerConcept$,
-} from '../../cursor/container-cursor-api.js'
+} from '../helpers/container-cursor-api.js'
 
 export class List extends SequenceContainer {
   static [Preconditions] = {

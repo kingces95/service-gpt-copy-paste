@@ -11,13 +11,13 @@ import {
   RewindContainerConcept,
   IndexableContainerConcept,
   ContiguousContainerConcept,
-} from './container-concepts.js'
+} from '../container-concepts.js'
 import {
   SequenceContainerConcept$,
   RewindContainerConcept$,
   IndexableContainerConcept$,
   ContiguousContainerConcept$,
-} from '../cursor/container-cursor-api.js'
+} from './container-cursor-api.js'
 
 export class ContiguousContainer extends IndexableContainer {
   static [Preconditions] = {

@@ -10,10 +10,10 @@ import {
 } from '@kingjs/cursor'
 import { 
   SequenceContainerConcept,
-} from './container-concepts.js'
+} from '../container-concepts.js'
 import {
   SequenceContainerConcept$,
-} from '../cursor/container-cursor-api.js'
+} from './container-cursor-api.js'
 
 export class SequenceContainer extends Container {
 

@@ -9,7 +9,7 @@ import {
   throwUpdateOutOfBounds,
   throwReadOutOfBounds,
 } from '@kingjs/cursor'
-import { RewindContainer } from "../rewind-container.js"
+import { RewindContainer } from "../helpers/rewind-container.js"
 import { ChainNode } from "./chain-node.js"
 import { 
   PrologContainerConcept,
@@ -20,7 +20,7 @@ import {
 import {
   SequenceContainerConcept$,
   RewindContainerConcept$,
-} from "../../cursor/container-cursor-api.js"
+} from "../helpers/container-cursor-api.js"
 
 export class Chain extends RewindContainer {
   static [Preconditions] = {

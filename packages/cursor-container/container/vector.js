@@ -1,5 +1,5 @@
 import { implement } from '@kingjs/implement'
-import { IndexableContainer } from "../indexable-container.js"
+import { IndexableContainer } from "../helpers/indexable-container.js"
 import { extend } from '@kingjs/partial-extend'
 import {
   SequenceContainerConcept,
@@ -7,7 +7,7 @@ import {
 } from '../container-concepts.js'
 import {
   IndexableContainerConcept$,
-} from '../../cursor/container-cursor-api.js'
+} from '../helpers/container-cursor-api.js'
 
 export class Vector extends IndexableContainer {
   _array
