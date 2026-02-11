@@ -20,7 +20,7 @@ import {
 import {
   SequenceContainerConcept$,
   RewindContainerConcept$,
-} from "../cursor/container-cursor-api.js"
+} from "../../cursor/container-cursor-api.js"
 
 export class Chain extends RewindContainer {
   static [Preconditions] = {

@@ -7,7 +7,7 @@ import {
 } from '../container-concepts.js'
 import {
   IndexableContainerConcept$,
-} from '../cursor/container-cursor-api.js'
+} from '../../cursor/container-cursor-api.js'
 
 export class Vector extends IndexableContainer {
   _array

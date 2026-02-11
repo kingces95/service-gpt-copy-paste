@@ -83,22 +83,3 @@ export class EpilogContainerConcept extends Concept {
   insert(cursor, value) { }
   remove(cursor) { }
 }
-
-// Implementation detail: dollar-suffixed concepts capture the interface
-// between a container and its cursors via tokens as used by this 
-// implementation.
-
-export class SequenceContainerConcept$ extends Concept {
-
-  // basic cursor
-  equals$(cursor, other) { }
-
-  // step cursor
-  step$(cursor) { }
-
-  // input cursor
-  value$(cursor) { }
-
-  // output cursor
-  setValue$(cursor, value) { }
-}

@@ -1,5 +1,5 @@
 import { implement } from '@kingjs/implement'
-import { ContiguousCursor } from '../cursor/contiguous-cursor.js'
+import { ContiguousCursor } from '../../cursor/contiguous-cursor.js'
 import { IndexableContainer } from "../indexable/indexable-container.js"
 import { Preconditions } from '@kingjs/partial-proxy'
 import { copyBackward, copyForward } from '@kingjs/cursor-algorithm'
@@ -17,7 +17,7 @@ import {
   RewindContainerConcept$,
   IndexableContainerConcept$,
   ContiguousContainerConcept$,
-} from '../cursor/container-cursor-api.js'
+} from '../../cursor/container-cursor-api.js'
 
 export class ContiguousContainer extends IndexableContainer {
   static [Preconditions] = {
@@ -49,16 +49,18 @@ export class ContiguousContainer extends IndexableContainer {
   }
 
   static {
-    // implement(this, SequenceContainerConcept$, {
-    // })
-    // implement(this, RewindContainerConcept$, {
-    // })
-    // implement(this, IndexableContainerConcept$, {
-    // })
+    implement(this, SequenceContainerConcept$, {
+    })
+    implement(this, RewindContainerConcept$, {
+    })
+    implement(this, IndexableContainerConcept$, {
+    })
     implement(this, ContiguousContainerConcept$, {
       // readAt$(cursor, offset, length, signed, littleEndian) { }
     })
+  }
 
+  static {
     implement(this, SequenceContainerConcept, {
       unshift(value) { this.insert(this.begin(), value) },
       shift() { return this.remove(this.begin()) },
@@ -72,8 +74,8 @@ export class ContiguousContainer extends IndexableContainer {
         return this.remove(end)
       }    
     })
-    // implement(this, IndexableContainerConcept, {
-    // })
+    implement(this, IndexableContainerConcept, {
+    })
     implement(this, ContiguousContainerConcept, {
     })
   }

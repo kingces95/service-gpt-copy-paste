@@ -1,6 +1,6 @@
 import { Container } from '../container.js'
 import { SegmentContainer } from '../segment/segment-container.js'
-import { Vector } from '../sequence/rewind/indexable/vector.js'
+import { Vector } from '../container/sequence/rewind/indexable/vector.js'
 
 // A multi-pass container is an abstract class that models a stream which does
 // not evict data upon reading. Instead it evicts data when client specifies it 

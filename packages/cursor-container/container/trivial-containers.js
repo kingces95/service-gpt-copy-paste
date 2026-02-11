@@ -12,7 +12,7 @@ import {
   RewindContainerConcept$,
   IndexableContainerConcept$,
   ContiguousContainerConcept$,
-} from './cursor/container-cursor-api.js'
+} from '../cursor/container-cursor-api.js'
 import {
   SequenceContainerConcept,
   RewindContainerConcept,

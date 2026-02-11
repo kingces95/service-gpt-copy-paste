@@ -13,7 +13,8 @@ export class RewindCursor extends SequenceCursor {
   static { 
     implement(this, BidirectionalCursorConcept, {
       stepBack() {
-        this.token$ = this.container$.stepBack$(this)
+        const { container$: container } = this
+        this.token$ = container.stepBack$(this)
         return this
       }    
     }) 

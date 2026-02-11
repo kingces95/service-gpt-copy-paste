@@ -1,17 +1,18 @@
 import { SequenceContainer } from '../sequence/sequence-container.js'
 import { Preconditions } from '@kingjs/partial-proxy'
-import { RewindCursor } from '../cursor/rewind-cursor.js'
+import { RewindCursor } from '../../cursor/rewind-cursor.js'
 import { implement } from '@kingjs/implement'
 import {
   throwEmpty,
 } from '@kingjs/cursor'
 import { 
+  SequenceContainerConcept,
   EpilogContainerConcept,
   RewindContainerConcept, 
 } from '../container-concepts.js'
 import {
   RewindContainerConcept$, 
-} from '../cursor/container-cursor-api.js'
+} from '../../cursor/container-cursor-api.js'
 
 export class RewindContainer extends SequenceContainer {
   static [Preconditions] = {
@@ -24,6 +25,14 @@ export class RewindContainer extends SequenceContainer {
   static {
     implement(this, RewindContainerConcept$, {
       // stepBack$(cursor) { }
+    })
+  }
+
+  static {
+    implement(this, SequenceContainerConcept, {
+      // get front() { }
+      // unshift(value) { }
+      // shift() { }
     })
     implement(this, RewindContainerConcept, {
       // get back() { }

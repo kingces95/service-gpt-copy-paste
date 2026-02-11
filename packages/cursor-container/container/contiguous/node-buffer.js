@@ -3,7 +3,7 @@ import { extend } from '@kingjs/partial-extend'
 import { ContiguousContainer } from "./contiguous-container.js"
 import {
   ContiguousContainerConcept$,
-} from "../cursor/container-cursor-api.js"
+} from "../../cursor/container-cursor-api.js"
 
 export class NodeBuffer extends ContiguousContainer {
   #buffer
@@ -13,6 +13,9 @@ export class NodeBuffer extends ContiguousContainer {
     this.#buffer = Buffer.alloc(8)
   }
 
+  // container
+  dispose$() { this.#buffer = null }
+  
   static {
     extend(this, {
       at$$({ index$: index }, offset) { 
@@ -67,7 +70,4 @@ export class NodeBuffer extends ContiguousContainer {
     const endIndex = cursor.index$
     return buffer.subarray(index, endIndex)
   }
-  
-  // container
-  dispose$() { this.#buffer = null }
 }

@@ -1,4 +1,4 @@
-import { Container } from "../../container.js"
+import { Container } from "../../container/container.js"
 
 // A sliding window, as the name implies, is a container that provides
 // a sliding window of elements. 

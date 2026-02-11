@@ -3,7 +3,7 @@ import { extend } from '@kingjs/partial-extend'
 import { ContiguousContainer } from "./contiguous-container.js"
 import {
   ContiguousContainerConcept$,
-} from "../cursor/container-cursor-api.js"
+} from "../../cursor/container-cursor-api.js"
 
 export class EcmaBuffer extends ContiguousContainer {
   #dataView 
@@ -14,6 +14,9 @@ export class EcmaBuffer extends ContiguousContainer {
     this.#dataView = new DataView(new ArrayBuffer(8))
   }
 
+  // container
+  dispose$() { this.#dataView = null }
+  
   static {
     extend(this, {
       at$$(index, offset) { 
@@ -65,7 +68,4 @@ export class EcmaBuffer extends ContiguousContainer {
 
     return new DataView(buffer, byteOffset + index, length);
   }
-
-  // container
-  dispose$() { this.#dataView = null }
 }

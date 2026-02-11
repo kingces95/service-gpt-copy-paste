@@ -2,7 +2,7 @@ import { implement } from '@kingjs/implement'
 import { abstract } from '@kingjs/abstract'
 import { extend } from '@kingjs/partial-extend'
 import { RewindContainer } from '../rewind/rewind-container.js'
-import { IndexableCursor } from '../cursor/indexable-cursor.js'
+import { IndexableCursor } from '../../cursor/indexable-cursor.js'
 import { Preconditions } from '@kingjs/partial-proxy'
 import {
   throwNotImplemented,
@@ -20,7 +20,7 @@ import {
   SequenceContainerConcept$,
   RewindContainerConcept$,
   IndexableContainerConcept$,
-} from '../cursor/container-cursor-api.js'
+} from '../../cursor/container-cursor-api.js'
 
 export class IndexableContainer extends RewindContainer {
   static [Preconditions] = {
@@ -81,6 +81,9 @@ export class IndexableContainer extends RewindContainer {
       at$$/*(index, offset)*/: abstract,
       setAt$$/*(index, offset, value)*/: abstract,
     })
+  }
+
+  static {
     implement(this, SequenceContainerConcept$, {
       equals$({ index$: index}, { index$: otherIndex }) { 
         return index === otherIndex },
@@ -106,10 +109,13 @@ export class IndexableContainer extends RewindContainer {
         this.setAt$$(index, offset, value)
       },
     })
+  }
+
+  static {
     implement(this, SequenceContainerConcept, {
       get front() { return this.at$$(0, 0) },
-      shift() { super.shift() },
-      unshift(value) { super.unshift(value) },
+      // shift() { },
+      // unshift(value) { },
     })
     implement(this, RewindContainerConcept, {
       get back() { return this.at$$(this.count - 1, 0) },

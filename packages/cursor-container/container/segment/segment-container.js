@@ -1,7 +1,7 @@
 import { JoinView } from '@kingjs/cursor'
 import { Container } from '../container.js'
-import { Vector } from '../sequence/rewind/indexable/vector.js'
-import { Deque } from '../sequence/rewind/indexable/deque.js'
+import { Vector } from '../container/sequence/rewind/indexable/vector.js'
+import { Deque } from '../container/sequence/rewind/indexable/deque.js'
 import { SegmentCursor } from './segment-cursor.js'
 
 // SegmentContainer is a container that holds segments of data, where each
