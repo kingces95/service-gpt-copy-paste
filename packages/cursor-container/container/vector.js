@@ -22,13 +22,6 @@ export class Vector extends IndexableContainer {
       at$$(index) { return this._array[index] },
       setAt$$(index, value) { this._array[index] = value },
     })
-
-    implement(this, IndexableContainer.cursorType.api$, {
-      at$({ index$: index }, offset) { 
-        return this.at$$(index, offset) },
-      setAt$({ index$: index }, offset, value) { 
-        this.setAt$$(index, offset, value) },
-    })
   }
 
   static {
