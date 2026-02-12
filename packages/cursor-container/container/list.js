@@ -1,9 +1,9 @@
 import { implement } from '@kingjs/implement'
-import { CursorFactoryConcept } from '@kingjs/cursor'
 import { extend } from '@kingjs/partial-extend'
 import { ListNode } from "./list-node.js"
 import { SequenceContainer } from "../helpers/sequence-container.js"
 import {
+  ContainerConcept,
   PrologContainerConcept,
   SequenceContainerConcept,
 } from "../container-concepts.js"
@@ -43,7 +43,7 @@ export class List extends SequenceContainer {
       endToken$() { return this._end },
     })
 
-    implement(this, CursorFactoryConcept, {
+    implement(this, ContainerConcept, {
       get isEmpty() { return this._end == this._root.next },
     })
 

@@ -9,7 +9,7 @@ import { IntervalConcept, Range } from "./range.js"
 
 export class CursorFactoryConcept extends IntervalConcept {
   static [Extends] = {
-    isEmpty() { return this.begin().equals(this.end()) },
+    // isEmpty() { return this.begin().equals(this.end()) },
     toRange() { return new Range(this.begin(), this.end()) },
   }
 

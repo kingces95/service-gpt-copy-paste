@@ -1,11 +1,10 @@
 import { implement } from '@kingjs/implement'
-import { Preconditions } from '@kingjs/partial-proxy'
-import { CursorFactoryConcept } from '@kingjs/cursor'
 import { extend } from '@kingjs/partial-extend'
 import { SequenceContainer } from '../helpers/sequence-container.js'
 import { RewindContainer } from "../helpers/rewind-container.js"
 import { ChainNode } from "./chain-node.js"
 import { 
+  ContainerConcept,
   PrologContainerConcept,
   EpilogContainerConcept,
   SequenceContainerConcept,
@@ -71,7 +70,7 @@ export class Chain extends RewindContainer {
       endToken$() { return this._end },
     })
 
-    implement(this, CursorFactoryConcept, {
+    implement(this, ContainerConcept, {
       get isEmpty() { return this._end == this._root.next },
     })
 

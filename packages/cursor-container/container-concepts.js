@@ -15,7 +15,6 @@ import {
 export class ContainerConcept extends CursorFactoryConcept {
   [Extends] = {
     get cursorType() { return this.constructor.cursorType },
-    get isEmpty() { return this.begin().equals(this.end()) }
   }
 
   static cursorType = CursorConcept
