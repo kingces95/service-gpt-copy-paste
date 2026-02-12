@@ -22,12 +22,16 @@ import {
 } from '../container-concepts.js'
 
 export class SequenceContainer extends Container {
+  static [Preconditions] = {
+    shift() { if (this.isEmpty) throwEmpty() },
+    get front() { if (this.isEmpty) throwEmpty() }    
+  }
 
   static cursorType = class SequenceCursor extends Container.cursorType {
 
     static api$ = class SequenceContainerConcept$ extends Concept {
 
-      static checked$ = class SequenceContainerCheckedConcept$ extends this {
+      static linked$ = class SequenceContainerCheckedConcept$ extends this {
         static [Preconditions] = {
           setValue$({ token$: link }, value) {
             if (!this.__isActive$(link)) throwStale()
@@ -84,7 +88,7 @@ export class SequenceContainer extends Container {
           return container.equals$(this, other) 
         }
       })
-      
+
       implement(this, CursorConcept, { 
         step() { 
           const { container$: container } = this

@@ -14,10 +14,13 @@ import {
 
 export class ContainerConcept extends CursorFactoryConcept {
   [Extends] = {
-    get cursorType() { return this.constructor.cursorType }
+    get cursorType() { return this.constructor.cursorType },
+    get isEmpty() { return this.begin().equals(this.end()) }
   }
 
   static cursorType = CursorConcept
+
+  get isEmpty() { }
 }
 export class InputContainerConcept extends ContainerConcept {
   static cursorType = InputCursorConcept
@@ -40,12 +43,7 @@ export class ContiguousContainerConcept extends RandomAccessContainerConcept {
 
 // A sequence container is a forward container that supports a front and
 // unshift/shift operations.
-export class SequenceContainerConcept extends ForwardContainerConcept {
-  static [Preconditions] = {
-    shift() { if (this.isEmpty) throwEmpty() },
-    get front() { if (this.isEmpty) throwEmpty() }    
-  }
-  
+export class SequenceContainerConcept extends ForwardContainerConcept { 
   get front() { }
   unshift(value) { }
   shift() { }

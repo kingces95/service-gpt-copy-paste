@@ -52,7 +52,7 @@ export class Chain extends RewindContainer {
   }
 
   static {
-    implement(this, SequenceContainer.cursorType.api$.checked$, {
+    implement(this, SequenceContainer.cursorType.api$.linked$, {
       equals$({ token$: link}, { token$: otherLink }) { 
         return link == otherLink },
       step$({ token$: link }) { return link.next },
@@ -60,7 +60,7 @@ export class Chain extends RewindContainer {
       setValue$({ token$: link }, value) { link.value = value },
     })
 
-    implement(this, RewindContainer.cursorType.api$.checked$, {
+    implement(this, RewindContainer.cursorType.api$.linked$, {
       stepBack$({ token$: link }) { return link.previous }
     })
   }

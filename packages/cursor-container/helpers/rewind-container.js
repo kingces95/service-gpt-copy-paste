@@ -27,7 +27,7 @@ export class RewindContainer extends SequenceContainer {
     static api$ = class RewindContainerConcept$ 
       extends SequenceContainer.cursorType.api$ {
 
-      static checked$ = class RewindContainerCheckedConcept$ 
+      static linked$ = class RewindContainerCheckedConcept$ 
         extends this {
 
         static [Preconditions] = {
@@ -85,7 +85,7 @@ export class RewindContainer extends SequenceContainer {
       // pop() { }
       // get count() { }
     })
-    
+
     implement(this, EpilogContainerConcept, {
       // insert(cursor, value) { }
       // remove(cursor) { }
