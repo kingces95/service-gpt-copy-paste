@@ -2,14 +2,6 @@ import { implement } from '@kingjs/implement'
 import { Preconditions } from '@kingjs/partial-proxy'
 import { CursorFactoryConcept } from '@kingjs/cursor'
 import { extend } from '@kingjs/partial-extend'
-import {
-  throwStale,
-  throwNotEquatableTo,
-  throwWriteOutOfBounds,
-  throwMoveOutOfBounds,
-  throwUpdateOutOfBounds,
-  throwReadOutOfBounds,
-} from '@kingjs/cursor'
 import { SequenceContainer } from '../helpers/sequence-container.js'
 import { RewindContainer } from "../helpers/rewind-container.js"
 import { ChainNode } from "./chain-node.js"
@@ -21,47 +13,6 @@ import {
 } from "../container-concepts.js"
 
 export class Chain extends RewindContainer {
-  static [Preconditions] = {
-    setValue$({ token$: link }, value) {
-      if (!this.__isActive$(link)) throwStale()
-      if (this.__isEnd$(link)) throwWriteOutOfBounds()
-      if (this.__isBeforeBegin$(link)) throwWriteOutOfBounds()
-    },
-    value$({ token$: link }) {
-      if (!this.__isActive$(link)) throwStale()
-      if (this.__isEnd$(link)) throwReadOutOfBounds()
-      if (this.__isBeforeBegin$(link)) throwReadOutOfBounds()
-    },
-    step$({ token$: link }) {
-      if (!this.__isActive$(link)) throwStale()
-      if (this.__isEnd$(link)) throwMoveOutOfBounds()
-    },
-  
-    stepBack$({ token$: link }) {
-      if (!this.__isActive$(link)) throwStale()
-      if (this.__isBeforeBegin$(link)) throwMoveOutOfBounds()
-    },
-
-    insertAfter(cursor, value) {
-      if (cursor.container$ != this) throwNotEquatableTo()
-      if (this.__isEnd$(cursor.token$)) throwUpdateOutOfBounds()
-    },
-    removeAfter(cursor) {
-      if (cursor.container$ != this) throwNotEquatableTo()
-      if (this.__isEnd$(cursor.token$)) throwUpdateOutOfBounds()
-    },
-
-    insert(cursor, value) {
-      if (cursor.container$ != this) throwNotEquatableTo()
-      if (this.__isBeforeBegin$(cursor.token$)) throwUpdateOutOfBounds()
-    },
-    remove(cursor) {
-      if (cursor.container$ != this) throwNotEquatableTo()
-      if (this.__isEnd$(cursor.token$)) throwUpdateOutOfBounds()
-      if (this.__isBeforeBegin$(cursor.token$)) throwUpdateOutOfBounds()
-    },
-  }
-
   _count
   _root
   _end
@@ -101,7 +52,7 @@ export class Chain extends RewindContainer {
   }
 
   static {
-    implement(this, SequenceContainer.cursorType.api$, {
+    implement(this, SequenceContainer.cursorType.api$.checked$, {
       equals$({ token$: link}, { token$: otherLink }) { 
         return link == otherLink },
       step$({ token$: link }) { return link.next },
@@ -109,7 +60,7 @@ export class Chain extends RewindContainer {
       setValue$({ token$: link }, value) { link.value = value },
     })
 
-    implement(this, RewindContainer.cursorType.api$, {
+    implement(this, RewindContainer.cursorType.api$.checked$, {
       stepBack$({ token$: link }) { return link.previous }
     })
   }

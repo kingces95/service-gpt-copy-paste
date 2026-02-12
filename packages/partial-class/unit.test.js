@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { PartialType } from '@kingjs/partial-type'
 import { PartialReflect, isKey } from '@kingjs/partial-reflect'
 import { PartialClass, Extends } from '@kingjs/partial-class'
 import { extend } from '@kingjs/partial-extend'
@@ -59,7 +58,7 @@ describe('A type', () => {
         derived = class extends type { }
       })
       it('should yield the extension', () => {
-        const declarations = [...PartialReflect.partialExtensions(derived)]
+        const declarations = [...PartialReflect.partialTypes(derived)]
         expect(declarations).toHaveLength(1)
         expect(declarations[0]).toBe(extension)
       })
@@ -73,7 +72,7 @@ describe('A type', () => {
           expect(declarations[0]).toBe(extension)
         })
         it('should yield the extension', () => {
-          const declarations = [...PartialReflect.partialExtensions(derived)]
+          const declarations = [...PartialReflect.partialTypes(derived)]
           expect(declarations).toHaveLength(1)
           expect(declarations[0]).toBe(extension)
         })
@@ -82,104 +81,90 @@ describe('A type', () => {
   })
 })
 
-describe('An extension', () => {
-  let extension
+describe('A PartialClass', () => {
+  let myPartialClass
   beforeEach(() => {
-    extension = class MyExtension extends PartialClass { }
+    myPartialClass = class MyPartialClass extends PartialClass { }
   })
-  it('should have no own declarations', () => {
-    const declarations = [...PartialReflect.ownPartialTypes(extension)]
-    expect(declarations).toHaveLength(0)
+  it('should have no own partialTypes', () => {
+    const partialTypes = [...PartialReflect.ownPartialTypes(myPartialClass)]
+    expect(partialTypes).toHaveLength(0)
   })
-  it('should have no declarations', () => {
-    const declarations = [...PartialReflect.partialExtensions(extension)]
-    expect(declarations).toHaveLength(0)
+  it('should have no partialTypes', () => {
+    const partialTypes = [...PartialReflect.partialTypes(myPartialClass)]
+    expect(partialTypes).toHaveLength(0)
   })
   it('should nave no own names or symbols', () => {
-    const keys = [...PartialReflect.ownKeys(extension)]
+    const keys = [...PartialReflect.ownKeys(myPartialClass)]
     expect(keys).toHaveLength(0)
   })
   it('should have no names or symbols', () => {
-    const keys = [...PartialReflect.keys(extension).filter(isKey)]
+    const keys = [...PartialReflect.keys(myPartialClass).filter(isKey)]
     expect(keys).toHaveLength(0)
   })
-  describe('with a sub extension', () => {
-    let subExtension
+  describe('which extended a base PartialClass', () => {
+    let basePartialClass
     beforeEach(() => {
-      subExtension = class extends PartialClass { }
-      extension[Extends] = [ subExtension ]
+      basePartialClass = class BasePartialClass extends PartialClass { }
+      myPartialClass[Extends] = [ basePartialClass ]
     })
-    it('should have the sub extension as an own declaration', () => {
-      const declarations = [...PartialReflect.ownPartialTypes(extension)]
-      expect(declarations).toHaveLength(1)
-      expect(declarations[0]).toBe(subExtension)
+    it('should have BasePartialType as an own PartialClass', () => {
+      const ownPartialTypes = [...PartialReflect.ownPartialTypes(myPartialClass)]
+      expect(ownPartialTypes).toHaveLength(1)
+      expect(ownPartialTypes[0]).toBe(basePartialClass)
     })
-    describe('that has a subMember', () => {
-      let subMember
+    describe('that has a baseMember', () => {
+      let baseMember
       beforeEach(() => {
-        subMember = function subMember() { }
-        subExtension.prototype.subMember = subMember
+        baseMember = function baseMember() { }
+        basePartialClass.prototype.baseMember = baseMember
       })
-      it('should have the subMember as a key', () => {
-        const keys = [...PartialReflect.keys(extension).filter(isKey)]
+      it('should have the baseMember as a key', () => {
+        const keys = [...PartialReflect.keys(myPartialClass).filter(isKey)]
         expect(keys).toHaveLength(1)
-        expect(keys[0]).toBe('subMember')
+        expect(keys[0]).toBe('baseMember')
       })
-      it('should not have the subMember as an own key', () => {
-        const keys = [...PartialReflect.ownKeys(extension)]
+      it('should not have the baseMember as an own key', () => {
+        const keys = [...PartialReflect.ownKeys(myPartialClass)]
         expect(keys).toHaveLength(0)
       })
-      it('should report subExtension as host for subMember', () => {
-        const host = PartialReflect.getHost(extension, 'subMember')
-        expect(host).toBe(subExtension)
+      it('should report BasePartialClass as the final host for baseMember', () => {
+        const host = PartialReflect.getFinalHost(myPartialClass, 'baseMember')
+        expect(host).toBe(basePartialClass)
       })
-      it('should report no hosts for subMember', () => {
-        const hosts = [...PartialReflect.virtualHosts(extension, 'subMember')]
-        expect(hosts).toHaveLength(0)
+      it('should report MyPartialClass and BasePartialClass as hosts for baseMember', () => {
+        const hosts = [...PartialReflect.hosts(myPartialClass, 'baseMember')]
+        const expected = new Set([ myPartialClass, basePartialClass ])
+        expect(new Set(hosts)).toEqual(expected)
       })
     })
-    describe('that also has a sub extension with a member', () => {
-      let subSubExtension
-      let subSubMember
+    describe('which extended a root PartialClass', () => {
+      let rootExtension
+      let rootMember
       beforeEach(() => {
-        subSubMember = function member() { }
-        subSubExtension = class extends PartialClass { }
-        subExtension[Extends] = [ subSubExtension ]
-        subSubExtension.prototype.member = subSubMember
+        rootMember = function rootMember() { }
+        rootExtension = class extends PartialClass { }
+        basePartialClass[Extends] = [ rootExtension ]
+        rootExtension.prototype.member = rootMember
       })
-      it('should not have the sub sub extension as an own declaration', () => {
-        const declarations = [...PartialReflect.ownPartialTypes(extension)]
+      it('should not have root PartialClass as an own partial type', () => {
+        const declarations = [...PartialReflect.ownPartialTypes(myPartialClass)]
         expect(declarations).toHaveLength(1)
-        expect(declarations[0]).toBe(subExtension)
+        expect(declarations[0]).toBe(basePartialClass)
       })
-      it('should have the sub sub extension as a declaration', () => {
-        const actual = new Set(PartialReflect.partialExtensions(extension))
-        const expected = new Set([ subExtension, subSubExtension ])
+      it('should have the root PartialClass as a partial type', () => {
+        const actual = new Set(PartialReflect.partialTypes(myPartialClass))
+        const expected = new Set([ basePartialClass, rootExtension ])
         expect(actual).toEqual(expected)
       })
-      it('should not have the member as an own name or symbol', () => {
-        const keys = [...PartialReflect.ownKeys(extension)]
+      it('should not have the root member as a key', () => {
+        const keys = [...PartialReflect.ownKeys(myPartialClass)]
         expect(keys).toHaveLength(0)
       })
-      it('should have the member as a name or symbol', () => {
-        const keys = [...PartialReflect.keys(extension).filter(isKey)]
+      it('should have the root member as a key', () => {
+        const keys = [...PartialReflect.keys(myPartialClass).filter(isKey)]
         expect(keys).toHaveLength(1)
         expect(keys[0]).toBe('member')
-      })
-      describe('and a MyPartialClass with a different member', () => {
-        let MyPartialClass, myPartialClass, myMember
-        beforeEach(() => {
-          myMember = function member() { }
-          MyPartialClass = class extends PartialType { }
-          myPartialClass = class extends MyPartialClass { }
-          myPartialClass.prototype.differentMember = myMember
-          extension[Extends].push(myPartialClass)
-        })
-        it('should assert that MyPartialClass is not a PartialClass', () => {
-          expect(() => {
-            [...PartialReflect.partialExtensions(extension)]
-          }).toThrow(`Associate type "myPartialClass" is of an unexpected type.`)
-        })
       })
     })
   })
@@ -187,15 +172,15 @@ describe('An extension', () => {
     let member
     beforeEach(() => {
       member = function member() { }
-      extension.prototype.member = member
+      myPartialClass.prototype.member = member
     })
     it('should have the member as an own name or symbol', () => {
-      const keys = [...PartialReflect.ownKeys(extension)]
+      const keys = [...PartialReflect.ownKeys(myPartialClass)]
       expect(keys).toHaveLength(1)
       expect(keys[0]).toBe('member')
     })
     it('should have the member as a name or symbol', () => {
-      const keys = [...PartialReflect.keys(extension).filter(isKey)]
+      const keys = [...PartialReflect.keys(myPartialClass).filter(isKey)]
       expect(keys).toHaveLength(1)
       expect(keys[0]).toBe('member')
     })
@@ -205,10 +190,10 @@ describe('An extension', () => {
     beforeEach(() => {
       symbol = Symbol('member')
       member = function member() { }
-      extension.prototype[symbol] = member
+      myPartialClass.prototype[symbol] = member
     })
     it('should have the symbolic member as an own name or symbol', () => {
-      const keys = [...PartialReflect.ownKeys(extension)]
+      const keys = [...PartialReflect.ownKeys(myPartialClass)]
       expect(keys).toHaveLength(1)
       expect(keys[0]).toBe(symbol)
     })

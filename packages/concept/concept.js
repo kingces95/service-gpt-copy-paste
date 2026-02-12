@@ -68,7 +68,7 @@ export class ConceptReflect {
   }
 
   static *concepts(type) {
-    for (const object of PartialReflect.partialExtensions(type)) {
+    for (const object of PartialReflect.partialTypes(type)) {
       if (!ConceptReflect.isConcept(object)) continue
       yield object
     }
@@ -79,9 +79,10 @@ export class ConceptReflect {
       yield object
     }
   }
-  static *getConceptHosts(type, name) {
-    for (const host of PartialReflect.virtualHosts(type, name)) {
+  static *getConceptOwnHosts(type, name) {
+    for (const host of PartialReflect.hosts(type, name)) {
       if (!ConceptReflect.isConcept(host)) continue
+      if (!Object.hasOwn(host.prototype, name)) continue
       yield host
     }
   }
@@ -93,6 +94,7 @@ export class ConceptReflect {
     for (const concept of ConceptReflect.concepts(type))
       yield *ConceptReflect.associatedConcepts(concept)
   }
+
   static *ownAssociatedConcepts(type) {
     if (!ConceptReflect.isConcept(type)) return
 

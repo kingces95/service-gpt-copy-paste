@@ -48,7 +48,7 @@ describe('MyConcept', () => {
     expect(actual).toEqual(expected)
   })
   it('should have not inherited concepts', () => {
-    const actual = [...PartialReflect.partialExtensions(MyConcept)]
+    const actual = [...PartialReflect.partialTypes(MyConcept)]
     const expected = [ ]
     expect(actual).toEqual(expected)
   })
@@ -78,12 +78,12 @@ describe('MyConcept', () => {
       expect(MyConcept.prototype).toBeInstanceOf(MyConcept)
     })
     it('should have MySubConcept', () => {
-      const actual = [...InfoReflect.getConceptHosts(MyConcept, 'member')]
+      const actual = [...InfoReflect.getConceptOwnHosts(MyConcept, 'member')]
       const expected = [ MyConcept ]
       expect(actual).toEqual(expected)
     })
     it('should report MyConcept as host for the member', () => {
-      const host = PartialReflect.getHost(MyConcept, 'member')
+      const host = PartialReflect.getFinalHost(MyConcept, 'member')
       expect(host).toBe(MyConcept)
     })
     it('should be found on an object with the member', () => {

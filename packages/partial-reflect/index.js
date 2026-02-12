@@ -5,6 +5,7 @@ import { PartialPrototype } from '@kingjs/partial-prototype'
 import { UserReflect } from '@kingjs/user-reflect'
 import { PartialTypeReflect } from '@kingjs/partial-type'
 import { isAbstract } from '@kingjs/abstract'
+import { Es6Reflect } from '@kingjs/es6-reflect'
 
 // Unfies reflection operations over PartialObjects and Es6 types.
 
@@ -47,7 +48,8 @@ export class PartialReflect {
         case 'function': break
         case 'string':
         case 'symbol': 
-          const host = PartialReflect.getHost(type, current, { isStatic })
+          const host = PartialReflect.getFinalHost(
+            type, current, { isStatic })
           if (host != type) continue
           yield current
           break
@@ -101,38 +103,35 @@ export class PartialReflect {
 
     yield* PartialAssociate.ownPartialTypes(type)
   }
-  static *partialExtensions(type) {
+  static *partialTypes(type) {
     if (PartialTypeReflect.isPartialType(type))
-      return yield* PartialPrototype.partialExtensions(type)
+      return yield* PartialPrototype.partialTypes(type)
 
-    yield* PartialAssociate.partialExtensions(type)
+    yield* PartialAssociate.partialTypes(type)
   }
 
-  static *virtualHosts(type, key) {
+  static *hosts(type, key) {
     if (PartialTypeReflect.isPartialType(type))
-      return yield* PartialPrototype.abstractHosts(type, key)
+      return yield* PartialPrototype.hosts(type, key)
 
-    yield* PartialAssociate.abstractHosts(type, key)
+    const hosts = new Set(PartialAssociate.hosts(type, key))
 
-    // yield types in the hiearchy that host members assigned to the key.
-    let host
-    for (const current of UserReflect.hierarchy(type, key)) {
-      switch (typeof current) {
-        case 'function': host = current; break
-        case 'object': yield host; break
-        default: assert(false, `Unexpected type: ${typeof current}`)
-      }
+    // yield types in the hiearchy that resolve the key to a member.
+    for (const current of UserReflect.hierarchy(type)) {
+      if (!(key in current.prototype)) break
+      hosts.add(current)
     }
+
+    yield* hosts
   }
-  static getHost(type, key, { isStatic } = { }) {
-    if (PartialTypeReflect.isPartialType(type)) {
-      if (isStatic) return
-      return PartialPrototype.getHost(type, key)
-    }
 
-    if (key in (isStatic ? type : type.prototype) === false) return null
+  static getFinalHost(type, key) {
+    if (PartialTypeReflect.isPartialType(type))
+      return PartialPrototype.getFinalHost(type, key)
 
-    return PartialAssociate.getHost(type, key, { isStatic }) || type
+    if (key in type.prototype === false) return null
+
+    return PartialAssociate.getFinalHost(type, key) || type
   }
 
   static load(pojoOrType) {

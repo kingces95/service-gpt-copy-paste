@@ -1,15 +1,6 @@
 import { implement } from '@kingjs/implement'
-import { Preconditions } from '@kingjs/partial-proxy'
 import { CursorFactoryConcept } from '@kingjs/cursor'
 import { extend } from '@kingjs/partial-extend'
-import {
-  throwStale,
-  throwNotEquatableTo,
-  throwWriteOutOfBounds,
-  throwMoveOutOfBounds,
-  throwUpdateOutOfBounds,
-  throwReadOutOfBounds,
-} from '@kingjs/cursor'
 import { ListNode } from "./list-node.js"
 import { SequenceContainer } from "../helpers/sequence-container.js"
 import {
@@ -18,32 +9,6 @@ import {
 } from "../container-concepts.js"
 
 export class List extends SequenceContainer {
-  static [Preconditions] = {
-    setValue$({ token$: link }, value) {
-      if (!this.__isActive$(link)) throwStale()
-      if (this.__isEnd$(link)) throwWriteOutOfBounds()
-      if (this.__isBeforeBegin$(link)) throwWriteOutOfBounds()
-    },
-    value$({ token$: link }) {
-      if (!this.__isActive$(link)) throwStale()
-      if (this.__isEnd$(link)) throwReadOutOfBounds()
-      if (this.__isBeforeBegin$(link)) throwReadOutOfBounds()
-    },
-    step$({ token$: link }) {
-      if (!this.__isActive$(link)) throwStale()
-      if (this.__isEnd$(link)) throwMoveOutOfBounds()
-    }, 
-  
-    insertAfter(cursor, value) {
-      if (cursor.container$ != this) throwNotEquatableTo()
-      if (this.__isEnd$(cursor.token$)) throwUpdateOutOfBounds()
-    },
-    removeAfter(cursor) {
-      if (cursor.container$ != this) throwNotEquatableTo()
-      if (this.__isEnd$(cursor.token$)) throwUpdateOutOfBounds()
-    }
-  }
-  
   _root
   _end
 

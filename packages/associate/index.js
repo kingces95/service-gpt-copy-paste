@@ -119,12 +119,10 @@ export class Associate {
   static *lookupGet(type, symbol, key) {
     const set = new Set()
     while (type) {
-      for (const value of Associate.lookupGetOwn(type, symbol, key)) {
-        if (set.has(value)) continue
-        yield value
+      for (const value of Associate.lookupGetOwn(type, symbol, key))
         set.add(value)
-      }
       type = Object.getPrototypeOf(type)
     }
+    yield* set
   }
 }

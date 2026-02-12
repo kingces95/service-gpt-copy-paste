@@ -84,6 +84,7 @@ export class SequenceContainer extends Container {
           return container.equals$(this, other) 
         }
       })
+      
       implement(this, CursorConcept, { 
         step() { 
           const { container$: container } = this
@@ -91,6 +92,7 @@ export class SequenceContainer extends Container {
           return this
         }
       })
+
       implement(this, MutableCursorConcept, { 
         get value() { 
           const { container$: container } = this
@@ -101,6 +103,7 @@ export class SequenceContainer extends Container {
           container.setValue$(this, value) 
         }
       })
+
       implement(this, ForwardCursorConcept, {
         clone() {
           const {

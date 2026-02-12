@@ -50,8 +50,8 @@ export class InfoReflect {
   static *ownPartialTypes(type) {
     yield* PartialReflect.ownPartialTypes(type)
   }
-  static *partialExtensions(type) {
-    yield* PartialReflect.partialExtensions(type)
+  static *partialTypes(type) {
+    yield* PartialReflect.partialTypes(type)
   }
 
   // PartialClassReflect proxies
@@ -72,8 +72,8 @@ export class InfoReflect {
   static *ownConcepts(type) {
     yield *ConceptReflect.ownConcepts(type)
   }
-  static *getConceptHosts(type, name) {
-    yield *ConceptReflect.getConceptHosts(type, name)
+  static *getConceptOwnHosts(type, name) {
+    yield *ConceptReflect.getConceptOwnHosts(type, name)
   }
   static *associatedConcepts(type) {
     yield* ConceptReflect.ownAssociatedConcepts(type)

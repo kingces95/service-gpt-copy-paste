@@ -27,7 +27,7 @@ describe('A type', () => {
     expect(declarations).toHaveLength(0)
   })
   it('should yield no declarations', () => {
-    const declarations = [...PartialReflect.partialExtensions(type)]
+    const declarations = [...PartialReflect.partialTypes(type)]
     expect(declarations).toHaveLength(0)
   })
 
@@ -99,11 +99,11 @@ describe('MyPojoType', () => {
         expect(myType.prototype.method).toBe(method)
       })
       it('should have myType as the host of the method', () => {
-        const host = PartialReflect.getHost(myType, 'method')
+        const host = PartialReflect.getFinalHost(myType, 'method')
         expect(host).toBe(myType)
       })
       it('should have no hosts for the method', () => {
-        const lookup = [...PartialReflect.virtualHosts(myType, 'method')]
+        const lookup = [...PartialReflect.hosts(myType, 'method')]
         expect(lookup).toHaveLength(1)
         expect(lookup[0]).toBe(myType)
       })
@@ -170,7 +170,7 @@ describe('PartialClass', () => {
       expect(declarations).toHaveLength(0)
     })
     it('should have no declarations', () => {
-      const declarations = [...PartialReflect.partialExtensions(MyExtension)]
+      const declarations = [...PartialReflect.partialTypes(MyExtension)]
       expect(declarations).toHaveLength(0)
     })
     it('should have no own member names or symbols', () => {
@@ -181,13 +181,8 @@ describe('PartialClass', () => {
       const keys = [...PartialReflect.keys(MyExtension).filter(isKey)]
       expect(keys).toHaveLength(0)
     })
-    it('should return nothing for missing member hosts', () => {
-      const lookup = PartialReflect.virtualHosts(
-        MyExtension, 'missingMember')
-      expect([...lookup]).toHaveLength(0)
-    })
     it('should return null for missing member host', () => {
-      const host = PartialReflect.getHost(
+      const host = PartialReflect.getFinalHost(
         MyExtension, 'missingMember')
       expect(host).toBe(null)
     })
@@ -265,11 +260,11 @@ describe('PartialClass', () => {
 
           it('should not have anonymous declarations', () => {
             const declarations = 
-              [...PartialReflect.partialExtensions(myType)]
+              [...PartialReflect.partialTypes(myType)]
             expect(declarations).toEqual([MyExtension])
           })
           it('should have extension as the host of the method', () => {
-            const host = PartialReflect.getHost(myType, 'method')
+            const host = PartialReflect.getFinalHost(myType, 'method')
             expect(host).toBe(MyExtension)
           })
         })
@@ -325,7 +320,7 @@ describe('PartialClass', () => {
             })
             it('should have mySubExtension as declaration', () => {
               const declarations = 
-                [...PartialReflect.partialExtensions(MyExtension)]
+                [...PartialReflect.partialTypes(MyExtension)]
               expect(declarations).toEqual([ MySubExtension ])
             })
 
@@ -358,7 +353,7 @@ describe('PartialClass', () => {
                 })
 
                 it('should have MySubExtension and MySubSubExtension as declarations', () => {
-                  const actual = new Set(PartialReflect.partialExtensions(MyExtension))
+                  const actual = new Set(PartialReflect.partialTypes(MyExtension))
                   const expected = new Set([ MySubExtension, MySubSubExtension ])
                   expect(actual).toEqual(expected)
                 })
@@ -388,14 +383,8 @@ describe('PartialClass', () => {
                     })
                     it('should have MySubSubExtension as member host for subSubMethod', () => {
                       const host = 
-                        PartialReflect.getHost(myType, 'subSubMethod')
+                        PartialReflect.getFinalHost(myType, 'subSubMethod')
                       expect(host).toBe(MySubSubExtension)
-                    })
-                    it('should have no member host for subMethod', () => {
-                      const lookup = 
-                        [...PartialReflect.virtualHosts(myType, 'subSubMethod')]
-                      expect(lookup).toHaveLength(1)
-                      expect(lookup[0]).toBe(myType)
                     })
                   })
                 })
@@ -408,14 +397,8 @@ describe('PartialClass', () => {
 
                 it('should have MySubExtension as member host for subMethod', () => {
                   const host = 
-                    PartialReflect.getHost(myType, 'subMethod')
+                    PartialReflect.getFinalHost(myType, 'subMethod')
                   expect(host).toBe(MySubExtension)
-                })
-                it('should have no member hosts for subMethod', () => {
-                  const lookup = 
-                    [...PartialReflect.virtualHosts(myType, 'subMethod')]
-                  expect(lookup).toHaveLength(1)
-                  expect(lookup[0]).toBe(myType)
                 })
               })
             })
@@ -433,13 +416,8 @@ describe('PartialClass', () => {
                 expect(myType.prototype.method).not.toBe(mySubExtensionMethod)
               })
               it('should have host of MyExtension', () => {
-                const host = PartialReflect.getHost(myType, 'method')
+                const host = PartialReflect.getFinalHost(myType, 'method')
                 expect(host).toBe(MyExtension)
-              })
-              it('should have no hosts', () => {
-                const actual = new Set(PartialReflect.virtualHosts(myType, 'method'))
-                expect(actual.size).toBe(1)
-                expect(actual.has(myType)).toBe(true)
               })
             })
             describe('and extending MySubType', () => {
@@ -453,7 +431,7 @@ describe('PartialClass', () => {
                 expect(declarations).toHaveLength(0)
               })
               it('should have MyExtension and MySubExtension as declarations', () => {
-                const actual = new Set(PartialReflect.partialExtensions(mySubType))
+                const actual = new Set(PartialReflect.partialTypes(mySubType))
                 const expected = new Set([ MyExtension, MySubExtension ])
                 expect(actual).toEqual(expected)
               })
@@ -474,7 +452,7 @@ describe('PartialClass', () => {
                 expect(actual).toEqual(expected)
               })
               it('should have MyExtension and MySubExtension as declarations', () => {
-                const actual = new Set(PartialReflect.partialExtensions(myType))
+                const actual = new Set(PartialReflect.partialTypes(myType))
                 const expected = new Set([ MyExtension, MySubExtension ])
                 expect(actual).toEqual(expected)
               })

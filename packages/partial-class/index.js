@@ -30,21 +30,23 @@ export class PartialClassReflect {
   }
 
   static *partialClasses(type) {
-    for (const collection of PartialReflect.partialExtensions(type)) {
+    for (const collection of PartialReflect.partialTypes(type)) {
       const collectionType = 
         PartialTypeReflect.getPartialType(collection)
       if (collectionType != PartialClass) continue
       yield collection
     }
   }
+  
   static *ownPartialClasses(type) {
     for (const collection of PartialReflect.ownPartialTypes(type)) {
       if (!PartialClassReflect.isPartialClass(collection)) continue 
       yield collection
     }
   }
+
   static getPartialClass(type, name) {
-    const host = PartialReflect.getHost(type, name)
+    const host = PartialReflect.getFinalHost(type, name)
     if (!PartialClassReflect.isPartialClass(host)) return null
     if (type == host) return null
     return host

@@ -1,7 +1,6 @@
 import { assert } from '@kingjs/assert'
 import { isAbstract } from '@kingjs/abstract'
 import { es6CreateThunk } from '@kingjs/es6-create-thunk'
-import { Descriptor } from '@kingjs/descriptor'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { Es6Compiler } from '@kingjs/es6-compiler'
 import { PartialReflect } from '@kingjs/partial-reflect'
@@ -128,11 +127,7 @@ export class PartialProxyReflect {
   }
   static *conditions$(type, key, symbol) {
     const isStatic = { isStatic: true }
-
-    const hosts = new Set([
-      // type, // assume key is in the process of being defined on type
-      ...PartialReflect.virtualHosts(type, key)
-    ])
+    const hosts = new Set(PartialReflect.hosts(type, key))
 
     for (const host of hosts) {
       const conditions = UserReflect.getOwnDescriptor(

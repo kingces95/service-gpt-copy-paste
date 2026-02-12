@@ -317,7 +317,7 @@ export class MemberInfo {
     const host = this.host
     for (let member = this; member; member = member.parent()) {
       const fn = member.host.ctor
-      for (const concept of InfoReflect.getConceptHosts(fn, member.name)) {
+      for (const concept of InfoReflect.getConceptOwnHosts(fn, member.name)) {
         if (concept == host.ctor) continue
         seen.add(concept)
       }

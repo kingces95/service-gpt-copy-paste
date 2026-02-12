@@ -47,24 +47,22 @@ function getPrototypicalType(type) {
 
 export class PartialPrototype {
 
-  static *partialExtensions(type) {
+  static *partialTypes(type) {
     assert(PartialTypeReflect.isPartialType(type))
     type = getPrototypicalType(type)
-    yield* PartialAssociate.partialExtensions(type)
+    yield* PartialAssociate.partialTypes(type)
   }
 
-  // returns partial classes that could have defined the key
-  // for example, all concepts that defined the key
-  static *abstractHosts(type, key) {
+  static *hosts(type, key) {
     assert(PartialTypeReflect.isPartialType(type))
     type = getPrototypicalType(type)
-    yield* PartialAssociate.abstractHosts(type, key)
+    yield* PartialAssociate.hosts(type, key)
   }
   
-  static getHost(type, key) {
+  static getFinalHost(type, key) {
     assert(PartialTypeReflect.isPartialType(type))
     type = getPrototypicalType(type)
-    return PartialAssociate.getHost(type, key)
+    return PartialAssociate.getFinalHost(type, key)
   }
 
   static *keys(type) { 

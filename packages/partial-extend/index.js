@@ -19,7 +19,8 @@ import { isAbstract } from '@kingjs/abstract'
 // are abstract (i.e. are implemented as @kingjs/abstract).
 
 // A member of a partial type that is copied to the target is associated 
-// with the partial type that defined it (PartialAssociate.getHost). 
+// with the partial type that defined it (PartialAssociate.getHosts and
+// PartialAssociate.getFinalHost to get the host of the last member copied).  
 
 // A member of a parital type that is copied to the target or was 
 // considered for copying to the target (i.e. was abstract) is associated 
@@ -32,11 +33,9 @@ import { isAbstract } from '@kingjs/abstract'
 // the partial type that "extended" it (parentType).
 
 export function extend(type, partialType, { 
-    keys = new Set(),
     parentType = type, 
     isTransparent = partialType?.prototype instanceof Extensions,
   } = { }) {
-
   partialType = PartialLoader.load(partialType)
 
   assert(!PartialTypeReflect.isKnown(type),
@@ -46,12 +45,15 @@ export function extend(type, partialType, {
   assert(PartialTypeReflect.isPartialType(partialType),
     `Expected partialType to indirectly extend PartialType.`)
 
+  const keys = new Set()
+
   for (const extension of PartialLoader.ownPartialTypes(partialType)) {
-    extend(type, extension, { 
-      keys,
+    const extensionKeys = extend(type, extension, { 
       parentType: partialType,
       isTransparent: extension.prototype instanceof Extensions,
     })
+
+    for (const key of extensionKeys) keys.add(key)
   }
 
   if (!isTransparent) 
@@ -59,29 +61,26 @@ export function extend(type, partialType, {
 
   const hostType = isTransparent ? parentType : partialType
 
-  let key
+  let ownKey
   for (const current of PartialLoader.ownDescriptors(partialType)) {
     switch (typeof current) {
       case 'string':
       case 'symbol': 
-        key = current
-        keys.add(key)
+        ownKey = current
+        keys.add(ownKey)
         break
       case 'object': 
-        if (isAbstract(current))
-          PartialAssociate.addAbstractHost(type, key, hostType)
-
         let descriptor = current
         if (Thunk in type)
-          descriptor = type[Thunk](key, current)
+          descriptor = type[Thunk](ownKey, current)
 
-        if (!Define.property(type, key, descriptor)) continue
-        PartialAssociate.addHost(type, key, hostType)
+        if (!Define.property(type, ownKey, descriptor)) continue
+        PartialAssociate.setFinalHost(type, ownKey, hostType)
         break
       default: assert(false, `Unexpected type: ${typeof current}`)
     }
   }
 
-  PartialAssociate.addHost$(type, keys, hostType)
+  for (const key of keys) PartialAssociate.addHost(type, key, hostType)
   return keys
 }
