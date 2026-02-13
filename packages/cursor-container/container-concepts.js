@@ -1,6 +1,5 @@
 import { Concept } from '@kingjs/concept'
 import { Extends } from '@kingjs/partial-class'
-import { Preconditions } from '@kingjs/partial-proxy'
 import {
   CursorFactoryConcept,
   CursorConcept,

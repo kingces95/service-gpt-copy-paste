@@ -1,5 +1,4 @@
 import { implement } from '@kingjs/implement'
-import { abstract } from '@kingjs/abstract'
 import { extend } from '@kingjs/partial-extend'
 import { SequenceContainer } from '../helpers/sequence-container.js'
 import { RewindContainer } from '../helpers/rewind-container.js'
@@ -135,9 +134,9 @@ export class IndexableContainer extends RewindContainer {
   }
 
   static {
-    extend(this, {
-      at$$/*(index, offset)*/: abstract,
-      setAt$$/*(index, offset, value)*/: abstract,
+    implement(this, {
+      at$$() { },
+      setAt$$() { },
     })
   }
 

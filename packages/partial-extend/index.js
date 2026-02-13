@@ -4,7 +4,6 @@ import { PartialTypeReflect, Thunk } from '@kingjs/partial-type'
 import { PartialAssociate } from '@kingjs/partial-associate'
 import { Define } from '@kingjs/define'
 import { Extensions } from '@kingjs/extensions'
-import { isAbstract } from '@kingjs/abstract'
 
 // Extend takes a targets type and a partial type and merges the 
 // partial type into the target type.

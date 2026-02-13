@@ -1,12 +1,18 @@
 import { assert } from '@kingjs/assert'
 import { extend } from '@kingjs/partial-extend'
+import { isPojo } from '@kingjs/pojo-test'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { PartialReflect, isKey } from '@kingjs/partial-reflect'
-import { Concept } from '@kingjs/concept'
+import { Concept, ConceptReflect } from '@kingjs/concept'
 
 export function implement(type, concept, implementation = { }) {
   assert(typeof type == 'function',
     'Type must be a function (e.g. class or function).')
+
+  // overload: if concept is pojo, create anonymous concept from pojo 
+  if (isPojo(concept))
+    return extend(type, ConceptReflect.define(concept), { isTransparent: true })
+
   assert(Es6Reflect.isExtensionOf(concept, Concept),
     'Argument concept must extend Concept.')
 

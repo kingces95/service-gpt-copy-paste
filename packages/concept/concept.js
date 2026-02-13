@@ -1,8 +1,10 @@
 import { assert } from '@kingjs/assert'
 import { abstract } from '@kingjs/abstract'
+import { isPojo } from '@kingjs/pojo-test'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { UserReflect } from '@kingjs/user-reflect'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
+import { Define } from '@kingjs/define'
 import { PartialType, PartialTypeReflect } from '@kingjs/partial-type'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { PartialClass, Extends } from '@kingjs/partial-class'
@@ -14,6 +16,30 @@ const KnownStaticMembers = new Set([
   Extends,
   Implements,
 ])
+
+function abstractify(descriptor) {
+  const type = Es6Descriptor.typeof(descriptor)
+  switch (type) { 
+    case 'getter':
+      descriptor.get = abstract
+      break
+    case 'setter':
+      descriptor.set = abstract
+      break
+    case 'property':
+      descriptor.get = abstract
+      descriptor.set = abstract
+      break
+    case 'method':
+      descriptor.value = abstract
+      break
+    default:
+      assert(false, [
+        `Concept members must be accessors or methods`,
+        `not ${type}.`].join(' '))
+  }
+  return descriptor
+}
 
 export class Concept extends PartialType {
   static [PartialType.PartialTypes] = {
@@ -34,34 +60,26 @@ export class Concept extends PartialType {
   }
 
   static [PartialType.Compile](descriptor) {
-    const result = super[PartialType.Compile](descriptor)
+    const compiledDescriptor = super[PartialType.Compile](descriptor)
+    const abstractDescriptor = abstractify(compiledDescriptor)
+    return abstractDescriptor
+  }
+}
 
-    const type = Es6Descriptor.typeof(result)
-    switch (type) { 
-      case 'getter':
-        result.get = abstract
-        break
-      case 'setter':
-        result.set = abstract
-        break
-      case 'property':
-        result.get = abstract
-        result.set = abstract
-        break
-      case 'method':
-        result.value = abstract
-        break
-      default:
-        assert(false, [
-          `Concept members must be accessors or methods`,
-          `not ${type}.`].join(' '))
-    }
-
-    return result
+export class ImplicitConcept extends PartialType { 
+  static [PartialType.Compile](descriptor) {
+    const compiledDescriptor = super[PartialType.Compile](descriptor)
+    const abstractDescriptor = abstractify(compiledDescriptor)
+    return abstractDescriptor
   }
 }
 
 export class ConceptReflect {
+  static define(pojoOrType) {
+    if (!isPojo(pojoOrType)) return pojoOrType
+    return Define.type(pojoOrType, ImplicitConcept)
+  }
+
   static isConcept(type) {
     const collectionType = PartialTypeReflect.getPartialType(type)
     return collectionType == Concept

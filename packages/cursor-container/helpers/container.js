@@ -1,8 +1,6 @@
 import { implement } from '@kingjs/implement'
-import { abstract } from '@kingjs/abstract'
 import { DisposeConcept } from '@kingjs/concept'
 import { PartialProxy } from '@kingjs/partial-proxy'
-import { extend } from '@kingjs/partial-extend'
 import { Preconditions, TypePrecondition } from '@kingjs/partial-proxy'
 import {
   ScopeConcept,
@@ -74,9 +72,9 @@ export class Container extends PartialProxy {
   get isDisposed$() { return this._disposed }
 
   static {
-    extend(this, {
-      beginToken$: abstract,
-      endToken$: abstract,
+    implement(this, {
+      beginToken$() { },
+      endToken$() { },
     })
 
     implement(this, ContainerConcept, {
