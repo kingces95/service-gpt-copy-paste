@@ -1,5 +1,6 @@
 import { Concept } from '@kingjs/concept'
 import { Extends } from '@kingjs/partial-class'
+import { Preconditions } from '@kingjs/partial-proxy'
 import {
   CursorFactoryConcept,
   CursorConcept,
@@ -9,6 +10,12 @@ import {
   BidirectionalCursorConcept,
   RandomAccessCursorConcept,
   ContiguousCursorConcept,
+
+  throwNotEquatableTo,
+  throwUpdateOutOfBounds,
+  throwMoveOutOfBounds,
+  throwReadOutOfBounds,
+  throwWriteOutOfBounds,
 } from '@kingjs/cursor'
 
 export class ContainerConcept extends CursorFactoryConcept {
@@ -70,6 +77,7 @@ export class IndexableContainerConcept extends RewindContainerConcept {
 // A prolog containers implements a beforeBegin iterator. A beforeBegin 
 // cursor is used for implementing insertAfter and removeAfter methods.
 export class PrologContainerConcept extends Concept {
+  
   beforeBegin() { }
   insertAfter(cursor, value) { }
   removeAfter(cursor) { }
@@ -83,3 +91,22 @@ export class EpilogContainerConcept extends Concept {
 // export class ContiguousContainerConcept extends IndexableContainerConcept {
 //   readAt(cursor, offset, length, signed, littleEndian) { }
 // }
+
+export class ContainerCursorConcept extends ForwardCursorConcept {
+  static [Preconditions] = {
+    step() {
+      const { container$: container } = this
+      if (container.isEnd(this)) throwMoveOutOfBounds()
+    },
+    get value() {
+      const { container$: container } = this
+      if (container.isEnd(this)) throwReadOutOfBounds()
+    },
+    set value(value) {
+      const { container$: container } = this
+      if (container.isEnd(this)) throwWriteOutOfBounds()
+    }
+  }
+
+  get container$() { }
+}

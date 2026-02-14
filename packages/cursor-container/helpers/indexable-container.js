@@ -12,6 +12,7 @@ import {
   RandomAccessCursorConcept,
 } from '@kingjs/cursor'
 import {
+  ContainerCursorConcept,
   SequenceContainerConcept,
   RewindContainerConcept,
   IndexableContainerConcept,
@@ -166,6 +167,17 @@ export class IndexableContainer extends RewindContainer {
         return this.at$$(index, offset) },
       setAt$({ index$: index }, offset, value) { 
         this.setAt$$(index, offset, value)
+      },
+    })
+  }
+
+  static {
+    extend(this, {
+      isBegin(cursor) { 
+        return cursor.index$ === 0
+      },
+      isEnd(cursor) { 
+        return cursor.index$ === this.count
       },
     })
   }

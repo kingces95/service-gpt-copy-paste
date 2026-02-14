@@ -22,11 +22,18 @@ export class Container extends PartialProxy {
 
   dispose$() { }
   get isDisposed$() { return this._disposed }
+  
+  isOwnerOf(cursor) { return cursor?.container$ == this }
 
   static {
     implement(this, {
       beginToken$() { },
       endToken$() { },
+    })
+
+    implement(this, {
+      isBegin(cursor) { },
+      isEnd(cursor) { },
     })
 
     implement(this, ContainerConcept, {

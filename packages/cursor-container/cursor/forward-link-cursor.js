@@ -81,11 +81,17 @@ export class ForwardLinkCursor extends ContainerCursor {
     }
 
     static {
+      extend(this, {
+        isBeforeBegin(cursor) { return this.rootLink$ == cursor.link$ },
+        isBegin(cursor) { return this.rootLink$.next == cursor.link$ },
+        isEnd(cursor) { return this.endLink$ == cursor.link$ },
+      })
+
       implement(this, {
         get rootLink$() { },
         get endLink$() { },
       })
-
+      
       implement(this, ContainerConcept, {
         get isEmpty() { return this.endLink$ == this.rootLink$.next },
       })
@@ -105,23 +111,23 @@ export class ForwardLinkCursor extends ContainerCursor {
   }
 
   static [Preconditions] = {
-    set value(value) {
-      const { link$ : link } = this
-      if (!this.__isActive$(link)) throwStale()
-      if (this.__isEnd$(link)) throwWriteOutOfBounds()
-      if (this.__isBeforeBegin$(link)) throwWriteOutOfBounds()
-    },
-    get value() {
-      const { link$ : link } = this
-      if (!this.__isActive$(link)) throwStale()
-      if (this.__isEnd$(link)) throwReadOutOfBounds()
-      if (this.__isBeforeBegin$(link)) throwReadOutOfBounds()
-    },
     step() {
       const { link$ : link } = this
       if (!this.__isActive$(link)) throwStale()
-      if (this.__isEnd$(link)) throwMoveOutOfBounds()
+      //if (this.__isEnd$(link)) throwMoveOutOfBounds()
     }, 
+    get value() {
+      const { link$ : link } = this
+      if (!this.__isActive$(link)) throwStale()
+      // if (this.__isEnd$(link)) throwReadOutOfBounds()
+      if (this.__isBeforeBegin$(link)) throwReadOutOfBounds()
+    },
+    set value(value) {
+      const { link$ : link } = this
+      if (!this.__isActive$(link)) throwStale()
+      // if (this.__isEnd$(link)) throwWriteOutOfBounds()
+      if (this.__isBeforeBegin$(link)) throwWriteOutOfBounds()
+    },
   }
 
   link$
@@ -133,15 +139,15 @@ export class ForwardLinkCursor extends ContainerCursor {
   }
 
   static {
-    extend(this, {
+    extend(this, {   
       __isActive$() { return !!this.next },
       __isEnd$() {
-        const { link$: link, container$: { endLink$: endLink } } = this
-        return link == endLink 
+        const { container$: container } = this
+        return container.isEnd(this)
       },
       __isBeforeBegin$() { 
-        const { link$: link, container$: { rootLink$: rootLink } } = this
-        return link == rootLink 
+        const { container$: container } = this
+        return container.isBeforeBegin(this)
       }
     })
   }

@@ -19,8 +19,7 @@ export class List extends Container {
   constructor() {
     super()
     const root = new this.constructor.cursorType.linkType$()
-    assert(root instanceof ForwardLink, 
-      'linkType must be a ForwardLink')
+    assert(root instanceof ForwardLink, 'linkType must be a ForwardLink')
     this.rootLink$ = root
     this.endLink$ = root.insertAfter()
   }
