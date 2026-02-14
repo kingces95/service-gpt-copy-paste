@@ -2,6 +2,7 @@ import { assert } from '@kingjs/assert'
 import { Preconditions } from '@kingjs/partial-proxy'
 import { implement } from '@kingjs/implement'
 import { PartialClass } from '@kingjs/partial-class'
+import { extend } from '@kingjs/partial-extend'
 import {
   EquatableConcept,
 } from '@kingjs/concept'
@@ -131,14 +132,18 @@ export class ForwardLinkCursor extends ContainerCursor {
     this.link$ = link
   }
 
-  __isActive$() { return !!this.next }
-  __isEnd$() {
-    const { link$: link, container$: { endLink$: endLink } } = this
-    return link == endLink 
-  }
-  __isBeforeBegin$() { 
-    const { link$: link, container$: { rootLink$: rootLink } } = this
-    return link == rootLink 
+  static {
+    extend(this, {
+      __isActive$() { return !!this.next },
+      __isEnd$() {
+        const { link$: link, container$: { endLink$: endLink } } = this
+        return link == endLink 
+      },
+      __isBeforeBegin$() { 
+        const { link$: link, container$: { rootLink$: rootLink } } = this
+        return link == rootLink 
+      }
+    })
   }
 
   static { 
@@ -146,7 +151,9 @@ export class ForwardLinkCursor extends ContainerCursor {
       insertAfter$(value) { this.link$.insertAfter(value) },
       removeAfter$() { return this.link$.removeAfter() }
     })
+  }
 
+  static {
     implement(this, EquatableConcept, { 
       equals(other) { 
         if (!this.equatableTo(other)) return false
