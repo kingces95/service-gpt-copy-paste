@@ -8,7 +8,7 @@ export * from "./helpers/indexable-container.js"
 export * from "./helpers/rewind-container.js"
 export * from "./helpers/sequence-container.js"
 
-export * from "../cli-yargs/list.js"
+export * from "./container/list.js"
 export * from "./container/chain.js"
 export * from "./container/deque.js"
 export * from "./container/vector.js"

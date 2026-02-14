@@ -1,5 +1,5 @@
 import { extend } from '@kingjs/partial-extend'
-import { List } from '../../cli-yargs/list.js'
+import { List } from './list.js'
 import { RewindLinkCursor } from '../cursor/rewind-link-cursor.js'
 
 const {
