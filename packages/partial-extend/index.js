@@ -39,8 +39,8 @@ export function extend(type, partialType, {
 
   assert(!PartialTypeReflect.isKnown(type),
     `Expected type to not be a known type.`)
-  assert(!PartialTypeReflect.isPartialType(type),
-    `Expected type to not be a PartialType.`)
+  // assert(!PartialTypeReflect.isPartialType(type),
+  //   `Expected type to not be a PartialType.`)
   assert(PartialTypeReflect.isPartialType(partialType),
     `Expected partialType to indirectly extend PartialType.`)
 

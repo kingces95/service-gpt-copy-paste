@@ -3,6 +3,7 @@ import { extend } from '@kingjs/partial-extend'
 import { SequenceContainer } from '../helpers/sequence-container.js'
 import { RewindContainer } from "../helpers/rewind-container.js"
 import { ChainNode } from "./chain-node.js"
+import { Container } from './container.js'
 import { 
   ContainerConcept,
   PrologContainerConcept,
@@ -10,6 +11,43 @@ import {
   SequenceContainerConcept,
   RewindContainerConcept,
 } from "../container-concepts.js"
+import { List$ } from './list.js'
+import { RewindLinkCursor } from '../helpers/rewind-link-cursor.js'
+
+const {
+  linkType$: RewindLink,
+  partialLinkContainerType$: PartialRewindLinkContainer,
+} = RewindLinkCursor
+
+export class Chain$ extends List$ {
+  static cursorType = RewindLinkCursor
+
+  count$
+
+  constructor() {
+    super()
+    const { root, end } = RewindLink.createEntangledPair()
+    this.root$ = root
+    this.end$ = end
+    this.count$ = 0
+  }
+
+  dispose$() {
+    super.dispose$()
+    this.root$ = null
+    this.end$ = null
+    this.count$ = 0
+  }
+
+  static {
+    extend(this, {
+      incrementCount$() { this.count$++ },
+      decrementCount$() { this.count$-- }
+    })
+
+    extend(this, PartialRewindLinkContainer)
+  }
+}
 
 export class Chain extends RewindContainer {
   _count

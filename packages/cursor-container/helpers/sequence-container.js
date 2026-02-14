@@ -1,7 +1,7 @@
 import { Concept } from '@kingjs/concept'
 import { Preconditions } from '@kingjs/partial-proxy'
 import { implement } from '@kingjs/implement'
-import { Container } from './container.js'
+import { Container } from '../container/container.js'
 import {
   EquatableConcept,
 } from '@kingjs/concept'
@@ -17,9 +17,8 @@ import {
   throwUpdateOutOfBounds,
   throwReadOutOfBounds,
 } from '@kingjs/cursor'
-import { 
-  SequenceContainerConcept,
-} from '../container-concepts.js'
+import { SequenceContainerConcept } from '../container-concepts.js'
+import { ContainerCursor } from './container-cursor.js'
 
 export class SequenceContainer extends Container {
   static [Preconditions] = {
@@ -27,7 +26,7 @@ export class SequenceContainer extends Container {
     get front() { if (this.isEmpty) throwEmpty() }    
   }
 
-  static cursorType = class SequenceCursor extends Container.cursorType {
+  static cursorType = class SequenceCursor extends ContainerCursor {
 
     static api$ = class SequenceContainerConcept$ extends Concept {
 

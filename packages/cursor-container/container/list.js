@@ -1,12 +1,53 @@
+import { assert } from '@kingjs/assert'
 import { implement } from '@kingjs/implement'
 import { extend } from '@kingjs/partial-extend'
 import { ListNode } from "./list-node.js"
+import { Container } from './container.js'
 import { SequenceContainer } from "../helpers/sequence-container.js"
 import {
   ContainerConcept,
   PrologContainerConcept,
   SequenceContainerConcept,
 } from "../container-concepts.js"
+import {
+  ForwardLinkCursor
+} from '../helpers/forward-link-cursor.js'
+
+const {
+  linkType$: ForwardLink,
+  partialLinkContainerType$: PartialForwardLinkContainer,
+} = ForwardLinkCursor
+
+export class List$ extends Container {
+  static cursorType = ForwardLinkCursor
+
+  rootLink$
+  endLink$
+
+  constructor() {
+    super()
+    const root = new this.constructor.cursorType.linkType$()
+    assert(root instanceof ForwardLink, 
+      'linkType must be a ForwardLink')
+    this.rootLink$ = root
+    this.endLink$ = root.insertAfter()
+  }
+
+  dispose$() {
+    super.dispose$()
+    this.rootLink$ = null
+    this.endLink$ = null
+  }
+
+  static {
+    extend(this, {
+      beginToken$() { return this.rootLink$.next },
+      endToken$() { return this.endLink$ },
+    })
+
+    extend(this, PartialForwardLinkContainer)
+  }
+}
 
 export class List extends SequenceContainer {
   _root

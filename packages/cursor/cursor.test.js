@@ -23,8 +23,8 @@ import {
 } from './trivial-cursors.js'
 
 import { 
-  List,
-  Chain,
+  List, List$,
+  Chain, Chain$,
   Vector,
   Deque,
   NodeBuffer,
@@ -84,11 +84,26 @@ const ListCase = {
     OutputCursorConcept, 
     ForwardCursorConcept],
 }
+const List$Case = {
+  type: List$,
+  concepts: [
+    InputCursorConcept,
+    OutputCursorConcept,
+    ForwardCursorConcept],
+}
 const ChainCase = {
   type: Chain,
   concepts: [
     InputCursorConcept, 
     OutputCursorConcept, 
+    ForwardCursorConcept,
+    BidirectionalCursorConcept],
+}
+const Chain$Case = {
+  type: Chain$,
+  concepts: [
+    InputCursorConcept,
+    OutputCursorConcept,
     ForwardCursorConcept,
     BidirectionalCursorConcept],
 }
@@ -140,7 +155,9 @@ const cases = [
   ['TrivialRandomAccessCursor', TrivialRandomAccessContainerCase],
   ['TrivialContiguousCursor', TrivialContiguousContainerCase],
   ['List', ListCase],
+  ['List$', List$Case],
   ['Chain', ChainCase],
+  ['Chain$', Chain$Case],
   ['Vector', VectorCase],
   ['Deque', DequeCase],
   ['NodeBuffer', NodeBufferCase],

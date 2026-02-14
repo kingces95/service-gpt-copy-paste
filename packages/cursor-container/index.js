@@ -2,7 +2,7 @@
 // export * from "./multi-pass/index.js"
 // export * from "./segment/index.js"
 
-export * from "./helpers/container.js"
+export * from "./container/container.js"
 export * from "./helpers/contiguous-container.js"
 export * from "./helpers/indexable-container.js"
 export * from "./helpers/rewind-container.js"

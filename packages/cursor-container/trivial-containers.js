@@ -7,7 +7,7 @@ import { SequenceCursor } from '../helpers/sequence-cursor.js'
 import { RewindCursor } from '../helpers/rewind-cursor.js'
 import { IndexableCursor } from '../helpers/indexable-cursor.js'
 import { ContiguousCursor } from '../helpers/contiguous-cursor.js'
-import { Container } from './helpers/container.js'
+import { Container } from './container/container.js'
 
 import {
   SequenceContainerConcept,
