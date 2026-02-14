@@ -91,8 +91,8 @@ export class ForwardLinkCursor extends ContainerCursor {
 
       implement(this, SequenceContainerConcept, {
         get front() { return this.rootLink$.next.value },
-        unshift(value) { this.insertAfter(this.beforeBegin(), value) },
         shift() { return this.removeAfter(this.beforeBegin()) },
+        unshift(value) { this.insertAfter(this.beforeBegin(), value) },
       })
 
       implement(this, PrologContainerConcept, {
@@ -155,7 +155,11 @@ export class ForwardLinkCursor extends ContainerCursor {
     })
 
     implement(this, CursorConcept, { 
-      step() { return this.next },
+      step() { 
+        const { link$ : link } = this
+        this.link$ = link.next
+        return this
+      },
     })
 
     implement(this, MutableCursorConcept, { 
