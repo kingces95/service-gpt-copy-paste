@@ -1,9 +1,9 @@
 import { assert } from '@kingjs/assert'
 import { extend } from '@kingjs/partial-extend'
-import { Container } from './container.js'
+import { Container } from '../cursor-container/container/container.js'
 import {
   ForwardLinkCursor
-} from '../cursor/forward-link-cursor.js'
+} from '../cursor-container/cursor/forward-link-cursor.js'
 
 const {
   linkType$: ForwardLink,

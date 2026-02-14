@@ -25,13 +25,6 @@ const {
 export class RewindLinkCursor extends ForwardLinkCursor {
 
   static linkType$ = class RewindLink extends ForwardLink {
-
-    static createEntangledPair() {
-      const root = new this()
-      const end = root.insertAfter()
-      return { root, end }
-    }
-
     #previous
   
     constructor(value) {

@@ -1,5 +1,5 @@
 import { extend } from '@kingjs/partial-extend'
-import { List } from './list.js'
+import { List } from '../../cli-yargs/list.js'
 import { RewindLinkCursor } from '../cursor/rewind-link-cursor.js'
 
 const {
@@ -14,16 +14,11 @@ export class Chain extends List {
 
   constructor() {
     super()
-    const { root, end } = RewindLink.createEntangledPair()
-    this.root$ = root
-    this.end$ = end
     this.count$ = 0
   }
 
   dispose$() {
     super.dispose$()
-    this.root$ = null
-    this.end$ = null
     this.count$ = 0
   }
 
