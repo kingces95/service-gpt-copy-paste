@@ -3,7 +3,7 @@ import { DisposeConcept } from '@kingjs/concept'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { TypePrecondition } from '@kingjs/partial-proxy'
 import { throwDisposed } from '@kingjs/cursor'
-import { ContainerCursor } from '../helpers/container-cursor.js'
+import { ContainerCursor } from '../cursor/container-cursor.js'
 import { ContainerConcept } from '../container-concepts.js'
 
 export class Container extends PartialProxy {

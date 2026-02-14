@@ -18,7 +18,7 @@ import {
   throwReadOutOfBounds,
 } from '@kingjs/cursor'
 import { SequenceContainerConcept } from '../container-concepts.js'
-import { ContainerCursor } from './container-cursor.js'
+import { ContainerCursor } from '../cursor/container-cursor.js'
 
 export class SequenceContainer extends Container {
   static [Preconditions] = {

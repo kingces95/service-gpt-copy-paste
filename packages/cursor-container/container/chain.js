@@ -1,6 +1,6 @@
 import { extend } from '@kingjs/partial-extend'
 import { List } from './list.js'
-import { RewindLinkCursor } from '../helpers/rewind-link-cursor.js'
+import { RewindLinkCursor } from '../cursor/rewind-link-cursor.js'
 
 const {
   linkType$: RewindLink,
