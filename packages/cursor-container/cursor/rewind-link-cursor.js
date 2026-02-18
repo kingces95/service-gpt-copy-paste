@@ -1,25 +1,22 @@
 import { assert } from '@kingjs/assert'
-import { Preconditions } from '@kingjs/partial-proxy'
 import { implement } from '@kingjs/implement'
 import { extend } from '@kingjs/partial-extend'
 import {
   BidirectionalCursorConcept,
-
-  throwStale,
-  throwNotEquatableTo,
-  throwMoveOutOfBounds,
-  throwUpdateOutOfBounds,
 } from '@kingjs/cursor'
 import { 
   RewindContainerConcept,
   PrologContainerConcept,
   EpilogContainerConcept,
 } from '../container-concepts.js'
+import {
+  LinkedBidirectionalContainerCursorConcept
+} from '../container-cursor-concepts.js'
 import { ForwardLinkCursor } from './forward-link-cursor.js'
 
 const {
   linkType$: ForwardLink,
-  partialLinkContainerType$: PartialForwardLinkContainer,
+  partialContainerType$: PartialForwardLinkContainer,
 } = ForwardLinkCursor
 
 export class RewindLinkCursor extends ForwardLinkCursor {
@@ -55,25 +52,8 @@ export class RewindLinkCursor extends ForwardLinkCursor {
     remove() { return this.previous.removeAfter() }
   }
    
-  static partialLinkContainerType$ = class PartialRewindLinkContainer
+  static partialContainerType$ = class PartialRewindLinkContainer
     extends PartialForwardLinkContainer {
-
-    static [Preconditions] = {
-      pop() { if (this.isEmpty) throwEmpty() },
-      get back() { if (this.isEmpty) throwEmpty() },
-      
-      insert(cursor, value) {
-        const { container$ : container, link$ : link } = cursor
-        if (container != this) throwNotEquatableTo()
-        if (this.__isBeforeBegin$(link)) throwUpdateOutOfBounds()
-      },
-      remove(cursor) {
-        const { container$ : container, link$ : link } = cursor
-        if (container != this) throwNotEquatableTo()
-        if (this.__isEnd$(link)) throwUpdateOutOfBounds()
-        if (this.__isBeforeBegin$(link)) throwUpdateOutOfBounds()
-      }
-    }
 
     static {
       extend(this, {
@@ -110,26 +90,18 @@ export class RewindLinkCursor extends ForwardLinkCursor {
 
       implement(this, EpilogContainerConcept, {
         insert(cursor, value) {
-          const { container$ : container, link$ : link } = cursor
+          const { link$ : link } = cursor
           link.insert(value)
           this.incrementCount$()
         },
         remove(cursor) {
-          const { container$ : container, link$ : link } = cursor
+          const { link$ : link } = cursor
           const result = link.remove()
           this.decrementCount$()
           return result
         }
       })
     }
-  }
-
-  static [Preconditions] = {
-    stepBack() {
-      const { link$ : link } = this
-      if (!this.__isActive$(link)) throwStale()
-      if (this.__isBeforeBegin$(link)) throwMoveOutOfBounds()
-    }, 
   }
 
   constructor(reversible, link) {
@@ -145,5 +117,7 @@ export class RewindLinkCursor extends ForwardLinkCursor {
         return this
       }    
     }) 
+
+    implement(this, LinkedBidirectionalContainerCursorConcept)
   }
 }

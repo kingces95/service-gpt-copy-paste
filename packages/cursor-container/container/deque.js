@@ -1,18 +1,21 @@
 import Denque from "denque"
-import { extend } from '@kingjs/partial-extend'
 import { implement } from '@kingjs/implement'
-import {
-  throwNotSupported,
-} from '@kingjs/cursor'
-import { 
-  IndexableContainer 
-} from "../helpers/indexable-container.js"
+import { extend } from '@kingjs/partial-extend'
+import { Container } from '../container.js'
 import {
   SequenceContainerConcept,
   RewindContainerConcept,
-} from "../container-concepts.js"
+  IndexableContainerConcept,
+} from '../container-concepts.js'
+import { IndexableCursor } from '../cursor/indexable-cursor.js'
 
-export class Deque extends IndexableContainer {
+const {
+  partialContainerType$: PartialIndexableContainer,
+} = IndexableCursor
+
+export class Deque extends Container {
+  static cursorType = IndexableCursor
+
   _denque
   
   constructor() { 
@@ -20,15 +23,14 @@ export class Deque extends IndexableContainer {
     this._denque = new Denque()
   }
   
+  dispose$() { this._denque.clear() }
+
   static {
-    extend(this, {
-      at$$(index) { return this._denque.get(index) },
-      setAt$$(index, offset, value) { throwNotSupported() },
-    })
+    extend(this, PartialIndexableContainer)
 
     implement(this, SequenceContainerConcept, {
-      unshift(value) { this._denque.unshift(value) },
       shift() { return this._denque.shift() },
+      unshift(value) { this._denque.unshift(value) },
     })
     
     implement(this, RewindContainerConcept, {
@@ -36,8 +38,10 @@ export class Deque extends IndexableContainer {
       push(value) { this._denque.push(value) },
       pop() { return this._denque.pop() },
     })
+
+    implement(this, IndexableContainerConcept, {
+      at(index) { return this._denque.get(index) },
+      setAt(index, offset, value) { throwNotSupported() },
+    })
   }
-  
-  // container
-  dispose$() { this._denque.clear() }
 }

@@ -1,69 +1,81 @@
 import { implement } from '@kingjs/implement'
 import { extend } from '@kingjs/partial-extend'
-import { ContiguousContainer } from "../helpers/contiguous-container.js"
+import { Container } from '../container.js'
+import { ContiguousCursor } from '../cursor/contiguous-cursor.js'
+import {
+  RewindContainerConcept,
+  IndexableContainerConcept,
+  BufferContainerConcept,
+} from '../container-concepts.js'
 
-export class EcmaBuffer extends ContiguousContainer {
-  #dataView 
+const {
+  partialContainerType$: PartialBufferContainer,
+} = ContiguousCursor
+
+export class EcmaBuffer extends Container {
+  static cursorType = ContiguousCursor
+
+  _buffer = new DataView(new ArrayBuffer(8))
+  _count = 0
 
   constructor() {
     super()
-
-    this.#dataView = new DataView(new ArrayBuffer(8))
   }
 
   // container
-  dispose$() { this.#dataView = null }
+  dispose$() { this._buffer = null }
 
   static {
-    extend(this, {
-      at$$(index, offset) { 
-        return this.dataView$.getUint8(index + offset) },
-      setAt$$(index, offset, value) { 
-        this.dataView$.setUint8(index + offset, value) }
+    extend(this, PartialBufferContainer)
+
+    implement(this, RewindContainerConcept, {
+      get count() { return this._count }
     })
 
-    implement(this, ContiguousContainer.cursorType.api$, {
-      readAt$({ index$: index }, offset, length, signed, littleEndian) {
-        const { dataView$: dataView } = this
-        const indexOffset = index + offset
+    implement(this, IndexableContainerConcept, {
+      at(index) { return this._buffer.getUint8(index) },
+      setAt(index, value) { this.setUint8(index, value) }
+    })
+
+    implement(this, BufferContainerConcept, {
+      get capacity() { return this._buffer.length },
+      expand(capacity) {
+        const newBuffer = Buffer.alloc(capacity)
+        this.buffer.copy(newBuffer)
+        this._buffer = newBuffer
+        return capacity
+      },
+      readAt(index, length, signed, littleEndian) {
+        const { buffer } = this
 
         switch (length) {
           case 1:
             return signed
-              ? dataView.getInt8(indexOffset)
-              : dataView.getUint8(indexOffset)
+              ? buffer.getInt8(index)
+              : buffer.getUint8(index)
 
           case 2:
             return signed
-              ? dataView.getInt16(indexOffset, littleEndian)
-              : dataView.getUint16(indexOffset, littleEndian)
+              ? buffer.getInt16(index, littleEndian)
+              : buffer.getUint16(index, littleEndian)
 
           case 4:
             return signed
-              ? dataView.getInt32(indexOffset, littleEndian)
-              : dataView.getUint32(indexOffset, littleEndian)
+              ? buffer.getInt32(index, littleEndian)
+              : buffer.getUint32(index, littleEndian)
         }
-      }    
+      },
+        data(index, cursor) { 
+        const { buffer, byteOffset } = this.buffer
+        const endIndex = cursor.index
+        const length = endIndex - index
+        return new DataView(buffer, byteOffset + index, length)
+      },
+    }, {
+      insertRange(begin, end) { },
+      removeRange(begin, end) { },
     })
   }
 
-  get dataView$() { return this.#dataView }
-  get capacity$() { return this.dataView$.byteLength }
-  expand$(capacity) {
-    const { dataView$: dataView } = this
-    const newBuffer = new ArrayBuffer(capacity)
-    const newDataView = new DataView(newBuffer)
-    new Uint8Array(newBuffer).set(new Uint8Array(dataView.buffer))
-    this.#dataView = newDataView
-  }
-
-  // contiguous cursor
-  data$(index, cursor) {
-    const dataView = this.dataView$;
-    const { buffer, byteOffset } = dataView;
-    const endIndex = cursor.index$;
-    const length = endIndex - index;
-
-    return new DataView(buffer, byteOffset + index, length);
-  }
+  get buffer() { return this._buffer }
 }

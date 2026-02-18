@@ -3,7 +3,7 @@ import { List } from './list.js'
 import { RewindLinkCursor } from '../cursor/rewind-link-cursor.js'
 
 const {
-  partialLinkContainerType$: PartialRewindLinkContainer,
+  partialContainerType$: PartialRewindLinkContainer,
 } = RewindLinkCursor
 
 export class Chain extends List {

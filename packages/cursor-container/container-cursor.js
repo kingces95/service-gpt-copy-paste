@@ -1,7 +1,7 @@
 import { implement } from '@kingjs/implement'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { ScopeConcept } from '@kingjs/concept'
-import { ContainerCursorConcept } from '../container-concepts.js'
+import { ContainerCursorConcept } from './container-cursor-concepts.js'
 
 export class ContainerCursor extends PartialProxy {
   _container
@@ -11,7 +11,7 @@ export class ContainerCursor extends PartialProxy {
     this._container = container
   }
 
-  get container$() { return this._container }
+  get container() { return this._container }
 
   static {
     implement(this, ScopeConcept, {

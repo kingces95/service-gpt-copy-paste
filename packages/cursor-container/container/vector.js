@@ -1,12 +1,20 @@
 import { implement } from '@kingjs/implement'
-import { IndexableContainer } from "../helpers/indexable-container.js"
 import { extend } from '@kingjs/partial-extend'
+import { Container } from '../container.js'
+import { IndexableCursor } from '../cursor/indexable-cursor.js'
 import {
   SequenceContainerConcept,
   RewindContainerConcept,
+  IndexableContainerConcept,
 } from '../container-concepts.js'
 
-export class Vector extends IndexableContainer {
+const {
+  partialContainerType$: PartialIndexableContainer,
+} = IndexableCursor
+
+export class Vector extends Container {
+  static cursorType = IndexableCursor
+
   _array
 
   constructor(elements = []) { 
@@ -14,17 +22,11 @@ export class Vector extends IndexableContainer {
     this._array = elements
   }
 
-  // container
   dispose$() { this._array.length = 0 }
 
   static {
-    extend(this, {
-      at$$(index) { return this._array[index] },
-      setAt$$(index, value) { this._array[index] = value },
-    })
-  }
+    extend(this, PartialIndexableContainer)
 
-  static {
     implement(this, SequenceContainerConcept, {
       shift() { return this._array.shift() },
       unshift(value) { this._array.unshift(value) },
@@ -34,6 +36,11 @@ export class Vector extends IndexableContainer {
       get count() { return this._array.length },
       push(value) { this._array.push(value) },
       pop() { return this._array.pop() },
+    })
+
+    implement(this, IndexableContainerConcept, {
+      at(index) { return this._array[index] },
+      setAt(index, value) { this._array[index] = value },
     })
   }
 }

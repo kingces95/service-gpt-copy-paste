@@ -1,28 +1,51 @@
 import { implement } from '@kingjs/implement'
 import { extend } from '@kingjs/partial-extend'
-import { ContiguousContainer } from "../helpers/contiguous-container.js"
+import { Container } from '../container.js'
+import { ContiguousCursor } from '../cursor/contiguous-cursor.js'
+import {
+  RewindContainerConcept,
+  IndexableContainerConcept,
+  BufferContainerConcept,
+} from '../container-concepts.js'
 
-export class NodeBuffer extends ContiguousContainer {
-  #buffer
+const {
+  partialContainerType$: PartialBufferContainer,
+} = ContiguousCursor
+
+export class NodeBuffer extends Container {
+  static cursorType = ContiguousCursor
+
+  _buffer = Buffer.alloc(0)
+  _count = 0
 
   constructor() {
     super()
-    this.#buffer = Buffer.alloc(8)
   }
 
   // container
-  dispose$() { this.#buffer = null }
+  dispose$() { this._buffer = null }
 
   static {
-    extend(this, {
-      at$$({ index$: index }, offset) { 
-        return this.buffer$[index + offset] },
-      setAt$$({ index$: index }, offset, value) { 
-        this.buffer$[index + offset] = value }
+    extend(this, PartialBufferContainer)
+
+    implement(this, RewindContainerConcept, {
+      get count() { return this._count }
     })
 
-    implement(this, ContiguousContainer.cursorType.api$, {
-      readAt$({ index$: index }, offset, length, signed, littleEndian) {
+    implement(this, IndexableContainerConcept, {
+      at(index) { return this._buffer[index] },
+      setAt(index, value) { this._buffer[index] = value }
+    })
+
+    implement(this, BufferContainerConcept, {
+      get capacity() { return this._buffer.length },
+      expand(capacity) {
+        const newBuffer = Buffer.alloc(capacity)
+        this.buffer.copy(newBuffer)
+        this._buffer = newBuffer
+        return capacity
+      },
+      readAt(index, offset, length, signed, littleEndian) {
         const { buffer$: buffer } = this
         const indexOffset = index + offset
 
@@ -48,24 +71,17 @@ export class NodeBuffer extends ContiguousContainer {
               : buffer.readUInt32BE(indexOffset)
             )
         }
-      }    
+      },
+      data(index, cursor) { 
+        const buffer = this.buffer
+        const endIndex = cursor.index
+        return buffer.subarray(index, endIndex)
+      },
+    }, {
+      insertRange(begin, end) { },
+      removeRange(begin, end) { },
     })
   }
 
-  get buffer$() { return this.#buffer }
-  get capacity$() { return this.#buffer.length }
-  expand$(capacity) {
-    const { buffer$: buffer } = this
-    const newBuffer = Buffer.alloc(capacity)
-    buffer.copy(newBuffer)
-    this.#buffer = newBuffer
-    return capacity
-  }
-
-  // contiguous cursor
-  data$(index, cursor) { 
-    const buffer = this.buffer$
-    const endIndex = cursor.index$
-    return buffer.subarray(index, endIndex)
-  }
+  get buffer() { return this._buffer }
 }

@@ -3,8 +3,8 @@ import { DisposeConcept } from '@kingjs/concept'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { TypePrecondition } from '@kingjs/partial-proxy'
 import { throwDisposed } from '@kingjs/cursor'
-import { ContainerCursor } from '../cursor/container-cursor.js'
-import { ContainerConcept } from '../container-concepts.js'
+import { ContainerCursor } from './container-cursor.js'
+import { ContainerConcept } from './container-concepts.js'
 
 export class Container extends PartialProxy {
   static [TypePrecondition]() {
@@ -23,7 +23,7 @@ export class Container extends PartialProxy {
   dispose$() { }
   get isDisposed$() { return this._disposed }
   
-  isOwnerOf(cursor) { return cursor?.container$ == this }
+  isOwnerOf(cursor) { return cursor?.container == this }
 
   static {
     implement(this, {
@@ -31,18 +31,13 @@ export class Container extends PartialProxy {
       endToken$() { },
     })
 
-    implement(this, {
-      isBegin(cursor) { },
-      isEnd(cursor) { },
-    })
-
     implement(this, ContainerConcept, {
       get cursorType() { return this.constructor.cursorType },
-      begin() {
-        const { cursorType } = this
-        return new this.cursorType(this, this.beginToken$()) 
-      },
+      begin() { return new this.cursorType(this, this.beginToken$()) },
       end() { return new this.cursorType(this, this.endToken$()) },
+    }, {
+      isBegin(cursor) { },
+      isEnd(cursor) { },
     })
 
     implement(this, DisposeConcept, {

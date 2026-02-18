@@ -8,15 +8,10 @@ import {
 } from '@kingjs/concept'
 import {
   CursorConcept,
-  CursorFactoryConcept,
   MutableCursorConcept,
   ForwardCursorConcept,
 
-  throwStale,
-  throwNotEquatableTo,
   throwWriteOutOfBounds,
-  throwMoveOutOfBounds,
-  throwUpdateOutOfBounds,
   throwReadOutOfBounds,
 } from '@kingjs/cursor'
 import { 
@@ -24,7 +19,10 @@ import {
   PrologContainerConcept,
   SequenceContainerConcept,
 } from '../container-concepts.js'
-import { ContainerCursor } from './container-cursor.js'
+import {
+  LinkedCursorConcept,
+} from '../container-cursor-concepts.js'
+import { ContainerCursor } from '../container-cursor.js'
 
 export class ForwardLinkCursor extends ContainerCursor {
 
@@ -61,37 +59,21 @@ export class ForwardLinkCursor extends ContainerCursor {
     }
   }
 
-  static partialLinkContainerType$ = class PartialForwardLinkContainer
+  static partialContainerType$ = class PartialForwardLinkContainer
     extends PartialClass {
 
-    static [Preconditions] = {
-      shift() { if (this.isEmpty) throwEmpty() },
-      get front() { if (this.isEmpty) throwEmpty() },
-
-      insertAfter(cursor, value) {
-        const { container$ : container, link$ : link } = cursor
-        if (container != this) throwNotEquatableTo()
-        if (this.__isEnd$(link)) throwUpdateOutOfBounds()
-      },
-      removeAfter(cursor) {
-        const { container$ : container, link$ : link } = cursor
-        if (container != this) throwNotEquatableTo()
-        if (this.__isEnd$(link)) throwUpdateOutOfBounds()
-      }
-    }
-
     static {
+      implement(this, {
+        get rootLink$() { },
+        get endLink$() { },
+      })
+      
       extend(this, {
         isBeforeBegin(cursor) { return this.rootLink$ == cursor.link$ },
         isBegin(cursor) { return this.rootLink$.next == cursor.link$ },
         isEnd(cursor) { return this.endLink$ == cursor.link$ },
       })
 
-      implement(this, {
-        get rootLink$() { },
-        get endLink$() { },
-      })
-      
       implement(this, ContainerConcept, {
         get isEmpty() { return this.endLink$ == this.rootLink$.next },
       })
@@ -113,18 +95,18 @@ export class ForwardLinkCursor extends ContainerCursor {
   static [Preconditions] = {
     step() {
       const { link$ : link } = this
-      if (!this.__isActive$(link)) throwStale()
+      // if (!this.__isActive$(link)) throwStale()
       //if (this.__isEnd$(link)) throwMoveOutOfBounds()
     }, 
     get value() {
       const { link$ : link } = this
-      if (!this.__isActive$(link)) throwStale()
+      // if (!this.__isActive$(link)) throwStale()
       // if (this.__isEnd$(link)) throwReadOutOfBounds()
       if (this.__isBeforeBegin$(link)) throwReadOutOfBounds()
     },
     set value(value) {
       const { link$ : link } = this
-      if (!this.__isActive$(link)) throwStale()
+      // if (!this.__isActive$(link)) throwStale()
       // if (this.__isEnd$(link)) throwWriteOutOfBounds()
       if (this.__isBeforeBegin$(link)) throwWriteOutOfBounds()
     },
@@ -139,16 +121,10 @@ export class ForwardLinkCursor extends ContainerCursor {
   }
 
   static {
-    extend(this, {   
+    extend(this, {
       __isActive$() { return !!this.next },
-      __isEnd$() {
-        const { container$: container } = this
-        return container.isEnd(this)
-      },
-      __isBeforeBegin$() { 
-        const { container$: container } = this
-        return container.isBeforeBegin(this)
-      }
+      __isEnd$() { return this.container.isEnd(this) },
+      __isBeforeBegin$() { return this.container.isBeforeBegin(this) }
     })
   }
 
@@ -182,14 +158,13 @@ export class ForwardLinkCursor extends ContainerCursor {
 
     implement(this, ForwardCursorConcept, {
       clone() {
-        const {
-          constructor, 
-          container$: container, 
-          link$: link 
-        } = this
-
+        const { constructor, container, link$: link } = this
         return new constructor(container, link)
       }
-    }) 
+    })
+
+    implement(this, LinkedCursorConcept, {
+      get isReachable() { return this.__isActive$() },
+    })
   }
 }

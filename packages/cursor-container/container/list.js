@@ -1,13 +1,13 @@
 import { assert } from '@kingjs/assert'
 import { extend } from '@kingjs/partial-extend'
-import { Container } from './container.js'
+import { Container } from '../container.js'
 import {
   ForwardLinkCursor
 } from '../cursor/forward-link-cursor.js'
 
 const {
   linkType$: ForwardLink,
-  partialLinkContainerType$: PartialForwardLinkContainer,
+  partialContainerType$: PartialForwardLinkContainer,
 } = ForwardLinkCursor
 
 export class List extends Container {

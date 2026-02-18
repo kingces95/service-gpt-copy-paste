@@ -131,7 +131,7 @@ class TrimmedSlidingWindowCursor extends IterableCursor {
 
   get isEnd() {
     if (!this.__isActive) this.__throwStale$() 
-    const window = this.container$
+    const window = this.container
     const endInnerCursor = window.endInnerCursor$
     const innerCursor = this.#innerCursor
     return innerCursor.equals(endInnerCursor)
@@ -139,7 +139,7 @@ class TrimmedSlidingWindowCursor extends IterableCursor {
 
   get isBegin() {
     if (!this.__isActive) this.__throwStale$()
-    const window = this.container$
+    const window = this.container
     const beginInnerCursor = window.beginInnerCursor$
     const innerCursor = this.#innerCursor
     return innerCursor.equals(beginInnerCursor)
@@ -148,7 +148,7 @@ class TrimmedSlidingWindowCursor extends IterableCursor {
   next() {
     if (!this.__isActive) this.__throwStale$()
     if (this.isEnd) return
-    const window = this.container$
+    const window = this.container
     const innerCursor = this.#innerCursor
     return window.next$(innerCursor)
   }
@@ -156,28 +156,28 @@ class TrimmedSlidingWindowCursor extends IterableCursor {
   step() {
     if (!this.__isActive) this.__throwStale$()
     const innerCursor = this.#innerCursor
-    const window = this.container$
+    const window = this.container
     return window.step$(innerCursor)
   }
 
   stepBack() {
     if (!this.__isActive) this.__throwStale$()
     const innerCursor = this.#innerCursor
-    const window = this.container$
+    const window = this.container
     return window.stepBack$(innerCursor)
   }
 
   clone() {
     if (!this.__isActive) this.__throwStale$()
-    const window = this.container$
+    const window = this.container
     const innerCursor = this.#innerCursor
     return new TrimmedSlidingWindowCursor(window, innerCursor.clone())
   }
 
   equals(other) {
     if (!this.__isActive) this.__throwStale$()
-    const window = this.container$
-    const otherWindow = other.container$
+    const window = this.container
+    const otherWindow = other.container
     if (window != otherWindow) return false
 
     const innerCursor = this.#innerCursor

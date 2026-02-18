@@ -28,7 +28,7 @@ import {
   Vector,
   Deque,
   NodeBuffer,
-  EcmaBuffer 
+  EcmaBuffer,
 } from '@kingjs/cursor-container'
 
 const TrivialInputContainerCase = {
@@ -130,6 +130,7 @@ const EcmaBufferCase = {
     RandomAccessCursorConcept,
     ContiguousCursorConcept],
 }
+
 
 const cases = [
   ['TrivialCursor', TrivialInputContainerCase],

@@ -15,6 +15,8 @@ export function implement(type, concept, implementation = { }) {
 
   assert(Es6Reflect.isExtensionOf(concept, Concept),
     'Argument concept must extend Concept.')
+  assert(!Es6Reflect.isExtensionOf(type, Concept),
+    'Expected type to not be a PartialType.')
 
   // if pojo, create anonymous partial class from pojo
   implementation = PartialReflect.load(implementation)
