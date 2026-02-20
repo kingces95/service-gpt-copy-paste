@@ -1,6 +1,6 @@
 import { implement } from '@kingjs/implement'
 import { extend } from '@kingjs/partial-extend'
-import { Container } from '../container.js'
+import { PartialProxy } from '@kingjs/partial-proxy'
 import { ContiguousCursor } from '../cursor/contiguous-cursor.js'
 import {
   RewindContainerConcept,
@@ -12,7 +12,7 @@ const {
   partialContainerType$: PartialBufferContainer,
 } = ContiguousCursor
 
-export class NodeBuffer extends Container {
+export class NodeBuffer extends PartialProxy {
   static cursorType = ContiguousCursor
 
   _buffer = Buffer.alloc(0)

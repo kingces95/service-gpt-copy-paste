@@ -7,7 +7,6 @@ import { SequenceCursor } from '../helpers/sequence-cursor.js'
 import { RewindCursor } from '../helpers/rewind-cursor.js'
 import { IndexableCursor } from '../helpers/indexable-cursor.js'
 import { ContiguousCursor } from '../helpers/contiguous-cursor.js'
-import { Container } from './container.js'
 
 import {
   SequenceContainerConcept,
@@ -25,6 +24,7 @@ export class SingletonContainer extends Container {
   get singleton$() { return this._singleton }
   set singleton$(value) { this._singleton = value }
 }
+
 export class SequenceSingletonContainer extends SingletonContainer {
   static cursorType = SequenceCursor
 
@@ -49,6 +49,7 @@ export class SequenceSingletonContainer extends SingletonContainer {
     })
   }
 }
+
 export class RewindSingletonContainer extends SingletonContainer {
   static cursorType = RewindCursor
 
@@ -67,6 +68,7 @@ export class RewindSingletonContainer extends SingletonContainer {
     })
   }
 }
+
 export class IndexableSingletonContainer extends SingletonContainer {
   static cursorType = IndexableCursor
 
@@ -87,6 +89,7 @@ export class IndexableSingletonContainer extends SingletonContainer {
     })
   }
 }
+
 export class ContiguousSingletonContainer extends SingletonContainer {
   static cursorType = ContiguousCursor
 

@@ -3,12 +3,6 @@ import { Preconditions } from '@kingjs/partial-proxy'
 import { copyBackward, copyForward } from '@kingjs/cursor-algorithm'
 import {
   ContiguousCursorConcept,
-
-  throwStale,
-  throwNotEquatableTo,
-  throwMoveOutOfBounds,
-  throwReadOutOfBounds,
-  throwWriteOutOfBounds,
 } from '@kingjs/cursor'
 
 import {

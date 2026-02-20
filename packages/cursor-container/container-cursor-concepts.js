@@ -10,17 +10,23 @@ import {
 } from '@kingjs/cursor'
 
 export class ContainerCursorConcept extends Concept {
-  static [Implements] = ForwardCursorConcept
-
   static [Preconditions] = {
     step() { 
-      if (this.container.isEnd(this)) throwMoveOutOfBounds() },
+      if (this.equals(this.container.end({ const: true }))) 
+        throwMoveOutOfBounds() 
+    },
     get value() { 
-      if (this.container.isEnd(this)) throwReadOutOfBounds() },
+      if (this.equals(this.container.end({ const: true })))
+        throwReadOutOfBounds()
+    },
     set value(value) { 
-      if (this.container.isEnd(this)) throwWriteOutOfBounds() }
+      if (this.equals(this.container.end({ const: true })))
+        throwWriteOutOfBounds()
+    },
   }
 
+  static [Implements] = ForwardCursorConcept
+  
   get container() { }
 }
 
@@ -29,31 +35,9 @@ export class BidirectionalContainerCursorConcept
   static [Implements] = BidirectionalCursorConcept
 
   static [Preconditions] = {
-    stepBack() { if (this.container.isBeforeBegin(this)) 
-      throwMoveOutOfBounds() }
-  }
-}
-
-export class LinkedCursorConcept 
-  extends ContainerCursorConcept {
-
-  static [Preconditions] = {
-    step() {
-      if (!this.isReachable) throwMoveOutOfBounds() },
-    get value() {
-      if (!this.isReachable) throwReadOutOfBounds() },
-    set value(value) {
-      if (!this.isReachable) throwWriteOutOfBounds() }
-  }
-
-  get isReachable() { }
-}
-
-export class LinkedBidirectionalContainerCursorConcept 
-  extends BidirectionalContainerCursorConcept {
-
-  static [Preconditions] = {
-    stepBack() {
-      if (!this.isReachable) throwMoveOutOfBounds() },
+    stepBack() { 
+      if (this.equals(this.container.beforeBegin({ const: true })))
+        throwMoveOutOfBounds()
+    }
   }
 }

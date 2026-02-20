@@ -1,7 +1,7 @@
 import Denque from "denque"
 import { implement } from '@kingjs/implement'
 import { extend } from '@kingjs/partial-extend'
-import { Container } from '../container.js'
+import { PartialProxy } from '@kingjs/partial-proxy'
 import {
   SequenceContainerConcept,
   RewindContainerConcept,
@@ -13,7 +13,7 @@ const {
   partialContainerType$: PartialIndexableContainer,
 } = IndexableCursor
 
-export class Deque extends Container {
+export class Deque extends PartialProxy {
   static cursorType = IndexableCursor
 
   _denque

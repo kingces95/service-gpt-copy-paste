@@ -1,6 +1,6 @@
 import { implement } from '@kingjs/implement'
 import { extend } from '@kingjs/partial-extend'
-import { Container } from '../container.js'
+import { PartialProxy } from '@kingjs/partial-proxy'
 import { IndexableCursor } from '../cursor/indexable-cursor.js'
 import {
   SequenceContainerConcept,
@@ -12,7 +12,7 @@ const {
   partialContainerType$: PartialIndexableContainer,
 } = IndexableCursor
 
-export class Vector extends Container {
+export class Vector extends PartialProxy {
   static cursorType = IndexableCursor
 
   _array

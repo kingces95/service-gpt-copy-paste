@@ -1,8 +1,7 @@
 import { implement } from '@kingjs/implement'
-import { extend } from '@kingjs/partial-extend'
 import { Preconditions, TypePrecondition } from '@kingjs/partial-proxy'
-import { EquatableConcept, Implements } from '@kingjs/concept'
-import { PartialClass } from '@kingjs/partial-class'
+import { EquatableConcept } from '@kingjs/concept'
+import { extend } from '@kingjs/partial-extend'
 import {
   CursorConcept,
   CursorFactoryConcept,
@@ -17,17 +16,80 @@ import {
   throwReadOutOfBounds,
   throwWriteOutOfBounds,
 } from '@kingjs/cursor'
-
 import {
+  ContainerConcept,
   SequenceContainerConcept,
   RewindContainerConcept,
   IndexableContainerConcept,
-
-  ContainerConcept,
 } from '../container-concepts.js'
-import { ContainerCursor } from '../container-cursor.js'
+import { ContainerCursor } from './container-cursor.js'
+
+const {
+  partialContainerType$: PartialContainer,
+} = ContainerCursor
 
 const __version = Symbol('__version')
+
+class PartialIndexableContainer 
+  extends PartialContainer {
+
+  static [Preconditions] = {
+    shift() { this[__version]++ || 1 },
+    unshift(value) { this[__version]++ || 1 },
+
+    at(index) {
+      if (index < 0) throwReadOutOfBounds()
+      if (index >= this.count) throwReadOutOfBounds()
+    },
+    setAt(index, value) {
+      if (index < 0) throwWriteOutOfBounds()
+      if (index >= this.count) throwWriteOutOfBounds()
+    },
+  }
+  
+  static [__version] = 0
+
+  static {
+    extend(this, {
+      get beginToken$() { return 0 },
+      get endToken$() { return this.count },
+    })
+    
+    implement(this, CursorFactoryConcept, {
+      get cursorType() { return this.constructor.cursorType },
+      begin() { return new this.cursorType(this, 0) },
+      end() { return new this.cursorType(this, this.count) },
+    })
+
+    implement(this, ContainerConcept, {
+      get isEmpty() { return this.count == 0 },
+      isBegin(cursor) { return cursor.index === 0 },
+      isEnd(cursor) { return cursor.index === this.count },
+    })
+
+    implement(this, SequenceContainerConcept, {
+      get front() { return this.at(0) },
+    }, {
+      unshift(value) { },
+      shift() { },
+    })
+
+    implement(this, RewindContainerConcept, {
+      get back() { return this.at(this.count - 1) },
+    }, {
+      get count() { },
+      pop() { },
+      push(value) { },
+    })
+
+    implement(this, IndexableContainerConcept, { 
+      // none
+    }, {
+      at(index) { },
+      setAt(index, value) { },
+    })
+  }
+}
 
 export class IndexableCursor extends ContainerCursor {
 
@@ -50,67 +112,13 @@ export class IndexableCursor extends ContainerCursor {
     },
   }
 
-  static partialContainerType$ = class PartialIndexableContainer 
-    extends PartialClass {
-
-    static [Preconditions] = {
-      shift() { this[__version]++ || 1 },
-      unshift(value) { this[__version]++ || 1 },
-
-      at(index) {
-        if (index < 0) throwReadOutOfBounds()
-        if (index >= this.count) throwReadOutOfBounds()
-      },
-      setAt(index, value) {
-        if (index < 0) throwWriteOutOfBounds()
-        if (index >= this.count) throwWriteOutOfBounds()
-      },
-    }
-    
-    static [__version] = 0
-
-    static {
-      implement(this, CursorFactoryConcept, {
-        get cursorType() { return this.constructor.cursorType },
-        begin() { return new this.cursorType(this, 0) },
-        end() { return new this.cursorType(this, this.count) },
-      })
-
-      implement(this, ContainerConcept, {
-        get isEmpty() { return this.count == 0 },
-        isBegin(cursor) { return cursor.index === 0 },
-        isEnd(cursor) { return cursor.index === this.count },        
-      })
-
-      implement(this, SequenceContainerConcept, {
-        get front() { return this.at(0) },
-      }, {
-        unshift(value) { },
-        shift() { },
-      })
-
-      implement(this, RewindContainerConcept, {
-        get back() { return this.at(this.count - 1) },
-      }, {
-        get count() { },
-        pop() { },
-        push(value) { },
-      })
-
-      implement(this, IndexableContainerConcept, { 
-        // none
-      }, {
-        at(index) { },
-        setAt(index, value) { },
-      })
-    }
-  }
+  static partialContainerType$ = PartialIndexableContainer
 
   __version
   _index
 
   constructor(indexable, index) {
-    super(indexable)
+    super(indexable, index)
     this._index = index
     this.__version = indexable[__version]
   }
@@ -121,12 +129,12 @@ export class IndexableCursor extends ContainerCursor {
     implement(this, EquatableConcept, { 
       equals(other) { 
         if (!this.equatableTo(other)) return false
-        return this.index$ == other.index$
+        return this._index == other._index
       }
     })
     
     implement(this, CursorConcept, { 
-      step() { this.move(1) },
+      step() { return this.move(1) },
     })
 
     implement(this, MutableCursorConcept, { 
@@ -136,13 +144,13 @@ export class IndexableCursor extends ContainerCursor {
 
     implement(this, ForwardCursorConcept, {
       clone() {
-        const { constructor, container, index$: index } = this
+        const { constructor, container, _index: index } = this
         return new constructor(container, index)
       }
     })
 
     implement(this, BidirectionalCursorConcept, {
-      stepBack() { this.move(-1) }    
+      stepBack() { return this.move(-1) }    
     }) 
 
     implement(this, RandomAccessCursorConcept, {
