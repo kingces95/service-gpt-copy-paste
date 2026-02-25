@@ -1,8 +1,10 @@
 import { Extends } from '@kingjs/partial-class'
 import { Preconditions } from '@kingjs/partial-proxy'
 import {
-  CursorFactoryConcept,
-  CursorConcept,
+  RangeConcept,
+  ForwardRangeConcept,
+  InputRangeConcept,
+  OutputRangeConcept,
   InputCursorConcept,
   OutputCursorConcept,
   ForwardCursorConcept,
@@ -10,31 +12,36 @@ import {
   RandomAccessCursorConcept,
   ContiguousCursorConcept,
 
+  throwNull,
   throwEmpty,
   throwNotEquatableTo,
   throwUpdateOutOfBounds,
 } from '@kingjs/cursor'
+import { Implements } from '@kingjs/concept'
 
-export class ContainerConcept extends CursorFactoryConcept {
+export class ContainerConcept extends RangeConcept {
   [Extends] = {
     get cursorType() { return this.constructor.cursorType },
+    get isEmpty() { 
+      return this.begin({ fixed: true })
+        .equals(this.end({ fixed: true }))
+    }
   }
 
-  static cursorType = CursorConcept
-
   get isEmpty() { }
-  isBegin(cursor) { }
-  isEnd(cursor) { }
 }
 
 export class InputContainerConcept extends ContainerConcept {
   static cursorType = InputCursorConcept
+  static [Implements] = InputRangeConcept
 }
 export class OutputContainerConcept extends ContainerConcept {
   static cursorType = OutputCursorConcept
+  static [Implements] = OutputRangeConcept
 }
 export class ForwardContainerConcept extends InputContainerConcept {
   static cursorType = ForwardCursorConcept
+  static [Implements] = ForwardRangeConcept
 }
 export class BidirectionalContainerConcept extends ForwardContainerConcept {
   static cursorType = BidirectionalCursorConcept
@@ -59,27 +66,6 @@ export class SequenceContainerConcept extends ForwardContainerConcept {
   shift() { }
 }
 
-// A prolog containers implements a beforeBegin iterator. A beforeBegin 
-// cursor is used for implementing insertAfter and removeAfter methods.
-export class PrologContainerConcept extends SequenceContainerConcept {
-  // static cursorType = ContainerCursorConcept
-
-  [Preconditions] = {
-    insertAfter(cursor, value) {
-      if (this.container != this) throwNotEquatableTo()
-      if (this.isEnd(cursor)) throwUpdateOutOfBounds()
-    },
-    removeAfter(cursor) {
-      if (this.container != this) throwNotEquatableTo()
-      if (this.isEnd(cursor)) throwUpdateOutOfBounds()
-    }
-  }
-
-  beforeBegin() { }
-  insertAfter(cursor, value) { }
-  removeAfter(cursor) { }
-}
-
 // A rewind container is a bidirectional container that supports a back and
 // push/pop operations.
 export class RewindContainerConcept extends BidirectionalContainerConcept {
@@ -101,13 +87,11 @@ export class RewindContainerConcept extends BidirectionalContainerConcept {
 export class EpilogContainerConcept extends RewindContainerConcept {
   static [Preconditions] = {
     insert(cursor, value) {
-      if (this.container != this) throwNotEquatableTo()
-      if (this.isBeforeBegin(cursor)) throwUpdateOutOfBounds()
+      if (this != this) throwNotEquatableTo()
     },
     remove(cursor) {
-      if (this.container != this) throwNotEquatableTo()
-      if (this.isEnd(cursor)) throwUpdateOutOfBounds()
-      if (this.isBeforeBegin(cursor)) throwUpdateOutOfBounds()
+      if (this != this) throwNotEquatableTo()
+      if (this.end({ fixed: true }).equals(cursor)) throwUpdateOutOfBounds()
     }
   }
   
@@ -123,11 +107,25 @@ export class IndexableContainerConcept extends RewindContainerConcept {
 }
 
 export class BufferContainerConcept extends IndexableContainerConcept {
+  static [Extends] = {
+    ensureCapacity(count) {
+      if (count <= this.capacity) return this.capacity
+      const newCapacity = Math.max(count, this.capacity * 2)
+      this.setCapacity(newCapacity)
+      return newCapacity
+    },
+    insertRange(cursor, begin, end) { 
+      const length = end.subtract(begin)
+      this.ensureCapacity(this.count + length)
+      this.copy(cursor, begin, end)
+    },
+    eraseRange(begin, end) { 
+      this.copy(begin, end, this.end())
+    },
+  }
   get capacity() { }
-  expand(count) { }
-  data(index, other) { }
+  setCapacity(count) { }
+  copy(cursor, begin, end) { }
   readAt(cursor, offset, length, signed, littleEndian) { }
-  insertRange(begin, end) { }
-  removeRange(begin, end) { }
+  data(index, other) { }
 }
-  

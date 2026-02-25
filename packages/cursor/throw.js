@@ -17,6 +17,8 @@ export function throwWriteOutOfBounds() { throw new RangeError(
   'Cannot write value out of bounds of cursor.') }
 export function throwMoveOutOfBounds() { throw new RangeError(
   'Cannot move cursor out of bounds.') }
+export function throwFixed() { throw new Error(
+  'Cannot move fixed cursor.') }
 
 export function throwEmpty() { throw new Error(
     "Container is empty.") }

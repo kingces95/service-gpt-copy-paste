@@ -1,3 +1,4 @@
+import { assert } from '@kingjs/assert'
 import { implement } from '@kingjs/implement'
 import { extend } from '@kingjs/partial-extend'
 import { PartialProxy } from '@kingjs/partial-proxy'
@@ -9,13 +10,13 @@ import {
 } from '../container-concepts.js'
 
 const {
-  partialContainerType$: PartialBufferContainer,
+  partialContainerType$: PartialContiguousContainer,
 } = ContiguousCursor
 
 export class NodeBuffer extends PartialProxy {
   static cursorType = ContiguousCursor
 
-  _buffer = Buffer.alloc(0)
+  _buffer = Buffer.alloc(8)
   _count = 0
 
   constructor() {
@@ -26,7 +27,7 @@ export class NodeBuffer extends PartialProxy {
   dispose$() { this._buffer = null }
 
   static {
-    extend(this, PartialBufferContainer)
+    extend(this, PartialContiguousContainer)
 
     implement(this, RewindContainerConcept, {
       get count() { return this._count }
@@ -39,47 +40,55 @@ export class NodeBuffer extends PartialProxy {
 
     implement(this, BufferContainerConcept, {
       get capacity() { return this._buffer.length },
-      expand(capacity) {
+      setCapacity(capacity) {
         const newBuffer = Buffer.alloc(capacity)
         this.buffer.copy(newBuffer)
         this._buffer = newBuffer
         return capacity
       },
-      readAt(index, offset, length, signed, littleEndian) {
-        const { buffer$: buffer } = this
-        const indexOffset = index + offset
+      copy(cursor, begin, end) {    
+        const { buffer: target } = cursor.range
+        const { index: targetStart } = cursor
+        const { index: sourceStart } = begin
+        const { index: sourceEnd } = end
+        this.buffer.copy(target, targetStart, sourceStart, sourceEnd)
+      },
+      data(begin = this.begin(), end = this.end()) { 
+        return this.buffer.subarray(begin.index, end.index)
+      },
+      readAt(index, length = 1, signed = false, littleEndian = false) {
+        const { buffer } = this
 
         switch (length) {
           case 1:
             return signed 
-              ? buffer.readInt8(indexOffset) 
-              : buffer.readUInt8(indexOffset)
+              ? buffer.readInt8(index) 
+              : buffer.readUInt8(index)
           case 2:
             return signed ? (littleEndian 
-              ? buffer.readInt16LE(indexOffset) 
-              : buffer.readInt16BE(indexOffset)
+              ? buffer.readInt16LE(index) 
+              : buffer.readInt16BE(index)
             ) : (littleEndian 
-              ? buffer.readUInt16LE(indexOffset) 
-              : buffer.readUInt16BE(indexOffset)
+              ? buffer.readUInt16LE(index) 
+              : buffer.readUInt16BE(index)
             )
           case 4:
             return signed ? (littleEndian 
-              ? buffer.readInt32LE(indexOffset) 
-              : buffer.readInt32BE(indexOffset)
+              ? buffer.readInt32LE(index) 
+              : buffer.readInt32BE(index)
             ) : (littleEndian 
-              ? buffer.readUInt32LE(indexOffset) 
-              : buffer.readUInt32BE(indexOffset)
+              ? buffer.readUInt32LE(index) 
+              : buffer.readUInt32BE(index)
             )
+          default:
+            // todo: move to PreConditions
+            throw new Error([
+              `Unsupported length: ${length}.`,
+              `Only 1, 2, or 4 bytes are supported.`,
+              `Cannot read ${length} byte(s) at index ${index}.`
+            ].join(' '))
         }
       },
-      data(index, cursor) { 
-        const buffer = this.buffer
-        const endIndex = cursor.index
-        return buffer.subarray(index, endIndex)
-      },
-    }, {
-      insertRange(begin, end) { },
-      removeRange(begin, end) { },
     })
   }
 

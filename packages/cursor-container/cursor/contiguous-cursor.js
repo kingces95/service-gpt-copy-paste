@@ -1,6 +1,7 @@
 import { implement } from '@kingjs/implement'
 import { Preconditions } from '@kingjs/partial-proxy'
 import { copyBackward, copyForward } from '@kingjs/cursor-algorithm'
+import { Implements } from '@kingjs/concept'
 import {
   ContiguousCursorConcept,
 } from '@kingjs/cursor'
@@ -11,7 +12,6 @@ import {
   IndexableContainerConcept,
   BufferContainerConcept,
   EpilogContainerConcept,
-  PrologContainerConcept,
 } from '../container-concepts.js'
 import { IndexableCursor } from './indexable-cursor.js'
 import { assert } from '@kingjs/assert'
@@ -22,7 +22,11 @@ export class ContiguousCursor extends IndexableCursor {
     extends IndexableCursor.partialContainerType$ {
 
     static [Preconditions] = {
-      readAt(index, length, signed, littleEndian) {
+      setCapacity(count) {
+        if (count < this.capacity) throw new RangeError(
+          `Cannot shrink buffer from ${this.capacity} to ${count}.`)
+      },
+      readAt(index, length = 1, signed = false, littleEndian = false) {
         assert([1, 2, 4].includes(length),
           `Unsupported length: ${length}. Only 1, 2, or 4 bytes are supported.`)
         
@@ -32,11 +36,24 @@ export class ContiguousCursor extends IndexableCursor {
         if (index + length > this.count) throw new RangeError(
           `Cannot read ${length} byte(s) at index ${index + length}.`)
       },
+      copy(cursor, begin, end) {
+        assert(cursor?.range?.constructor == this.constructor)
+        assert(begin?.range == this)
+        assert(end?.range == this)
+      },
+      data(begin = this.begin(), end = this.end()) {
+        const { index: beginIndex } = begin
+        const { index: endIndex } = end
+        assert(beginIndex >= 0, 
+          `Cannot read at negative index: ${beginIndex}.`)
+        assert(endIndex <= this.count, 
+          `Cannot read at index ${endIndex}.`)        
+      },
       insert(begin, end) { 
-        // nyi
+        return
       },
       remove(begin, end) { 
-        // nyi
+        return
       }
     }
 
@@ -64,41 +81,35 @@ export class ContiguousCursor extends IndexableCursor {
         setAt(index, value) { },
       })
 
-      implement(this, BufferContainerConcept, {
-        readAt(index, length, signed, littleEndian) { },
-        data(index, other) { },
-        expand(count) { },
-        capacity(count) { },
-        insertRange(begin, end) { },
-        removeRange(begin, end) { },
-      })
-
-      implement(this, PrologContainerConcept, {
-        insertAfter(cursor, value) { },
-        removeAfter(cursor) { },
-      })
-
       implement(this, EpilogContainerConcept, {
-         insert(cursor, value) {
-          if (this._length >= this.capacity$) {
-            this.expand(this.capacity * 2 || 4)
-            return this.insert(cursor, value)
-          }
+        insert(cursor, value) {
+          const begin = cursor.clone()
           const end = this.end()
-          this._length++
-          const result = this.end()
-          copyBackward(cursor, end, result)
-          cursor.value = value    
+          this.ensureCapacity(this.count + 1)
+          this._count++
+          const cursorPlusOne = cursor.clone().step()
+          this.copy(cursorPlusOne, begin, end)
+          cursor.value = value
         },
         remove(cursor) {
           const value = cursor.value
+          const target = cursor.clone()
+          const begin = cursor.step()
           const end = this.end()
-          const after = cursor.clone()
-          after.step()
-          copyForward(after, end, cursor)
-          this._length--
+          this.copy(target, begin, end)
+          this._count--
           return value
         }         
+      })
+
+      implement(this, BufferContainerConcept, {
+        // none
+      }, {
+        get capacity() { },
+        setCapacity(count) { },
+        copy(cursor, begin, end) { },
+        readAt(index, length, signed, littleEndian) { },
+        data(index, other) { },
       })
     }
   }

@@ -1,4 +1,5 @@
 export * from "./cursor-concepts.js"
+export * from "./range-concepts.js"
 export * from "./cursor.js"
 export * from "./range.js"
 export * from "./throw.js"

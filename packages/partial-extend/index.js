@@ -46,7 +46,8 @@ export function extend(type, partialType, {
 
   const keys = new Set()
 
-  for (const extension of PartialLoader.ownPartialTypes(partialType)) {
+  const extensions = [...PartialLoader.ownPartialTypes(partialType)]
+  for (const extension of extensions) {
     const extensionKeys = extend(type, extension, { 
       parentType: partialType,
       isTransparent: extension.prototype instanceof Extensions,

@@ -1,25 +1,27 @@
 import { 
   Implements,
-  EquatableConcept,
-} from '@kingjs/concept'
+  EquatableConcept } from '@kingjs/concept'
 import { Extends } from '@kingjs/partial-class'
 import { throwNotEquatableTo } from './throw.js'
 import { Preconditions } from '@kingjs/partial-proxy'
-import { IntervalConcept, Range } from "./range.js"
-
-export class CursorFactoryConcept extends IntervalConcept {
-  static [Extends] = {
-    toRange() { return new Range(this.begin(), this.end()) },
-  }
-
-  get cursorType() { }
-  
-  begin() { }
-  end() { }
-}
+import { 
+  throwMoveOutOfBounds, 
+  throwReadOutOfBounds, 
+  throwWriteOutOfBounds } from './throw.js'
 
 export class CursorConcept extends EquatableConcept {
+  static [Preconditions] = {
+    step() { 
+      if (this.equals(this.range.end({ constant: true }))) 
+        throwMoveOutOfBounds() 
+    },
+  }
+  
   static [Extends] = {
+    equatableTo(other) {
+      if (other?.constructor != this.constructor) return false
+      return this.range == other.range
+    },
     next() {
       const value = this.value 
       if (!this.step()) return
@@ -27,14 +29,29 @@ export class CursorConcept extends EquatableConcept {
     }
   }
 
+  get range() { }
   step() { }
 }
 
 export class InputCursorConcept extends CursorConcept {
+  static [Preconditions] = {
+    get value() { 
+      if (this.equals(this.range.end({ constant: true })))
+        throwReadOutOfBounds()
+    },
+  }
+
   get value() { }
 }
 
 export class OutputCursorConcept extends CursorConcept {
+  static [Preconditions] = {
+    set value(value) { 
+      if (this.equals(this.range.end({ constant: true })))
+        throwWriteOutOfBounds()
+    },
+  }
+  
   set value(value) { }
 }
 
@@ -47,6 +64,19 @@ export class ForwardCursorConcept extends InputCursorConcept {
 }
 
 export class BidirectionalCursorConcept extends ForwardCursorConcept {
+  static [Preconditions] = {
+    stepBack() { 
+      const { range } = this
+      if (range.beforeBegin) {
+        // if (this.equals(container.beforeBegin({ constant: true })))
+        //   throwMoveOutOfBounds()
+        // else 
+        if (this.equals(range.begin({ constant: true })))
+          throwMoveOutOfBounds()
+      }
+    }
+  }
+
   stepBack() { }
 }
 
@@ -57,7 +87,16 @@ export class RandomAccessCursorConcept extends BidirectionalCursorConcept {
     },
     subtract(other) {
       if (!this.equatableTo(other)) throwNotEquatableTo(other)
-    }
+    },
+    move(offset) {
+      const { range } = this
+      const begin = range.begin({ constant: true })
+      const end = range.end({ constant: true })
+      const count = end.subtract(begin)
+      offset += this.index
+      if (offset < 0) throwMoveOutOfBounds()
+      if (offset > count) throwMoveOutOfBounds()
+    },
   }
 
   move(offset) { }

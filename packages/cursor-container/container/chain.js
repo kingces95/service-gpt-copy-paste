@@ -1,38 +1,25 @@
 import { assert } from '@kingjs/assert'
 import { implement } from '@kingjs/implement'
-import { Preconditions } from '@kingjs/partial-proxy'
-import {
-  throwMoveOutOfBounds,
-} from '@kingjs/cursor'
+import { BidirectionalCursorConcept } from '@kingjs/cursor'
+import { extend } from '@kingjs/partial-extend'
 import { List } from './list.js'
 import { 
   RewindContainerConcept,
-  PrologContainerConcept,
   EpilogContainerConcept,
 } from '../container-concepts.js'
 import {
   RewindLink,
 } from '../helpers/rewind-link.js'
-import {
-  BidirectionalContainerCursorConcept,
-} from '../container-cursor-concepts.js'
 
 class ChainCursor extends List.cursorType {
   static linkType$ = RewindLink
-
-  static [Preconditions] = {
-    stepBack() { 
-      if (this.equals(this.container.beforeBegin({ const: true })))
-        throwMoveOutOfBounds()
-    }
-  }
 
   constructor(container, link) {
     super(container, link)
   }
 
   static { 
-    implement(this, BidirectionalContainerCursorConcept, {
+    implement(this, BidirectionalCursorConcept, {
       stepBack() {
         this.link = this.link.previous
         assert(this.link)
@@ -58,13 +45,23 @@ export class Chain extends List {
   }
 
   static {
-    implement(this, PrologContainerConcept, {
+    extend(this, {
+      // TODO: Loader installs stubs so type.prototype does not work. Need
+      // to update loader to attach a static [Prototype] symbol that contains
+      // the original methods so super methods can be addressed stripped of
+      // stubs and proxies. 
+
+      // insertAfter(cursor, value) { cursor.link.insertAfter(value) },
+      // removeAfter(cursor) { return cursor.link.removeAfter() },
+
       insertAfter(cursor, value) {
-        super.insertAfter(cursor, value)
+        // List.prototype.insertAfter.call(this, cursor, value)
+        cursor.link.insertAfter(value)
         this.count$++
       },
       removeAfter(cursor) {
-        const result = super.removeAfter(cursor)
+        // const result = List.prototype.removeAfter.call(this, cursor)
+        const result = cursor.link.removeAfter()
         this.count$--
         return result
       },
@@ -72,16 +69,14 @@ export class Chain extends List {
 
     implement(this, RewindContainerConcept, {
       get back() { return this.endLink$.previous.value },
+      get count() { return this.count$ },
       push(value) { 
-        this.insert(this.end(), value),
-        this.count$++
+        this.insert(this.end(), value)
       },
       pop() {
         const cursor = this.end()
         cursor.stepBack()
-        const result = this.remove(cursor)
-        this.count$--
-        return result
+        return this.remove(cursor)
       },
     })
 

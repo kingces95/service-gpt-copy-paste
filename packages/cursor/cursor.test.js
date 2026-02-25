@@ -12,14 +12,14 @@ import {
 } from './cursor-concepts.js'
 
 import {
-  TrivialInputContainer,
-  TrivialOutputContainer,
-  TrivialMutableContainer,
-  TrivialForwardContainer,
-  TrivialBidirectionalContainer,
-  TrivialRandomAccessContainer,
-  TrivialContiguousContainer,
-  TrivialOtherContainer,
+  TrivialInputRange,
+  TrivialOutputRange,
+  TrivialMutableRange,
+  TrivialForwardRanged,
+  TrivialBidirectionalRange,
+  TrivialRandomAccessRange,
+  TrivialContiguousRange,
+  TrivialOtherRange,
 } from './trivial-cursors.js'
 
 import { 
@@ -32,26 +32,26 @@ import {
 } from '@kingjs/cursor-container'
 
 const TrivialInputContainerCase = {
-  type: TrivialInputContainer,
+  type: TrivialInputRange,
   concepts: [InputCursorConcept],
 }
 const TrivialOutputContainerCase = {
-  type: TrivialOutputContainer,
+  type: TrivialOutputRange,
   concepts: [OutputCursorConcept],
 }
 const TrivialMutableContainerCase = {
-  type: TrivialMutableContainer,
+  type: TrivialMutableRange,
   concepts: [InputCursorConcept, OutputCursorConcept],
 }
 const TrivialForwardContainerCase = {
-  type: TrivialForwardContainer,
+  type: TrivialForwardRanged,
   concepts: [
     InputCursorConcept, 
     OutputCursorConcept, 
     ForwardCursorConcept],
 }
 const TrivialBidirectionalContainerCase = {
-  type: TrivialBidirectionalContainer,
+  type: TrivialBidirectionalRange,
   concepts: [
     InputCursorConcept, 
     OutputCursorConcept, 
@@ -59,7 +59,7 @@ const TrivialBidirectionalContainerCase = {
     BidirectionalCursorConcept],
 }
 const TrivialRandomAccessContainerCase = {
-  type: TrivialRandomAccessContainer,
+  type: TrivialRandomAccessRange,
   concepts: [
     InputCursorConcept, 
     OutputCursorConcept, 
@@ -68,7 +68,7 @@ const TrivialRandomAccessContainerCase = {
     RandomAccessCursorConcept],
 }
 const TrivialContiguousContainerCase = {
-  type: TrivialContiguousContainer,
+  type: TrivialContiguousRange,
   concepts: [
     InputCursorConcept, 
     OutputCursorConcept, 
@@ -172,6 +172,12 @@ describe.each(cases)('%s', (_, { type, concepts }) => {
     }
   })
 
+  it('should have a range that is iterable and empty', () => {
+    let container = new type()
+    const values = [...container]
+    expect(values).toEqual([])
+  })
+
   describe('uses a container factory to activate itself', () => {
     let container
     let begin
@@ -182,10 +188,12 @@ describe.each(cases)('%s', (_, { type, concepts }) => {
     })
 
     describe('cursor', () => {
+      it('should be instanceof cursor type', () => {
+        expect(begin).toBeInstanceOf(cursorType)
+      })
       it('should throw on step', () => {
         expect(() => begin.step()).toThrow(
-          "Cannot move cursor out of bounds."
-        )
+          "Cannot move cursor out of bounds.")
       })
       it('should be equatable to itself', () => {
         expect(begin.equatableTo(begin)).toBe(true)
@@ -203,6 +211,9 @@ describe.each(cases)('%s', (_, { type, concepts }) => {
 
     if (concepts.includes(InputCursorConcept)) {
       describe('as an input cursor', () => {
+        it('should be instanceof InputCursorConcept', () => {
+          expect(begin).toBeInstanceOf(InputCursorConcept)
+        })
         it('should throw read out of bounds if read', () => {
           expect(() => begin.value).toThrow(
             'Cannot read value out of bounds of cursor.'
@@ -218,6 +229,9 @@ describe.each(cases)('%s', (_, { type, concepts }) => {
   
     if (concepts.includes(OutputCursorConcept)) {
       describe('as an output cursor', () => {
+        it('should be instanceof OutputCursorConcept', () => {
+          expect(begin).toBeInstanceOf(OutputCursorConcept)
+        })
         it('should throw RangeError if set', () => {
           if (!(begin instanceof OutputCursorConcept)) return
           expect(() => begin.value = 42).toThrow(RangeError)
@@ -227,6 +241,9 @@ describe.each(cases)('%s', (_, { type, concepts }) => {
   
     if (concepts.includes(ForwardCursorConcept)) {
       describe('as a forward cursor', () => {
+        it('should be instanceof ForwardCursorConcept', () => {
+          expect(begin).toBeInstanceOf(ForwardCursorConcept)
+        })
         it('should be equal to its clone', () => {
           const clone = begin.clone()
           expect(begin.equals(clone)).toBe(true)
@@ -236,6 +253,9 @@ describe.each(cases)('%s', (_, { type, concepts }) => {
   
     if (concepts.includes(BidirectionalCursorConcept)) {
       describe('as a bidirectional cursor', () => {
+        it('should be instanceof BidirectionalCursorConcept', () => {
+          expect(begin).toBeInstanceOf(BidirectionalCursorConcept)
+        })
         it('should throw on stepBack', () => {
           expect(() => {
             begin.stepBack()
@@ -247,6 +267,9 @@ describe.each(cases)('%s', (_, { type, concepts }) => {
   
     if (concepts.includes(RandomAccessCursorConcept)) {
       describe('as a random access cursor', () => {
+        it('should be instanceof RandomAccessCursorConcept', () => {
+          expect(begin).toBeInstanceOf(RandomAccessCursorConcept)
+        })
         it('should throw if moving forward', () => {
           expect(() => begin.move(1)).toThrow(
             "Cannot move cursor out of bounds."
@@ -288,6 +311,9 @@ describe.each(cases)('%s', (_, { type, concepts }) => {
     
     if (concepts.includes(ContiguousCursorConcept)) {
       describe('as a contiguous cursor', () => {
+        it('should be instanceof ContiguousCursorConcept', () => {
+          expect(begin).toBeInstanceOf(ContiguousCursorConcept)
+        })
         it('should throw RangeError on read 1', () => {
           expect(() => begin.read(1)).toThrow(RangeError)
         })
@@ -399,7 +425,7 @@ describe.each(cases)('%s', (_, { type, concepts }) => {
       let otherContainer
       let otherCursor
       beforeEach(() => {
-        otherContainer = new TrivialOtherContainer()
+        otherContainer = new TrivialOtherRange()
         otherCursor = otherContainer.begin()
       })
       it('should not be equatable', () => {

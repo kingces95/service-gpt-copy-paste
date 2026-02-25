@@ -1,35 +1,24 @@
+import { assert } from '@kingjs/assert'
 import { implement } from '@kingjs/implement'
 import { PartialProxy } from '@kingjs/partial-proxy'
-import { 
-  ScopeConcept,
-  EquatableConcept,
-} from '@kingjs/concept'
 import { 
   CursorConcept 
 } from './cursor-concepts.js'
 
 export class Cursor extends PartialProxy { 
-  #scope
+  _range
 
-  constructor(scope) {
+  constructor(range) {
     super()
-    this.#scope = scope
+    assert(range)
+    this._range = range
   }
 
-  get scope$() { return this.#scope }
-
   static {
-    implement(this, ScopeConcept, {
-      equatableTo(other) {
-        if (other?.constructor != this.constructor) return false
-        return this.scope$ == other.scope$
-      }
-    })
-    implement(this, EquatableConcept, { 
-      // equals(other) { }
-    })
     implement(this, CursorConcept, { 
-      // step() { }
+      get range() { return this._range }
+    }, {
+      step() { }
     })
   }
 }

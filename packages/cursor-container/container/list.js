@@ -1,8 +1,7 @@
 import { assert } from '@kingjs/assert'
 import { extend } from '@kingjs/partial-extend'
 import { implement } from '@kingjs/implement'
-import { PartialProxy } from '@kingjs/partial-proxy'
-import { Preconditions } from '@kingjs/partial-proxy'
+import { PartialProxy, Preconditions } from '@kingjs/partial-proxy'
 import {
   EquatableConcept,
 } from '@kingjs/concept'
@@ -11,12 +10,12 @@ import {
   MutableCursorConcept,
   ForwardCursorConcept,
 
-  throwWriteOutOfBounds,
-  throwReadOutOfBounds,
+  throwNull,
+  throwUpdateOutOfBounds,
+  throwNotEquatableTo,
 } from '@kingjs/cursor'
 import { 
   ContainerConcept,
-  PrologContainerConcept,
   SequenceContainerConcept,
 } from '../container-concepts.js'
 import { 
@@ -27,29 +26,16 @@ import { ForwardLink } from '../helpers/forward-link.js'
 class ListCursor extends ContainerCursor {
   static linkType$ = ForwardLink
 
-  static [Preconditions] = {
-    get value() { if (this.isBeforeBegin) throwReadOutOfBounds() },
-    set value(value) { if (this.isBeforeBegin) throwWriteOutOfBounds() }
-  }
-
   constructor(container, link) {
     super(container, link)
   }
 
   get link() { return this.token }
   set link(link) { this.token = link }
-  get isBeforeBegin() { return this.token === this.container._rootLink }
 
   static {
     extend(this, {
       __isActive$() { return !!this.next },
-    })
-  }
-
-  static { 
-    implement(this, {
-      insertAfter$(value) { this.link.insertAfter(value) },
-      removeAfter$() { return this.link.removeAfter() }
     })
   }
 
@@ -85,6 +71,23 @@ class ListCursor extends ContainerCursor {
 export class List extends PartialProxy {
   static cursorType = ListCursor
 
+  static [Preconditions] = {
+    insertAfter(cursor, value) {
+      if (!cursor) throwNull()
+      if (cursor.range != this) throwNotEquatableTo()
+      const end = this.end({ fixed: true })
+      if (cursor.equals(end)) throwUpdateOutOfBounds()
+    },
+    removeAfter(cursor) {
+      if (!cursor) throwNull()
+      if (cursor.range != this) throwNotEquatableTo()
+      const end = this.end({ fixed: true })
+      if (cursor.equals(end)) throwUpdateOutOfBounds()
+      const next = cursor.clone().step()
+      if (next.equals(end)) throwUpdateOutOfBounds()
+    }
+  }
+
   _rootLink
   _endLink
 
@@ -104,6 +107,12 @@ export class List extends PartialProxy {
 
   static {
 
+    extend(this, {
+      beforeBegin() { return new this.cursorType(this, this._rootLink) },
+      insertAfter(cursor, value) { cursor.link.insertAfter(value) },
+      removeAfter(cursor) { return cursor.link.removeAfter() },
+    })
+
     implement(this, ContainerConcept, {
       get isEmpty() { return this._endLink == this._rootLink.next },
     })
@@ -112,12 +121,6 @@ export class List extends PartialProxy {
       get front() { return this._rootLink.next.value },
       shift() { return this.removeAfter(this.beforeBegin()) },
       unshift(value) { this.insertAfter(this.beforeBegin(), value) },
-    })
-
-    implement(this, PrologContainerConcept, {
-      beforeBegin() { return new this.cursorType(this, this._rootLink) },
-      insertAfter(cursor, value) { cursor.insertAfter$(value) },
-      removeAfter(cursor) { return cursor.removeAfter$() },
     })
 
     implement(this, ContainerConcept, {

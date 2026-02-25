@@ -98,7 +98,7 @@ export class PartialReflect {
   }
 
   static *ownPartialTypes(type) {
-    if (PartialTypeReflect.isPartialType(type))
+    if (PartialTypeReflect.isPartialType(type)) 
       return yield* PartialLoader.ownPartialTypes(type)
 
     yield* PartialAssociate.ownPartialTypes(type)

@@ -11,7 +11,7 @@ import {
   BidirectionalCursorConcept,
   RandomAccessCursorConcept,
   ContiguousCursorConcept,
-  CursorFactoryConcept,
+  ForwardRangeConcept,
 
   Cursor,
   Range,
@@ -29,7 +29,6 @@ import {
   SequenceContainerConcept,
   RewindContainerConcept,
   IndexableContainerConcept,
-  PrologContainerConcept,
 
   ContainerCursor,
   SequenceCursor,
@@ -75,7 +74,7 @@ function dump(fn) {
 // dumpToFile(ContiguousCursorConcept, 'contiguous-cursor-concept')
 
 // dumpToFile(Cursor, 'cursor')
-// dumpToFile(CursorFactoryConcept, 'cursor-factory-concept')
+// dumpToFile(ForwardRangeConcept, 'cursor-factory-concept')
 // dumpToFile(Range, 'range')
 // dumpToFile(IntervalConcept, 'interval-concept')
 
@@ -89,7 +88,6 @@ function dump(fn) {
 // dumpToFile(SequenceContainerConcept, 'sequence-container-concept')
 // dumpToFile(RewindContainerConcept, 'rewind-container-concept')
 // dumpToFile(IndexableContainerConcept, 'indexable-container-concept')
-// dumpToFile(PrologContainerConcept, 'prolog-container-concept')
 
 // dumpToFile(ContainerCursor, 'container-cursor')
 // dumpToFile(SequenceCursor, 'sequence-cursor')

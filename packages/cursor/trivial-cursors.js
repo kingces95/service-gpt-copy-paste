@@ -5,7 +5,6 @@ import { EquatableConcept } from '@kingjs/concept'
 import { Cursor } from './cursor.js'
 import { 
   CursorConcept,
-  CursorFactoryConcept,
   InputCursorConcept,
   OutputCursorConcept,
   MutableCursorConcept,
@@ -14,6 +13,9 @@ import {
   RandomAccessCursorConcept,
   ContiguousCursorConcept,
 } from './cursor-concepts.js'
+import { 
+  ForwardRangeConcept
+} from './range-concepts.js'
 import {
   throwMoveOutOfBounds,
   throwReadOutOfBounds,
@@ -23,7 +25,6 @@ import {
 // End cursor implementations; Cursors (1) are empty and (2) cannot move. 
 
 export class TrivialCursor extends Cursor {
-  
   constructor(scope) {
     super(scope)
   }
@@ -79,7 +80,7 @@ export class TrivialMutableCursor extends TrivialCursor {
 export class TrivialForwardCursor extends TrivialMutableCursor {
   static { 
     implement(this, ForwardCursorConcept, {
-      clone() { return new this.constructor(this.scope$) }
+      clone() { return new this.constructor(this.range) }
     }) 
   }
 }
@@ -127,36 +128,37 @@ export class TrivialContiguousCursor extends TrivialRandomAccessCursor {
 
 export class TrivialOtherCursor extends TrivialCursor { }
 
-export class TrivialContainer extends PartialProxy {
+export class TrivialRange extends PartialProxy {
+  static cursorType = TrivialCursor
+
   static {
-    implement(this, CursorFactoryConcept, {
-      get cursorType() { return this.constructor.cursorType },
+    implement(this, ForwardRangeConcept, {
       begin() { return new this.cursorType(this) },
       end() { return new this.cursorType(this) },
     })
   }
 }
-export class TrivialOtherContainer extends TrivialContainer { 
+export class TrivialOtherRange extends TrivialRange { 
   static cursorType = TrivialOtherCursor
 }
-export class TrivialInputContainer extends TrivialContainer {
+export class TrivialInputRange extends TrivialRange {
   static cursorType = TrivialInputCursor
 }
-export class TrivialOutputContainer extends TrivialContainer {
+export class TrivialOutputRange extends TrivialRange {
   static cursorType = TrivialOutputCursor
 }
-export class TrivialMutableContainer extends TrivialContainer {
+export class TrivialMutableRange extends TrivialRange {
   static cursorType = TrivialMutableCursor
 }
-export class TrivialForwardContainer extends TrivialContainer {
+export class TrivialForwardRanged extends TrivialRange {
   static cursorType = TrivialForwardCursor
 }
-export class TrivialBidirectionalContainer extends TrivialContainer {
+export class TrivialBidirectionalRange extends TrivialRange {
   static cursorType = TrivialBidirectionalCursor
 }
-export class TrivialRandomAccessContainer extends TrivialContainer {
+export class TrivialRandomAccessRange extends TrivialRange {
   static cursorType = TrivialRandomAccessCursor
 }
-export class TrivialContiguousContainer extends TrivialContainer {
+export class TrivialContiguousRange extends TrivialRange {
   static cursorType = TrivialContiguousCursor
 }

@@ -4,15 +4,13 @@ import { EquatableConcept } from '@kingjs/concept'
 import { extend } from '@kingjs/partial-extend'
 import {
   CursorConcept,
-  CursorFactoryConcept,
+  ForwardRangeConcept,
   MutableCursorConcept,
   ForwardCursorConcept,
   BidirectionalCursorConcept,
   RandomAccessCursorConcept,
 
   throwStale,
-  throwNotEquatableTo,
-  throwMoveOutOfBounds,
   throwReadOutOfBounds,
   throwWriteOutOfBounds,
 } from '@kingjs/cursor'
@@ -50,12 +48,7 @@ class PartialIndexableContainer
   static [__version] = 0
 
   static {
-    extend(this, {
-      get beginToken$() { return 0 },
-      get endToken$() { return this.count },
-    })
-    
-    implement(this, CursorFactoryConcept, {
+    implement(this, ForwardRangeConcept, {
       get cursorType() { return this.constructor.cursorType },
       begin() { return new this.cursorType(this, 0) },
       end() { return new this.cursorType(this, this.count) },
@@ -63,8 +56,6 @@ class PartialIndexableContainer
 
     implement(this, ContainerConcept, {
       get isEmpty() { return this.count == 0 },
-      isBegin(cursor) { return cursor.index === 0 },
-      isEnd(cursor) { return cursor.index === this.count },
     })
 
     implement(this, SequenceContainerConcept, {
@@ -93,24 +84,10 @@ class PartialIndexableContainer
 
 export class IndexableCursor extends ContainerCursor {
 
-  static [TypePrecondition] = function() {
-    const { container, __version } = this
-    if (container[__version] !== __version) throwStale()
-  }
-
-  static [Preconditions] = {
-    subtract(otherCursor) {
-      if (!this.equatableTo(otherCursor)) throwNotEquatableTo()
-    },
-    compareTo(otherCursor) {
-      if (!this.equatableTo(otherCursor)) throwNotEquatableTo()
-    },
-    move(offset) {
-      offset += this.index
-      if (offset < 0) throwMoveOutOfBounds()
-      if (offset > this.container.count) throwMoveOutOfBounds()
-    },
-  }
+  // static [TypePrecondition] = function() {
+  //   const { _range, __version } = this
+  //   if (_range[__version] !== __version) throwStale()
+  // }
 
   static partialContainerType$ = PartialIndexableContainer
 
@@ -165,13 +142,13 @@ export class IndexableCursor extends ContainerCursor {
         this.container.setAt(this.index + offset, value)
       },
       subtract(otherCursor) {
-        return otherCursor.index - this.index
+        return this.index - otherCursor.index
       },
       compareTo(otherCursor) {
         if (this.index < otherCursor.index) return -1
         if (this.index > otherCursor.index) return 1
         return 0
-      }      
+      },
     }) 
   }
 

@@ -15,7 +15,6 @@ import {
   ForwardContainerConcept,
   RewindContainerConcept,
   RandomAccessContainerConcept,
-  PrologContainerConcept,
   SequenceContainerConcept,
   IndexableContainerConcept,
   ContiguousContainerConcept,

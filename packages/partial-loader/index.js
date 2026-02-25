@@ -5,6 +5,7 @@ import { PartialType, PartialTypeReflect } from '@kingjs/partial-type'
 import { getOwn } from '@kingjs/get-own'
 import { asIterable } from '@kingjs/as-iterable'
 import { Es6Reflect } from '@kingjs/es6-reflect'
+import { PartialAssociate } from '@kingjs/partial-associate'
 
 // Operations supporting @kingjs/extend.
 
@@ -30,7 +31,13 @@ export class PartialLoader {
 
   static *ownPartialTypes(type) {
     assert(PartialTypeReflect.isPartialType(type))
+    // added by declaration (e.g. by static [Extends] = PartialType)
     yield* PartialLoader.declaredOwnPartialTypes$(type, PartialType.PartialTypes)
+    
+    // added procedurally (e.g by extend() or implement())
+    yield* PartialAssociate.ownPartialTypes(type)
+    
+    // added by inheritance (e.g. by extending a partial type)
     yield* PartialLoader.inheritedPartialTypes$(type)
   }
   static *declaredOwnPartialTypes$(type, symbols) {
@@ -45,6 +52,7 @@ export class PartialLoader {
       const { expectedType, map = o => o } = options
       const associatedTypes = getOwn(type, symbol)
 
+      // TODO: see RangeConcept: Breaks trying to make iterable.
       for (let associatedType of asIterable(associatedTypes).map(map)) {
         assert(isExtensionOfAny(associatedType, expectedType),
           `Associate type "${associatedType.name}" is of an unexpected type.`)

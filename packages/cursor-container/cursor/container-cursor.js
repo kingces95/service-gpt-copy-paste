@@ -1,9 +1,8 @@
 import { implement } from '@kingjs/implement'
-import { throwDisposed } from '@kingjs/cursor'
-import { PartialProxy, TypePrecondition } from '@kingjs/partial-proxy'
-import { ScopeConcept, DisposeConcept } from '@kingjs/concept'
+import { Cursor, throwDisposed } from '@kingjs/cursor'
+import { TypePrecondition } from '@kingjs/partial-proxy'
+import { DisposeConcept } from '@kingjs/concept'
 import { PartialClass } from '@kingjs/partial-class'
-import { ContainerCursorConcept } from '../container-cursor-concepts.js'
 
 const __disposed = Symbol('__disposed')
 
@@ -22,8 +21,6 @@ export class PartialContainer extends PartialClass {
   static {
     implement(this, {
       dispose$() { },
-      get beginToken$() { },
-      get endToken$() { },
     })
 
     implement(this, DisposeConcept, {
@@ -36,33 +33,18 @@ export class PartialContainer extends PartialClass {
   }
 }
 
-export class ContainerCursor extends PartialProxy {
+export class ContainerCursor extends Cursor {
   static partialContainerType$ = PartialContainer
   static { PartialContainer.cursorType = this }
   
-  #container
   #token
 
   constructor(container, token) {
-    super()
-    this.#container = container
+    super(container)
     this.#token = token
   }
 
-  get container() { return this.#container }
+  get container() { return this.range }
   get token() { return this.#token }
   set token(token) { this.#token = token }
-  get isBegin() { return this.token === this.container.beginToken$ }
-  get isEnd() { return this.token === this.container.endToken$ }
-
-  static {
-    implement(this, ScopeConcept, {
-      equatableTo(other) {
-        if (other?.constructor != this.constructor) return false
-        return this.container == other.container
-      }
-    })
-    
-    implement(this, ContainerCursorConcept)
-  }
 }

@@ -1,3 +1,4 @@
+import { assert } from '@kingjs/assert'
 import { implement } from '@kingjs/implement'
 import { extend } from '@kingjs/partial-extend'
 import { PartialProxy } from '@kingjs/partial-proxy'
@@ -15,11 +16,15 @@ const {
 export class EcmaBuffer extends PartialProxy {
   static cursorType = ContiguousCursor
 
-  _buffer = new DataView(new ArrayBuffer(8))
+  _buffer = null
+  _view = null
   _count = 0
 
   constructor() {
     super()
+    const bytes = new ArrayBuffer(8)
+    this._buffer = new Uint8Array(bytes)
+    this._view = new DataView(bytes)
   }
 
   // container
@@ -33,49 +38,63 @@ export class EcmaBuffer extends PartialProxy {
     })
 
     implement(this, IndexableContainerConcept, {
-      at(index) { return this._buffer.getUint8(index) },
-      setAt(index, value) { this.setUint8(index, value) }
+      at(index) { return this.view.getUint8(index) },
+      setAt(index, value) { this.view.setUint8(index, value) }
     })
 
     implement(this, BufferContainerConcept, {
-      get capacity() { return this._buffer.length },
-      expand(capacity) {
-        const newBuffer = Buffer.alloc(capacity)
-        this.buffer.copy(newBuffer)
+      get capacity() { return this.bytes.byteLength },
+      setCapacity(capacity) {
+        const newBytes = new ArrayBuffer(capacity)
+        const newBuffer = new Uint8Array(newBytes)
+        const newView = new DataView(newBytes)
+        newBuffer.set(this.buffer)
         this._buffer = newBuffer
+        this._view = newView
         return capacity
       },
-      readAt(index, length, signed, littleEndian) {
-        const { buffer } = this
+      copy(cursor, begin, end) { 
+        const { buffer: target } = cursor.range
+        const { index: targetStart } = cursor
+        const { index: sourceStart } = begin
+        const { index: sourceEnd } = end
+        const subArray = this.buffer.subarray(sourceStart, sourceEnd)
+        target.set(subArray, targetStart)
+      },
+      data(begin = this.begin(), end = this.end()) { 
+        return this.buffer.subarray(begin.index, end.index)
+      },
+      readAt(index, length = 1, signed = false, littleEndian = false) {
+        const { view } = this
 
         switch (length) {
           case 1:
             return signed
-              ? buffer.getInt8(index)
-              : buffer.getUint8(index)
+              ? view.getInt8(index)
+              : view.getUint8(index)
 
           case 2:
             return signed
-              ? buffer.getInt16(index, littleEndian)
-              : buffer.getUint16(index, littleEndian)
+              ? view.getInt16(index, littleEndian)
+              : view.getUint16(index, littleEndian)
 
           case 4:
             return signed
-              ? buffer.getInt32(index, littleEndian)
-              : buffer.getUint32(index, littleEndian)
+              ? view.getInt32(index, littleEndian)
+              : view.getUint32(index, littleEndian)
+
+          default:
+            throw new Error([
+              `Unsupported length: ${length}.`,
+              `Only 1, 2, or 4 bytes are supported.`,
+              `Cannot read ${length} byte(s) at index ${index}.`
+            ].join(' '))
         }
       },
-        data(index, cursor) { 
-        const { buffer, byteOffset } = this.buffer
-        const endIndex = cursor.index
-        const length = endIndex - index
-        return new DataView(buffer, byteOffset + index, length)
-      },
-    }, {
-      insertRange(begin, end) { },
-      removeRange(begin, end) { },
     })
   }
 
   get buffer() { return this._buffer }
+  get view() { return this._view }
+  get bytes() { return this._buffer.buffer }
 }
