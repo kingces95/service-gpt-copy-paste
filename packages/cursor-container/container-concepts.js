@@ -31,25 +31,31 @@ export class ContainerConcept extends RangeConcept {
   get isEmpty() { }
 }
 
-export class InputContainerConcept extends ContainerConcept {
+export class InputContainerConcept
+  extends ContainerConcept {
   static cursorType = InputCursorConcept
   static [Implements] = InputRangeConcept
 }
-export class OutputContainerConcept extends ContainerConcept {
+export class OutputContainerConcept 
+  extends ContainerConcept {
   static cursorType = OutputCursorConcept
   static [Implements] = OutputRangeConcept
 }
-export class ForwardContainerConcept extends InputContainerConcept {
+export class ForwardContainerConcept 
+  extends InputContainerConcept {
   static cursorType = ForwardCursorConcept
   static [Implements] = ForwardRangeConcept
 }
-export class BidirectionalContainerConcept extends ForwardContainerConcept {
+export class BidirectionalContainerConcept 
+  extends ForwardContainerConcept {
   static cursorType = BidirectionalCursorConcept
 }
-export class RandomAccessContainerConcept extends BidirectionalContainerConcept {
+export class RandomAccessContainerConcept 
+  extends BidirectionalContainerConcept {
   static cursorType = RandomAccessCursorConcept
 }
-export class ContiguousContainerConcept extends RandomAccessContainerConcept {
+export class ContiguousContainerConcept 
+  extends RandomAccessContainerConcept {
   static cursorType = ContiguousCursorConcept
 }
 
@@ -84,7 +90,7 @@ export class RewindContainerConcept extends BidirectionalContainerConcept {
   push(value) { }
 }
 
-export class EpilogContainerConcept extends RewindContainerConcept {
+export class EditableContainerConcept extends RewindContainerConcept {
   static [Preconditions] = {
     insert(cursor, value) {
       if (this != this) throwNotEquatableTo()
@@ -127,5 +133,6 @@ export class BufferContainerConcept extends IndexableContainerConcept {
   setCapacity(count) { }
   copy(cursor, begin, end) { }
   readAt(cursor, offset, length, signed, littleEndian) { }
+  writeAt(cursor, offset, value, length, signed, littleEndian) { }
   data(index, other) { }
 }

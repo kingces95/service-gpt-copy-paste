@@ -5,7 +5,7 @@ import { extend } from '@kingjs/partial-extend'
 import { List } from './list.js'
 import { 
   RewindContainerConcept,
-  EpilogContainerConcept,
+  EditableContainerConcept,
 } from '../container-concepts.js'
 import {
   RewindLink,
@@ -80,7 +80,7 @@ export class Chain extends List {
       },
     })
 
-    implement(this, EpilogContainerConcept, {
+    implement(this, EditableContainerConcept, {
       insert(cursor, value) {
         cursor.link.insert(value)
         this.count$++

@@ -1,60 +1,60 @@
 import { assert } from '@kingjs/assert'
 import { implement } from '@kingjs/implement'
-import { extend } from '@kingjs/partial-extend'
-import { PartialProxy } from '@kingjs/partial-proxy'
 import { ContiguousCursor } from '../cursor/contiguous-cursor.js'
-import {
-  RewindContainerConcept,
-  IndexableContainerConcept,
-  BufferContainerConcept,
-} from '../container-concepts.js'
+import {BufferContainerConcept } from '../container-concepts.js'
+import { EcmaBuffer } from './ecma-buffer.js'
 
-const {
-  partialContainerType$: PartialContiguousContainer,
-} = ContiguousCursor
-
-export class NodeBuffer extends PartialProxy {
+export class NodeBuffer extends EcmaBuffer {
   static cursorType = ContiguousCursor
 
-  _buffer = Buffer.alloc(8)
-  _count = 0
+  _buffer
+  _count
 
-  constructor() {
-    super()
+  constructor(buffer, count) {
+    assert(!buffer || Buffer.isBuffer(buffer))
+    assert(!count || count >= 0)
+    assert(!buffer || !count || count <= buffer.length)
+    if (!buffer) buffer = Buffer.alloc(8)
+    if (!count) count = 0
+    super(buffer, count)
+    this._count = count
+    this._buffer = buffer
   }
 
-  // container
-  dispose$() { this._buffer = null }
-
   static {
-    extend(this, PartialContiguousContainer)
-
-    implement(this, RewindContainerConcept, {
-      get count() { return this._count }
-    })
-
-    implement(this, IndexableContainerConcept, {
-      at(index) { return this._buffer[index] },
-      setAt(index, value) { this._buffer[index] = value }
-    })
 
     implement(this, BufferContainerConcept, {
-      get capacity() { return this._buffer.length },
-      setCapacity(capacity) {
-        const newBuffer = Buffer.alloc(capacity)
-        this.buffer.copy(newBuffer)
-        this._buffer = newBuffer
-        return capacity
-      },
-      copy(cursor, begin, end) {    
-        const { buffer: target } = cursor.range
-        const { index: targetStart } = cursor
-        const { index: sourceStart } = begin
-        const { index: sourceEnd } = end
-        this.buffer.copy(target, targetStart, sourceStart, sourceEnd)
-      },
-      data(begin = this.begin(), end = this.end()) { 
-        return this.buffer.subarray(begin.index, end.index)
+      writeAt(index, value, length = 1, signed = false, littleEndian = false) {
+        const { buffer } = this
+
+        switch (length) {
+          case 1:
+            return signed
+              ? buffer.writeInt8(value, index) 
+              : buffer.writeUInt8(value, index)
+          case 2:
+            return signed ? (littleEndian
+              ? buffer.writeInt16LE(value, index) 
+              : buffer.writeInt16BE(value, index)
+            ) : (littleEndian 
+              ? buffer.writeUInt16LE(value, index) 
+              : buffer.writeUInt16BE(value, index)
+            )
+          case 4:
+            return signed ? (littleEndian
+              ? buffer.writeInt32LE(value, index) 
+              : buffer.writeInt32BE(value, index)
+            ) : (littleEndian 
+              ? buffer.writeUInt32LE(value, index) 
+              : buffer.writeUInt32BE(value, index)
+            )
+          default:
+            throw new Error([
+              `Unsupported length: ${length}.`,
+              `Only 1, 2, or 4 bytes are supported.`,
+              `Cannot write ${length} byte(s) at index ${index}.`
+            ].join(' '))
+        }
       },
       readAt(index, length = 1, signed = false, littleEndian = false) {
         const { buffer } = this

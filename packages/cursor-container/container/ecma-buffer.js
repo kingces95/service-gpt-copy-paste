@@ -16,15 +16,25 @@ const {
 export class EcmaBuffer extends PartialProxy {
   static cursorType = ContiguousCursor
 
-  _buffer = null
-  _view = null
-  _count = 0
+  _buffer
+  _count
+  _view
 
-  constructor() {
+  constructor(buffer, count) {
+    assert(!buffer || buffer instanceof Uint8Array)
+    assert(!count || count >= 0)
+    assert(!buffer || !count || count <= buffer.length)
     super()
-    const bytes = new ArrayBuffer(8)
-    this._buffer = new Uint8Array(bytes)
-    this._view = new DataView(bytes)
+    this._count = count || 0
+    this._buffer = buffer || new Uint8Array(new ArrayBuffer(8))
+    this._view = null
+  }
+
+  get bytes$() { return this._buffer.buffer }
+  set view$(value) { this._view = value }
+  get view$() {
+    if (!this._view) this.view$ = new DataView(this.bytes$)
+    return this._view
   }
 
   // container
@@ -38,19 +48,18 @@ export class EcmaBuffer extends PartialProxy {
     })
 
     implement(this, IndexableContainerConcept, {
-      at(index) { return this.view.getUint8(index) },
-      setAt(index, value) { this.view.setUint8(index, value) }
+      at(index) { return this.readAt(index) },
+      setAt(index, value) { this.writeAt(index, value) }
     })
 
     implement(this, BufferContainerConcept, {
-      get capacity() { return this.bytes.byteLength },
+      get capacity() { return this.bytes$.byteLength },
       setCapacity(capacity) {
         const newBytes = new ArrayBuffer(capacity)
         const newBuffer = new Uint8Array(newBytes)
-        const newView = new DataView(newBytes)
         newBuffer.set(this.buffer)
         this._buffer = newBuffer
-        this._view = newView
+        this._view = null
         return capacity
       },
       copy(cursor, begin, end) { 
@@ -64,8 +73,38 @@ export class EcmaBuffer extends PartialProxy {
       data(begin = this.begin(), end = this.end()) { 
         return this.buffer.subarray(begin.index, end.index)
       },
+      writeAt(index, value, length = 1, signed = false, littleEndian = false) {
+        const { view$: view } = this
+
+        switch (length) {
+          case 1:
+            signed
+              ? view.setInt8(index, value)
+              : view.setUint8(index, value)
+            break
+
+          case 2:
+            signed
+              ? view.setInt16(index, value, littleEndian)
+              : view.setUint16(index, value, littleEndian)
+            break
+
+          case 4:
+            signed
+              ? view.setInt32(index, value, littleEndian)
+              : view.setUint32(index, value, littleEndian)
+            break
+
+          default:
+            throw new Error([
+              `Unsupported length: ${length}.`,
+              `Only 1, 2, or 4 bytes are supported.`,
+              `Cannot write ${length} byte(s) at index ${index}.`
+            ].join(' '))
+        }
+      },
       readAt(index, length = 1, signed = false, littleEndian = false) {
-        const { view } = this
+        const { view$: view } = this
 
         switch (length) {
           case 1:
@@ -95,6 +134,4 @@ export class EcmaBuffer extends PartialProxy {
   }
 
   get buffer() { return this._buffer }
-  get view() { return this._view }
-  get bytes() { return this._buffer.buffer }
 }

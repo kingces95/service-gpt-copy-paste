@@ -1,7 +1,5 @@
 import { implement } from '@kingjs/implement'
 import { Preconditions } from '@kingjs/partial-proxy'
-import { copyBackward, copyForward } from '@kingjs/cursor-algorithm'
-import { Implements } from '@kingjs/concept'
 import {
   ContiguousCursorConcept,
 } from '@kingjs/cursor'
@@ -11,7 +9,7 @@ import {
   RewindContainerConcept,
   IndexableContainerConcept,
   BufferContainerConcept,
-  EpilogContainerConcept,
+  EditableContainerConcept,
 } from '../container-concepts.js'
 import { IndexableCursor } from './indexable-cursor.js'
 import { assert } from '@kingjs/assert'
@@ -81,7 +79,7 @@ export class ContiguousCursor extends IndexableCursor {
         setAt(index, value) { },
       })
 
-      implement(this, EpilogContainerConcept, {
+      implement(this, EditableContainerConcept, {
         insert(cursor, value) {
           const begin = cursor.clone()
           const end = this.end()
@@ -108,6 +106,7 @@ export class ContiguousCursor extends IndexableCursor {
         get capacity() { },
         setCapacity(count) { },
         copy(cursor, begin, end) { },
+        writeAt(index, value, length, signed, littleEndian) { },
         readAt(index, length, signed, littleEndian) { },
         data(index, other) { },
       })
@@ -126,6 +125,11 @@ export class ContiguousCursor extends IndexableCursor {
         const index = this.index + offset
         return container.readAt(index, length, signed, littleEndian)
       },
+      writeAt(offset = 0, value, length = 1, signed = false, littleEndian = false) {
+        const { container } = this
+        const index = this.index + offset
+        return container.writeAt(index, value, length, signed, littleEndian)
+      }
     }) 
   }
 }

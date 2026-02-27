@@ -8,6 +8,7 @@ import {
   throwMoveOutOfBounds, 
   throwReadOutOfBounds, 
   throwWriteOutOfBounds } from './throw.js'
+import { write } from 'fast-csv'
 
 export class CursorConcept extends EquatableConcept {
   static [Preconditions] = {
@@ -108,8 +109,9 @@ export class RandomAccessCursorConcept extends BidirectionalCursorConcept {
 
 export class ContiguousCursorConcept extends RandomAccessCursorConcept {
   static [Preconditions] = {
-    data(other) {
-      if (!this.equatableTo(other)) throwNotEquatableTo(other)
+    data(begin, end) {
+      if (!this.equatableTo(begin)) throwNotEquatableTo()
+      if (!this.equatableTo(end)) throwNotEquatableTo()
     }
   }
 
@@ -117,36 +119,58 @@ export class ContiguousCursorConcept extends RandomAccessCursorConcept {
     read(length = 1, signed = false, littleEndian = false) {
       return this.readAt(0, length, signed, littleEndian)
     },
+    write(value, length = 1, signed = false, littleEndian = false) {
+      return this.writeAt(0, value, length, signed, littleEndian)
+    },
 
+    // 8 bit
     readUInt8() { return this.read() },
     readInt8() { return this.read(1, true) },
+    writeUInt8(value) { return this.write(value) },
+    writeInt8(value) { return this.write(value, 1, true) },
   
-    readUInt16(littleEndian = false) { return this.read(2, false, littleEndian) },
+    // 16 bit unsigned
+    readUInt16(littleEndian = false) { 
+      return this.read(2, false, littleEndian) },
     readUInt16BE() { return this.readUInt16() },
     readUInt16LE() { return this.readUInt16(true) },
+    writeUInt16(value, littleEndian = false) { 
+      return this.write(value, 2, false, littleEndian) },
+    writeUInt16BE(value) { return this.writeUInt16(value) },
+    writeUInt16LE(value) { return this.writeUInt16(value, true) },
     
-    readInt16(littleEndian = false) { return this.read(2, true, littleEndian) },
+    // 16 bit signed
+    readInt16(littleEndian = false) { 
+      return this.read(2, true, littleEndian) },
     readInt16BE() { return this.readInt16() },
     readInt16LE() { return this.readInt16(true) },
+    writeInt16(value, littleEndian = false) { 
+      return this.write(value, 2, true, littleEndian) },
+    writeInt16BE(value) { return this.writeInt16(value) },
+    writeInt16LE(value) { return this.writeInt16(value, true) },
   
-    readUInt32(littleEndian = false) { return this.read(4, false, littleEndian) },
+    // 32 bit unsigned
+    readUInt32(littleEndian = false) { 
+      return this.read(4, false, littleEndian) },
     readUInt32BE() { return this.readUInt32() },
     readUInt32LE() { return this.readUInt32(true) },
+    writeUInt32(value, littleEndian = false) { 
+      return this.write(value, 4, false, littleEndian) },
+    writeUInt32BE(value) { return this.writeUInt32(value) },
+    writeUInt32LE(value) { return this.writeUInt32(value, true) },
   
-    readInt32(littleEndian = false) { return this.read(4, true, littleEndian) },
+    // 32 bit signed
+    readInt32(littleEndian = false) { 
+      return this.read(4, true, littleEndian) },
     readInt32BE() { return this.readInt32() },
     readInt32LE() { return this.readInt32(true) },
+    writeInt32(value, littleEndian = false) { 
+      return this.write(value, 4, true, littleEndian) },
+    writeInt32BE(value) { return this.writeInt32(value) },
+    writeInt32LE(value) { return this.writeInt32(value, true) },
   }
 
-  // Deconstruct a cursor to its underlying components. The STL version only
-  // returns a buffer and index if the container is contiguous, but this version
-  // will also return a set of inner cursors of composit view cursors.
-  // Unwrap a cursor to an array cursors or buffer plus index. For example,
-  // - JoinView returns [outterCursor, innerCursor]
-  // - ComposedView returns [cursor] 
-  // - ContiguousContainer returns [buffer, index]
-  // - Vector return null because it's neither a composition of other cursors
-  //   nor does it have an underlying buffer
-  data(other) { }
+  data(begin, end) { }
   readAt(offset, length, signed, littleEndian) { }
+  writeAt(offset, value, length, signed, littleEndian) { }
 }
