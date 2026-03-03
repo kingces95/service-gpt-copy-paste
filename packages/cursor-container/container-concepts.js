@@ -2,9 +2,13 @@ import { Extends } from '@kingjs/partial-class'
 import { Preconditions } from '@kingjs/partial-proxy'
 import {
   RangeConcept,
-  ForwardRangeConcept,
   InputRangeConcept,
   OutputRangeConcept,
+  ForwardRangeConcept,
+  BidirectionalRangeConcept,
+  RandomAccessRangeConcept,
+  ContiguousRangeConcept,
+
   InputCursorConcept,
   OutputCursorConcept,
   ForwardCursorConcept,
@@ -49,19 +53,34 @@ export class ForwardContainerConcept
 export class BidirectionalContainerConcept 
   extends ForwardContainerConcept {
   static cursorType = BidirectionalCursorConcept
+  static [Implements] = BidirectionalRangeConcept
 }
 export class RandomAccessContainerConcept 
   extends BidirectionalContainerConcept {
   static cursorType = RandomAccessCursorConcept
+  static [Implements] = RandomAccessRangeConcept
 }
 export class ContiguousContainerConcept 
   extends RandomAccessContainerConcept {
   static cursorType = ContiguousCursorConcept
+  static [Implements] = ContiguousRangeConcept
 }
 
-// A sequence container is a forward container that supports a front and
-// unshift/shift operations.
-export class SequenceContainerConcept extends ForwardContainerConcept { 
+export class SpliceableContainerConcept extends ContainerConcept {
+  static [Preconditions] = {
+    splice(cursor, outCount = 0, ...values) {
+      if (cursor == null) throwNull()
+      if (cursor.range != this) throwNotEquatableTo()
+      if (outCount < 0) throw new RangeError(
+        `outCount must be non-negative.`)
+      const count = this.count
+    }
+  }
+  
+  splice(cursor, outCount = 1, ...values) { }
+}
+
+export class FrontEditableContainerConcept extends ContainerConcept { 
   static [Preconditions] = {
     shift() { if (this.isEmpty) throwEmpty() },
     get front() { if (this.isEmpty) throwEmpty() }
@@ -72,47 +91,47 @@ export class SequenceContainerConcept extends ForwardContainerConcept {
   shift() { }
 }
 
-// A rewind container is a bidirectional container that supports a back and
-// push/pop operations.
-export class RewindContainerConcept extends BidirectionalContainerConcept {
+export class BackEditableContainerConcept extends ContainerConcept {
   static [Preconditions] = {
     pop() { if (this.isEmpty) throwEmpty() },
     get back() { if (this.isEmpty) throwEmpty() },
   }
-    
-  static [Extends] = {
-    get isEmpty() { return this.count == 0 }
-  }
   
-  get count() { }
   get back() { }
   pop() { }
   push(value) { }
 }
 
-export class EditableContainerConcept extends RewindContainerConcept {
-  static [Preconditions] = {
-    insert(cursor, value) {
-      if (this != this) throwNotEquatableTo()
-    },
-    remove(cursor) {
-      if (this != this) throwNotEquatableTo()
-      if (this.end({ fixed: true }).equals(cursor)) throwUpdateOutOfBounds()
-    }
-  }
-  
+export class EditableContainerConcept extends ContainerConcept {
+  static [Implements] = [
+    FrontEditableContainerConcept,
+    BackEditableContainerConcept,
+  ]
   insert(cursor, value) { }
   remove(cursor) { }
 }
 
-// An indexable container is a rewind container that supports random access
-// operations.
-export class IndexableContainerConcept extends RewindContainerConcept {
+export class CountableContainerConcept extends ContainerConcept {
+  static [Extends] = {
+    get isEmpty() { return this.count == 0 }
+  }
+
+  get count() { }
+}
+
+export class IndexableContainerConcept extends CountableContainerConcept {
   at(index) { }
   setAt(index, value) { }
 }
 
-export class BufferContainerConcept extends IndexableContainerConcept {
+export class ByteContainerConept extends IndexableContainerConcept {
+  copy(cursor, begin, end) { }
+  readAt(cursor, offset, length, signed, littleEndian) { }
+  writeAt(cursor, offset, value, length, signed, littleEndian) { }
+  data(index, other) { }
+}
+
+export class BufferContainerConcept extends ContainerConcept {
   static [Extends] = {
     ensureCapacity(count) {
       if (count <= this.capacity) return this.capacity
@@ -120,19 +139,9 @@ export class BufferContainerConcept extends IndexableContainerConcept {
       this.setCapacity(newCapacity)
       return newCapacity
     },
-    insertRange(cursor, begin, end) { 
-      const length = end.subtract(begin)
-      this.ensureCapacity(this.count + length)
-      this.copy(cursor, begin, end)
-    },
-    eraseRange(begin, end) { 
-      this.copy(begin, end, this.end())
-    },
   }
   get capacity() { }
   setCapacity(count) { }
-  copy(cursor, begin, end) { }
-  readAt(cursor, offset, length, signed, littleEndian) { }
-  writeAt(cursor, offset, value, length, signed, littleEndian) { }
-  data(index, other) { }
 }
+
+

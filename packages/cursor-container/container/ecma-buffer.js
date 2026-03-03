@@ -4,9 +4,11 @@ import { extend } from '@kingjs/partial-extend'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { ContiguousCursor } from '../cursor/contiguous-cursor.js'
 import {
-  RewindContainerConcept,
+  BackEditableContainerConcept,
+  CountableContainerConcept,
   IndexableContainerConcept,
   BufferContainerConcept,
+  ByteContainerConept,
 } from '../container-concepts.js'
 
 const {
@@ -43,7 +45,7 @@ export class EcmaBuffer extends PartialProxy {
   static {
     extend(this, PartialBufferContainer)
 
-    implement(this, RewindContainerConcept, {
+    implement(this, CountableContainerConcept, {
       get count() { return this._count }
     })
 
@@ -62,6 +64,9 @@ export class EcmaBuffer extends PartialProxy {
         this._view = null
         return capacity
       },
+    })
+
+    implement(this, ByteContainerConept, {
       copy(cursor, begin, end) { 
         const { buffer: target } = cursor.range
         const { index: targetStart } = cursor

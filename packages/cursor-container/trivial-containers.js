@@ -9,8 +9,8 @@ import { IndexableCursor } from '../helpers/indexable-cursor.js'
 import { ContiguousCursor } from '../helpers/contiguous-cursor.js'
 
 import {
-  SequenceContainerConcept,
-  RewindContainerConcept,
+  FrontEditableContainerConcept,
+  BackEditableContainerConcept,
   IndexableContainerConcept,
   ContiguousContainerConcept,
 } from './container-concepts.js'
@@ -38,7 +38,7 @@ export class SequenceSingletonContainer extends SingletonContainer {
   }
 
   static {
-    implement(this, SequenceContainerConcept, {
+    implement(this, FrontEditableContainerConcept, {
       get front() { return this.singleton$ },
       unshift(value) { this.singleton$ = value },
       shift() { 
@@ -60,7 +60,7 @@ export class RewindSingletonContainer extends SingletonContainer {
   }
 
   static {
-    implement(this, RewindContainerConcept, { 
+    implement(this, BackEditableContainerConcept, { 
       // get count() { },
       // get back() { },
       // pop() { },

@@ -3,8 +3,9 @@ import { implement } from '@kingjs/implement'
 import { extend } from '@kingjs/partial-extend'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import {
-  SequenceContainerConcept,
-  RewindContainerConcept,
+  FrontEditableContainerConcept,
+  BackEditableContainerConcept,
+  CountableContainerConcept,
   IndexableContainerConcept,
 } from '../container-concepts.js'
 import { IndexableCursor } from '../cursor/indexable-cursor.js'
@@ -28,15 +29,18 @@ export class Deque extends PartialProxy {
   static {
     extend(this, PartialIndexableContainer)
 
-    implement(this, SequenceContainerConcept, {
+    implement(this, FrontEditableContainerConcept, {
       shift() { return this._denque.shift() },
       unshift(value) { this._denque.unshift(value) },
     })
     
-    implement(this, RewindContainerConcept, {
-      get count() { return this._denque.length },
+    implement(this, BackEditableContainerConcept, {
       push(value) { this._denque.push(value) },
       pop() { return this._denque.pop() },
+    })
+
+    implement(this, CountableContainerConcept, {
+      get count() { return this._denque.length },
     })
 
     implement(this, IndexableContainerConcept, {

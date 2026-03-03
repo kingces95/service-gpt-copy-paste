@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { 
+  DisposeConcept,
+  ConceptReflect 
+} from '@kingjs/concept'
+import { 
   InputCursorConcept,
   OutputCursorConcept,
   MutableCursorConcept,
@@ -14,12 +18,27 @@ import {
   InputContainerConcept,
   OutputContainerConcept,
   ForwardContainerConcept,
-  RewindContainerConcept,
+  BidirectionalContainerConcept,
   RandomAccessContainerConcept,
-  SequenceContainerConcept,
-  IndexableContainerConcept,
   ContiguousContainerConcept,
+  SpliceableContainerConcept,
+  BackEditableContainerConcept,
+  FrontEditableContainerConcept,
+  EditableContainerConcept,
+  CountableContainerConcept,
+  IndexableContainerConcept,
+  BufferContainerConcept,
+  ByteContainerConept,
 } from '@kingjs/cursor-container'
+import {
+  RangeConcept,
+  InputRangeConcept,
+  OutputRangeConcept,
+  ForwardRangeConcept,
+  BidirectionalRangeConcept,
+  RandomAccessRangeConcept,
+  ContiguousRangeConcept,
+} from '@kingjs/cursor'
 
 import { 
   List,
@@ -30,33 +49,62 @@ import {
   EcmaBuffer 
 } from '@kingjs/cursor-container'
 
+const universalContainerConcepts = [
+  DisposeConcept,
+  RangeConcept,
+  InputRangeConcept,
+  OutputRangeConcept,
+  ContainerConcept,
+  ForwardRangeConcept,
+  InputContainerConcept,
+  OutputContainerConcept,
+  ForwardContainerConcept]
+
 const ListCase = {
   name: 'List',
   type: List,
   concepts: [
-    // OutputContainerConcept,
-    ForwardContainerConcept],
+    ...universalContainerConcepts,
+    FrontEditableContainerConcept],
   members: {
     front: true, shift: true, unshift: true,
     beforeBegin: true, insertAfter: true, removeAfter: true,
   }
 }
+
+const reversibleContainerConcepts = [
+  ...universalContainerConcepts,
+  BidirectionalRangeConcept,
+  BidirectionalContainerConcept,
+  FrontEditableContainerConcept,
+  BackEditableContainerConcept,
+  EditableContainerConcept]
+
 const ChainCase = {
   name: 'Chain',
   type: Chain,
   concepts: [
-    ForwardContainerConcept,
-    RewindContainerConcept],
+    ...reversibleContainerConcepts,
+    SpliceableContainerConcept,
+    CountableContainerConcept],
   members: {
     front: true, shift: true, unshift: true,
     back: true, pop: true, push: true, count: true,
     insert: true, remove: true,
   }
 }
+
+const indexableContainerConcepts = [
+  ...reversibleContainerConcepts,
+  BackEditableContainerConcept,
+  RandomAccessContainerConcept,
+  IndexableContainerConcept,
+  CountableContainerConcept]
+
 const VectorCase = {
   name: 'Vector',
   type: Vector,
-  concepts: [RandomAccessContainerConcept],
+  concepts: [...indexableContainerConcepts],
   members: {
     front: true, shift: true, unshift: true,
     back: true, pop: true, push: true, count: true,
@@ -66,7 +114,7 @@ const VectorCase = {
 const DequeCase = {
   name: 'Deque',
   type: Deque,
-  concepts: [RandomAccessContainerConcept],
+  concepts: [...indexableContainerConcepts],
   members: {
     front: true, shift: true, unshift: true,
     back: true, pop: true, push: true, count: true,
@@ -74,24 +122,19 @@ const DequeCase = {
     at: true, // setAt: true,
   }
 }
-const NodeBufferCase = {
-  name: 'NodeBuffer',
-  type: NodeBuffer,
-  concepts: [ContiguousContainerConcept],
-  members: {
-    front: true, shift: true, unshift: true,
-    back: true, pop: true, push: true, count: true,
-    insert: true, remove: true,
-    at: true, setAt: true, readAt: true,
-    capacity: true, setCapacity: true, ensureCapacity: true,
-    copy: true, insertRange: true, removeRange: true,
-    data: true,
-  }
-}
+
+const bufferConainerConcepts = [
+  ...indexableContainerConcepts,
+  ContiguousContainerConcept,
+  EditableContainerConcept,
+  BufferContainerConcept,
+  ByteContainerConept,
+]
+
 const EcmaBufferCase = {
   name: 'EcmaBuffer',
   type: EcmaBuffer,
-  concepts: [ContiguousContainerConcept],
+  concepts: [...bufferConainerConcepts],
   members: {
     front: true, shift: true, unshift: true,
     back: true, pop: true, push: true, count: true,
@@ -102,6 +145,21 @@ const EcmaBufferCase = {
     data: true,
   }
 }
+const NodeBufferCase = {
+  name: 'NodeBuffer',
+  type: NodeBuffer,
+  concepts: [...bufferConainerConcepts],
+  members: {
+    front: true, shift: true, unshift: true,
+    back: true, pop: true, push: true, count: true,
+    insert: true, remove: true,
+    at: true, setAt: true, readAt: true,
+    capacity: true, setCapacity: true, // ensureCapacity: true,
+    copy: true, // insertRange: true, removeRange: true,
+    data: true,
+  }
+}
+
 
 const cases = [
   [ListCase.name, ListCase],
@@ -116,7 +174,17 @@ describe.each(cases)('A %s', (name, { type, concepts, members }) => {
   describe('type', () => {
     it('should be instanceof its concepts', () => {
       for (const concept of concepts) {
+        if (type.prototype instanceof concept == false) throw new Error(
+          `${type.name} does not implement ${concept.name}.`)
         expect(type.prototype instanceof concept).toBe(true)
+      }
+    })
+    it('should have only expected concepts', () => {
+      const set = new Set(concepts)
+      for (const concept of ConceptReflect.concepts(type)) {
+        if (set.has(concept) == false) throw new Error(
+          `${type.name} implements unexpected concept ${concept.name}.`)
+        expect(set.has(concept)).toBe(true)
       }
     })
     it('should define expected members', () => {
@@ -124,6 +192,14 @@ describe.each(cases)('A %s', (name, { type, concepts, members }) => {
         expect(member in type.prototype)
       }
     })
+    // it('should define expected members on a conceptt', () => {
+    //   for (const member of Reflect.ownKeys(members)) {
+    //     const hosts = [...ConceptReflect.getConceptOwnHosts(type, member)]
+    //     if (hosts.length == 0) throw new Error(
+    //       `${type.name} does not implement member ${member} as a concept member.`)
+    //     expect(hosts.length).toBeGreaterThan(0)
+    //   }
+    // })
   })
 
   const isEmpty = 'Container is empty.'
@@ -413,7 +489,7 @@ describe.each(cases)('A %s', (name, { type, concepts, members }) => {
 //     })
 //   })
 //   describe.each([ 
-//     type.prototype instanceof RewindContainerConcept,
+//     type.prototype instanceof BackEditableContainerConcept,
 //   ].filter(Boolean))
 //   ('bidirectional container', (isBidirectional) => {
 //     it('should throw if popped', () => {
@@ -706,7 +782,7 @@ describe.each(cases)('A %s', (name, { type, concepts, members }) => {
 //       })
 //     }
 
-//     if (type.prototype instanceof SequenceContainerConcept) {
+//     if (type.prototype instanceof FrontEditableContainerConcept) {
 //       describe('accessing a sequence container', () => {
 //         it('should not have a front value', () => {
 //           expect(() => { f0.front }).toThrow(
@@ -723,7 +799,7 @@ describe.each(cases)('A %s', (name, { type, concepts, members }) => {
 //       })
 //     }
 
-//     if (type.prototype instanceof RewindContainerConcept) {
+//     if (type.prototype instanceof BackEditableContainerConcept) {
 //       describe('accessing a rewind container', () => {
 //         it('should throw on count', () => {
 //           expect(() => { f0.count }).toThrow(

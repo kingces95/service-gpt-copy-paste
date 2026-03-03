@@ -5,10 +5,12 @@ import {
 } from '@kingjs/cursor'
 
 import {
-  SequenceContainerConcept,
-  RewindContainerConcept,
+  FrontEditableContainerConcept,
+  BackEditableContainerConcept,
+  CountableContainerConcept,
   IndexableContainerConcept,
   BufferContainerConcept,
+  ByteContainerConept,
   EditableContainerConcept,
 } from '../container-concepts.js'
 import { IndexableCursor } from './indexable-cursor.js'
@@ -56,20 +58,18 @@ export class ContiguousCursor extends IndexableCursor {
     }
 
     static {
-      implement(this, SequenceContainerConcept, {
+      implement(this, FrontEditableContainerConcept, {
         unshift(value) { this.insert(this.begin(), value) },
         shift() { return this.remove(this.begin()) },
       })
 
-      implement(this, RewindContainerConcept, {
+      implement(this, BackEditableContainerConcept, {
         push(value) { this.insert(this.end(), value) },
         pop() { 
           const end = this.end()
           end.stepBack()
           return this.remove(end)
-        }    
-      }, {
-        get count() { },
+        }
       })
 
       implement(this, IndexableContainerConcept, { 
@@ -79,25 +79,10 @@ export class ContiguousCursor extends IndexableCursor {
         setAt(index, value) { },
       })
 
-      implement(this, EditableContainerConcept, {
-        insert(cursor, value) {
-          const begin = cursor.clone()
-          const end = this.end()
-          this.ensureCapacity(this.count + 1)
-          this._count++
-          const cursorPlusOne = cursor.clone().step()
-          this.copy(cursorPlusOne, begin, end)
-          cursor.value = value
-        },
-        remove(cursor) {
-          const value = cursor.value
-          const target = cursor.clone()
-          const begin = cursor.step()
-          const end = this.end()
-          this.copy(target, begin, end)
-          this._count--
-          return value
-        }         
+      implement(this, CountableContainerConcept, { 
+        // none
+      }, {
+        get count() { return this._count }
       })
 
       implement(this, BufferContainerConcept, {
@@ -105,6 +90,11 @@ export class ContiguousCursor extends IndexableCursor {
       }, {
         get capacity() { },
         setCapacity(count) { },
+      })
+
+      implement(this, ByteContainerConept, {
+        // none
+      }, {
         copy(cursor, begin, end) { },
         writeAt(index, value, length, signed, littleEndian) { },
         readAt(index, length, signed, littleEndian) { },
@@ -119,7 +109,7 @@ export class ContiguousCursor extends IndexableCursor {
 
   static { 
     implement(this, ContiguousCursorConcept, {
-      data(other) { return this.container.data(this.index, other) },      
+      data(other) { return this.container.data(this, other) },      
       readAt(offset = 0, length = 1, signed = false, littleEndian = false) {
         const { container } = this
         const index = this.index + offset

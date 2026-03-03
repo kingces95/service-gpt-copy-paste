@@ -42,6 +42,7 @@ export class PartialReflect {
     yield* UserReflect.keys(type, { isStatic })
   }
   static *ownKeys(type, { isStatic } = { }) {
+    // TODO: Remove assert?
     assert(PartialTypeReflect.isPartialType(type))
     for (const current of PartialReflect.keys(type, { isStatic })) {
       switch (typeof current) {
@@ -57,6 +58,12 @@ export class PartialReflect {
       }
     }    
   }
+  // static isOwnKey(type, key, { isStatic } = { }) {
+  //   // TODO: Remove assert?
+  //   assert(PartialTypeReflect.isPartialType(type))
+  //   if (isStatic) return false
+  //   const finalHost = PartialReflect.getFinalHost(type, key, { isStatic })
+  // }
 
   static getOwnDescriptor(type, key, { isStatic } = { }) {
     if (PartialTypeReflect.isPartialType(type)) {

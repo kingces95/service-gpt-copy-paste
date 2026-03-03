@@ -16,8 +16,10 @@ import {
 } from '@kingjs/cursor'
 import {
   ContainerConcept,
-  SequenceContainerConcept,
-  RewindContainerConcept,
+  FrontEditableContainerConcept,
+  BackEditableContainerConcept,
+  EditableContainerConcept,
+  CountableContainerConcept,
   IndexableContainerConcept,
 } from '../container-concepts.js'
 import { ContainerCursor } from './container-cursor.js'
@@ -58,19 +60,42 @@ class PartialIndexableContainer
       get isEmpty() { return this.count == 0 },
     })
 
-    implement(this, SequenceContainerConcept, {
+    implement(this, FrontEditableContainerConcept, {
       get front() { return this.at(0) },
     }, {
       unshift(value) { },
       shift() { },
     })
 
-    implement(this, RewindContainerConcept, {
+    implement(this, BackEditableContainerConcept, {
       get back() { return this.at(this.count - 1) },
     }, {
-      get count() { },
       pop() { },
       push(value) { },
+    })
+
+    implement(this, EditableContainerConcept, {
+      insert(cursor, value) {
+        const begin = cursor.clone()
+        const end = this.end()
+        this.ensureCapacity(this.count + 1)
+        this._count++
+        const cursorPlusOne = cursor.clone().step()
+        this.copy(cursorPlusOne, begin, end)
+        cursor.value = value
+      },
+      remove(cursor) {
+        const value = cursor.value
+        const begin = cursor.clone().step()
+        const end = this.end()
+        this.copy(cursor, begin, end)
+        this._count--
+        return value
+      },
+    })
+
+    implement(this, CountableContainerConcept, {
+      get count() { },
     })
 
     implement(this, IndexableContainerConcept, { 

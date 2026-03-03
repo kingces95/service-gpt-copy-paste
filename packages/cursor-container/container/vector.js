@@ -3,8 +3,9 @@ import { extend } from '@kingjs/partial-extend'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { IndexableCursor } from '../cursor/indexable-cursor.js'
 import {
-  SequenceContainerConcept,
-  RewindContainerConcept,
+  FrontEditableContainerConcept,
+  BackEditableContainerConcept,
+  CountableContainerConcept,
   IndexableContainerConcept,
 } from '../container-concepts.js'
 
@@ -27,15 +28,18 @@ export class Vector extends PartialProxy {
   static {
     extend(this, PartialIndexableContainer)
 
-    implement(this, SequenceContainerConcept, {
+    implement(this, FrontEditableContainerConcept, {
       shift() { return this._array.shift() },
       unshift(value) { this._array.unshift(value) },
     })
 
-    implement(this, RewindContainerConcept, {
-      get count() { return this._array.length },
+    implement(this, BackEditableContainerConcept, {
       push(value) { this._array.push(value) },
       pop() { return this._array.pop() },
+    })
+
+    implement(this, CountableContainerConcept, {
+      get count() { return this._array.length },
     })
 
     implement(this, IndexableContainerConcept, {

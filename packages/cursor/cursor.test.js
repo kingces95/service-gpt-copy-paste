@@ -119,6 +119,7 @@ const NodeBufferCase = {
     BidirectionalCursorConcept,
     RandomAccessCursorConcept,
     ContiguousCursorConcept],
+  bufferType: Buffer,
 }
 const EcmaBufferCase = {
   type: EcmaBuffer,
@@ -148,7 +149,7 @@ const cases = [
   ['EcmaBuffer', EcmaBufferCase],
 ]
 
-describe.each(cases)('%s', (_, { type, concepts }) => {
+describe.each(cases)('%s', (_, { type, concepts, bufferType }) => {
   let begin0, end0, begin1
   let begin, end
   let cursorType, cursorPrototype
@@ -346,17 +347,18 @@ describe.each(cases)('%s', (_, { type, concepts }) => {
           expect(() => begin.readInt32BE()).toThrow(RangeError)
           expect(() => begin.readInt32LE()).toThrow(RangeError)
         })
-        it('should return an empty buffer for data', () => {
-          const buffer = begin.data(begin)
-      
-          if (Buffer.isBuffer(buffer)) {
-            expect(buffer.length).toBe(0)
-          }
-          else if (buffer instanceof DataView) {
+        describe('data', () => {
+          let buffer
+          beforeEach(() => {
+            buffer = begin.data()
+          })
+          it('should return an empty buffer for data', () => {
+            expect(buffer).toBeInstanceOf(Uint8Array)
             expect(buffer.byteLength).toBe(0)
-          } else {
-            throw new Error("data() did not return a Buffer or DataView.")
-          }
+          })
+          it('should return the expected buffer type for data', () => {
+            expect(buffer instanceof (bufferType || Uint8Array)).toBe(true)
+          })
         })
         it('should throw if data called with null cursor', () => {
           expect(() => begin.data(null)).toThrow(
@@ -388,19 +390,17 @@ describe.each(cases)('%s', (_, { type, concepts }) => {
         })
       }
       if (concepts.includes(ContiguousCursorConcept)) {
-        describe('as a contiguous cursor', () => {
+        describe('data', () => {
+          let buffer
+          beforeEach(() => {
+            buffer = begin.data(otherBegin)
+          })
           it('should return an empty buffer for data', () => {
-            if (!(begin instanceof ContiguousCursorConcept)) return
-            const buffer = begin.data(otherBegin)
-    
-            if (Buffer.isBuffer(buffer)) {
-              expect(buffer.length).toBe(0)
-            }
-            else if (buffer instanceof DataView) {
-              expect(buffer.byteLength).toBe(0)
-            } else {
-              throw new Error("data() did not return a Buffer or DataView.")
-            }
+            expect(buffer).toBeInstanceOf(Uint8Array)
+            expect(buffer.byteLength).toBe(0)
+          })
+          it('should return the expected buffer type for data', () => {
+            expect(buffer instanceof (bufferType || Uint8Array)).toBe(true)
           })
         })
       }

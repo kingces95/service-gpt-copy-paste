@@ -13,9 +13,9 @@ import {
   InputContainerConcept,
   OutputContainerConcept,
   ForwardContainerConcept,
-  RewindContainerConcept,
+  BackEditableContainerConcept,
   RandomAccessContainerConcept,
-  SequenceContainerConcept,
+  FrontEditableContainerConcept,
   IndexableContainerConcept,
   ContiguousContainerConcept,
 } from '@kingjs/cursor-container'
@@ -147,7 +147,7 @@ describe.each(cases)('A %s', (name, type, cursorType, concepts) => {
     })
   })
   describe.each([ 
-    type.prototype instanceof RewindContainerConcept,
+    type.prototype instanceof BackEditableContainerConcept,
   ].filter(Boolean))
   ('bidirectional container', (isBidirectional) => {
     it('should throw if popped', () => {
@@ -440,7 +440,7 @@ describe.each(cases)('A %s', (name, type, cursorType, concepts) => {
       })
     }
 
-    if (type.prototype instanceof SequenceContainerConcept) {
+    if (type.prototype instanceof FrontEditableContainerConcept) {
       describe('accessing a sequence container', () => {
         it('should not have a front value', () => {
           expect(() => { f0.front }).toThrow(
@@ -457,7 +457,7 @@ describe.each(cases)('A %s', (name, type, cursorType, concepts) => {
       })
     }
 
-    if (type.prototype instanceof RewindContainerConcept) {
+    if (type.prototype instanceof BackEditableContainerConcept) {
       describe('accessing a rewind container', () => {
         it('should throw on count', () => {
           expect(() => { f0.count }).toThrow(

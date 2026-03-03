@@ -26,8 +26,8 @@ import {
   RandomAccessContainerConcept,
   ContiguousContainerConcept,
 
-  SequenceContainerConcept,
-  RewindContainerConcept,
+  FrontEditableContainerConcept,
+  BackEditableContainerConcept,
   IndexableContainerConcept,
 
   ContainerCursor,
@@ -85,8 +85,8 @@ function dump(fn) {
 // dumpToFile(BidirectionalContainerConcept, 'bidirectional-container-concept')
 // dumpToFile(RandomAccessContainerConcept, 'random-access-container-concept')
 // dumpToFile(ContiguousContainerConcept, 'contiguous-container-concept')
-// dumpToFile(SequenceContainerConcept, 'sequence-container-concept')
-// dumpToFile(RewindContainerConcept, 'rewind-container-concept')
+// dumpToFile(FrontEditableContainerConcept, 'sequence-container-concept')
+// dumpToFile(BackEditableContainerConcept, 'rewind-container-concept')
 // dumpToFile(IndexableContainerConcept, 'indexable-container-concept')
 
 // dumpToFile(ContainerCursor, 'container-cursor')

@@ -4,7 +4,10 @@ import { BidirectionalCursorConcept } from '@kingjs/cursor'
 import { extend } from '@kingjs/partial-extend'
 import { List } from './list.js'
 import { 
-  RewindContainerConcept,
+  BidirectionalContainerConcept,
+  CountableContainerConcept,
+  BackEditableContainerConcept,
+  SpliceableContainerConcept,
   EditableContainerConcept,
 } from '../container-concepts.js'
 import {
@@ -32,16 +35,16 @@ class ChainCursor extends List.cursorType {
 export class Chain extends List {
   static cursorType = ChainCursor
   
-  count$
+  _count
 
   constructor() {
     super()
-    this.count$ = 0
+    this._count = 0
   }
 
   dispose$() {
     super.dispose$()
-    this.count$ = 0
+    this._count = 0
   }
 
   static {
@@ -57,19 +60,20 @@ export class Chain extends List {
       insertAfter(cursor, value) {
         // List.prototype.insertAfter.call(this, cursor, value)
         cursor.link.insertAfter(value)
-        this.count$++
+        this._count++
       },
       removeAfter(cursor) {
         // const result = List.prototype.removeAfter.call(this, cursor)
         const result = cursor.link.removeAfter()
-        this.count$--
+        this._count--
         return result
       },
     })
 
-    implement(this, RewindContainerConcept, {
+    implement(this, BidirectionalContainerConcept)
+
+    implement(this, BackEditableContainerConcept, {
       get back() { return this.endLink$.previous.value },
-      get count() { return this.count$ },
       push(value) { 
         this.insert(this.end(), value)
       },
@@ -80,16 +84,29 @@ export class Chain extends List {
       },
     })
 
+    implement(this, CountableContainerConcept, {
+      get count() { return this._count },
+    })
+
     implement(this, EditableContainerConcept, {
       insert(cursor, value) {
         cursor.link.insert(value)
-        this.count$++
+        this._count++
       },
       remove(cursor) {
         const result = cursor.link.remove()
-        this.count$--
+        this._count--
         return result
       }
+    })
+
+    implement(this, SpliceableContainerConcept, {
+      splice(cursor, outCount = 0, ...values) {
+        const beforeCursor = cursor.clone().stepBack()
+        while (outCount-- > 0) this.removeAfter(beforeCursor)
+        for (let i = values.length - 1; i >= 0; i--)
+          this.insertAfter(beforeCursor, values[i])
+      },
     })
   }
 }

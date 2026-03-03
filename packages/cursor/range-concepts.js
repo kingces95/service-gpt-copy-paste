@@ -3,7 +3,10 @@ import {
   CursorConcept, 
   InputCursorConcept, 
   OutputCursorConcept,
-  ForwardCursorConcept } from './cursor-concepts.js'
+  ForwardCursorConcept,
+  BidirectionalCursorConcept,
+  RandomAccessCursorConcept,
+  ContiguousCursorConcept } from './cursor-concepts.js'
 import { Extends } from '@kingjs/partial-class'
 
 export class RangeConcept extends Concept {
@@ -32,4 +35,13 @@ export class OutputRangeConcept extends RangeConcept {
 }
 export class ForwardRangeConcept extends RangeConcept {
   static cursorType = ForwardCursorConcept
+}
+export class BidirectionalRangeConcept extends ForwardRangeConcept {
+  static cursorType = BidirectionalCursorConcept
+}
+export class RandomAccessRangeConcept extends BidirectionalRangeConcept {
+  static cursorType = RandomAccessCursorConcept
+}
+export class ContiguousRangeConcept extends RandomAccessRangeConcept {
+  static cursorType = ContiguousCursorConcept
 }

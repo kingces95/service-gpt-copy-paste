@@ -69,12 +69,13 @@ export class BidirectionalCursorConcept extends ForwardCursorConcept {
     stepBack() { 
       const { range } = this
       if (range.beforeBegin) {
-        // if (this.equals(container.beforeBegin({ constant: true })))
-        //   throwMoveOutOfBounds()
-        // else 
-        if (this.equals(range.begin({ constant: true })))
+        if (this.equals(range.beforeBegin({ fixed: true })))
           throwMoveOutOfBounds()
+        return
       }
+
+      if (this.equals(range.begin({ fixed: true })))
+        throwMoveOutOfBounds()
     }
   }
 
@@ -110,8 +111,8 @@ export class RandomAccessCursorConcept extends BidirectionalCursorConcept {
 export class ContiguousCursorConcept extends RandomAccessCursorConcept {
   static [Preconditions] = {
     data(begin, end) {
-      if (!this.equatableTo(begin)) throwNotEquatableTo()
-      if (!this.equatableTo(end)) throwNotEquatableTo()
+      if (begin !== undefined && !this.equatableTo(begin)) throwNotEquatableTo()
+      if (end !== undefined && !this.equatableTo(end)) throwNotEquatableTo()
     }
   }
 
