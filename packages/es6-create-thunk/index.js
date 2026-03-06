@@ -38,42 +38,61 @@ export function es6CreateThunk(descriptor, {
 
   const { value, get, set } = descriptor
 
-  const method = function() {
-    try { 
+  // Provided a trimmed stub if hasTypeConditions is false. This aids
+  // in debugging by haveing fewer lines to step over to invoke the target.
+  const hasTypeConditions = typePrecondition || typePostcondition
+
+  const method = hasTypeConditions 
+    ? function() {
       typePrecondition?.call(this) 
       preconditionValue?.apply(this, arguments)
       const result = value.apply(this, arguments)
       postconditionValue?.call(this, result)
-      return result
-    } finally { 
       typePostcondition?.call(this) 
+      return result
+    } 
+    : function() {
+      preconditionValue?.apply(this, arguments)
+      const result = value.apply(this, arguments)
+      postconditionValue?.call(this, result)
+      return result
     }
-  }
-  const getter = function() {
-    try { 
+  const getter = hasTypeConditions
+    ? function() {
       typePrecondition?.call(this)
       preconditionValue?.call(this)
       preconditionGet?.call(this)
       const result = get.call(this)
       postconditionGet?.call(this, result)
       postconditionValue?.call(this, result)
-      return result
-    } finally { 
       typePostcondition?.call(this) 
+      return result
+    } 
+    : function() {
+      preconditionValue?.call(this)
+      preconditionGet?.call(this)
+      const result = get.call(this)
+      postconditionGet?.call(this, result)
+      postconditionValue?.call(this, result)
+      return result
     }
-  }
-  const setter = function(value) {
-    try { 
+  const setter = hasTypeConditions
+    ? function(value) {
       typePrecondition?.call(this)
       preconditionValue?.call(this, value)
       preconditionSet?.call(this, value)
       set.call(this, value)
       postconditionSet?.call(this)
       postconditionValue?.call(this)
-    } finally { 
       typePostcondition?.call(this) 
+    } 
+    : function(value) {
+      preconditionValue?.call(this, value)
+      preconditionSet?.call(this, value)
+      set.call(this, value)
+      postconditionSet?.call(this)
+      postconditionValue?.call(this)
     }
-  }
 
   function setName(fn, name) {
     Object.defineProperty(fn, 'name', {

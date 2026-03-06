@@ -4,6 +4,8 @@ import { PartialAssociate } from '@kingjs/partial-associate'
 import { PartialTypeReflect } from '@kingjs/partial-type'
 import { extend } from '@kingjs/partial-extend'
 
+// internal
+
 // Creates an empty "prototypical" class that extends Prototypical
 // and merges a given partial object type into it. This allows
 // reflection over the merged result which will faithfully report 
@@ -11,22 +13,18 @@ import { extend } from '@kingjs/partial-extend'
 
 class Prototypical { }
 
-function prototypicalCreate(type) {
+function prototypicalCreate(partialType) {
   let prototypicalType = class extends Prototypical { }
   Object.defineProperties(prototypicalType, {
     name: {
-      value: '$prototypical_' + type.name,
+      value: '$prototypical_' + partialType.name,
       configurable: true,
       enumerable: false,
       writable: false,
     }
   })
 
-  extend(prototypicalType, type, { 
-    // HACK: A PartialType should not report being merged with itself.
-    isTransparent: true,
-    parentType: type
-  })
+  extend(prototypicalType, partialType)
   
   return prototypicalType
 }

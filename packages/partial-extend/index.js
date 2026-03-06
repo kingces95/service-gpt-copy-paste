@@ -3,7 +3,7 @@ import { PartialLoader } from '@kingjs/partial-loader'
 import { PartialTypeReflect, Thunk } from '@kingjs/partial-type'
 import { PartialAssociate } from '@kingjs/partial-associate'
 import { Define } from '@kingjs/define'
-import { Extensions } from '@kingjs/extensions'
+import { isAbstract } from '@kingjs/abstract'
 
 // Extend takes a targets type and a partial type and merges the 
 // partial type into the target type.
@@ -29,58 +29,33 @@ import { Extensions } from '@kingjs/extensions'
 // Transparent partial types are merged but not associated. A transparent
 // partial type is one whose prototype extends Extensions. Members of
 // a transparent partial type are logically considered to be defined by 
-// the partial type that "extended" it (parentType).
+// the partial type that "extended" it.
 
-export function extend(type, partialType, { 
-    parentType = type, 
-    isTransparent = partialType?.prototype instanceof Extensions,
-  } = { }) {
+export function extend(type, partialType) {
   partialType = PartialLoader.load(partialType)
 
-  assert(!PartialTypeReflect.isKnown(type),
-    `Expected type to not be a known type.`)
-  // assert(!PartialTypeReflect.isPartialType(type),
-  //   `Expected type to not be a PartialType.`)
-  assert(PartialTypeReflect.isPartialType(partialType),
-    `Expected partialType to indirectly extend PartialType.`)
+  const createThunk = (ownKey, descriptor) => Thunk in type 
+    ? type[Thunk](ownKey, descriptor) 
+    : descriptor
 
-  const keys = new Set()
+  const plan = PartialLoader.getExtendPlan(partialType)
 
-  const extensions = [...PartialLoader.ownPartialTypes(partialType)]
-  for (const extension of extensions) {
-    const extensionKeys = extend(type, extension, { 
-      parentType: partialType,
-      isTransparent: extension.prototype instanceof Extensions,
-    })
+  for (let { host, keys, ownKeys, descriptors } of plan) {
+    if (host) {
+      PartialAssociate.addPartialType(type, host)
 
-    for (const key of extensionKeys) keys.add(key)
-  }
+      for (const key of keys) 
+        PartialAssociate.addHost(type, key, host)
 
-  if (!isTransparent) 
-    PartialAssociate.addPartialType(type, partialType)
+      for (const key of ownKeys) 
+        PartialAssociate.addOwnHost(type, key, host)
+    }
 
-  const hostType = isTransparent ? parentType : partialType
-
-  let ownKey
-  for (const current of PartialLoader.ownDescriptors(partialType)) {
-    switch (typeof current) {
-      case 'string':
-      case 'symbol': 
-        ownKey = current
-        keys.add(ownKey)
-        break
-      case 'object': 
-        let descriptor = current
-        if (Thunk in type)
-          descriptor = type[Thunk](ownKey, current)
-
-        if (!Define.property(type, ownKey, descriptor)) continue
-        PartialAssociate.setFinalHost(type, ownKey, hostType)
-        break
-      default: assert(false, `Unexpected type: ${typeof current}`)
+    for (const [key, descriptor] of descriptors) {
+      const thunk = createThunk(key, descriptor)
+      Define.property(type, key, thunk)
+      if (host && !isAbstract(descriptor))
+        PartialAssociate.setFinalHost(type, key, host)
     }
   }
-
-  for (const key of keys) PartialAssociate.addHost(type, key, hostType)
-  return keys
 }

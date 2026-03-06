@@ -93,4 +93,8 @@ export class ExtensionsReflect {
     if (!isPojo(pojoOrType)) return pojoOrType
     return Define.type(pojoOrType, Extensions)
   }
+
+  static isExtensions(type) {
+    return type?.prototype instanceof Extensions
+  }
 }

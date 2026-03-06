@@ -4,8 +4,6 @@ import { PartialLoader } from '@kingjs/partial-loader'
 import { PartialPrototype } from '@kingjs/partial-prototype'
 import { UserReflect } from '@kingjs/user-reflect'
 import { PartialTypeReflect } from '@kingjs/partial-type'
-import { isAbstract } from '@kingjs/abstract'
-import { Es6Reflect } from '@kingjs/es6-reflect'
 
 // Unfies reflection operations over PartialObjects and Es6 types.
 
@@ -49,21 +47,21 @@ export class PartialReflect {
         case 'function': break
         case 'string':
         case 'symbol': 
-          const host = PartialReflect.getFinalHost(
-            type, current, { isStatic })
-          if (host != type) continue
+          if (!PartialReflect.isOwnKey(type, current, { isStatic })) 
+            continue
           yield current
           break
         default: assert(false, `Unexpected type: ${typeof current}`)
       }
     }    
   }
-  // static isOwnKey(type, key, { isStatic } = { }) {
-  //   // TODO: Remove assert?
-  //   assert(PartialTypeReflect.isPartialType(type))
-  //   if (isStatic) return false
-  //   const finalHost = PartialReflect.getFinalHost(type, key, { isStatic })
-  // }
+  static isOwnKey(type, key, { isStatic } = { }) {
+    // TODO: Remove assert?
+    assert(PartialTypeReflect.isPartialType(type))
+    if (isStatic) return false
+    const finalHost = PartialReflect.getFinalHost(type, key, { isStatic })
+    return finalHost === type
+  }
 
   static getOwnDescriptor(type, key, { isStatic } = { }) {
     if (PartialTypeReflect.isPartialType(type)) {
@@ -111,12 +109,23 @@ export class PartialReflect {
     yield* PartialAssociate.ownPartialTypes(type)
   }
   static *partialTypes(type) {
-    if (PartialTypeReflect.isPartialType(type))
-      return yield* PartialPrototype.partialTypes(type)
+    if (PartialTypeReflect.isPartialType(type)) {
+      // filter out self; the prototypical type correctly reports it was
+      // extened by the partial type however the prototypical type, being
+      // a stand in for the partial type, should not report that it was 
+      // extended by the partial type.
+      for (const current of PartialPrototype.partialTypes(type)) {
+        if (current == type) continue
+        yield current
+      }
+    }
 
     yield* PartialAssociate.partialTypes(type)
   }
 
+  static *ownHosts(type, key) {
+    
+  }
   static *hosts(type, key) {
     if (PartialTypeReflect.isPartialType(type))
       return yield* PartialPrototype.hosts(type, key)

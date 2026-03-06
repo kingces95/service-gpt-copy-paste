@@ -7,6 +7,8 @@ import { asIterable } from '@kingjs/as-iterable'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { PartialAssociate } from '@kingjs/partial-associate'
 
+// internal
+
 // Operations supporting @kingjs/extend.
 
 function isExtensionOfAny(type, expectedType) {
@@ -27,6 +29,10 @@ export class PartialLoader {
     const type = ExtensionsReflect.define(pojoOrType)
     assert(PartialTypeReflect.isPartialType(type))
     return type
+  }
+
+  static isTransparent(type) {
+    return ExtensionsReflect.isExtensions(type)
   }
 
   static *ownPartialTypes(type) {
@@ -73,7 +79,6 @@ export class PartialLoader {
     if (!descriptor) return null
     return type[PartialType.Compile](descriptor) 
   }
-
   static *ownDescriptors(type) {
     assert(PartialTypeReflect.isPartialType(type))
     for (const key of UserReflect.ownKeys(type)) {
@@ -81,5 +86,62 @@ export class PartialLoader {
       yield key
       yield descriptor
     }
+  }
+
+  static getExtendPlan(rootPartialType) {
+    const plan = []
+    const visited = new Set()
+
+    assert(!PartialTypeReflect.isKnown(rootPartialType))
+    // assert(!PartialTypeReflect.isPartialType(type))
+
+    function getLoadPlan$(partialType, hostOfPartialType) {
+      assert(PartialTypeReflect.isPartialType(partialType))    
+        
+      if (visited.has(partialType)) return new Set()
+        visited.add(partialType)
+      
+      const keys = new Set()
+      const ownKeys = new Set()
+      const descriptors = new Map()
+      const isTransparent = PartialLoader.isTransparent(partialType)
+      const host = isTransparent ? hostOfPartialType : partialType
+
+      plan.push({ 
+        host,
+        keys: host ? keys : null,
+        ownKeys: host ? ownKeys : null,
+        descriptors,
+        isTransparent,
+      })
+
+      const ownPartialTypes = [...PartialLoader.ownPartialTypes(partialType)]
+      for (const basePartialType of ownPartialTypes.reverse()) {
+        for (const key of getLoadPlan$(basePartialType, partialType))
+          keys.add(key)
+      }
+
+      let ownKey
+      for (const current of PartialLoader.ownDescriptors(partialType)) {
+        switch (typeof current) {
+          case 'string':
+          case 'symbol': 
+            ownKey = current
+            ownKeys.add(ownKey)
+            keys.add(ownKey)
+            break
+          case 'object':
+            const descriptor = current
+            descriptors.set(ownKey, descriptor)
+            break
+          default: assert(false, `Unexpected type: ${typeof current}`)
+        }
+      }
+
+      return keys
+    }
+
+    getLoadPlan$(rootPartialType, null)
+    return plan.reverse()
   }
 }

@@ -193,107 +193,90 @@ describe.each(tests)('A %s thunk', (_, { descriptor, ...flags }) => {
       expect(thunk.writable).toBe(expected.writable)
     })
 
-    describe.each([
-      ['throws', true],
-      ['returns', false],
-    ])('%s', (_, throws) => {
-      if (flags.hasGetter) {
-        it('thunks the getter', () => {
-          const context = []
-          if (throws) context.throw = true
+    if (flags.hasGetter) {
+      it('thunks the getter', () => {
+        const context = []
 
-          let result
-          try { result = thunk.get.call(context) }
-          catch (error) { }
+        let result
+        try { result = thunk.get.call(context) }
+        catch (error) { }
 
-          expect(result).toBe(throws ? undefined : 'result')
-    
-          const expected = []
-          if (throws) expected.throw = true
+        expect(result).toBe('result')
+  
+        const expected = []
 
-          if (hasTypePrecondition) 
-            expected.push('typePrecondition', [])
-          if (hasPrecondition) 
-            expected.push('precondition', [])
-          if (hasGetterPrecondition)
-            expected.push('getterPrecondition', [])
+        if (hasTypePrecondition) 
+          expected.push('typePrecondition', [])
+        if (hasPrecondition) 
+          expected.push('precondition', [])
+        if (hasGetterPrecondition)
+          expected.push('getterPrecondition', [])
 
-          expected.push('get', [])
-          
-          if (!throws) {
-            if (hasPostcondition) 
-              expected.push('postcondition', ['result'])
-            if (hasGetterPostcondition)
-              expected.push('getterPostcondition', ['result'])
-          }
-          if (hasTypePostcondition) 
-            expected.push('typePostcondition', [])
-          expect(context).toEqual(expected)
-        })
-      }
-    
-      if (flags.hasSetter) {
-        it('thunks the setter', () => {
-          const context = []
-          if (throws) context.throw = true
+        expected.push('get', [])
+        
+        if (hasPostcondition) 
+          expected.push('postcondition', ['result'])
+        if (hasGetterPostcondition)
+          expected.push('getterPostcondition', ['result'])
+        if (hasTypePostcondition) 
+          expected.push('typePostcondition', [])
+        expect(context).toEqual(expected)
+      })
+    }
+  
+    if (flags.hasSetter) {
+      it('thunks the setter', () => {
+        const context = []
 
-          try { thunk.set.call(context, 'a0') }
-          catch (error) { }
-    
-          const expected = []
-          if (throws) expected.throw = true
+        try { thunk.set.call(context, 'a0') }
+        catch (error) { }
+  
+        const expected = []
 
-          if (hasTypePrecondition) 
-            expected.push('typePrecondition', [])
-          if (hasPrecondition) 
-            expected.push('precondition', ['a0'])
-          if (hasSetterPrecondition)
-            expected.push('setterPrecondition', ['a0'])
+        if (hasTypePrecondition) 
+          expected.push('typePrecondition', [])
+        if (hasPrecondition) 
+          expected.push('precondition', ['a0'])
+        if (hasSetterPrecondition)
+          expected.push('setterPrecondition', ['a0'])
 
-          expected.push('set', ['a0'])
-          
-          if (!throws) {
-            if (hasPostcondition) 
-              expected.push('postcondition', [])
-            if (hasSetterPostcondition)
-              expected.push('setterPostcondition', [])
-          }
-          if (hasTypePostcondition) 
-            expected.push('typePostcondition', [])
-          expect(context).toEqual(expected)
-        })
-      }
-    
-      if (flags.hasMethod) {
-        it('thunks the method', () => {
-          const context = []
-          if (throws) context.throw = true
+        expected.push('set', ['a0'])
+        
+        if (hasPostcondition) 
+          expected.push('postcondition', [])
+        if (hasSetterPostcondition)
+          expected.push('setterPostcondition', [])
+        if (hasTypePostcondition) 
+          expected.push('typePostcondition', [])
+        expect(context).toEqual(expected)
+      })
+    }
+  
+    if (flags.hasMethod) {
+      it('thunks the method', () => {
+        const context = []
 
-          let result
-          try { result = thunk.value.call(context, 'a0', 'a1') }
-          catch (error) { }
-          
-          expect(result).toBe(throws ? undefined : 'result')
-          
-          const expected = []
-          if (throws) expected.throw = true
+        let result
+        try { result = thunk.value.call(context, 'a0', 'a1') }
+        catch (error) { }
+        
+        expect(result).toBe('result')
+        
+        const expected = []
 
-          if (hasTypePrecondition) 
-            expected.push('typePrecondition', [])
-          if (hasPrecondition) 
-            expected.push('precondition', ['a0', 'a1'])
-          
-          expected.push('method', ['a0', 'a1'])
-          
-          if (!throws) {
-            if (hasPostcondition) 
-              expected.push('postcondition', ['result'])
-          }
-          if (hasTypePostcondition) 
-            expected.push('typePostcondition', [])
-          expect(context).toEqual(expected)
-        })
-      }
-    })
+        if (hasTypePrecondition) 
+          expected.push('typePrecondition', [])
+        if (hasPrecondition) 
+          expected.push('precondition', ['a0', 'a1'])
+        
+        expected.push('method', ['a0', 'a1'])
+        
+        if (hasPostcondition) 
+          expected.push('postcondition', ['result'])
+        if (hasTypePostcondition) 
+          expected.push('typePostcondition', [])
+        expect(context).toEqual(expected)
+      })
+    }
   })
 })

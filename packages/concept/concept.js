@@ -100,6 +100,7 @@ export class ConceptReflect {
   static *getConceptOwnHosts(type, name) {
     for (const host of PartialReflect.hosts(type, name)) {
       if (!ConceptReflect.isConcept(host)) continue
+      // if (!PartialReflect.isOwnKey(host, name)) continue
       if (!Object.hasOwn(host.prototype, name)) continue
       yield host
     }

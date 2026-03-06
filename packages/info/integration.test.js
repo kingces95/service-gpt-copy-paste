@@ -171,7 +171,7 @@ describe('MyClass', () => {
           it('should be abstract', () => {
             expect(memberInfo.isAbstract).toBe(true)
           })
-          it('should report MyExtendedConcept ad MyConcept as concept hosts', () => {
+          it('should report MyExtendedConcept and MyConcept as concept hosts', () => {
             const concepts = [...memberInfo.concepts()]
             const expected = [
               TypeInfo.from(myExtendedConcept),

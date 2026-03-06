@@ -140,6 +140,7 @@ export class BufferContainerConcept extends ContainerConcept {
       return newCapacity
     },
   }
+  ensureCapacity(count) { } // TODO: Remove once loader fixed
   get capacity() { }
   setCapacity(count) { }
 }
