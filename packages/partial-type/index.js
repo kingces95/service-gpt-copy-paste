@@ -2,7 +2,7 @@ import { assert } from '@kingjs/assert'
 import { Es6Compiler } from '@kingjs/es6-compiler'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 
-const PartialTypes = Symbol('PartialType.partialTypes')
+const Declarations = Symbol('PartialType.partialTypes')
 const Compile = Symbol('PartialType.compile')
 
 export const Thunk = Symbol('PartialType.Thunk')
@@ -10,16 +10,18 @@ export const Preconditions = Symbol('PartialType.Preconditions')
 export const Postconditions = Symbol('PartialType.Postconditions')
 export const TypePrecondition = Symbol('PartialType.TypePrecondition')
 export const TypePostcondition = Symbol('PartialType.TypePostcondition')
+export const Prototype = Symbol('PartialType.Prototype')
+export const Constructors = Symbol('PartialType.Constructors')
 
 export class PartialType extends null {
   static Compile = Compile
-  static PartialTypes = PartialTypes
+  static Declarations = Declarations
 
   constructor() { 
     throw new TypeError('PartialType cannot be instantiated.') 
   }
 
-  static [PartialTypes] = { }
+  static [Declarations] = { }
   static [Compile](descriptor) { 
     return Es6Compiler.compile(descriptor) 
   }
@@ -33,11 +35,16 @@ export class PartialTypeReflect {
   }
   static isKnownKey(type, key, { isStatic } = { }) {
     if (PartialTypeReflect.isKnown(type)) return true
-    if (key == Thunk) return true
-    if (key == Preconditions) return true
-    if (key == Postconditions) return true
-    if (key == TypePrecondition) return true
-    if (key == TypePostcondition) return true
+    if (isStatic) {
+      if (key == Thunk) return true
+      if (key == Preconditions) return true
+      if (key == Postconditions) return true
+      if (key == TypePrecondition) return true
+      if (key == TypePostcondition) return true
+      if (key == Prototype) return true
+    } else {
+      if (key == Constructors) return true
+    }
     return Es6Reflect.isKnownKey(type, key, { isStatic })
   }
 

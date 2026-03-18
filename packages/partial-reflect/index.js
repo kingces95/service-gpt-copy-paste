@@ -59,7 +59,7 @@ export class PartialReflect {
     // TODO: Remove assert?
     assert(PartialTypeReflect.isPartialType(type))
     if (isStatic) return false
-    const finalHost = PartialReflect.getFinalHost(type, key, { isStatic })
+    const finalHost = PartialReflect.getImplementingHost(type, key, { isStatic })
     return finalHost === type
   }
 
@@ -123,31 +123,23 @@ export class PartialReflect {
     yield* PartialAssociate.partialTypes(type)
   }
 
-  static *ownHosts(type, key) {
-    
-  }
   static *hosts(type, key) {
     if (PartialTypeReflect.isPartialType(type))
       return yield* PartialPrototype.hosts(type, key)
 
-    const hosts = new Set(PartialAssociate.hosts(type, key))
-
     // yield types in the hiearchy that resolve the key to a member.
-    for (const current of UserReflect.hierarchy(type)) {
-      if (!(key in current.prototype)) break
-      hosts.add(current)
-    }
-
+    const hosts = new Set(PartialAssociate.hosts(type, key))
+    for (const host of UserReflect.getHosts(type, key)) hosts.add(host)
     yield* hosts
   }
 
-  static getFinalHost(type, key) {
+  static getImplementingHost(type, key) {
     if (PartialTypeReflect.isPartialType(type))
-      return PartialPrototype.getFinalHost(type, key)
+      return PartialPrototype.getImplementingHost(type, key)
 
     if (key in type.prototype === false) return null
 
-    return PartialAssociate.getFinalHost(type, key) || type
+    return PartialAssociate.getImplementingHost(type, key) || type
   }
 
   static load(pojoOrType) {

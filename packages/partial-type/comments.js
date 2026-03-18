@@ -12,7 +12,7 @@ const PartialTypes = Symbol('PartialType.partialTypes')
 // into PartialClass types:
 
 //    class PartialClass extends PartialType {
-//      static [PartialType.PartialTypes] = {
+//      static [PartialType.Declarations] = {
 //        [Extends]: { 
 //          expectedType: [ PartialClass, Extensions ],
 //          map: PartialReflect.load,

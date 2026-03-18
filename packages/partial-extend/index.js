@@ -1,9 +1,5 @@
-import { assert } from '@kingjs/assert'
 import { PartialLoader } from '@kingjs/partial-loader'
-import { PartialTypeReflect, Thunk } from '@kingjs/partial-type'
-import { PartialAssociate } from '@kingjs/partial-associate'
-import { Define } from '@kingjs/define'
-import { isAbstract } from '@kingjs/abstract'
+import { Thunk } from '@kingjs/partial-type'
 
 // Extend takes a targets type and a partial type and merges the 
 // partial type into the target type.
@@ -19,7 +15,7 @@ import { isAbstract } from '@kingjs/abstract'
 
 // A member of a partial type that is copied to the target is associated 
 // with the partial type that defined it (PartialAssociate.getHosts and
-// PartialAssociate.getFinalHost to get the host of the last member copied).  
+// PartialAssociate.getImplementingHost to get the host of the last member copied).  
 
 // A member of a parital type that is copied to the target or was 
 // considered for copying to the target (i.e. was abstract) is associated 
@@ -38,24 +34,7 @@ export function extend(type, partialType) {
     ? type[Thunk](ownKey, descriptor) 
     : descriptor
 
-  const plan = PartialLoader.getExtendPlan(partialType)
-
-  for (let { host, keys, ownKeys, descriptors } of plan) {
-    if (host) {
-      PartialAssociate.addPartialType(type, host)
-
-      for (const key of keys) 
-        PartialAssociate.addHost(type, key, host)
-
-      for (const key of ownKeys) 
-        PartialAssociate.addOwnHost(type, key, host)
-    }
-
-    for (const [key, descriptor] of descriptors) {
-      const thunk = createThunk(key, descriptor)
-      Define.property(type, key, thunk)
-      if (host && !isAbstract(descriptor))
-        PartialAssociate.setFinalHost(type, key, host)
-    }
-  }
+  const plan = PartialLoader.getPlan(partialType)
+  PartialLoader.define(type, partialType, { createThunk })
+  PartialLoader.associate(type, plan)
 }

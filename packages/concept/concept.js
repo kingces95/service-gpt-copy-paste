@@ -4,7 +4,6 @@ import { isPojo } from '@kingjs/pojo-test'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { UserReflect } from '@kingjs/user-reflect'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
-import { Define } from '@kingjs/define'
 import { PartialType, PartialTypeReflect } from '@kingjs/partial-type'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { PartialClass, Extends } from '@kingjs/partial-class'
@@ -42,8 +41,8 @@ function abstractify(descriptor) {
 }
 
 export class Concept extends PartialType {
-  static [PartialType.PartialTypes] = {
-    ...PartialClass[PartialType.PartialTypes],
+  static [PartialType.Declarations] = {
+    ...PartialClass[PartialType.Declarations],
     [Implements]: { expectedType: Concept },
   }
 
@@ -77,7 +76,7 @@ export class ImplicitConcept extends PartialType {
 export class ConceptReflect {
   static define(pojoOrType) {
     if (!isPojo(pojoOrType)) return pojoOrType
-    return Define.type(pojoOrType, ImplicitConcept)
+    return Es6Reflect.defineType(null, ImplicitConcept, pojoOrType)
   }
 
   static isConcept(type) {

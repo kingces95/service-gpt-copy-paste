@@ -83,9 +83,9 @@ describe('MyConcept', () => {
       expect(actual).toEqual(expected)
     })
     it('should not report MyConcept as host for the member', () => {
-      // TODO: rename getFinalHost as getImplementingHost
+      // TODO: rename getImplementingHost as getImplementingHost
       // aka the final non-abstract implementation of the member.
-      const host = PartialReflect.getFinalHost(MyConcept, 'member')
+      const host = PartialReflect.getImplementingHost(MyConcept, 'member')
       expect(host).toBe(null)
     })
     it('should be found on an object with the member', () => {

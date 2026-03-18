@@ -47,11 +47,9 @@ const MyClassMd = {
     ],
     hierarchy: {
       staticMember: [ 
-        MyClass, MyClass.staticMember, 
-        Object ],
+        MyClass, MyClass.staticMember ],
       staticBaseMember: [ 
-        MyClass, MyClass.staticBaseMember, 
-        Object ],
+        MyClass, MyClass.staticBaseMember ],
     },
   },
   instance: {
@@ -67,11 +65,9 @@ const MyClassMd = {
     ],
     hierarchy: {
       member: [ 
-        MyClass, MyClass.prototype.member, 
-        Object ],
+        MyClass, MyClass.prototype.member ],
       baseMember: [ 
-        MyClass, MyClass.prototype.baseMember, 
-        Object ],
+        MyClass, MyClass.prototype.baseMember ],
     },
   },
 }
@@ -102,16 +98,11 @@ const MyExtendedClassMd = {
     hierarchy: {
       staticMember: [ 
         MyExtendedClass, MyExtendedClass.staticMember, 
-        MyClass, MyClass.staticMember, 
-        Object ],
+        MyClass, MyClass.staticMember ],
       staticBaseMember: [ 
-        MyExtendedClass, 
-        MyClass, MyClass.staticBaseMember, 
-        Object ],
+        MyClass, MyClass.staticBaseMember ],
       extendedStaticMember: [ 
-        MyExtendedClass, MyExtendedClass.extendedStaticMember, 
-        MyClass, 
-        Object ],
+        MyExtendedClass, MyExtendedClass.extendedStaticMember ],
     },
   },
   instance: {
@@ -129,16 +120,11 @@ const MyExtendedClassMd = {
     hierarchy: {
       member: [ 
         MyExtendedClass, MyExtendedClass.prototype.member, 
-        MyClass, MyClass.prototype.member, 
-        Object ],
+        MyClass, MyClass.prototype.member ],
       baseMember: [ 
-        MyExtendedClass, 
-        MyClass, MyClass.prototype.baseMember, 
-        Object ],
+        MyClass, MyClass.prototype.baseMember ],
       extendedMember: [ 
-        MyExtendedClass, MyExtendedClass.prototype.extendedMember, 
-        MyClass, 
-        Object ],
+        MyExtendedClass, MyExtendedClass.prototype.extendedMember ],
     },
   },
 }
@@ -180,6 +166,12 @@ describe.each(Classes)('%s', (_, classMd) => {
     expect(actual).toEqual(expected)
   })
 
+  it('has correct base types', () => {
+    const expected = classMd.chain.slice(1)
+    const actual = [...Es6Reflect.baseTypes(type)]
+    expect(actual).toEqual(expected)
+  })
+
   describe.each([
     ['static', true], 
     ['instance', false]
@@ -195,7 +187,7 @@ describe.each(Classes)('%s', (_, classMd) => {
       const members = md?.hierarchy || { }
       for (const key in members) {
         const expected = members[key]
-        const actual = [...Es6Reflect.hierarchy(
+        const actual = [...Es6Reflect.getDescriptor(
           type, key, { isStatic, excludeKnown: true })].map(value => {
             if (typeof value == 'object') return value.value
             return value
@@ -315,11 +307,12 @@ describe.each(Classes)('%s', (_, classMd) => {
           isStatic ? owner : owner.prototype,
           name)
         let actual
+        scan:
         for (const current of Es6Reflect.getDescriptor(
           type, name, { isStatic, excludeKnown: true })) {
           switch (typeof current) {
             case 'function': actual = null; continue
-            case 'object': actual = current; break
+            case 'object': actual = current; break scan
             default: assert(false, `Unexpected type: ${typeof current}`)
           }
         }

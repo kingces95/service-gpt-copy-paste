@@ -14,7 +14,7 @@ export const Extends = Symbol('PartialClass.Extends')
 //    extend(MyType, Dumpper)
 
 export class PartialClass extends PartialType {
-  static [PartialType.PartialTypes] = {
+  static [PartialType.Declarations] = {
     [Extends]: { 
       expectedType: [ PartialClass, Extensions ],
       map: PartialReflect.load,
@@ -46,7 +46,7 @@ export class PartialClassReflect {
   }
 
   static getPartialClass(type, name) {
-    const host = PartialReflect.getFinalHost(type, name)
+    const host = PartialReflect.getImplementingHost(type, name)
     if (!PartialClassReflect.isPartialClass(host)) return null
     if (type == host) return null
     return host

@@ -1,194 +1,126 @@
 import assert from 'assert'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { es6Typeof } from '@kingjs/es6-typeof'
+import { isAbstract } from '@kingjs/abstract'
+import { Es6Reflector } from '@kingjs/es6-reflector'
 
-const KnownInstanceMembers = new Set([ 'constructor' ])
-const KnownStaticMembers = new Set([ 'length', 'name', 'prototype' ])
+const Reflector = new Es6Reflector()
 
 // Es6Reflect, like Reflect but operates on Type and is static aware.
 
 export class Es6Reflect {
-  static baseType$(type, { isStatic } = { }) {
-    const result = Es6Reflect.baseType(type)
-    if (isStatic && result == Object)
-      return null
-    return result
-  }
+
+  // Es6Reflector does not include baseType because its algorithms do
+  // not assume that baseType.constructor.prototype round-trips. This
+  // assumption allows Es6Reflector to support multiple inheritance
+  // using an alternative carefully crafted prototype chain. 
   static baseType(type) {
-    if (type == null) type = Object
-
-    let prototype = type.prototype
-
-    prototype = Object.getPrototypeOf(prototype)
-    if (prototype == Function.prototype) 
-      prototype = Object.prototype
-
-    return prototype?.constructor ?? null
+    if (type == null) return null
+    const baseTypes = Es6Reflect.baseTypes(type)
+    const { value } = baseTypes.next()
+    if (value == Function) return Object
+    return value || null
   }
 
+  static *baseTypes(type) {
+    yield* Reflector.baseTypes(type)
+  }
   static isAbstract(type) {
-    let current = type
-    while (current) {
-      if (current == Object) return false
-      current = Es6Reflect.baseType(current)
-    }
-    return true
+    return Reflector.isAbstract(type)
   }
-
   static typeof(fn, key, descriptor, { isStatic } = { }) {
-    const descriptorType = Es6Descriptor.typeof(descriptor)
-    if (descriptorType != 'field')
-      return descriptorType
-
-    const value = descriptor.value
-    const es6Type = es6Typeof(value)
-    if (key === 'constructor' 
-      && !isStatic 
-      && value === fn) {
-
-      assert(es6Type == 'class')
-      return 'constructor'
-    }
-
-    return 'field'
+    return Reflector.typeof(fn, key, descriptor, { isStatic })
   }
-
-  // predicates
   static isKnown(type) {
-    return type == Object || type == Function
+    return Reflector.isKnown(type)
   }
   static isKnownKey(type, name, { isStatic } = { }) {
-    if (Es6Reflect.isKnown(type)) return true
-    return isStatic
-      ? KnownStaticMembers.has(name)
-      : KnownInstanceMembers.has(name)
+    return Reflector.isKnownKey(type, name, { isStatic })
   }
   static isExtensionOf(cls, targetCls) {
-    let base = cls
-    while (base = Es6Reflect.baseType(base))
-      if (base == targetCls) return true
-    return false
+    return Reflector.isExtensionOf(cls, targetCls)
   }
 
-  static *hierarchy(type, key = null, { isStatic, excludeKnown } = { }) {
-    let current = type
-    while (current) {
-      yield current
-      if (key) {
-        const descriptor = Es6Reflect.getOwnDescriptor(current, key, { 
-          isStatic, excludeKnown })
-        if (descriptor)
-          yield descriptor
-      }
-      current = Es6Reflect.baseType(current)
-    }
+  static *hierarchy(type, { isStatic } = { }) {
+    yield* Reflector.hierarchy(type, { isStatic })
   }
 
   static hasOwnKey(type, name, { isStatic, excludeKnown } = { }) {
-    if (excludeKnown && Es6Reflect.isKnownKey(type, name, { isStatic }))
-      return false
-
-    const object = isStatic
-      ? type
-      : type.prototype
-
-    return Object.prototype.hasOwnProperty.call(object, name)
+    return Reflector.hasOwnKey(type, name, { isStatic, excludeKnown })
   }
-
   static *ownKeys(type, { isStatic, excludeKnown } = { }) {
-    const keys = isStatic
-      ? Reflect.ownKeys(type)
-      : Reflect.ownKeys(type.prototype)
-
-    for (const name of keys) {
-      if (excludeKnown && Es6Reflect.isKnownKey(type, name, { isStatic }))
-        continue
-      yield name
-    }
+    yield* Reflector.ownKeys(type, { isStatic, excludeKnown })
   }
-
   static *keys(type, { isStatic, excludeKnown } = { }) {
-    const visited = new Set()
-
-    let current = type
-    while (current) {
-      yield current
-      for (const key of Es6Reflect.ownKeys(current, { isStatic, excludeKnown })) {
-        if (visited.has(key)) continue
-        visited.add(key)
-        yield key
-      }
-      current = Es6Reflect.baseType$(current, { isStatic })
-    }
+    yield* Reflector.keys(type, { isStatic, excludeKnown })
   }
 
-  static getHost(type, name, { isStatic, excludeKnown } = { }) {
-    let current = type
-    while (current) {
-      if (Es6Reflect.hasOwnKey(current, name, { isStatic, excludeKnown }))
-        return current
-
-      current = Es6Reflect.baseType$(current, { isStatic })
-    }
-    return null
+  static isHostOf(type, name, { isStatic, excludeKnown } = { }) {
+    return Reflector.isHostOf(type, name, { isStatic, excludeKnown })
+  }
+  static *getHosts(type, name, { isStatic, excludeKnown } = { }) {
+    yield* Reflector.getHosts(type, name, { isStatic, excludeKnown })
   }
 
   static getOwnDescriptor(type, name, { isStatic, excludeKnown } = { }) {
-    if (!Es6Reflect.hasOwnKey(type, name, { isStatic, excludeKnown }))
-      return null
-
-    const object = isStatic
-      ? type
-      : type.prototype
-
-    return Object.getOwnPropertyDescriptor(object, name)
+    return Reflector.getOwnDescriptor(type, name, { isStatic, excludeKnown })
   }
   static *ownDescriptors(type, { isStatic, excludeKnown } = { }) {
-    const ownKeys = Es6Reflect.ownKeys(type, { isStatic, excludeKnown })
-    for (const key of ownKeys) {
-      const descriptor = Es6Reflect.getOwnDescriptor(
-        type, key, { isStatic, excludeKnown })
-      yield key
-      yield descriptor
-    }
+    yield* Reflector.ownDescriptors(type, { isStatic, excludeKnown })
   }  
 
   static *getDescriptor(type, name, { isStatic, excludeKnown } = { }) {
-    let current = type
-    while (current) {
-      const descriptor = Es6Reflect.getOwnDescriptor(
-        current, name, { isStatic, excludeKnown })
-      if (descriptor) {
-        yield current
-        return yield descriptor
-      }
-
-      current = Es6Reflect.baseType$(current, { isStatic })
-    }
+    yield* Reflector.getDescriptor(type, name, { isStatic, excludeKnown })
   }
   static *descriptors(type, { isStatic, excludeKnown } = { }) {
-    let owner
-    for (const current of Es6Reflect.keys(type, { isStatic, excludeKnown })) {
-      switch (typeof current) {
-        case 'function': owner = current; yield owner; break
-        case 'string':
-        case 'symbol': {
-          const descriptor = Es6Reflect.getOwnDescriptor(
-            owner, current, { isStatic, excludeKnown })
-          yield current
-          yield descriptor
-          break
-        }
-        default: assert(false, `Unexpected type: ${typeof current}`)
-      }
-    }
+    yield* Reflector.descriptors(type, { isStatic, excludeKnown })
   }
 
   static getMetadata(type) {
     return Metadata.get(type)
   }
-}
 
+  static defineProperty(type, key, descriptor) {
+    const prototype = type.prototype
+
+    if (key in prototype && isAbstract(descriptor)) return false
+
+    Object.defineProperty(prototype, key, descriptor)
+    return true
+  }
+
+  static defineProperties(type, descriptors) {
+    const keys = []
+    for (const key of Reflect.ownKeys(descriptors)) {
+      const defined = Es6Reflect.property(type, key, descriptors[key])
+      keys.push([key, defined])
+    }
+    return keys
+  }
+  
+  static defineType(name = null, base = Object, pojo = { }) {
+    const [type] = [class extends base { }]
+    
+    Object.defineProperties(type, {
+      name: {
+        value: name,
+        configurable: true,
+        enumerable: false,
+        writable: false,
+      }
+    })
+
+    const prototype = type.prototype
+    for (const key of Reflect.ownKeys(pojo)) {
+      if (key === 'constructor') continue
+      const descriptor = Object.getOwnPropertyDescriptor(pojo, key)
+      Object.defineProperty(prototype, key, descriptor)
+    }
+
+    const descriptors = Object.getOwnPropertyDescriptors(type.prototype)
+    return type
+  }
+}
 
 export class Es6GetterMd {
   static Type = 'getter'

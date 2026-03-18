@@ -57,10 +57,10 @@ export class PartialPrototype {
     yield* PartialAssociate.hosts(type, key)
   }
   
-  static getFinalHost(type, key) {
+  static getImplementingHost(type, key) {
     assert(PartialTypeReflect.isPartialType(type))
     type = getPrototypicalType(type)
-    return PartialAssociate.getFinalHost(type, key)
+    return PartialAssociate.getImplementingHost(type, key)
   }
 
   static *keys(type) { 

@@ -3,6 +3,8 @@ import { Es6Associate } from '@kingjs/es6-associate'
 import { PartialTypeReflect } from '@kingjs/partial-type'
 
 const PartialTypes = Symbol.for('PartialReflect.partialTypes')
+const Keys = Symbol.for('PartialReflect.keys')
+const OwnKeys = Symbol('PartialReflect.ownKeys')
 const FinalHostMap = Symbol.for('PartialReflect.hostMap')
 const HostLookup = Symbol.for('PartialReflect.hostLookup')
 const OwnHostLookup = Symbol.for('PartialReflect.ownHostLookup')
@@ -30,13 +32,22 @@ export class PartialAssociate {
     yield* Es6Associate.associates(type, PartialTypes)
   }
 
-  static setFinalHost(type, key, host, { isStatic } = { }) {
+  static addKey(type, key, { isStatic } = { }) {
     assert(!PartialTypeReflect.isKnownKey(type, key, { isStatic }))
-    Es6Associate.addMemberAssociate(type, key, FinalHostMap, host, { isStatic })
+    Es6Associate.addMemberAssociates(type, key, Keys, key, { isStatic })
   }
-  static getFinalHost(type, key, { isStatic } = { }) {
-    if (PartialTypeReflect.isKnownKey(type, key, { isStatic })) return null
-    return Es6Associate.getMemberAssociate(type, key, FinalHostMap, { isStatic })
+  static *keys(type, { isStatic } = { }) {
+    if (PartialTypeReflect.isKnown(type)) return
+    yield* Es6Associate.memberAssociates(type, Keys, { isStatic })
+  }
+
+  static addOwnKey(type, key, { isStatic } = { }) {
+    assert(!PartialTypeReflect.isKnownKey(type, key, { isStatic }))
+    Es6Associate.addMemberAssociate(type, key, OwnKeys, key, { isStatic })
+  }
+  static *ownKeys(type, { isStatic } = { }) {
+    if (PartialTypeReflect.isKnown(type)) return
+    yield* Es6Associate.memberAssociates(type, OwnKeys, { isStatic })
   }
 
   static addHost(type, key, host, { isStatic } = { }) {
@@ -50,10 +61,19 @@ export class PartialAssociate {
 
   static addOwnHost(type, key, host, { isStatic } = { }) {
     assert(!PartialTypeReflect.isKnownKey(type, key, { isStatic }))
-    Es6Associate.addMemberAssociates(type, key, OwnHostLookup, host, { isStatic })
+    Es6Associate.addMemberAssociate(type, key, OwnHostLookup, host, { isStatic })
   }
   static *ownHosts(type, key, { isStatic } = { }) {
     if (PartialTypeReflect.isKnownKey(type, key, { isStatic })) return
     yield* Es6Associate.memberAssociates(type, key, OwnHostLookup, { isStatic })
+  }
+
+  static setImplementingHost(type, key, host, { isStatic } = { }) {
+    assert(!PartialTypeReflect.isKnownKey(type, key, { isStatic }))
+    Es6Associate.addMemberAssociate(type, key, FinalHostMap, host, { isStatic })
+  }
+  static getImplementingHost(type, key, { isStatic } = { }) {
+    if (PartialTypeReflect.isKnownKey(type, key, { isStatic })) return null
+    return Es6Associate.getMemberAssociate(type, key, FinalHostMap, { isStatic })
   }
 }

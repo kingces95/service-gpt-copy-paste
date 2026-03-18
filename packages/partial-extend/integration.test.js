@@ -27,10 +27,28 @@ describe('Extensions with non-standard properties', () => {
     beforeEach(() => {
       [cls] = [class { }]
       extend(cls, pojo)
+      const descriptors = Object.getOwnPropertyDescriptors(cls.prototype)
     })
-
+    it('should create an instance with expected property descriptors', () => {
+      const descriptors = Object.getOwnPropertyDescriptors(cls.prototype)
+      const dfault = {
+        value: 42, writable: true, enumerable: true, configurable: true,
+      }
+      expect(descriptors).toEqual({
+        writableFalse: { ...dfault, writable: false },
+        enumerableFalse: { ...dfault, enumerable: false }, 
+        configurableFalse: { ...dfault, configurable: false },
+        constructor: {
+          value: cls,
+          writable: true,
+          enumerable: false,
+          configurable: true,
+        }
+      })
+    })
     it('should have and info pojo', async () => {
       const pojo = await TypeInfo.from(cls).toPojo(filter)
+      const descriptors = Object.getOwnPropertyDescriptors(cls.prototype)
       expect(pojo).toEqual({
         members: { fields: {
           writableFalse: { 

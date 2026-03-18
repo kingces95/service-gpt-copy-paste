@@ -115,14 +115,19 @@ export class PartialProxy {
 
 export class PartialProxyReflect {
   static *getTypeConditions$(type, symbol) {
-    const isStatic = { isStatic: true }
-    for (const host of [...UserReflect.hierarchy(type, symbol)]) {
-      const { value } = UserReflect.getOwnDescriptor(
-        host, symbol, isStatic) ?? { }
-      if (!value) continue
-      assert(typeof value === 'function', 
-        `Expected function but got ${typeof value}`)
-      yield value
+    for (const current of UserReflect.getDescriptor(
+      type, symbol, { isStatic: true })) {
+      switch (typeof current) {
+        case 'function': break
+        case 'object': 
+          const { value } = current
+          if (!value) continue
+          assert(typeof value === 'function', 
+            `Expected function but got ${typeof value}`)
+          yield value
+          break
+        default: assert(false, `Unexpected type: ${typeof current}`)
+      }
     }
   }
   static *conditions$(type, key, symbol) {

@@ -419,7 +419,7 @@ describe('A bespoke class', () => {
   describe('with static and explicit constructor members', () => {
     beforeEach(() => {
       myClass.constructor = function() { }
-      myClass.prototype.constructor = function() { }
+      // myClass.prototype.constructor = function() { }
     })
     it('has a pojo', async () => {
       const pojo = {

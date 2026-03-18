@@ -10,9 +10,6 @@ export class UserReflect {
   static *keys(type, { isStatic } = { }) {
     yield* Es6Reflect.keys(type, { isStatic, ...Filter })
   } 
-  static *hierarchy(type, key, { isStatic } = { }) {
-    yield* Es6Reflect.hierarchy(type, key, { isStatic, ...Filter })
-  }
   static getOwnDescriptor(type, key, { isStatic } = { }) {
     return Es6Reflect.getOwnDescriptor(type, key, { isStatic, ...Filter })
   }
@@ -25,7 +22,10 @@ export class UserReflect {
   static *descriptors(type, { isStatic } = { }) {
     yield* Es6Reflect.descriptors(type, { isStatic, ...Filter })
   }
-  static getHost(type, name, { isStatic } = { }) {
-    return Es6Reflect.getHost(type, name, { isStatic, ...Filter })
+  static isHostOf(type, name, { isStatic } = { }) {
+    return Es6Reflect.isHostOf(type, name, { isStatic, ...Filter })
+  } 
+  static *getHosts(type, name, { isStatic } = { }) {
+    yield* Es6Reflect.getHosts(type, name, { isStatic, ...Filter })
   }
 }
