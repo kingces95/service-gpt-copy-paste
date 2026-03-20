@@ -1,203 +1,187 @@
-import assert from 'assert'
-import { Es6Descriptor } from '@kingjs/es6-descriptor'
-import { es6Typeof } from '@kingjs/es6-typeof'
+import {
+  Es6InstancePrototype,
+  Es6StaticPrototype,
+} from '@kingjs/es6-prototype'
+
+export class Es6Reflector {
+  #instancePrototype
+  #staticPrototype
+
+  constructor({
+    knownTypes,
+    knownInstanceKeys,
+    knownStaticKeys,
+  } = { }) {
+    this.#instancePrototype = new Es6InstancePrototype({
+      knownTypes,
+      knownKeys: knownInstanceKeys,
+    })
+
+    this.#staticPrototype = new Es6StaticPrototype({
+      knownTypes,
+      knownKeys: knownStaticKeys,
+    })
+  }
+
+  #prototype(isStatic = false) { 
+    return isStatic
+      ? this.#staticPrototype
+      : this.#instancePrototype 
+  }
+
+  typeof(type, key, descriptor) {
+    return this.#prototype().typeof(type, key, descriptor)
+  }
+
+  *knownTypes() { 
+    yield* this.#prototype().knownTypes()
+  }
+  *knownKeys({ isStatic } = { }) { 
+    yield* this.#prototype(isStatic).knownKeys() 
+  }
+
+  *hierarchy(type) { 
+    yield* this.#prototype().hierarchy(type) 
+  }
+  getBaseType(type) {
+    return this.#prototype().getBaseType(type)
+  }
+  *baseTypes(type) { 
+    yield* this.#prototype().baseTypes(type) 
+  }
+  isExtensionOf(type, targetType) { 
+    return this.#prototype().isExtensionOf(type, targetType) 
+  }
+  isAbstract(type) { 
+    return this.#prototype().isAbstract(type) 
+  }
+  isKnown(type, { isStatic } = { }) {
+    return this.#prototype(isStatic).isKnown(type)
+  }
+  isKnownKey(type, name, { isStatic } = { }) {
+    return this.#prototype(isStatic).isKnownKey(type, name)
+  }
+  hasOwnKey(type, name, { isStatic } = { }) {
+    return this.#prototype(isStatic).hasOwnKey(type, name)
+  }
+  *ownKeys(type, { isStatic } = { }) {
+    yield* this.#prototype(isStatic).ownKeys(type)
+  }
+  *keys(type, { isStatic } = { }) {
+    yield* this.#prototype(isStatic).keys(type)
+  }
+  isHostOf(type, name, { isStatic } = { }) {
+    return this.#prototype(isStatic).isHostOf(type, name)
+  }
+  *getHosts(type, name, { isStatic } = { }) {
+    yield* this.#prototype(isStatic).getHosts(type, name)
+  }
+  getOwnDescriptor(type, name, { isStatic } = { }) {
+    return this.#prototype(isStatic).getOwnDescriptor(type, name)
+  }
+  *ownDescriptors(type, { isStatic } = { }) {
+    yield* this.#prototype(isStatic).ownDescriptors(type)
+  }
+  *getDescriptor(type, name, { isStatic } = { }) {
+    yield* this.#prototype(isStatic).getDescriptor(type, name)
+  }
+  *descriptors(type, { isStatic } = { }) {
+    yield* this.#prototype(isStatic).descriptors(type)
+  }
+}
 
 const KnownTypes = [ Object, Function ]
 const KnownInstanceKeys = [ 'constructor' ]
-const KnownStaticKeys = [ 'length', 'name', 'prototype' ]
+const KnownStaticKeys = [ 'constructor', 'length', 'name', 'prototype' ]
 
-class Es6Prototype {
-
-  static *chain(prototype) {
-    do { yield prototype } 
-    while (prototype = Object.getPrototypeOf(prototype))
-  }
-
-  static hasOwnKey(prototype, name) {
-    return Object.prototype.hasOwnProperty.call(prototype, name)
-  }
-
-  static *ownKeys(prototype) {
-    yield* Reflect.ownKeys(prototype)
-  }
-
-  static getOwnDescriptor(prototype, name) {
-    return Object.getOwnPropertyDescriptor(prototype, name)
+export class Es6UserReflector extends Es6Reflector {
+  constructor() {
+    super({
+      knownTypes: KnownTypes,
+      knownInstanceKeys: KnownInstanceKeys,
+      knownStaticKeys: KnownStaticKeys,
+    })
   }
 }
 
-export class Es6Reflector {
-  #knownTypes
-  #knownInstanceKeys
-  #knownStaticKeys
-  #getPrototypeFn
-  #fixedOptions
-  
-  constructor({
-    knownTypes = KnownTypes,
-    knownStaticKeys = KnownStaticKeys,
-    knownInstanceKeys = KnownInstanceKeys, 
-    fixedOptions = { },
-    getPrototypeFn = type => type.prototype,
-  } = { }) {
-    this.#knownTypes = new Set(knownTypes)
-    this.#knownInstanceKeys = new Set(knownInstanceKeys)
-    this.#knownStaticKeys = new Set(knownStaticKeys)
-    this.#fixedOptions = fixedOptions
-    this.#getPrototypeFn = getPrototypeFn
+export class Es6Reflect$ {
+  #userReflector
+  #legacyReflector
+  #reflector
+
+  constructor() {
+    this.#userReflector = new Es6UserReflector()
+    this.#legacyReflector = new Es6Reflector({
+      knownTypes: [ Object ]
+    })
+    this.#reflector = new Es6Reflector()
   }
 
-  #getOptions(options) {
-    return { ...options, ...this.#fixedOptions }
+  // #getReflector({ excludeKnown } = { }) {
+  //   return excludeKnown ? this.#userReflector : this.#legacyReflector
+  // }
+  #getReflector(type, options = { }) {
+    return this.#getReflector$(type, options)
   }
 
-  #getPrototype(type, { isStatic }) {
-    return isStatic ? type : this.#getPrototypeFn(type)
+  typeof(type, key, descriptor, options = { }) {
+    return this.#getReflector(type, options).typeof(type, key, descriptor)
   }
-
-  typeof(fn, key, descriptor, { isStatic } = { }) {
-    const descriptorType = Es6Descriptor.typeof(descriptor)
-    if (descriptorType != 'field')
-      return descriptorType
-
-    const value = descriptor.value
-    const es6Type = es6Typeof(value)
-    if (key === 'constructor' 
-      && !isStatic 
-      && value === fn) {
-
-      assert(es6Type == 'class')
-      return 'constructor'
-    }
-
-    return 'field'
+  *hierarchy(type, options = { }) {
+    yield* this.#getReflector(type, options).hierarchy(type)
   }
-
-  *hierarchy(type, { isStatic } = { }) {
-    let prototype = this.#getPrototypeFn(type)
-    for (const link of Es6Prototype.chain(prototype)) {
-      const ctor = link.constructor
-      // TODO: why suppress Object for static members?
-      if (type != Object && isStatic && ctor == Object) break
-      yield ctor
-    }
+  getBaseType(type, options = { }) {
+    return this.#getReflector(type, options).getBaseType(type)
   }
-
   *baseTypes(type, options = { }) {
-    const hierarchy = this.hierarchy(type, options)
-    hierarchy.next() // skip self
-    yield* hierarchy
+    yield* this.#getReflector(type, options).baseTypes(type)
   }
-
-  isExtensionOf(type, target) {
-    for (const base of this.baseTypes(type))
-      if (base == target) return true
-    return false
+  isExtensionOf(type, targetType, options = { }) {
+    return this.#getReflector(type, options).isExtensionOf(type, targetType)
   }
-
-  isAbstract(type) {
-    return type != Object && !this.isExtensionOf(type, Object)
+  isAbstract(type, options = { }) {
+    return this.#getReflector(type, options).isAbstract(type)
   }
-
-  isKnown(type) { 
-    return this.#knownTypes.has(type) 
+  isKnown(type, options = { }) {
+    return this.#getReflector(type, options).isKnown(type, options)
   }
-
-  isKnownKey(type, name, { isStatic } = { }) {
-    if (this.isKnown(type)) return true
-
-    if (isStatic) 
-      return this.#knownStaticKeys.has(name)
-
-    return this.#knownInstanceKeys.has(name)
+  isKnownKey(type, name, options = { }) {
+    return this.#getReflector(type, options).isKnownKey(type, name, options)
   }
-
   hasOwnKey(type, name, options = { }) {
-    const { excludeKnown } = this.#getOptions(options)
-    const prototype = this.#getPrototype(type, options)
-
-    if (excludeKnown && this.isKnownKey(type, name, options))
-      return false
-
-    return Es6Prototype.hasOwnKey(prototype, name)
+    return this.#getReflector(type, options).hasOwnKey(type, name, options)
   }
-
   *ownKeys(type, options = { }) {
-    const prototype = this.#getPrototype(type, options)
-
-    for (const name of Es6Prototype.ownKeys(prototype)) {
-      if (!this.hasOwnKey(type, name, options))
-        continue
-      yield name
-    }
+    yield* this.#getReflector(type, options).ownKeys(type, options)
   }
-
   *keys(type, options = { }) {
-    const visited = new Set()
-
-    for (const current of this.hierarchy(type, options)) {
-      yield current
-      for (const key of this.ownKeys(current, options)) {
-        if (visited.has(key)) continue
-        visited.add(key)
-        yield key
-      }
-    }
+    yield* this.#getReflector(type, options).keys(type, options)
   }
-
   isHostOf(type, name, options = { }) {
-    if (this.isKnownKey(type, name, options)) return false
-    return name in this.#getPrototype(type, options)
+    return this.#getReflector(type, options).isHostOf(type, name, options)
   }
-
   *getHosts(type, name, options = { }) {
-    for (const current of this.hierarchy(type, options)) {
-      if (this.isHostOf(current, name, options)) yield current
-    }
+    yield* this.#getReflector(type, options).getHosts(type, name, options)
   }
-
   getOwnDescriptor(type, name, options = { }) {
-    const prototype = this.#getPrototype(type, options)
-    
-    if (!this.hasOwnKey(type, name, options))
-      return null
-
-    return Es6Prototype.getOwnDescriptor(prototype, name)
+    return this.#getReflector(type, options).getOwnDescriptor(type, name, options)
   }
-
   *ownDescriptors(type, options = { }) {
-    for (const key of this.ownKeys(type, options)) {
-      yield key
-      yield this.getOwnDescriptor(type, key, options)
-    }
-  }  
-
-  *getDescriptor(type, name, options = { }) {
-    for (const current of this.hierarchy(type, options)) {  
-      const descriptor = this.getOwnDescriptor(current, name, options)
-      if (!descriptor) continue
-      yield current
-      yield descriptor
-    }
+    yield* this.#getReflector(type, options).ownDescriptors(type, options)
   }
 
+  #getReflector$(type, { excludeKnown, isStatic } = { }) {
+    return excludeKnown 
+      ? this.#userReflector 
+      : isStatic && type != Object
+        ? this.#legacyReflector
+        : this.#reflector
+  }
+  *getDescriptor(type, name, options = { }) {
+    yield* this.#getReflector$(type, options).getDescriptor(type, name, options)
+  }
   *descriptors(type, options = { }) {
-    let owner
-    for (const current of this.keys(type, options)) {
-      switch (typeof current) {
-        case 'function': 
-          owner = current
-          yield owner
-          break
-        case 'string':
-        case 'symbol': {
-          const descriptor = this.getOwnDescriptor(owner, current, options)
-          yield current
-          yield descriptor
-          break
-        }
-        default: assert(false, `Unexpected type: ${typeof current}`)
-      }
-    }
+    yield* this.#getReflector$(type, options).descriptors(type, options)
   }
 }
+

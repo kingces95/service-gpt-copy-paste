@@ -106,6 +106,7 @@ describe('Es6ClassInfo', () => {
       expect(actualBase == expectedBase).toBe(true)
     })
     it('returns __proto__', () => {
+      const members = [...info.members()]
       const protoMember = info.getMember('__proto__')
       expect(protoMember).toBeInstanceOf(Es6PropertyInfo)
     })

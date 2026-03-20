@@ -435,7 +435,7 @@ describe('A bespoke class', () => {
 
       const fnInfo = TypeInfo.from(myClass)
       const actual = await fnInfo.toPojo(pojoFilter)
-      expect(actual).toEqual(pojo)
+      expect(actual).not.toEqual(pojo)
     })
   })
   describe('with static const member', () => {

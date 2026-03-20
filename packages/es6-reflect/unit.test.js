@@ -199,7 +199,9 @@ describe.each(Classes)('%s', (_, classMd) => {
     it('has correct own keys', () => {
       const expected = md?.ownKeys || []
       const actual = [...Es6Reflect.ownKeys(type, { isStatic })]
-        .filter(name => Es6Reflect.isKnownKey(type, name, { isStatic }) === false)
+        .filter(name => Es6Reflect.isKnownKey(
+          type, name, { isStatic }) === false)
+        .filter(name => typeof name == 'string')
       // sort for comparison
       expected.sort()
       actual.sort()
@@ -335,3 +337,39 @@ function keys(type, isStatic) {
 
   return result
 }
+
+describe('Javascript', () => {
+  it('static prototype chain', () => {
+    const fnPrototype = Function.prototype
+    const objectPrototype = Object.prototype
+    expect(Object.getPrototypeOf(Object)).toBe(fnPrototype)
+    expect(Object.getPrototypeOf(fnPrototype)).toBe(objectPrototype)
+    expect(Object.getPrototypeOf(objectPrototype)).toBe(null)
+
+    expect(Object.getPrototypeOf(Function)).toBe(fnPrototype)
+
+    const Class = class { }
+    expect(Object.getPrototypeOf(Class)).toBe(fnPrototype)
+
+    const ClassObject = class extends Object { }
+    expect(Object.getPrototypeOf(ClassObject)).toBe(Object)
+
+    const ClassNull = class extends null { }
+    expect(Object.getPrototypeOf(ClassNull)).toBe(fnPrototype)
+
+    const ClassFunction = class extends Function { }
+    expect(Object.getPrototypeOf(ClassFunction)).toBe(Function)
+  })
+  it('instance prototype chain', () => {
+    const object = { }
+    const objectPrototype = Object.prototype
+    expect(Object.getPrototypeOf(object)).toBe(objectPrototype)
+    expect(Object.getPrototypeOf(objectPrototype)).toBe(null)
+
+    const fu = function() { }
+    const fnPrototype = Function.prototype
+    expect(Object.getPrototypeOf(fu)).toBe(fnPrototype)
+    expect(Object.getPrototypeOf(fnPrototype)).toBe(objectPrototype)
+    expect(Object.getPrototypeOf(objectPrototype)).toBe(null)
+  })
+})
