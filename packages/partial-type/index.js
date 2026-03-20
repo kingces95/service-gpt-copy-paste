@@ -1,6 +1,7 @@
 import { assert } from '@kingjs/assert'
 import { Es6Compiler } from '@kingjs/es6-compiler'
 import { Es6Reflect } from '@kingjs/es6-reflect'
+import { isAbstract } from '@kingjs/abstract'
 
 const Declarations = Symbol('PartialType.partialTypes')
 const Compile = Symbol('PartialType.compile')
@@ -84,5 +85,39 @@ export class PartialTypeReflect {
       if (PartialTypeReflect.isPartialUrType(baseType)) return baseType
 
     return null
+  }
+  
+  // TODO: Consider moving defineProperty and defineType
+  // to their own home. They are independent of PartialType.
+  // They were moved here out of convenience during a refactor.
+  static defineProperty(type, key, descriptor) {
+    const prototype = type.prototype
+
+    if (key in prototype && isAbstract(descriptor)) return false
+
+    Object.defineProperty(prototype, key, descriptor)
+    return true
+  }
+
+  static defineType(name = null, base = Object, pojo = { }) {
+    const [type] = [class extends base { }]
+    
+    Object.defineProperties(type, {
+      name: {
+        value: name,
+        configurable: true,
+        enumerable: false,
+        writable: false,
+      }
+    })
+
+    const prototype = type.prototype
+    for (const key of Reflect.ownKeys(pojo)) {
+      if (key === 'constructor') continue
+      const descriptor = Object.getOwnPropertyDescriptor(pojo, key)
+      Object.defineProperty(prototype, key, descriptor)
+    }
+
+    return type
   }
 }

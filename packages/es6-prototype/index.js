@@ -47,6 +47,9 @@ export class Es6Prototype {
   //    - class { }, Object with no members of interest
   //    - class extends Object { }, Object with members of interest
   //    - class extends null { }, not Object at all
+  // This implies that there exists a prototype link with a .constructor of 
+  // Object that has different members -- one with and one without. A bit
+  // odd but *less* odd then the actual JavaScript ctor chain.
 
   // == Multiple inheritance ==
   // For another example, a type system that supports multipule inheritance
@@ -76,6 +79,15 @@ export class Es6Prototype {
     for (const link of Es6Prototype.chain(prototype))
       yield link.constructor
   }
+  
+  *hierarchy$(type) {
+    const prototype = this.#getPrototypeFn(type)
+    for (const link of Es6Prototype.chain(prototype)) {
+      yield link.constructor
+      yield link
+    }
+  }
+
 
   isKnown(type) {
     return this.#knownTypes.has(type)
@@ -125,12 +137,15 @@ export class Es6Prototype {
   }
 
   *keys(type) {
+    const prototype = this.#getPrototypeFn(type)
+    
     const visited = new Set()
-
-    for (const current of this.hierarchy(type)) {
-      yield current
-      for (const key of this.ownKeys(current)) {
+    for (const current of Es6Prototype.chain(prototype)) {
+      const ctor = current.constructor
+      yield ctor
+      for (const key of Es6Prototype.ownKeys(current)) {
         if (visited.has(key)) continue
+        if (this.isKnownKey(ctor, key)) continue
         visited.add(key)
         yield key
       }
@@ -162,12 +177,15 @@ export class Es6Prototype {
   }  
 
   *getDescriptor(type, name) {
-    for (const current of this.hierarchy(type)) {  
-      const descriptor = this.getOwnDescriptor(current, name)
+    const prototype = this.#getPrototypeFn(type)
+    for (const current of Es6Prototype.chain(prototype)) {  
+      const descriptor = Es6Prototype.getOwnDescriptor(current, name)
       if (!descriptor) continue
-      yield current
+      const ctor = current.constructor
+      if (this.isKnownKey(ctor, name)) continue
+      yield ctor
       yield descriptor
-    }
+    } 
   }
 
   *descriptors(type) {
@@ -260,9 +278,9 @@ export class Es6StaticPrototype extends Es6Prototype {
 
     // recursive case: class extends Base { }
     const baseType = Object.getPrototypeOf(type)
-    const basePrototype = Es6StaticPrototype.getPrototype(baseType)
-    return Es6StaticPrototype.#createPrototype(
-      type, basePrototype, Object.getOwnPropertyDescriptors(type))
+    const base = Es6StaticPrototype.getPrototype(baseType)
+    const descriptors = Object.getOwnPropertyDescriptors(type)
+    return Es6StaticPrototype.#createPrototype(type, base, descriptors)
   }
 
   static #createPrototype(type, basePrototype = null, descriptors = { }) {

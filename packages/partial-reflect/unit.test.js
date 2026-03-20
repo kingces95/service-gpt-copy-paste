@@ -63,7 +63,7 @@ describe('A type', () => {
     beforeEach(() => {
       method = function method() { }
       methodResult = 
-        Es6Reflect.defineProperty(type, 'method', { value: method })
+        PartialTypeReflect.defineProperty(type, 'method', { value: method })
     })
 
     it('should return method as own descriptor', () => {
@@ -77,7 +77,7 @@ describe('A type', () => {
       let abstractResult
       beforeEach(() => {
         abstractResult = 
-          Es6Reflect.defineProperty(type, 'method', { value: abstract })
+          PartialTypeReflect.defineProperty(type, 'method', { value: abstract })
       })
 
       it('should not change the method', () => {

@@ -1,165 +1,79 @@
-import { isAbstract } from '@kingjs/abstract'
-import { Es6Reflect$ } from '@kingjs/es6-reflector'
+import { 
+  Es6Reflector,
+  Es6UserReflector,
+} from '@kingjs/es6-reflector'
 
-const Reflector$ = new Es6Reflect$()
+class Es6LegacyReflect {
+  #userReflector
+  #reflector
 
-// Es6Reflect, like Reflect but operates on Type and is static aware.
-
-export class Es6Reflect {
-
-  static baseType(type) {
-    if (type == null) return null
-    return Reflector$.getBaseType(type)
-  }
-
-  static *baseTypes(type) {
-    yield* Reflector$.baseTypes(type)
-  }
-  static isAbstract(type) {
-    return Reflector$.isAbstract(type)
-  }
-  static typeof(fn, key, descriptor, { isStatic } = { }) {
-    return Reflector$.typeof(fn, key, descriptor, { isStatic })
-  }
-  static isExtensionOf(cls, targetCls) {
-    return Reflector$.isExtensionOf(cls, targetCls)
+  constructor() {
+    this.#userReflector = new Es6UserReflector()
+    this.#reflector = new Es6Reflector()
   }
 
-  static *hierarchy(type, { isStatic } = { }) {
-    yield* Reflector$.hierarchy(type, { isStatic })
+  #getReflector({ excludeKnown } = { }) {
+    return excludeKnown 
+      ? this.#userReflector 
+      : this.#reflector
   }
 
-  static isKnown(type, { isStatic, excludeKnown } = { }) {
-    return Reflector$.isKnown(
-      type, { isStatic, excludeKnown: true })
+  typeof(type, key, descriptor, options = { }) {
+    return this.#getReflector(options).typeof(type, key, descriptor)
   }
-  static isKnownKey(type, name, { isStatic, excludeKnown } = { }) {
-    return Reflector$.isKnownKey(
-      type, name, { isStatic, excludeKnown: true })
+  *hierarchy(type, options = { }) {
+    yield* this.#getReflector(options).hierarchy(type)
   }
-  static hasOwnKey(type, name, { isStatic, excludeKnown } = { }) {
-    return Reflector$.hasOwnKey(type, name, { isStatic, excludeKnown })
+  baseType(type, options = { }) {
+    return this.#getReflector(options).getBaseType(type)
   }
-  static *ownKeys(type, { isStatic, excludeKnown } = { }) {
-    yield* Reflector$.ownKeys(type, { isStatic, excludeKnown })
+  *baseTypes(type, options = { }) {
+    yield* this.#getReflector(options).baseTypes(type)
   }
-  static *keys(type, { isStatic, excludeKnown } = { }) {
-    yield* Reflector$.keys(type, { isStatic, excludeKnown })
+  isExtensionOf(type, targetType, options = { }) {
+    return this.#getReflector(options).isExtensionOf(type, targetType)
   }
-
-  static isHostOf(type, name, { isStatic, excludeKnown } = { }) {
-    return Reflector$.isHostOf(type, name, { isStatic, excludeKnown })
-  }
-  static *getHosts(type, name, { isStatic, excludeKnown } = { }) {
-    yield* Reflector$.getHosts(type, name, { isStatic, excludeKnown })
+  isAbstract(type, options = { }) {
+    return this.#getReflector(options).isAbstract(type)
   }
 
-  static getOwnDescriptor(type, name, { isStatic, excludeKnown } = { }) {
-    return Reflector$.getOwnDescriptor(type, name, { isStatic, excludeKnown })
+  isKnown(type, options = { }) {
+    options.excludeKnown = true
+    return this.#getReflector(options).isKnown(type, options)
   }
-  static *ownDescriptors(type, { isStatic, excludeKnown } = { }) {
-    yield* Reflector$.ownDescriptors(type, { isStatic, excludeKnown })
-  }  
-
-  static *getDescriptor(type, name, { isStatic, excludeKnown } = { }) {
-    yield* Reflector$.getDescriptor(type, name, { isStatic, excludeKnown })
-  }
-  static *descriptors(type, { isStatic, excludeKnown } = { }) {
-    yield* Reflector$.descriptors(type, { isStatic, excludeKnown })
+  isKnownKey(type, name, options = { }) {
+    options.excludeKnown = true
+    return this.#getReflector(options).isKnownKey(type, name, options)
   }
 
-  static getMetadata(type) {
-    return Metadata.get(type)
+  hasOwnKey(type, name, options = { }) {
+    return this.#getReflector(options).hasOwnKey(type, name, options)
+  }
+  *ownKeys(type, options = { }) {
+    yield* this.#getReflector(options).ownKeys(type, options)
+  }
+  *keys(type, options = { }) {
+    yield* this.#getReflector(options).keys(type, options)
+  }
+  isHostOf(type, name, options = { }) {
+    return this.#getReflector(options).isHostOf(type, name, options)
+  }
+  *getHosts(type, name, options = { }) {
+    yield* this.#getReflector(options).getHosts(type, name, options)
+  }
+  getOwnDescriptor(type, name, options = { }) {
+    return this.#getReflector(options).getOwnDescriptor(type, name, options)
+  }
+  *ownDescriptors(type, options = { }) {
+    yield* this.#getReflector(options).ownDescriptors(type, options)
   }
 
-  static defineProperty(type, key, descriptor) {
-    const prototype = type.prototype
-
-    if (key in prototype && isAbstract(descriptor)) return false
-
-    Object.defineProperty(prototype, key, descriptor)
-    return true
+  *getDescriptor(type, name, options = { }) {
+    yield* this.#getReflector(options).getDescriptor(type, name, options)
   }
-
-  // static defineProperties(type, descriptors) {
-  //   const keys = []
-  //   for (const key of Reflect.ownKeys(descriptors)) {
-  //     const defined = Es6Reflect.property(type, key, descriptors[key])
-  //     keys.push([key, defined])
-  //   }
-  //   return keys
-  // }
-  
-  static defineType(name = null, base = Object, pojo = { }) {
-    const [type] = [class extends base { }]
-    
-    Object.defineProperties(type, {
-      name: {
-        value: name,
-        configurable: true,
-        enumerable: false,
-        writable: false,
-      }
-    })
-
-    const prototype = type.prototype
-    for (const key of Reflect.ownKeys(pojo)) {
-      if (key === 'constructor') continue
-      const descriptor = Object.getOwnPropertyDescriptor(pojo, key)
-      Object.defineProperty(prototype, key, descriptor)
-    }
-
-    const descriptors = Object.getOwnPropertyDescriptors(type.prototype)
-    return type
+  *descriptors(type, options = { }) {
+    yield* this.#getReflector(options).descriptors(type, options)
   }
 }
 
-export class Es6GetterMd {
-  static Type = 'getter'
-  static DefaultConfigurable = true
-  static DefaultEnumerable = false
-}
-export class Es6SetterMd { 
-  static Type = 'setter'
-  static DefaultConfigurable = true
-  static DefaultEnumerable = false
-}
-export class Es6PropertyMd { 
-  static Type = 'property'
-  static DefaultConfigurable = true
-  static DefaultEnumerable = false
-}
-export class Es6FieldMd { 
-  static Type = 'field'
-  static DefaultConfigurable = true
-  static DefaultWritable = true
-  static DefaultEnumerable = true
-}
-export class Es6MethodMd { 
-  static Type = 'method'
-  static DefaultConfigurable = true
-  static DefaultWritable = true
-  static DefaultEnumerable = false
-}
-export class Es6ConstructorMd { 
-  static Type = 'constructor'
-  static DefaultConfigurable = true
-  static DefaultWritable = true
-  static DefaultEnumerable = false
-}
-export class Es6PrototypeMd { 
-  static Type = 'prototype'
-  static DefaultConfigurable = false
-  static DefaultWritable = false
-  static DefaultEnumerable = false
-}
-
-const Metadata = new Map([
-  [Es6FieldMd.Type, Es6FieldMd],
-  [Es6MethodMd.Type, Es6MethodMd],
-  [Es6GetterMd.Type, Es6GetterMd],
-  [Es6SetterMd.Type, Es6SetterMd],
-  [Es6PropertyMd.Type, Es6PropertyMd],
-  [Es6ConstructorMd.Type, Es6ConstructorMd],
-  [Es6PrototypeMd.Type, Es6PrototypeMd],
-])
+export const Es6Reflect = new Es6LegacyReflect()

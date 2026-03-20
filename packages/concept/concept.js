@@ -76,7 +76,8 @@ export class ImplicitConcept extends PartialType {
 export class ConceptReflect {
   static define(pojoOrType) {
     if (!isPojo(pojoOrType)) return pojoOrType
-    return Es6Reflect.defineType(null, ImplicitConcept, pojoOrType)
+    return PartialTypeReflect.defineType(
+      null, ImplicitConcept, pojoOrType)
   }
 
   static isConcept(type) {

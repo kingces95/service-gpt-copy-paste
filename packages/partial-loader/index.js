@@ -288,7 +288,7 @@ export class PartialLoader {
       const descriptor = UserReflect.getOwnDescriptor(ctor, key)
       const thunk = createThunk(key, descriptor)
       if (!descriptor.configurable) continue
-      Es6Reflect.defineProperty(type, key, thunk)
+      PartialTypeReflect.defineProperty(type, key, thunk)
     }
   }
 
@@ -299,7 +299,7 @@ export class PartialLoader {
     for (let { descriptors } of plan) {
       for (const [key, descriptor] of descriptors) {
         const thunk = createThunk(key, descriptor)
-        Es6Reflect.defineProperty(type, key, thunk)
+        PartialTypeReflect.defineProperty(type, key, thunk)
       }
     }
 

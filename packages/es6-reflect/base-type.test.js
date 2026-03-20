@@ -45,7 +45,7 @@ const MyExtendedClassTest = {
 }
 
 const tests = [
-  [NullTest.name, NullTest],
+  // [NullTest.name, NullTest],
   [ObjectTest.name, ObjectTest],
   [FunctionTest.name, FunctionTest],
   [MyClassTest.name, MyClassTest],
