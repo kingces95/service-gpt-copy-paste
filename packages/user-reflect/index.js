@@ -1,4 +1,3 @@
-import { Es6Reflect } from '@kingjs/es6-reflect'
 import { Es6Reflector } from '@kingjs/es6-reflector'
 
 const KnownTypes = [ Object, Function ]
@@ -10,33 +9,3 @@ export const UserReflect = new Es6Reflector({
   knownInstanceKeys: KnownInstanceKeys,
   knownStaticKeys: KnownStaticKeys,
 })
-
-const Filter = { excludeKnown: true }
-
-export class UserReflect$ {
-
-  static *ownKeys(type, { isStatic } = { }) {
-    yield* Es6Reflect.ownKeys(type, { isStatic, ...Filter })
-  }
-  static *keys(type, { isStatic } = { }) {
-    yield* Es6Reflect.keys(type, { isStatic, ...Filter })
-  } 
-  static getOwnDescriptor(type, key, { isStatic } = { }) {
-    return Es6Reflect.getOwnDescriptor(type, key, { isStatic, ...Filter })
-  }
-  static *ownDescriptors(type, { isStatic } = { }) {
-    yield* Es6Reflect.ownDescriptors(type, { isStatic, ...Filter })
-  }
-  static *getDescriptor(type, key, { isStatic } = { }) {
-    yield* Es6Reflect.getDescriptor(type, key, { isStatic, ...Filter })
-  }
-  static *descriptors(type, { isStatic } = { }) {
-    yield* Es6Reflect.descriptors(type, { isStatic, ...Filter })
-  }
-  static isHostOf(type, name, { isStatic } = { }) {
-    return Es6Reflect.isHostOf(type, name, { isStatic, ...Filter })
-  } 
-  static *getHosts(type, name, { isStatic } = { }) {
-    yield* Es6Reflect.getHosts(type, name, { isStatic, ...Filter })
-  }
-}

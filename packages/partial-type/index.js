@@ -1,6 +1,6 @@
 import { assert } from '@kingjs/assert'
 import { Es6Compiler } from '@kingjs/es6-compiler'
-import { Es6Reflect } from '@kingjs/es6-reflect'
+import { Es6UserReflect } from '@kingjs/es6-reflector'
 import { isAbstract } from '@kingjs/abstract'
 
 const Declarations = Symbol('PartialType.partialTypes')
@@ -31,7 +31,7 @@ export class PartialType extends null {
 export class PartialTypeReflect {
   static isKnown(type) {
     if (!type) return false
-    if (Es6Reflect.isKnown(type)) return true
+    if (Es6UserReflect.isKnown(type)) return true
     return PartialTypeReflect.isPartialUrType(type)
   }
   static isKnownKey(type, key, { isStatic } = { }) {
@@ -46,7 +46,7 @@ export class PartialTypeReflect {
     } else {
       if (key == Constructors) return true
     }
-    return Es6Reflect.isKnownKey(type, key, { isStatic })
+    return Es6UserReflect.isKnownKey(type, key, { isStatic })
   }
 
   static isPartialUrType(type) {
@@ -58,9 +58,9 @@ export class PartialTypeReflect {
     if (!type) return null
 
     if (PartialTypeReflect.isPartialUrType(type))
-      return Es6Reflect.baseType(type)
+      return Es6UserReflect.getBaseType(type)
 
-    const result = Es6Reflect.baseType(type)
+    const result = Es6UserReflect.getBaseType(type)
     if (PartialTypeReflect.isPartialUrType(result))
       return null
 
@@ -73,7 +73,7 @@ export class PartialTypeReflect {
     }
   }
   static isPartialType(type) {
-    if (!Es6Reflect.isExtensionOf(type, PartialType)) return false
+    if (!Es6UserReflect.isExtensionOf(type, PartialType)) return false
     if (PartialTypeReflect.isPartialUrType(type)) return false
     return true
   }
@@ -81,7 +81,7 @@ export class PartialTypeReflect {
     if (!PartialTypeReflect.isPartialType(type)) return null
 
     let baseType = type
-    while (baseType = Es6Reflect.baseType(baseType)) 
+    while (baseType = Es6UserReflect.getBaseType(baseType)) 
       if (PartialTypeReflect.isPartialUrType(baseType)) return baseType
 
     return null

@@ -1,7 +1,7 @@
 import { assert } from '@kingjs/assert'
 import { extend } from '@kingjs/partial-extend'
 import { isPojo } from '@kingjs/pojo-test'
-import { Es6Reflect } from '@kingjs/es6-reflect'
+import { Es6Reflect } from '@kingjs/es6-reflector'
 import { PartialReflect, isKey } from '@kingjs/partial-reflect'
 import { Concept, ConceptReflect } from '@kingjs/concept'
 

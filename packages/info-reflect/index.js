@@ -1,5 +1,5 @@
 import { PartialReflect } from '@kingjs/partial-reflect'
-import { Es6Reflect } from '@kingjs/es6-reflect'
+import { Es6Reflect } from '@kingjs/es6-reflector'
 import { ConceptReflect } from "@kingjs/concept"
 import { PartialClassReflect } from '@kingjs/partial-class'
 import { PartialTypeReflect } from '@kingjs/partial-type'

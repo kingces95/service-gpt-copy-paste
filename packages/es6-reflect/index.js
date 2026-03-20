@@ -24,7 +24,7 @@ class Es6LegacyReflect {
   *hierarchy(type, options = { }) {
     yield* this.#getReflector(options).hierarchy(type)
   }
-  baseType(type, options = { }) {
+  getBaseType(type, options = { }) {
     return this.#getReflector(options).getBaseType(type)
   }
   *baseTypes(type, options = { }) {

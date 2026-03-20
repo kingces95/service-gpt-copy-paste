@@ -9,7 +9,7 @@ import {
 } from '@kingjs/partial-type'
 import { getOwn } from '@kingjs/get-own'
 import { asIterable } from '@kingjs/as-iterable'
-import { Es6Reflect } from '@kingjs/es6-reflect'
+import { Es6Reflect } from '@kingjs/es6-reflector'
 import { PartialAssociate } from '@kingjs/partial-associate'
 
 import { isAbstract } from '@kingjs/abstract'

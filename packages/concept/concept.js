@@ -1,7 +1,7 @@
 import { assert } from '@kingjs/assert'
 import { abstract } from '@kingjs/abstract'
 import { isPojo } from '@kingjs/pojo-test'
-import { Es6Reflect } from '@kingjs/es6-reflect'
+import { Es6Reflect } from '@kingjs/es6-reflector'
 import { UserReflect } from '@kingjs/user-reflect'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { PartialType, PartialTypeReflect } from '@kingjs/partial-type'

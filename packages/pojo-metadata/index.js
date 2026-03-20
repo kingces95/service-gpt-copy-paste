@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { Es6Reflect } from '@kingjs/es6-reflect'
+import { Es6Reflect } from '@kingjs/es6-reflector'
 
 // PojoMetadata is a map of type to pojo metadata where the prototype
 // of each pojo is the pojo metadata of the prototype of the key type.
@@ -38,7 +38,7 @@ export class PojoMetadata {
     if (this.#map.has(type)) throw new Error(
       `Pojo metadata for type ${type.name} already exists.`)
 
-    const baseType = Es6Reflect.baseType(type)
+    const baseType = Es6Reflect.getBaseType(type)
     const prototype = baseType ? this.get(baseType) : { }
     const metadata = { ...prototype }
     Object.assign(metadata, pojo)

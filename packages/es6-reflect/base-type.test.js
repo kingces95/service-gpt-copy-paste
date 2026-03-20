@@ -59,7 +59,7 @@ describe.each(tests)('%s', (_, test) => {
     ({ type, baseType } = test)
   })
   it(`should have correct base type`, () => {
-    const result = Es6Reflect.baseType(type)
+    const result = Es6Reflect.getBaseType(type)
     expect(result).toBe(baseType)
   })
   it('should have correct isAbstract result', () => {
