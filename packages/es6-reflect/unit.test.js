@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Es6Reflect } from '@kingjs/es6-reflect'
+import {
+  Es6Reflect,
+  Es6UserReflect,
+} from '@kingjs/es6-reflector'
 
 const ObjectMd = {
   name: 'Object',
@@ -147,7 +150,7 @@ describe.each(Classes)('%s', (_, classMd) => {
 
   it('has correct isKnown result', () => {
     const expected = !!classMd.isKnown
-    const actual = Es6Reflect.isKnown(type)
+    const actual = Es6UserReflect.isKnown(type)
     expect(actual).toBe(expected)
   })
 
@@ -199,7 +202,7 @@ describe.each(Classes)('%s', (_, classMd) => {
     it('has correct own keys', () => {
       const expected = md?.ownKeys || []
       const actual = [...Es6Reflect.ownKeys(type, { isStatic })]
-        .filter(name => Es6Reflect.isKnownKey(
+        .filter(name => Es6UserReflect.isKnownKey(
           type, name, { isStatic }) === false)
         .filter(name => typeof name == 'string')
       // sort for comparison
@@ -212,8 +215,8 @@ describe.each(Classes)('%s', (_, classMd) => {
       const expected = md?.members || []
       const actual = []
       let owner
-      for (const current of Es6Reflect.keys(
-        type, { isStatic, excludeKnown: true })) {
+      for (const current of Es6UserReflect.keys(
+        type, { isStatic })) {
         switch (typeof current) {
           case 'function': owner = current; continue
           case 'string':
@@ -254,8 +257,8 @@ describe.each(Classes)('%s', (_, classMd) => {
 
       const actual = {}
       let key, descriptor
-      for (const current of Es6Reflect.ownDescriptors(
-        type, { isStatic, excludeKnown: true })) {
+      for (const current of Es6UserReflect.ownDescriptors(
+        type, { isStatic })) {
         switch (typeof current) {
           case 'string': key = current; continue
           case 'symbol': key = current; continue
@@ -277,8 +280,8 @@ describe.each(Classes)('%s', (_, classMd) => {
 
       const actual = {}
       let key, owner, descriptor
-      for (const current of Es6Reflect.descriptors(
-        type, { isStatic, excludeKnown: true })) {
+      for (const current of Es6UserReflect.descriptors(
+        type, { isStatic })) {
         switch (typeof current) {
           case 'string': key = current; continue
           case 'symbol': key = current; continue
@@ -297,8 +300,8 @@ describe.each(Classes)('%s', (_, classMd) => {
         const expected = Object.getOwnPropertyDescriptor(
           isStatic ? owner : owner.prototype,
           name)
-        const actual = Es6Reflect.getOwnDescriptor(
-          type, name, { isStatic, excludeKnown: true })
+        const actual = Es6UserReflect.getOwnDescriptor(
+          type, name, { isStatic })
         expect(actual).toEqual(expected)
       }
     })

@@ -4,7 +4,7 @@ import { abstract } from '@kingjs/abstract'
 import { Extensions } from '@kingjs/extensions'
 import { PartialReflect, isKey } from '@kingjs/partial-reflect'
 import { UserReflect } from '@kingjs/user-reflect'
-import { Es6Reflect } from '@kingjs/es6-reflect'
+import { Es6Reflect } from '@kingjs/es6-reflector'
 import { PartialType, PartialTypeReflect } from '@kingjs/partial-type'
 import { extend } from '@kingjs/partial-extend'
 

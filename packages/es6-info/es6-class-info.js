@@ -1,5 +1,8 @@
 import { assert } from '@kingjs/assert'
-import { Es6Reflect } from '@kingjs/es6-reflect'
+import { 
+  Es6Reflect,
+  Es6UserReflect,
+} from '@kingjs/es6-reflector'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { 
   Es6DescriptorInfo, 
@@ -44,7 +47,7 @@ export class Es6ClassInfo {
   get name() { return this.id.value }
   get isNonPublic() { return this.id.isNonPublic }
   get isAnonymous() { return this.id.isAnonymous }
-  get isKnown() { return Es6Reflect.isKnown(this.ctor) }
+  get isKnown() { return Es6UserReflect.isKnown(this.ctor) }
 
   get base() { return Es6ClassInfo.from(Es6Reflect.getBaseType(this.ctor)) }
 
@@ -169,7 +172,7 @@ export class Es6MemberInfo {
   get isKnown() {
     if (this.host.isKnown) return true
     const isStatic = this.isStatic
-    return Es6Reflect.isKnownKey(this.host.ctor, this.name, { isStatic })
+    return Es6UserReflect.isKnownKey(this.host.ctor, this.name, { isStatic })
   }
   get isAbstract() { return this.#descriptorInfo.isAbstract }
 

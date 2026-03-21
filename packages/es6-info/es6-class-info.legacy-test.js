@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Es6Reflect } from '@kingjs/es6-reflect'
+import { Es6Reflect } from '@kingjs/es6-reflector'
 import { 
   Es6ObjectRuntimeNameOrSymbol,
   Es6ClassInfo, 
@@ -11,7 +11,6 @@ import {
   Es6SetterInfo,
   Es6PropertyInfo
 } from './es6-class-info.js'
-
 
 // Functions are also instances so can self-reflect. These members would
 // typically only exist in a reflection system ala TypeInfo.call() but
