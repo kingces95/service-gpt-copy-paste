@@ -1,8 +1,6 @@
 import { assert } from '@kingjs/assert'
-import { 
-  Es6Reflect,
-  Es6UserReflect,
-} from '@kingjs/es6-reflector'
+import { Es6Reflect } from '@kingjs/es6-reflect'
+import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { 
   Es6DescriptorInfo, 

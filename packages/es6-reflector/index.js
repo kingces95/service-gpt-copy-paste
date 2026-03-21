@@ -89,20 +89,3 @@ export class Es6Reflector {
     yield* this.#prototype(isStatic).descriptors(type)
   }
 }
-
-const KnownTypes = [ Object, Function ]
-const KnownInstanceKeys = [ 'constructor' ]
-const KnownStaticKeys = [ 'constructor', 'length', 'name', 'prototype' ]
-
-export class Es6UserReflector extends Es6Reflector {
-  constructor() {
-    super({
-      knownTypes: KnownTypes,
-      knownInstanceKeys: KnownInstanceKeys,
-      knownStaticKeys: KnownStaticKeys,
-    })
-  }
-}
-
-export const Es6Reflect = new Es6Reflector()
-export const Es6UserReflect = new Es6UserReflector()

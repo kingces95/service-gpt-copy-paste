@@ -2,7 +2,7 @@ import { assert } from '@kingjs/assert'
 import { PartialAssociate } from '@kingjs/partial-associate'
 import { PartialLoader } from '@kingjs/partial-loader'
 import { PartialPrototype } from '@kingjs/partial-prototype'
-import { UserReflect } from '@kingjs/user-reflect'
+import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { PartialTypeReflect } from '@kingjs/partial-type'
 
 // Unfies reflection operations over PartialObjects and Es6 types.
@@ -37,7 +37,7 @@ export class PartialReflect {
     }
     
     if (PartialTypeReflect.isKnown(type)) return
-    yield* UserReflect.keys(type, { isStatic })
+    yield* Es6UserReflect.keys(type, { isStatic })
   }
   static *ownKeys(type, { isStatic } = { }) {
     // TODO: Remove assert?
@@ -70,7 +70,7 @@ export class PartialReflect {
     }
     
     if (PartialTypeReflect.isKnownKey(type, key, { isStatic })) return
-    return UserReflect.getOwnDescriptor(type, key, { isStatic })
+    return Es6UserReflect.getOwnDescriptor(type, key, { isStatic })
   }
   static *ownDescriptors(type, { isStatic } = { }) {
     if (PartialTypeReflect.isPartialType(type)) {
@@ -79,7 +79,7 @@ export class PartialReflect {
     }
 
     if (PartialTypeReflect.isKnown(type)) return
-    yield* UserReflect.ownDescriptors(type, { isStatic })
+    yield* Es6UserReflect.ownDescriptors(type, { isStatic })
   }
   
   static *getDescriptor(type, key, { isStatic } = { }) {
@@ -89,7 +89,7 @@ export class PartialReflect {
     }
 
     if (PartialTypeReflect.isKnownKey(type, key, { isStatic })) return
-    yield* UserReflect.getDescriptor(type, key, { isStatic })
+    yield* Es6UserReflect.getDescriptor(type, key, { isStatic })
 
   }
   static *descriptors(type, { isStatic } = { }) {
@@ -99,7 +99,7 @@ export class PartialReflect {
     }
 
     if (PartialTypeReflect.isKnown(type)) return
-    yield* UserReflect.descriptors(type, { isStatic })
+    yield* Es6UserReflect.descriptors(type, { isStatic })
   }
 
   static *ownPartialTypes(type) {
@@ -129,7 +129,7 @@ export class PartialReflect {
 
     // yield types in the hiearchy that resolve the key to a member.
     const hosts = new Set(PartialAssociate.hosts(type, key))
-    for (const host of UserReflect.getHosts(type, key)) hosts.add(host)
+    for (const host of Es6UserReflect.getHosts(type, key)) hosts.add(host)
     yield* hosts
   }
 

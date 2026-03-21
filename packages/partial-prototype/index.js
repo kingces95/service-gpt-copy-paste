@@ -1,5 +1,5 @@
 import { assert } from '@kingjs/assert'
-import { UserReflect } from '@kingjs/user-reflect'
+import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { PartialAssociate } from '@kingjs/partial-associate'
 import { PartialTypeReflect } from '@kingjs/partial-type'
 import { extend } from '@kingjs/partial-extend'
@@ -66,7 +66,7 @@ export class PartialPrototype {
   static *keys(type) { 
     assert(PartialTypeReflect.isPartialType(type))
     const prototypicalType = getPrototypicalType(type)
-    for (const current of UserReflect.keys(prototypicalType)) {
+    for (const current of Es6UserReflect.keys(prototypicalType)) {
       switch (typeof current) {
         case 'function': 
           yield current == prototypicalType ? type : current
@@ -80,7 +80,7 @@ export class PartialPrototype {
     assert(PartialTypeReflect.isPartialType(type))
     let owner = null
     const prototypicalType = getPrototypicalType(type)
-    for (const current of UserReflect.getDescriptor(prototypicalType, key)) {
+    for (const current of Es6UserReflect.getDescriptor(prototypicalType, key)) {
       switch (typeof current) {
         case 'function': owner = current; break
         case 'object':
@@ -94,7 +94,7 @@ export class PartialPrototype {
   static *descriptors(type) {
     assert(PartialTypeReflect.isPartialType(type))
     const prototypicalType = getPrototypicalType(type)
-    for (const current of UserReflect.descriptors(prototypicalType)) {
+    for (const current of Es6UserReflect.descriptors(prototypicalType)) {
       switch (typeof current) {
         case 'function': 
           yield current == prototypicalType ? type : current

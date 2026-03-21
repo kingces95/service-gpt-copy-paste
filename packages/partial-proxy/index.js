@@ -4,7 +4,7 @@ import { es6CreateThunk } from '@kingjs/es6-create-thunk'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { Es6Compiler } from '@kingjs/es6-compiler'
 import { PartialReflect } from '@kingjs/partial-reflect'
-import { UserReflect } from '@kingjs/user-reflect'
+import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { trimPojo } from '@kingjs/pojo-trim'
 import { 
   Thunk,
@@ -115,7 +115,7 @@ export class PartialProxy {
 
 export class PartialProxyReflect {
   static *getTypeConditions$(type, symbol) {
-    for (const current of UserReflect.getDescriptor(
+    for (const current of Es6UserReflect.getDescriptor(
       type, symbol, { isStatic: true })) {
       switch (typeof current) {
         case 'function': break
@@ -135,7 +135,7 @@ export class PartialProxyReflect {
     const hosts = new Set(PartialReflect.hosts(type, key))
 
     for (const host of hosts) {
-      const conditions = UserReflect.getOwnDescriptor(
+      const conditions = Es6UserReflect.getOwnDescriptor(
         host, symbol, isStatic) ?? { }
       const pojo = conditions?.value
       if (!pojo) continue

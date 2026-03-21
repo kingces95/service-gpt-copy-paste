@@ -1,5 +1,5 @@
 import { assert } from '@kingjs/assert'
-import { UserReflect } from '@kingjs/user-reflect'
+import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { ExtensionsReflect } from '@kingjs/extensions'
 import { 
   PartialType, 
@@ -9,7 +9,7 @@ import {
 } from '@kingjs/partial-type'
 import { getOwn } from '@kingjs/get-own'
 import { asIterable } from '@kingjs/as-iterable'
-import { Es6Reflect } from '@kingjs/es6-reflector'
+import { Es6Reflect } from '@kingjs/es6-reflect'
 import { PartialAssociate } from '@kingjs/partial-associate'
 
 import { isAbstract } from '@kingjs/abstract'
@@ -100,13 +100,13 @@ export class PartialLoader {
 
   static getOwnDescriptor(type, key) {
     assert(PartialTypeReflect.isPartialType(type))
-    const descriptor = UserReflect.getOwnDescriptor(type, key)
+    const descriptor = Es6UserReflect.getOwnDescriptor(type, key)
     if (!descriptor) return null
     return type[PartialType.Compile](descriptor) 
   }
   static *ownDescriptors(type) {
     assert(PartialTypeReflect.isPartialType(type))
-    for (const key of UserReflect.ownKeys(type)) {
+    for (const key of Es6UserReflect.ownKeys(type)) {
       const descriptor = PartialLoader.getOwnDescriptor(type, key)
       yield key
       yield descriptor
@@ -284,8 +284,8 @@ export class PartialLoader {
       PartialLoader.define$(basePrototype, { createThunk, type })
 
     const ctor = prototype.constructor
-    for (const key of UserReflect.ownKeys(ctor)) {
-      const descriptor = UserReflect.getOwnDescriptor(ctor, key)
+    for (const key of Es6UserReflect.ownKeys(ctor)) {
+      const descriptor = Es6UserReflect.getOwnDescriptor(ctor, key)
       const thunk = createThunk(key, descriptor)
       if (!descriptor.configurable) continue
       PartialTypeReflect.defineProperty(type, key, thunk)

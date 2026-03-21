@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Es6Reflect } from '@kingjs/es6-reflector'
+import { Es6Reflect } from '@kingjs/es6-reflect'
 import { isAbstract } from '@kingjs/abstract'
 
 const NullTest = {

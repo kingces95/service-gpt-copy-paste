@@ -1,8 +1,8 @@
 import { assert } from '@kingjs/assert'
 import { abstract } from '@kingjs/abstract'
 import { isPojo } from '@kingjs/pojo-test'
-import { Es6Reflect } from '@kingjs/es6-reflector'
-import { UserReflect } from '@kingjs/user-reflect'
+import { Es6Reflect } from '@kingjs/es6-reflect'
+import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { PartialType, PartialTypeReflect } from '@kingjs/partial-type'
 import { PartialReflect } from '@kingjs/partial-reflect'
@@ -117,7 +117,7 @@ export class ConceptReflect {
   static *ownAssociatedConcepts(type) {
     if (!ConceptReflect.isConcept(type)) return
 
-    for (const name of UserReflect.ownKeys(type, { isStatic: true })) {
+    for (const name of Es6UserReflect.ownKeys(type, { isStatic: true })) {
       if (KnownStaticMembers.has(name)) continue
 
       const concept = type[name]

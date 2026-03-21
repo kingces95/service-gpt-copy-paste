@@ -4,8 +4,14 @@ const KnownTypes = [ Object, Function ]
 const KnownInstanceKeys = [ 'constructor' ]
 const KnownStaticKeys = [ 'constructor', 'length', 'name', 'prototype' ]
 
-export const UserReflect = new Es6Reflector({
-  knownTypes: KnownTypes,
-  knownInstanceKeys: KnownInstanceKeys,
-  knownStaticKeys: KnownStaticKeys,
-})
+class Es6UserReflector extends Es6Reflector {
+  constructor() {
+    super({
+      knownTypes: KnownTypes,
+      knownInstanceKeys: KnownInstanceKeys,
+      knownStaticKeys: KnownStaticKeys,
+    })
+  }
+}
+
+export const Es6UserReflect = new Es6UserReflector()

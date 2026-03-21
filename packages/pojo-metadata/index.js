@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { Es6Reflect } from '@kingjs/es6-reflector'
+import { Es6Reflect } from '@kingjs/es6-reflect'
 
 // PojoMetadata is a map of type to pojo metadata where the prototype
 // of each pojo is the pojo metadata of the prototype of the key type.

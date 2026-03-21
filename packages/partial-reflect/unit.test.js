@@ -3,8 +3,8 @@ import { beforeEach } from 'vitest'
 import { abstract } from '@kingjs/abstract'
 import { Extensions } from '@kingjs/extensions'
 import { PartialReflect, isKey } from '@kingjs/partial-reflect'
-import { UserReflect } from '@kingjs/user-reflect'
-import { Es6Reflect } from '@kingjs/es6-reflector'
+import { Es6UserReflect } from '@kingjs/es6-user-reflect'
+import { Es6Reflect } from '@kingjs/es6-reflect'
 import { PartialType, PartialTypeReflect } from '@kingjs/partial-type'
 import { extend } from '@kingjs/partial-extend'
 
@@ -68,7 +68,7 @@ describe('A type', () => {
 
     it('should return method as own descriptor', () => {
       const descriptor = 
-        UserReflect.getOwnDescriptor(type, 'method')
+        Es6UserReflect.getOwnDescriptor(type, 'method')
       expect(descriptor.value).toBe(method)
       expect(methodResult).toBe(true)
     })
@@ -125,7 +125,7 @@ describe('MyPojoType', () => {
         expect(declarations).toHaveLength(0)
       })
       it('should have method as member name or symbol', () => {
-        const keys = [...UserReflect.keys(myType).filter(isKey)]
+        const keys = [...Es6UserReflect.keys(myType).filter(isKey)]
         expect(keys).toContain('method')
       })
     })
@@ -450,11 +450,11 @@ describe('PartialClass', () => {
               })
               it('should have no ownMemberKeys', () => {
                 const keys = 
-                  [...UserReflect.ownKeys(mySubType)]
+                  [...Es6UserReflect.ownKeys(mySubType)]
                 expect(keys).toHaveLength(0)
               })
               it('should have method as member name or symbol', () => {
-                const keys = [...UserReflect.keys(mySubType).filter(isKey)]
+                const keys = [...Es6UserReflect.keys(mySubType).filter(isKey)]
                 expect(keys).toContain('method')
               })
             })
@@ -470,12 +470,12 @@ describe('PartialClass', () => {
                 expect(actual).toEqual(expected)
               })
               it('should have method as own member name or symbol', () => {
-                const keys = [...UserReflect.ownKeys(myType)]
+                const keys = [...Es6UserReflect.ownKeys(myType)]
                 expect(keys).toContain('method')
                 expect(keys).toHaveLength(1)
               })
               it('should have method as member name or symbol', () => {
-                const keys = [...UserReflect.keys(myType).filter(isKey)]
+                const keys = [...Es6UserReflect.keys(myType).filter(isKey)]
                 expect(keys).toContain('method')
                 expect(keys).toHaveLength(1)
               })

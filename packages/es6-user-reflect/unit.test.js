@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { abstract, isAbstract } from '@kingjs/abstract'
 import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 
 const Member = Symbol('member')
