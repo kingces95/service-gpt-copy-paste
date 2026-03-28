@@ -11,10 +11,12 @@ export class Es6Reflector {
     knownTypes,
     knownInstanceKeys,
     knownStaticKeys,
+    getPrototypeFn = type => type.prototype,
   } = { }) {
     this.#instancePrototype = new Es6InstancePrototype({
       knownTypes,
       knownKeys: knownInstanceKeys,
+      getPrototypeFn,
     })
 
     this.#staticPrototype = new Es6StaticPrototype({

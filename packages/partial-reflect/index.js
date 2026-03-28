@@ -1,7 +1,7 @@
 import { assert } from '@kingjs/assert'
 import { PartialAssociate } from '@kingjs/partial-associate'
 import { PartialLoader } from '@kingjs/partial-loader'
-import { PartialPrototype } from '@kingjs/partial-prototype'
+import { PartialPrototype } from '@kingjs/partial-prototype-legacy'
 import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { PartialTypeReflect } from '@kingjs/partial-type'
 

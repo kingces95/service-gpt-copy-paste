@@ -1,3 +1,4 @@
+import { assert } from '@kingjs/assert'
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Es6Reflect } from '@kingjs/es6-reflect'

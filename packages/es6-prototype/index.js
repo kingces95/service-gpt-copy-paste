@@ -4,6 +4,32 @@ import { es6Typeof } from '@kingjs/es6-typeof'
 
 export class Es6Prototype {
 
+  static create(links) {
+    // links like { type, descriptors }
+    return links.reduce((prototype, { type, descriptors }) => {
+      prototype = Es6Prototype.createLink(type, prototype, descriptors)
+      return prototype
+    }, null)
+  }
+
+  static createLink(type, basePrototype = null, descriptors = { }) {
+    // add link to base prototype chain
+    const prototype = Object.create(basePrototype)
+
+    // define descriptors on prototype
+    Object.defineProperties(prototype, descriptors)
+
+    // define .constructor to be type
+    Object.defineProperty(prototype, 'constructor', {
+      value: type,
+      configurable: true,
+      enumerable: false,
+      writable: false,
+    })
+    
+    return prototype    
+  }
+
   static *chain(prototype) {
     do { yield prototype } 
     while (prototype = Object.getPrototypeOf(prototype))
@@ -219,10 +245,11 @@ export class Es6Prototype {
 export class Es6InstancePrototype extends Es6Prototype {
   constructor({
     knownKeys = [],
-    knownTypes = [],
+    knownTypes = [], 
+    getPrototypeFn = type => type.prototype,
   }) {
     super({
-      getPrototypeFn: type => type.prototype,
+      getPrototypeFn,
       knownTypes,
       knownKeys,
     })
@@ -244,62 +271,55 @@ export class Es6InstancePrototype extends Es6Prototype {
   }
 }
 
-export class Es6StaticPrototype extends Es6Prototype {
-  static #prototypes
-  static #objectNullPrototype
-  static #objectPrototype
+export class Es6PrototypeCache {
+  #cache
+  #getPrototype
 
-  static {
-    this.#prototypes = new WeakMap()
-    this.#objectNullPrototype = Es6StaticPrototype.#createPrototype(Object)
-    this.#objectPrototype = Es6StaticPrototype.#createPrototype(
-      Object, null, Object.getOwnPropertyDescriptors(Object))
+  constructor(getPrototype) {
+    this.#cache = new WeakMap()
+    this.#getPrototype = getPrototype
   }
 
-  static getPrototype(type) {
+  getPrototype(type) {
     if (!type) return null
 
-    let prototype = Es6StaticPrototype.#prototypes.get(type)
+    let prototype = this.#cache.get(type)
     if (!prototype) {
-      prototype = Es6StaticPrototype.#buildPrototype(type)
-      Es6StaticPrototype.#prototypes.set(type, prototype)
+      prototype = this.#getPrototype(type)
+      this.#cache.set(type, prototype)
     }
     return prototype
   }
+}
 
-  static #buildPrototype(type) {
-    // base case: class { } or class extends null { }
-    if (type == Function.prototype) 
-      return Es6StaticPrototype.#objectNullPrototype
+export class Es6StaticPrototype extends Es6Prototype {
+  static #cache
 
-    // base case: class extends Object { }
-    if (type == Object) 
-      return Es6StaticPrototype.#objectPrototype
+  static {
+    const objectNullPrototype = Es6Prototype.createLink(Object)
+    const objectPrototype = Es6Prototype.createLink(
+      Object, null, Object.getOwnPropertyDescriptors(Object))
 
-    // recursive case: class extends Base { }
-    const baseType = Object.getPrototypeOf(type)
-    const base = Es6StaticPrototype.getPrototype(baseType)
-    const descriptors = Object.getOwnPropertyDescriptors(type)
-    return Es6StaticPrototype.#createPrototype(type, base, descriptors)
-  }
+    const cache = new Es6PrototypeCache(type => {
+      // base case: class { } or class extends null { }
+      if (type == Function.prototype) 
+        return objectNullPrototype
 
-  static #createPrototype(type, basePrototype = null, descriptors = { }) {
-    // add link to base prototype chain
-    const prototype = Object.create(basePrototype)
+      // base case: class extends Object { }
+      if (type == Object) 
+        return objectPrototype
 
-    // define descriptors on prototype
-    Object.defineProperties(prototype, descriptors)
-
-    // define .constructor to be type
-    Object.defineProperty(prototype, 'constructor', {
-      value: type,
-      configurable: true,
-      enumerable: false,
-      writable: false,
+      // recursive case: class extends Base { }
+      const baseType = Object.getPrototypeOf(type)
+      const basePrototype = cache.getPrototype(baseType)
+      const descriptors = Object.getOwnPropertyDescriptors(type)
+      return Es6Prototype.createLink(type, basePrototype, descriptors)
     })
-    
-    return prototype    
+
+    Es6StaticPrototype.#cache = cache
   }
+
+  static getPrototype(type) { return this.#cache.getPrototype(type) }
 
   constructor({
     knownKeys = [],

@@ -1,109 +1,109 @@
-import { assert } from '@kingjs/assert'
-import { Es6UserReflect } from '@kingjs/es6-user-reflect'
-import { PartialAssociate } from '@kingjs/partial-associate'
-import { PartialTypeReflect } from '@kingjs/partial-type'
-import { extend } from '@kingjs/partial-extend'
+import { Es6Prototype } from '@kingjs/es6-prototype'
+import { Es6Descriptor } from '@kingjs/es6-descriptor'
+import { ExtensionsReflect } from '@kingjs/extensions'
 
-// internal
+export class PartialPrototype extends Es6Prototype {
+  static #cache
 
-// Creates an empty "prototypical" class that extends Prototypical
-// and merges a given partial object type into it. This allows
-// reflection over the merged result which will faithfully report 
-// what the loader (extend) actually did.
-
-class Prototypical { }
-
-function prototypicalCreate(partialType) {
-  let prototypicalType = class extends Prototypical { }
-  Object.defineProperties(prototypicalType, {
-    name: {
-      value: '$prototypical_' + partialType.name,
-      configurable: true,
-      enumerable: false,
-      writable: false,
-    }
-  })
-
-  extend(prototypicalType, partialType)
-  
-  return prototypicalType
-}
-
-const PrototypicalTypeMap = new Map()
-
-function getPrototypicalType(type) {
-  assert(PartialTypeReflect.isPartialType(type))
-  let prototypicalType = PrototypicalTypeMap.get(type)
-
-  if (!prototypicalType) {
-    prototypicalType = prototypicalCreate(type)
-    PrototypicalTypeMap.set(type, prototypicalType)
-  }
-  
-  return prototypicalType
-}
-
-export class PartialPrototype {
-
-  static *partialTypes(type) {
-    assert(PartialTypeReflect.isPartialType(type))
-    type = getPrototypicalType(type)
-    yield* PartialAssociate.partialTypes(type)
+  static {
+    PartialPrototype.#cache = new Es6PrototypeCache(type => {
+    })
   }
 
-  static *hosts(type, key) {
+  static getPrototype(type) {
     assert(PartialTypeReflect.isPartialType(type))
-    type = getPrototypicalType(type)
-    yield* PartialAssociate.hosts(type, key)
-  }
-  
-  static getImplementingHost(type, key) {
-    assert(PartialTypeReflect.isPartialType(type))
-    type = getPrototypicalType(type)
-    return PartialAssociate.getImplementingHost(type, key)
+    if (ExtensionsReflect.isTransparent(type)) 
+      return this.#createPrototype(type)
+
+    return this.#cache.getPrototype(type)
   }
 
-  static *keys(type) { 
-    assert(PartialTypeReflect.isPartialType(type))
-    const prototypicalType = getPrototypicalType(type)
-    for (const current of Es6UserReflect.keys(prototypicalType)) {
-      switch (typeof current) {
-        case 'function': 
-          yield current == prototypicalType ? type : current
-          break
-        default: yield current
+  static #createPrototype(type) {
+    // To be javascript-ish this multi-extensible loader exposes 
+    // a declarative representation, a "partial prototype", of the 
+    // method table which answers many of the same questions a normal 
+    // single-extensible prototype answers. For example,
+    //    - What are the own/inherited keys/descriptors of the type?
+    //    - What types does the type extend?
+    //    - What members are overloaded and which take precidence?
+
+    // The above questions are answered using a partial prototype with
+    // the same ergonomics as the normal prototype. For example, a user 
+    // would reflect on the partial prototype to get the own/inherited 
+    // keys/descriptors the same way as would be done with a normal 
+    // prototype chain. The same goes for collecting the extended types 
+    // and establishing which member of which extended type takes 
+    // precedence over other members.
+
+    // The partial prototype must necessarily sacrifice some ergonomics
+    // provided by the normal prototype. For example, there is not a 
+    // one-to-one relationship between a partial prototype and its type.
+    // Instead, only the first link in the chain has a one-to-one 
+    // relationship with the type. Subsequent links contain copies of the 
+    // keys/descriptors of the first link of their respective partial type.
+    // Put another way, there are many partial prototype links for a given
+    // type and while they all share the same key/descriptors they have
+    // different next links. 
+
+    // Practically, this all means that public APIs should not take a 
+    // prototype link as an argument. Instead, APIs should take a type so 
+    // they may get the prototype link themselves from the type. In this way, 
+    // the API gets the *first* link of the chain which does have a one-to-one
+    // relationship with the type and can be used to answer the same 
+    // questions as a normal prototype with the same ergonomics; APIs
+    // cannot assume a prototype link is the *first* link in the prototype
+    // chain and so cannot use it to answer questions about the type 
+    // returned by the constructor property.
+
+    const plan = PartialLoader.getPlan(type)
+
+    // Note: Host is null iff type is transparent. In this case, the plan as a
+    // single step and the prototype degenerates to a bag of keys/descriptors 
+    // with no prototype chain. This prototype should not be cached since 
+    // it is only referenced by the type that declared it.
+    
+    let prototype = Object.create(null)
+    for (let { host, transparent, descriptors$ } of plan) {
+
+      if (host && host != type) {
+        if (transparent) continue
+        Object.defineProperties(prototype, 
+          Object.getOwnPropertyDescriptors(
+            this.#createPrototype(host)))
+        prototype = Object.create(prototype)
+        continue
       }
-    }    
-  }
-  
-  static *getDescriptor(type, key) {
-    assert(PartialTypeReflect.isPartialType(type))
-    let owner = null
-    const prototypicalType = getPrototypicalType(type)
-    for (const current of Es6UserReflect.getDescriptor(prototypicalType, key)) {
-      switch (typeof current) {
-        case 'function': owner = current; break
-        case 'object':
-          yield owner == prototypicalType ? type : owner
-          return yield current
-        default: assert(false, `Unexpected type: ${typeof current}`)
-      }
+
+      Object.defineProperties(prototype, descriptors$)
     }
+
+    // Note: The last step of the plan is always the type itself since the plan
+    // is reversed depth-first deduplicated *post-order* walk of the type's 
+    // partial types. This means the constructor property is always defined by 
+    // the last step of the plan and so it is safe to set it here without 
+    // worrying about overwriting an existing constructor property.
+
+    prototype.constructor = type
+    Object.defineProperty(prototype, 'constructor', { enumerable: false })
+    return prototype
   }
 
-  static *descriptors(type) {
-    assert(PartialTypeReflect.isPartialType(type))
-    const prototypicalType = getPrototypicalType(type)
-    for (const current of Es6UserReflect.descriptors(prototypicalType)) {
-      switch (typeof current) {
-        case 'function': 
-          yield current == prototypicalType ? type : current
-          break
-        case 'string':
-        case 'symbol': 
-        case 'object': yield current; break
-        default: assert(false, `Unexpected type: ${typeof current}`)
-      }
-    }
+  constructor({
+    knownKeys = [],
+    knownTypes = [],
+  }) {
+    // .constructor is reserved for static members since it is needed
+    // to construct the prototype chain.
+    knownKeys.push('constructor')
+
+    super({
+      getPrototypeFn: type => Es6StaticPrototype.getPrototype(type),
+      knownTypes,
+      knownKeys,
+    })
+  }
+
+  typeof(type, key, descriptor) {
+    return Es6Descriptor.typeof(descriptor)
   }
 }

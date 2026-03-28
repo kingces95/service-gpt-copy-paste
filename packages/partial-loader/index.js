@@ -13,6 +13,7 @@ import { Es6Reflect } from '@kingjs/es6-reflect'
 import { PartialAssociate } from '@kingjs/partial-associate'
 
 import { isAbstract } from '@kingjs/abstract'
+import { Es6Prototype } from '@kingjs/es6-prototype'
 
 function createPrototype(base = null) {
   const prototype = { }
@@ -60,18 +61,18 @@ export class PartialLoader {
     return ExtensionsReflect.isExtensions(type)
   }
 
-  static *ownPartialTypes(type) {
+  static *#ownPartialTypes(type) {
     assert(PartialTypeReflect.isPartialType(type))
     // added by declaration (e.g. by static [Extends] = PartialType)
-    yield* PartialLoader.declaredOwnPartialTypes$(type)
+    yield* PartialLoader.#declaredOwnPartialTypes(type)
 
     // added procedurally (e.g by extend() or implement())
     yield* PartialAssociate.ownPartialTypes(type)
 
     // added by inheritance (e.g. by extending a partial type)
-    yield* PartialLoader.inheritedPartialTypes$(type)
+    yield* PartialLoader.#inheritedPartialTypes(type)
   }
-  static *declaredOwnPartialTypes$(type, symbols = PartialType.Declarations) {
+  static *#declaredOwnPartialTypes(type, symbols = PartialType.Declarations) {
 
     // if symbols typeof symbol, pull metadata off of type
     if (typeof symbols == 'symbol') symbols = type[symbols]
@@ -91,11 +92,36 @@ export class PartialLoader {
       }
     }
   }
-  static *inheritedPartialTypes$(type) {
+  static *#inheritedPartialTypes(type) {
     const baseType = PartialTypeReflect.baseType(type)
     if (!baseType) return
-    yield* PartialLoader.inheritedPartialTypes$(baseType)
+    yield* PartialLoader.#inheritedPartialTypes(baseType)
     yield baseType
+  }
+  // todo: remove
+  static *declaredOwnPartialTypes$(type, symbols = PartialType.Declarations) {
+    yield* PartialLoader.#declaredOwnPartialTypes(type, symbols)
+  }
+  static *ownPartialTypes(type) {
+    yield* PartialLoader.#ownPartialTypes(type)
+  }
+  static *partialTypes(rootPartialType) {
+    assert(PartialTypeReflect.isPartialType(rootPartialType))
+
+    const visited = new Set()
+
+    function *reverseDepthFirstWalk$(partialType) {
+      if (visited.has(partialType)) return
+      visited.add(partialType)
+      
+      const ownPartialTypes = [...PartialLoader.ownPartialTypes(partialType)]
+      for (const basePartialType of ownPartialTypes.reverse())
+        yield *reverseDepthFirstWalk$(basePartialType)
+
+      yield partialType
+    }
+
+    yield *reverseDepthFirstWalk$(rootPartialType)
   }
 
   static getOwnDescriptor(type, key) {
@@ -104,7 +130,7 @@ export class PartialLoader {
     if (!descriptor) return null
     return type[PartialType.Compile](descriptor) 
   }
-  static *ownDescriptors(type) {
+  static *#ownDescriptors(type) {
     assert(PartialTypeReflect.isPartialType(type))
     for (const key of Es6UserReflect.ownKeys(type)) {
       const descriptor = PartialLoader.getOwnDescriptor(type, key)
@@ -112,37 +138,40 @@ export class PartialLoader {
       yield descriptor
     }
   }
+  static *ownDescriptors(type) {
+    yield* PartialLoader.#ownDescriptors(type)
+  }
 
   static getPlan(rootPartialType) {
-    const plan = []
     const visited = new Set()
+    const isTransparent = PartialLoader.transparent(rootPartialType)
+    const plan = [{ 
+      host: isTransparent ? null : rootPartialType,
+      keys: new Set(),
+      descriptors: Object.create(null),
+    }]
 
     assert(!PartialTypeReflect.isKnown(rootPartialType))
 
-    function reverseDepthFirstWalk$(partialType, hostOfPartialType) {
+    function reverseDepthFirstWalk$(partialType) {
       assert(PartialTypeReflect.isPartialType(partialType))    
         
+      const step = plan[plan.length - 1]
+      const { keys, descriptors } = step
+
       if (visited.has(partialType)) return new Set()
         visited.add(partialType)
       
-      const keys = new Set()
-      const descriptors = new Map()
-      const transparent = PartialLoader.transparent(partialType)
-      const host = transparent ? hostOfPartialType : partialType
-      const descriptors$ = class extends null { }
-      const step = { 
-        host,
-        keys,
-        transparent,
-        descriptors,
-        descriptors$,
-      }
-
-      plan.push(step)
-
       const ownPartialTypes = [...PartialLoader.ownPartialTypes(partialType)]
       for (const basePartialType of ownPartialTypes.reverse()) {
-        for (const key of reverseDepthFirstWalk$(basePartialType, partialType))
+        if (!PartialLoader.transparent(basePartialType)) {
+          plan.push({
+            host: basePartialType,
+            keys: new Set(),
+            descriptors: Object.create(null),
+          })
+        }
+        for (const key of reverseDepthFirstWalk$(basePartialType))
           keys.add(key)
       }
 
@@ -156,8 +185,8 @@ export class PartialLoader {
             break
           case 'object':
             const descriptor = current
-            descriptors.set(ownKey, descriptor)
-            descriptors$[ownKey] = descriptor
+            if (isAbstract(descriptor) && descriptors[ownKey]) continue
+            descriptors[ownKey] = descriptor
             break
           default: assert(false, `Unexpected type: ${typeof current}`)
         }
@@ -166,92 +195,8 @@ export class PartialLoader {
       return keys
     }
 
-    reverseDepthFirstWalk$(rootPartialType, null)
+    reverseDepthFirstWalk$(rootPartialType)
     return plan.reverse()
-  }
-
-  static #prototypeCache = new WeakMap()
-
-  static getPrototype(type) {
-    assert(PartialTypeReflect.isPartialType(type))
-
-    let prototype = PartialLoader.#prototypeCache.get(type)
-    if (!prototype) {
-      prototype = PartialLoader.createPrototype(type)
-      if (PartialLoader.transparent(type)) return prototype
-      PartialLoader.#prototypeCache.set(type, prototype)
-    }
-    return prototype
-  }
-
-  static createPrototype(type) {
-    // To be javascript-ish this multi-extensible loader exposes 
-    // a declarative representation, a "partial prototype", of the 
-    // method table which answers many of the same questions a normal 
-    // single-extensible prototype answers. For example,
-    //    - What are the own/inherited keys/descriptors of the type?
-    //    - What types does the type extend?
-    //    - What members are overloaded and which take precidence?
-
-    // The above questions are answered using a partial prototype with
-    // the same ergonomics as the normal prototype. For example, a user 
-    // would reflect on the partial prototype to get the own/inherited 
-    // keys/descriptors the same way as would be done with a normal 
-    // prototype chain. The same goes for collecting the extended types 
-    // and establishing which member of which extended type takes 
-    // precedence over other members.
-
-    // The partial prototype must necessarily sacrifice some ergonomics
-    // provided by the normal prototype. For example, there is not a 
-    // one-to-one relationship between a partial prototype and its type.
-    // Instead, only the first link in the chain has a one-to-one 
-    // relationship with the type. Subsequent links contain copies of the 
-    // keys/descriptors of the first link of their respective partial type.
-    // Put another way, there are many partial prototype links for a given
-    // type and while they all share the same key/descriptors they have
-    // different next links. 
-
-    // Practically, this all means that public APIs should not take a 
-    // prototype link as an argument. Instead, APIs should take a type so 
-    // they may get the prototype link themselves from the type. In this way, 
-    // the API gets the *first* link of the chain which does have a one-to-one
-    // relationship with the type and can be used to answer the same 
-    // questions as a normal prototype with the same ergonomics; APIs
-    // cannot assume a prototype link is the *first* link in the prototype
-    // chain and so cannot use it to answer questions about the type 
-    // returned by the constructor property.
-
-    const plan = PartialLoader.getPlan(type)
-
-    // Note: Host is null iff type is transparent. In this case, the plan as a
-    // single step and the prototype degenerates to a bag of keys/descriptors 
-    // with no prototype chain. This prototype should not be cached since 
-    // it is only referenced by the type that declared it.
-    
-    let prototype = Object.create(null)
-    for (let { host, transparent, descriptors$ } of plan) {
-
-      if (host && host != type) {
-        if (transparent) continue
-        Object.defineProperties(prototype, 
-          Object.getOwnPropertyDescriptors(
-            PartialLoader.createPrototype(host)))
-        prototype = Object.create(prototype)
-        continue
-      }
-
-      Object.defineProperties(prototype, descriptors$)
-    }
-
-    // Note: The last step of the plan is always the type itself since the plan
-    // is reversed depth-first deduplicated *post-order* walk of the type's 
-    // partial types. This means the constructor property is always defined by 
-    // the last step of the plan and so it is safe to set it here without 
-    // worrying about overwriting an existing constructor property.
-
-    prototype.constructor = type
-    Object.defineProperty(prototype, 'constructor', { enumerable: false })
-    return prototype
   }
 
   static associate(type, plan) {
@@ -268,7 +213,8 @@ export class PartialLoader {
         PartialAssociate.addHost(type, key, host)
       }
 
-      for (const [key, descriptor] of descriptors) {
+      for (const key of Reflect.ownKeys(descriptors)) {
+        const descriptor = descriptors[key]
         PartialAssociate.addOwnKey(type, key)
         PartialAssociate.addOwnHost(type, key, host)
 
@@ -297,7 +243,8 @@ export class PartialLoader {
     
     const plan = PartialLoader.getPlan(partialType)
     for (let { descriptors } of plan) {
-      for (const [key, descriptor] of descriptors) {
+      for (const key of Reflect.ownKeys(descriptors)) {
+        const descriptor = descriptors[key]
         const thunk = createThunk(key, descriptor)
         PartialTypeReflect.defineProperty(type, key, thunk)
       }

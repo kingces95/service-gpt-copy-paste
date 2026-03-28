@@ -1,7 +1,7 @@
 {
-  "name": "@kingjs/user-reflect",
+  "name": "@kingjs/partial-reflector",
   "version": "1.0.0",
-  "description": ".",
+  "description": "",
   "main": "index.js",
   "type": "module",
   "exports": {
