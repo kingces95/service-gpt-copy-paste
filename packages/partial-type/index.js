@@ -3,7 +3,7 @@ import { Es6Compiler } from '@kingjs/es6-compiler'
 import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { isAbstract } from '@kingjs/abstract'
 
-const Declarations = Symbol('PartialType.partialTypes')
+const Declarations = Symbol('PartialType.declarations')
 const Compile = Symbol('PartialType.compile')
 
 export const Thunk = Symbol('PartialType.Thunk')

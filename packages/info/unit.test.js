@@ -63,6 +63,8 @@ const ConceptMd = {
   isConcept: false,
   isAnonymous: false,
   base: PartialType,
+  // ownStaticMembers: [ Symbol.hasInstance ],
+  // staticMembers: [ Symbol.hasInstance],
 }
 
 const MyExtensionsMd = {
@@ -379,9 +381,11 @@ describe('Given', () => {
 //   hasValue: true,
 // }
 
+class MyConcept extends Concept { member() { } }
+
 const MyConceptMemberMd = {
   name: 'member',
-  cls: class MyConcept extends Concept { member() { } },
+  cls: MyConcept,
   toString: 'member, abstract method, [conceptInfo MyConcept]',
   type: 'method',
   isMethod: true,
@@ -425,8 +429,8 @@ const MyPartialClassExtensionMemberMd = {
   cls: class MyPartialClassExtension extends PartialClass {
     static [Extends] = MyPartialClassMemberMd.cls
   },
-  partialClass: MyPartialClassMemberMd.cls,
-  toString: 'member, method, [partialClassInfo MyPartialClassExtension]',
+  // partialClass: MyPartialClassMemberMd.cls,
+  toString: 'member, method, [partialClassInfo MyPartialClass]',
   type: 'method',
   isMethod: true,
   isConfigurable: true,

@@ -100,6 +100,10 @@ export class Es6Prototype {
     this.#knownKeys = new Set(knownKeys)
   }
 
+  getPrototype(type) {
+    return this.#getPrototypeFn(type)
+  }
+
   *hierarchy(type) {
     const prototype = this.#getPrototypeFn(type)
     for (const link of Es6Prototype.chain(prototype))
@@ -162,7 +166,7 @@ export class Es6Prototype {
     }
   }
 
-  *keys(type) {
+  *keys(type, { includeOverridden = false } = { }) {
     const prototype = this.#getPrototypeFn(type)
     
     const visited = new Set()
@@ -171,7 +175,8 @@ export class Es6Prototype {
       yield ctor
       for (const key of Es6Prototype.ownKeys(current)) {
         if (visited.has(key)) continue
-        if (this.isKnownKey(ctor, key)) continue
+        if (!includeOverridden && this.isKnownKey(ctor, key)) 
+          continue
         visited.add(key)
         yield key
       }
@@ -187,6 +192,12 @@ export class Es6Prototype {
   *getHosts(type, name) {
     for (const current of this.hierarchy(type))
       if (this.isHostOf(current, name)) yield current
+  }
+
+  getImplementingHost(type, name) {
+    for (const current of this.hierarchy(type))
+      if (this.hasOwnKey(current, name)) return current
+    return null
   }
 
   getOwnDescriptor(type, name) {
@@ -214,9 +225,9 @@ export class Es6Prototype {
     } 
   }
 
-  *descriptors(type) {
+  *descriptors(type, { includeOverridden = false } = { }) {
     let owner
-    for (const current of this.keys(type)) {
+    for (const current of this.keys(type, { includeOverridden })) {
       const typeofCurrent = typeof current
       assert(typeofCurrent == 'function'
         || typeofCurrent == 'string'

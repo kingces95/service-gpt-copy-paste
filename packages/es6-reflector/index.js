@@ -31,6 +31,9 @@ export class Es6Reflector {
       : this.#instancePrototype 
   }
 
+  getPrototype(type, { isStatic } = { }) {
+    return this.#prototype(isStatic).getPrototype(type)
+  }
   typeof(type, key, descriptor) {
     return this.#prototype().typeof(type, key, descriptor)
   }
@@ -69,14 +72,17 @@ export class Es6Reflector {
   *ownKeys(type, { isStatic } = { }) {
     yield* this.#prototype(isStatic).ownKeys(type)
   }
-  *keys(type, { isStatic } = { }) {
-    yield* this.#prototype(isStatic).keys(type)
+  *keys(type, { isStatic, includeOverridden } = { }) {
+    yield* this.#prototype(isStatic).keys(type, { includeOverridden })
   }
   isHostOf(type, name, { isStatic } = { }) {
     return this.#prototype(isStatic).isHostOf(type, name)
   }
   *getHosts(type, name, { isStatic } = { }) {
     yield* this.#prototype(isStatic).getHosts(type, name)
+  }
+  getImplementingHost(type, name, { isStatic } = { }) {
+    return this.#prototype(isStatic).getImplementingHost(type, name)
   }
   getOwnDescriptor(type, name, { isStatic } = { }) {
     return this.#prototype(isStatic).getOwnDescriptor(type, name)
@@ -87,7 +93,7 @@ export class Es6Reflector {
   *getDescriptor(type, name, { isStatic } = { }) {
     yield* this.#prototype(isStatic).getDescriptor(type, name)
   }
-  *descriptors(type, { isStatic } = { }) {
-    yield* this.#prototype(isStatic).descriptors(type)
+  *descriptors(type, { isStatic, includeOverridden } = { }) {
+    yield* this.#prototype(isStatic).descriptors(type, { includeOverridden })
   }
 }

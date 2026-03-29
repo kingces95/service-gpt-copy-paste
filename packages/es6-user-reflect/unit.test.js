@@ -124,7 +124,7 @@ const Tests = {
 const Cases = Object.entries(Tests)
 const KnownTypes = [ Object, Function ]
 const KnownInstanceKeys = [ 'constructor' ]
-const KnownStaticKeys = [ 'constructor', 'length', 'name', 'prototype' ]
+const KnownStaticKeys = [ 'length', 'name', 'prototype', 'constructor' ]
 
 describe('UserReflect', () => {
   it('reports known types correctly', () => {

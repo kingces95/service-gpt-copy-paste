@@ -4,16 +4,17 @@ import { ExtensionsReflect } from '@kingjs/extensions'
 import { 
   PartialType, 
   PartialTypeReflect,
-  Prototype,
-  Constructors
+  Thunk, Preconditions, Postconditions,
+  TypePrecondition, TypePostcondition,
+  Prototype, Constructors
 } from '@kingjs/partial-type'
 import { getOwn } from '@kingjs/get-own'
 import { asIterable } from '@kingjs/as-iterable'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { PartialAssociate } from '@kingjs/partial-associate'
-
+import { Es6Reflector } from '@kingjs/es6-reflector'
 import { isAbstract } from '@kingjs/abstract'
-import { Es6Prototype } from '@kingjs/es6-prototype'
+import { Es6Prototype, Es6PrototypeCache } from '@kingjs/es6-prototype'
 
 function createPrototype(base = null) {
   const prototype = { }
@@ -102,9 +103,19 @@ export class PartialLoader {
   static *declaredOwnPartialTypes$(type, symbols = PartialType.Declarations) {
     yield* PartialLoader.#declaredOwnPartialTypes(type, symbols)
   }
-  static *ownPartialTypes(type) {
-    yield* PartialLoader.#ownPartialTypes(type)
+  static *#transparentTypes(type) {
+    for (const partialType of PartialLoader.#ownPartialTypes(type)) {
+      if (!PartialLoader.transparent(partialType)) continue
+      yield partialType
+    }
   }
+  static *ownPartialTypes(type) {
+    for (const partialType of PartialLoader.#ownPartialTypes(type)) {
+      if (PartialLoader.transparent(partialType)) continue
+      yield partialType
+    }
+  }
+
   static *partialTypes(rootPartialType) {
     assert(PartialTypeReflect.isPartialType(rootPartialType))
 
@@ -130,16 +141,25 @@ export class PartialLoader {
     if (!descriptor) return null
     return type[PartialType.Compile](descriptor) 
   }
-  static *#ownDescriptors(type) {
+  static *ownDescriptors(type) {
     assert(PartialTypeReflect.isPartialType(type))
-    for (const key of Es6UserReflect.ownKeys(type)) {
-      const descriptor = PartialLoader.getOwnDescriptor(type, key)
+
+    const ownKeys = new Map()
+    for (const current of [
+      ...PartialLoader.#transparentTypes(type), type].reverse()) {
+
+      for (const key of Es6UserReflect.ownKeys(current)) {
+        const descriptor = PartialLoader.getOwnDescriptor(current, key)
+        if (ownKeys.has(key) && !isAbstract(ownKeys.get(key))) continue
+        ownKeys.set(key, descriptor)
+      }    
+    }
+
+    // TODO: Convert to pojo
+    for (const [key, descriptor] of ownKeys) {
       yield key
       yield descriptor
     }
-  }
-  static *ownDescriptors(type) {
-    yield* PartialLoader.#ownDescriptors(type)
   }
 
   static getPlan(rootPartialType) {
@@ -164,13 +184,11 @@ export class PartialLoader {
       
       const ownPartialTypes = [...PartialLoader.ownPartialTypes(partialType)]
       for (const basePartialType of ownPartialTypes.reverse()) {
-        if (!PartialLoader.transparent(basePartialType)) {
-          plan.push({
-            host: basePartialType,
-            keys: new Set(),
-            descriptors: Object.create(null),
-          })
-        }
+        plan.push({
+          host: basePartialType,
+          keys: new Set(),
+          descriptors: Object.create(null),
+        })
         for (const key of reverseDepthFirstWalk$(basePartialType))
           keys.add(key)
       }
@@ -184,9 +202,7 @@ export class PartialLoader {
             keys.add(ownKey)
             break
           case 'object':
-            const descriptor = current
-            if (isAbstract(descriptor) && descriptors[ownKey]) continue
-            descriptors[ownKey] = descriptor
+            descriptors[ownKey] = current
             break
           default: assert(false, `Unexpected type: ${typeof current}`)
         }
@@ -257,3 +273,164 @@ export class PartialLoader {
     //   PartialLoader.getPrototype(partialType), { createThunk, type })
   }
 }
+
+export class PartialPrototype extends Es6Prototype {
+  static getPrototype(type) {
+    assert(PartialTypeReflect.isPartialType(type))
+    if (PartialLoader.transparent(type)) 
+      return this.#createPrototype(type)
+
+    return this.#cache.getPrototype(type)
+  }
+
+  static #createPrototype(partialType) {
+    return PartialLoader.partialTypes(partialType)
+      .reduce((prototype, partialType) => {
+        const descriptors = { }
+
+        let ownKey
+        for (const current of PartialLoader.ownDescriptors(partialType)) {
+          assert(typeof current == 'object'
+            || typeof current == 'string' 
+            || typeof current == 'symbol',
+            `Unexpected type: ${typeof current}`)
+
+          switch (typeof current) {
+            case 'string':
+            case 'symbol':
+              ownKey = current 
+            break
+            case 'object':
+              // inherit existing descriptor if current is abstract
+              if (isAbstract(current)) {
+                const existing = descriptors[ownKey]
+                if (existing && !isAbstract(existing))
+                  current = existing
+              }
+              descriptors[ownKey] = current
+              break
+          }
+        }
+        return Es6Prototype.createLink(partialType, prototype, descriptors)
+      }, null)
+  }
+
+  static #cache = new Es6PrototypeCache(partialType => {
+    return this.#createPrototype(partialType)
+  })
+
+  constructor() {
+    super({
+      getPrototypeFn: type => Es6StaticPrototype.getPrototype(type),
+    })
+  }
+}
+
+const KnownTypes = [ Object, Function ]
+const KnownInstanceKeys = [ 'constructor', Constructors ]
+const KnownStaticKeys = [ 'length', 'name', 'prototype',
+  Thunk, Preconditions, Postconditions,
+  TypePrecondition, TypePostcondition,
+  Prototype,
+  // TODO: remove Compile, Declarations, Symbol.hasInstance
+  PartialType.Compile, 'Compile',
+  PartialType.Declarations, 'Declarations',
+  Symbol.hasInstance,
+]
+
+export class PartialReflector {
+  #es6UserReflector
+  #partialReflector
+
+  constructor({
+  } = { }) {
+    this.#es6UserReflector = new Es6Reflector({
+      knownTypes: KnownTypes,
+      knownInstanceKeys: KnownInstanceKeys,
+      knownStaticKeys: KnownStaticKeys,
+    })
+    
+    this.#partialReflector = new Es6Reflector({
+      knownTypes: KnownTypes,
+      knownInstanceKeys: KnownInstanceKeys,
+      knownStaticKeys: KnownStaticKeys,
+      getPrototypeFn: type => PartialPrototype.getPrototype(type),
+    })
+  }
+
+  #reflector(type, isStatic = false) { 
+    const isPartialType = PartialTypeReflect.isPartialType(type)
+    return isPartialType
+      ? this.#partialReflector
+      : this.#es6UserReflector 
+  }
+
+  typeof(type, key, descriptor) {
+    return this.#reflector().typeof(type, key, descriptor)
+  }
+
+  *knownTypes() { 
+    yield* this.#reflector().knownTypes()
+  }
+  *knownKeys({ isStatic } = { }) { 
+    yield* this.#reflector(isStatic).knownKeys({ isStatic }) 
+  }
+
+  getPrototype(type, { isStatic } = { }) {
+    return this.#reflector(type).getPrototype(type, { isStatic })
+  }
+  *hierarchy(type) { 
+    yield* this.#reflector(type).hierarchy(type) 
+  }
+  getBaseType(type) {
+    return this.#reflector(type).getBaseType(type)
+  }
+  *baseTypes(type) { 
+    yield* this.#reflector(type).baseTypes(type) 
+  }
+  isExtensionOf(type, targetType) { 
+    return this.#reflector(type).isExtensionOf(type, targetType) 
+  }
+  isAbstract(type) { 
+    return this.#reflector(type).isAbstract(type) 
+  }
+  isKnown(type, { isStatic } = { }) {
+    return this.#reflector(type, isStatic).isKnown(type, { isStatic })
+  }
+  isKnownKey(type, name, { isStatic } = { }) {
+    return this.#reflector(type, isStatic).isKnownKey(type, name, { isStatic })
+  }
+  hasOwnKey(type, name, { isStatic } = { }) {
+    return this.#reflector(type, isStatic).hasOwnKey(type, name, { isStatic })
+  }
+  *ownKeys(type, { isStatic } = { }) {
+    yield* this.#reflector(type, isStatic).ownKeys(type, { isStatic })
+  }
+  *keys(type, { isStatic } = { }) {
+    yield* this.#reflector(type, isStatic).keys(type, { isStatic })
+  }
+  isHostOf(type, name, { isStatic } = { }) {
+    return this.#reflector(type, isStatic).isHostOf(type, name, { isStatic })
+  }
+  // todo: rename as hosts()
+  *getHosts(type, name, { isStatic } = { }) {
+    yield* this.#reflector(type, isStatic).getHosts(type, name, { isStatic })
+  }
+  getImplementingHost(type, name, { isStatic } = { }) {
+    return this.#reflector(type, isStatic).getImplementingHost(type, name, { isStatic })
+  }
+  getOwnDescriptor(type, name, { isStatic } = { }) {
+    return this.#reflector(type, isStatic).getOwnDescriptor(type, name, { isStatic })
+  }
+  *ownDescriptors(type, { isStatic } = { }) {
+    yield* this.#reflector(type, isStatic).ownDescriptors(type, { isStatic })
+  }
+  *getDescriptor(type, name, { isStatic } = { }) {
+    yield* this.#reflector(type, isStatic).getDescriptor(type, name, { isStatic })
+  }
+  *descriptors(type, { isStatic } = { }) {
+    yield* this.#reflector(type, isStatic).descriptors(type, { isStatic })
+  }
+}
+
+export const PartialReflect$ = new PartialReflector()

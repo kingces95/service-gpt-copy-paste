@@ -79,12 +79,14 @@ export class TypeInfo {
   }
 
   getOwnMember(key, { isStatic } = { }) {
+    const host = this
     const fn = this.ctor
     const descriptor = InfoReflect.getOwnDescriptor(fn, key, { isStatic })
     if (!descriptor) return null
-    return MemberInfo.create$(fn, key, descriptor, { isStatic })
+    return MemberInfo.create$(host, fn, key, descriptor, { isStatic })
   }
   getMember(key, { isStatic } = { }) {
+    const host = this
     const fn = this.ctor
     let owner, descriptor
     for (const current of InfoReflect.getDescriptor(fn, key, { isStatic })) {
@@ -95,9 +97,12 @@ export class TypeInfo {
       }
     }
     if (!descriptor) return null
-    return MemberInfo.create$(owner, key, descriptor, { isStatic })
+    return MemberInfo.create$(host, owner, key, descriptor, { isStatic })
   }
   *ownMembers({ isStatic } = { }) {
+    if (this.isConcept && isStatic) return
+
+    const host = this
     const fn = this.ctor
     let key
     for (const current of InfoReflect.ownDescriptors(fn, { isStatic })) {
@@ -105,13 +110,16 @@ export class TypeInfo {
         case 'string':
         case 'symbol': key = current; break
         case 'object':
-          yield MemberInfo.create$(fn, key, current, { isStatic })
+          yield MemberInfo.create$(host, fn, key, current, { isStatic })
           break
         default: assert(false, `Unexpected type: ${typeof current}`)
       }
     }
   }
   *members({ isStatic } = { }) {
+    if (this.isConcept && isStatic) return
+
+    const host = this
     const fn = this.ctor
     let owner, key
     for (const current of InfoReflect.descriptors(fn, { isStatic })) {
@@ -120,7 +128,7 @@ export class TypeInfo {
         case 'string':
         case 'symbol': key = current; break
         case 'object': {
-          yield MemberInfo.create$(owner, key, current, { isStatic })
+          yield MemberInfo.create$(host, owner, key, current, { isStatic })
           continue
         }
         default: assert(false, `Unexpected type: ${typeof current}`)
@@ -202,11 +210,15 @@ TypeInfo.PartialClass = TypeInfo.from(PartialClass)
 TypeInfo.Concept = TypeInfo.from(Concept)
 
 export class MemberInfo {
-  static create$(fn, key, descriptor, { isStatic } = { }) {
-    const type = InfoReflect.typeof(fn, key, descriptor, { isStatic })
+  static create$(host, fn, key, descriptor, { isStatic } = { }) {
     const keyInfo = Es6KeyInfo.create(key)
     const descriptorInfo = Es6DescriptorInfo.create(descriptor)
-    const host = TypeInfo.from(fn)
+    const type = InfoReflect.typeof(fn, key, descriptor, { isStatic })
+    
+    const fnAsHost = TypeInfo.from(fn)
+    const isAbstract = descriptorInfo.isAbstract
+    if (!isAbstract || !fnAsHost.isAbstract)
+      host = fnAsHost
 
     return new MemberInfo(
       host, keyInfo, descriptorInfo, { isStatic, type })
@@ -315,6 +327,7 @@ export class MemberInfo {
 
     // Use .parent to walk the member hierarchy
     const host = this.host
+    // if (host.isConcept) seen.add(host.ctor)
     for (let member = this; member; member = member.parent()) {
       const fn = member.host.ctor
       for (const concept of InfoReflect.getConceptOwnHosts(fn, member.name)) {

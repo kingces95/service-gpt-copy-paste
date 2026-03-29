@@ -25,7 +25,7 @@ import {
   MyEmptyClass,
   MyClass
 } from "./my-classes.js"
-import { isAbstract } from '@kingjs/abstract'
+import { PartialReflect } from '@kingjs/partial-reflect'
 
 describe('Object members', () => {
   let pojo
@@ -158,7 +158,7 @@ describe('MyClass members', () => {
 //     const fnInfo = Es6ClassInfo.from(MyClass)
 //     pojo = await fnInfo.toPojo({
 //       isStatic: true,
-//       isKnown: false,
+//       isKnown: false,  
 //       isNonPublic: false,
 //     })
 //   })

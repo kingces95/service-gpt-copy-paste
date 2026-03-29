@@ -3,7 +3,7 @@ import { Es6Reflector } from '@kingjs/es6-reflector'
 
 const KnownTypes = [ Object, Function ]
 const KnownInstanceKeys = [ 'constructor' ]
-const KnownStaticKeys = [ 'constructor', 'length', 'name', 'prototype' ]
+const KnownStaticKeys = [ 'length', 'name', 'prototype' ]
 
 export class PartialReflector {
   #es6UserReflector
