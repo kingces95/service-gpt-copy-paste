@@ -158,12 +158,7 @@ describe('A concept with a member', () => {
     }
     myConceptInfo = TypeInfo.from(myConcept)
   })
-  it('should have no own concepts', () => {
-    const actual = [...myConceptInfo.ownConcepts(myConcept)]
-    const expected = [ ]
-    expect(actual).toEqual(expected)
-  })
-  it('should have no inherited concepts', () => {
+  it('should have no concepts', () => {
     const actual = [...myConceptInfo.concepts()]
     const expected = [ ]
     expect(actual).toEqual(expected)
@@ -229,8 +224,8 @@ describe('A concept with a member', () => {
       it('should not instance of the concept', () => {
         expect(cls.prototype).not.toBeInstanceOf(myConcept)
       })
-      it('should not declare the concept as its own', () => {
-        const actual = [...clsInfo.ownConcepts(cls)]
+      it('should not declare the concept', () => {
+        const actual = [...clsInfo.concepts(cls)]
         const expected = [myConceptInfo]
         expect(actual).not.toEqual(expected)
       })
@@ -245,8 +240,8 @@ describe('A concept with a member', () => {
       }
       clsInfo = TypeInfo.from(cls)
     })
-    it('declares the concept as its own', () => {
-      const actual = [...clsInfo.ownConcepts(cls)]
+    it('declares the concept', () => {
+      const actual = [...clsInfo.concepts(cls)]
       const expected = [myConceptInfo]
       expect(actual).toEqual(expected)
     })
@@ -263,8 +258,8 @@ describe('A concept with a member', () => {
           implement(subCls, myConcept, { member: fn })
           subClsInfo = TypeInfo.from(subCls)
         })
-        it('claims to declare the concept as its own', () => {
-          const actual = [...subClsInfo.ownConcepts(subCls)]
+        it('claims to declare the concept', () => {
+          const actual = [...subClsInfo.concepts(subCls)]
           const expected = [myConceptInfo]
           expect(actual).toEqual(expected)
         })
@@ -278,11 +273,6 @@ describe('A concept with a member', () => {
           expect(member?.method).toBe(fn)
           expect(subCls.prototype.member).toBe(fn)
         })
-      })
-      it('has no own declared concepts', () => {
-        const actual = [...subClsInfo.ownConcepts(subCls)]
-        const expected = [ ]
-        expect(actual).toEqual(expected)
       })
       it('inherits the concept', () => {
         const actual = [...subClsInfo.concepts()]

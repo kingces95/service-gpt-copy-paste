@@ -55,13 +55,6 @@ export class PartialReflect {
     return yield* PartialReflect$.descriptors(type, { isStatic })
   }
 
-  static *ownPartialTypes(type) {
-    if (PartialTypeReflect.isPartialType(type)) 
-      // return yield* PartialReflect$.baseTypes(type)
-      return yield* PartialLoader.ownPartialTypes(type)
-
-    yield* PartialAssociate.ownPartialTypes(type)
-  }
   static *partialTypes(type) {
     if (PartialTypeReflect.isPartialType(type))
       return yield* PartialReflect$.baseTypes(type)

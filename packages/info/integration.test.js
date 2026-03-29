@@ -69,7 +69,7 @@ describe('MyClass', () => {
       expect(member).not.toBeNull()
     })  
     it('should report being merged directly with MyPartialClass', () => {
-      const actual = [...info.ownPartialClasses()]
+      const actual = [...info.partialClasses()]
       const expected = [TypeInfo.from(myPartialClass)]
       expect(actual).toEqual(expected)
     })
@@ -106,11 +106,6 @@ describe('MyClass', () => {
       beforeEach(() => {
         myExtendedClass = class MyExtendedClass extends cls { }
         info = TypeInfo.from(myExtendedClass)
-      })
-      it('should report no own partial classes', () => {
-        const actual = [...info.ownPartialClasses()]
-        const expected = [ ]
-        expect(actual).toEqual(expected)
       })
       it('should report being merged indirectly with MyPartialClass', () => {
         const actual = [...info.partialClasses()]
@@ -150,7 +145,7 @@ describe('MyClass', () => {
           expect(member).not.toBeNull()
         })
         it('should report being merged MyExtendedConcept and MyConcept', () => {
-          const actual = [...info.ownConcepts()]
+          const actual = [...info.concepts()]
           const expected = [
             TypeInfo.from(myExtendedConcept),
             TypeInfo.from(myConcept)]
@@ -191,8 +186,8 @@ describe('MyClass', () => {
         const member = info.getMember('myMethod')
         expect(member).not.toBeNull()
       })
-      it('should report being merged directly with MyConcept', () => {
-        const actual = [...info.ownConcepts()]
+      it('should report being merged with MyConcept', () => {
+        const actual = [...info.concepts()]
         const expected = [TypeInfo.from(myConcept)]
         expect(actual).toEqual(expected)
       })
@@ -224,11 +219,6 @@ describe('MyClass', () => {
           myExtendedClass = class MyExtendedClass extends cls { }
           info = TypeInfo.from(myExtendedClass)
         })
-        it('should report no own concepts', () => {
-          const actual = [...info.ownConcepts()]
-          const expected = [ ]
-          expect(actual).toEqual(expected)
-        })
         it('should report being merged indirectly with MyConcept', () => {
           const actual = [...info.concepts()]
           const expected = [TypeInfo.from(myConcept)]
@@ -249,12 +239,12 @@ describe('MyClass', () => {
         info = TypeInfo.from(cls)
       })
       it('should report being merged with MyPartialClass', () => {
-        const actualPartialClasses = [...info.ownPartialClasses()]
+        const actualPartialClasses = [...info.partialClasses()]
         const expectedPartialClasses = [myPartialClassInfo]
         expect(actualPartialClasses).toEqual(expectedPartialClasses)
       })
       it('should report being merged with MyConcept', () => {
-        const actualConcepts = [...info.ownConcepts()]
+        const actualConcepts = [...info.concepts()]
         const expectedConcepts = [TypeInfo.from(myConcept)]
         expect(actualConcepts).toEqual(expectedConcepts)
       })
@@ -282,12 +272,12 @@ describe('MyClass', () => {
         info = TypeInfo.from(cls)
       })
       it('should report being merged with MyPartialClass', () => {
-        const actualPartialClasses = [...info.ownPartialClasses()]
+        const actualPartialClasses = [...info.partialClasses()]
         const expectedPartialClasses = [myPartialClassInfo]
         expect(actualPartialClasses).toEqual(expectedPartialClasses)
       })
       it('should report being merged with MyConcept', () => {
-        const actualConcepts = [...info.ownConcepts()]
+        const actualConcepts = [...info.concepts()]
         const expectedConcepts = [TypeInfo.from(myConcept)]
         expect(actualConcepts).toEqual(expectedConcepts)
       })

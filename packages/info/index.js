@@ -152,10 +152,6 @@ export class TypeInfo {
   }
 
   // concepts
-  *ownConcepts() {
-    yield *InfoReflect.ownConcepts(this.ctor)
-      .map(concept => TypeInfo.from(concept))
-  }
   *concepts() {
     yield *InfoReflect.concepts(this.ctor)
       .map(concept => TypeInfo.from(concept))

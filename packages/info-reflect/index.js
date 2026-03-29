@@ -47,9 +47,6 @@ export class InfoReflect {
     yield* PartialReflect.descriptors(type, { isStatic })
   }
 
-  static *ownPartialTypes(type) {
-    yield* PartialReflect.ownPartialTypes(type)
-  }
   static *partialTypes(type) {
     yield* PartialReflect.partialTypes(type)
   }
@@ -68,9 +65,6 @@ export class InfoReflect {
   // ConceptReflect proxies
   static *concepts(type) {
     yield *ConceptReflect.concepts(type)
-  }
-  static *ownConcepts(type) {
-    yield *ConceptReflect.ownConcepts(type)
   }
   static *getConceptOwnHosts(type, name) {
     yield *ConceptReflect.getConceptOwnHosts(type, name)

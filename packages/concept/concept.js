@@ -91,12 +91,6 @@ export class ConceptReflect {
       yield object
     }
   }
-  static *ownConcepts(type) {
-    for (const object of PartialReflect.ownPartialTypes(type)) {
-      if (!ConceptReflect.isConcept(object)) continue
-      yield object
-    }
-  }
   static *getConceptOwnHosts(type, name) {
     for (const host of PartialReflect.hosts(type, name)) {
       if (!ConceptReflect.isConcept(host)) continue

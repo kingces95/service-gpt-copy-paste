@@ -9,8 +9,8 @@ describe('A type', () => {
   beforeEach(() => {
     type = class { }
   })
-  it('should yield no own extensions', () => {
-    const declarations = [...PartialReflect.ownPartialTypes(type)]
+  it('should yield no extensions', () => {
+    const declarations = [...PartialReflect.partialTypes(type)]
     expect(declarations).toHaveLength(0)
   })
   describe('after being extended by a PartialClass with a declared Extension', () => {
@@ -23,7 +23,7 @@ describe('A type', () => {
       extend(type, extension)
     })
     it('should yield the extensions', () => {
-      const declarations = [...PartialReflect.ownPartialTypes(type)]
+      const declarations = [...PartialReflect.partialTypes(type)]
       expect(declarations).toHaveLength(2)
       expect(declarations).toContain(extension)
       expect(declarations).toContain(subExtension)
@@ -47,8 +47,8 @@ describe('A type', () => {
       extension = class MyExtension extends PartialClass { }
       extend(type, extension)
     })
-    it('should yield the extension as an own PartialClass declaration', () => {
-      const declarations = [...PartialReflect.ownPartialTypes(type)]
+    it('should yield the extension', () => {
+      const declarations = [...PartialReflect.partialTypes(type)]
       expect(declarations).toHaveLength(1)
       expect(declarations[0]).toBe(extension)
     })
@@ -66,11 +66,6 @@ describe('A type', () => {
         beforeEach(() => {
           extend(derived, extension)
         })
-        it('should yield the extension as own', () => {
-          const declarations = [...PartialReflect.ownPartialTypes(derived)]
-          expect(declarations).toHaveLength(1)
-          expect(declarations[0]).toBe(extension)
-        })
         it('should yield the extension', () => {
           const declarations = [...PartialReflect.partialTypes(derived)]
           expect(declarations).toHaveLength(1)
@@ -85,10 +80,6 @@ describe('A PartialClass', () => {
   let myPartialClass
   beforeEach(() => {
     myPartialClass = class MyPartialClass extends PartialClass { }
-  })
-  it('should have no own partialTypes', () => {
-    const partialTypes = [...PartialReflect.ownPartialTypes(myPartialClass)]
-    expect(partialTypes).toHaveLength(0)
   })
   it('should have no partialTypes', () => {
     const partialTypes = [...PartialReflect.partialTypes(myPartialClass)]
@@ -109,10 +100,10 @@ describe('A PartialClass', () => {
         basePartialClass = class BasePartialClass extends PartialClass { }
         myPartialClass[Extends] = [ basePartialClass ]
       })
-      it('should have BasePartialType as an own PartialClass', () => {
-        const ownPartialTypes = [...PartialReflect.ownPartialTypes(myPartialClass)]
-        expect(ownPartialTypes).toHaveLength(1)
-        expect(ownPartialTypes[0]).toBe(basePartialClass)
+      it('should have BasePartialType as a partialClass', () => {
+        const partialTypes = [...PartialReflect.partialTypes(myPartialClass)]
+        expect(partialTypes).toHaveLength(1)
+        expect(partialTypes[0]).toBe(basePartialClass)
       })
       describe('that has a baseMember', () => {
         let baseMember
@@ -148,11 +139,6 @@ describe('A PartialClass', () => {
           basePartialClass[Extends] = [ rootExtension ]
           rootExtension.prototype.member = rootMember
         })
-        it('should not have root PartialClass as an own partial type', () => {
-          const declarations = [...PartialReflect.ownPartialTypes(myPartialClass)]
-          expect(declarations).toHaveLength(1)
-          expect(declarations[0]).toBe(basePartialClass)
-        })
         it('should have the root PartialClass as a partial type', () => {
           const actual = new Set(PartialReflect.partialTypes(myPartialClass))
           const expected = new Set([ basePartialClass, rootExtension ])
@@ -175,11 +161,11 @@ describe('A PartialClass', () => {
         basePartialClass = class BasePartialClass extends PartialClass { }
         extend(myPartialClass, basePartialClass)
       })
-      it('should have BasePartialType as an own PartialClass', () => {
-        const ownPartialTypes = [
-          ...PartialReflect.ownPartialTypes(myPartialClass)]
-        expect(ownPartialTypes).toHaveLength(1)
-        expect(ownPartialTypes[0]).toBe(basePartialClass)
+      it('should have BasePartialType', () => {
+        const partialTypes = [
+          ...PartialReflect.partialTypes(myPartialClass)]
+        expect(partialTypes).toHaveLength(1)
+        expect(partialTypes[0]).toBe(basePartialClass)
       })
     })
   })

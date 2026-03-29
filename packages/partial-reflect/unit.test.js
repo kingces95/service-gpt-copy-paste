@@ -32,10 +32,6 @@ describe('A type', () => {
   beforeEach(() => {
     type = class { }
   })
-  it('should yield no own declarations', () => {
-    const declarations = [...PartialReflect.ownPartialTypes(type)]
-    expect(declarations).toHaveLength(0)
-  })
   it('should yield no declarations', () => {
     const declarations = [...PartialReflect.partialTypes(type)]
     expect(declarations).toHaveLength(0)
@@ -120,8 +116,8 @@ describe('MyPojoType', () => {
         expect(lookup).toHaveLength(1)
         expect(lookup[0]).toBe(myType)
       })
-      it('should have no own declarations', () => {
-        const declarations = [...PartialReflect.ownPartialTypes(myType)]
+      it('should have no declarations', () => {
+        const declarations = [...PartialReflect.partialTypes(myType)]
         expect(declarations).toHaveLength(0)
       })
       it('should have method as member name or symbol', () => {
@@ -177,10 +173,6 @@ describe('PartialClass', () => {
     })
     it('should return PartialClass as their partial class', () => {
       expect(PartialTypeReflect.getPartialType(MyExtension)).toBe(PartialClass)
-    })
-    it('should have no own declarations', () => {
-      const declarations = [...PartialReflect.ownPartialTypes(MyExtension)]
-      expect(declarations).toHaveLength(0)
     })
     it('should have no declarations', () => {
       const declarations = [...PartialReflect.partialTypes(MyExtension)]
@@ -292,8 +284,8 @@ describe('PartialClass', () => {
         MyExtension[ExtensionSymbol] = [ MySubExtension ]
       })
 
-      it('should have MySubExtension as own declaration', () => {
-        const declarations = [...PartialReflect.ownPartialTypes(MyExtension)]
+      it('should have MySubExtension a declaration', () => {
+        const declarations = [...PartialReflect.partialTypes(MyExtension)]
         expect(declarations).toEqual([ MySubExtension ])
       })
 
@@ -321,9 +313,9 @@ describe('PartialClass', () => {
                 ...PartialReflect.ownKeys(MyExtension)]
               expect(keys).toContain('method')
             })
-            it('should have mySubExtension as own declaration', () => {
+            it('should have mySubExtension a declaration', () => {
               const declarations = 
-                [...PartialReflect.ownPartialTypes(MyExtension)]
+                [...PartialReflect.partialTypes(MyExtension)]
               expect(declarations).toEqual([ MySubExtension ])
             })
             it('should have method as memberKey', () => {
@@ -370,10 +362,13 @@ describe('PartialClass', () => {
                   const expected = new Set([ MySubExtension, MySubSubExtension ])
                   expect(actual).toEqual(expected)
                 })
-                it('should have MySubExtension as own declaration', () => {
+                it('should have MySubSubExtension and MySubExtension a declaration', () => {
                   const declarations = 
-                    [...PartialReflect.ownPartialTypes(MyExtension)]
-                  expect(declarations).toEqual([ MySubExtension ])
+                    [...PartialReflect.partialTypes(MyExtension)]
+                  expect(declarations).toEqual([ 
+                    MySubExtension,
+                    MySubSubExtension
+                  ])
                 })
 
                 describe('when subSubMethod added to MySubSubExtension', () => {
@@ -438,10 +433,12 @@ describe('PartialClass', () => {
               beforeEach(() => {
                 mySubType = class extends myType { }
               })
-              it('should have no own declarations', () => {
+              it('should have no declarations', () => {
                 const declarations = 
-                  [...PartialReflect.ownPartialTypes(mySubType)]
-                expect(declarations).toHaveLength(0)
+                  [...PartialReflect.partialTypes(mySubType)]
+                expect(declarations).toHaveLength(2)
+                expect(declarations).toContain(MyExtension)
+                expect(declarations).toContain(MySubExtension)
               })
               it('should have MyExtension and MySubExtension as declarations', () => {
                 const actual = new Set(PartialReflect.partialTypes(mySubType))
@@ -459,11 +456,6 @@ describe('PartialClass', () => {
               })
             })
             describe('myType', () => {
-              it('should have MyExtension and MySubExtension as own declarations', () => {
-                const actual = new Set(PartialReflect.ownPartialTypes(myType))
-                const expected = new Set([ MyExtension, MySubExtension ])
-                expect(actual).toEqual(expected)
-              })
               it('should have MyExtension and MySubExtension as declarations', () => {
                 const actual = new Set(PartialReflect.partialTypes(myType))
                 const expected = new Set([ MyExtension, MySubExtension ])

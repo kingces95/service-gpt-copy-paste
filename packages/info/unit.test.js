@@ -302,20 +302,10 @@ describe('Given', () => {
       const missingMember = info.getOwnMember('myMissingMember')
       expect(missingMember).toBeNull()
     })
-    it('should have no own PartialClass associations', () => {
-      const partialClassAssociations = [
-        ...info.ownPartialClasses()]
-      expect(partialClassAssociations).toEqual([])
-    })
     it('should have no PartialClass associations', () => {
       const partialClassAssociations = [
         ...info.partialClasses()]
       expect(partialClassAssociations).toEqual([])
-    })
-    it('should have no own Concept associations', () => {
-      const conceptAssociations = [
-        ...info.ownConcepts()]
-      expect(conceptAssociations).toEqual([])
     })
     it('should have no Concept associations', () => {
       const conceptAssociations = [

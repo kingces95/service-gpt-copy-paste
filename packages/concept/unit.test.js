@@ -42,11 +42,6 @@ describe('MyConcept', () => {
   it('should be a concept', () => {
     expect(ConceptReflect.isConcept(MyConcept)).toBe(true)
   })
-  it('should have no own concepts', () => {
-    const actual = [...PartialReflect.ownPartialTypes(MyConcept)]
-    const expected = [ ]
-    expect(actual).toEqual(expected)
-  })
   it('should have not inherited concepts', () => {
     const actual = [...PartialReflect.partialTypes(MyConcept)]
     const expected = [ ]
@@ -130,8 +125,8 @@ describe('MyConcept', () => {
       const expected = [ MySubConcept ]
       expect(actual).toEqual(expected)
     })
-    it('should have own concepts', () => {
-      const actual = [...InfoReflect.ownConcepts(MyConcept)]
+    it('should have concepts', () => {
+      const actual = [...InfoReflect.concepts(MyConcept)]
       const expected = [ MySubConcept ]
       expect(actual).toEqual(expected)
     })
