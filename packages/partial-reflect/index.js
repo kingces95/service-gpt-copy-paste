@@ -1,4 +1,3 @@
-import { assert } from '@kingjs/assert'
 import { PartialAssociate } from '@kingjs/partial-associate'
 import { PartialLoader, PartialReflect$ } from '@kingjs/partial-loader'
 import { Es6UserReflect } from '@kingjs/es6-user-reflect'
@@ -53,13 +52,6 @@ export class PartialReflect {
     return yield* PartialReflect$.getDescriptor(type, key, { isStatic })
   }
   static *descriptors(type, { isStatic } = { }) {
-    // return yield* PartialReflect$.descriptors(type, { isStatic })
-
-    if (PartialTypeReflect.isPartialType(type)) {
-      if (isStatic) return
-      return yield* PartialReflect$.descriptors(type, { isStatic })
-    }
-
     return yield* PartialReflect$.descriptors(type, { isStatic })
   }
 
@@ -78,30 +70,21 @@ export class PartialReflect {
   }
 
   static *hosts(type, key) {
-    // yield* PartialReflect$.getHosts(type, key)
-
     if (PartialTypeReflect.isPartialType(type))
       return yield* PartialReflect$.getHosts(type, key)
-      // return yield* PartialPrototype.hosts(type, key)
 
     // yield types in the hiearchy that resolve the key to a member.
     const hosts = new Set(PartialAssociate.hosts(type, key))
     for (const host of Es6UserReflect.getHosts(type, key)) 
       hosts.add(host)
     yield* hosts
-
-    // const altHosts = new Set(
-    //   PartialReflect$.getHosts(type, key))
-    // assert(altHosts.size == hosts.size, 'Expected same number of hosts')
   }
 
   static getImplementingHost(type, key) {
     if (PartialTypeReflect.isPartialType(type)) 
       return PartialReflect$.getImplementingHost(type, key)
-      // return PartialPrototype.getImplementingHost(type, key)
 
     if (key in type.prototype === false) return null
-
     return PartialAssociate.getImplementingHost(type, key) || type
   }
 

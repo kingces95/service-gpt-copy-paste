@@ -32,24 +32,6 @@ export class PartialAssociate {
     yield* Es6Associate.associates(type, PartialTypes)
   }
 
-  static addKey(type, key, { isStatic } = { }) {
-    assert(!PartialTypeReflect.isKnownKey(type, key, { isStatic }))
-    Es6Associate.addMemberAssociates(type, key, Keys, key, { isStatic })
-  }
-  static *keys(type, { isStatic } = { }) {
-    if (PartialTypeReflect.isKnown(type)) return
-    yield* Es6Associate.memberAssociates(type, Keys, { isStatic })
-  }
-
-  static addOwnKey(type, key, { isStatic } = { }) {
-    assert(!PartialTypeReflect.isKnownKey(type, key, { isStatic }))
-    Es6Associate.addMemberAssociate(type, key, OwnKeys, key, { isStatic })
-  }
-  static *ownKeys(type, { isStatic } = { }) {
-    if (PartialTypeReflect.isKnown(type)) return
-    yield* Es6Associate.memberAssociates(type, OwnKeys, { isStatic })
-  }
-
   static addHost(type, key, host, { isStatic } = { }) {
     assert(!PartialTypeReflect.isKnownKey(type, key, { isStatic }))
     Es6Associate.addMemberAssociates(type, key, HostLookup, host, { isStatic })
@@ -57,15 +39,6 @@ export class PartialAssociate {
   static *hosts(type, key, { isStatic } = { }) {
     if (PartialTypeReflect.isKnownKey(type, key, { isStatic })) return
     yield* Es6Associate.memberAssociates(type, key, HostLookup, { isStatic })
-  }
-
-  static addOwnHost(type, key, host, { isStatic } = { }) {
-    assert(!PartialTypeReflect.isKnownKey(type, key, { isStatic }))
-    Es6Associate.addMemberAssociate(type, key, OwnHostLookup, host, { isStatic })
-  }
-  static *ownHosts(type, key, { isStatic } = { }) {
-    if (PartialTypeReflect.isKnownKey(type, key, { isStatic })) return
-    yield* Es6Associate.memberAssociates(type, key, OwnHostLookup, { isStatic })
   }
 
   static setImplementingHost(type, key, host, { isStatic } = { }) {

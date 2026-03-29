@@ -197,6 +197,11 @@ describe('A bespoke partial class', () => {
         members: { methods: {
           method: { host: '.' }
         } },
+        staticMembers: { fields: {
+          method: {
+            fieldType: 'function', 
+            host: '.' }
+        }}
       }
 
       // Constructors are ignored by the DSL
@@ -215,10 +220,16 @@ describe('A bespoke partial class', () => {
         writable: false,
       })
     })
-    it('has a pojo that ignores the static data member', async () => {
+    it('has a pojo with static data member', async () => {
       const pojo = {
         name: 'MyPartialClass',
         isAbstract: true,
+        staticMembers: { fields: {
+          myStaticConst: {
+            fieldType: 'number', 
+            modifiers: [ 'sealed', 'const' ],
+            host: '.' }
+        }}
       }
       const fnInfo = ClassInfo.from(myPartialClass)
       const actual = await fnInfo.toPojo(pojoFilter)
@@ -283,6 +294,14 @@ describe('A bespoke partial class', () => {
     it('has a pojo', async () => {
       const pojo = {
         members: {
+          properties: {
+            myAccessor: { host: '.' }
+          },
+          methods: {
+            myMethod: { host: '.' }
+          }
+        },
+        staticMembers: {
           properties: {
             myAccessor: { host: '.' }
           },

@@ -116,7 +116,7 @@ export class PartialLoader {
     }
   }
 
-  static *partialTypes(rootPartialType) {
+  static *hierarchy(rootPartialType) {
     assert(PartialTypeReflect.isPartialType(rootPartialType))
 
     const visited = new Set()
@@ -224,16 +224,11 @@ export class PartialLoader {
       if (type != host)
         PartialAssociate.addPartialType(type, host)
 
-      for (const key of keys) {
-        PartialAssociate.addKey(type, key)
+      for (const key of keys)
         PartialAssociate.addHost(type, key, host)
-      }
 
       for (const key of Reflect.ownKeys(descriptors)) {
         const descriptor = descriptors[key]
-        PartialAssociate.addOwnKey(type, key)
-        PartialAssociate.addOwnHost(type, key, host)
-
         if (!isAbstract(descriptor))
           PartialAssociate.setImplementingHost(type, key, host)
       }
@@ -284,7 +279,7 @@ export class PartialPrototype extends Es6Prototype {
   }
 
   static #createPrototype(partialType) {
-    return PartialLoader.partialTypes(partialType)
+    return PartialLoader.hierarchy(partialType)
       .reduce((prototype, partialType) => {
         const descriptors = { }
 
