@@ -1,5 +1,6 @@
 import { PartialAssociate } from '@kingjs/partial-associate'
-import { PartialLoader, PartialReflect$ } from '@kingjs/partial-loader'
+import { PartialLoader } from '@kingjs/partial-loader'
+import { PartialReflector } from '@kingjs/partial-reflector'
 import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { PartialTypeReflect } from '@kingjs/partial-type'
 
@@ -25,6 +26,8 @@ import { PartialTypeReflect } from '@kingjs/partial-type'
 export function isKey(key) {
   return typeof key === 'string' || typeof key === 'symbol'
 }
+
+export const PartialReflect$ = new PartialReflector()
 
 export class PartialReflect {
 
