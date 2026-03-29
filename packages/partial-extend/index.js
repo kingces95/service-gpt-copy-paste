@@ -14,13 +14,13 @@ import { Thunk } from '@kingjs/partial-type'
 // are abstract (i.e. are implemented as @kingjs/abstract).
 
 // A member of a partial type that is copied to the target is associated 
-// with the partial type that defined it (PartialAssociate.getHosts and
+// with the partial type that defined it (PartialAssociate.hosts and
 // PartialAssociate.getImplementingHost to get the host of the last member copied).  
 
 // A member of a parital type that is copied to the target or was 
 // considered for copying to the target (i.e. was abstract) is associated 
 // with each partial type in the hierarchy that tried to defined it 
-// (PartialAssociate.getHosts). 
+// (PartialAssociate.hosts). 
 
 // Transparent partial types are merged but not associated. A transparent
 // partial type is one whose prototype extends Extensions. Members of

@@ -95,9 +95,8 @@ export class PartialReflector {
   isHostOf(type, name, { isStatic } = { }) {
     return this.#reflector(type, isStatic).isHostOf(type, name, { isStatic })
   }
-  // todo: rename as hosts()
-  *getHosts(type, name, { isStatic } = { }) {
-    yield* this.#reflector(type, isStatic).getHosts(type, name, { isStatic })
+  *hosts(type, name, { isStatic } = { }) {
+    yield* this.#reflector(type, isStatic).hosts(type, name, { isStatic })
   }
   getImplementingHost(type, name, { isStatic } = { }) {
     return this.#reflector(type, isStatic).getImplementingHost(type, name, { isStatic })

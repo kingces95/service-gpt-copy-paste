@@ -78,8 +78,8 @@ export class Es6Reflector {
   isHostOf(type, name, { isStatic } = { }) {
     return this.#prototype(isStatic).isHostOf(type, name)
   }
-  *getHosts(type, name, { isStatic } = { }) {
-    yield* this.#prototype(isStatic).getHosts(type, name)
+  *hosts(type, name, { isStatic } = { }) {
+    yield* this.#prototype(isStatic).hosts(type, name)
   }
   getImplementingHost(type, name, { isStatic } = { }) {
     return this.#prototype(isStatic).getImplementingHost(type, name)

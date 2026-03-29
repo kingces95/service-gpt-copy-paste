@@ -67,11 +67,11 @@ export class PartialReflect {
 
   static *hosts(type, key) {
     if (PartialTypeReflect.isPartialType(type))
-      return yield* PartialReflect$.getHosts(type, key)
+      return yield* PartialReflect$.hosts(type, key)
 
     // yield types in the hiearchy that resolve the key to a member.
     const hosts = new Set(PartialAssociate.hosts(type, key))
-    for (const host of Es6UserReflect.getHosts(type, key)) 
+    for (const host of Es6UserReflect.hosts(type, key)) 
       hosts.add(host)
     yield* hosts
   }

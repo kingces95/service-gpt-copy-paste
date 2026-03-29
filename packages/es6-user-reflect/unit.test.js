@@ -211,7 +211,7 @@ describe.each(Cases)('%s', (name, md) => {
     })
     it('reports correct hosts for keys', () => {
       for (const key of expectedKeys) {
-        const hosts = Es6UserReflect.getHosts(type, key, { isStatic })
+        const hosts = Es6UserReflect.hosts(type, key, { isStatic })
         const actual = [ ...hosts ]
         expect(actual).toEqual(expectedHosts[key])
       }

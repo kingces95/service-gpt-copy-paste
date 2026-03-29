@@ -189,7 +189,7 @@ export class Es6Prototype {
     return name in prototype
   }
 
-  *getHosts(type, name) {
+  *hosts(type, name) {
     for (const current of this.hierarchy(type))
       if (this.isHostOf(current, name)) yield current
   }
