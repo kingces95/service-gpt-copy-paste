@@ -34,8 +34,9 @@ export class PartialReflect {
   static getPrototype(type, { isStatic } = { }) {
     return PartialReflect$.getPrototype(type, { isStatic })
   }
-  static *keys(type, { isStatic } = { }) { 
-    return yield* PartialReflect$.keys(type, { isStatic })
+  static *keys(type, { isStatic, includeOverridden } = { }) { 
+    return yield* PartialReflect$.keys(type, { 
+      isStatic, includeOverridden })
   }
   static *ownKeys(type, { isStatic } = { }) {
     return yield* PartialReflect$.ownKeys(type, { isStatic })
@@ -54,8 +55,9 @@ export class PartialReflect {
   static *getDescriptor(type, key, { isStatic } = { }) {
     return yield* PartialReflect$.getDescriptor(type, key, { isStatic })
   }
-  static *descriptors(type, { isStatic } = { }) {
-    return yield* PartialReflect$.descriptors(type, { isStatic })
+  static *descriptors(type, { isStatic, includeOverridden } = { }) {
+    return yield* PartialReflect$.descriptors(type, { 
+      isStatic, includeOverridden })
   }
 
   static *partialTypes(type) {
@@ -74,14 +76,6 @@ export class PartialReflect {
     for (const host of Es6UserReflect.hosts(type, key)) 
       hosts.add(host)
     yield* hosts
-  }
-
-  static getImplementingHost(type, key) {
-    if (PartialTypeReflect.isPartialType(type)) 
-      return PartialReflect$.getImplementingHost(type, key)
-
-    if (key in type.prototype === false) return null
-    return PartialAssociate.getImplementingHost(type, key) || type
   }
 
   static load(pojoOrType) {

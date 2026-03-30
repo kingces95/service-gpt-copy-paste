@@ -89,8 +89,9 @@ export class PartialReflector {
   *ownKeys(type, { isStatic } = { }) {
     yield* this.#reflector(type, isStatic).ownKeys(type, { isStatic })
   }
-  *keys(type, { isStatic } = { }) {
-    yield* this.#reflector(type, isStatic).keys(type, { isStatic })
+  *keys(type, { isStatic, includeOverridden } = { }) {
+    yield* this.#reflector(type, isStatic).keys(type, { 
+      isStatic, includeOverridden })
   }
   isHostOf(type, name, { isStatic } = { }) {
     return this.#reflector(type, isStatic).isHostOf(type, name, { isStatic })
@@ -110,7 +111,8 @@ export class PartialReflector {
   *getDescriptor(type, name, { isStatic } = { }) {
     yield* this.#reflector(type, isStatic).getDescriptor(type, name, { isStatic })
   }
-  *descriptors(type, { isStatic } = { }) {
-    yield* this.#reflector(type, isStatic).descriptors(type, { isStatic })
+  *descriptors(type, { isStatic, includeOverridden } = { }) {
+    yield* this.#reflector(type, isStatic).descriptors(type, { 
+      isStatic, includeOverridden })
   }
 }

@@ -40,13 +40,4 @@ export class PartialAssociate {
     if (PartialTypeReflect.isKnownKey(type, key, { isStatic })) return
     yield* Es6Associate.memberAssociates(type, key, HostLookup, { isStatic })
   }
-
-  static setImplementingHost(type, key, host, { isStatic } = { }) {
-    assert(!PartialTypeReflect.isKnownKey(type, key, { isStatic }))
-    Es6Associate.addMemberAssociate(type, key, FinalHostMap, host, { isStatic })
-  }
-  static getImplementingHost(type, key, { isStatic } = { }) {
-    if (PartialTypeReflect.isKnownKey(type, key, { isStatic })) return null
-    return Es6Associate.getMemberAssociate(type, key, FinalHostMap, { isStatic })
-  }
 }

@@ -303,13 +303,6 @@ export class MemberInfo {
     return true  
   }
 
-  get partialClass() {
-    if (this.isStatic) return null
-    const fn = this.host.ctor
-    const partialClass = InfoReflect.getPartialClass(fn, this.name)
-    return TypeInfo.from(partialClass)
-  }
-
   get isConceptual() {
     if (this.isStatic) return false
     return this.concepts().next().done == false

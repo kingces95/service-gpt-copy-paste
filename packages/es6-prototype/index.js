@@ -174,8 +174,8 @@ export class Es6Prototype {
       const ctor = current.constructor
       yield ctor
       for (const key of Es6Prototype.ownKeys(current)) {
-        if (visited.has(key)) continue
-        if (!includeOverridden && this.isKnownKey(ctor, key)) 
+        if (!includeOverridden && visited.has(key)) continue
+        if (this.isKnownKey(ctor, key)) 
           continue
         visited.add(key)
         yield key

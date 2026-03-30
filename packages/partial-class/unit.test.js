@@ -120,10 +120,6 @@ describe('A PartialClass', () => {
           const keys = [...PartialReflect.ownKeys(myPartialClass)]
           expect(keys).toHaveLength(0)
         })
-        it('should report BasePartialClass as the final host for baseMember', () => {
-          const host = PartialReflect.getImplementingHost(myPartialClass, 'baseMember')
-          expect(host).toBe(basePartialClass)
-        })
         it('should report MyPartialClass and BasePartialClass as hosts for baseMember', () => {
           const hosts = [...PartialReflect.hosts(myPartialClass, 'baseMember')]
           const expected = new Set([ myPartialClass, basePartialClass ])

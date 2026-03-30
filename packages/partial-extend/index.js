@@ -1,5 +1,10 @@
+import { assert } from '@kingjs/assert'
 import { PartialLoader } from '@kingjs/partial-loader'
+import { PartialReflect } from '@kingjs/partial-reflect'
+import { PartialTypeReflect } from '@kingjs/partial-type'
+import { PartialAssociate } from '@kingjs/partial-associate'
 import { Thunk } from '@kingjs/partial-type'
+import { isAbstract } from '@kingjs/abstract'
 
 // Extend takes a targets type and a partial type and merges the 
 // partial type into the target type.
@@ -34,7 +39,59 @@ export function extend(type, partialType) {
     ? type[Thunk](ownKey, descriptor) 
     : descriptor
 
-  const plan = PartialLoader.getPlan(partialType)
-  PartialLoader.define(type, partialType, { createThunk })
-  PartialLoader.associate(type, plan)
+  define(type, partialType, { createThunk })
+  associate(type, partialType)
+}
+
+function associate(type, partialType) {
+  if (PartialLoader.transparent(partialType)) return
+
+  PartialAssociate.addPartialType(type, partialType)
+  for (const current of PartialReflect.partialTypes(partialType))
+    PartialAssociate.addPartialType(type, current)
+
+  let host
+  for (const current of PartialReflect.keys(
+    partialType, { includeOverridden: true })) {
+
+    assert(typeof current == 'string'
+      || typeof current == 'symbol'
+      || typeof current == 'function',
+      `Unexpected type: ${typeof current}`)
+
+    switch (typeof current) {
+      case 'string':
+      case 'symbol':
+        PartialAssociate.addHost(type, current, host)
+        break
+      case 'function':
+        host = current
+        break
+    }
+  }
+}
+
+function define(type, partialType, { createThunk }) {
+  let key
+  for (const current of PartialReflect.descriptors(partialType)) {
+    assert (typeof current == 'string' 
+      || typeof current == 'symbol'
+      || typeof current == 'object'
+      || typeof current == 'function',
+      `Unexpected type: ${typeof current}`)
+
+    switch (typeof current) {
+      case 'string':
+      case 'symbol':
+        key = current
+        break
+      case 'object':
+        const descriptor = current
+        const thunk = createThunk(key, descriptor)
+        PartialTypeReflect.defineProperty(type, key, thunk)
+        break
+      case 'function':
+        break
+    }
+  }
 }

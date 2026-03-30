@@ -37,11 +37,4 @@ export class PartialClassReflect {
       yield collection
     }
   }
-
-  static getPartialClass(type, name) {
-    const host = PartialReflect.getImplementingHost(type, name)
-    if (!PartialClassReflect.isPartialClass(host)) return null
-    if (type == host) return null
-    return host
-  }
 }

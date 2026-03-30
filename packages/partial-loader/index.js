@@ -40,15 +40,14 @@ export class PartialLoader {
 
   static *#ownPartialTypes(type) {
     assert(PartialTypeReflect.isPartialType(type))
+    
     // added by declaration (e.g. by static [Extends] = PartialType)
     yield* PartialLoader.#declaredOwnPartialTypes(type)
 
     // added procedurally (e.g by extend() or implement())
     yield* PartialAssociate.ownPartialTypes(type)
-
-    // added by inheritance (e.g. by extending a partial type)
-    yield* PartialLoader.#inheritedPartialTypes(type)
   }
+
   static *#declaredOwnPartialTypes(type, symbols = PartialType.Declarations) {
 
     // if symbols typeof symbol, pull metadata off of type
@@ -69,22 +68,14 @@ export class PartialLoader {
       }
     }
   }
-  static *#inheritedPartialTypes(type) {
-    const baseType = PartialTypeReflect.baseType(type)
-    if (!baseType) return
-    yield* PartialLoader.#inheritedPartialTypes(baseType)
-    yield baseType
-  }
-  // todo: remove
-  static *declaredOwnPartialTypes$(type, symbols = PartialType.Declarations) {
-    yield* PartialLoader.#declaredOwnPartialTypes(type, symbols)
-  }
+
   static *#transparentTypes(type) {
     for (const partialType of PartialLoader.#ownPartialTypes(type)) {
       if (!PartialLoader.transparent(partialType)) continue
       yield partialType
     }
   }
+
   static *ownPartialTypes(type) {
     for (const partialType of PartialLoader.#ownPartialTypes(type)) {
       if (PartialLoader.transparent(partialType)) continue
@@ -100,6 +91,10 @@ export class PartialLoader {
     function *reverseDepthFirstWalk$(partialType) {
       if (visited.has(partialType)) return
       visited.add(partialType)
+    
+      const baseType = PartialTypeReflect.baseType(partialType)
+      if (baseType)
+        yield* reverseDepthFirstWalk$(baseType)
       
       const ownPartialTypes = [...PartialLoader.ownPartialTypes(partialType)]
       for (const basePartialType of ownPartialTypes.reverse())
@@ -117,6 +112,7 @@ export class PartialLoader {
     if (!descriptor) return null
     return type[PartialType.Compile](descriptor) 
   }
+
   static *ownDescriptors(type) {
     assert(PartialTypeReflect.isPartialType(type))
 
@@ -131,116 +127,9 @@ export class PartialLoader {
       }    
     }
 
-    // TODO: Convert to pojo
     for (const [key, descriptor] of ownKeys) {
       yield key
       yield descriptor
     }
-  }
-
-  static getPlan(rootPartialType) {
-    const visited = new Set()
-    const isTransparent = PartialLoader.transparent(rootPartialType)
-    const plan = [{ 
-      host: isTransparent ? null : rootPartialType,
-      keys: new Set(),
-      descriptors: Object.create(null),
-    }]
-
-    assert(!PartialTypeReflect.isKnown(rootPartialType))
-
-    function reverseDepthFirstWalk$(partialType) {
-      assert(PartialTypeReflect.isPartialType(partialType))    
-        
-      const step = plan[plan.length - 1]
-      const { keys, descriptors } = step
-
-      if (visited.has(partialType)) return new Set()
-        visited.add(partialType)
-      
-      const ownPartialTypes = [...PartialLoader.ownPartialTypes(partialType)]
-      for (const basePartialType of ownPartialTypes.reverse()) {
-        plan.push({
-          host: basePartialType,
-          keys: new Set(),
-          descriptors: Object.create(null),
-        })
-        for (const key of reverseDepthFirstWalk$(basePartialType))
-          keys.add(key)
-      }
-
-      let ownKey
-      for (const current of PartialLoader.ownDescriptors(partialType)) {
-        switch (typeof current) {
-          case 'string':
-          case 'symbol': 
-            ownKey = current
-            keys.add(ownKey)
-            break
-          case 'object':
-            descriptors[ownKey] = current
-            break
-          default: assert(false, `Unexpected type: ${typeof current}`)
-        }
-      }
-
-      return keys
-    }
-
-    reverseDepthFirstWalk$(rootPartialType)
-    return plan.reverse()
-  }
-
-  static associate(type, plan) {
-    // cache elements of the tree traversal that created the plan
-
-    for (let { host, keys, descriptors } of plan) {
-      if (!host) continue
-
-      if (type != host)
-        PartialAssociate.addPartialType(type, host)
-
-      for (const key of keys)
-        PartialAssociate.addHost(type, key, host)
-
-      for (const key of Reflect.ownKeys(descriptors)) {
-        const descriptor = descriptors[key]
-        if (!isAbstract(descriptor))
-          PartialAssociate.setImplementingHost(type, key, host)
-      }
-    }    
-  }
-
-  static define$(prototype, { createThunk, type }) {
-    const basePrototype = Object.getPrototypeOf(prototype)
-    if (basePrototype) 
-      PartialLoader.define$(basePrototype, { createThunk, type })
-
-    const ctor = prototype.constructor
-    for (const key of Es6UserReflect.ownKeys(ctor)) {
-      const descriptor = Es6UserReflect.getOwnDescriptor(ctor, key)
-      const thunk = createThunk(key, descriptor)
-      if (!descriptor.configurable) continue
-      PartialTypeReflect.defineProperty(type, key, thunk)
-    }
-  }
-
-  static define(type, partialType, {
-    createThunk = (ownKey, descriptor) => descriptor } = { }) {
-    
-    const plan = PartialLoader.getPlan(partialType)
-    for (let { descriptors } of plan) {
-      for (const key of Reflect.ownKeys(descriptors)) {
-        const descriptor = descriptors[key]
-        const thunk = createThunk(key, descriptor)
-        PartialTypeReflect.defineProperty(type, key, thunk)
-      }
-    }
-
-    // TODO: Remove above once logic is replicated below with
-    // partial prototype.
-
-    // PartialLoader.define$(
-    //   PartialLoader.getPrototype(partialType), { createThunk, type })
   }
 }

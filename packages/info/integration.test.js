@@ -45,10 +45,6 @@ describe('MyClass', () => {
           const host = memberInfo.host
           expect(host.equals(info)).toBe(true)
         })
-        it('should report partial class', () => {
-          const partialClass = memberInfo.partialClass
-          expect(partialClass.equals(myPartialClassInfo)).toBe(true)
-        })
       })
     })
   })
@@ -81,10 +77,6 @@ describe('MyClass', () => {
       it('should report MyClass as host', () => {
         const rootHost = memberInfo.host
         expect(rootHost.equals(info)).toBe(true)
-      })
-      it('should report MyPartialClass as its partialClass', () => {
-        const partialClass = memberInfo.partialClass
-        expect(partialClass.equals(myPartialClassInfo)).toBe(true)
       })
       it('should report null parent', () => {
         const parent = memberInfo.parent()
@@ -208,10 +200,6 @@ describe('MyClass', () => {
           const expected = [TypeInfo.from(myConcept)]
           expect(concepts).toEqual(expected)
         })
-        it('should report no partial class', () => {
-          const partialClass = memberInfo.partialClass
-          expect(partialClass).toBeNull()
-        })
       })
       describe('and used as an extension to another class', () => {
         let myExtendedClass
@@ -248,16 +236,6 @@ describe('MyClass', () => {
         const expectedConcepts = [TypeInfo.from(myConcept)]
         expect(actualConcepts).toEqual(expectedConcepts)
       })
-      describe('has a merged member', () => {
-        let memberInfo
-        beforeEach(() => {
-          memberInfo = info.getMember('myMethod')
-        })
-        it('should report MyPartialClass as its partialClass', () => {
-          const partialClass = memberInfo.partialClass
-          expect(partialClass.equals(myPartialClassInfo)).toBe(true)
-        })
-      })
     })
     describe('merged with MyConcept then MyPartialClass', () => {
       let myPartialClass
@@ -280,16 +258,6 @@ describe('MyClass', () => {
         const actualConcepts = [...info.concepts()]
         const expectedConcepts = [TypeInfo.from(myConcept)]
         expect(actualConcepts).toEqual(expectedConcepts)
-      })
-      describe('has a merged member', () => {
-        let memberInfo
-        beforeEach(() => {
-          memberInfo = info.getMember('myMethod')
-        })
-        it('should report MyPartialClass as its partialClass', () => {
-          const partialClass = memberInfo.partialClass
-          expect(partialClass.equals(myPartialClassInfo)).toBe(true)
-        })
       })
     })
   })

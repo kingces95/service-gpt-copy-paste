@@ -78,7 +78,7 @@ describe('A type', () => {
         implement(type, MyConcept)
         expect(type.prototype).toBeInstanceOf(MyConcept)
       })
-      it('should be an declared concept', () => {
+      it('should be a declared concept', () => {
         const actual = [...PartialReflect.partialTypes(type)]
         const expected = [MyConcept]
         expect(actual).toEqual(expected)

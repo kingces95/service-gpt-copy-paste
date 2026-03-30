@@ -58,9 +58,6 @@ export class InfoReflect {
   static *partialClasses(type) {
     yield* PartialClassReflect.partialClasses(type)
   }
-  static getPartialClass(type, name) {
-    return PartialClassReflect.getPartialClass(type, name)
-  }
 
   // ConceptReflect proxies
   static *concepts(type) {

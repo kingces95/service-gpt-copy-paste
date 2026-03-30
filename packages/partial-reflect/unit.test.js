@@ -107,10 +107,6 @@ describe('MyPojoType', () => {
       it('should have the method on type', () => {
         expect(myType.prototype.method).toBe(method)
       })
-      it('should have myType as the host of the method', () => {
-        const host = PartialReflect.getImplementingHost(myType, 'method')
-        expect(host).toBe(myType)
-      })
       it('should have no hosts for the method', () => {
         const lookup = [...PartialReflect.hosts(myType, 'method')]
         expect(lookup).toHaveLength(1)
@@ -185,11 +181,6 @@ describe('PartialClass', () => {
     it('should have no member names or symbols', () => {
       const keys = [...PartialReflect.keys(MyExtension).filter(isKey)]
       expect(keys).toHaveLength(0)
-    })
-    it('should return null for missing member host', () => {
-      const host = PartialReflect.getImplementingHost(
-        MyExtension, 'missingMember')
-      expect(host).toBe(null)
     })
     it('should return null for missing member descriptor', () => {
       let descriptor = null
@@ -267,10 +258,6 @@ describe('PartialClass', () => {
             const declarations = 
               [...PartialReflect.partialTypes(myType)]
             expect(declarations).toEqual([MyExtension])
-          })
-          it('should have extension as the host of the method', () => {
-            const host = PartialReflect.getImplementingHost(myType, 'method')
-            expect(host).toBe(MyExtension)
           })
         })
       })
@@ -384,29 +371,6 @@ describe('PartialClass', () => {
                     expect(keys).toContain('subSubMethod')
                     expect(keys).toHaveLength(3)
                   })
-
-                  describe('after defining on myType', () => {
-                    beforeEach(() => {
-                      extend(myType, MyExtension)
-                    })
-                    it('should have MySubSubExtension as member host for subSubMethod', () => {
-                      const host = 
-                        PartialReflect.getImplementingHost(myType, 'subSubMethod')
-                      expect(host).toBe(MySubSubExtension)
-                    })
-                  })
-                })
-              })
-
-              describe('after defining on myType', () => {
-                beforeEach(() => {
-                  extend(myType, MyExtension)
-                })
-
-                it('should have MySubExtension as member host for subMethod', () => {
-                  const host = 
-                    PartialReflect.getImplementingHost(myType, 'subMethod')
-                  expect(host).toBe(MySubExtension)
                 })
               })
             })
@@ -422,10 +386,6 @@ describe('PartialClass', () => {
                 expect(myType.prototype.method).toBe(myExtensionMethod)
                 // not mySubExtensionMethod
                 expect(myType.prototype.method).not.toBe(mySubExtensionMethod)
-              })
-              it('should have host of MyExtension', () => {
-                const host = PartialReflect.getImplementingHost(myType, 'method')
-                expect(host).toBe(MyExtension)
               })
             })
             describe('and extending MySubType', () => {

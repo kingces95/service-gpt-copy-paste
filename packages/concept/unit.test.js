@@ -77,12 +77,6 @@ describe('MyConcept', () => {
       const expected = [ MyConcept ]
       expect(actual).toEqual(expected)
     })
-    it('should not report MyConcept as host for the member', () => {
-      // the final *non-abstract* implementation of the member.
-      const host = PartialReflect.getImplementingHost(MyConcept, 'member')
-      // TODO: Revert test? Or allow abstract members if no implementation?
-      expect(host).toBe(MyConcept)
-    })
     it('should be found on an object with the member', () => {
       expect({ member() { } }).toBeInstanceOf(MyConcept)
     })

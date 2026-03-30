@@ -643,11 +643,6 @@ describe('Member', () => {
         .map(concept => TypeInfo.from(concept))
       expect(actual).toEqualAsSet(expected)
     })
-    it('should have expected merged PartialClass', () => {
-      const actual = info.partialClass
-      const expected = TypeInfo.from(md.partialClass)
-      expect(actual).toBe(expected)
-    })
     it('has expected predicates', () => {
       expect(info.isNonPublic).toBe(!!md.isNonPublic)
       expect(info.isAbstract).toBe(!!md.isAbstract)
