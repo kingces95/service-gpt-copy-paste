@@ -23,17 +23,17 @@ const KnownStaticKeys = [ 'length', 'name', 'prototype',
 ]
 
 export class PartialReflector {
-  #es6UserReflector
-  #partialReflector
+  #typeReflector
+  #partialTypeReflector
 
   constructor() {
-    this.#es6UserReflector = new Es6Reflector({
+    this.#typeReflector = new Es6Reflector({
       knownTypes: KnownTypes,
       knownInstanceKeys: KnownInstanceKeys,
       knownStaticKeys: KnownStaticKeys,
     })
     
-    this.#partialReflector = new Es6Reflector({
+    this.#partialTypeReflector = new Es6Reflector({
       knownTypes: KnownTypes,
       knownInstanceKeys: KnownInstanceKeys,
       knownStaticKeys: KnownStaticKeys,
@@ -44,8 +44,8 @@ export class PartialReflector {
   #reflector(type) { 
     const isPartialType = PartialTypeReflect.isPartialType(type)
     return isPartialType
-      ? this.#partialReflector
-      : this.#es6UserReflector 
+      ? this.#partialTypeReflector
+      : this.#typeReflector 
   }
 
   typeof(type, key, descriptor) {
@@ -78,38 +78,48 @@ export class PartialReflector {
     return this.#reflector(type).isAbstract(type) 
   }
   isKnown(type, { isStatic } = { }) {
-    return this.#reflector(type, isStatic).isKnown(type, { isStatic })
+    return this.#reflector(type, isStatic).isKnown(
+      type, { isStatic })
   }
   isKnownKey(type, name, { isStatic } = { }) {
-    return this.#reflector(type, isStatic).isKnownKey(type, name, { isStatic })
+    return this.#reflector(type, isStatic).isKnownKey(
+      type, name, { isStatic })
   }
   hasOwnKey(type, name, { isStatic } = { }) {
-    return this.#reflector(type, isStatic).hasOwnKey(type, name, { isStatic })
+    return this.#reflector(type, isStatic).hasOwnKey(
+      type, name, { isStatic })
   }
   *ownKeys(type, { isStatic } = { }) {
-    yield* this.#reflector(type, isStatic).ownKeys(type, { isStatic })
+    yield* this.#reflector(type, isStatic).ownKeys(
+      type, { isStatic })
   }
   *keys(type, { isStatic, includeOverridden } = { }) {
     yield* this.#reflector(type, isStatic).keys(type, { 
       isStatic, includeOverridden })
   }
   isHostOf(type, name, { isStatic } = { }) {
-    return this.#reflector(type, isStatic).isHostOf(type, name, { isStatic })
+    return this.#reflector(type, isStatic).isHostOf(
+      type, name, { isStatic })
   }
   *hosts(type, name, { isStatic } = { }) {
-    yield* this.#reflector(type, isStatic).hosts(type, name, { isStatic })
+    yield* this.#reflector(type, isStatic).hosts(
+      type, name, { isStatic })
   }
   getImplementingHost(type, name, { isStatic } = { }) {
-    return this.#reflector(type, isStatic).getImplementingHost(type, name, { isStatic })
+    return this.#reflector(type, isStatic).getImplementingHost(
+      type, name, { isStatic })
   }
   getOwnDescriptor(type, name, { isStatic } = { }) {
-    return this.#reflector(type, isStatic).getOwnDescriptor(type, name, { isStatic })
+    return this.#reflector(type, isStatic).getOwnDescriptor(
+      type, name, { isStatic })
   }
   *ownDescriptors(type, { isStatic } = { }) {
-    yield* this.#reflector(type, isStatic).ownDescriptors(type, { isStatic })
+    yield* this.#reflector(type, isStatic).ownDescriptors(
+      type, { isStatic })
   }
   *getDescriptor(type, name, { isStatic } = { }) {
-    yield* this.#reflector(type, isStatic).getDescriptor(type, name, { isStatic })
+    yield* this.#reflector(type, isStatic).getDescriptor(
+      type, name, { isStatic })
   }
   *descriptors(type, { isStatic, includeOverridden } = { }) {
     yield* this.#reflector(type, isStatic).descriptors(type, { 

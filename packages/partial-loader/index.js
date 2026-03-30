@@ -40,7 +40,7 @@ export class PartialLoader {
 
   static *#ownPartialTypes(type) {
     assert(PartialTypeReflect.isPartialType(type))
-    
+
     // added by declaration (e.g. by static [Extends] = PartialType)
     yield* PartialLoader.#declaredOwnPartialTypes(type)
 
@@ -81,6 +81,11 @@ export class PartialLoader {
       if (PartialLoader.transparent(partialType)) continue
       yield partialType
     }
+  }
+
+  // todo: remove; in use by tests
+  static *declaredOwnPartialTypes$(type, symbols = PartialType.Declarations) {
+    yield* PartialLoader.#declaredOwnPartialTypes(type, symbols)
   }
 
   static *hierarchy(rootPartialType) {

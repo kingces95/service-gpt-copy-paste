@@ -47,45 +47,6 @@ export class Es6Prototype {
     return Object.getOwnPropertyDescriptor(prototype, name)
   }
 
-  // Algorithms for querying a prototype chain. Other type systems use
-  // the same algorithms by carful construction of their own prototype
-  // chains. 
-
-  // For each of the following examples, the constructed prototype chain 
-  // each link  has its descriptors copied from an original object and 
-  // a next link that is custom to the construction. For this reason, 
-  // the constructed prototype chain does not round trip via 
-  // .constructor.prototype. This is a key assumption that allows for the 
-  // flexibility of the examples. Consequently, .baseType is the one 
-  // notable omission from Es6Reflector.
-
-  // == Static members ==
-  // For example, static members are typically queryied by walking
-  // the ctor chain, but since the ctor chain is not homogeneous, this
-  // complicates callers who would have to distinguish between ctors and
-  // non-ctors in the chain. This is due to the fact that eventually all 
-  // ctor chains terminate in Function.prototype which has as its prototype 
-  // Object.prototype. Instead a custom protoype chain is constructed where:
-  // - No links are ctor by definition of a prototype chain.
-  // - All links have a .constructor property that is the type of interest.
-  //   (And .constructor becomes a reserved work for static members.)
-  // - The final link can be constructed, given the following, to be:
-  //    - class { }, Object with no members of interest
-  //    - class extends Object { }, Object with members of interest
-  //    - class extends null { }, not Object at all
-  // This implies that there exists a prototype link with a .constructor of 
-  // Object that has different members -- one with and one without. A bit
-  // odd but *less* odd then the actual JavaScript ctor chain.
-
-  // == Multiple inheritance ==
-  // For another example, a type system that supports multipule inheritance
-  // can construct a prototype chain that includes all base types in an 
-  // order consistent with the method resolution order of the type system
-  // (typically reverse post-order depth first traversal). Somewhat
-  // surprisingly (!), this prototype chain construction allows for querying 
-  // a multipule inheritance hierarchy using the same algorithms as a single 
-  // inheritance hierarchy. 
-
   #getPrototypeFn
   #knownTypes
   #knownKeys
@@ -117,7 +78,6 @@ export class Es6Prototype {
       yield link
     }
   }
-
 
   isKnown(type) {
     return this.#knownTypes.has(type)
@@ -304,21 +264,69 @@ export class Es6PrototypeCache {
 }
 
 export class Es6StaticPrototype extends Es6Prototype {
+  // Transform ES6 static prototype chain as below.
+
+  // These constructions allow for the same algorithms used to query 
+  // the instance prototype chain to be used to query the static
+  // prototype chain. For example,
+  
+  //    .keys() and .descriptors() return just the static members. 
+  //    The insance members found on Function.prototype and 
+  //    Object.prototype are excluded because they are not included 
+  //    in the chain.
+
+  //    .baseTypes() and .hierarchy() return the same list of types as 
+  //    would be returned by the instance prototype chain. This unifies
+  //    the static and instance prototype chains.
+
+  // Note the chain link labeled Object and Object* both have a 
+  // .constructor pointing to the ES6 Object function, but only 
+  // Object* has a copy of the static members of Object. The Object 
+  // link has no members. 
+  
+  // The one gotcha is Object* is never directly returned as a prototype of
+  // any type, but is only used as a link in the prototype chain when a 
+  // type extends Object. This is a bit odd but less odd than the actual
+  // JavaScript ctor chain. This is mitigated by higher level Reflectors 
+  // that only return user defined members in which case all members of 
+  // Object are hidden anyway.
+
+  // The other small gotcha is that, unlike ES6, .constructor is reserved 
+  // as a *static* member. A small price to pay!
+
+  // class A { }
+  // class A extends Object { }
+
+  // ES6 Class Chain:                   Static Prototype Chain:
+  // A                                  A
+  // └── Function.prototype       ->    └── Object
+  //     └── Object.prototype               └── null
+  //         └── null     
+
+  // class A extends Object { }
+
+  // ES6 Class:                         Static Prototype Chain:
+  // A                                  A 
+  // └── Object                   ->    └── Object*
+  //     └── Function.prototype             └── null
+  //         └── Object.prototype           
+  //             └── null  
+
   static #cache
 
   static {
-    const objectNullPrototype = Es6Prototype.createLink(Object)
-    const objectPrototype = Es6Prototype.createLink(
+    const objectCtorWithoutStatics = Es6Prototype.createLink(Object)
+    const objectCtorWithStatics = Es6Prototype.createLink(
       Object, null, Object.getOwnPropertyDescriptors(Object))
 
     const cache = new Es6PrototypeCache(type => {
       // base case: class { } or class extends null { }
       if (type == Function.prototype) 
-        return objectNullPrototype
+        return objectCtorWithoutStatics
 
       // base case: class extends Object { }
       if (type == Object) 
-        return objectPrototype
+        return objectCtorWithStatics
 
       // recursive case: class extends Base { }
       const baseType = Object.getPrototypeOf(type)
