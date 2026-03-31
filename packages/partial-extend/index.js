@@ -51,26 +51,6 @@ function associate(type, partialType) {
     if (!PartialTypeReflect.isPartialType(current)) continue
     PartialAssociate.addPartialType(type, current)
   }
-
-  let host
-  for (const current of PartialReflect.keys(
-    partialType, { includeOverridden: true })) {
-
-    assert(typeof current == 'string'
-      || typeof current == 'symbol'
-      || typeof current == 'function',
-      `Unexpected type: ${typeof current}`)
-
-    switch (typeof current) {
-      case 'string':
-      case 'symbol':
-        PartialAssociate.addHost(type, current, host)
-        break
-      case 'function':
-        host = current
-        break
-    }
-  }
 }
 
 function define(type, partialType, { createThunk }) {

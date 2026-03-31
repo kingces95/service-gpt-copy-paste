@@ -1,4 +1,3 @@
-import { PartialLoader } from '@kingjs/partial-loader'
 import { 
   PartialType, 
   PartialTypeReflect,
@@ -10,7 +9,7 @@ import { Es6Reflector } from '@kingjs/es6-reflector'
 import { 
   getPrototype as getPartialPrototype 
 } from '@kingjs/partial-prototype'
-import { PartialLoader } from '@kingjs/partial-loader'
+
 
 // Unfies reflection operations over PartialType and Es6 types which
 // may have been merged with vairous PartialTypes (i.e.PartialClass,
