@@ -94,7 +94,7 @@ export class PartialLoader {
       if (visited.has(type)) return
       visited.add(type)
     
-      const baseType = PartialTypeReflect.baseType(type)
+      const baseType = PartialTypeReflect.getBaseType(type)
       if (baseType)
         yield* reverseDepthFirstWalk$(baseType)
       

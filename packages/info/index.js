@@ -64,7 +64,7 @@ export class TypeInfo {
   get isTransparent() { return this.isExtensions }
 
   get base() { 
-    const base = TypeInfo.from(InfoReflect.baseType(this.ctor)) 
+    const base = TypeInfo.from(InfoReflect.getExtendedType(this.ctor)) 
     if (!this.isAbstract) return base
     if (base == TypeInfo.Object) return null
     return base

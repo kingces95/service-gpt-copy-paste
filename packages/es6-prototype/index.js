@@ -102,6 +102,16 @@ export class Es6Prototype {
     yield* hierarchy
   }
 
+  getExtendedType(type) {
+    let result = Object.getPrototypeOf(type)
+    if (result == Function.prototype) 
+      result = Object
+
+    for (const base of this.baseTypes(type))
+      if (base == result) return base
+    return null
+  }
+
   isExtensionOf(type, targetType) {
     for (const base of this.baseTypes(type))
       if (base == targetType) return true

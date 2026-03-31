@@ -8,8 +8,9 @@ const cache = new Es6PrototypeCache(partialType => {
 })
 
 function createPrototype(type) {
-  return PartialLoader.hierarchy(type)
-    .reduce((prototype, currentType) => {
+  const hierarchy = [...PartialLoader.hierarchy(type)]
+  
+  return hierarchy.reduce((prototype, currentType) => {
     const descriptors = { }
 
     let ownKey

@@ -1,3 +1,4 @@
+import { assert } from '@kingjs/assert'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { ConceptReflect } from "@kingjs/concept"
 import { PartialClassReflect } from '@kingjs/partial-class'
@@ -33,13 +34,14 @@ export class InfoReflect {
   static *descriptors(type, { isStatic } = { }) { 
     yield* PartialReflect.descriptors(type, { isStatic })
   }
+  
+  static getExtendedType(type) {
+    return PartialReflect.getExtendedType(type)
+  }
 
   // PartialTypeReflect proxies
   static isKnown(type) { 
     return PartialTypeReflect.isKnown(type)
-  }
-  static baseType(type) { 
-    return PartialTypeReflect.baseType(type)
   }
 
   // PartialClassReflect proxies

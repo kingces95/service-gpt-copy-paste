@@ -54,7 +54,7 @@ export class PartialTypeReflect {
     if (type == PartialType) return true
     return Object.getPrototypeOf(type) == PartialType
   }
-  static baseType(type) {
+  static getBaseType(type) {
     if (!type) return null
 
     if (PartialTypeReflect.isPartialUrType(type))
@@ -69,7 +69,7 @@ export class PartialTypeReflect {
   static *hierarchy(type) {
     while (type) {
       yield type
-      type = PartialTypeReflect.baseType(type)
+      type = PartialTypeReflect.getBaseType(type)
     }
   }
   static isPartialType(type) {

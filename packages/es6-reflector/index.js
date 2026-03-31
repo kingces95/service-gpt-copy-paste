@@ -54,6 +54,9 @@ export class Es6Reflector {
   *baseTypes(type) { 
     yield* this.#prototype().baseTypes(type) 
   }
+  getExtendedType(type) {
+    return this.#prototype().getExtendedType(type)
+  }
   isExtensionOf(type, targetType) { 
     return this.#prototype().isExtensionOf(type, targetType) 
   }
