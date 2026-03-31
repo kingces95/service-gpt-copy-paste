@@ -66,12 +66,6 @@ export class PartialTypeReflect {
 
     return result
   }
-  static *hierarchy(type) {
-    while (type) {
-      yield type
-      type = PartialTypeReflect.getBaseType(type)
-    }
-  }
   static isPartialType(type) {
     if (!Es6UserReflect.isExtensionOf(type, PartialType)) return false
     if (PartialTypeReflect.isPartialUrType(type)) return false
