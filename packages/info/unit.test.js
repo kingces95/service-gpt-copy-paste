@@ -4,7 +4,7 @@ import { TypeInfo } from "@kingjs/info"
 import { Concept, Implements } from '@kingjs/concept'
 import { PartialType } from '@kingjs/partial-type'
 import { PartialClass, Extends } from '@kingjs/partial-class'
-import { PartialReflect } from '@kingjs/partial-reflect'
+import { PartialLoader } from '@kingjs/partial-loader'
 import { Extensions } from '@kingjs/extensions'
 import { } from "@kingjs/info-to-pojo"
 import { toEqualAsSet } from '@kingjs/vitest'
@@ -68,7 +68,7 @@ const ConceptMd = {
 }
 
 const MyExtensionsMd = {
-  ctor: PartialReflect.load({ }),
+  ctor: PartialLoader.load({ }),
   toString: '[partialPojoInfo]',
   isKnown: false,
   isTransparent: true,
@@ -430,7 +430,7 @@ const MyPartialClassExtensionMemberMd = {
 
 const MyPojoMemberMd = {
   name: 'member',
-  cls: PartialReflect.load({ member() { } }),
+  cls: PartialLoader.load({ member() { } }),
   type: 'method',
   isMethod: true,
   toString: 'member, method, [partialPojoInfo]',
@@ -441,7 +441,7 @@ const MyPojoMemberMd = {
 
 const MyPojoLambdaMd = {
   name: 'member',
-  cls: PartialReflect.load({ member: () => { } }),
+  cls: PartialLoader.load({ member: () => { } }),
   type: 'method',
   isMethod: true,
   toString: 'member, method, [partialPojoInfo]',

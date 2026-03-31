@@ -43,7 +43,7 @@ describe('MyConcept', () => {
     expect(ConceptReflect.isConcept(MyConcept)).toBe(true)
   })
   it('should have not inherited concepts', () => {
-    const actual = [...PartialReflect.partialTypes(MyConcept)]
+    const actual = [...ConceptReflect.concepts(MyConcept)]
     const expected = [ ]
     expect(actual).toEqual(expected)
   })

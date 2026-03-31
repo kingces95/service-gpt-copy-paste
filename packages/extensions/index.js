@@ -52,34 +52,34 @@ import { isPojo } from '@kingjs/pojo-test'
 // The transformation from pojo to Extensions allows for some slick
 // declarative patterns for defining members. For example, a method 
 // can be defined like this:
-//    const MyPartial = PartialReflect.load({
+//    const MyPartial = PartialLoader.load({
 //      myMethod() { ... }
 //    }) 
 
 // The method could also be defined using a descriptor:
-//    const MyPartial = PartialReflect.load({
+//    const MyPartial = PartialLoader.load({
 //      myMethod: { value: function() { ... } }
 //    })
 
 // Or as a lambda:
-//    const MyPartial = PartialReflect.load({
+//    const MyPartial = PartialLoader.load({
 //      myMethod: () => { ... }
 //    })
 
 // Or using a named function like 'abstract':
 //    import { abstract } from '@kingjs/abstract'
-//    const MyPartial = PartialReflect.load({
+//    const MyPartial = PartialLoader.load({
 //      myMethod: abstract
 //    })
 
 // An accessor can be defined like this:
-//    const MyPartial = PartialReflect.load({
+//    const MyPartial = PartialLoader.load({
 //      get myProperty() { ... },
 //      set myProperty(value) { ... },
 //    })
 
 // A constant can be defined like this:
-//    const MyPartial = PartialReflect.load({
+//    const MyPartial = PartialLoader.load({
 //      myConstant: { 
 //        value: 42, 
 //        enumerable: true, 

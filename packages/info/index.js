@@ -89,10 +89,12 @@ export class TypeInfo {
     const host = this
     const fn = this.ctor
     let owner, descriptor
+
+    found:
     for (const current of InfoReflect.getDescriptor(fn, key, { isStatic })) {
       switch (typeof current) {
         case 'function': owner = current; break
-        case 'object': descriptor = current; break
+        case 'object': descriptor = current; break found
         default: assert(false, `Unexpected type: ${typeof current}`)
       }
     }

@@ -14,7 +14,7 @@ describe('MyClass that extends MyBase with MySymbol, MyType', () => {
   let myBaseType
   let myMetadata
   beforeEach(() => {
-    myBase = class MyBase { }
+    myBase = class MyBase { }   
     myClass = class MyClass extends myBase { } 
     myBaseType = class MyBaseType { }
     myType = class MyType extends myBaseType { }

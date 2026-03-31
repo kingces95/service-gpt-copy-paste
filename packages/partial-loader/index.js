@@ -39,7 +39,7 @@ export class PartialLoader {
   }
 
   static *#ownPartialTypes(type) {
-    assert(PartialTypeReflect.isPartialType(type))
+    // assert(PartialTypeReflect.isPartialType(type))
 
     // added by declaration (e.g. by static [Extends] = PartialType)
     yield* PartialLoader.#declaredOwnPartialTypes(type)
@@ -52,6 +52,7 @@ export class PartialLoader {
 
     // if symbols typeof symbol, pull metadata off of type
     if (typeof symbols == 'symbol') symbols = type[symbols]
+    if (!symbols) return
     assert(symbols != null, 'failed to find metadata symbols on type.')
     
     // symbols like { [TheSymbol]: { expectedType, map } }
@@ -89,7 +90,7 @@ export class PartialLoader {
   }
 
   static *hierarchy(rootPartialType) {
-    assert(PartialTypeReflect.isPartialType(rootPartialType))
+    // assert(PartialTypeReflect.isPartialType(rootPartialType))
 
     const visited = new Set()
 
@@ -112,14 +113,19 @@ export class PartialLoader {
   }
 
   static getOwnDescriptor(type, key) {
-    assert(PartialTypeReflect.isPartialType(type))
+    // assert(PartialTypeReflect.isPartialType(type))
+
     const descriptor = Es6UserReflect.getOwnDescriptor(type, key)
     if (!descriptor) return null
+
+    if (!PartialTypeReflect.isPartialType(type))
+      return descriptor
+    
     return type[PartialType.Compile](descriptor) 
   }
 
   static *ownDescriptors(type) {
-    assert(PartialTypeReflect.isPartialType(type))
+    // assert(PartialTypeReflect.isPartialType(type))
 
     const ownKeys = new Map()
     for (const current of [

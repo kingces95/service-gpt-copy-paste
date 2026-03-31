@@ -7,6 +7,7 @@ import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { PartialType, PartialTypeReflect } from '@kingjs/partial-type'
 import { extend } from '@kingjs/partial-extend'
+import { PartialLoader } from '@kingjs/partial-loader'
 
 describe('PartialType', () => {
   it('cannot be instantiated', () => {
@@ -45,7 +46,7 @@ describe('A type', () => {
     beforeEach(() => {
       method = function method() { }
       extend(type, 
-        PartialReflect.load({ method }))
+        PartialLoader.load({ method }))
     })
 
     it('should have the method', () => {
@@ -87,7 +88,7 @@ describe('A type', () => {
 describe('MyPojoType', () => {
   let MyPojoType
   beforeEach(() => {
-    MyPojoType = PartialReflect.load({ })
+    MyPojoType = PartialLoader.load({ })
   })
 
   describe('with method', () => {
@@ -219,7 +220,7 @@ describe('PartialClass', () => {
     describe('with MyAnonymousSubExtension', () => {
       let MyAnonymousSubExtension
       beforeEach(() => {
-        MyAnonymousSubExtension = PartialReflect.load({ })
+        MyAnonymousSubExtension = PartialLoader.load({ })
         MyExtension[ExtensionSymbol] = [ MyAnonymousSubExtension ]
       })
 

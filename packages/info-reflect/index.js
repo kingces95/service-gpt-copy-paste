@@ -47,10 +47,6 @@ export class InfoReflect {
     yield* PartialReflect.descriptors(type, { isStatic })
   }
 
-  static *partialTypes(type) {
-    yield* PartialReflect.partialTypes(type)
-  }
-
   // PartialClassReflect proxies
   static *ownPartialClasses(type) {
     yield* PartialClassReflect.ownPartialClasses(type)

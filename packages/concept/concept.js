@@ -86,7 +86,7 @@ export class ConceptReflect {
   }
 
   static *concepts(type) {
-    for (const object of PartialReflect.partialTypes(type)) {
+    for (const object of PartialReflect.baseTypes(type)) {
       if (!ConceptReflect.isConcept(object)) continue
       yield object
     }

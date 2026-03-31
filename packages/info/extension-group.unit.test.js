@@ -3,7 +3,7 @@ import { beforeEach } from 'vitest'
 import { ClassInfo } from "@kingjs/info"
 import { } from "@kingjs/info-to-pojo"
 import { PartialClass } from '@kingjs/partial-class'
-import { PartialReflect } from '@kingjs/partial-reflect'
+import { PartialLoader } from '@kingjs/partial-loader'
 import { abstract, isAbstract } from '@kingjs/abstract'
 
 describe('TypeInfo for PartialClass', () => {
@@ -111,13 +111,13 @@ describe('A member', () => {
     //   'static const hidden sealed prototype { value: object }' ],
     ])('%s', (_, name, cls, expected) => {
     it('has a toString', async () => {
-      const fnInfo = ClassInfo.from(PartialReflect.load(cls))
+      const fnInfo = ClassInfo.from(PartialLoader.load(cls))
       const member = fnInfo.getOwnMember(name) 
         ?? fnInfo.getOwnStaticMember(name)
       expect(member.toString()).toBe(expected) 
     })
     it('does not equal Object.toString member', async () => {
-      const fnInfo = ClassInfo.from(PartialReflect.load(cls))
+      const fnInfo = ClassInfo.from(PartialLoader.load(cls))
       const member = fnInfo.getOwnMember(name) 
         ?? fnInfo.getOwnStaticMember(name)
       const objectFnInfo = ClassInfo.from(Object)

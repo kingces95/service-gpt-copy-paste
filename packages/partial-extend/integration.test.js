@@ -4,7 +4,7 @@ import { TypeInfo } from "@kingjs/info"
 import { extend } from '@kingjs/partial-extend'
 import { } from "@kingjs/info-to-pojo"
 import { PartialClass } from '@kingjs/partial-class'
-import { PartialReflect } from '@kingjs/partial-reflect'
+import { PartialLoader } from '@kingjs/partial-loader'
 
 const filter = {
   isNonPublic: false, isKnown: false,
@@ -76,7 +76,7 @@ describe('Kitchen sink', () => {
       member1() { return 42 }
       member2() { return 42 }
     }],
-    ['lambda', PartialReflect.load({
+    ['lambda', PartialLoader.load({
       getter0: { get: () => { } },
       get getter1() { },
 

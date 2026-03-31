@@ -8,14 +8,14 @@ const PartialTypes = Symbol('PartialType.partialTypes')
 // For example, PartialTypes is used by PartialClass to designate
 // the Extends symbol as containing an adjacency list to other PartialType
 // types of type PartialClass and Extensions. Also specified is
-// a coercion method PartialReflect.load is used to transform POJOs 
+// a coercion method PartialLoader.load is used to transform POJOs 
 // into PartialClass types:
 
 //    class PartialClass extends PartialType {
 //      static [PartialType.Declarations] = {
 //        [Extends]: { 
 //          expectedType: [ PartialClass, Extensions ],
-//          map: PartialReflect.load,
+//          map: PartialLoader.load,
 //        }
 //      }
 //    }

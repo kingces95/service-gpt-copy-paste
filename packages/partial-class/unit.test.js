@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { PartialReflect, isKey } from '@kingjs/partial-reflect'
-import { PartialClass, Extends } from '@kingjs/partial-class'
+import { 
+  PartialClass, 
+  PartialClassReflect, 
+  Extends } from '@kingjs/partial-class'
 import { extend } from '@kingjs/partial-extend'
 
 describe('A type', () => {
@@ -10,7 +13,7 @@ describe('A type', () => {
     type = class { }
   })
   it('should yield no extensions', () => {
-    const declarations = [...PartialReflect.partialTypes(type)]
+    const declarations = [...PartialClassReflect.partialClasses(type)]
     expect(declarations).toHaveLength(0)
   })
   describe('after being extended by a PartialClass with a declared Extension', () => {
@@ -23,7 +26,7 @@ describe('A type', () => {
       extend(type, extension)
     })
     it('should yield the extensions', () => {
-      const declarations = [...PartialReflect.partialTypes(type)]
+      const declarations = [...PartialClassReflect.partialClasses(type)]
       expect(declarations).toHaveLength(2)
       expect(declarations).toContain(extension)
       expect(declarations).toContain(subExtension)
@@ -48,7 +51,7 @@ describe('A type', () => {
       extend(type, extension)
     })
     it('should yield the extension', () => {
-      const declarations = [...PartialReflect.partialTypes(type)]
+      const declarations = [...PartialClassReflect.partialClasses(type)]
       expect(declarations).toHaveLength(1)
       expect(declarations[0]).toBe(extension)
     })
@@ -58,7 +61,7 @@ describe('A type', () => {
         derived = class extends type { }
       })
       it('should yield the extension', () => {
-        const declarations = [...PartialReflect.partialTypes(derived)]
+        const declarations = [...PartialClassReflect.partialClasses(derived)]
         expect(declarations).toHaveLength(1)
         expect(declarations[0]).toBe(extension)
       })
@@ -67,7 +70,7 @@ describe('A type', () => {
           extend(derived, extension)
         })
         it('should yield the extension', () => {
-          const declarations = [...PartialReflect.partialTypes(derived)]
+          const declarations = [...PartialClassReflect.partialClasses(derived)]
           expect(declarations).toHaveLength(1)
           expect(declarations[0]).toBe(extension)
         })
@@ -82,7 +85,7 @@ describe('A PartialClass', () => {
     myPartialClass = class MyPartialClass extends PartialClass { }
   })
   it('should have no partialTypes', () => {
-    const partialTypes = [...PartialReflect.partialTypes(myPartialClass)]
+    const partialTypes = [...PartialClassReflect.partialClasses(myPartialClass)]
     expect(partialTypes).toHaveLength(0)
   })
   it('should nave no own names or symbols', () => {
@@ -101,7 +104,7 @@ describe('A PartialClass', () => {
         myPartialClass[Extends] = [ basePartialClass ]
       })
       it('should have BasePartialType as a partialClass', () => {
-        const partialTypes = [...PartialReflect.partialTypes(myPartialClass)]
+        const partialTypes = [...PartialClassReflect.partialClasses(myPartialClass)]
         expect(partialTypes).toHaveLength(1)
         expect(partialTypes[0]).toBe(basePartialClass)
       })
@@ -136,7 +139,7 @@ describe('A PartialClass', () => {
           rootExtension.prototype.member = rootMember
         })
         it('should have the root PartialClass as a partial type', () => {
-          const actual = new Set(PartialReflect.partialTypes(myPartialClass))
+          const actual = new Set(PartialClassReflect.partialClasses(myPartialClass))
           const expected = new Set([ basePartialClass, rootExtension ])
           expect(actual).toEqual(expected)
         })
@@ -159,7 +162,7 @@ describe('A PartialClass', () => {
       })
       it('should have BasePartialType', () => {
         const partialTypes = [
-          ...PartialReflect.partialTypes(myPartialClass)]
+          ...PartialClassReflect.partialClasses(myPartialClass)]
         expect(partialTypes).toHaveLength(1)
         expect(partialTypes[0]).toBe(basePartialClass)
       })

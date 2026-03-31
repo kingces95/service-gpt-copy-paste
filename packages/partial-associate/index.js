@@ -2,12 +2,8 @@ import { assert } from '@kingjs/assert'
 import { Es6Associate } from '@kingjs/es6-associate'
 import { PartialTypeReflect } from '@kingjs/partial-type'
 
-const PartialTypes = Symbol.for('PartialReflect.partialTypes')
-const Keys = Symbol.for('PartialReflect.keys')
-const OwnKeys = Symbol('PartialReflect.ownKeys')
-const FinalHostMap = Symbol.for('PartialReflect.hostMap')
-const HostLookup = Symbol.for('PartialReflect.hostLookup')
-const OwnHostLookup = Symbol.for('PartialReflect.ownHostLookup')
+const PartialTypes = Symbol.for('PartialAssociate.partialTypes')
+const HostLookup = Symbol.for('PartialAssociate.hostLookup')
 
 // PartialAssociate is like Es6Associate but filters out types known
 // to the PartialType system and restricts associates to just those

@@ -1,84 +1,77 @@
-import { PartialAssociate } from '@kingjs/partial-associate'
 import { PartialLoader } from '@kingjs/partial-loader'
-import { PartialReflector } from '@kingjs/partial-reflector'
-import { Es6UserReflect } from '@kingjs/es6-user-reflect'
-import { PartialTypeReflect } from '@kingjs/partial-type'
+import { 
+  PartialType, 
+  PartialTypeReflect,
+  Thunk, Preconditions, Postconditions,
+  TypePrecondition, TypePostcondition,
+  Prototype, Constructors
+} from '@kingjs/partial-type'
+import { Es6Reflector } from '@kingjs/es6-reflector'
+import { 
+  getPrototype as getPartialPrototype 
+} from '@kingjs/partial-prototype'
+import { PartialLoader } from '@kingjs/partial-loader'
 
-// Unfies reflection operations over PartialObjects and Es6 types.
+// Unfies reflection operations over PartialType and Es6 types which
+// may have been merged with vairous PartialTypes (i.e.PartialClass,
+// Concept, etc.). For example, 
 
-// PartialType reflection is dispatched to PartialLoader/PartialPrototype
-// while Es6 type reflection is dispatched to UserReflect.
+//  *PartialReflect.baseTypes(type)
+//    Returns all base types of a type including PartialTypes and Es6 types.
 
-// Known types/keys are filtered out. 
+// *PartialReflect.partialTypes(type)
+//    Returns all base types filtered to only include PartialTypes.
 
-// The set of known types includes all Es6 built-in types (e.g. Object, 
-// Array, Function, etc) as well as PartialType and all types that 
-// directly extend PartialType (i.e. Extensions, PartialClass, etc).
+// *PartialReflect.hosts(type, key)
+//    Returns all types that defined or considered defining a member 
+//    with the key (i.e. keys that were overridden).
 
-// Known keys include all keys defined on known types as well as some
-// Es6 keys like 'length' and 'constructor' which are automatically
-// defined on functions.
+// *PartialReflect.keys(type, { includeOverridden })
+//    Returns all keys of a type including keys of PartialTypes and Es6 types. 
+//    If includeOverridden is false, overridden keys are not included. If
+//    includeOverridden is true, overridden keys are included and associated
+//    with the type that defined them (i.e. hosts).
 
-// Load() enters the monade. Load returns the type except when the type
-// is a pojo, in which case an anonymous PartialType type is created
-// from the pojo.
+// *baseTypes(type)
+//    Returns the base types of a type. Since a type may have multiple base
+//    types they are returned in the reverse order they were merged.
+//    For example, if a type extends a base type and a concept, baseTypes 
+//    will return the Concept followed by the base type.  
+
+// etc.
+
+const KnownTypes = [ Object, Function ]
+const KnownInstanceKeys = [ 'constructor', Constructors ]
+const KnownStaticKeys = [ 'length', 'name', 'prototype',
+  Thunk, Preconditions, Postconditions,
+  TypePrecondition, TypePostcondition,
+  Prototype,
+  // TODO: remove Compile, Declarations, Symbol.hasInstance
+  PartialType.Compile, 'Compile',
+  PartialType.Declarations, 'Declarations',
+  Symbol.hasInstance,
+]
+
+class PartialReflector extends Es6Reflector { 
+  constructor() {
+    super({
+      knownTypes: KnownTypes,
+      knownInstanceKeys: KnownInstanceKeys,
+      knownStaticKeys: KnownStaticKeys,
+      getPrototypeFn: type => getPartialPrototype(type),
+    })
+  }
+
+  *partialTypes(type) {
+    for (const current of this.baseTypes(type)) {
+      if (!PartialTypeReflect.isPartialType(current)) continue
+      yield current
+    }
+  }
+}
+
+export const PartialReflect = new PartialReflector()
 
 export function isKey(key) {
   return typeof key === 'string' || typeof key === 'symbol'
-}
-
-export const PartialReflect$ = new PartialReflector()
-
-export class PartialReflect {
-
-  static getPrototype(type, { isStatic } = { }) {
-    return PartialReflect$.getPrototype(type, { isStatic })
-  }
-  static *keys(type, { isStatic, includeOverridden } = { }) { 
-    return yield* PartialReflect$.keys(type, { 
-      isStatic, includeOverridden })
-  }
-  static *ownKeys(type, { isStatic } = { }) {
-    return yield* PartialReflect$.ownKeys(type, { isStatic })
-  }
-  static isOwnKey(type, key, { isStatic } = { }) {
-    return PartialReflect$.isOwnKey(type, key, { isStatic })
-  }
-
-  static getOwnDescriptor(type, key, { isStatic } = { }) {
-    return PartialReflect$.getOwnDescriptor(type, key, { isStatic })
-  }
-  static *ownDescriptors(type, { isStatic } = { }) {
-    return yield* PartialReflect$.ownDescriptors(type, { isStatic })
-  }
-  
-  static *getDescriptor(type, key, { isStatic } = { }) {
-    return yield* PartialReflect$.getDescriptor(type, key, { isStatic })
-  }
-  static *descriptors(type, { isStatic, includeOverridden } = { }) {
-    return yield* PartialReflect$.descriptors(type, { 
-      isStatic, includeOverridden })
-  }
-
-  static *partialTypes(type) {
-    if (PartialTypeReflect.isPartialType(type))
-      return yield* PartialReflect$.baseTypes(type)
-
-    yield* PartialAssociate.partialTypes(type)
-  }
-
-  static *hosts(type, key) {
-    if (PartialTypeReflect.isPartialType(type))
-      return yield* PartialReflect$.hosts(type, key)
-
-    // yield types in the hiearchy that resolve the key to a member.
-    const hosts = new Set(PartialAssociate.hosts(type, key))
-    for (const host of Es6UserReflect.hosts(type, key)) 
-      hosts.add(host)
-    yield* hosts
-  }
-
-  static load(pojoOrType) {
-    return PartialLoader.load(pojoOrType)
-  }
 }

@@ -4,7 +4,7 @@ import { PartialReflect } from '@kingjs/partial-reflect'
 import { PartialTypeReflect } from '@kingjs/partial-type'
 import { PartialAssociate } from '@kingjs/partial-associate'
 import { Thunk } from '@kingjs/partial-type'
-import { isAbstract } from '@kingjs/abstract'
+import { PartialLoader } from '@kingjs/partial-loader'
 
 // Extend takes a targets type and a partial type and merges the 
 // partial type into the target type.
@@ -47,8 +47,10 @@ function associate(type, partialType) {
   if (PartialLoader.transparent(partialType)) return
 
   PartialAssociate.addPartialType(type, partialType)
-  for (const current of PartialReflect.partialTypes(partialType))
+  for (const current of PartialReflect.baseTypes(partialType)) {
+    if (!PartialTypeReflect.isPartialType(current)) continue
     PartialAssociate.addPartialType(type, current)
+  }
 
   let host
   for (const current of PartialReflect.keys(
