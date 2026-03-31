@@ -144,21 +144,6 @@ const SealedMethodMd = {
   toString: 'sealed method',
 }
 
-const AbstractMethodMd = {
-  name: 'abstract method',
-  descriptor: {
-    value: abstract,
-    enumerable: false,
-    configurable: Es6MethodDescriptor.DefaultConfigurable,
-    writable: Es6MethodDescriptor.DefaultWritable,
-  },
-  infoType: Es6MethodDescriptorInfo,
-  type: 'method',
-  isAbstract: true,
-  modifiers: [  ],
-  toString: 'abstract method',
-}
-
 const NumberMd = {
   name: 'number',
   descriptor: {

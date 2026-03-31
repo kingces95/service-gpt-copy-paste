@@ -39,8 +39,6 @@ export class PartialLoader {
   }
 
   static *#ownPartialTypes(type) {
-    // assert(PartialTypeReflect.isPartialType(type))
-
     // added by declaration (e.g. by static [Extends] = PartialType)
     yield* PartialLoader.#declaredOwnPartialTypes(type)
 
@@ -89,32 +87,28 @@ export class PartialLoader {
     yield* PartialLoader.#declaredOwnPartialTypes(type, symbols)
   }
 
-  static *hierarchy(rootPartialType) {
-    // assert(PartialTypeReflect.isPartialType(rootPartialType))
-
+  static *hierarchy(rootType) {
     const visited = new Set()
 
-    function *reverseDepthFirstWalk$(partialType) {
-      if (visited.has(partialType)) return
-      visited.add(partialType)
+    function *reverseDepthFirstWalk$(type) {
+      if (visited.has(type)) return
+      visited.add(type)
     
-      const baseType = PartialTypeReflect.baseType(partialType)
+      const baseType = PartialTypeReflect.baseType(type)
       if (baseType)
         yield* reverseDepthFirstWalk$(baseType)
       
-      const ownPartialTypes = [...PartialLoader.ownPartialTypes(partialType)]
+      const ownPartialTypes = [...PartialLoader.ownPartialTypes(type)]
       for (const basePartialType of ownPartialTypes.reverse())
         yield *reverseDepthFirstWalk$(basePartialType)
 
-      yield partialType
+      yield type
     }
 
-    yield *reverseDepthFirstWalk$(rootPartialType)
+    yield *reverseDepthFirstWalk$(rootType)
   }
 
   static getOwnDescriptor(type, key) {
-    // assert(PartialTypeReflect.isPartialType(type))
-
     const descriptor = Es6UserReflect.getOwnDescriptor(type, key)
     if (!descriptor) return null
 
@@ -125,8 +119,6 @@ export class PartialLoader {
   }
 
   static *ownDescriptors(type) {
-    // assert(PartialTypeReflect.isPartialType(type))
-
     const ownKeys = new Map()
     for (const current of [
       ...PartialLoader.#transparentTypes(type), type].reverse()) {

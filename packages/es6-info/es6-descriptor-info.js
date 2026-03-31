@@ -1,5 +1,4 @@
 import { assert } from "@kingjs/assert"
-import { isAbstract } from "@kingjs/abstract"
 import { es6Typeof } from '@kingjs/es6-typeof'
 import { 
   Es6Descriptor,
@@ -40,7 +39,6 @@ export class Es6DescriptorInfo {
   get isData() { return this.isMethod || this.isField }
   
   // pivots
-  get isAbstract() { return isAbstract(this.#descriptor) }
   
   // values
   get getter() { return this.descriptor.get }
@@ -57,16 +55,10 @@ export class Es6DescriptorInfo {
     return Es6Descriptor.equals(this.descriptor, other.descriptor)
   }
 
-  *pivots() {
-    if (this.isAbstract) yield 'abstract'
-  }
   *modifiers() { yield* Es6Descriptor.modifiers(this.descriptor) }
 
   toString() {
     return [
-      // e.g. 'abstract'
-      ...this.pivots(), 
-
       // e.g. 'const', 'visible', 'hidden', 'sealed'
       ...this.modifiers(),
 

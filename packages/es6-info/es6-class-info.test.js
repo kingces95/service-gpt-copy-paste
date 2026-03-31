@@ -366,7 +366,6 @@ describe('Es6MemberInfo', () => {
     it('has expected predicates', () => {
       expect(info.isKnown).toBe(!!md.isKnown)
       expect(info.isNonPublic).toBe(!!md.isNonPublic)
-      expect(info.isAbstract).toBe(!!md.isAbstract)
 
       expect(info.isField).toBe(!!md.isField)
       expect(info.isProperty).toBe(!!md.isProperty)

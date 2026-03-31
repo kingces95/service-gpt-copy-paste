@@ -225,7 +225,6 @@ export class Es6MemberInfo {
     if (this.isStatic) yield 'static' 
     if (this.isNonPublic) yield 'non-public'
     if (this.isKnown) yield 'known'
-    yield* this.#descriptorInfo.pivots()
   }
 
   toString() {
@@ -236,7 +235,7 @@ export class Es6MemberInfo {
       keyInfo.toString(), 
       
     [
-      // e.g. 'abstract'
+      // e.g. 'static'
       ...this.pivots(), 
 
       // e.g. 'const', 'visible', 'hidden', 'sealed'

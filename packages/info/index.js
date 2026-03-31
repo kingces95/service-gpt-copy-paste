@@ -13,6 +13,7 @@ import {
   Es6KeyInfo,
   Es6DescriptorInfo,
 } from "@kingjs/es6-info"
+import { isAbstract } from "@kingjs/abstract"
 
 const FunctionInfoCache = new WeakMap()
 
@@ -214,8 +215,8 @@ export class MemberInfo {
     const type = InfoReflect.typeof(fn, key, descriptor, { isStatic })
     
     const fnAsHost = TypeInfo.from(fn)
-    const isAbstract = descriptorInfo.isAbstract
-    if (!isAbstract || !fnAsHost.isAbstract)
+    const abstract = isAbstract(descriptor)
+    if (!abstract || !fnAsHost.isAbstract)
       host = fnAsHost
 
     return new MemberInfo(
@@ -257,8 +258,8 @@ export class MemberInfo {
   // pivots
   get isStatic() { return this.#isStatic }
   get isNonPublic() { return this.#keyInfo.isNonPublic }
-  get isAbstract() { return this.#descriptorInfo.isAbstract }
-  
+  get isAbstract() { return isAbstract(this.descriptor) }
+
   // member type
   get type() { return this.#type }
   get isConstructor() { return this.type == 'constructor' }
@@ -287,6 +288,7 @@ export class MemberInfo {
 
   // descriptor
   get descriptorInfo() { return this.#descriptorInfo }
+  get descriptor() { return this.#descriptorInfo.descriptor }
 
   parent() { 
     const parent = this.host.base
@@ -333,13 +335,13 @@ export class MemberInfo {
 
   *modifiers() { 
     yield* Es6Descriptor.modifiers(
-      this.#descriptorInfo.descriptor, 
+      this.descriptor, 
       InfoReflect.getMetadata(this.type))     
   }
   *pivots() { 
     if (this.isStatic) yield 'static' 
     if (this.isNonPublic) yield 'non-public'
-    yield* this.#descriptorInfo.pivots()
+    if (this.isAbstract) yield 'abstract'
   }
 
   toString() {
