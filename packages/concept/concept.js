@@ -8,6 +8,7 @@ import { PartialType, PartialTypeReflect } from '@kingjs/partial-type'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { PartialClass, Extends } from '@kingjs/partial-class'
 import { Descriptor } from '@kingjs/descriptor'
+import { es6DefineType } from '@kingjs/es6-define-type'
 
 export const Implements = Symbol('Concept.Implements')
 
@@ -76,8 +77,7 @@ export class ImplicitConcept extends PartialType {
 export class ConceptReflect {
   static define(pojoOrType) {
     if (!isPojo(pojoOrType)) return pojoOrType
-    return PartialTypeReflect.defineType(
-      null, ImplicitConcept, pojoOrType)
+    return es6DefineType(null, ImplicitConcept, pojoOrType)
   }
 
   static isConcept(type) {

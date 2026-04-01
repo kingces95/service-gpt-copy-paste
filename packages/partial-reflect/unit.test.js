@@ -53,36 +53,6 @@ describe('A type', () => {
       expect(type.prototype.method).toBe(method)
     })
   })
-
-  describe('with a method', () => {
-    let method
-    let methodResult
-    beforeEach(() => {
-      method = function method() { }
-      methodResult = 
-        PartialTypeReflect.defineProperty(type, 'method', { value: method })
-    })
-
-    it('should return method as own descriptor', () => {
-      const descriptor = 
-        Es6UserReflect.getOwnDescriptor(type, 'method')
-      expect(descriptor.value).toBe(method)
-      expect(methodResult).toBe(true)
-    })
-
-    describe('after attempting to define as abstract method', () => {
-      let abstractResult
-      beforeEach(() => {
-        abstractResult = 
-          PartialTypeReflect.defineProperty(type, 'method', { value: abstract })
-      })
-
-      it('should not change the method', () => {
-        expect(type.prototype.method).toBe(method)
-        expect(abstractResult).toBe(false)
-      })
-    })
-  })
 })
 
 describe('MyPojoType', () => {

@@ -1,6 +1,5 @@
-import { PartialType, PartialTypeReflect } from '@kingjs/partial-type'
+import { PartialType } from '@kingjs/partial-type'
 import { Extensions } from '@kingjs/extensions'
-import { PartialReflect } from '@kingjs/partial-reflect'
 import { PartialLoader } from '@kingjs/partial-loader'
 
 export const Extends = Symbol('PartialClass.Extends')
@@ -19,23 +18,6 @@ export class PartialClass extends PartialType {
     [Extends]: { 
       expectedType: [ PartialClass, Extensions ],
       map: PartialLoader.load,
-    }
-  }
-}
-
-export class PartialClassReflect {
-  static isPartialClass(type) {
-    if (!type) return false
-    const collectionType = PartialTypeReflect.getPartialType(type)
-    return collectionType == PartialClass
-  }
-
-  static *partialClasses(type) {
-    for (const collection of PartialReflect.baseTypes(type)) {
-      const collectionType = 
-        PartialTypeReflect.getPartialType(collection)
-      if (collectionType != PartialClass) continue
-      yield collection
     }
   }
 }

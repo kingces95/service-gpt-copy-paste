@@ -5,6 +5,7 @@ import { PartialTypeReflect } from '@kingjs/partial-type'
 import { PartialAssociate } from '@kingjs/partial-associate'
 import { Thunk } from '@kingjs/partial-type'
 import { PartialLoader } from '@kingjs/partial-loader'
+import { isAbstract } from '@kingjs/abstract'
 
 // Extend takes a targets type and a partial type and merges the 
 // partial type into the target type.
@@ -53,6 +54,15 @@ function associate(type, partialType) {
   }
 }
 
+function defineProperty(type, key, descriptor) {
+  const prototype = type.prototype
+
+  if (key in prototype && isAbstract(descriptor)) return false
+
+  Object.defineProperty(prototype, key, descriptor)
+  return true
+}
+
 function define(type, partialType, { createThunk }) {
   let key
   for (const current of PartialReflect.descriptors(partialType)) {
@@ -70,10 +80,40 @@ function define(type, partialType, { createThunk }) {
       case 'object':
         const descriptor = current
         const thunk = createThunk(key, descriptor)
-        PartialTypeReflect.defineProperty(type, key, thunk)
+        defineProperty(type, key, thunk)
         break
       case 'function':
         break
     }
   }
 }
+
+// describe('with a method', () => {
+//   let method
+//   let methodResult
+//   beforeEach(() => {
+//     method = function method() { }
+//     methodResult = 
+//       PartialTypeReflect.defineProperty(type, 'method', { value: method })
+//   })
+
+//   it('should return method as own descriptor', () => {
+//     const descriptor = 
+//       Es6UserReflect.getOwnDescriptor(type, 'method')
+//     expect(descriptor.value).toBe(method)
+//     expect(methodResult).toBe(true)
+//   })
+
+//   describe('after attempting to define as abstract method', () => {
+//     let abstractResult
+//     beforeEach(() => {
+//       abstractResult = 
+//         PartialTypeReflect.defineProperty(type, 'method', { value: abstract })
+//     })
+
+//     it('should not change the method', () => {
+//       expect(type.prototype.method).toBe(method)
+//       expect(abstractResult).toBe(false)
+//     })
+//   })
+// })

@@ -3,6 +3,7 @@ import {
   PartialTypeReflect 
 } from '@kingjs/partial-type'
 import { isPojo } from '@kingjs/pojo-test'
+import { es6DefineType } from '@kingjs/es6-define-type'
 
 // Extensions hosts descriptors that can be copied onto a type.
 
@@ -93,8 +94,7 @@ export class Extensions extends PartialType { }
 export class ExtensionsReflect {
   static define(pojoOrType) {
     if (!isPojo(pojoOrType)) return pojoOrType
-    return PartialTypeReflect.defineType(
-      null, Extensions, pojoOrType)
+    return es6DefineType(null, Extensions, pojoOrType)
   }
 
   static isExtensions(type) {

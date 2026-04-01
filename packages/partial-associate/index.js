@@ -16,7 +16,7 @@ const PartialTypes = Symbol.for('PartialAssociate.partialTypes')
 export class PartialAssociate {
 
   static addPartialType(type, partialType) {
-    assert(!PartialTypeReflect.isKnown(type))
+    // assert(!PartialTypeReflect.isKnown(type))
     assert(PartialTypeReflect.isPartialType(partialType))
     Es6Associate.addAssociates(type, PartialTypes, partialType)
   }

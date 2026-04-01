@@ -1,7 +1,6 @@
 import { assert } from '@kingjs/assert'
 import { Es6Compiler } from '@kingjs/es6-compiler'
 import { Es6UserReflect } from '@kingjs/es6-user-reflect'
-import { isAbstract } from '@kingjs/abstract'
 
 const Declarations = Symbol('PartialType.declarations')
 const Compile = Symbol('PartialType.compile')
@@ -12,7 +11,6 @@ export const Postconditions = Symbol('PartialType.Postconditions')
 export const TypePrecondition = Symbol('PartialType.TypePrecondition')
 export const TypePostcondition = Symbol('PartialType.TypePostcondition')
 export const Prototype = Symbol('PartialType.Prototype')
-export const Constructors = Symbol('PartialType.Constructors')
 
 export class PartialType extends null {
   static Compile = Compile
@@ -29,27 +27,8 @@ export class PartialType extends null {
 }
 
 export class PartialTypeReflect {
-  static isKnown(type) {
-    if (!type) return false
-    if (Es6UserReflect.isKnown(type)) return true
-    return PartialTypeReflect.isPartialUrType(type)
-  }
-  static isKnownKey(type, key, { isStatic } = { }) {
-    if (PartialTypeReflect.isKnown(type)) return true
-    if (isStatic) {
-      if (key == Thunk) return true
-      if (key == Preconditions) return true
-      if (key == Postconditions) return true
-      if (key == TypePrecondition) return true
-      if (key == TypePostcondition) return true
-      if (key == Prototype) return true
-    } else {
-      if (key == Constructors) return true
-    }
-    return Es6UserReflect.isKnownKey(type, key, { isStatic })
-  }
 
-  static isPartialUrType(type) {
+  static #isPartialUrType(type) {
     if (!type) return false
     if (type == PartialType) return true
     return Object.getPrototypeOf(type) == PartialType
@@ -57,18 +36,18 @@ export class PartialTypeReflect {
   static getBaseType(type) {
     if (!type) return null
 
-    if (PartialTypeReflect.isPartialUrType(type))
+    if (PartialTypeReflect.#isPartialUrType(type))
       return Es6UserReflect.getBaseType(type)
 
     const result = Es6UserReflect.getBaseType(type)
-    if (PartialTypeReflect.isPartialUrType(result))
+    if (PartialTypeReflect.#isPartialUrType(result))
       return null
 
     return result
   }
   static isPartialType(type) {
     if (!Es6UserReflect.isExtensionOf(type, PartialType)) return false
-    if (PartialTypeReflect.isPartialUrType(type)) return false
+    if (PartialTypeReflect.#isPartialUrType(type)) return false
     return true
   }
   static getPartialType(type) {
@@ -76,42 +55,8 @@ export class PartialTypeReflect {
 
     let baseType = type
     while (baseType = Es6UserReflect.getBaseType(baseType)) 
-      if (PartialTypeReflect.isPartialUrType(baseType)) return baseType
+      if (PartialTypeReflect.#isPartialUrType(baseType)) return baseType
 
     return null
-  }
-  
-  // TODO: Consider moving defineProperty and defineType
-  // to their own home. They are independent of PartialType.
-  // They were moved here out of convenience during a refactor.
-  static defineProperty(type, key, descriptor) {
-    const prototype = type.prototype
-
-    if (key in prototype && isAbstract(descriptor)) return false
-
-    Object.defineProperty(prototype, key, descriptor)
-    return true
-  }
-
-  static defineType(name = null, base = Object, pojo = { }) {
-    const [type] = [class extends base { }]
-    
-    Object.defineProperties(type, {
-      name: {
-        value: name,
-        configurable: true,
-        enumerable: false,
-        writable: false,
-      }
-    })
-
-    const prototype = type.prototype
-    for (const key of Reflect.ownKeys(pojo)) {
-      if (key === 'constructor') continue
-      const descriptor = Object.getOwnPropertyDescriptor(pojo, key)
-      Object.defineProperty(prototype, key, descriptor)
-    }
-
-    return type
   }
 }

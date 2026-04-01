@@ -1,15 +1,14 @@
 import { 
   PartialType, 
-  PartialTypeReflect,
   Thunk, Preconditions, Postconditions,
   TypePrecondition, TypePostcondition,
-  Prototype, Constructors
-} from '@kingjs/partial-type'
+  Prototype } from '@kingjs/partial-type'
+import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { Es6Reflector } from '@kingjs/es6-reflector'
-import { 
-  getPrototype as getPartialPrototype 
-} from '@kingjs/partial-prototype'
-
+import { getPrototype as getPartialPrototype } from '@kingjs/partial-prototype'
+import { PartialClass } from '@kingjs/partial-class'
+import { Concept, ImplicitConcept } from '@kingjs/concept'
+import { Extensions } from '@kingjs/extensions'
 
 // Unfies reflection operations over PartialType and Es6 types which
 // may have been merged with vairous PartialTypes (i.e.PartialClass,
@@ -39,10 +38,12 @@ import {
 
 // etc.
 
-const KnownTypes = [ Object, Function ]
-const KnownInstanceKeys = [ 'constructor', Constructors ]
+const KnownTypes = [ Object, Function, 
+  PartialType, Concept, ImplicitConcept, Extensions, PartialClass ]
+const KnownInstanceKeys = [ 'constructor' ]
 const KnownStaticKeys = [ 'length', 'name', 'prototype',
-  Thunk, Preconditions, Postconditions,
+  Thunk, 
+  Preconditions, Postconditions,
   TypePrecondition, TypePostcondition,
   Prototype,
   // TODO: remove Compile, Declarations, Symbol.hasInstance
@@ -61,9 +62,37 @@ class PartialReflector extends Es6Reflector {
     })
   }
 
+  isPartialType(type) {
+    if (!type) return false
+    if (this.isKnown(type)) return false
+    return Es6UserReflect.isExtensionOf(type, PartialType)
+  }
+
+  isPartialClass(type) {
+    if (!type) return false
+    return Es6UserReflect.isExtensionOf(type, PartialClass)
+  }
+
+  isConcept(type) {
+    if (!type) return false
+    return Es6UserReflect.isExtensionOf(type, Concept)
+  }
+
+  isExtension(type) {
+    if (!type) return false
+    return Es6UserReflect.isExtensionOf(type, Extensions)
+  }
+
   *partialTypes(type) {
     for (const current of this.baseTypes(type)) {
-      if (!PartialTypeReflect.isPartialType(current)) continue
+      if (!this.isPartialType(current)) continue
+      yield current
+    }
+  }
+
+  *partialClasses(type) {
+    for (const current of this.baseTypes(type)) {
+      if (!this.isPartialClass(current)) continue
       yield current
     }
   }
