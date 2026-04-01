@@ -49,7 +49,7 @@ function associate(type, partialType) {
 
   PartialAssociate.addPartialType(type, partialType)
   for (const current of PartialReflect.baseTypes(partialType)) {
-    if (!PartialTypeReflect.isPartialType(current)) continue
+    if (!PartialReflect.isPartialType(current)) continue
     PartialAssociate.addPartialType(type, current)
   }
 }

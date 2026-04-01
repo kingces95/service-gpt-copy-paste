@@ -50,13 +50,4 @@ export class PartialTypeReflect {
     if (PartialTypeReflect.#isPartialUrType(type)) return false
     return true
   }
-  static getPartialType(type) {
-    if (!PartialTypeReflect.isPartialType(type)) return null
-
-    let baseType = type
-    while (baseType = Es6UserReflect.getBaseType(baseType)) 
-      if (PartialTypeReflect.#isPartialUrType(baseType)) return baseType
-
-    return null
-  }
 }

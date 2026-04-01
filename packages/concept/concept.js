@@ -81,16 +81,13 @@ export class ConceptReflect {
   }
 
   static isConcept(type) {
-    const collectionType = PartialTypeReflect.getPartialType(type)
-    return collectionType == Concept
+    return PartialReflect.isConcept(type)
   }
 
   static *concepts(type) {
-    for (const object of PartialReflect.baseTypes(type)) {
-      if (!ConceptReflect.isConcept(object)) continue
-      yield object
-    }
+    yield* PartialReflect.concepts(type)
   }
+  
   static *getConceptOwnHosts(type, name) {
     for (const host of PartialReflect.hosts(type, name)) {
       if (!ConceptReflect.isConcept(host)) continue

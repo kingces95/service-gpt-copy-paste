@@ -113,6 +113,7 @@ export class Es6Prototype {
   }
 
   isExtensionOf(type, targetType) {
+    if (!type) return false
     for (const base of this.baseTypes(type))
       if (base == targetType) return true
     return false

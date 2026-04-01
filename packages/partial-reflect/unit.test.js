@@ -110,10 +110,10 @@ describe('PartialClass', () => {
   })
 
   it('should not be recognized as a partial class', () => {
-    expect(PartialTypeReflect.isPartialType(PartialClass)).toBe(false)
+    expect(PartialReflect.isPartialType(PartialClass)).toBe(false)
   })
   it('should return null for its partial class', () => {
-    expect(PartialTypeReflect.getPartialType(PartialClass)).toBe(null)
+    expect(PartialReflect.getPartialType(PartialClass)).toBe(null)
   })
 
   describe('MyNamelessExtension', () => {
@@ -122,8 +122,7 @@ describe('PartialClass', () => {
       [MyNamelessExtension] = [class extends PartialClass { }]
     })
     it('should not throw when verified as a PartialType', () => {
-      expect(() => {
-        PartialTypeReflect.getPartialType(MyNamelessExtension)
+      expect(() => { PartialReflect.getPartialType(MyNamelessExtension)
       }).not.toThrow()
     })
   })
@@ -136,10 +135,10 @@ describe('PartialClass', () => {
     })
 
     it('should be recognized as partial classes', () => {
-      expect(PartialTypeReflect.isPartialType(MyExtension)).toBe(true)
+      expect(PartialReflect.isPartialType(MyExtension)).toBe(true)
     })
     it('should return PartialClass as their partial class', () => {
-      expect(PartialTypeReflect.getPartialType(MyExtension)).toBe(PartialClass)
+      expect(PartialReflect.getPartialType(MyExtension)).toBe(PartialClass)
     })
     it('should have no declarations', () => {
       const declarations = [...PartialReflect.partialTypes(MyExtension)]

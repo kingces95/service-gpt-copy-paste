@@ -14,6 +14,7 @@ import {
   Es6DescriptorInfo,
 } from "@kingjs/es6-info"
 import { isAbstract } from "@kingjs/abstract"
+import { PartialReflect } from '@kingjs/partial-reflect'
 
 const FunctionInfoCache = new WeakMap()
 
@@ -29,13 +30,10 @@ export class TypeInfo {
     return FunctionInfoCache.get(fn)
   }
   static #create(fn) {
-    const partialType = PartialTypeReflect.getPartialType(fn)
-    switch (partialType) {
-      case Extensions: return new ExtensionsInfo(fn)
-      case PartialClass: return new PartialClassInfo(fn)
-      case Concept: return new ConceptInfo(fn)
-    }
-    
+    if (PartialReflect.isExtension(fn)) return new ExtensionsInfo(fn)
+    if (PartialReflect.isPartialClass(fn)) return new PartialClassInfo(fn)
+    if (PartialReflect.isConcept(fn)) return new ConceptInfo(fn)
+    // TODO: refactor to handle ImplicitConcept and the like.
     return new ClassInfo(fn)
   }
 

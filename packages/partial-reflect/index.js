@@ -62,26 +62,19 @@ class PartialReflector extends Es6Reflector {
     })
   }
 
-  isPartialType(type) {
-    if (!type) return false
-    if (this.isKnown(type)) return false
-    return Es6UserReflect.isExtensionOf(type, PartialType)
+  getPartialType(type) {
+    let current = type
+    while (current = Es6UserReflect.getBaseType(current)) {
+      if (Es6UserReflect.getBaseType(current) == PartialType)
+        return current
+    }
+    return null
   }
 
-  isPartialClass(type) {
-    if (!type) return false
-    return Es6UserReflect.isExtensionOf(type, PartialClass)
-  }
-
-  isConcept(type) {
-    if (!type) return false
-    return Es6UserReflect.isExtensionOf(type, Concept)
-  }
-
-  isExtension(type) {
-    if (!type) return false
-    return Es6UserReflect.isExtensionOf(type, Extensions)
-  }
+  isPartialType(type) { return this.getPartialType(type) != null }
+  isPartialClass(type) { return this.getPartialType(type) == PartialClass }
+  isConcept(type) { return this.getPartialType(type) == Concept }
+  isExtension(type) { return this.getPartialType(type) == Extensions }
 
   *partialTypes(type) {
     for (const current of this.baseTypes(type)) {
@@ -93,6 +86,13 @@ class PartialReflector extends Es6Reflector {
   *partialClasses(type) {
     for (const current of this.baseTypes(type)) {
       if (!this.isPartialClass(current)) continue
+      yield current
+    }
+  }
+
+  *concepts(type) {
+    for (const current of this.baseTypes(type)) {
+      if (!this.isConcept(current)) continue
       yield current
     }
   }
