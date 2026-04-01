@@ -1,6 +1,5 @@
 import { assert } from '@kingjs/assert'
 import { Es6Associate } from '@kingjs/es6-associate'
-import { PartialTypeReflect } from '@kingjs/partial-type'
 
 const PartialTypes = Symbol.for('PartialAssociate.partialTypes')
 
@@ -16,8 +15,6 @@ const PartialTypes = Symbol.for('PartialAssociate.partialTypes')
 export class PartialAssociate {
 
   static addPartialType(type, partialType) {
-    // assert(!PartialTypeReflect.isKnown(type))
-    assert(PartialTypeReflect.isPartialType(partialType))
     Es6Associate.addAssociates(type, PartialTypes, partialType)
   }
   static *ownPartialTypes(type) {

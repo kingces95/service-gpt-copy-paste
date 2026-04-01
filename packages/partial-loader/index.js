@@ -1,10 +1,7 @@
 import { assert } from '@kingjs/assert'
 import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { ExtensionsReflect } from '@kingjs/extensions'
-import { 
-  PartialType, 
-  PartialTypeReflect,
-} from '@kingjs/partial-type'
+import { PartialType } from '@kingjs/partial-type'
 import { getOwn } from '@kingjs/get-own'
 import { asIterable } from '@kingjs/as-iterable'
 import { Es6Reflect } from '@kingjs/es6-reflect'
@@ -30,12 +27,35 @@ export class PartialLoader {
   static load(pojoOrType) {
     // TODO: move the POJO check from define to here
     const type = ExtensionsReflect.define(pojoOrType)
-    assert(PartialTypeReflect.isPartialType(type))
+    assert(PartialLoader.isPartialType(type))
     return type
   }
 
   static transparent(type) {
     return ExtensionsReflect.isExtensions(type)
+  }
+
+  static #isPartialUrType(type) {
+    if (!type) return false
+    if (type == PartialType) return true
+    return Object.getPrototypeOf(type) == PartialType
+  }
+  static getBaseType(type) {
+    if (!type) return null
+
+    if (PartialLoader.#isPartialUrType(type))
+      return Es6UserReflect.getBaseType(type)
+
+    const result = Es6UserReflect.getBaseType(type)
+    if (PartialLoader.#isPartialUrType(result))
+      return null
+
+    return result
+  }
+  static isPartialType(type) {
+    if (!Es6UserReflect.isExtensionOf(type, PartialType)) return false
+    if (PartialLoader.#isPartialUrType(type)) return false
+    return true
   }
 
   static *#ownPartialTypes(type) {
@@ -94,7 +114,7 @@ export class PartialLoader {
       if (visited.has(type)) return
       visited.add(type)
     
-      const baseType = PartialTypeReflect.getBaseType(type)
+      const baseType = PartialLoader.getBaseType(type)
       if (baseType)
         yield* reverseDepthFirstWalk$(baseType)
       
@@ -112,7 +132,7 @@ export class PartialLoader {
     const descriptor = Es6UserReflect.getOwnDescriptor(type, key)
     if (!descriptor) return null
 
-    if (!PartialTypeReflect.isPartialType(type))
+    if (!PartialLoader.isPartialType(type))
       return descriptor
     
     return type[PartialType.Compile](descriptor) 

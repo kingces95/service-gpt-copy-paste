@@ -1,7 +1,4 @@
-import { 
-  PartialType, 
-  PartialTypeReflect 
-} from '@kingjs/partial-type'
+import { PartialType } from '@kingjs/partial-type'
 import { isPojo } from '@kingjs/pojo-test'
 import { es6DefineType } from '@kingjs/es6-define-type'
 

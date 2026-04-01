@@ -4,10 +4,7 @@ import { InfoReflect } from '@kingjs/info-reflect'
 import { Extensions } from '@kingjs/extensions'
 import { Concept } from "@kingjs/concept"
 import { PartialClass } from '@kingjs/partial-class'
-import { 
-  PartialType, 
-  PartialTypeReflect 
-} from '@kingjs/partial-type'
+import { PartialType } from '@kingjs/partial-type'
 import { 
   Es6IdInfo,
   Es6KeyInfo,

@@ -1,7 +1,6 @@
 import { assert } from '@kingjs/assert'
 import { PartialLoader } from '@kingjs/partial-loader'
 import { PartialReflect } from '@kingjs/partial-reflect'
-import { PartialTypeReflect } from '@kingjs/partial-type'
 import { PartialAssociate } from '@kingjs/partial-associate'
 import { Thunk } from '@kingjs/partial-type'
 import { PartialLoader } from '@kingjs/partial-loader'

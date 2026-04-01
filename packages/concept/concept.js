@@ -4,7 +4,7 @@ import { isPojo } from '@kingjs/pojo-test'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
-import { PartialType, PartialTypeReflect } from '@kingjs/partial-type'
+import { PartialType } from '@kingjs/partial-type'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { PartialClass, Extends } from '@kingjs/partial-class'
 import { Descriptor } from '@kingjs/descriptor'
@@ -87,7 +87,7 @@ export class ConceptReflect {
   static *concepts(type) {
     yield* PartialReflect.concepts(type)
   }
-  
+
   static *getConceptOwnHosts(type, name) {
     for (const host of PartialReflect.hosts(type, name)) {
       if (!ConceptReflect.isConcept(host)) continue

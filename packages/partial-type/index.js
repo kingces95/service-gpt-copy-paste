@@ -25,29 +25,3 @@ export class PartialType extends null {
     return Es6Compiler.compile(descriptor) 
   }
 }
-
-export class PartialTypeReflect {
-
-  static #isPartialUrType(type) {
-    if (!type) return false
-    if (type == PartialType) return true
-    return Object.getPrototypeOf(type) == PartialType
-  }
-  static getBaseType(type) {
-    if (!type) return null
-
-    if (PartialTypeReflect.#isPartialUrType(type))
-      return Es6UserReflect.getBaseType(type)
-
-    const result = Es6UserReflect.getBaseType(type)
-    if (PartialTypeReflect.#isPartialUrType(result))
-      return null
-
-    return result
-  }
-  static isPartialType(type) {
-    if (!Es6UserReflect.isExtensionOf(type, PartialType)) return false
-    if (PartialTypeReflect.#isPartialUrType(type)) return false
-    return true
-  }
-}
