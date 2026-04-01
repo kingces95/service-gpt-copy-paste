@@ -3,12 +3,12 @@ import { PartialClass, Extends } from "@kingjs/partial-class"
 import { implement } from "@kingjs/implement"
 import { Concept, Implements } from "@kingjs/concept"
 import { extend } from "@kingjs/partial-extend"
-import { ExtensionsReflect } from "@kingjs/extensions"
+import { PartialLoader } from "@kingjs/partial-loader"
 
 const MySymbol = Symbol.for('my-symbol')
 const MyStaticSymbol = Symbol.for('my-static-symbol')
 
-export const MyExtensions = ExtensionsReflect.define({
+export const MyExtensions = PartialLoader.load({
   myMethod() { },
   get myGetter() { },
   myAbstractGetter: { get: abstract },

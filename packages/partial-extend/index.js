@@ -3,7 +3,6 @@ import { PartialLoader } from '@kingjs/partial-loader'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { PartialAssociate } from '@kingjs/partial-associate'
 import { Thunk } from '@kingjs/partial-type'
-import { PartialLoader } from '@kingjs/partial-loader'
 import { isAbstract } from '@kingjs/abstract'
 
 // Extend takes a targets type and a partial type and merges the 

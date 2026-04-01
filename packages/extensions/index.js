@@ -1,6 +1,4 @@
 import { PartialType } from '@kingjs/partial-type'
-import { isPojo } from '@kingjs/pojo-test'
-import { es6DefineType } from '@kingjs/es6-define-type'
 
 // Extensions hosts descriptors that can be copied onto a type.
 
@@ -12,8 +10,8 @@ import { es6DefineType } from '@kingjs/es6-define-type'
 // Extensions are said to be "transparent". 
 
 // Extensions are typically created dynamically from a pojo by
-// calling ExtensionsReflect.define(pojo) and typically this
-// call is done inernally while interpreting declarative metadata
+// calling PartialLoader.load(pojo) and typically this
+// call is done inernally whi  le interpreting declarative metadata
 // that hosts pojos representing extensions. For example, an
 // CursorConcept might define a next() method via a pojo like this:
 //   class CursorConcept extends Concept {
@@ -21,11 +19,11 @@ import { es6DefineType } from '@kingjs/es6-define-type'
 //   }
 // Here, Extends is well known and interpreted by a loader that
 // merges the defined methods into types that extend CursorConcept.
-// Such loaders would call ExtensionsReflect.define() internally
+// Such loaders would call PartialLoader.load() internally
 // to convert the pojo into an Extensions type.
 
 // Implementing concepts using @kingjs/implement also uses 
-// ExtensionsReflect.define() internally to convert pojos
+// PartialLoader.load() internally to convert pojos
 // into Extensions types. For example to implement an equality
 // concept using a pojo:
 //   class MyClass {
@@ -34,7 +32,7 @@ import { es6DefineType } from '@kingjs/es6-define-type'
 //     }
 //   }
 // Here the pojo { equals(other) { ... } } is converted into
-// an Extensions type via ExtensionsReflect.define() internally.
+// an Extensions type via PartialLoader.load() internally.
 
 // Abstract membeers can be defined via Extensions by using
 // the @kingjs/abstract package and @kingjs/extend. For example:
@@ -87,14 +85,3 @@ import { es6DefineType } from '@kingjs/es6-define-type'
 //    })
 
 export class Extensions extends PartialType { }
-
-export class ExtensionsReflect {
-  static define(pojoOrType) {
-    if (!isPojo(pojoOrType)) return pojoOrType
-    return es6DefineType(null, Extensions, pojoOrType)
-  }
-
-  static isExtensions(type) {
-    return type?.prototype instanceof Extensions
-  }
-}
