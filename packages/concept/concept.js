@@ -1,9 +1,8 @@
 import { assert } from '@kingjs/assert'
-import { abstract } from '@kingjs/abstract'
+import { abstractify } from '@kingjs/abstract'
 import { isPojo } from '@kingjs/pojo-test'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { Es6UserReflect } from '@kingjs/es6-user-reflect'
-import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { PartialType } from '@kingjs/partial-type'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { PartialClass, Extends } from '@kingjs/partial-class'
@@ -16,30 +15,6 @@ const KnownStaticMembers = new Set([
   Extends,
   Implements,
 ])
-
-function abstractify(descriptor) {
-  const type = Es6Descriptor.typeof(descriptor)
-  switch (type) { 
-    case 'getter':
-      descriptor.get = abstract
-      break
-    case 'setter':
-      descriptor.set = abstract
-      break
-    case 'property':
-      descriptor.get = abstract
-      descriptor.set = abstract
-      break
-    case 'method':
-      descriptor.value = abstract
-      break
-    default:
-      assert(false, [
-        `Concept members must be accessors or methods`,
-        `not ${type}.`].join(' '))
-  }
-  return descriptor
-}
 
 export class Concept extends PartialType {
   static [PartialType.Declarations] = {

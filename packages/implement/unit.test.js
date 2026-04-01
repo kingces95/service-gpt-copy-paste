@@ -92,7 +92,7 @@ describe('A type', () => {
         expect(() => {
           implement(type, MyConcept)
         }).toThrow(
-          'Concept members must be accessors or methods not field.'
+          'Only function descriptors can be abstractified.'
         )
       })    
     })

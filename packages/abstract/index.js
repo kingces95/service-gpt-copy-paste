@@ -20,3 +20,14 @@ export function isAbstract(descriptor) {
   if (descriptor.value === abstract) return true
   return false
 }
+
+
+export function abstractify(descriptor) {
+  if (typeof descriptor.get == 'function') descriptor.get = abstract
+  if (typeof descriptor.set == 'function') descriptor.set = abstract
+  if (typeof descriptor.value == 'function') 
+    descriptor.value = abstract
+  else if (descriptor.value !== undefined)
+    throw new Error('Only function descriptors can be abstractified.')
+  return descriptor
+}
