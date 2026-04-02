@@ -1,6 +1,4 @@
-import { assert } from '@kingjs/assert'
 import { Es6Compiler } from '@kingjs/es6-compiler'
-import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 
 const Declarations = Symbol('PartialType.declarations')
 const Compile = Symbol('PartialType.compile')

@@ -3,26 +3,25 @@ import { PartialType } from '@kingjs/partial-type'
 // Extensions hosts descriptors that can be copied onto a type.
 
 // An Extensions merged with a type is not associated with the 
-// type the way a PartialClass or Concept is nor are copied 
-// descriptors associated with the Extensions. After being copied
+// type like a PartialClass or Concept. After being copied
 // the descriptors are indistinguishable from descriptors which
 // might have been defined directly on the type. For this reason, 
 // Extensions are said to be "transparent". 
 
 // Extensions are typically created dynamically from a pojo by
-// calling PartialLoader.load(pojo) and typically this
-// call is done inernally whi  le interpreting declarative metadata
+// calling PartialLoader.load(pojo). Practically, this
+// call is made transparently when loading declarative metadata
 // that hosts pojos representing extensions. For example, an
-// CursorConcept might define a next() method via a pojo like this:
+// CursorConcept might define a next() method like this:
 //   class CursorConcept extends Concept {
 //     static [Extends] = { next() { ... } }
+//     ...
 //   }
-// Here, Extends is well known and interpreted by a loader that
-// merges the defined methods into types that extend CursorConcept.
-// Such loaders would call PartialLoader.load() internally
-// to convert the pojo into an Extensions type.
+// Here the pojo { next() { ... } } is converted into an Extensions
+// type via PartialLoader.load() internally. The next() method is
+// then copied onto the prototype of any type that implements CursorConcept.
 
-// Implementing concepts using @kingjs/implement also uses 
+// Implementing concepts using @kingjs/implement uses 
 // PartialLoader.load() internally to convert pojos
 // into Extensions types. For example to implement an equality
 // concept using a pojo:
@@ -43,7 +42,13 @@ import { PartialType } from '@kingjs/partial-type'
 //     }
 //   }
 // Here the abstract descriptor is copied onto MyClass.prototype
-// via an Extensions type created internally by extend().
+// via an Extensions type created internally by extend(). This can
+// also be done using implement() like this:
+//   class MyClass {
+//     static {
+//       implement(this, { method() { } })
+//     }
+//   }
 
 // The transformation from pojo to Extensions allows for some slick
 // declarative patterns for defining members. For example, a method 

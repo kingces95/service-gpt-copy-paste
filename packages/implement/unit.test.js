@@ -109,14 +109,14 @@ describe('A type', () => {
         expect(descriptor.set).toBe(abstract)
       })
       it('should not satisfy the concept', () => {
-        expect(ConceptReflect.satisfies(type.prototype, MyConcept)).toBe(false)
+        expect(type.prototype instanceof MyConcept).toBe(false)
       })
       describe('when implemented', () => {
         beforeEach(() => {
           implement(type, MyConcept)
         })
         it('should satisfy the concept', () => {
-          expect(ConceptReflect.satisfies(type.prototype, MyConcept)).toBe(true)
+          expect(type.prototype instanceof MyConcept).toBe(true)
         })
         it('should have an abstract accessor', () => {
           const descriptor = Object.getOwnPropertyDescriptor(
@@ -137,7 +137,7 @@ describe('A type', () => {
             expect(descriptor.set).toBe(abstract)
           })
           it('should not satisfy the concept', () => {
-            expect(ConceptReflect.satisfies(type.prototype, MyConcept)).toBe(false)
+            expect(type.prototype instanceof MyConcept).toBe(false)
           })
         })
         describe('and removes the setter', () => {
@@ -153,7 +153,7 @@ describe('A type', () => {
             expect(descriptor.set).toBe(undefined)
           })
           it('should not satisfy the concept', () => {
-            expect(ConceptReflect.satisfies(type.prototype, MyConcept)).toBe(false)
+            expect(type.prototype instanceof MyConcept).toBe(false)
           })
         })
       })
@@ -163,7 +163,7 @@ describe('A type', () => {
         MyConcept.prototype.method = abstract
       })
       it('should not satisfy the concept', () => {
-        expect(ConceptReflect.satisfies(type, MyConcept)).toBe(false)
+        expect(type.prototype instanceof MyConcept).toBe(false)
       })
 
       describe('when implemented', () => {
@@ -171,7 +171,7 @@ describe('A type', () => {
           implement(type, MyConcept)
         })
         it('should satisfy the concept', () => {
-          expect(ConceptReflect.satisfies(type.prototype, MyConcept)).toBe(true)
+          expect(type.prototype instanceof MyConcept).toBe(true)
         })
         it('should have an abstract method', () => {
           expect(type.prototype.method).toBe(abstract)
@@ -183,7 +183,6 @@ describe('A type', () => {
             })
           }) 
           it('should not satisfy the concept', () => {
-            expect(ConceptReflect.satisfies(type.prototype, MyConcept)).toBe(false)
             expect(type.prototype instanceof MyConcept).toBe(false)
           })
         })
@@ -194,7 +193,7 @@ describe('A type', () => {
           implement(type, MyConcept, { method: emptyMethod })
         })
         it('should satisfy the concept', () => {
-          expect(ConceptReflect.satisfies(type.prototype, MyConcept)).toBe(true)
+          expect(type.prototype instanceof MyConcept).toBe(true)
         })
         it('should have the defined method', () => {
           expect(type.prototype.method).toBe(emptyMethod)
