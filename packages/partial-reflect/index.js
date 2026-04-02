@@ -1,14 +1,17 @@
+import { assert } from '@kingjs/assert'
+import { isAbstract } from '@kingjs/abstract'
 import { 
   PartialType, 
   Thunk, Preconditions, Postconditions,
   TypePrecondition, TypePostcondition,
   Prototype } from '@kingjs/partial-type'
+import { Es6Prototype } from '@kingjs/es6-prototype'
 import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { Es6Reflector } from '@kingjs/es6-reflector'
-import { getPrototype as getPartialPrototype } from '@kingjs/partial-prototype'
 import { PartialClass } from '@kingjs/partial-class'
 import { Concept, ImplicitConcept } from '@kingjs/concept'
 import { Extensions } from '@kingjs/extensions'
+import { PartialLoader } from '@kingjs/partial-loader'
 
 // Unfies reflection operations over PartialType and Es6 types which
 // may have been merged with vairous PartialTypes (i.e.PartialClass,
@@ -52,13 +55,48 @@ const KnownStaticKeys = [ 'length', 'name', 'prototype',
   Symbol.hasInstance,
 ]
 
+function createPrototype(type) {
+  const hierarchy = [...PartialLoader.hierarchy(type)]
+  
+  return hierarchy.reduce((prototype, currentType) => {
+    const descriptors = { }
+
+    let ownKey
+    for (const current of PartialLoader.ownDescriptors(currentType)) {
+      assert(typeof current == 'object'
+        || typeof current == 'string' 
+        || typeof current == 'symbol',
+        `Unexpected type: ${typeof current}`)
+
+      switch (typeof current) {
+        case 'string':
+        case 'symbol':
+          ownKey = current 
+        break
+        case 'object':
+          // inherit existing descriptor if current is abstract
+          if (isAbstract(current)) {
+            const existing = descriptors[ownKey]
+            if (existing && !isAbstract(existing))
+              current = existing
+          }
+          descriptors[ownKey] = current
+          break
+      }
+    }
+
+    return Es6Prototype.createLink(currentType, prototype, descriptors)
+  }, null)
+}
+
 class PartialReflector extends Es6Reflector { 
   constructor() {
     super({
       knownTypes: KnownTypes,
       knownInstanceKeys: KnownInstanceKeys,
       knownStaticKeys: KnownStaticKeys,
-      getPrototypeFn: type => getPartialPrototype(type),
+      // TODO: suppress caching transparent prototypes?
+      getPrototypeFn: createPrototype,
     })
   }
 

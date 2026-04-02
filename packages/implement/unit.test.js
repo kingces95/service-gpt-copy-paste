@@ -216,7 +216,7 @@ describe('A type', () => {
     describe('with an associated concept and method', () => {
       let associatedConcept
       beforeEach(() => {
-        associatedConcept = class extends Concept {
+        associatedConcept = class AssociatedConcept extends Concept {
           associatedMethod() { }
         }
         MyConcept.tagType = associatedConcept

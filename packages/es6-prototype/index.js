@@ -3,6 +3,32 @@ import { Descriptor } from '@kingjs/descriptor'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { es6Typeof } from '@kingjs/es6-typeof'
 
+class Es6PrototypeCache {
+  #cache
+  #getPrototype
+
+  constructor(getPrototype) {
+    this.#getPrototype = getPrototype
+  }
+
+  getPrototype(type) {
+    if (!type) return null
+
+    if (!this.#getPrototype)
+      return type.prototype
+
+    if (!this.#cache)
+      this.#cache = new WeakMap()
+
+    let prototype = this.#cache.get(type)
+    if (!prototype) {
+      prototype = this.#getPrototype(type)
+      this.#cache.set(type, prototype)
+    }
+    return prototype
+  }
+}
+
 export class Es6Prototype {
 
   static create(links) {
@@ -52,32 +78,32 @@ export class Es6Prototype {
     return Object.getOwnPropertyDescriptor(prototype, name)
   }
 
-  #getPrototypeFn
+  #cache
   #knownTypes
   #knownKeys
 
   constructor({
-    getPrototypeFn = type => type.prototype,
+    getPrototypeFn = null,
     knownTypes = [],
     knownKeys = [],
   } = { }) {
-    this.#getPrototypeFn = getPrototypeFn
     this.#knownTypes = new Set(knownTypes)
     this.#knownKeys = new Set(knownKeys)
+    this.#cache = new Es6PrototypeCache(getPrototypeFn)
   }
 
   getPrototype(type) {
-    return this.#getPrototypeFn(type)
+    return this.#cache.getPrototype(type)
   }
 
   *hierarchy(type) {
-    const prototype = this.#getPrototypeFn(type)
+    const prototype = this.getPrototype(type)
     for (const link of Es6Prototype.chain(prototype))
       yield link.constructor
   }
   
   *hierarchy$(type) {
-    const prototype = this.#getPrototypeFn(type)
+    const prototype = this.getPrototype(type)
     for (const link of Es6Prototype.chain(prototype)) {
       yield link.constructor
       yield link
@@ -130,18 +156,18 @@ export class Es6Prototype {
 
   hasOwnKey(type, name) {
     if (this.isKnownKey(type, name)) return false
-    const prototype = this.#getPrototypeFn(type)
+    const prototype = this.getPrototype(type)
     return Es6Prototype.hasOwnKey(prototype, name)
   }
 
   hasKey(type, name) {
     if (this.isKnownKey(type, name)) return false
-    const prototype = this.#getPrototypeFn(type)
+    const prototype = this.getPrototype(type)
     return Es6Prototype.hasKey(prototype, name)
   }
 
   *ownKeys(type) {
-    const prototype = this.#getPrototypeFn(type)
+    const prototype = this.getPrototype(type)
     for (const name of Es6Prototype.ownKeys(prototype)) {
       if (this.isKnownKey(type, name)) continue
       yield name
@@ -149,7 +175,7 @@ export class Es6Prototype {
   }
 
   *keys(type, { includeOverridden = false } = { }) {
-    const prototype = this.#getPrototypeFn(type)
+    const prototype = this.getPrototype(type)
     
     const visited = new Set()
     for (const current of Es6Prototype.chain(prototype)) {
@@ -183,7 +209,7 @@ export class Es6Prototype {
 
   getOwnDescriptor(type, name) {
     if (!this.hasOwnKey(type, name)) return null
-    const prototype = this.#getPrototypeFn(type)
+    const prototype = this.getPrototype(type)
     return Es6Prototype.getOwnDescriptor(prototype, name)
   }
 
@@ -195,7 +221,7 @@ export class Es6Prototype {
   }  
 
   *getDescriptor(type, name) {
-    const prototype = this.#getPrototypeFn(type)
+    const prototype = this.getPrototype(type)
     for (const current of Es6Prototype.chain(prototype)) {  
       const descriptor = Es6Prototype.getOwnDescriptor(current, name)
       if (!descriptor) continue
@@ -302,27 +328,6 @@ export class Es6InstancePrototype extends Es6Prototype {
   }
 }
 
-export class Es6PrototypeCache {
-  #cache
-  #getPrototype
-
-  constructor(getPrototype) {
-    this.#cache = new WeakMap()
-    this.#getPrototype = getPrototype
-  }
-
-  getPrototype(type) {
-    if (!type) return null
-
-    let prototype = this.#cache.get(type)
-    if (!prototype) {
-      prototype = this.#getPrototype(type)
-      this.#cache.set(type, prototype)
-    }
-    return prototype
-  }
-}
-
 export class Es6StaticPrototype extends Es6Prototype {
   // Transform ES6 static prototype chain as below.
 
@@ -372,33 +377,14 @@ export class Es6StaticPrototype extends Es6Prototype {
   //         └── Object.prototype           
   //             └── null  
 
-  static #cache
+  static #objectCtorWithoutStatics
+  static #objectCtorWithStatics
 
   static {
-    const objectCtorWithoutStatics = Es6Prototype.createLink(Object)
-    const objectCtorWithStatics = Es6Prototype.createLink(
+    this.#objectCtorWithoutStatics = Es6Prototype.createLink(Object)
+    this.#objectCtorWithStatics = Es6Prototype.createLink(
       Object, null, Object.getOwnPropertyDescriptors(Object))
-
-    const cache = new Es6PrototypeCache(type => {
-      // base case: class { } or class extends null { }
-      if (type == Function.prototype) 
-        return objectCtorWithoutStatics
-
-      // base case: class extends Object { }
-      if (type == Object) 
-        return objectCtorWithStatics
-
-      // recursive case: class extends Base { }
-      const baseType = Object.getPrototypeOf(type)
-      const basePrototype = cache.getPrototype(baseType)
-      const descriptors = Object.getOwnPropertyDescriptors(type)
-      return Es6Prototype.createLink(type, basePrototype, descriptors)
-    })
-
-    Es6StaticPrototype.#cache = cache
   }
-
-  static getPrototype(type) { return this.#cache.getPrototype(type) }
 
   constructor({
     knownKeys = [],
@@ -409,7 +395,21 @@ export class Es6StaticPrototype extends Es6Prototype {
     knownKeys.push('constructor')
 
     super({
-      getPrototypeFn: type => Es6StaticPrototype.getPrototype(type),
+      getPrototypeFn: type => {
+        // base case: class { } or class extends null { }
+        if (type == Function.prototype) 
+          return Es6StaticPrototype.#objectCtorWithoutStatics
+
+        // base case: class extends Object { }
+        if (type == Object) 
+          return Es6StaticPrototype.#objectCtorWithStatics
+
+        // recursive case: class extends Base { }
+        const baseType = Object.getPrototypeOf(type)
+        const basePrototype = this.getPrototype(baseType)
+        const descriptors = Object.getOwnPropertyDescriptors(type)
+        return Es6Prototype.createLink(type, basePrototype, descriptors)
+      },
       knownTypes,
       knownKeys,
     })
