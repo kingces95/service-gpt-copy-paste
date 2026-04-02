@@ -309,23 +309,12 @@ export class MemberInfo {
   *concepts() {
     if (this.isStatic) return
 
-    // Concepts can be declared on any member of the type hierarchy. 
-    // Walk the hierarchy to find them and maintain a set to avoid duplicates.
-    const seen = new Set()
-
-    // Use .parent to walk the member hierarchy
-    const host = this.host
-    // if (host.isConcept) seen.add(host.ctor)
-    for (let member = this; member; member = member.parent()) {
-      const fn = member.host.ctor
-      for (const concept of InfoReflect.getConceptOwnHosts(fn, member.name)) {
-        if (concept == host.ctor) continue
-        seen.add(concept)
-      }
+    const name = this.name
+    const fn = this.host.ctor
+    for (const concept of InfoReflect.concepts(fn, this.name)) {
+      if (PartialReflect.hasOwnKey(concept, name))
+        yield TypeInfo.from(concept)
     }
-
-    // Map to Info instances
-    yield *[...seen].map(fn => TypeInfo.from(fn))
   }
 
   *modifiers() { 

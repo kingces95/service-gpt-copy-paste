@@ -1,13 +1,11 @@
 import { assert } from '@kingjs/assert'
 import { abstractify } from '@kingjs/abstract'
-import { isPojo } from '@kingjs/pojo-test'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { PartialType } from '@kingjs/partial-type'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { PartialClass, Extends } from '@kingjs/partial-class'
 import { Descriptor } from '@kingjs/descriptor'
-import { es6DefineType } from '@kingjs/es6-define-type'
 
 export const Implements = Symbol('Concept.Implements')
 
@@ -50,38 +48,24 @@ export class ImplicitConcept extends PartialType {
 }
 
 export class ConceptReflect {
-  static define(pojoOrType) {
-    if (!isPojo(pojoOrType)) return pojoOrType
-    return es6DefineType(null, ImplicitConcept, pojoOrType)
-  }
-
-  static isConcept(type) {
+  static #isConcept(type) {
     return PartialReflect.isConcept(type)
   }
 
-  static *concepts(type) {
+  static *#concepts(type) {
     yield* PartialReflect.concepts(type)
   }
 
-  static *getConceptOwnHosts(type, name) {
-    for (const host of PartialReflect.hosts(type, name)) {
-      if (!ConceptReflect.isConcept(host)) continue
-      // if (!PartialReflect.isOwnKey(host, name)) continue
-      if (!Object.hasOwn(host.prototype, name)) continue
-      yield host
-    }
-  }
-
   static *associatedConcepts(type) {
-    if (!ConceptReflect.isConcept(type)) return
+    if (!ConceptReflect.#isConcept(type)) return
 
     yield* ConceptReflect.ownAssociatedConcepts(type)
-    for (const concept of ConceptReflect.concepts(type))
+    for (const concept of ConceptReflect.#concepts(type))
       yield *ConceptReflect.associatedConcepts(concept)
   }
 
   static *ownAssociatedConcepts(type) {
-    if (!ConceptReflect.isConcept(type)) return
+    if (!ConceptReflect.#isConcept(type)) return
 
     for (const name of Es6UserReflect.ownKeys(type, { isStatic: true })) {
       if (KnownStaticMembers.has(name)) continue
@@ -96,7 +80,7 @@ export class ConceptReflect {
   }
 
   static satisfies(instance, concept) {
-    if (!ConceptReflect.isConcept(concept)) return false
+    if (!ConceptReflect.#isConcept(concept)) return false
     if (typeof instance != 'object' || instance == null) return false
 
     assert(Es6Reflect.isExtensionOf(concept, Concept),
@@ -130,32 +114,6 @@ export class ConceptReflect {
       }  
     }
 
-    let owner
-    let name
-    let instanceDescriptor, instanceType
-    for (const current of PartialReflect.descriptors(concept)) {
-      switch (typeof current) {
-        case 'function': owner = current; break
-        case 'string': 
-        case 'symbol': 
-          name = current
-          if (!(name in instance)) return false 
-          instanceDescriptor = Descriptor.get(instance, name)
-          instanceType = Descriptor.typeof(instanceDescriptor)
-          break
-        case 'object': {
-          const conceptDescriptor = current
-          const conceptType = Descriptor.typeof(conceptDescriptor)
-          if (instanceType == conceptType) continue
-          if (instanceType == 'property') {
-            if (conceptType == 'getter') continue
-            if (conceptType == 'setter') continue
-          }
-          return false
-        }
-      }
-    }
-
-    return true
+    return Es6Reflect.canDuckCast(concept, instance)
   }
 }

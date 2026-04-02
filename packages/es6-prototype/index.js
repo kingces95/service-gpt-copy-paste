@@ -1,4 +1,5 @@
 import assert from 'assert'
+import { Descriptor } from '@kingjs/descriptor'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { es6Typeof } from '@kingjs/es6-typeof'
 
@@ -37,6 +38,10 @@ export class Es6Prototype {
 
   static hasOwnKey(prototype, name) {
     return Object.prototype.hasOwnProperty.call(prototype, name)
+  }
+
+  static hasKey(prototype, name) {
+    return name in prototype
   }
 
   static *ownKeys(prototype) {
@@ -129,6 +134,12 @@ export class Es6Prototype {
     return Es6Prototype.hasOwnKey(prototype, name)
   }
 
+  hasKey(type, name) {
+    if (this.isKnownKey(type, name)) return false
+    const prototype = this.#getPrototypeFn(type)
+    return Es6Prototype.hasKey(prototype, name)
+  }
+
   *ownKeys(type) {
     const prototype = this.#getPrototypeFn(type)
     for (const name of Es6Prototype.ownKeys(prototype)) {
@@ -154,15 +165,14 @@ export class Es6Prototype {
     }
   }
 
-  isHostOf(type, name) {
-    if (this.isKnownKey(type, name)) return false
-    const prototype = this.#getPrototypeFn(type)
-    return name in prototype
+  *ownHosts(type, name) {
+    for (const current of this.hierarchy(type))
+      if (this.hasOwnKey(current, name)) yield current
   }
 
   *hosts(type, name) {
     for (const current of this.hierarchy(type))
-      if (this.isHostOf(current, name)) yield current
+      if (this.hasKey(current, name)) yield current
   }
 
   getImplementingHost(type, name) {
@@ -221,6 +231,45 @@ export class Es6Prototype {
         }
       }
     }
+  }
+
+  canDuckCast(type, instance) {
+    let owner
+    let name
+    let instanceDescriptor, instanceType
+    for (const current of this.descriptors(type)) {
+      switch (typeof current) {
+        case 'function': 
+          owner = current
+          break
+
+        case 'string': 
+        case 'symbol': 
+          name = current
+          if (!(name in instance)) return false 
+          // TODO: Consider using Es6Descriptor
+          instanceDescriptor = Descriptor.get(instance, name)
+          instanceType = Descriptor.typeof(instanceDescriptor)
+          break
+
+        case 'object': {
+          const descriptorType = Descriptor.typeof(current)
+          assert(descriptorType == 'data' 
+            || descriptorType == 'getter' 
+            || descriptorType == 'setter'
+            || descriptorType == 'property',
+            `Unexpected descriptor type: ${descriptorType}`)
+
+          if (instanceType == descriptorType) continue
+          if (instanceType == 'property') {
+            if (descriptorType == 'getter') continue
+            if (descriptorType == 'setter') continue
+          }
+          return false
+        }
+      }
+    }
+    return true
   }
 }
 

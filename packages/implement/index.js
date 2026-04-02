@@ -3,16 +3,20 @@ import { extend } from '@kingjs/partial-extend'
 import { isPojo } from '@kingjs/pojo-test'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { PartialReflect, isKey } from '@kingjs/partial-reflect'
-import { Concept, ConceptReflect } from '@kingjs/concept'
+import { Concept, ImplicitConcept } from '@kingjs/concept'
 import { PartialLoader } from '@kingjs/partial-loader'
+import { es6DefineType } from '@kingjs/es6-define-type'
 
 export function implement(type, concept, implementation = { }) {
   assert(typeof type == 'function',
     'Type must be a function (e.g. class or function).')
 
   // overload: if concept is pojo, create anonymous concept from pojo 
-  if (isPojo(concept))
-    return extend(type, ConceptReflect.define(concept), { isTransparent: true })
+  if (isPojo(concept)) {
+    // TODO: clean up. Should use implementation for starters. 
+    const implicitConcept = es6DefineType(null, ImplicitConcept, concept)
+    return extend(type, implicitConcept, { isTransparent: true })
+  }
 
   assert(Es6Reflect.isExtensionOf(concept, Concept),
     'Argument concept must extend Concept.')

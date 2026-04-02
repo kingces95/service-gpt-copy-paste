@@ -115,13 +115,19 @@ describe('Extensions members', () => {
 })
 
 describe('MyConcept members', () => {
-  let pojo
+  let fnInfo
   beforeEach(async () => {
-    const fnInfo = ClassInfo.from(MyConcept)
-    pojo = await fnInfo.toPojo()
+    fnInfo = ClassInfo.from(MyConcept)
   })
 
-  it('matches expected', () => {
+  it('has expected concepts for myConceptMethod', () => {
+    const methodInfo = fnInfo.getMember('myConceptMethod')
+    const concepts = [...methodInfo.concepts()]
+    expect(concepts).toEqual([])
+  })
+
+  it('matches expected', async () => {
+    const pojo = await fnInfo.toPojo()
     expect(pojo).toEqual(myConceptPojo)
   })
 })

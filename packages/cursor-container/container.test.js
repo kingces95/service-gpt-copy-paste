@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
+import { PartialReflect } from '@kingjs/partial-reflect'
 import { 
   DisposeConcept,
   ConceptReflect 
@@ -181,7 +182,7 @@ describe.each(cases)('A %s', (name, { type, concepts, members }) => {
     })
     it('should have only expected concepts', () => {
       const set = new Set(concepts)
-      for (const concept of ConceptReflect.concepts(type)) {
+      for (const concept of PartialReflect.concepts(type)) {
         if (set.has(concept) == false) throw new Error(
           `${type.name} implements unexpected concept ${concept.name}.`)
         expect(set.has(concept)).toBe(true)
@@ -190,14 +191,6 @@ describe.each(cases)('A %s', (name, { type, concepts, members }) => {
     it('should define expected members', () => {
       for (const member of Reflect.ownKeys(members)) {
         expect(member in type.prototype)
-      }
-    })
-    it('should define expected members on a conceptt', () => {
-      for (const member of Reflect.ownKeys(members)) {
-        const hosts = [...ConceptReflect.getConceptOwnHosts(type, member)]
-        if (hosts.length == 0) throw new Error(
-          `${type.name} does not implement member ${member} as a concept member.`)
-        expect(hosts.length).toBeGreaterThan(0)
       }
     })
   })

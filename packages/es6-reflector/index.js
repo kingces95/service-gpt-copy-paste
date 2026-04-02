@@ -72,14 +72,17 @@ export class Es6Reflector {
   hasOwnKey(type, name, { isStatic } = { }) {
     return this.#prototype(isStatic).hasOwnKey(type, name)
   }
+  hasKey(type, name, { isStatic } = { }) {
+    return this.#prototype(isStatic).hasKey(type, name)
+  }
   *ownKeys(type, { isStatic } = { }) {
     yield* this.#prototype(isStatic).ownKeys(type)
   }
   *keys(type, { isStatic, includeOverridden } = { }) {
     yield* this.#prototype(isStatic).keys(type, { includeOverridden })
   }
-  isHostOf(type, name, { isStatic } = { }) {
-    return this.#prototype(isStatic).isHostOf(type, name)
+  *ownHosts(type, name, { isStatic } = { }) {
+    yield* this.#prototype(isStatic).ownHosts(type, name)
   }
   *hosts(type, name, { isStatic } = { }) {
     yield* this.#prototype(isStatic).hosts(type, name)
@@ -98,5 +101,8 @@ export class Es6Reflector {
   }
   *descriptors(type, { isStatic, includeOverridden } = { }) {
     yield* this.#prototype(isStatic).descriptors(type, { includeOverridden })
+  }
+  canDuckCast(type, targetType) {
+    return this.#prototype().canDuckCast(type, targetType)
   }
 }

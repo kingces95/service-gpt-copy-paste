@@ -40,10 +40,10 @@ describe('MyConcept', () => {
     MyConcept = class MyConcept extends Concept { }
   })
   it('should be a concept', () => {
-    expect(ConceptReflect.isConcept(MyConcept)).toBe(true)
+    expect(PartialReflect.isConcept(MyConcept)).toBe(true)
   })
   it('should have not inherited concepts', () => {
-    const actual = [...ConceptReflect.concepts(MyConcept)]
+    const actual = [...PartialReflect.concepts(MyConcept)]
     const expected = [ ]
     expect(actual).toEqual(expected)
   })
@@ -71,11 +71,6 @@ describe('MyConcept', () => {
     })
     it('should have prototype that is instance of itself', () => {
       expect(MyConcept.prototype).toBeInstanceOf(MyConcept)
-    })
-    it('should have MySubConcept', () => {
-      const actual = [...InfoReflect.getConceptOwnHosts(MyConcept, 'member')]
-      const expected = [ MyConcept ]
-      expect(actual).toEqual(expected)
     })
     it('should be found on an object with the member', () => {
       expect({ member() { } }).toBeInstanceOf(MyConcept)

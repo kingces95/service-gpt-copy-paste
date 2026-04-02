@@ -43,15 +43,12 @@ export class InfoReflect {
   static isKnown(type) { 
     return PartialReflect.isKnown(type)
   }
+  
+  static *concepts(type) {
+    yield *PartialReflect.concepts(type)
+  }
 
   // ConceptReflect proxies
-  static *getConceptOwnHosts(type, name) {
-    yield *ConceptReflect.getConceptOwnHosts(type, name)
-  }
-  static *concepts(type) {
-    yield *ConceptReflect.concepts(type)
-  }
-
   static *associatedConcepts(type) {
     yield* ConceptReflect.ownAssociatedConcepts(type)
   }

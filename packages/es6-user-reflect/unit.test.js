@@ -199,14 +199,14 @@ describe.each(Cases)('%s', (name, md) => {
     })
     it('reports is host to all keys', () => {
       for (const key of expectedKeys) {
-        const isHostOf = Es6UserReflect.isHostOf(type, key, { isStatic })
-        expect(isHostOf).toBe(true)
+        const hasKey = Es6UserReflect.hasKey(type, key, { isStatic })
+        expect(hasKey).toBe(true)
       }
     })
     it('reports not hosting known keys', () => {
       for (const key of Es6UserReflect.knownKeys({ isStatic })) {
-        const isHostOf = Es6UserReflect.isHostOf(type, key, { isStatic })
-        expect(isHostOf).toBe(false)
+        const hasKey = Es6UserReflect.hasKey(type, key, { isStatic })
+        expect(hasKey).toBe(false)
       }
     })
     it('reports correct hosts for keys', () => {
