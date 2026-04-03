@@ -1,5 +1,5 @@
 import { assert } from '@kingjs/assert'
-import { Es6Prototype, Es6StaticPrototype } from '@kingjs/es6-prototype'
+import { Es6Prototype } from '@kingjs/es6-prototype'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { es6Typeof } from '@kingjs/es6-typeof'
 
@@ -118,7 +118,7 @@ export class Es6Reflector {
 
     knownStaticKeys.push('constructor')
 
-    this.#static = new Es6StaticPrototype({
+    this.#static = new Es6Prototype({
       knownTypes,
       knownKeys: knownStaticKeys,
       getPrototypeFn: type => {
