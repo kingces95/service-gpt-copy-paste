@@ -1,7 +1,6 @@
 import { assert } from '@kingjs/assert'
 import { Descriptor } from '@kingjs/descriptor'
 
-
 class Es6PrototypeCache {
   #cache
   #getPrototype
@@ -274,112 +273,5 @@ export class Es6Prototype {
       }
     }
     return true
-  }
-}
-
-const ObjectCtorWithStatics = Es6Prototype.createLink(
-      Object, null, Object.getOwnPropertyDescriptors(Object))
-const ObjectCtorWithoutStatics = Es6Prototype.createLink(Object)
-
-export class Es6StaticPrototype extends Es6Prototype {
-  // Transform ES6 static prototype chain as below.
-
-  // These constructions allow for the same algorithms used to query 
-  // the instance prototype chain to be used to query the static
-  // prototype chain. For example,
-  
-  //    .keys() and .descriptors() return just the static members. 
-  //    The insance members found on Function.prototype and 
-  //    Object.prototype are excluded because they are not included 
-  //    in the chain.
-
-  //    .baseTypes() and .hierarchy() return the same list of types as 
-  //    would be returned by the instance prototype chain. This unifies
-  //    the static and instance prototype chains.
-
-  // Note the chain link labeled Object and Object* both have a 
-  // .constructor pointing to the ES6 Object function, but only 
-  // Object* has a copy of the static members of Object. The Object 
-  // link has no members. 
-  
-  // The one gotcha is Object* is never directly returned as a prototype of
-  // any type, but is only used as a link in the prototype chain when a 
-  // type extends Object. This is a bit odd but less odd than the actual
-  // JavaScript ctor chain. This is mitigated by higher level Reflectors 
-  // that only return user defined members in which case all members of 
-  // Object are hidden anyway.
-
-  // The other small gotcha is that, unlike ES6, .constructor is reserved 
-  // as a *static* member. A small price to pay!
-
-  // class A { }
-
-  // ES6 Chains:                        Static Prototype Chain:
-  // A                                  A
-  // └── Function.prototype       ->    └── Object
-  //     └── Object.prototype               └── null
-  //         └── null                                                                                                                              
-  //                                                                                                      
-  // A.prototype                                                                                                  
-  // └── Object.prototype                                                                                           
-  //     └── null                                                                                   
- 
-  // class A extends null
-
-  // ES6 Chains:                        Static Prototype Chain:
-  // A                                  A
-  // └── Function.prototype       ->    └── null
-  //     └── Object.prototype               
-  //         └── null     
-  //                                                                                                      
-  // A.prototype                                                                                                  
-  // └── null                                                                                   
-
-  // class A extends Object { }                                                                             
-
-  // ES6 Class:                         Static Prototype Chain:
-  // A                                  A 
-  // └── Object                   ->    └── Object*
-  //     └── Function.prototype             └── null
-  //         └── Object.prototype           
-  //             └── null  
-  //                                                                                                      
-  // A.prototype                                                                                                  
-  // └── Object.prototype                                                                                           
-  //     └── null 
-
-  constructor({
-    knownKeys = [],
-    knownTypes = [],
-  }) {
-    // .constructor is reserved for static members since it is needed
-    // to construct the prototype chain.
-    knownKeys.push('constructor')
-
-    super({
-      getPrototypeFn: type => {
-        // base case: class { }
-        if (type == Function.prototype) 
-          return ObjectCtorWithoutStatics
-
-        // base case: class extends Object { }
-        if (type == Object) 
-          return ObjectCtorWithStatics
-
-        const baseType = Object.getPrototypeOf(type)
-        const basePrototype = 
-          // base case: class extends null { }
-          baseType == Function.prototype 
-            && Object.getPrototypeOf(type.prototype) == null ? null
-
-          // recursive case: class extends Base { }
-          : this.getPrototype(baseType)
-
-        const descriptors = Object.getOwnPropertyDescriptors(type)
-        return Es6Prototype.createLink(type, basePrototype, descriptors)
-      },
-      knownTypes,
-      knownKeys,
-    })
   }
 }
