@@ -77,7 +77,7 @@ const MyExtensionsMd = {
   isPartialClass: false,
   isConcept: false,
   isAnonymous: true,
-  base: null,
+  base: Extensions,
 }
 
 const MyPartialClassMd = {
@@ -90,7 +90,7 @@ const MyPartialClassMd = {
   isPartialClass: true,
   isConcept: false,
   isAnonymous: false,
-  base: null,
+  base: PartialClass,
 }
 
 const MyConceptMd = {
@@ -103,7 +103,7 @@ const MyConceptMd = {
   isPartialClass: false,
   isConcept: true,
   isAnonymous: false,
-  base: null,
+  base: Concept,
 }
 
 const Es6Object = {
@@ -216,8 +216,8 @@ describe('Given', () => {
       const expectedBase = md.base
       if (!expectedBase) return
       const baseInfo = TypeInfo.from(expectedBase)
-      expect(info.isSubclassOf(baseInfo)).toBe(true)
-      expect(baseInfo.isSubclassOf(info)).toBe(false)
+      expect(info.isExtensionOf(baseInfo)).toBe(true)
+      expect(baseInfo.isExtensionOf(info)).toBe(false)
     })
     it('should equal itself', () => {
       expect(info.equals(info)).toBe(true)

@@ -31,40 +31,66 @@ export class Es6Reflector {
       : this.#instancePrototype 
   }
 
-  getPrototype(type, { isStatic } = { }) {
-    return this.#prototype(isStatic).getPrototype(type)
+  isExtensionOf(type, targetType, { minDepth = 1 } = { }) {
+    const prototype = this.#staticPrototype
+
+    if (!type) return false
+    if (typeof type != 'function') return false
+    
+    let depth = 0
+    for (const base of prototype.hierarchy(type)) {
+      if (base == targetType) return depth >= minDepth
+      depth++
+    }
+
+    return false
   }
+
+  getExtendedType(type) {
+    const prototype = this.#staticPrototype
+
+    let result = Object.getPrototypeOf(type)
+    if (result == Function.prototype) 
+      result = Object
+
+    for (const base of prototype.baseTypes(type))
+      if (base == result) return base
+    return null
+  }
+
+  isAbstract(type) {
+    return type != Object && !this.isExtensionOf(type, Object)
+  }
+
   typeof(type, key, descriptor) {
-    return this.#prototype().typeof(type, key, descriptor)
+    return this.#instancePrototype.typeof(type, key, descriptor)
   }
 
   *knownTypes() { 
-    yield* this.#prototype().knownTypes()
-  }
-  *knownKeys({ isStatic } = { }) { 
-    yield* this.#prototype(isStatic).knownKeys() 
+    yield* this.#instancePrototype.knownTypes()
   }
 
   *hierarchy(type) { 
-    yield* this.#prototype().hierarchy(type) 
+    yield* this.#instancePrototype.hierarchy(type) 
   }
   getBaseType(type) {
-    return this.#prototype().getBaseType(type)
+    return this.#instancePrototype.getBaseType(type)
   }
   *baseTypes(type) { 
-    yield* this.#prototype().baseTypes(type) 
+    yield* this.#instancePrototype.baseTypes(type) 
   }
-  getExtendedType(type) {
-    return this.#prototype().getExtendedType(type)
+  canDuckCast(type, targetType) {
+    return this.#instancePrototype.canDuckCast(type, targetType)
   }
-  isExtensionOf(type, targetType) { 
-    return this.#prototype().isExtensionOf(type, targetType) 
-  }
-  isAbstract(type) { 
-    return this.#prototype().isAbstract(type) 
+
+  getPrototype(type, { isStatic } = { }) {
+    return this.#prototype(isStatic).getPrototype(type)
   }
   isKnown(type, { isStatic } = { }) {
     return this.#prototype(isStatic).isKnown(type)
+  }
+  *knownKeys({ isStatic } = { }) { 
+    yield* this.#prototype(isStatic).knownKeys() 
   }
   isKnownKey(type, name, { isStatic } = { }) {
     return this.#prototype(isStatic).isKnownKey(type, name)
@@ -101,8 +127,5 @@ export class Es6Reflector {
   }
   *descriptors(type, { isStatic, includeOverridden } = { }) {
     yield* this.#prototype(isStatic).descriptors(type, { includeOverridden })
-  }
-  canDuckCast(type, targetType) {
-    return this.#prototype().canDuckCast(type, targetType)
   }
 }

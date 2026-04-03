@@ -40,10 +40,10 @@ describe('MyConcept', () => {
     MyConcept = class MyConcept extends Concept { }
   })
   it('should be a concept', () => {
-    expect(PartialReflect.isConcept(MyConcept)).toBe(true)
+    expect(PartialReflect.isExtensionOf(MyConcept, Concept)).toBe(true)
   })
   it('should have not inherited concepts', () => {
-    const actual = [...PartialReflect.concepts(MyConcept)]
+    const actual = [...PartialReflect.baseTypes(MyConcept)]
     const expected = [ ]
     expect(actual).toEqual(expected)
   })

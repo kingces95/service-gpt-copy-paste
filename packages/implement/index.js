@@ -2,10 +2,14 @@ import { assert } from '@kingjs/assert'
 import { extend } from '@kingjs/partial-extend'
 import { isPojo } from '@kingjs/pojo-test'
 import { Es6Reflect } from '@kingjs/es6-reflect'
-import { PartialReflect, isKey } from '@kingjs/partial-reflect'
+import { PartialReflect } from '@kingjs/partial-reflect'
 import { Concept, ImplicitConcept } from '@kingjs/concept'
 import { PartialLoader } from '@kingjs/partial-loader'
 import { es6DefineType } from '@kingjs/es6-define-type'
+
+function isKey(key) {
+  return typeof key === 'string' || typeof key === 'symbol'
+}
 
 export function implement(type, concept, implementation = { }) {
   assert(typeof type == 'function',

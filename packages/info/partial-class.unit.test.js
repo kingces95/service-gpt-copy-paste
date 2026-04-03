@@ -6,6 +6,7 @@ import { extend } from '@kingjs/partial-extend'
 import { abstract } from '@kingjs/abstract'
 import { } from "@kingjs/info-to-pojo"
 import { PartialLoader } from '@kingjs/partial-loader'
+import { Extensions } from '@kingjs/extensions'
 
 function getMemberValue(cls) {
   const info = TypeInfo.from(cls)
@@ -19,9 +20,11 @@ const pojoFilter = {
   isKnown: false,
 }
 
+const base = { base: 'Extensions' }
+
 describe('A partial class', () => {
   describe.each([
-    ['no members', { }, { }],
+    ['no members', { }, { ...base }],
     // ['static data', class MyEg extends PartialClass { 
     //   static myStaticMember = 1 }, {
     //   // static members are ignored by the DSL
@@ -34,26 +37,31 @@ describe('A partial class', () => {
     ['instance setter', {
       set myInstanceAccessor(value) { }
     }, {
+      ...base,
       members: { setters: {
         myInstanceAccessor: { host: '.' }
       } },
     }],
     ['data', { myData: 1 }, { 
+      ...base,
       members: { fields: {
         myData: { host: '.', fieldType: 'number' } 
       } },
     }],
     ['abstract method', { myMethod: abstract }, { 
+      ...base,
       members: { methods: {
         myMethod: { host: '.', isAbstract: true } 
       } }
     }],
     ['descriptor member', { myMethod: { value: 1 } }, {
+      ...base,
       members: { fields: {
         myMethod: { host: '.', fieldType: 'number'} 
       } },
     }],
     ['const field', { myField: { value: 3.141, writable: false } }, {
+      ...base,
       members: { fields: {
         myField: { host: '.', modifiers: [ 'const' ], fieldType: 'number' } 
       } },

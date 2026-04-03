@@ -1,6 +1,7 @@
 import { assert } from '@kingjs/assert'
 import { PartialReflect } from '@kingjs/partial-reflect'
-import { ConceptReflect } from "@kingjs/concept"
+import { Concept, ConceptReflect } from "@kingjs/concept"
+import { PartialClass } from '@kingjs/partial-class'
 
 export class InfoReflect {
 
@@ -38,14 +39,21 @@ export class InfoReflect {
   }
 
   static *partialClasses(type) {
-    yield* PartialReflect.partialClasses(type)
+    // yield* PartialReflect.partialClasses(type)
+    for (const current of PartialReflect.baseTypes(type)) {
+      if (!PartialReflect.isExtensionOf(current, PartialClass)) continue
+      yield current
+    }
   }
   static isKnown(type) { 
     return PartialReflect.isKnown(type)
   }
   
   static *concepts(type) {
-    yield *PartialReflect.concepts(type)
+    for (const current of PartialReflect.baseTypes(type)) {
+      if (!PartialReflect.isExtensionOf(current, Concept)) continue
+      yield current
+    }
   }
 
   // ConceptReflect proxies

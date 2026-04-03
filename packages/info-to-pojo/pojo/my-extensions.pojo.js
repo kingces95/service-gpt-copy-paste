@@ -1,4 +1,5 @@
 export const myExtensionsPojo = {
+  base: 'Extensions',
   isAbstract: true,
   isAnonymous: true,
   members: {

@@ -86,20 +86,25 @@ describe('A concept', () => {
   })
 
   describe.each([
-    ['no members', class MyConcept extends Concept { }, { }],
+    ['no members', class MyConcept extends Concept { }, { 
+      base: 'Concept',
+    }],
     ['static data', class MyConcept extends Concept { 
       static member = 1 }, {
+      base: 'Concept',
       // static members are ignored by the DSL
     }],
     ['static getter', class MyConcept extends Concept {
       static get member() { return 1 } 
     }, { 
+      base: 'Concept',
       // static members are ignored by the DSL
     }],
     ['instance setter', class MyConcept extends Concept {
       set member(value) { }
     }, 
     {
+      base: 'Concept',
       members: { setters: {
         member: { 
           host: '.',
@@ -300,6 +305,7 @@ describe('A bespoke concept', () => {
           },
         } },
         name: 'MyConcept',
+        base: 'Concept',
         isAbstract: true,
         isConcept: true,
       }
@@ -364,6 +370,7 @@ describe('A bespoke concept', () => {
     it('has a pojo that ignores the static member', async () => {
       const pojo = {
         name: 'MyConcept',
+        base: 'Concept',
         isAbstract: true,
         isConcept: true,
         members: { methods: {
@@ -425,6 +432,7 @@ describe('A bespoke concept', () => {
     it('has a pojo', async () => {
       const pojo = {
         name: 'MyConcept',
+        base: 'Concept',
         isAbstract: true,
         isConcept: true,
         members: {

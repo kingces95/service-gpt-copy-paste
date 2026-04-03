@@ -27,9 +27,13 @@ export class TypeInfo {
     return FunctionInfoCache.get(fn)
   }
   static #create(fn) {
-    if (PartialReflect.isExtension(fn)) return new ExtensionsInfo(fn)
-    if (PartialReflect.isPartialClass(fn)) return new PartialClassInfo(fn)
-    if (PartialReflect.isConcept(fn)) return new ConceptInfo(fn)
+
+    if (PartialReflect.isExtensionOf(fn, Extensions)) 
+      return new ExtensionsInfo(fn)
+    if (PartialReflect.isExtensionOf(fn, PartialClass)) 
+      return new PartialClassInfo(fn)
+    if (PartialReflect.isExtensionOf(fn, Concept)) 
+      return new ConceptInfo(fn)
     // TODO: refactor to handle ImplicitConcept and the like.
     return new ClassInfo(fn)
   }
@@ -59,13 +63,10 @@ export class TypeInfo {
   get isTransparent() { return this.isExtensions }
 
   get base() { 
-    const base = TypeInfo.from(InfoReflect.getExtendedType(this.ctor)) 
-    if (!this.isAbstract) return base
-    if (base == TypeInfo.Object) return null
-    return base
+    return TypeInfo.from(InfoReflect.getExtendedType(this.ctor)) 
   }
 
-  isSubclassOf(other) {
+  isExtensionOf(other) {
     assert(other instanceof TypeInfo, 'other must be a TypeInfo')
 
     let current = this

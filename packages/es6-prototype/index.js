@@ -1,4 +1,4 @@
-import assert from 'assert'
+import { assert } from '@kingjs/assert'
 import { Descriptor } from '@kingjs/descriptor'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { es6Typeof } from '@kingjs/es6-typeof'
@@ -131,27 +131,6 @@ export class Es6Prototype {
     const hierarchy = this.hierarchy(type)
     hierarchy.next() // skip self
     yield* hierarchy
-  }
-
-  getExtendedType(type) {
-    let result = Object.getPrototypeOf(type)
-    if (result == Function.prototype) 
-      result = Object
-
-    for (const base of this.baseTypes(type))
-      if (base == result) return base
-    return null
-  }
-
-  isExtensionOf(type, targetType) {
-    if (!type) return false
-    for (const base of this.baseTypes(type))
-      if (base == targetType) return true
-    return false
-  }
-
-  isAbstract(type) {
-    return type != Object && !this.isExtensionOf(type, Object)
   }
 
   hasOwnKey(type, name) {
@@ -360,15 +339,29 @@ export class Es6StaticPrototype extends Es6Prototype {
   // as a *static* member. A small price to pay!
 
   // class A { }
-  // class A extends Object { }
 
-  // ES6 Class Chain:                   Static Prototype Chain:
+  // ES6 Chains:                        Static Prototype Chain:
   // A                                  A
   // └── Function.prototype       ->    └── Object
   //     └── Object.prototype               └── null
-  //         └── null     
+  //         └── null                                                                                                                              
+  //                                                                                                      
+  // A.prototype                                                                                                  
+  // └── Object.prototype                                                                                           
+  //     └── null                                                                                   
+ 
+  // class A extends null
 
-  // class A extends Object { }
+  // ES6 Chains:                        Static Prototype Chain:
+  // A                                  A
+  // └── Function.prototype       ->    └── null
+  //     └── Object.prototype               
+  //         └── null     
+  //                                                                                                      
+  // A.prototype                                                                                                  
+  // └── null                                                                                   
+
+  // class A extends Object { }                                                                             
 
   // ES6 Class:                         Static Prototype Chain:
   // A                                  A 
@@ -376,6 +369,10 @@ export class Es6StaticPrototype extends Es6Prototype {
   //     └── Function.prototype             └── null
   //         └── Object.prototype           
   //             └── null  
+  //                                                                                                      
+  // A.prototype                                                                                                  
+  // └── Object.prototype                                                                                           
+  //     └── null 
 
   static #objectCtorWithoutStatics
   static #objectCtorWithStatics
@@ -396,7 +393,7 @@ export class Es6StaticPrototype extends Es6Prototype {
 
     super({
       getPrototypeFn: type => {
-        // base case: class { } or class extends null { }
+        // base case: class { }
         if (type == Function.prototype) 
           return Es6StaticPrototype.#objectCtorWithoutStatics
 
@@ -404,18 +401,20 @@ export class Es6StaticPrototype extends Es6Prototype {
         if (type == Object) 
           return Es6StaticPrototype.#objectCtorWithStatics
 
-        // recursive case: class extends Base { }
         const baseType = Object.getPrototypeOf(type)
-        const basePrototype = this.getPrototype(baseType)
+        const basePrototype = 
+          // base case: class extends null { }
+          baseType == Function.prototype 
+            && Object.getPrototypeOf(type.prototype) == null ? null
+
+          // recursive case: class extends Base { }
+          : this.getPrototype(baseType)
+
         const descriptors = Object.getOwnPropertyDescriptors(type)
         return Es6Prototype.createLink(type, basePrototype, descriptors)
       },
       knownTypes,
       knownKeys,
     })
-  }
-
-  typeof(type, key, descriptor) {
-    return Es6Descriptor.typeof(descriptor)
   }
 }

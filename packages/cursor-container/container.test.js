@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { 
+  Concept,
   DisposeConcept,
   ConceptReflect 
 } from '@kingjs/concept'
@@ -182,7 +183,9 @@ describe.each(cases)('A %s', (name, { type, concepts, members }) => {
     })
     it('should have only expected concepts', () => {
       const set = new Set(concepts)
-      for (const concept of PartialReflect.concepts(type)) {
+      const baseConcepts = [...PartialReflect.baseTypes(type)]
+        .filter(current => PartialReflect.isExtensionOf(current, Concept))
+      for (const concept of baseConcepts) {
         if (set.has(concept) == false) throw new Error(
           `${type.name} implements unexpected concept ${concept.name}.`)
         expect(set.has(concept)).toBe(true)

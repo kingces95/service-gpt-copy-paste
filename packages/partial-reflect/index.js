@@ -4,9 +4,9 @@ import {
   PartialType, 
   Thunk, Preconditions, Postconditions,
   TypePrecondition, TypePostcondition,
-  Prototype } from '@kingjs/partial-type'
+  Prototype 
+} from '@kingjs/partial-type'
 import { Es6Prototype } from '@kingjs/es6-prototype'
-import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { Es6Reflector } from '@kingjs/es6-reflector'
 import { PartialClass } from '@kingjs/partial-class'
 import { Concept, ImplicitConcept } from '@kingjs/concept'
@@ -17,15 +17,11 @@ import { PartialLoader } from '@kingjs/partial-loader'
 // may have been merged with vairous PartialTypes (i.e.PartialClass,
 // Concept, etc.). For example, 
 
-//  *PartialReflect.baseTypes(type)
-//    Returns all base types of a type including PartialTypes and Es6 types.
-
-// *PartialReflect.partialTypes(type)
-//    Returns all base types filtered to only include PartialTypes.
-
-// *PartialReflect.hosts(type, key)
-//    Returns all types that defined or considered defining a member 
-//    with the key (i.e. keys that were overridden).
+// *PartialReflect.baseTypes(type)
+//    Returns the base types of a type. Since a type may have multiple base
+//    types they are returned in the reverse order they were merged.
+//    For example, if a type extends a base type and a concept, baseTypes 
+//    will return the Concept followed by the base type.  
 
 // *PartialReflect.keys(type, { includeOverridden })
 //    Returns all keys of a type including keys of PartialTypes and Es6 types. 
@@ -33,11 +29,9 @@ import { PartialLoader } from '@kingjs/partial-loader'
 //    includeOverridden is true, overridden keys are included and associated
 //    with the type that defined them (i.e. hosts).
 
-// *baseTypes(type)
-//    Returns the base types of a type. Since a type may have multiple base
-//    types they are returned in the reverse order they were merged.
-//    For example, if a type extends a base type and a concept, baseTypes 
-//    will return the Concept followed by the base type.  
+// *PartialReflect.hosts(type, key)
+//    Returns all types that defined or were overridden defining a member 
+//    with the key.
 
 // etc.
 
@@ -55,89 +49,42 @@ const KnownStaticKeys = [ 'length', 'name', 'prototype',
   Symbol.hasInstance,
 ]
 
-function createPrototype(type) {
-  const hierarchy = [...PartialLoader.hierarchy(type)]
-  
-  return hierarchy.reduce((prototype, currentType) => {
-    const descriptors = { }
+export const PartialReflect = new Es6Reflector({
+  knownTypes: KnownTypes,
+  knownInstanceKeys: KnownInstanceKeys,
+  knownStaticKeys: KnownStaticKeys,
+  // TODO: suppress caching transparent prototypes?
+  getPrototypeFn: function createPrototype(type) {
+    const hierarchy = [...PartialLoader.hierarchy(type)]
+    
+    return hierarchy.reduce((prototype, currentType) => {
+      const descriptors = { }
 
-    let ownKey
-    for (const current of PartialLoader.ownDescriptors(currentType)) {
-      assert(typeof current == 'object'
-        || typeof current == 'string' 
-        || typeof current == 'symbol',
-        `Unexpected type: ${typeof current}`)
+      let ownKey
+      for (const current of PartialLoader.ownDescriptors(currentType)) {
+        assert(typeof current == 'object'
+          || typeof current == 'string' 
+          || typeof current == 'symbol',
+          `Unexpected type: ${typeof current}`)
 
-      switch (typeof current) {
-        case 'string':
-        case 'symbol':
-          ownKey = current 
-        break
-        case 'object':
-          // inherit existing descriptor if current is abstract
-          if (isAbstract(current)) {
-            const existing = descriptors[ownKey]
-            if (existing && !isAbstract(existing))
-              current = existing
-          }
-          descriptors[ownKey] = current
+        switch (typeof current) {
+          case 'string':
+          case 'symbol':
+            ownKey = current 
           break
+          case 'object':
+            // inherit existing descriptor if current is abstract
+            if (isAbstract(current)) {
+              const existing = descriptors[ownKey]
+              if (existing && !isAbstract(existing))
+                current = existing
+            }
+            descriptors[ownKey] = current
+            break
+        }
       }
-    }
 
-    return Es6Prototype.createLink(currentType, prototype, descriptors)
-  }, null)
-}
-
-class PartialReflector extends Es6Reflector { 
-  constructor() {
-    super({
-      knownTypes: KnownTypes,
-      knownInstanceKeys: KnownInstanceKeys,
-      knownStaticKeys: KnownStaticKeys,
-      // TODO: suppress caching transparent prototypes?
-      getPrototypeFn: createPrototype,
-    })
-  }
-
-  getPartialType(type) {
-    let current = type
-    while (current = Es6UserReflect.getBaseType(current)) {
-      if (Es6UserReflect.getBaseType(current) == PartialType)
-        return current
-    }
-    return null
-  }
-
-  isPartialType(type) { return this.getPartialType(type) != null }
-  isPartialClass(type) { return this.getPartialType(type) == PartialClass }
-  isConcept(type) { return this.getPartialType(type) == Concept }
-  isExtension(type) { return this.getPartialType(type) == Extensions }
-
-  *partialTypes(type) {
-    for (const current of this.baseTypes(type)) {
-      if (!this.isPartialType(current)) continue
-      yield current
-    }
-  }
-
-  *partialClasses(type) {
-    for (const current of this.baseTypes(type)) {
-      if (!this.isPartialClass(current)) continue
-      yield current
-    }
-  }
-
-  *concepts(type) {
-    for (const current of this.baseTypes(type)) {
-      if (!this.isConcept(current)) continue
-      yield current
-    }
-  }
-}
-
-export const PartialReflect = new PartialReflector()
-
-export function isKey(key) {
-  return typeof key === 'string' || typeof key === 'symbol'
-}
+      return Es6Prototype.createLink(currentType, prototype, descriptors)
+    }, null)
+  },
+})

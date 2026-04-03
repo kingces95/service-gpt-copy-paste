@@ -122,7 +122,7 @@ export class CliClassMetadata extends CliMetadata {
   static fromMetadataPojo(poja) { return CliMetadataPojoLoader.activate(poja) }
   static async fromClass(class$) { return await CliMetadataClassLoader.activate(class$) }
 
-  static isSubclassOf(classMd, scope, name) {
+  static isExtensionOf(classMd, scope, name) {
     const defaultScope = classMd.loader.scope
 
     let current = classMd.baseClass

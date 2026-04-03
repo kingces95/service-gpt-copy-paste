@@ -1,6 +1,7 @@
 import { isAbstract } from "@kingjs/abstract";
 
 export const myConceptPojo = {
+  base: 'Concept',
   name: 'MyConcept',
   isAbstract: true,
   isConcept: true,

@@ -78,7 +78,7 @@ export class CliParameterInfo extends CliInfo {
   }
 
   get group() {
-    const isService = CliClassMetadata.isSubclassOf(
+    const isService = CliClassMetadata.isExtensionOf(
       this.#classMd, CLI_SCOPE, CLI_SERVICE_PROVIDER)
   
     const group = this.#classMd.group 

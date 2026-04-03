@@ -14,40 +14,6 @@ const KnownStaticMembers = new Set([
   Implements,
 ])
 
-export class Concept extends PartialType {
-  static [PartialType.Declarations] = {
-    ...PartialClass[PartialType.Declarations],
-    [Implements]: { expectedType: Concept },
-  }
-
-  // `myInstance instanceof myConcept` tests if an instance satsifies a concept.
-  // Justification to override Symbol.hasInstance: There should never exist an
-  // instance of a PartialType much less a Concept (except for the prototype of
-  // the class itself). So it is reasonable to override the behavior of
-  // instanceof to test if an instance satisfies the concept. For reflection, use
-  // Es6Reflect.isExtensionOf(type, concept).
-  static [Symbol.hasInstance](instance) {
-    if (this == Concept) 
-      return super[Symbol.hasInstance](instance)
-    return ConceptReflect.satisfies(instance, this)
-  }
-
-  static [PartialType.Compile](descriptor) {
-    const compiledDescriptor = super[PartialType.Compile](descriptor)
-    const abstractDescriptor = abstractify(compiledDescriptor)
-    return abstractDescriptor
-  }
-}
-
-// TODO: Remove/combine with Concept or extend with Symbol.hasInstance.
-export class ImplicitConcept extends PartialType { 
-  static [PartialType.Compile](descriptor) {
-    const compiledDescriptor = super[PartialType.Compile](descriptor)
-    const abstractDescriptor = abstractify(compiledDescriptor)
-    return abstractDescriptor
-  }
-}
-
 const AssociatedConceptReflect = new Es6Prototype({
   knownKeys: [ 'constructor' ],
   getPrototypeFn: concept => {
@@ -118,7 +84,7 @@ export class ConceptReflect {
   }
 
   static satisfies(instance, concept) {
-    if (!PartialReflect.isExtensionOf(concept, Concept)) return false
+    if (!PartialReflect.isConcept(concept)) return false
     if (typeof instance != 'object' || instance == null) return false
 
     assert(Es6Reflect.isExtensionOf(concept, Concept),
