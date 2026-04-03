@@ -1,7 +1,6 @@
 import { assert } from '@kingjs/assert'
 import { Descriptor } from '@kingjs/descriptor'
-import { Es6Descriptor } from '@kingjs/es6-descriptor'
-import { es6Typeof } from '@kingjs/es6-typeof'
+
 
 class Es6PrototypeCache {
   #cache
@@ -278,34 +277,9 @@ export class Es6Prototype {
   }
 }
 
-export class Es6InstancePrototype extends Es6Prototype {
-  constructor({
-    knownKeys = [],
-    knownTypes = [], 
-    getPrototypeFn = type => type.prototype,
-  }) {
-    super({
-      getPrototypeFn,
-      knownTypes,
-      knownKeys,
-    })
-  }
-
-  typeof(type, key, descriptor) {
-    const descriptorType = Es6Descriptor.typeof(descriptor)
-    if (descriptorType != 'field')
-      return descriptorType
-
-    const value = descriptor.value
-    const es6Type = es6Typeof(value)
-    if (key === 'constructor' && value === type) {
-      assert(es6Type == 'class')
-      return 'constructor'
-    }
-
-    return 'field'
-  }
-}
+const ObjectCtorWithStatics = Es6Prototype.createLink(
+      Object, null, Object.getOwnPropertyDescriptors(Object))
+const ObjectCtorWithoutStatics = Es6Prototype.createLink(Object)
 
 export class Es6StaticPrototype extends Es6Prototype {
   // Transform ES6 static prototype chain as below.
@@ -374,15 +348,6 @@ export class Es6StaticPrototype extends Es6Prototype {
   // └── Object.prototype                                                                                           
   //     └── null 
 
-  static #objectCtorWithoutStatics
-  static #objectCtorWithStatics
-
-  static {
-    this.#objectCtorWithoutStatics = Es6Prototype.createLink(Object)
-    this.#objectCtorWithStatics = Es6Prototype.createLink(
-      Object, null, Object.getOwnPropertyDescriptors(Object))
-  }
-
   constructor({
     knownKeys = [],
     knownTypes = [],
@@ -395,11 +360,11 @@ export class Es6StaticPrototype extends Es6Prototype {
       getPrototypeFn: type => {
         // base case: class { }
         if (type == Function.prototype) 
-          return Es6StaticPrototype.#objectCtorWithoutStatics
+          return ObjectCtorWithoutStatics
 
         // base case: class extends Object { }
         if (type == Object) 
-          return Es6StaticPrototype.#objectCtorWithStatics
+          return ObjectCtorWithStatics
 
         const baseType = Object.getPrototypeOf(type)
         const basePrototype = 
