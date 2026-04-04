@@ -1,6 +1,7 @@
 import { assert } from '@kingjs/assert'
 import { PartialReflect } from '@kingjs/partial-reflect'
-import { Concept, ConceptReflect } from "@kingjs/concept"
+import { Concept } from "@kingjs/concept"
+import { ConceptReflect } from '@kingjs/concept-reflect'
 import { PartialClass } from '@kingjs/partial-class'
 
 export class InfoReflect {

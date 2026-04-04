@@ -8,9 +8,6 @@ import {
 } from '@kingjs/partial-type'
 import { Es6Prototype } from '@kingjs/es6-prototype'
 import { Es6Reflector } from '@kingjs/es6-reflector'
-import { PartialClass } from '@kingjs/partial-class'
-import { Concept, ImplicitConcept } from '@kingjs/concept'
-import { Extensions } from '@kingjs/extensions'
 import { PartialLoader } from '@kingjs/partial-loader'
 
 // Unfies reflection operations over PartialType and Es6 types which
@@ -35,9 +32,8 @@ import { PartialLoader } from '@kingjs/partial-loader'
 
 // etc.
 
-const KnownTypes = [ Object, Function, 
-  PartialType, Concept, ImplicitConcept, Extensions, PartialClass ]
-const KnownInstanceKeys = [ 'constructor' ]
+const KnownTypes = [ Object, Function, PartialType ]
+const KnownKeys = [ 'constructor' ]
 const KnownStaticKeys = [ 'length', 'name', 'prototype',
   Thunk, 
   Preconditions, Postconditions,
@@ -50,8 +46,9 @@ const KnownStaticKeys = [ 'length', 'name', 'prototype',
 ]
 
 export const PartialReflect = new Es6Reflector({
-  knownTypes: KnownTypes,
-  knownInstanceKeys: KnownInstanceKeys,
+  knownTypes: KnownTypes, 
+  knownTypeFn: type => Object.getPrototypeOf(type) === PartialType,
+  knownKeys: KnownKeys,
   knownStaticKeys: KnownStaticKeys,
   // TODO: suppress caching transparent prototypes?
   getPrototypeFn: function createPrototype(type) {

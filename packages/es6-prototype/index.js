@@ -77,16 +77,20 @@ export class Es6Prototype {
   }
 
   #cache
-  #knownTypes
+  #knownTypes 
+  #knownTypeFn
   #knownKeys
+  #knownKeyFn
 
   constructor({
+    knownTypes = [], knownTypeFn,
+    knownKeys = [], knownKeyFn,
     getPrototypeFn = null,
-    knownTypes = [],
-    knownKeys = [],
   } = { }) {
     this.#knownTypes = new Set(knownTypes)
+    this.#knownTypeFn = knownTypeFn
     this.#knownKeys = new Set(knownKeys)
+    this.#knownKeyFn = knownKeyFn
     this.#cache = new Es6PrototypeCache(getPrototypeFn)
   }
 
@@ -109,11 +113,14 @@ export class Es6Prototype {
   }
 
   isKnown(type) {
-    return this.#knownTypes.has(type)
+    if (!type) return false
+    return this.#knownTypes.has(type) 
+      || this.#knownTypeFn?.(type) == true
   }
   isKnownKey(type, name) {
     if (this.isKnown(type)) return true
     return this.#knownKeys.has(name)
+      || this.#knownKeyFn?.(type, name) == true
   }
 
   *knownKeys() { yield* this.#knownKeys }

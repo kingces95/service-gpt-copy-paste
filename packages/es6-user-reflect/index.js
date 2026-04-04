@@ -6,6 +6,6 @@ const KnownStaticKeys = [ 'length', 'name', 'prototype' ]
 
 export const Es6UserReflect = new Es6Reflector({
   knownTypes: KnownTypes,
-  knownInstanceKeys: KnownInstanceKeys,
+  knownKeys: KnownInstanceKeys,
   knownStaticKeys: KnownStaticKeys,
 })

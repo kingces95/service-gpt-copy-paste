@@ -3,9 +3,11 @@ import { beforeEach } from 'vitest'
 import { PartialType } from '@kingjs/partial-type'
 import { PartialClass, Extends } from '@kingjs/partial-class'
 import { PartialReflect } from '@kingjs/partial-reflect'
-import { Concept, Implements, ConceptReflect } from '@kingjs/concept'
+import { Concept, Implements } from '@kingjs/concept'
+import { ConceptReflect } from '@kingjs/concept-reflect'
 import { abstract } from '@kingjs/abstract'
 import { InfoReflect } from '@kingjs/info-reflect'
+import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 
 describe('Concept', () => {
   it('should compile function descriptor to abstract', () => {
@@ -110,6 +112,7 @@ describe('MyConcept', () => {
       MyConcept[Implements] = [ MySubConcept ]
     })
     it('should have inherited concepts', () => {
+      const debug = PartialReflect.getPrototype(MyConcept)
       const actual = [...InfoReflect.concepts(MyConcept)]
       const expected = [ MySubConcept ]
       expect(actual).toEqual(expected)

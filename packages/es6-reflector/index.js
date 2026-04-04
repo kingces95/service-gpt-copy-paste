@@ -105,22 +105,23 @@ export class Es6Reflector {
   #static
 
   constructor({
-    knownTypes = [],
-    knownInstanceKeys = [],
-    knownStaticKeys = [],
+    knownTypes = [], knownTypeFn,
+    knownKeys = [], knownKeyFn,
+    knownStaticKeys = [], knownStaticKeyFn,
     getPrototypeFn = type => type.prototype,
   } = { }) {
     this.#instance = new Es6Prototype({
-      knownTypes,
-      knownKeys: knownInstanceKeys,
+      knownTypes, knownTypeFn,
+      knownKeys, knownKeyFn,
       getPrototypeFn,
     })
 
     knownStaticKeys.push('constructor')
 
     this.#static = new Es6Prototype({
-      knownTypes,
+      knownTypes, knownTypeFn,
       knownKeys: knownStaticKeys,
+      knownKeyFn: knownStaticKeyFn,
       getPrototypeFn: type => {
         // base case 1: class A { }
         if (type == Function.prototype) 

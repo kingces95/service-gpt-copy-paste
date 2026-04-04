@@ -1,11 +1,12 @@
-import { assert } from '@kingjs/assert'
 import { abstractify } from '@kingjs/abstract'
-import { Es6Reflect } from '@kingjs/es6-reflect'
 import { PartialType } from '@kingjs/partial-type'
+import { PartialClass } from '@kingjs/partial-class'
+import { assert } from '@kingjs/assert'
+import { Es6Reflect } from '@kingjs/es6-reflect'
 import { PartialReflect } from '@kingjs/partial-reflect'
-import { PartialClass, Extends } from '@kingjs/partial-class'
 import { Es6Prototype } from '@kingjs/es6-prototype'
 import { Es6Compiler } from '@kingjs/es6-compiler'
+import { Extends } from '@kingjs/partial-class'
 
 export const Implements = Symbol('Concept.Implements')
 
