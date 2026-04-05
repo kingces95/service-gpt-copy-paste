@@ -47,14 +47,6 @@ describe('DescriptorInfo', () => {
       expect(info.isConfigurable).toBe(d.configurable == true)
       expect(info.isEnumerable).toBe(d.enumerable == true)
       expect(info.isWritable).toBe(d.writable == true)
-
-      expect(info.isAbstract).toBe(md.isAbstract == true)
-    })
-    it('has correct pivots', () => {
-      const pivots = Array.from(info.pivots())
-      if (md.isAbstract) {
-        expect(pivots).toContain('abstract')
-      }
     })
     it('toString is correct', () => {
       expect(info.toString()).toBe(md.toString)

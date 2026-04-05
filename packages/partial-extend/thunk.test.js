@@ -6,7 +6,7 @@ import {
   TypePostcondition,
   Preconditions,
   Postconditions,
-} from '@kingjs/partial-type'
+} from '@kingjs/partial-proxy'
 import { PartialProxy } from '@kingjs/partial-proxy'
 
 class MyType extends PartialProxy {

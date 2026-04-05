@@ -7,20 +7,19 @@ const ObjectCtorWithStatics = Es6Prototype.createLink(
       Object, null, Object.getOwnPropertyDescriptors(Object))
 const ObjectCtorWithoutStatics = Es6Prototype.createLink(Object)
 
-// Es6Reflector supports reflection on ES6 classe static and instance members.
+// Es6Reflector supports reflection on ES6 class static and instance members.
 // The static members are copied onto a parallel prototype chain so that the
-// same algorithms can be used to query instance members can be used to query
+// same algorithms used to query instance members can be used to query
 // static members. For example,
 
   //    class A { static a() }
 
-// if transformed into:
+// is transformed into:
 
   //    Class A$ extends null { a() }
 
-// would mean reflecting over A$'s instance members would yield the static 
-// members of A. This roghly works. The catch is that the prototype chain 
-// of A is:
+// so reflecting over A$'s instance members yield static members of A. 
+// This roghly works. The catch is that the prototype chain of A is:
 
   //    A
   //    └── Function.prototype
@@ -32,10 +31,12 @@ const ObjectCtorWithoutStatics = Es6Prototype.createLink(Object)
   //    A$
   //    └── null
 
-// The final links in the prototype chain are different so we would yield
-// different members. Worse, there are three possible final links in the
-// static prototype chain depending on how A is defined. Here are the three
-// cases, the static and instance prototype chains, and the Es6Reflector 
+// The final links in the prototype chain are different so would yield
+// different members so need to be somehow rationalized.
+
+// There are three possible final links in the static prototype chain 
+// depending on how an ES6 class is defined. Here are the three cases, 
+// the static and instance prototype chains, and the Es6Reflector 
 // transformation:
 
 // 1. class A { }
@@ -80,17 +81,17 @@ const ObjectCtorWithoutStatics = Es6Prototype.createLink(Object)
 // of Function and Object. For example, .bind() and .hasOwnProperty() would be
 // included. This is an artifact of the fact that ES6 classes are exposed as 
 // Function instances which are also Object instances. For this reason 
-// Function.prototype and Object.prototype are excluded so that after 
-// transformation to A$ the same naive reflection of A's static members exclude
-// Function and Object instance members.
+// Function.prototype and Object.prototype are excluded so that fter 
+// transformation to A$ the same naive reflection of A's static members 
+// exclude Function and Object instance members.
 
-// The first two examples result in Object.prototype appearing in the instance
+// The first two examples result in Object.prototype in the _instance_
 // prototype chain whereas the third example does not. Conceptually, the first
 // two cases define first class objects which, when activated, inherit Object's 
 // instance members. It is natural, therefore, for an enumeration of the
 // base types to include Object hence Object is included in the transformation. 
-// The third clase where the class extends null defines a class that is more akin 
-// to a hashtable with syntactic sugar for CRUD operations. It is natural, 
+// The third case, where the class extends null, defines a class that is more 
+// akin to a hashtable with syntactic sugar for CRUD operations. It is natural, 
 // therefore, for an enumeration of its base types to exclude Object hence 
 // Object is excluded in the transformation.
 
@@ -100,9 +101,24 @@ const ObjectCtorWithoutStatics = Es6Prototype.createLink(Object)
 // where Object` includes them. Both Object* and Object` include a .constructor 
 // member since it is needed to construct an instance prototype chain.  
 
+// Metadata
+
+// Es6Reflector supports metadata which is a prototype chain of the static 
+// field descriptors of a type found by traversing the instance prototype
+// chain. 
+
+// The instance prototype chain is choosen for metadata instead of
+// the static prototype chain since it can be transformed by the user via
+// the injected function getPrototypeFn so may include additional classes
+// not found on the static chain. Roughly, the instance chain is allows
+// for reflection on the runtime behavior of the type whereas the static 
+// chain allows reflection on the hierarchy of the type as declared in the 
+// source code. 
+
 export class Es6Reflector {
   #instance
   #static
+  #metadata
 
   constructor({
     knownTypes = [], knownTypeFn,
@@ -144,15 +160,80 @@ export class Es6Reflector {
         return Es6Prototype.createLink(type, basePrototype, descriptors)
       }
     })
+
+    this.#metadata = new Es6Prototype({
+      knownKeys: [ 'constructor' ],
+      getPrototypeFn: type => {
+        const hierarchy = [...this.hierarchy(type)]
+
+        return hierarchy.reverse().reduce((prototype, currentType) => {
+          const descriptors = { }
+
+          let key
+          const options = { isStatic: true }
+          for (const current of this.ownDescriptors(currentType, options)) {
+            assert(typeof current == 'object'
+              || typeof current == 'string' 
+              || typeof current == 'symbol',
+              `Unexpected type: ${typeof current}`)
+
+            switch (typeof current) {
+              case 'string':
+              case 'symbol':
+                key = current 
+                break
+              case 'object':
+                const descriptor = current
+                const descriptorType = Es6Descriptor.typeof(descriptor)
+                if (descriptorType != 'field') continue
+                descriptors[key] = descriptor
+                break
+            }
+          }
+
+          return Es6Prototype.createLink(currentType, prototype, descriptors)
+        }, null)
+      }
+    })
   }
 
   #reflect(isStatic = false) { 
     return isStatic ? this.#static : this.#instance 
   }
 
+  *#ownValues(reflect, type, instance, { 
+    descriptorType, valueType } = { }) {
+    const valueFilter = valueType 
+      ? value => this.isExtensionOf(value, valueType) : null
+    
+    yield* reflect.ownValues(type, 
+      instance, { descriptorType, valueFilter })
+  }
+
+  *#values(reflect, type, instance, { 
+    descriptorType, valueType, includeOverridden } = { }) {
+    const valueFilter = valueType 
+      ? value => this.isExtensionOf(value, valueType) : null
+
+    yield* reflect.values(type, 
+      instance, { descriptorType, valueFilter, includeOverridden })
+  }
+
   // static/instance agnostic methods
   *knownTypes() { 
     yield* this.#instance.knownTypes()
+  }
+
+  // metadata methods
+  getMetadata(type) {
+    return this.#metadata.getPrototype(type)
+  }
+  *ownMetadataValues(type, { valueType } = { }) {
+    yield* this.#ownValues(this.#metadata, type, null, { valueType })
+  }
+  *metadataValues(type, { valueType, includeOverridden } = { }) {
+    yield* this.#values(this.#metadata, type, null, { 
+      valueType, includeOverridden })
   }
 
   // static exclusive methods
@@ -248,5 +329,17 @@ export class Es6Reflector {
   }
   *descriptors(type, { isStatic, includeOverridden } = { }) {
     yield* this.#reflect(isStatic).descriptors(type, { includeOverridden })
+  }
+  *ownValues(type, { 
+    descriptorType, valueType, isStatic } = { }) {
+    const instance = isStatic ? type : type.prototype
+    yield* this.#ownValues(this.#reflect(isStatic), type, instance, { 
+      descriptorType, valueType })
+  }
+  *values(type, { 
+    descriptorType, valueType, isStatic, includeOverridden } = { }) {
+    const instance = isStatic ? type : type.prototype
+    yield* this.#values(this.#reflect(isStatic), type, instance, { 
+      descriptorType, valueType, includeOverridden })
   }
 }

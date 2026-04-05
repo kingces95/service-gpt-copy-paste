@@ -1,5 +1,6 @@
 import { assert } from '@kingjs/assert'
 import { Descriptor } from '@kingjs/descriptor'
+import { Es6Descriptor } from '@kingjs/es6-descriptor'
 
 class Es6PrototypeCache {
   #cache
@@ -173,6 +174,22 @@ export class Es6Prototype {
         yield key
       }
     }
+  }
+
+  *ownValues(type, instance, { 
+    descriptorType, valueFilter } = { }) {
+
+    yield *Es6Descriptor.values(
+      this.ownDescriptors(type), 
+        instance, { descriptorType, valueFilter })
+  }
+
+  *values(type, instance, { 
+    descriptorType, valueFilter, includeOverridden } = { }) {
+
+    yield *Es6Descriptor.values(
+      this.descriptors(type, { includeOverridden }), 
+        instance, { descriptorType, valueFilter })
   }
 
   *ownHosts(type, name) {

@@ -2,7 +2,7 @@ import { assert } from '@kingjs/assert'
 import { PartialLoader } from '@kingjs/partial-loader'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { PartialAssociate } from '@kingjs/partial-associate'
-import { Thunk } from '@kingjs/partial-type'
+import { Thunk } from '@kingjs/partial-proxy'
 import { isAbstract } from '@kingjs/abstract'
 import { PartialType } from '@kingjs/partial-type'
 

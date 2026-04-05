@@ -1,3 +1,4 @@
+import { assert } from '@kingjs/assert'
 import { 
   Descriptor,
   DataDescriptor,
@@ -6,6 +7,7 @@ import {
   PropertyDescriptor,
 } from '@kingjs/descriptor'
 import { es6Typeof } from '@kingjs/es6-typeof'
+import { asIterable } from '@kingjs/as-iterable'
 
 export class Es6Descriptor {
 
@@ -24,6 +26,69 @@ export class Es6Descriptor {
 
   static equals(lhs, rhs) {
     return Descriptor.equals(lhs, rhs)
+  }
+
+  static getValue(descriptor, instance) {
+    const type = Es6Descriptor.typeof(descriptor)
+    assert(type == Es6FieldDescriptor.Type 
+      || type == Es6MethodDescriptor.Type
+      || type == Es6GetterDescriptor.Type
+      || type == Es6PropertyDescriptor.Type, 
+      `Unexpected descriptor type: ${type}`)
+
+    switch (type) {
+      case Es6FieldDescriptor.Type:
+        return descriptor.value
+      case Es6MethodDescriptor.Type:
+        return descriptor.value.call(instance)
+      case Es6GetterDescriptor.Type:
+        return descriptor.get.call(instance)
+      case Es6PropertyDescriptor.Type:
+        return descriptor.get.call(instance)
+    }
+  }
+
+  static *values(descriptors, instance, { 
+    descriptorType = 'field', valueFilter } = { }) {
+
+    const filter = new Set(asIterable(descriptorType))
+
+    let key
+    let host
+    for (const current of descriptors) {
+      assert(typeof current == 'object'
+        || typeof current == 'function'
+        || typeof current == 'string'
+        || typeof current == 'symbol',
+        `Unexpected type: ${typeof current}`)
+
+      switch (typeof current) {
+        case 'function':
+          host = current 
+          break
+
+        case 'string':
+        case 'symbol':
+          key = current
+          break
+
+        case 'object': {
+          const descriptor = current
+          const descriptorType = Es6Descriptor.typeof(descriptor)
+          if (filter.size > 0 && !filter.has(descriptorType)) 
+            continue
+
+          const value = Es6Descriptor.getValue(descriptor, instance)
+          if (valueFilter && !valueFilter(value)) continue
+
+          assert(key != null, 'Expected key before descriptor')
+          const result = { value, key }
+          if (host) result.host = host
+          yield result
+          break
+        }
+      }
+    }
   }
   
   static *modifiers(

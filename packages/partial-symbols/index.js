@@ -3,7 +3,7 @@
 // PartialTypes is a static symbol applied to extensions of 
 // PartialType which describes how those extensions form a poset of 
 // PartialType types.
-const PartialTypes = Symbol('PartialType.partialTypes')
+export const Declarations = Symbol('PartialType.declarations')
 
 // For example, PartialTypes is used by PartialClass to designate
 // the Extends symbol as containing an adjacency list to other PartialType
@@ -53,7 +53,7 @@ const PartialTypes = Symbol('PartialType.partialTypes')
 
 // Compile is a static symbol applied to extensions of PartialType which
 // designates a function that can be used to "compile" member descriptors.
-const Compile = Symbol('PartialType.compile')
+export const Compile = Symbol('PartialType.compile')
 
 // For example, Concept PartialType uses Compile to transform its
 // descriptors so thay are "abstract" by setting all get/set/value to abstract
@@ -97,3 +97,6 @@ export const Preconditions = Symbol('PartialType.Preconditions')
 export const Postconditions = Symbol('PartialType.Postconditions')
 export const TypePrecondition = Symbol('PartialType.TypePrecondition')
 export const TypePostcondition = Symbol('PartialType.TypePostcondition')
+
+export const Implements = Symbol('Concept.Implements')
+export const Extends = Symbol('PartialClass.Extends')

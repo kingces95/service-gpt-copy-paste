@@ -1,19 +1,11 @@
 import { abstractify } from '@kingjs/abstract'
 import { PartialType } from '@kingjs/partial-type'
 import { PartialClass } from '@kingjs/partial-class'
-import { assert } from '@kingjs/assert'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { PartialReflect } from '@kingjs/partial-reflect'
-import { Es6Prototype } from '@kingjs/es6-prototype'
-import { Es6Compiler } from '@kingjs/es6-compiler'
-import { Extends } from '@kingjs/partial-class'
+import { Implements } from '@kingjs/partial-symbols'
 
-export const Implements = Symbol('Concept.Implements')
-
-const KnownStaticMembers = new Set([
-  Extends,
-  Implements,
-])
+export { Implements } from '@kingjs/partial-symbols'
 
 export class Concept extends PartialType {
   static [PartialType.Declarations] = {
@@ -21,16 +13,24 @@ export class Concept extends PartialType {
     [Implements]: { expectedType: Concept },
   }
 
-  // `myInstance instanceof myConcept` tests if an instance satsifies a concept.
-  // Justification to override Symbol.hasInstance: There should never exist an
-  // instance of a PartialType much less a Concept (except for the prototype of
-  // the class itself). So it is reasonable to override the behavior of
-  // instanceof to test if an instance satisfies the concept. For reflection, use
-  // Es6Reflect.isExtensionOf(type, concept).
+  // Concept is an abstract type (i.e. it cannot be instantiated) so 
+  // the default instanceof behavior is would always be false. This 
+  // fact justifies overriding Symbol.hasInstance to provide an 
+  // alternative behavior which is to test if an instance satisfies 
+  // a concept. A concept is satisified if (1) the instance can be 
+  // duck cast to MyConcept and (2) the instance satisfies all 
+  // associated concepts of MyConcept.
   static [Symbol.hasInstance](instance) {
     if (this == Concept) 
-      return super[Symbol.hasInstance](instance)
-    return ConceptReflect.satisfies(instance, this)
+      return false
+
+    if (typeof instance != 'object' || instance == null) 
+      return false
+
+    if (!satisfiesAssociations(instance, this)) 
+      return false
+
+    return Es6Reflect.canDuckCast(this, instance)
   }
 
   static [PartialType.Compile](descriptor) {
@@ -49,85 +49,36 @@ export class ImplicitConcept extends PartialType {
   }
 }
 
-const AssociatedConceptReflect = new Es6Prototype({
-  knownKeys: [ 'constructor' ],
-  getPrototypeFn: concept => {
-    const hierarchy = [...PartialReflect.hierarchy(concept)]
+// Associated concepts allow for test if assoicated metadata of
+// an instance satisfies associated concepts of a concept. 
+// For example, 
 
-    return hierarchy.reverse().reduce((prototype, current) => {
-      const descriptors = { }
+  // myContainer instanceof InputContainerConcept
 
-      const options = { isStatic: true }
-      for (const key of PartialReflect.ownKeys(current, options)) {
-        if (KnownStaticMembers.has(key)) continue
+// where MyContainer declares an anassociated cursorType as an
+// InputCursor like,
 
-        const associatedConcept = concept[key]
-        if (typeof associatedConcept != 'function') continue
-        if (!Es6Reflect.isExtensionOf(associatedConcept, Concept)) continue
+  // static cursorType = InputCursor
 
-        descriptors[key] = Es6Compiler.emit({ value: associatedConcept })
-      }
+// and InputContainerConcept declares an associated concept 
+// cursorType as InputCursorConcept like,
 
-      return Es6Prototype.createLink(current, prototype, descriptors)
-    }, null)
+  // static cursorType = InputCursorConcept
+
+// the test is satisfied because InputCursor satisfies InputCursorConcept.
+function satisfiesAssociations(instance, concept) {
+  const ctor = instance.constructor
+
+  const options = { valueType: Concept, includeOverridden: true }
+  for (const { value: associatedConcept, key } of 
+    PartialReflect.metadataValues(concept, options)) {
+
+    const associatedType = ctor[key]
+    if (!(typeof associatedType == 'function')) 
+      return false      
+    
+    if (!(associatedType.prototype instanceof associatedConcept)) 
+      return false        
   }
-})
-
-export class ConceptReflect {
-  static *ownAssociatedConcepts(type) {
-    for (const key of AssociatedConceptReflect.ownKeys(type)) {
-      yield key
-      yield type[key]
-    }
-  }
-
-  static *associatedConcepts(type) {
-    for (const current of AssociatedConceptReflect.hierarchy(type))
-      yield* ConceptReflect.ownAssociatedConcepts(current)
-  }
-
-  static #satisfiesAssociations(instance, concept) {
-    // Associate concepts allow for 
-    //   myContainer instanceof InputContainerConcept
-    // where MyContainer declares associated type as
-    //   static cursorType = InputCursor
-    // and InputContainerConcept declares associated concept as
-    //   static cursorType = InputCursorConcept
-    const ctor = instance?.constructor
-
-    let associatedType
-    for (const current of ConceptReflect.associatedConcepts(concept)) {
-      assert(typeof current == 'string'
-        || typeof current == 'symbol' 
-        || typeof current == 'function',
-        `Unexpected type: ${typeof current}`)
-
-      switch (typeof current) {
-        case 'function':
-          if (!(associatedType.prototype instanceof current)) 
-            return false
-          break
-        case 'string':
-        case 'symbol':
-          associatedType = ctor[current]
-          if (!(typeof associatedType == 'function')) 
-            return false
-          break
-      }
-    }
-    return true
-  }
-
-  static satisfies(instance, concept) {
-    if (!PartialReflect.isExtensionOf(concept, Concept)) return false
-    if (typeof instance != 'object' || instance == null) return false
-
-    assert(Es6Reflect.isExtensionOf(concept, Concept),
-      `Argument concept must extend Concept.`)
-
-    if (!ConceptReflect.#satisfiesAssociations(instance, concept)) 
-      return false
-
-    return Es6Reflect.canDuckCast(concept, instance)
-  }
+  return true
 }

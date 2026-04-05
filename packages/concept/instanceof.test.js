@@ -37,36 +37,44 @@ class MyInheritedTaggedConcept extends Concept {
 }
 
 class MyType {
-  static TypeTag = class { typeTagMethod() { } }
-
-  constructor() {
+   constructor() {
     this.value$ = 42
     this.readOnly$ = false
   }
   get value() { return this.value$ }
   set value(value) { this.value$ = value }
-  method() { return this.readOnly$ }
+  method() { return this.readOnly$ } 
+}
+
+class MyTaggedType extends MyType {
+  static TypeTag = class { typeTagMethod() { } }
 }
 
 describe('An instance of a type', () => {
+  let taggedInstance
   let instance
   beforeEach(() => {
     instance = new MyType()
+    taggedInstance = new MyTaggedType()
   })
 
   it('should satisfy MyEmptyConcept', () => {
     expect(instance).toBeInstanceOf(MyEmptyConcept)
   })
   it('should satisfy MyTaggedConcept', () => {
-    expect(instance).toBeInstanceOf(MyTaggedConcept)
+    expect(taggedInstance).toBeInstanceOf(MyTaggedConcept)
+    expect(instance).not.toBeInstanceOf(MyTaggedConcept)
   })
   it('should satisfy MyTaggedConceptWithMethod', () => {
-    expect(instance).toBeInstanceOf(MyTaggedConceptWithMethod)
+    expect(taggedInstance).toBeInstanceOf(MyTaggedConceptWithMethod)
+    expect(instance).not.toBeInstanceOf(MyTaggedConceptWithMethod)
   })
   it('should satisfy MyInheritedTaggedConcept', () => {
-    expect(instance).toBeInstanceOf(MyInheritedTaggedConcept)
+    expect(taggedInstance).toBeInstanceOf(MyInheritedTaggedConcept)
+    expect(instance).not.toBeInstanceOf(MyInheritedTaggedConcept)
   })
   it('should not satisfy MyTaggedConceptWithFoo', () => {
+    expect(taggedInstance).not.toBeInstanceOf(MyTaggedConceptWithFoo)
     expect(instance).not.toBeInstanceOf(MyTaggedConceptWithFoo)
   })
 

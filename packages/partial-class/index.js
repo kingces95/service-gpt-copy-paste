@@ -1,8 +1,9 @@
 import { PartialType } from '@kingjs/partial-type'
 import { Extensions } from '@kingjs/extensions'
 import { PartialLoader } from '@kingjs/partial-loader'
+import { Extends } from '@kingjs/partial-symbols'
 
-export const Extends = Symbol('PartialClass.Extends')
+export { Extends } from '@kingjs/partial-symbols'
 
 // Extend copies members from one or more extensions to a type prototype.
 // An extension is a class which extends PartialClass. For example, an extension 

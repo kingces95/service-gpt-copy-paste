@@ -4,10 +4,8 @@ import { PartialType } from '@kingjs/partial-type'
 import { PartialClass, Extends } from '@kingjs/partial-class'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { Concept, Implements } from '@kingjs/concept'
-import { ConceptReflect } from '@kingjs/concept-reflect'
 import { abstract } from '@kingjs/abstract'
 import { InfoReflect } from '@kingjs/info-reflect'
-import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 
 describe('Concept', () => {
   it('should compile function descriptor to abstract', () => {
@@ -50,12 +48,12 @@ describe('MyConcept', () => {
     expect(actual).toEqual(expected)
   })
   it('should have no associated concepts', () => {
-    const actual = ConceptReflect.associatedConcepts(MyConcept)
+    const actual = PartialReflect.metadataValues(MyConcept)
     const expected = [ ]
     expect([...actual]).toEqual(expected)
   })
   it('should have no own associated concepts', () => {
-    const actual = ConceptReflect.ownAssociatedConcepts(MyConcept)
+    const actual = PartialReflect.ownMetadataValues(MyConcept)
     expect([...actual]).toEqual([])
   })
   it('should be found on an empty object', () => {
@@ -140,13 +138,24 @@ describe('MyConcept', () => {
         expect(MyConcept.prototype).toBeInstanceOf(MyConcept)
       })
       it('should have associated concept', () => {
-        const actual = [...ConceptReflect.associatedConcepts(MyConcept)]
-        const expected = [ 'associatedType', AssociatedConcept ]
+        const actual = [...PartialReflect.metadataValues(MyConcept, {
+          valueType: Concept,
+        })]
+        const expected = [{ 
+          host: MyConcept,
+          key:'associatedType', 
+          value:AssociatedConcept 
+        }]
         expect(actual).toEqual(expected)
       })
       it('should have own associated concept', () => {
-        const actual = [...ConceptReflect.ownAssociatedConcepts(MyConcept)]
-        const expected = [ 'associatedType', AssociatedConcept ]
+        const actual = [...PartialReflect.ownMetadataValues(MyConcept, {
+          valueType: Concept,
+        })]
+        const expected = [{
+          key: 'associatedType', 
+          value: AssociatedConcept
+        }]
         expect(actual).toEqual(expected)
       })
       it('should not be found on an empty object', () => {

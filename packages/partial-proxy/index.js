@@ -12,7 +12,7 @@ import {
   Postconditions,
   TypePrecondition,
   TypePostcondition,
-} from '@kingjs/partial-type'
+} from '@kingjs/partial-symbols'
 
 export {
   Thunk,
@@ -20,7 +20,7 @@ export {
   Postconditions,
   TypePrecondition,
   TypePostcondition,
-} from '@kingjs/partial-type'
+} from '@kingjs/partial-symbols'
 
 function createThunk(type, key, descriptor) {
   const conditions = PartialProxyReflect.getConditions(type, key)

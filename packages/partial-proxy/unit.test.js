@@ -8,8 +8,7 @@ import {
   TypePostcondition,
   Preconditions,
   Postconditions,
-} from '@kingjs/partial-type'
-import {
+
   PartialProxy,
   PartialProxyReflect,
 } from '@kingjs/partial-proxy'

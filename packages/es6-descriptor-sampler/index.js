@@ -215,7 +215,6 @@ export const Descriptors = [
   [ FunctionMd.name, FunctionMd ],
   [ ConstMethodMd.name, ConstMethodMd ],
   [ SealedMethodMd.name, SealedMethodMd ],
-  [ AbstractMethodMd.name, AbstractMethodMd ],
   [ NumberMd.name, NumberMd ],
   [ HiddenNumberMd.name, HiddenNumberMd ],
   [ ConstNumberMd.name, ConstNumberMd ],

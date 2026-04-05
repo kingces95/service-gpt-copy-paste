@@ -1,14 +1,20 @@
 import { assert } from '@kingjs/assert'
 import { isAbstract } from '@kingjs/abstract'
-import { 
-  PartialType, 
-  Thunk, Preconditions, Postconditions,
-  TypePrecondition, TypePostcondition,
-  Prototype 
-} from '@kingjs/partial-type'
 import { Es6Prototype } from '@kingjs/es6-prototype'
 import { Es6Reflector } from '@kingjs/es6-reflector'
 import { PartialLoader } from '@kingjs/partial-loader'
+import { PartialType } from '@kingjs/partial-type'
+import { 
+  Implements, 
+  Extends,
+  Compile,
+  Declarations,
+  Thunk, 
+  Preconditions, 
+  Postconditions,
+  TypePrecondition, 
+  TypePostcondition,
+} from '@kingjs/partial-symbols'
 
 // Unfies reflection operations over PartialType and Es6 types which
 // may have been merged with vairous PartialTypes (i.e.PartialClass,
@@ -35,13 +41,13 @@ import { PartialLoader } from '@kingjs/partial-loader'
 const KnownTypes = [ Object, Function, PartialType ]
 const KnownKeys = [ 'constructor' ]
 const KnownStaticKeys = [ 'length', 'name', 'prototype',
+  Implements, Extends,
   Thunk, 
   Preconditions, Postconditions,
   TypePrecondition, TypePostcondition,
-  Prototype,
   // TODO: remove Compile, Declarations, Symbol.hasInstance
-  PartialType.Compile, 'Compile',
-  PartialType.Declarations, 'Declarations',
+  Compile, 'Compile',
+  Declarations, 'Declarations',
   Symbol.hasInstance,
 ]
 

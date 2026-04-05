@@ -1,14 +1,10 @@
 import { Es6Compiler } from '@kingjs/es6-compiler'
+import { Compile, Declarations} from '@kingjs/partial-symbols'
 
-const Declarations = Symbol('PartialType.declarations')
-const Compile = Symbol('PartialType.compile')
-
-export const Thunk = Symbol('PartialType.Thunk')
-export const Preconditions = Symbol('PartialType.Preconditions')
-export const Postconditions = Symbol('PartialType.Postconditions')
-export const TypePrecondition = Symbol('PartialType.TypePrecondition')
-export const TypePostcondition = Symbol('PartialType.TypePostcondition')
-export const Prototype = Symbol('PartialType.Prototype')
+export {
+  Compile,
+  Declarations,
+} from '@kingjs/partial-symbols'
 
 export class PartialType extends null {
   static Compile = Compile

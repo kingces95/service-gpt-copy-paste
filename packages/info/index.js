@@ -53,8 +53,8 @@ export class TypeInfo {
   get isConcept() { return this instanceof ConceptInfo }
 
   get ctor() { return this.#fn }
-  get isKnown() { return InfoReflect.isKnown(this.ctor) }
-  get isAbstract() { return InfoReflect.isAbstract(this.ctor) }
+  get isKnown() { return PartialReflect.isKnown(this.ctor) }
+  get isAbstract() { return PartialReflect.isAbstract(this.ctor) }
 
   get id() { return this.#idInfo }
   get name() { return this.id.value }
@@ -63,7 +63,7 @@ export class TypeInfo {
   get isTransparent() { return this.isExtensions }
 
   get base() { 
-    return TypeInfo.from(InfoReflect.getExtendedType(this.ctor)) 
+    return TypeInfo.from(PartialReflect.getExtendedType(this.ctor)) 
   }
 
   isExtensionOf(other) {
@@ -78,7 +78,7 @@ export class TypeInfo {
   getOwnMember(key, { isStatic } = { }) {
     const host = this
     const fn = this.ctor
-    const descriptor = InfoReflect.getOwnDescriptor(fn, key, { isStatic })
+    const descriptor = PartialReflect.getOwnDescriptor(fn, key, { isStatic })
     if (!descriptor) return null
     return MemberInfo.create$(host, fn, key, descriptor, { isStatic })
   }
@@ -88,7 +88,7 @@ export class TypeInfo {
     let owner, descriptor
 
     found:
-    for (const current of InfoReflect.getDescriptor(fn, key, { isStatic })) {
+    for (const current of PartialReflect.getDescriptor(fn, key, { isStatic })) {
       switch (typeof current) {
         case 'function': owner = current; break
         case 'object': descriptor = current; break found
@@ -104,7 +104,7 @@ export class TypeInfo {
     const host = this
     const fn = this.ctor
     let key
-    for (const current of InfoReflect.ownDescriptors(fn, { isStatic })) {
+    for (const current of PartialReflect.ownDescriptors(fn, { isStatic })) {
       switch (typeof current) {
         case 'string':
         case 'symbol': key = current; break
@@ -121,7 +121,7 @@ export class TypeInfo {
     const host = this
     const fn = this.ctor
     let owner, key
-    for (const current of InfoReflect.descriptors(fn, { isStatic })) {
+    for (const current of PartialReflect.descriptors(fn, { isStatic })) {
       switch (typeof current) {
         case 'function': owner = current; break
         case 'string':
@@ -141,39 +141,34 @@ export class TypeInfo {
   *staticMembers() { yield* this.members({ isStatic: true }) }
 
   // partial classes
-  *ownPartialClasses() {
-    yield *InfoReflect.ownPartialClasses(this.ctor)
-      .map(partialClass => TypeInfo.from(partialClass))
-  }
   *partialClasses() {
-    yield *InfoReflect.partialClasses(this.ctor)
-      .map(partialClass => TypeInfo.from(partialClass))
+    for (const current of PartialReflect.baseTypes(this.ctor)) {
+      if (!PartialReflect.isExtensionOf(current, PartialClass)) continue
+      yield TypeInfo.from(current)
+    }
   }
 
   // concepts
   *concepts() {
-    yield *InfoReflect.concepts(this.ctor)
-      .map(concept => TypeInfo.from(concept))
+    for (const current of PartialReflect.baseTypes(this.ctor)) {
+      if (!PartialReflect.isExtensionOf(current, Concept)) continue
+      yield TypeInfo.from(current)
+    }
   }
   *ownAssociatedConcepts() {
-    for (const current of InfoReflect.ownAssociatedConcepts(this.ctor)) {
-      switch (typeof current) {
-        case 'string': yield current; break
-        case 'function': yield TypeInfo.from(current); break
-        default: 
-          assert(false, `Unexpected type: ${typeof current}`)
-      }  
-    }
+    yield *PartialReflect.metadataValues(this.ctor, { valueType: Concept })
+      .map(({ key, value }) => ({
+        key, 
+        value: TypeInfo.from(value)
+    }))
   }
   *associatedConcepts() {
-    for (const current of InfoReflect.associatedConcepts(this.ctor)) {
-      switch (typeof current) {
-        case 'string': yield current; break
-        case 'function': yield TypeInfo.from(current); break
-        default: 
-          assert(false, `Unexpected type: ${typeof current}`)
-      }  
-    }
+    yield *PartialReflect.metadataValues(this.ctor, { valueType: Concept })
+      .map(({ host, key, value }) => ({
+        key, 
+        value: TypeInfo.from(value),
+        host: TypeInfo.from(host),
+    }))
   }
 
   equals(other) { return this == other }
@@ -208,7 +203,7 @@ export class MemberInfo {
   static create$(host, fn, key, descriptor, { isStatic } = { }) {
     const keyInfo = Es6KeyInfo.create(key)
     const descriptorInfo = Es6DescriptorInfo.create(descriptor)
-    const type = InfoReflect.typeof(fn, key, descriptor, { isStatic })
+    const type = PartialReflect.typeof(fn, key, descriptor, { isStatic })
     
     const fnAsHost = TypeInfo.from(fn)
     const abstract = isAbstract(descriptor)
