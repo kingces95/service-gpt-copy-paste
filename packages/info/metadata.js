@@ -1,19 +1,5 @@
-import { PartialReflect } from '@kingjs/partial-reflect'
-import { Concept } from "@kingjs/concept"
-
-export class InfoReflect {
-  
-  static *concepts(type) {
-    for (const current of PartialReflect.baseTypes(type)) {
-      if (!PartialReflect.isExtensionOf(current, Concept)) continue
-      yield current
-    }
-  }
-
-  // Es6Reflect proxies
-  static getMetadata(type) {
-    return Metadata.get(type)
-  }
+export function getMetadata(type) {
+  return Metadata.get(type)
 }
 
 export class GetterMd {

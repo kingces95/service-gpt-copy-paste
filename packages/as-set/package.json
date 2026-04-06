@@ -1,15 +1,15 @@
 {
-  "name": "@kingjs/info-reflect",
+  "name": "@kingjs/as-set",
   "version": "1.0.0",
-  "description": ".",
+  "description": "",
   "main": "index.js",
   "type": "module",
   "exports": {
     ".": "./index.js"
   },
-  "dependencies": {},
-  "devDependencies": {},
-  "peerDependencies": {},
+  "dependencies": {
+    "rxjs": "^7.5.0"
+  },
   "author": "Chris King",
   "license": "MIT"
 }

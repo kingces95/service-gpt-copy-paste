@@ -7,7 +7,7 @@ import {
   PropertyDescriptor,
 } from '@kingjs/descriptor'
 import { es6Typeof } from '@kingjs/es6-typeof'
-import { asIterable } from '@kingjs/as-iterable'
+import { asSet } from '@kingjs/as-set'
 
 export class Es6Descriptor {
 
@@ -49,9 +49,9 @@ export class Es6Descriptor {
   }
 
   static *values(descriptors, instance, { 
-    descriptorType = 'field', valueFilter } = { }) {
+    descriptorFilter, valueFilter } = { }) {
 
-    const filter = new Set(asIterable(descriptorType))
+    descriptorFilter = asSet(descriptorFilter)
 
     let key
     let host
@@ -75,7 +75,8 @@ export class Es6Descriptor {
         case 'object': {
           const descriptor = current
           const descriptorType = Es6Descriptor.typeof(descriptor)
-          if (filter.size > 0 && !filter.has(descriptorType)) 
+          if (descriptorFilter.size > 0 && 
+            !descriptorFilter.has(descriptorType)) 
             continue
 
           const value = Es6Descriptor.getValue(descriptor, instance)

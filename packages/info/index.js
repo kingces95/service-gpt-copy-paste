@@ -1,6 +1,5 @@
 import { assert } from '@kingjs/assert'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
-import { InfoReflect } from '@kingjs/info-reflect'
 import { Extensions } from '@kingjs/extensions'
 import { Concept } from "@kingjs/concept"
 import { PartialClass } from '@kingjs/partial-class'
@@ -12,6 +11,7 @@ import {
 } from "@kingjs/es6-info"
 import { isAbstract } from "@kingjs/abstract"
 import { PartialReflect } from '@kingjs/partial-reflect'
+import { getMetadata } from './metadata.js'
 
 const FunctionInfoCache = new WeakMap()
 
@@ -68,11 +68,7 @@ export class TypeInfo {
 
   isExtensionOf(other) {
     assert(other instanceof TypeInfo, 'other must be a TypeInfo')
-
-    let current = this
-    while (current = current.base)
-      if (current.equals(other)) return true
-    return false
+    return PartialReflect.isExtensionOf(this.ctor, other.ctor)
   }
 
   getOwnMember(key, { isStatic } = { }) {
@@ -142,18 +138,14 @@ export class TypeInfo {
 
   // partial classes
   *partialClasses() {
-    for (const current of PartialReflect.baseTypes(this.ctor)) {
-      if (!PartialReflect.isExtensionOf(current, PartialClass)) continue
-      yield TypeInfo.from(current)
-    }
+    yield* PartialReflect.baseTypes(this.ctor, { filter: PartialClass })
+      .map(type => TypeInfo.from(type))
   }
 
   // concepts
   *concepts() {
-    for (const current of PartialReflect.baseTypes(this.ctor)) {
-      if (!PartialReflect.isExtensionOf(current, Concept)) continue
-      yield TypeInfo.from(current)
-    }
+    yield* PartialReflect.baseTypes(this.ctor, { filter: Concept })
+      .map(type => TypeInfo.from(type))
   }
   *ownAssociatedConcepts() {
     yield *PartialReflect.metadataValues(this.ctor, { valueType: Concept })
@@ -302,21 +294,24 @@ export class MemberInfo {
     if (this.isStatic) return false
     return this.concepts().next().done == false
   }
+
+  // TODO: Should prob be ownConcepts since it does not include concepts
+  // where the this.name is inherited.
   *concepts() {
     if (this.isStatic) return
 
-    const name = this.name
-    const fn = this.host.ctor
-    for (const concept of InfoReflect.concepts(fn, this.name)) {
-      if (PartialReflect.hasOwnKey(concept, name))
-        yield TypeInfo.from(concept)
+    const { name, host: { ctor: type } } = this
+    const filter = { filter: Concept }
+    for (const current of PartialReflect.baseTypes(type, filter)) {
+      if (!PartialReflect.hasOwnKey(current, name)) continue
+      yield TypeInfo.from(current)
     }
   }
 
   *modifiers() { 
     yield* Es6Descriptor.modifiers(
       this.descriptor, 
-      InfoReflect.getMetadata(this.type))     
+      getMetadata(this.type))     
   }
   *pivots() { 
     if (this.isStatic) yield 'static' 

@@ -1,6 +1,7 @@
 import { assert } from '@kingjs/assert'
 import { Descriptor } from '@kingjs/descriptor'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
+import { asSet } from '@kingjs/as-set'
 
 class Es6PrototypeCache {
   #cache
@@ -73,8 +74,20 @@ export class Es6Prototype {
     yield* Reflect.ownKeys(prototype)
   }
 
-  static getOwnDescriptor(prototype, name) {
+  static #getOwnDescriptor(prototype, name) {
     return Object.getOwnPropertyDescriptor(prototype, name)
+  }
+
+  static getOwnDescriptor(prototype, name, descriptorFilter) {
+    const descriptor = Es6Prototype.#getOwnDescriptor(prototype, name)
+
+    if (descriptorFilter) {
+      descriptorFilter = asSet(descriptorFilter)
+      const descriptorType = Es6Descriptor.typeof(descriptor)
+      if (!descriptorFilter.has(descriptorType)) return null
+    }
+
+    return descriptor
   }
 
   #cache
@@ -99,19 +112,6 @@ export class Es6Prototype {
     return this.#cache.getPrototype(type)
   }
 
-  *hierarchy(type) {
-    const prototype = this.getPrototype(type)
-    for (const link of Es6Prototype.chain(prototype))
-      yield link.constructor
-  }
-  
-  *hierarchy$(type) {
-    const prototype = this.getPrototype(type)
-    for (const link of Es6Prototype.chain(prototype)) {
-      yield link.constructor
-      yield link
-    }
-  }
 
   isKnown(type) {
     if (!type) return false
@@ -127,6 +127,12 @@ export class Es6Prototype {
   *knownKeys() { yield* this.#knownKeys }
   *knownTypes() { yield* this.#knownTypes }
 
+  *hierarchy(type) {
+    const prototype = this.getPrototype(type)
+    for (const link of Es6Prototype.chain(prototype))
+      yield link.constructor
+  }
+  
   getBaseType(type) {
     const baseTypes = this.baseTypes(type)
     const { value } = baseTypes.next()
@@ -208,32 +214,43 @@ export class Es6Prototype {
     return null
   }
 
-  getOwnDescriptor(type, name) {
+  getOwnDescriptor(type, name, { descriptorFilter } = { }) {
     if (!this.hasOwnKey(type, name)) return null
     const prototype = this.getPrototype(type)
-    return Es6Prototype.getOwnDescriptor(prototype, name)
+    return Es6Prototype.getOwnDescriptor(
+      prototype, name, descriptorFilter)
   }
 
-  *ownDescriptors(type) {
+  *ownDescriptors(type, { descriptorFilter } = { }) {
     for (const key of this.ownKeys(type)) {
+      const descriptor = this.getOwnDescriptor(
+        type, key, { descriptorFilter })
+      if (!descriptor) continue
+
       yield key
-      yield this.getOwnDescriptor(type, key)
+      yield descriptor
     }
   }  
 
-  *getDescriptor(type, name) {
+  *getDescriptor(type, name, { descriptorFilter } = { }) {
     const prototype = this.getPrototype(type)
     for (const current of Es6Prototype.chain(prototype)) {  
-      const descriptor = Es6Prototype.getOwnDescriptor(current, name)
-      if (!descriptor) continue
       const ctor = current.constructor
       if (this.isKnownKey(ctor, name)) continue
+
+      const descriptor = Es6Prototype.getOwnDescriptor(
+        current, name, descriptorFilter)
+      if (!descriptor) continue
+
       yield ctor
       yield descriptor
     } 
   }
 
-  *descriptors(type, { includeOverridden = false } = { }) {
+  *descriptors(type, { 
+    descriptorFilter, 
+    includeOverridden } = { }) {
+
     let owner
     for (const current of this.keys(type, { includeOverridden })) {
       const typeofCurrent = typeof current
@@ -250,9 +267,11 @@ export class Es6Prototype {
         case 'string':
         case 'symbol': {
           const key = current
+          const descriptor = this.getOwnDescriptor(
+            owner, key, { descriptorFilter })
+          if (!descriptor) continue
+            
           yield key
-
-          const descriptor = this.getOwnDescriptor(owner, current)
           yield descriptor
           break
         }

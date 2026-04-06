@@ -5,7 +5,6 @@ import { PartialClass, Extends } from '@kingjs/partial-class'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { Concept, Implements } from '@kingjs/concept'
 import { abstract } from '@kingjs/abstract'
-import { InfoReflect } from '@kingjs/info-reflect'
 
 describe('Concept', () => {
   it('should compile function descriptor to abstract', () => {
@@ -109,14 +108,10 @@ describe('MyConcept', () => {
       MySubConcept = class MySubConcept extends Concept { }
       MyConcept[Implements] = [ MySubConcept ]
     })
-    it('should have inherited concepts', () => {
-      const debug = PartialReflect.getPrototype(MyConcept)
-      const actual = [...InfoReflect.concepts(MyConcept)]
-      const expected = [ MySubConcept ]
-      expect(actual).toEqual(expected)
-    })
     it('should have concepts', () => {
-      const actual = [...InfoReflect.concepts(MyConcept)]
+      const actual = [...PartialReflect.baseTypes(MyConcept, {
+        filter: Concept
+      })]
       const expected = [ MySubConcept ]
       expect(actual).toEqual(expected)
     })

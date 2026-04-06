@@ -27,7 +27,7 @@ export class Concept extends PartialType {
     if (typeof instance != 'object' || instance == null) 
       return false
 
-    if (!satisfiesAssociations(instance, this)) 
+    if (!satisfiesAssociations(this, instance)) 
       return false
 
     return Es6Reflect.canDuckCast(this, instance)
@@ -49,8 +49,8 @@ export class ImplicitConcept extends PartialType {
   }
 }
 
-// Associated concepts allow for test if assoicated metadata of
-// an instance satisfies associated concepts of a concept. 
+// Associated concepts allow for testign if assoicated metadata of
+// an instance satisfies associated metadata of a concept. 
 // For example, 
 
   // myContainer instanceof InputContainerConcept
@@ -65,8 +65,8 @@ export class ImplicitConcept extends PartialType {
 
   // static cursorType = InputCursorConcept
 
-// the test is satisfied because InputCursor satisfies InputCursorConcept.
-function satisfiesAssociations(instance, concept) {
+// would be true because InputCursor satisfies InputCursorConcept.
+function satisfiesAssociations(concept, instance) {
   const ctor = instance.constructor
 
   const options = { valueType: Concept, includeOverridden: true }

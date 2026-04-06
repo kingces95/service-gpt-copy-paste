@@ -2,6 +2,7 @@ import { assert } from '@kingjs/assert'
 import { Es6Prototype } from '@kingjs/es6-prototype'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { es6Typeof } from '@kingjs/es6-typeof'
+import { asIterable } from '@kingjs/as-iterable'
 
 const ObjectCtorWithStatics = Es6Prototype.createLink(
       Object, null, Object.getOwnPropertyDescriptors(Object))
@@ -170,7 +171,7 @@ export class Es6Reflector {
           const descriptors = { }
 
           let key
-          const options = { isStatic: true }
+          const options = { isStatic: true, descriptorType: 'field' }
           for (const current of this.ownDescriptors(currentType, options)) {
             assert(typeof current == 'object'
               || typeof current == 'string' 
@@ -184,8 +185,6 @@ export class Es6Reflector {
                 break
               case 'object':
                 const descriptor = current
-                const descriptorType = Es6Descriptor.typeof(descriptor)
-                if (descriptorType != 'field') continue
                 descriptors[key] = descriptor
                 break
             }
@@ -217,6 +216,19 @@ export class Es6Reflector {
 
     yield* reflect.values(type, 
       instance, { descriptorType, valueFilter, includeOverridden })
+  }
+
+  *#areExtensionsOf(types, filter) {
+    if (!filter) yield* types
+
+    filter:
+    for (const type of types) {
+      for (const filterType of asIterable(filter))
+        if (!this.isExtensionOf(type, filterType)) 
+          continue filter
+
+      yield type
+    } 
   }
 
   // static/instance agnostic methods
@@ -257,14 +269,17 @@ export class Es6Reflector {
   }
 
   // instance exclusive methods
-  *hierarchy(type) { 
-    yield* this.#instance.hierarchy(type) 
+  *hierarchy(type, { filter } = { }) { 
+    const types = this.#instance.hierarchy(type)
+    yield* this.#areExtensionsOf(types, filter)
+  }
+  *baseTypes(type, { filter } = { }) { 
+    const types = this.#instance.hierarchy(type)
+    types.next() // skip self
+    yield* this.#areExtensionsOf(types, filter)
   }
   getBaseType(type) {
     return this.#instance.getBaseType(type)
-  }
-  *baseTypes(type) { 
-    yield* this.#instance.baseTypes(type) 
   }
   canDuckCast(type, targetType) {
     return this.#instance.canDuckCast(type, targetType)
@@ -318,17 +333,22 @@ export class Es6Reflector {
   getImplementingHost(type, name, { isStatic } = { }) {
     return this.#reflect(isStatic).getImplementingHost(type, name)
   }
-  getOwnDescriptor(type, name, { isStatic } = { }) {
-    return this.#reflect(isStatic).getOwnDescriptor(type, name)
+  getOwnDescriptor(type, name, { isStatic, descriptorFilter } = { }) {
+    return this.#reflect(isStatic)
+      .getOwnDescriptor(type, name, { descriptorFilter })
   }
-  *ownDescriptors(type, { isStatic } = { }) {
-    yield* this.#reflect(isStatic).ownDescriptors(type)
+  *ownDescriptors(type, { isStatic, descriptorFilter } = { }) {
+    yield* this.#reflect(isStatic)
+      .ownDescriptors(type, { descriptorFilter })
   }
-  *getDescriptor(type, name, { isStatic } = { }) {
-    yield* this.#reflect(isStatic).getDescriptor(type, name)
+  *getDescriptor(type, name, { isStatic, descriptorFilter } = { }) {
+    yield* this.#reflect(isStatic)
+      .getDescriptor(type, name, { descriptorFilter })
   }
-  *descriptors(type, { isStatic, includeOverridden } = { }) {
-    yield* this.#reflect(isStatic).descriptors(type, { includeOverridden })
+  *descriptors(type, { 
+    isStatic, descriptorFilter, includeOverridden } = { }) {
+    yield* this.#reflect(isStatic)
+      .descriptors(type, { includeOverridden, descriptorFilter })
   }
   *ownValues(type, { 
     descriptorType, valueType, isStatic } = { }) {
