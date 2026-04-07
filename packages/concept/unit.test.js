@@ -139,7 +139,7 @@ describe('MyConcept', () => {
         const expected = [{ 
           host: MyConcept,
           key:'associatedType', 
-          value:AssociatedConcept 
+          value: AssociatedConcept 
         }]
         expect(actual).toEqual(expected)
       })

@@ -126,20 +126,6 @@ const KnownTypes = [ Object, Function ]
 const KnownInstanceKeys = [ 'constructor' ]
 const KnownStaticKeys = [ 'length', 'name', 'prototype', 'constructor' ]
 
-describe('UserReflect', () => {
-  it('reports known types correctly', () => {
-    const actual = [ ...Es6UserReflect.knownTypes() ]
-    expect(actual).toEqual(KnownTypes)
-  })
-  it('reports known instance keys correctly', () => {
-    const actual = [ ...Es6UserReflect.knownKeys() ]
-    expect(actual).toEqual(KnownInstanceKeys)
-  })
-  it('reports known static keys correctly', () => {
-    const actual = [ ...Es6UserReflect.knownKeys({ isStatic: true }) ]
-    expect(actual).toEqual(KnownStaticKeys)
-  })
-})
 describe.each(Cases)('%s', (name, md) => {
   let type
   beforeEach(() => {
@@ -175,12 +161,6 @@ describe.each(Cases)('%s', (name, md) => {
     const actual = Es6UserReflect.isAbstract(type)
     expect(actual).toBe(expected)
   })
-  it('reports no own known keys', () => {
-    for (const key of Es6UserReflect.knownKeys()) {
-      const hasOwnKey = Es6UserReflect.hasOwnKey(type, key)
-      expect(hasOwnKey).toBe(false)
-    }
-  })
   describe.each(['static', 'instance'])('%s', (key) => {
     const isStatic = key == 'static'
     const expectedOwnKeys = md[key]?.ownKeys || []
@@ -201,12 +181,6 @@ describe.each(Cases)('%s', (name, md) => {
       for (const key of expectedKeys) {
         const hasKey = Es6UserReflect.hasKey(type, key, { isStatic })
         expect(hasKey).toBe(true)
-      }
-    })
-    it('reports not hosting known keys', () => {
-      for (const key of Es6UserReflect.knownKeys({ isStatic })) {
-        const hasKey = Es6UserReflect.hasKey(type, key, { isStatic })
-        expect(hasKey).toBe(false)
       }
     })
     it('reports correct hosts for keys', () => {

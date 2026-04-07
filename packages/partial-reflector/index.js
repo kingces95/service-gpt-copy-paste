@@ -51,8 +51,137 @@ const KnownStaticKeys = [ 'length', 'name', 'prototype',
   Symbol.hasInstance,
 ]
 
-export class PartialReflector extends Es6Reflector {
+// METADATA
+
+// PartialReflector supports metadata which is a prototype chain of the 
+// static field descriptors of a type found by traversing the type
+// hiearchy of the instance prototype chain. For example, implementing
+
+  //  myContainer instanceof InputContainerConcept
   
+// where MyContainer declares an an associated cursorType as an
+// InputCursor like,
+
+  //  class InputCursorConcept extends Concept { 
+  //    next() { }
+  //    get value() { } 
+  //  }
+  //  class InputContainerConcept extends Concept { 
+  //    static cursorType = InputCursorConcept 
+  //  }  
+
+  //  class MyCursor exends Cursor {
+  //    static { extends(this, InputCursorConcept) }
+  //    next() {...}
+  //    get value() {...} 
+  //  }
+  //  class MyPartialContainer extends PartialClass {
+  //    static cursorType = MyCursor
+  //    ...
+  //  }
+  //  class MyContainer extends Container { 
+  //    static { extends(this, MyPartialContainer) }
+  //    // the following members included for illustrative purposes only.
+  //    static myStaticField = ...
+  //    myMember() {...}
+  //  }
+
+// requires testing if MyContainer's cursor is an InputCurosr. Specifically,
+// this requires testing if MyContainer has a static cursorType whose value
+// is a type an instance of which would be instanceof the concept found 
+// in the static cursorType on InputContainerConcept namely 
+// InputCursorConcept. 
+
+// A naive implementation would search the static prototype chain created
+// by Es6Reflector for a field named cursorType on MyContainer and find none. 
+
+  // Es6Reflector Static Prototype Chain:
+
+  // MyContainer (myStaticField)
+  // └── Container
+  //     └── Object
+  //         └── null
+
+// The correct implementation would search for a static named cursorType on 
+// all partial extensions as well (i.e. on MyPartialContainer). Metadata 
+// solves this by allowing querying across the partial extensions for static 
+// field descriptors using the following transform.
+
+// PartialReflector creates an instance prototype chain for MyContainer
+// which includes the partial types defined on MyContainer:
+
+  // PartialReflector Instance Prototype Chain:
+
+  // MyContainer (myMember)
+  // └── MyPartialContainer
+  //     └── Container
+  //         └── Object
+  //             └── null
+
+// Each prototype in this chain has a copy of the instance descriptors of
+// the type it represents. The metadata chain is a transformation of this 
+// instance prototype chain except that each prototype in the chain has a 
+// copy of the *static field* descriptors of the type it represents. 
+
+  // PartialReflector Metadata Prototype Chain:
+
+  // MyContainer (myStaticField)
+  // └── MyPartialContainer (cursorType)
+  //     └── Container
+  //         └── Object
+  //             └── null
+
+// Querying the metadata chain for MyContainer would hence find the static 
+// cursorType on MyPartialContainer.
+
+// PRECONDITIONS AND POSTCONDITIONS
+
+// PartialReflector also supports preconditions and postconditions which are
+// prototypes chains of the function descriptors of a type found by traversing
+// the type hierarchy of the metadata prototype chain. 
+
+// Continuing the above example, if MyCursor, InputCursorConcept and Cursor 
+// defined preconditions like,
+
+  //  MyCursor[Preconditions] = {
+  //    next() { ...precondition... }
+  //  }
+
+  //  Cursor[Preconditions] = {
+  //    value() { ...precondition... }
+  //  }
+
+  //  InputCursorConcept[Preconditions] = {
+  //    value() { ...precondition... }
+  //    next() { ...precondition... }
+  //  }
+
+// then the metadata prototype chain of MyCursor would be like,
+
+  // MyCursor (Preconditions)
+  // └── InputCursorConcept (Preconditions)
+  //     └── Cursor (Preconditions)
+  //         └── Object
+  //             └── null
+
+// which is transformed into a preconditions chain by expanding the 
+// Preconditions POJOs into a chain like,
+
+  // MyCursor (next)
+  // └── InputCursorConcept (value, next)
+  //     └── Cursor (value)
+  //         └── null
+
+// Querying the preconditions chain for MyCursor for precondition by name
+// would yield descriptors for all relevant preconditions. For example, 
+// querying for the next precondition would yield the next preconditions 
+// on MyCursor and InputCursorConcept but not Cursor since Cursor does 
+// not define a next precondition. 
+
+export class PartialReflector extends Es6Reflector {
+  #metadata
+  #preconditions
+  #postconditions
 
   constructor() {
     super({
@@ -95,5 +224,78 @@ export class PartialReflector extends Es6Reflector {
         }, null)
       },
     })
+
+    this.#metadata = new Es6Prototype({
+      knownKeys: [ 'constructor' ],
+      getPrototypeFn: type => {
+        const hierarchy = [...this.hierarchy(type)]
+
+        return hierarchy.reverse().reduce((prototype, currentType) => {
+          const descriptors = { }
+
+          let key
+          const options = { isStatic: true, descriptorType: 'field' }
+          for (const current of this.ownDescriptors(currentType, options)) {
+            assert(typeof current == 'object'
+              || typeof current == 'string' 
+              || typeof current == 'symbol',
+              `Unexpected type: ${typeof current}`)
+
+            switch (typeof current) {
+              case 'string':
+              case 'symbol':
+                key = current 
+                break
+              case 'object':
+                const descriptor = current
+                descriptors[key] = descriptor
+                break
+            }
+          }
+
+          return Es6Prototype.createLink(currentType, prototype, descriptors)
+        }, null)
+      }
+    })
+
+    const createConditionsPrototype = (symbol) => {
+      return new Es6Prototype({
+        knownKeys: [ 'constructor' ],
+        getPrototypeFn: type => {
+          const debug = this.getMetadataPrototype(type)
+          const values = [...this.getMetadataValue(type, symbol)].reverse()
+
+          return values.reduce((prototype, { host, value }) => {
+            const descriptors = Reflect.getOwnPropertyDescriptors(value)
+            return Es6Prototype.createLink(host, prototype, descriptors)
+          }, null)
+        }
+      })
+    }
+
+    this.#preconditions = createConditionsPrototype(Preconditions)
+    this.#postconditions = createConditionsPrototype(Postconditions)
   }
+
+  // metadata methods
+  getMetadataPrototype(type) {
+    return this.#metadata.getPrototype(type)
+  }
+  *ownMetadataValues(type, { valueType } = { }) {
+    yield* this.ownValues$(this.#metadata, type, null, { valueType })
+  }
+  *getMetadataValue(type, name, { valueType } = { }) {
+    yield* this.getValue$(this.#metadata, type, name, null, { valueType })
+  }
+  *metadataValues(type, { valueType, includeOverridden } = { }) {
+    yield* this.values$(this.#metadata, type, null, { 
+      valueType, includeOverridden })
+  }
+
+  *getPreconditions(type, key) {
+    yield *this.#preconditions.getDescriptor(type, key)
+  }
+  *getPostconditions(type, key) {
+    yield *this.#postconditions.getDescriptor(type, key)
+  } 
 }

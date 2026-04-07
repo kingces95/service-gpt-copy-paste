@@ -63,7 +63,7 @@ describe.each(TestValue)('A %s descriptor', (_, descriptor) => {
     const symbolKey = Symbol('key')
     const instance = { value: 42 }
     const actual = [...Es6Descriptor.values([symbolKey, descriptor], instance, { 
-      descriptorFilter: Es6Descriptor.typeof(descriptor),
+      descriptorType: Es6Descriptor.typeof(descriptor),
       valueFilter: value => value == 42,
     })]
     const expected = [{ key: symbolKey, value: 42 }]
@@ -72,17 +72,8 @@ describe.each(TestValue)('A %s descriptor', (_, descriptor) => {
   it('can be filtered out by value', () => {
     const instance = { value: 42 }
     const actual = [...Es6Descriptor.values(['key', descriptor], instance, { 
-      descriptorFilter: Es6Descriptor.typeof(descriptor),
+      descriptorType: Es6Descriptor.typeof(descriptor),
       valueFilter: value => value == 43,
-    })]
-    const expected = [ ]
-    expect(actual).toEqual(expected)
-  })
-  it('can be filtered out by type', () => {
-    const instance = { value: 42 }
-    const actual = [...Es6Descriptor.values(['key', descriptor], instance, { 
-      descriptorFilter: Es6Descriptor.typeof(descriptor) 
-        == 'getter' ? 'data' : 'getter',
     })]
     const expected = [ ]
     expect(actual).toEqual(expected)
@@ -93,7 +84,7 @@ describe.each(TestValue)('A %s descriptor', (_, descriptor) => {
     const instance = { value: 42 }
     const actual = [...Es6Descriptor.values([
       fn, symbolKey, descriptor], instance, { 
-        descriptorFilter: Es6Descriptor.typeof(descriptor),
+        descriptorType: Es6Descriptor.typeof(descriptor),
         valueFilter: value => value == 42,
       })]
     const expected = [{ key: symbolKey, value: 42, host: fn }]

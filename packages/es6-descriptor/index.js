@@ -48,10 +48,17 @@ export class Es6Descriptor {
     }
   }
 
-  static *values(descriptors, instance, { 
-    descriptorFilter, valueFilter } = { }) {
+  static filter(descriptor, { descriptorType } = { }) {
+    if (descriptorType) {
+      descriptorType = asSet(descriptorType)
+      if (!descriptorType.has(Es6Descriptor.typeof(descriptor))) 
+        return null
+    }
 
-    descriptorFilter = asSet(descriptorFilter)
+    return descriptor
+  }
+
+  static *values(descriptors, instance, { valueFilter } = { }) {
 
     let key
     let host
@@ -74,16 +81,11 @@ export class Es6Descriptor {
 
         case 'object': {
           const descriptor = current
-          const descriptorType = Es6Descriptor.typeof(descriptor)
-          if (descriptorFilter.size > 0 && 
-            !descriptorFilter.has(descriptorType)) 
-            continue
-
           const value = Es6Descriptor.getValue(descriptor, instance)
           if (valueFilter && !valueFilter(value)) continue
 
-          assert(key != null, 'Expected key before descriptor')
-          const result = { value, key }
+          const result = { value }
+          if (key) result.key = key
           if (host) result.host = host
           yield result
           break
