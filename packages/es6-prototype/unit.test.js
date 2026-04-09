@@ -478,95 +478,94 @@ function runTests(
       expect(canDuckCast).toBe(false)
     })
   })  
-
-  class MyGetterValue {
-    get member() { return 'value' }
-  }
-  class MySubGetterValue extends MyGetterValue { }
-
-  const MyValueTest = {
-    type: MyGetterValue,
-    key: 'member',
-    host: MyGetterValue,
-    value: 'value',
-    descriptorType: 'getter',
-    notDescriptorType: 'data',
-    instanceOf: String,
-    notInstanceOf: Array,
-    isOwnValue: true,
-  }
-  const MySubValueTest = {
-    type: MySubGetterValue,
-    key: 'member',
-    host: MyGetterValue,
-    value: 'value',
-    descriptorType: 'getter',
-    notDescriptorType: 'data',
-    instanceOf: String,
-    notInstanceOf: Array,    
-    isOwnValue: false,
-  }
   
-  const ValueTestCases = [
-    ['Value', MyValueTest],
-    ['Sub value', MySubValueTest],
-  ]
-
-  describe.each(ValueTestCases)('%s', (_, { 
-    type, key, host, value,
-    descriptorType, notDescriptorType,
-    instanceOf, notInstanceOf,
-    isOwnValue,
-   }) => {
-
-    let reflector
-    let resultHostValue
-    let resultHostKeyValue
-    let resultKeyValue
-    beforeEach(() => {
-      reflector = new reflectorCtor()
-      resultHostKeyValue = { host, key, value }
-      resultHostValue = { host, value }
-      resultKeyValue = { key, value }
-    })
-
-    // getValue
-    it('should have expected value', () => {
-      const actual = [...reflector.getValue(type, key)]
-      expect(actual).toEqual([ resultHostValue ])
-    })
-
-    it('should have expected value with descriptor type filter', () => {
-      const actual = [...reflector.getValue(type, key, { descriptorType })]
-      expect(actual).toEqual([ resultHostValue ])
-    })
-    it('should return nothing with not descriptor type filter', () => {
-      const actual = [...reflector.getValue(
-        type, key, { descriptorType: notDescriptorType })]
-      expect(actual).toEqual([ ])
-    })
-
-    if (reflectorCtor == Es6Reflector) {
-      it('should have expected value with value type filter', () => {
-        const actual = [...reflector.getValue(type, key, { instanceOf })]
-        expect(actual).toEqual([ resultHostValue ])
-      })
-      it('should have expected value with Object type filter', () => {
-        const actual = [...reflector.getValue(type, key, { instanceOf: Object })]
-        expect(actual).toEqual([ resultHostValue ])
-      })
-      it('should return nothing with bad value type filter', () => {
-        const actual = [...reflector.getValue(type, key, { 
-          instanceOf: notInstanceOf })]
-        expect(actual).toEqual([ ])
-      })
+  describe('Value filters', () => {
+    class MyGetterFilter {
+      get member() { return 'value' }
     }
+  
+    const CtorValue = { key: 'constructor', value: MyGetterFilter }
+    const HostCtorValue = { ...CtorValue, host: MyGetterFilter }
+    const NoFilterTest = {
+      type: MyGetterFilter,
+      key: 'member',
+      value: 'value',
+      descriptorType: null,
+      instanceOf: null,
+      ownValues: [ CtorValue, { key: 'member', value: 'value' } ],
+      gotValue: [ { host: MyGetterFilter, value: 'value' } ],
+      values: [ HostCtorValue, 
+        { host: MyGetterFilter, key: 'member', value: 'value' } ],
+    }
+    const DescriptorTypeTest = {
+      ...NoFilterTest,
+      descriptorType: 'getter',
+      ownValues: [ { key: 'member', value: 'value' } ],
+      gotValue: [ { host: MyGetterFilter, value: 'value' } ],
+      values: [ { host: MyGetterFilter, key: 'member', value: 'value' } ],
+    }
+    const InstanceOfTest = {
+      ...NoFilterTest,
+      instanceOf: String,
+      ownValues: [ { key: 'member', value: 'value' } ],
+      gotValue: [ { host: MyGetterFilter, value: 'value' } ],
+      values: [ { host: MyGetterFilter, key: 'member', value: 'value' } ],
+    }
+    const NegativeDescriptorTypeTest = {
+      ...NoFilterTest,
+      descriptorType: 'data',
+      ownValues: [ ],
+      gotValue: [ ],
+      values: [ ],
+    }
+    const NegativeInstanceOfTest = {
+      ...NoFilterTest,
+      instanceOf: Number,
+      ownValues: [ ],
+      gotValue: [ ],
+      values: [ ],
+    }
+    
+    const ValueTestCases = [
+      ['No filter', NoFilterTest],
+      ['Descriptor type filter', DescriptorTypeTest],
+      ['Value type filter', InstanceOfTest],
+      ['Negative descriptor type filter', NegativeDescriptorTypeTest],
+      ['Negative value type filter', NegativeInstanceOfTest],
+    ]
+    describe.each(ValueTestCases)('%s', (_, { 
+      type, key, value,
+      descriptorType, instanceOf,
+      ownValues, values, gotValue,
+     }) => {
+  
+      let reflector
+      let options
+      beforeEach(() => {
+        reflector = new reflectorCtor({
+          knownTypes: [ Object ],
+        })
+        options = { descriptorType, instanceOf }
+      })
+  
+      // getValue
+      it('should have expected member value', () => {
+        const actual = [...reflector.getValue(type, key, options)]
+        expect(actual).toEqual(gotValue)
+      })
 
-    // ownValues
-    // it('should have expected own value', () => {
-    //   const actual = [...reflector.ownValues(type)]
-    //   expect(actual).toEqual(isOwnValue ? [ resultKeyValue ] : [ ])
-    // })
+      // ownValues
+      it('should have expected own value', () => {
+        const actual = [...reflector.ownValues(type, options)]
+        expect(actual).toEqual(ownValues)
+      })
+
+      // values
+      it('should have expected value', () => {
+        const actual = [...reflector.values(type, options)]
+        expect(actual).toEqual(values)
+      })
+    })
   })
 }
 

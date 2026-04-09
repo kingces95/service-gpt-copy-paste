@@ -191,7 +191,7 @@ export class Es6Prototype {
       descriptorType, includeOverridden: true })
     yield* Es6Descriptor.values(descriptors, instance)
       .filter(this.#instanceOfFilter(instanceOf))
- }
+  }
 
   *values(type, { instance, includeOverridden, 
     descriptorType, instanceOf } = { }) {
@@ -217,7 +217,7 @@ export class Es6Prototype {
     for (const key of this.ownKeys(type)) {
       const descriptor = this.getOwnDescriptor(
         type, key, { descriptorType })
-      assert(descriptor)
+      if (!descriptor) continue
 
       yield key
       yield descriptor
@@ -258,7 +258,7 @@ export class Es6Prototype {
           const key = current
           const descriptor = this.getOwnDescriptor(
             owner, key, { descriptorType })
-          assert(descriptor)
+          if (!descriptor) continue
             
           yield key
           yield descriptor
