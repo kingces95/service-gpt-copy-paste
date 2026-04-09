@@ -1,7 +1,7 @@
 import { assert } from '@kingjs/assert'
 import { Descriptor } from '@kingjs/descriptor'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
-import { asSet } from '@kingjs/as-set'
+import { instanceOf } from '@kingjs/instance-of'
 
 class Es6PrototypeCache {
   #cache
@@ -102,6 +102,12 @@ export class Es6Prototype {
     this.#cache = new Es6PrototypeCache(getPrototypeFn)
   }
 
+  #instanceOfFilter(type) {
+    return type 
+      ? ({ value }) => instanceOf(value, type)
+      : () => true
+  }
+
   getPrototype(type) {
     return this.#cache.getPrototype(type)
   }
@@ -172,21 +178,27 @@ export class Es6Prototype {
     }
   }
 
-  *ownValues(type, { instance, descriptorType } = { }) {
+  *ownValues(type, { instance, 
+    descriptorType, instanceOf } = { }) {
     const descriptors = this.ownDescriptors(type, { descriptorType })
     yield *Es6Descriptor.values(descriptors, instance)
+      .filter(this.#instanceOfFilter(instanceOf))
   }
 
-  *getValue(type, name, { instance, descriptorType } = { }) {
+  *getValue(type, name, { instance, 
+    descriptorType, instanceOf } = { }) {
     const descriptors = this.getDescriptor(type, name, { 
       descriptorType, includeOverridden: true })
     yield* Es6Descriptor.values(descriptors, instance)
-  }
+      .filter(this.#instanceOfFilter(instanceOf))
+ }
 
-  *values(type, { instance, descriptorType, includeOverridden } = { }) {
+  *values(type, { instance, includeOverridden, 
+    descriptorType, instanceOf } = { }) {
     const descriptors = this.descriptors(type, { 
       includeOverridden, descriptorType })
     yield *Es6Descriptor.values(descriptors, instance, { descriptorType })
+      .filter(this.#instanceOfFilter(instanceOf))
   }
 
   *hosts(type, name) {
