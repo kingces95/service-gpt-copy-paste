@@ -1,377 +1,306 @@
-import { assert } from '@kingjs/assert'
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Es6Reflect } from '@kingjs/es6-reflect'
-import { Es6UserReflect } from '@kingjs/es6-user-reflect'
+import { isAbstract } from '@kingjs/abstract'
 
-const ObjectMd = {
+describe('Es6Reflect', () => {
+  it('should return false if isExtensionOf is called with null type', () => {
+    const result = Es6Reflect.isExtensionOf(null, Object)
+    expect(result).toBe(false)
+  })
+  it('should return false if isExtensionOf is called with null expectedType', () => {
+    const result = Es6Reflect.isExtensionOf(Object, null)
+    expect(result).toBe(false)
+  })
+  it('should return false if isExtensionOf is called with non-function type', () => {
+    const result = Es6Reflect.isExtensionOf({}, Object)
+    expect(result).toBe(false)
+  })
+})
+
+class MyKitchenSink { 
+  member() { }
+  static {
+    Object.defineProperty(MyKitchenSink.prototype, 'filed', {
+      value: 1,
+      configurable: true,
+      enumerable: false,
+      writable: true,
+    })
+  }
+}
+
+describe.each([
+  ['method', 'member'],
+  ['field', 'filed'],
+  ['constructor', 'constructor']
+])('typeof %s', (descriptorType, name) => {
+  let reflect
+  let descriptor
+  beforeEach(() => {
+    reflect = Es6Reflect
+    descriptor = Object.getOwnPropertyDescriptor(
+      MyKitchenSink.prototype, name)
+  })
+  it('should be method descriptor', () => {
+    const result = Es6Reflect.typeof(MyKitchenSink, name, descriptor)
+    expect(result).toBe(descriptorType)
+  })
+})
+
+const ObjectTest = {
   name: 'Object',
   type: Object,
-  isKnown: true,
-  chain: [ Object ],
+  baseType: null,
+  baseTypes: [],
+  extendedType: null,
+  hierarchy: [Object],
+  extensions: [ 
+    Object 
+  ],
 }
 
-const FunctionMd = {
+const FunctionTest = {
   name: 'Function',
   type: Function,
-  isKnown: true,
-  chain: [ Function, Object ],
+  baseType: Object,
+  baseTypes: [Object],
+  extendedType: Object,
+  hierarchy: [Function, Object],
+  extensions: [ 
+    Function, 
+    Object 
+  ],
 }
 
-const MyFunction = function() { }
-const MyFunctionMd = {
-  name: 'MyFunction',
-  type: MyFunction,
-  chain: [ MyFunction, Object ],
-  isKnown: false,
-}
+class MyClass { }
+class MyClassExtendsNull extends null { }
+class MyClassEntendsObject extends Object { }
+class MyExtendedClass extends MyClass { }
 
-const MyClass = class { 
-  static staticMember() { }
-  static staticBaseMember() { }
-  member() { }
-  baseMember() { }
-}
-const MyClassMd = {
+const MyClassTest = {
   name: 'MyClass',
   type: MyClass,
-  chain: [ MyClass, Object ],
-  static: {
-    ownKeys: [ 'staticMember', 'staticBaseMember' ],
-    keys: [ 'staticMember', 'staticBaseMember' ],
-    ownMembers: [ 
-      [ 'staticMember', MyClass ],
-      [ 'staticBaseMember', MyClass ],
-    ],
-    members: [ 
-      [ 'staticMember', MyClass ],
-      [ 'staticBaseMember', MyClass ],
-    ],
-    hierarchy: {
-      staticMember: [ 
-        MyClass, MyClass.staticMember ],
-      staticBaseMember: [ 
-        MyClass, MyClass.staticBaseMember ],
-    },
-  },
-  instance: {
-    ownKeys: [ 'member', 'baseMember' ],
-    keys: [ 'member', 'baseMember' ],
-    ownMembers: [ 
-      [ 'member', MyClass ],
-      [ 'baseMember', MyClass ],
-    ],
-    members: [ 
-      [ 'member', MyClass ],
-      [ 'baseMember', MyClass ],
-    ],
-    hierarchy: {
-      member: [ 
-        MyClass, MyClass.prototype.member ],
-      baseMember: [ 
-        MyClass, MyClass.prototype.baseMember ],
-    },
-  },
+  baseType: Object,
+  baseTypes: [Object],
+  extendedType: Object,
+  hierarchy: [MyClass, Object],
+  extensions: [ 
+    MyClass, 
+    Object 
+  ]
 }
 
-const MyExtendedClass = class extends MyClass { 
-  static staticMember() { }
-  static extendedStaticMember() { }
-  member() { }
-  extendedMember() { }
+const MyClassExtendsNullTest = {
+  name: 'MyClassExtendsNull',
+  type: MyClassExtendsNull,
+  baseType: null,
+  isAbstract: true,
+  baseTypes: [],
+  extendedType: null,
+  hierarchy: [MyClassExtendsNull],
+  extensions: [ 
+    MyClassExtendsNull
+  ]
 }
-const MyExtendedClassMd = {
+
+const MyClassEntendsObjectTest = {
+  name: 'MyClassEntendsObject',
+  type: MyClassEntendsObject,
+  baseType: Object,
+  baseTypes: [Object],
+  extendedType: Object,
+  hierarchy: [MyClassEntendsObject, Object],
+  extensions: [ 
+    MyClassEntendsObject, 
+    Object
+  ],
+  explicitlyExtendsObject: true,
+}
+
+const MyExtendedClassTest = {
   name: 'MyExtendedClass',
   type: MyExtendedClass,
   baseType: MyClass,
-  chain: [ MyExtendedClass, MyClass, Object ],
-  static: {
-    ownKeys: [ 'staticMember', 'extendedStaticMember' ],
-    keys: [ 'staticMember', 'extendedStaticMember', 'staticBaseMember' ],
-    ownMembers: [
-      [ 'staticMember', MyExtendedClass ],
-      [ 'extendedStaticMember', MyExtendedClass ],
-    ],
-    members: [
-      [ 'staticMember', MyExtendedClass ],
-      [ 'extendedStaticMember', MyExtendedClass ],
-      [ 'staticBaseMember', MyClass ],
-    ],
-    hierarchy: {
-      staticMember: [ 
-        MyExtendedClass, MyExtendedClass.staticMember, 
-        MyClass, MyClass.staticMember ],
-      staticBaseMember: [ 
-        MyClass, MyClass.staticBaseMember ],
-      extendedStaticMember: [ 
-        MyExtendedClass, MyExtendedClass.extendedStaticMember ],
-    },
-  },
-  instance: {
-    ownKeys: [ 'member', 'extendedMember' ],
-    keys: [ 'member', 'extendedMember', 'baseMember' ],
-    ownMembers: [
-      [ 'member', MyExtendedClass ],
-      [ 'extendedMember', MyExtendedClass ],
-    ],
-    members: [
-      [ 'member', MyExtendedClass ],
-      [ 'extendedMember', MyExtendedClass ],
-      [ 'baseMember', MyClass ],
-    ],
-    hierarchy: {
-      member: [ 
-        MyExtendedClass, MyExtendedClass.prototype.member, 
-        MyClass, MyClass.prototype.member ],
-      baseMember: [ 
-        MyClass, MyClass.prototype.baseMember ],
-      extendedMember: [ 
-        MyExtendedClass, MyExtendedClass.prototype.extendedMember ],
-    },
-  },
+  baseTypes: [MyClass, Object],
+  extendedType: MyClass,
+  extendedX2Type: Object,
+  hierarchy: [MyExtendedClass, MyClass, Object],
+  extensions: [ 
+    MyExtendedClass, 
+    MyClass, 
+    Object 
+  ]
 }
 
-const Classes = [
-  [ObjectMd.name, ObjectMd],
-  [FunctionMd.name, FunctionMd],
-  [MyFunctionMd.name, MyFunctionMd],
-  [MyClassMd.name, MyClassMd],
-  [MyExtendedClassMd.name, MyExtendedClassMd],
+const tests = [
+  // [NullTest.name, NullTest],
+  [ObjectTest.name, ObjectTest],
+  [FunctionTest.name, FunctionTest],
+  [MyClassTest.name, MyClassTest],
+  [MyClassExtendsNullTest.name, MyClassExtendsNullTest],
+  [MyClassEntendsObjectTest.name, MyClassEntendsObjectTest],
+  [MyExtendedClassTest.name, MyExtendedClassTest]
 ]
 
-// test Es6Reflect
-describe.each(Classes)('%s', (_, classMd) => {
-
-  let type
-  beforeEach(() => {
-    ({ type } = classMd)
+describe.each(tests)('%s', (_, {
+  type, baseType, baseTypes, isAbstract, extendedType, extendedX2Type,
+  hierarchy, extensions, explicitlyExtendsObject
+}) => {
+  it(`should have correct base type`, () => {
+    const result = Es6Reflect.getBaseType(type)
+    expect(result).toBe(baseType)
   })
-
-  it('has correct isKnown result', () => {
-    const expected = !!classMd.isKnown
-    const actual = Es6UserReflect.isKnown(type)
+  it(`should have correct base types`, () => {
+    const result = [...Es6Reflect.baseTypes(type)]
+    expect(result).toEqual(baseTypes || [])
+  })
+  it('should have correct isAbstract result', () => {
+    const expected = !!isAbstract
+    const actual = Es6Reflect.isAbstract(type)
     expect(actual).toBe(expected)
   })
-
-  it('is an extension of its base type', () => {
-    const { baseType } = classMd
-    if (!baseType)
-      return
-
-    expect(Es6Reflect.isExtensionOf(type, baseType)).toBe(true)
-    expect(Es6Reflect.isExtensionOf(baseType, type)).toBe(false)
+  it('should have correct extended type', () => {
+    const result = Es6Reflect.getExtendedType(type)
+    expect(result).toBe(extendedType)
   })
-
-  it('has correct hierarchy', () => {
-    const expected = classMd.chain
-    const actual = [...Es6Reflect.hierarchy(type)]
-    expect(actual).toEqual(expected)
+  it('should be extension of itself with minDepth of zero', () => {
+    const result = Es6Reflect.isExtensionOf(type, type, { minDepth: 0 })
+    expect(result).toBe(true)
   })
-
-  it('has correct base types', () => {
-    const expected = classMd.chain.slice(1)
-    const actual = [...Es6Reflect.baseTypes(type)]
-    expect(actual).toEqual(expected)
+  it('should have the correct hierarchy', () => {
+    const result = [...Es6Reflect.hierarchy(type)]
+    expect(result).toEqual(hierarchy || [])
   })
-
-  describe.each([
-    ['static', true], 
-    ['instance', false]
-  ])('%s', (label, isStatic) => {
-    let prototype
-    let md
-    beforeEach(() => {
-      prototype = isStatic ? type : type.prototype
-      md = classMd?.[label]
+  if (extendedType) {
+    it('should be extension of extended type with minDepth of one', () => {
+      const result = Es6Reflect.isExtensionOf(
+        type, extendedType, { minDepth: 1 })
+      expect(result).toBe(true)
+    })    
+    it('should not be extension of extended type with minDepth of two', () => {
+      const result = Es6Reflect.isExtensionOf(
+        type, extendedType, { minDepth: 2 })
+      expect(result).toBe(false)
     })
-
-    it('has correct member hierarchy', () => {
-      const members = md?.hierarchy || { }
-      for (const key in members) {
-        const expected = members[key]
-        const actual = [...Es6Reflect.getDescriptor(
-          type, key, { isStatic, excludeKnown: true })].map(value => {
-            if (typeof value == 'object') return value.value
-            return value
-          })
-        expect(actual).toEqual(expected)
-      }
+  }
+  if (extendedX2Type) {
+    it('should not be extension of extended2x with minDepth of two', () => {
+      if (!extendedX2Type) return
+      const result = Es6Reflect.isExtensionOf(
+        type, extendedX2Type, { minDepth: 2 })
+      expect(result).toBe(true)
     })
-
-    it('has correct own keys', () => {
-      const expected = md?.ownKeys || []
-      const actual = [...Es6Reflect.ownKeys(type, { isStatic })]
-        .filter(name => Es6UserReflect.isKnownKey(
-          type, name, { isStatic }) === false)
-        .filter(name => typeof name == 'string')
-      // sort for comparison
-      expected.sort()
-      actual.sort()
-      expect(actual).toEqual(expected)
+  }
+  if (baseType) {
+    it('should be able to duck cast to base type', () => {
+      const instance = new type()
+      const canDuckCast = Es6Reflect.canDuckCast(baseType, instance)
+      expect(canDuckCast).toBe(true)
     })
-
-    it('has correct members', () => {
-      const expected = md?.members || []
-      const actual = []
-      let owner
-      for (const current of Es6UserReflect.keys(
-        type, { isStatic })) {
-        switch (typeof current) {
-          case 'function': owner = current; continue
-          case 'string':
-          case 'symbol': actual.push([current, owner]); break
-          default: assert(false, `Unexpected type: ${typeof current}`)
-        }
-      }
-      expect(actual).toEqual(expected)
+    it('should return self when hierarchy is filtered by baseType', () => {
+      const result = [...Es6Reflect.hierarchy(type, { filter: baseType })]
+      expect(result).toEqual([type])
     })
-
-    it('has correct members including known ones', () => {
-      const expected = keys(type, isStatic)
-      const actual = {}
-      let owner
-      for (const current of Es6Reflect.keys(
-        type, { isStatic, excludeKnown: false })) {
-        switch (typeof current) {
-          case 'function': owner = current; continue
-          case 'string':
-          case 'symbol': 
-            // so __proto__ shows up in the keys
-            Object.defineProperty(
-              actual, current, { value: true, enumerable: true })
-            break
-          default: assert(false, `Unexpected type: ${typeof current}`)
-        }
-      }
-
-      expect(actual).toEqual(expected)
+  }
+  if (isAbstract) {
+    it('should return no hierarchy if filtered by Object', () => {
+      if (!isAbstract) return
+      const result = [...Es6Reflect.hierarchy(type, { filter: Object })]
+      expect(result).toEqual([])
     })
+    it('should return no base type if filtered by Object', () => {
+      if (!isAbstract) return
+      const result = Es6Reflect.getBaseType(type, { filter: Object })
+      expect(result).toBe(null)
+    })
+  }
+  it('should have the correct extensions', () => {
+    const actual = [...Es6Reflect.extensions(type)]
+    expect(actual).toEqual(extensions)
+  })
+  it('should have correct static prototype', () => {
+    const expectedChain = [...extensions]
+    
+    const actualChain = []
+    let actualLink = Es6Reflect.getPrototype(type, { isStatic: true })
+    do { actualChain.push(actualLink) } 
+    while (actualLink = Object.getPrototypeOf(actualLink))
 
-    it('has correct own descriptors', () => {
-      const expected = {}
-      for (const [name] of md?.members || [])
-        expected[name] = Object.getOwnPropertyDescriptor(
-          isStatic ? type : type.prototype,
-          name)
+    expect(actualChain.length).toBe(expectedChain.length)
 
-      const actual = {}
-      let key, descriptor
-      for (const current of Es6UserReflect.ownDescriptors(
-        type, { isStatic })) {
-        switch (typeof current) {
-          case 'string': key = current; continue
-          case 'symbol': key = current; continue
-          case 'object': descriptor = current; break
-          default: assert(false, `Unexpected type: ${typeof current}`)
-        }
-        actual[key] = descriptor
+    let expectedLink = expectedChain.shift()
+    do { 
+      actualLink = actualChain.shift()
+
+      // The actual and expected descriptors match except for constructor. 
+      const actualDescriptors = 
+        Object.getOwnPropertyDescriptors(actualLink)
+      const expectedDescriptors = 
+        Object.getOwnPropertyDescriptors(expectedLink)
+
+      // The constructor property is repurposed to point to the type 
+      // from which the static members were copied. This mimics 
+      // the Es6 prototype chain and is what allows using the Es6 
+      // prototype chain reflection ergonomics on the static prototype 
+      // chain.
+      expect(expectedLink.constructor).toBe(Function)
+      expect(actualLink.constructor).toBe(expectedLink)
+      delete actualDescriptors.constructor
+      delete expectedDescriptors.constructor
+
+      // A final wrinkle: Es6 only exposes Object statics off a type
+      // if the type explicitly extends Object or the type *is* object
+      if (type != Object && 
+        expectedLink == Object && !explicitlyExtendsObject) {
+        expect(actualDescriptors).toEqual({ })
+        continue
       }
 
-      expect(actual).toEqual(expected)
-    })
+      expect(actualDescriptors).toEqual(expectedDescriptors)
 
-    it('has correct descriptors', () => {
-      const expected = {}
-      for (const [name, owner] of md?.members || [])
-        expected[name] = Object.getOwnPropertyDescriptor(
-          isStatic ? owner : owner.prototype,
-          name)
-
-      const actual = {}
-      let key, owner, descriptor
-      for (const current of Es6UserReflect.descriptors(
-        type, { isStatic })) {
-        switch (typeof current) {
-          case 'string': key = current; continue
-          case 'symbol': key = current; continue
-          case 'function': owner = current; continue
-          case 'object': descriptor = current; break
-          default: assert(false, `Unexpected type: ${typeof current}`)
-        }
-        actual[key] = descriptor
-      }
-
-      expect(actual).toEqual(expected)
-    })
-
-    it('can get each own descriptor', () => {
-      for (const [name, owner] of md?.ownMembers || []) {
-        const expected = Object.getOwnPropertyDescriptor(
-          isStatic ? owner : owner.prototype,
-          name)
-        const actual = Es6UserReflect.getOwnDescriptor(
-          type, name, { isStatic })
-        expect(actual).toEqual(expected)
-      }
-    })
-
-    it('can get each descriptor', () => {
-      for (const [name, owner] of md?.members || []) {
-        const expected = Object.getOwnPropertyDescriptor(
-          isStatic ? owner : owner.prototype,
-          name)
-        let actual
-        scan:
-        for (const current of Es6Reflect.getDescriptor(
-          type, name, { isStatic, excludeKnown: true })) {
-          switch (typeof current) {
-            case 'function': actual = null; continue
-            case 'object': actual = current; break scan
-            default: assert(false, `Unexpected type: ${typeof current}`)
-          }
-        }
-        expect(actual).toEqual(expected)
-      }
-    })
+    } while (expectedLink = expectedChain.shift())
   })
 })
 
-function keys(type, isStatic) {
-  const result = { }
-
-  let prototype = isStatic ? type : type.prototype
-  while (prototype) {
-    if (isStatic && prototype == Function.prototype) break
-    for (const key of Reflect.ownKeys(prototype))
-      Object.defineProperty(result, key, { value: true, enumerable: true })
-    prototype = Object.getPrototypeOf(prototype)
+class MyGetterClass {
+  get getter() { return { self: this, member: 'getter' } }
+}
+class MySetterType {
+  set setter(value) { value({ self: this, member: 'setter' }) }
+}
+class MyMethodType {
+  method() { return { self: this, member: 'method' } }
+}
+class MyPropertyType {
+  get property() { return { self: this, member: 'property' } }
+  set property(value) { value({ self: this, member: 'property' }) }
+}
+class MyFieldType {
+  static {
+    Object.defineProperty(MyFieldType.prototype, 'field', {
+      value: { self: this, member: 'field' },
+      configurable: true,
+      enumerable: false,
+      writable: true,
+    })
   }
-
-  return result
 }
 
-describe('Javascript', () => {
-  it('static prototype chain', () => {
-    const fnPrototype = Function.prototype
-    const objectPrototype = Object.prototype
-    expect(Object.getPrototypeOf(Object)).toBe(fnPrototype)
-    expect(Object.getPrototypeOf(fnPrototype)).toBe(objectPrototype)
-    expect(Object.getPrototypeOf(objectPrototype)).toBe(null)
+const DescriptorTests = [
+  [MyGetterClass.name, MyGetterClass, 'getter'],
+  [MySetterType.name, MySetterType, 'setter'],
+  [MyMethodType.name, MyMethodType, 'method'],
+  [MyPropertyType.name, MyPropertyType, 'property'],
+  [MyFieldType.name, MyFieldType, 'field'],
+]
 
-    expect(Object.getPrototypeOf(Function)).toBe(fnPrototype)
-
-    const Class = class { }
-    expect(Object.getPrototypeOf(Class)).toBe(fnPrototype)
-
-    const ClassObject = class extends Object { }
-    expect(Object.getPrototypeOf(ClassObject)).toBe(Object)
-
-    const ClassNull = class extends null { }
-    expect(Object.getPrototypeOf(ClassNull)).toBe(fnPrototype)
-
-    const ClassFunction = class extends Function { }
-    expect(Object.getPrototypeOf(ClassFunction)).toBe(Function)
-  })
-  it('instance prototype chain', () => {
-    const object = { }
-    const objectPrototype = Object.prototype
-    expect(Object.getPrototypeOf(object)).toBe(objectPrototype)
-    expect(Object.getPrototypeOf(objectPrototype)).toBe(null)
-
-    const fu = function() { }
-    const fnPrototype = Function.prototype
-    expect(Object.getPrototypeOf(fu)).toBe(fnPrototype)
-    expect(Object.getPrototypeOf(fnPrototype)).toBe(objectPrototype)
-    expect(Object.getPrototypeOf(objectPrototype)).toBe(null)
+describe.each(DescriptorTests)('%s', (_, type, key) => {
+  const descriptorType = key
+  it(`should have correct descriptor type`, () => {
+    const descriptor = Object.getOwnPropertyDescriptor(type.prototype, key)
+    const result = Es6Reflect.typeof(type, key, descriptor)
+    expect(result).toBe(descriptorType)
   })
 })
+

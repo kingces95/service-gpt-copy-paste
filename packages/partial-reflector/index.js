@@ -179,10 +179,6 @@ const KnownStaticKeys = [ 'length', 'name', 'prototype',
 // not define a next precondition. 
 
 export class PartialReflector extends Es6Reflector {
-  #metadata
-  #preconditions
-  #postconditions
-
   constructor() {
     super({
       knownTypes: KnownTypes, 
@@ -224,78 +220,14 @@ export class PartialReflector extends Es6Reflector {
         }, null)
       },
     })
-
-    this.#metadata = new Es6Prototype({
-      knownKeys: [ 'constructor' ],
-      getPrototypeFn: type => {
-        const hierarchy = [...this.hierarchy(type)]
-
-        return hierarchy.reverse().reduce((prototype, currentType) => {
-          const descriptors = { }
-
-          let key
-          const options = { isStatic: true, descriptorType: 'field' }
-          for (const current of this.ownDescriptors(currentType, options)) {
-            assert(typeof current == 'object'
-              || typeof current == 'string' 
-              || typeof current == 'symbol',
-              `Unexpected type: ${typeof current}`)
-
-            switch (typeof current) {
-              case 'string':
-              case 'symbol':
-                key = current 
-                break
-              case 'object':
-                const descriptor = current
-                descriptors[key] = descriptor
-                break
-            }
-          }
-
-          return Es6Prototype.createLink(currentType, prototype, descriptors)
-        }, null)
-      }
-    })
-
-    const createConditionsPrototype = (symbol) => {
-      return new Es6Prototype({
-        knownKeys: [ 'constructor' ],
-        getPrototypeFn: type => {
-          const debug = this.getMetadataPrototype(type)
-          const values = [...this.getMetadataValue(type, symbol)].reverse()
-
-          return values.reduce((prototype, { host, value }) => {
-            const descriptors = Reflect.getOwnPropertyDescriptors(value)
-            return Es6Prototype.createLink(host, prototype, descriptors)
-          }, null)
-        }
-      })
-    }
-
-    this.#preconditions = createConditionsPrototype(Preconditions)
-    this.#postconditions = createConditionsPrototype(Postconditions)
-  }
-
-  // metadata methods
-  getMetadataPrototype(type) {
-    return this.#metadata.getPrototype(type)
-  }
-  *ownMetadataValues(type, { valueType } = { }) {
-    yield* this.ownValues$(this.#metadata, type, null, { valueType })
-  }
-  *getMetadataValue(type, name, { valueType } = { }) {
-    yield* this.getValue$(this.#metadata, type, name, null, { valueType })
-  }
-  *metadataValues(type, { valueType, includeOverridden } = { }) {
-    yield* this.values$(this.#metadata, type, null, { 
-      valueType, includeOverridden })
   }
 
   *getPreconditions(type, key) {
-    yield *this.#preconditions.getDescriptor(type, key)
+    yield *this.getMetadataPrototype(type, Preconditions)
+      .getDescriptor(type, key)
   }
   *getPostconditions(type, key) {
-    yield *this.#postconditions.getDescriptor(type, key)
+    yield *this.getMetadataPrototype(type, Postconditions)
+      .getDescriptor(type, key)
   } 
 }

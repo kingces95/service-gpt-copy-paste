@@ -69,7 +69,7 @@ export class ImplicitConcept extends PartialType {
 function satisfiesAssociations(concept, instance) {
   const ctor = instance.constructor
 
-  const options = { valueType: Concept, includeOverridden: true }
+  const options = { extensionOf: Concept, includeOverridden: true }
   for (const { value: associatedConcept, key } of 
     PartialReflect.metadataValues(concept, options)) {
 

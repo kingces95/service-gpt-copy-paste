@@ -148,14 +148,14 @@ export class TypeInfo {
       .map(type => TypeInfo.from(type))
   }
   *ownAssociatedConcepts() {
-    yield *PartialReflect.metadataValues(this.ctor, { valueType: Concept })
+    yield *PartialReflect.metadataValues(this.ctor, { extensionOf: Concept })
       .map(({ key, value }) => ({
         key, 
         value: TypeInfo.from(value)
     }))
   }
   *associatedConcepts() {
-    yield *PartialReflect.metadataValues(this.ctor, { valueType: Concept })
+    yield *PartialReflect.metadataValues(this.ctor, { extensionOf: Concept })
       .map(({ host, key, value }) => ({
         key, 
         value: TypeInfo.from(value),

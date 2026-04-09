@@ -3,6 +3,7 @@ import { Es6Prototype } from '@kingjs/es6-prototype'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { es6Typeof } from '@kingjs/es6-typeof'
 import { asIterable } from '@kingjs/as-iterable'
+import { instanceOf } from '@kingjs/instance-of'
 
 const ObjectCtorWithStatics = Es6Prototype.createLink(
       Object, null, Object.getOwnPropertyDescriptors(Object))
@@ -103,8 +104,41 @@ const ObjectCtorWithoutStatics = Es6Prototype.createLink(Object)
 // member since it is needed to construct an instance prototype chain.  
 
 export class Es6Reflector {
+
+  static isMetadata(value) {
+    // base case: primitives and types are metadata
+    if (value == null) return true
+    
+    const typeofValue = typeof value
+    if (typeofValue == 'function') return true
+    if (typeofValue == 'symbol') return true
+    if (typeofValue == 'string') return true
+    if (typeofValue == 'number') return true
+    if (typeofValue == 'boolean') return true
+
+    assert(typeofValue == 'object')
+    
+    if (Aarray.isArray(value)) {
+      // recursive case: arrays whose elements are metadata
+      for (const element of value)
+        if (!Es6Reflector.isMetadata(element)) 
+          return false
+      }
+      else {
+      // recursive case: plain objects whose values are metadata
+      if (value?.constructor != Object) return false
+      for (const key in Reflect.ownKeys(value))
+        if (!Es6Reflector.isMetadata(value[key])) 
+          return false
+    }
+
+    return true
+  }
+
   #instance
   #static
+  #metadata
+  #metadataPrototypes
 
   constructor({
     knownTypes = [], knownTypeFn,
@@ -146,6 +180,57 @@ export class Es6Reflector {
         return Es6Prototype.createLink(type, basePrototype, descriptors)
       }
     })
+
+    this.#metadata = new Es6Prototype({
+      knownKeys: [ 'constructor' ],
+      getPrototypeFn: type => {
+        const hierarchy = [...this.hierarchy(type)]
+
+        return hierarchy.reverse().reduce((prototype, currentType) => {
+          const descriptors = { }
+
+          let key
+          const options = { isStatic: true, descriptorType: 'field' }
+          for (const current of this.ownDescriptors(currentType, options)) {
+            assert(typeof current == 'object'
+              || typeof current == 'string' 
+              || typeof current == 'symbol',
+              `Unexpected type: ${typeof current}`)
+
+            switch (typeof current) {
+              case 'string':
+              case 'symbol':
+                key = current 
+                break
+              case 'object':
+                const descriptor = current
+                const value = descriptor.value
+                if (!Es6Reflector.isMetadata(value)) continue
+                descriptors[key] = descriptor
+                break
+            }
+          }
+
+          return Es6Prototype.createLink(currentType, prototype, descriptors)
+        }, null)
+      }
+    })
+
+    this.#metadataPrototypes = new Map()
+  }
+
+  #createMetadataPrototype(symbol) {
+    return new Es6Prototype({
+      knownKeys: [ 'constructor' ],
+      getPrototypeFn: type => {
+        const values = [...this.getMetadataValue(type, symbol)].reverse()
+
+        return values.reduce((prototype, { host, value }) => {
+          const descriptors = Reflect.getOwnPropertyDescriptors(value)
+          return Es6Prototype.createLink(host, prototype, descriptors)
+        }, null)
+      }
+    })
   }
 
   #reflect(isStatic = false) { 
@@ -165,32 +250,41 @@ export class Es6Reflector {
     } 
   }
 
-  // ergonomic methods
-  *ownValues$(reflect, type, instance, { 
-    descriptorType, valueType } = { }) {
-    const valueFilter = valueType 
-      ? value => this.isExtensionOf(value, valueType) : null
-    
-    yield* reflect.ownValues(type, 
-      instance, { descriptorType, valueFilter })
+  #extensionOfFilter(type) {
+    return type 
+      ? ({value}) => this.isExtensionOf(value, type) 
+      : () => true
+  }
+  #instanceOfFilter(type) {
+    return type 
+      ? ({ value }) => instanceOf(value, type)
+      : () => true
   }
 
-  *getValue$(reflect, type, name, instance, { 
-    descriptorType, valueType, includeOverridden } = { }) {
-    const valueFilter = valueType 
-      ? value => this.isExtensionOf(value, valueType) : null
+  // metadata methods
+  getMetadataPrototype(type, key) {
+    if (!key) return this.#metadata.getPrototype(type)
 
-    yield* reflect.getValue(type, name, instance, { 
-      descriptorType, valueFilter, includeOverridden })
+    if (!this.#metadataPrototypes.has(key)) 
+      this.#metadataPrototypes.set(key, 
+        this.#createMetadataPrototype(key))
+
+    return this.#metadataPrototypes.get(key).getPrototype(type)
   }
-
-  *values$(reflect, type, instance, { 
-    descriptorType, valueType, includeOverridden } = { }) {
-    const valueFilter = valueType 
-      ? value => this.isExtensionOf(value, valueType) : null
-
-    yield* reflect.values(type, 
-      instance, { descriptorType, valueFilter, includeOverridden })
+  *ownMetadataValues(type, { instanceOf, extensionOf } = { }) {
+    yield* this.#metadata.ownValues(type)
+      .filter(this.#extensionOfFilter(extensionOf))
+        .filter(this.#instanceOfFilter(instanceOf))
+  }
+  *getMetadataValue(type, name, { instanceOf, extensionOf } = { }) {
+    yield* this.#metadata.getValue(type, name)
+      .filter(this.#extensionOfFilter(extensionOf))
+        .filter(this.#instanceOfFilter(instanceOf))
+  }
+  *metadataValues(type, { includeOverridden, instanceOf, extensionOf } = { }) {
+    yield* this.#metadata.values(type, { includeOverridden })
+      .filter(this.#extensionOfFilter(extensionOf))
+        .filter(this.#instanceOfFilter(instanceOf))
   }
 
   // static exclusive methods
@@ -205,6 +299,9 @@ export class Es6Reflector {
     }
 
     return false
+  }
+  *extensions(type) {
+    yield* this.#static.hierarchy(type)
   }
   getExtendedType(type) {
     return this.#static.getBaseType(type)
@@ -231,6 +328,9 @@ export class Es6Reflector {
   }
 
   // shared methods
+  getPrototype(type, { isStatic } = { }) {
+    return this.#reflect(isStatic).getPrototype(type)
+  }
   typeof(type, key, descriptor, { isStatic } = { }) {
     const descriptorType = Es6Descriptor.typeof(descriptor)
     if (descriptorType != 'field')
@@ -245,63 +345,92 @@ export class Es6Reflector {
 
     return 'field'
   }
-  getPrototype(type, { isStatic } = { }) {
-    return this.#reflect(isStatic).getPrototype(type)
-  }
-  isKnown(type, { isStatic } = { }) {
-    return this.#reflect(isStatic).isKnown(type)
-  }
-  isKnownKey(type, name, { isStatic } = { }) {
-    return this.#reflect(isStatic).isKnownKey(type, name)
-  }
-  hasOwnKey(type, name, { isStatic } = { }) {
-    return this.#reflect(isStatic).hasOwnKey(type, name)
-  }
-  hasKey(type, name, { isStatic } = { }) {
-    return this.#reflect(isStatic).hasKey(type, name)
-  }
-  *ownKeys(type, { isStatic } = { }) {
-    yield* this.#reflect(isStatic).ownKeys(type)
-  }
-  *keys(type, { isStatic, includeOverridden } = { }) {
-    yield* this.#reflect(isStatic).keys(type, { includeOverridden })
-  }
-  *hosts(type, name, { isStatic } = { }) {
-    yield* this.#reflect(isStatic).hosts(type, name)
-  }
-  getOwnDescriptor(type, name, { isStatic, descriptorType } = { }) {
-    return this.#reflect(isStatic)
-      .getOwnDescriptor(type, name, { descriptorType })
-  }
-  *ownDescriptors(type, { isStatic, descriptorType } = { }) {
-    yield* this.#reflect(isStatic)
-      .ownDescriptors(type, { descriptorType })
-  }
-  *getDescriptor(type, name, { isStatic, descriptorType } = { }) {
-    yield* this.#reflect(isStatic)
-      .getDescriptor(type, name, { descriptorType })
-  }
-  *descriptors(type, { 
-    isStatic, descriptorType, includeOverridden } = { }) {
-    yield* this.#reflect(isStatic)
-      .descriptors(type, { includeOverridden, descriptorType })
-  }
-  *ownValues(type, { 
-    descriptorType, valueType, isStatic } = { }) {
+  *ownValues(type, { isStatic, 
+    descriptorType, extensionOf, instanceOf } = { }) {
     const instance = isStatic ? type : type.prototype
-    yield* this.ownValues$(this.#reflect(isStatic), type, instance, { 
-      descriptorType, valueType })
+    const options = { instance, descriptorType }
+    yield* this.#reflect(isStatic).ownValues(type, options)
+      .filter(this.#extensionOfFilter(extensionOf))
+        .filter(this.#instanceOfFilter(instanceOf))
   }
-  *getValue(type, name, { 
-    descriptorType, valueType, isStatic, includeOverridden } = { }) {
+  *getValue(type, name, { isStatic, includeOverridden, 
+    descriptorType, extensionOf, instanceOf } = { }) {
     const instance = isStatic ? type : type.prototype
-    yield* this.getValue$(this.#reflect(isStatic), type, name, instance, { 
-      descriptorType, valueType, includeOverridden })
+    const options = { instance, includeOverridden, descriptorType }
+    yield* this.#reflect(isStatic).getValue(type, name, options)
+      .filter(this.#extensionOfFilter(extensionOf))
+        .filter(this.#instanceOfFilter(instanceOf))
   }
-  *values(type, { 
-    descriptorType, valueType, isStatic, includeOverridden } = { }) {
+  *values(type, { isStatic, includeOverridden, 
+    descriptorType, extensionOf, instanceOf } = { }) {
     const instance = isStatic ? type : type.prototype
-    yield* this.values$(this.#reflect(isStatic), type, instance, { 
-      descriptorType, valueType, includeOverridden })
+    const options = { instance, includeOverridden, descriptorType }
+    yield* this.#reflect(isStatic).values(type, options)
+      .filter(this.#extensionOfFilter(extensionOf))
+        .filter(this.#instanceOfFilter(instanceOf))
   }
+
+  // static thunks
+  static {
+    const thunks = [
+      'getPrototype', 'isKnown', 'isKnownKey', 'hasOwnKey', 'hasKey',
+      'ownKeys', 'keys', 'hosts', 'getOwnDescriptor', 'ownDescriptors',
+      'getDescriptor', 'descriptors', 
+    ]
+
+    for (const name of thunks) {
+      const member = function(...args) {
+        const options = args[args.length - 1]
+        const self = this.#reflect(options?.isStatic)
+        return self[name].apply(self, args)
+      }
+      Object.defineProperty(this.prototype, name, { 
+        value: member,
+        enumerable: false,
+        configurable: true,
+        writable: true,
+      })
+    }
+  }
+  // getPrototype(type, { isStatic } = { }) {
+  //   return this.#reflect(isStatic).getPrototype(type)
+  // }
+  // isKnown(type, { isStatic } = { }) {
+  //   return this.#reflect(isStatic).isKnown(type)
+  // }
+  // isKnownKey(type, name, { isStatic } = { }) {
+  //   return this.#reflect(isStatic).isKnownKey(type, name)
+  // }
+  // hasOwnKey(type, name, { isStatic } = { }) {
+  //   return this.#reflect(isStatic).hasOwnKey(type, name)
+  // }
+  // hasKey(type, name, { isStatic } = { }) {
+  //   return this.#reflect(isStatic).hasKey(type, name)
+  // }
+  // *ownKeys(type, { isStatic } = { }) {
+  //   yield* this.#reflect(isStatic).ownKeys(type)
+  // }
+  // *keys(type, { isStatic, includeOverridden } = { }) {
+  //   yield* this.#reflect(isStatic).keys(type, { includeOverridden })
+  // }
+  // *hosts(type, name, { isStatic } = { }) {
+  //   yield* this.#reflect(isStatic).hosts(type, name)
+  // }
+  // getOwnDescriptor(type, name, { isStatic, descriptorType } = { }) {
+  //   return this.#reflect(isStatic)
+  //     .getOwnDescriptor(type, name, { descriptorType })
+  // }
+  // *ownDescriptors(type, { isStatic, descriptorType } = { }) {
+  //   yield* this.#reflect(isStatic)
+  //     .ownDescriptors(type, { descriptorType })
+  // }
+  // *getDescriptor(type, name, { isStatic, descriptorType } = { }) {
+  //   yield* this.#reflect(isStatic)
+  //     .getDescriptor(type, name, { descriptorType })
+  // }
+  // *descriptors(type, { 
+  //   isStatic, descriptorType, includeOverridden } = { }) {
+  //   yield* this.#reflect(isStatic)
+  //     .descriptors(type, { includeOverridden, descriptorType })
+  // }
 }

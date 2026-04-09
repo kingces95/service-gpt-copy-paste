@@ -134,7 +134,7 @@ describe('MyConcept', () => {
       })
       it('should have associated concept', () => {
         const actual = [...PartialReflect.metadataValues(MyConcept, {
-          valueType: Concept,
+          extensionOf: Concept,
         })]
         const expected = [{ 
           host: MyConcept,
@@ -145,7 +145,7 @@ describe('MyConcept', () => {
       })
       it('should have own associated concept', () => {
         const actual = [...PartialReflect.ownMetadataValues(MyConcept, {
-          valueType: Concept,
+          extensionOf: Concept,
         })]
         const expected = [{
           key: 'associatedType', 

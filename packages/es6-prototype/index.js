@@ -53,7 +53,6 @@ export class Es6Prototype {
 
     // define descriptors on prototype
     Object.defineProperties(prototype, descriptors)
-
     
     return prototype    
   }
@@ -173,33 +172,21 @@ export class Es6Prototype {
     }
   }
 
-  *ownValues(type, instance, { 
-    descriptorType, valueFilter } = { }) {
-
+  *ownValues(type, { instance, descriptorType } = { }) {
     const descriptors = this.ownDescriptors(type, { descriptorType })
-
-    yield *Es6Descriptor.values(descriptors, 
-      instance, { valueFilter })
+    yield *Es6Descriptor.values(descriptors, instance)
   }
 
-  *getValue(type, name, instance, { 
-    descriptorType, valueFilter } = { }) {
-
+  *getValue(type, name, { instance, descriptorType } = { }) {
     const descriptors = this.getDescriptor(type, name, { 
       descriptorType, includeOverridden: true })
-
-    yield* Es6Descriptor.values(descriptors, 
-      instance, { valueFilter })
+    yield* Es6Descriptor.values(descriptors, instance)
   }
 
-  *values(type, instance, { 
-    descriptorType, valueFilter, includeOverridden } = { }) {
-
+  *values(type, { instance, descriptorType, includeOverridden } = { }) {
     const descriptors = this.descriptors(type, { 
       includeOverridden, descriptorType })
-
-    yield *Es6Descriptor.values(descriptors, 
-        instance, { descriptorType, valueFilter })
+    yield *Es6Descriptor.values(descriptors, instance, { descriptorType })
   }
 
   *hosts(type, name) {

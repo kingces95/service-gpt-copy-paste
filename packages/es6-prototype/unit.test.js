@@ -1,9 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Es6Prototype } from '@kingjs/es6-prototype'
-import { get, keys, values } from 'lodash'
-import { write } from 'fast-csv'
-import { run } from 'jest'
+import { Es6Reflector } from '@kingjs/es6-reflector'
+import { result } from 'lodash'
 
 describe('Es6Prototype', () => {
   it('should allow prototype injection given a type', () => {
@@ -52,7 +51,11 @@ describe('Es6Prototype', () => {
 class MyType { }
 class MySubType { }
 
-function runTests(memberKey = 'member') {
+function runTests(
+  memberKey = 'member',
+  reflectorCtor = Es6Prototype,
+) {
+
   const isSymbol = typeof memberKey === 'symbol'
   
   const MyTypeDescriptors = {
@@ -310,7 +313,7 @@ function runTests(memberKey = 'member') {
 
     let reflector
     beforeEach(() => {
-      reflector = new Es6Prototype({
+      reflector = new reflectorCtor({
         knownKeys: knownKeys,
         knownTypes: knownTypes,
         knownTypeFn: knownTypeFn,
@@ -376,7 +379,7 @@ function runTests(memberKey = 'member') {
     })
     it('should have expected values', () => {
       if (!values) return
-      const actual = [...reflector.values(type, null, { includeOverridden })]
+      const actual = [...reflector.values(type, { includeOverridden })]
       expect(actual).toEqual(values)
     })
     it('should have expected member value', () => {
@@ -416,70 +419,161 @@ function runTests(memberKey = 'member') {
       expect(actual).toBeNull()
     })
   })
+
+  class MyQuackerType {
+    get property() { }
+    set property(value) { }
+    method() { }
+    static { this.prototype.field = 42 }
+  }
+  class MyGetterType {
+    get property() { }
+  }
+  class MySetterType {
+    set property(value) { }
+  }
+  class MyMethodType {
+    method() { }
+  }
+  class MyDataType {
+    static { this.prototype.field = 42 }
+  }
+  class MyGooseType {
+    honk() { }
+  }
+  class MyFakeMethodType {
+    get method() { }
+  }
+
+  describe('Quacker', () => {
+    const reflector = new reflectorCtor()
+    it('can be duck cast to getter', () => {
+      const instance = new MyQuackerType()
+      const canDuckCast = reflector.canDuckCast(MyGetterType, instance)
+      expect(canDuckCast).toBe(true)
+    })
+    it('can be duck cast to setter', () => {
+      const instance = new MyQuackerType()
+      const canDuckCast = reflector.canDuckCast(MySetterType, instance)
+      expect(canDuckCast).toBe(true)
+    })
+    it('can be duck cast to method', () => {
+      const instance = new MyQuackerType()
+      const canDuckCast = reflector.canDuckCast(MyMethodType, instance)
+      expect(canDuckCast).toBe(true)
+    })
+    it('can be duck cast to data', () => {
+      const instance = new MyQuackerType()
+      const canDuckCast = reflector.canDuckCast(MyDataType, instance)
+      expect(canDuckCast).toBe(true)
+    })
+    it('cannot be duck cast to goose', () => {
+      const instance = new MyQuackerType()
+      const canDuckCast = reflector.canDuckCast(MyGooseType, instance)
+      expect(canDuckCast).toBe(false)
+    })
+    it('cannot be duck cast to fake method', () => {
+      const instance = new MyQuackerType()
+      const canDuckCast = reflector.canDuckCast(MyFakeMethodType, instance)
+      expect(canDuckCast).toBe(false)
+    })
+  })  
+
+  class MyGetterValue {
+    get member() { return 'value' }
+  }
+  class MySubGetterValue extends MyGetterValue { }
+
+  const MyValueTest = {
+    type: MyGetterValue,
+    key: 'member',
+    host: MyGetterValue,
+    value: 'value',
+    descriptorType: 'getter',
+    notDescriptorType: 'data',
+    instanceOf: String,
+    notInstanceOf: Array,
+    isOwnValue: true,
+  }
+  const MySubValueTest = {
+    type: MySubGetterValue,
+    key: 'member',
+    host: MyGetterValue,
+    value: 'value',
+    descriptorType: 'getter',
+    notDescriptorType: 'data',
+    instanceOf: String,
+    notInstanceOf: Array,    
+    isOwnValue: false,
+  }
+  
+  const ValueTestCases = [
+    ['Value', MyValueTest],
+    ['Sub value', MySubValueTest],
+  ]
+
+  describe.each(ValueTestCases)('%s', (_, { 
+    type, key, host, value,
+    descriptorType, notDescriptorType,
+    instanceOf, notInstanceOf,
+    isOwnValue,
+   }) => {
+
+    let reflector
+    let resultHostValue
+    let resultHostKeyValue
+    let resultKeyValue
+    beforeEach(() => {
+      reflector = new reflectorCtor()
+      resultHostKeyValue = { host, key, value }
+      resultHostValue = { host, value }
+      resultKeyValue = { key, value }
+    })
+
+    // getValue
+    it('should have expected value', () => {
+      const actual = [...reflector.getValue(type, key)]
+      expect(actual).toEqual([ resultHostValue ])
+    })
+
+    it('should have expected value with descriptor type filter', () => {
+      const actual = [...reflector.getValue(type, key, { descriptorType })]
+      expect(actual).toEqual([ resultHostValue ])
+    })
+    it('should return nothing with not descriptor type filter', () => {
+      const actual = [...reflector.getValue(
+        type, key, { descriptorType: notDescriptorType })]
+      expect(actual).toEqual([ ])
+    })
+
+    if (reflectorCtor == Es6Reflector) {
+      it('should have expected value with value type filter', () => {
+        const actual = [...reflector.getValue(type, key, { instanceOf })]
+        expect(actual).toEqual([ resultHostValue ])
+      })
+      it('should have expected value with Object type filter', () => {
+        const actual = [...reflector.getValue(type, key, { instanceOf: Object })]
+        expect(actual).toEqual([ resultHostValue ])
+      })
+      it('should return nothing with bad value type filter', () => {
+        const actual = [...reflector.getValue(type, key, { 
+          instanceOf: notInstanceOf })]
+        expect(actual).toEqual([ ])
+      })
+    }
+
+    // ownValues
+    // it('should have expected own value', () => {
+    //   const actual = [...reflector.ownValues(type)]
+    //   expect(actual).toEqual(isOwnValue ? [ resultKeyValue ] : [ ])
+    // })
+  })
 }
 
-describe('Key as string', () => {
-  runTests('member')
-})
-describe('Key as symbol', () => {
-  runTests(Symbol('member'))
+describe('Key as string', () => { runTests('member') })
+describe('Key as symbol', () => { runTests(Symbol('member')) })
+describe('Reflector', () => {
+  describe('Key as string', () => { runTests('member', Es6Reflector) })
+  describe('Key as symbol', () => { runTests(Symbol('member'), Es6Reflector) })
 })
 
-class MyQuackerType {
-  get property() { }
-  set property(value) { }
-  method() { }
-  data = 42
-}
-class MyGetterType {
-  get property() { }
-}
-class MySetterType {
-  set property(value) { }
-}
-class MyMethodType {
-  method() { }
-}
-class MyDataType {
-  data = 42
-}
-class MyGooseType {
-  honk() { }
-}
-class MyFakeMethodType {
-  get method() { }
-}
-
-describe('Quacker', () => {
-  const reflector = new Es6Prototype()
-  it('can be duck cast to getter', () => {
-    const instance = new MyQuackerType()
-    const canDuckCast = reflector.canDuckCast(MyGetterType, instance)
-    expect(canDuckCast).toBe(true)
-  })
-  it('can be duck cast to setter', () => {
-    const instance = new MyQuackerType()
-    const canDuckCast = reflector.canDuckCast(MySetterType, instance)
-    expect(canDuckCast).toBe(true)
-  })
-  it('can be duck cast to method', () => {
-    const instance = new MyQuackerType()
-    const canDuckCast = reflector.canDuckCast(MyMethodType, instance)
-    expect(canDuckCast).toBe(true)
-  })
-  it('can be duck cast to data', () => {
-    const instance = new MyQuackerType()
-    const canDuckCast = reflector.canDuckCast(MyDataType, instance)
-    expect(canDuckCast).toBe(true)
-  })
-  it('cannot be duck cast to goose', () => {
-    const instance = new MyQuackerType()
-    const canDuckCast = reflector.canDuckCast(MyGooseType, instance)
-    expect(canDuckCast).toBe(false)
-  })
-  it('cannot be duck cast to fake method', () => {
-    const instance = new MyQuackerType()
-    const canDuckCast = reflector.canDuckCast(MyFakeMethodType, instance)
-    expect(canDuckCast).toBe(false)
-  })
-})
