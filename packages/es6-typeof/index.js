@@ -17,6 +17,10 @@ function hasClassPrototypeDefaults(descriptor) {
 }
 
 export function es6Typeof(value) {
+  // in addition to the standard typeof results
+  // 'object', 'function', 'string', 
+  // 'boolean', 'symbol', 'number', 'bigint',
+  // also return 'null', 'undefined', 'array', and 'class'
   if (value === undefined) return 'undefined'
   if (value === null) return 'null'
   if (Array.isArray(value)) return 'array'

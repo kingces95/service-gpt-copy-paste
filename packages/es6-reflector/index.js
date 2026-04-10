@@ -232,33 +232,84 @@ const ObjectCtorWithoutStatics = Es6Prototype.createLink(Object)
 export class Es6Reflector {
 
   static isMetadata(value) {
-    // base case: primitives and types are metadata
-    if (value == null) return true
-    
-    const typeofValue = typeof value
-    if (typeofValue == 'function') return true
-    if (typeofValue == 'symbol') return true
-    if (typeofValue == 'string') return true
-    if (typeofValue == 'number') return true
-    if (typeofValue == 'boolean') return true
+    const es6Type = es6Typeof(value)
 
-    assert(typeofValue == 'object')
-    
-    if (Aarray.isArray(value)) {
-      // recursive case: arrays whose elements are metadata
-      for (const element of value)
-        if (!Es6Reflector.isMetadata(element)) 
+    switch(es6Type) {
+      case 'null':
+      case 'undefined':
+      case 'class':
+      case 'string':
+      case 'number':
+      case 'bigint':
+      case 'boolean':
+      case 'symbol':
+        return true
+      case 'function':
+        return false
+      case 'object':
+        // recursive case: plain objects whose values are metadata
+        if (value?.constructor && value.constructor != Object) 
           return false
-      }
-      else {
-      // recursive case: plain objects whose values are metadata
-      if (value?.constructor != Object) return false
-      for (const key in Reflect.ownKeys(value))
-        if (!Es6Reflector.isMetadata(value[key])) 
-          return false
+        for (const key of Reflect.ownKeys(value))
+          if (!Es6Reflector.isMetadata(value[key])) 
+            return false
+        break
+      case 'array':
+        // recursive case: arrays whose elements are metadata
+        for (const element of value)
+          if (!Es6Reflector.isMetadata(element)) 
+            return false
+        break
+      default:
+        assert(false, `Unexpected type: ${es6Type}`)
     }
 
     return true
+  }
+
+  static create({
+      knownTypes = [], knownTypeFn,
+      knownKeys = [], knownKeyFn,
+      knownStaticKeys = [], knownStaticKeyFn,
+      getPrototypeFn = type => type.prototype,
+    } = { }) {
+
+    knownStaticKeys.push('constructor')
+
+    return new Es6Reflector({ 
+      instance$: new Es6Prototype({
+        knownTypes, knownTypeFn,
+        knownKeys, knownKeyFn,
+        getPrototypeFn,
+      }),
+
+      static$: new Es6Prototype({
+        knownTypes, knownTypeFn,
+        knownKeys: knownStaticKeys,
+        knownKeyFn: knownStaticKeyFn,
+        getPrototypeFn: function(type) {
+          // base case 1: class A { }
+          if (type == Function.prototype) 
+            return ObjectCtorWithoutStatics
+
+          // base case 2: class A extends Object { }
+          if (type == Object) 
+            return ObjectCtorWithStatics
+
+          const baseType = Object.getPrototypeOf(type)
+          const basePrototype = 
+            // base case 3: class A extends null { }
+            baseType == Function.prototype 
+              && Object.getPrototypeOf(type.prototype) == null ? null
+
+            // recursive case: class B extends A { }
+            : this.getPrototype(baseType)
+
+          const descriptors = Object.getOwnPropertyDescriptors(type)
+          return Es6Prototype.createLink(type, basePrototype, descriptors)
+        }
+      })
+    })
   }
 
   #instance
@@ -267,57 +318,24 @@ export class Es6Reflector {
   #metadataPrototypes
 
   constructor({
-    knownTypes = [], knownTypeFn,
-    knownKeys = [], knownKeyFn,
-    knownStaticKeys = [], knownStaticKeyFn,
-    getPrototypeFn = type => type.prototype,
-  } = { }) {
-    this.#instance = new Es6Prototype({
-      knownTypes, knownTypeFn,
-      knownKeys, knownKeyFn,
-      getPrototypeFn,
-    })
+    instance$,
+    static$,
+  }) {
+    this.#instance = instance$
+    this.#static = static$
 
-    knownStaticKeys.push('constructor')
-
-    this.#static = new Es6Prototype({
-      knownTypes, knownTypeFn,
-      knownKeys: knownStaticKeys,
-      knownKeyFn: knownStaticKeyFn,
-      getPrototypeFn: type => {
-        // base case 1: class A { }
-        if (type == Function.prototype) 
-          return ObjectCtorWithoutStatics
-
-        // base case 2: class A extends Object { }
-        if (type == Object) 
-          return ObjectCtorWithStatics
-
-        const baseType = Object.getPrototypeOf(type)
-        const basePrototype = 
-          // base case 3: class A extends null { }
-          baseType == Function.prototype 
-            && Object.getPrototypeOf(type.prototype) == null ? null
-
-          // recursive case: class B extends A { }
-          : this.#static.getPrototype(baseType)
-
-        const descriptors = Object.getOwnPropertyDescriptors(type)
-        return Es6Prototype.createLink(type, basePrototype, descriptors)
-      }
-    })
-
+    const self = this
     this.#metadata = new Es6Prototype({
       knownKeys: [ 'constructor' ],
-      getPrototypeFn: type => {
-        const hierarchy = [...this.hierarchy(type)]
+      getPrototypeFn: function(type) {
+        const hierarchy = [...self.hierarchy(type)]
 
         return hierarchy.reverse().reduce((prototype, currentType) => {
           const descriptors = { }
 
           let key
           const options = { isStatic: true, descriptorType: 'field' }
-          for (const current of this.ownDescriptors(currentType, options)) {
+          for (const current of self.ownDescriptors(currentType, options)) {
             assert(typeof current == 'object'
               || typeof current == 'string' 
               || typeof current == 'symbol',
@@ -329,9 +347,12 @@ export class Es6Reflector {
                 key = current 
                 break
               case 'object':
+                if (key == 'prototype') continue
+
                 const descriptor = current
                 const value = descriptor.value
                 if (!Es6Reflector.isMetadata(value)) continue
+
                 descriptors[key] = descriptor
                 break
             }
@@ -383,7 +404,7 @@ export class Es6Reflector {
   }
 
   // metadata methods
-  getMetadataPrototype(type, key) {
+  getMetadata(type, key) {
     if (!key) return this.#metadata.getPrototype(type)
 
     if (!this.#metadataPrototypes.has(key)) 
@@ -393,16 +414,21 @@ export class Es6Reflector {
     return this.#metadataPrototypes.get(key).getPrototype(type)
   }
   *ownMetadataValues(type, { instanceOf, extensionOf } = { }) {
-    yield* this.#metadata.ownValues(type, { instanceOf })
-      .filter(this.#extensionOfFilter(extensionOf))
+    yield* this.#metadata.ownValues(
+      type, { instanceOf })
+        .filter(this.#extensionOfFilter(extensionOf))
   }
-  *getMetadataValue(type, name, { instanceOf, extensionOf } = { }) {
-    yield* this.#metadata.getValue(type, name, { instanceOf})
-      .filter(this.#extensionOfFilter(extensionOf))
+  *getMetadataValue(type, name, { includeOverridden,
+    instanceOf, extensionOf } = { }) {
+    yield* this.#metadata.getValue(
+      type, name, { includeOverridden, instanceOf })
+        .filter(this.#extensionOfFilter(extensionOf))
   }
-  *metadataValues(type, { includeOverridden, instanceOf, extensionOf } = { }) {
-    yield* this.#metadata.values(type, { includeOverridden, instanceOf })
-      .filter(this.#extensionOfFilter(extensionOf))
+  *metadataValues(type, { includeOverridden, 
+    instanceOf, extensionOf } = { }) {
+    yield* this.#metadata.values(
+      type, { includeOverridden, instanceOf })
+        .filter(this.#extensionOfFilter(extensionOf))
   }
 
   // static exclusive methods
@@ -428,36 +454,21 @@ export class Es6Reflector {
     return type != Object && !this.isExtensionOf(type, Object)
   }
 
-  // instance exclusive methods
-  *hierarchy(type, { filter } = { }) { 
-    const types = this.#instance.hierarchy(type)
-    yield* this.#areExtensionsOf(types, filter)
-  }
-  *baseTypes(type, { filter } = { }) { 
-    const types = this.#instance.hierarchy(type)
-    types.next() // skip self
-    yield* this.#areExtensionsOf(types, filter)
-  }
-  getBaseType(type) {
-    return this.#instance.getBaseType(type)
-  }
-  canDuckCast(type, targetType) {
-    return this.#instance.canDuckCast(type, targetType)
-  }
-
   // shared methods
   getPrototype(type, { isStatic } = { }) {
     return this.#reflect(isStatic).getPrototype(type)
   }
   typeof(type, key, descriptor, { isStatic } = { }) {
     const descriptorType = Es6Descriptor.typeof(descriptor)
+
+    // return 'getter', 'setter', 'property', 'method'
     if (descriptorType != 'field')
       return descriptorType
 
+    // map 'field' to 'field' or 'constructor'
     const value = descriptor.value
-    const es6Type = es6Typeof(value)
     if (!isStatic && key === 'constructor' && value === type) {
-      assert(es6Type == 'class')
+      assert(es6Typeof(value) == 'class')
       return 'constructor'
     }
 
@@ -485,7 +496,24 @@ export class Es6Reflector {
       .filter(this.#extensionOfFilter(extensionOf))
   }
 
-  // static thunks
+  // instance exclusive methods
+  *hierarchy(type, { filter } = { }) { 
+    const types = this.#instance.hierarchy(type)
+    yield* this.#areExtensionsOf(types, filter)
+  }
+  *baseTypes(type, { filter } = { }) { 
+    const types = this.#instance.hierarchy(type)
+    types.next() // skip self
+    yield* this.#areExtensionsOf(types, filter)
+  }
+  getBaseType(type) {
+    return this.#instance.getBaseType(type)
+  }
+  canDuckCast(type, targetType) {
+    return this.#instance.canDuckCast(type, targetType)
+  }
+
+  // thunks
   static {
     const thunks = [
       'getPrototype', 'isKnown', 'isKnownKey', 'hasOwnKey', 'hasKey',

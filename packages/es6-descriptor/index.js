@@ -14,9 +14,11 @@ export class Es6Descriptor {
   static typeof(descriptor) {
     const type = Descriptor.typeof(descriptor)
 
+    // return 'property', 'getter', 'setter'
     if (type != DataDescriptor.Type) 
       return type
       
+    // map 'data' to 'field' or 'method'    
     const valueType = es6Typeof(descriptor.value)
     if (valueType == 'function' && descriptor.enumerable == false)
       return Es6MethodDescriptor.Type

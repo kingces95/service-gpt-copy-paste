@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Es6Prototype } from '@kingjs/es6-prototype'
 import { Es6Reflector } from '@kingjs/es6-reflector'
-import { result } from 'lodash'
 
 describe('Es6Prototype', () => {
   it('should allow prototype injection given a type', () => {
@@ -53,9 +52,8 @@ class MySubType { }
 
 function runTests(
   memberKey = 'member',
-  reflectorCtor = Es6Prototype,
+  activate = (options) => new Es6Prototype(options),
 ) {
-
   const isSymbol = typeof memberKey === 'symbol'
   
   const MyTypeDescriptors = {
@@ -313,7 +311,7 @@ function runTests(
 
     let reflector
     beforeEach(() => {
-      reflector = new reflectorCtor({
+      reflector = activate({
         knownKeys: knownKeys,
         knownTypes: knownTypes,
         knownTypeFn: knownTypeFn,
@@ -446,7 +444,7 @@ function runTests(
   }
 
   describe('Quacker', () => {
-    const reflector = new reflectorCtor()
+    const reflector = activate()
     it('can be duck cast to getter', () => {
       const instance = new MyQuackerType()
       const canDuckCast = reflector.canDuckCast(MyGetterType, instance)
@@ -542,7 +540,7 @@ function runTests(
       let reflector
       let options
       beforeEach(() => {
-        reflector = new reflectorCtor({
+        reflector = activate({
           knownTypes: [ Object ],
         })
         options = { descriptorType, instanceOf }
@@ -572,7 +570,9 @@ function runTests(
 describe('Key as string', () => { runTests('member') })
 describe('Key as symbol', () => { runTests(Symbol('member')) })
 describe('Reflector', () => {
-  describe('Key as string', () => { runTests('member', Es6Reflector) })
-  describe('Key as symbol', () => { runTests(Symbol('member'), Es6Reflector) })
+  describe('Key as string', () => { 
+    runTests('member', options => Es6Reflector.create(options)) })
+  describe('Key as symbol', () => { 
+    runTests(Symbol('member'), options => Es6Reflector.create(options)) })
 })
 

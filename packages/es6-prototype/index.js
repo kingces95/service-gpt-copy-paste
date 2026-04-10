@@ -4,10 +4,12 @@ import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { instanceOf } from '@kingjs/instance-of'
 
 class Es6PrototypeCache {
+  #host
   #cache
   #getPrototype
 
-  constructor(getPrototype) {
+  constructor(host, getPrototype) {
+    this.#host = host
     this.#getPrototype = getPrototype
   }
 
@@ -22,7 +24,7 @@ class Es6PrototypeCache {
 
     let prototype = this.#cache.get(type)
     if (!prototype) {
-      prototype = this.#getPrototype(type)
+      prototype = this.#getPrototype.call(this.#host, type)
       this.#cache.set(type, prototype)
     }
     return prototype
@@ -37,6 +39,18 @@ export class Es6Prototype {
       prototype = Es6Prototype.createLink(type, prototype, descriptors)
       return prototype
     }, null)
+  }
+
+  static deconstruct(prototype) {
+    const chain = []
+    do { 
+      const link = Object.create(null)
+      Object.defineProperties(link,
+        Object.getOwnPropertyDescriptors(prototype))
+      chain.push(link) 
+    } 
+    while (prototype = Object.getPrototypeOf(prototype))
+    return chain
   }
 
   static createLink(type, basePrototype = null, descriptors = { }) {
@@ -99,7 +113,7 @@ export class Es6Prototype {
     this.#knownTypeFn = knownTypeFn
     this.#knownKeys = new Set(knownKeys)
     this.#knownKeyFn = knownKeyFn
-    this.#cache = new Es6PrototypeCache(getPrototypeFn)
+    this.#cache = new Es6PrototypeCache(this, getPrototypeFn)
   }
 
   #instanceOfFilter(type) {
