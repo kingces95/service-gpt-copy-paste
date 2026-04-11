@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { PartialType } from '@kingjs/partial-type'
 import { PartialClass, Extends } from '@kingjs/partial-class'
-import { PartialReflect } from '@kingjs/partial-reflect'
+import { PartialReflect, PartialMetadata } from '@kingjs/partial-reflect'
 import { Concept, Implements } from '@kingjs/concept'
 import { abstract } from '@kingjs/abstract'
 
@@ -47,12 +47,12 @@ describe('MyConcept', () => {
     expect(actual).toEqual(expected)
   })
   it('should have no associated concepts', () => {
-    const actual = PartialReflect.metadataValues(MyConcept)
+    const actual = PartialMetadata.values(MyConcept)
     const expected = [ ]
     expect([...actual]).toEqual(expected)
   })
   it('should have no own associated concepts', () => {
-    const actual = PartialReflect.ownMetadataValues(MyConcept)
+    const actual = PartialMetadata.ownValues(MyConcept)
     expect([...actual]).toEqual([])
   })
   it('should be found on an empty object', () => {
@@ -133,7 +133,7 @@ describe('MyConcept', () => {
         expect(MyConcept.prototype).toBeInstanceOf(MyConcept)
       })
       it('should have associated concept', () => {
-        const actual = [...PartialReflect.metadataValues(MyConcept, {
+        const actual = [...PartialMetadata.values(MyConcept, {
           extensionOf: Concept,
         })]
         const expected = [{ 
@@ -144,7 +144,7 @@ describe('MyConcept', () => {
         expect(actual).toEqual(expected)
       })
       it('should have own associated concept', () => {
-        const actual = [...PartialReflect.ownMetadataValues(MyConcept, {
+        const actual = [...PartialMetadata.ownValues(MyConcept, {
           extensionOf: Concept,
         })]
         const expected = [{

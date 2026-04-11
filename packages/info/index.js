@@ -10,7 +10,7 @@ import {
   Es6DescriptorInfo,
 } from "@kingjs/es6-info"
 import { isAbstract } from "@kingjs/abstract"
-import { PartialReflect } from '@kingjs/partial-reflect'
+import { PartialReflect, PartialMetadata } from '@kingjs/partial-reflect'
 import { getMetadata } from './metadata.js'
 
 const FunctionInfoCache = new WeakMap()
@@ -148,14 +148,14 @@ export class TypeInfo {
       .map(type => TypeInfo.from(type))
   }
   *ownAssociatedConcepts() {
-    yield *PartialReflect.metadataValues(this.ctor, { extensionOf: Concept })
+    yield *PartialMetadata.values(this.ctor, { extensionOf: Concept })
       .map(({ key, value }) => ({
         key, 
         value: TypeInfo.from(value)
     }))
   }
   *associatedConcepts() {
-    yield *PartialReflect.metadataValues(this.ctor, { extensionOf: Concept })
+    yield *PartialMetadata.values(this.ctor, { extensionOf: Concept })
       .map(({ host, key, value }) => ({
         key, 
         value: TypeInfo.from(value),

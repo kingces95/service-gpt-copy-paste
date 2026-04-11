@@ -33,14 +33,6 @@ class Es6PrototypeCache {
 
 export class Es6Prototype {
 
-  static create(links) {
-    // links like { type, descriptors }, subtype first
-    return [...links].reverse().reduce((prototype, { type, descriptors }) => {
-      prototype = Es6Prototype.createLink(type, prototype, descriptors)
-      return prototype
-    }, null)
-  }
-
   static deconstruct(prototype) {
     const chain = []
     do { 
@@ -51,6 +43,14 @@ export class Es6Prototype {
     } 
     while (prototype = Object.getPrototypeOf(prototype))
     return chain
+  }
+
+  static create(links) {
+    // links like { type, descriptors }, subtype first
+    return [...links].reverse().reduce((prototype, { type, descriptors }) => {
+      prototype = Es6Prototype.createLink(type, prototype, descriptors)
+      return prototype
+    }, null)
   }
 
   static createLink(type, basePrototype = null, descriptors = { }) {
