@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Es6Prototype } from '@kingjs/es6-prototype'
 import { PartialMetadata, isMetadata } from '@kingjs/partial-reflect'
+import { Prototype } from '@kingjs/prototype'
 
 describe('isMetadata', () => {
   class MyClass { }
@@ -121,7 +121,7 @@ describe('metadata', () => {
   describe.each(tests)('%s', (_, { type, links }) => {
     it('should have correct metadata links', () => {
       const expectedChain = [...links]
-      const actualChain = Es6Prototype.deconstruct(
+      const actualChain = Prototype.deconstruct(
         PartialMetadata.getPrototype(type))
       
       expect(actualChain.length).toBe(expectedChain.length)

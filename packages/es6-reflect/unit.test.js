@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Es6Reflect } from '@kingjs/es6-reflect'
-import { Es6Reflector } from '@kingjs/es6-reflector'
-import { Es6Prototype } from '@kingjs/es6-prototype'
+import { Prototype } from '@kingjs/prototype'
 
 describe('Es6Reflect', () => {
   it('should return false if isExtensionOf is called with null type', () => {
@@ -194,7 +193,7 @@ describe('Hierarchy', () => {
     })
     it('should have correct static prototype', () => {
       const expectedChain = [...extensions]
-      const actualChain = Es6Prototype.deconstruct(
+      const actualChain = Prototype.deconstruct(
         Es6Reflect.getPrototype(type, { isStatic: true }))
       
       expect(actualChain.length).toBe(expectedChain.length)

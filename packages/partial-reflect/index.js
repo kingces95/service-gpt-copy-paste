@@ -1,6 +1,6 @@
 import { assert } from '@kingjs/assert'
 import { isAbstract } from '@kingjs/abstract'
-import { Es6Prototype } from '@kingjs/es6-prototype'
+import { Prototype } from '@kingjs/prototype'
 import { Es6Reflector } from '@kingjs/es6-reflector'
 import { PartialLoader } from '@kingjs/partial-loader'
 import { PartialType } from '@kingjs/partial-type'
@@ -88,7 +88,7 @@ export const PartialReflect = Es6Reflector.create({
         }
       }
 
-      return Es6Prototype.createLink(currentType, prototype, descriptors)
+      return Prototype.createLink(currentType, prototype, descriptors)
     }, null)
   },
 })
@@ -208,7 +208,7 @@ export const PartialMetadata = PartialReflect.on({
         }
       }
 
-      return Es6Prototype.createLink(currentType, prototype, descriptors)
+      return Prototype.createLink(currentType, prototype, descriptors)
     }, null)
   }
 })
@@ -265,7 +265,7 @@ function partialReflectOnMetaObject(symbol) {
 
       return values.reduce((prototype, { host, value }) => {
         const descriptors = Reflect.getOwnPropertyDescriptors(value)
-        return Es6Prototype.createLink(host, prototype, descriptors)
+        return Prototype.createLink(host, prototype, descriptors)
       }, null)
     }
   })

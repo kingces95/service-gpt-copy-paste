@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Prototype } from '@kingjs/prototype'
-import { Es6Prototype } from '@kingjs/es6-prototype'
+import { Es6Prototype } from '.'
 import { Es6Reflector } from '@kingjs/es6-reflector'
+import { Prototype } from '@kingjs/prototype'
 
 describe('Es6Prototype', () => {
   it('should allow prototype injection given a type', () => {

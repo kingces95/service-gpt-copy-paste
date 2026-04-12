@@ -7,7 +7,6 @@ import {
   PropertyDescriptor,
 } from '@kingjs/descriptor'
 import { es6Typeof } from '@kingjs/es6-typeof'
-import { asSet } from '@kingjs/as-set'
 
 export class Es6Descriptor {
 
@@ -48,18 +47,6 @@ export class Es6Descriptor {
       case Es6PropertyDescriptor.Type:
         return descriptor.get.call(instance)
     }
-  }
-
-  static filter(descriptor, { descriptorType } = { }) {
-    if (!descriptor) return null
-
-    if (descriptorType) {
-      descriptorType = asSet(descriptorType)
-      if (!descriptorType.has(Es6Descriptor.typeof(descriptor))) 
-        return null
-    }
-
-    return descriptor
   }
 
   static *values(descriptors, instance) {
