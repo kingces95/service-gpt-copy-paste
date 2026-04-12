@@ -3,8 +3,11 @@ import { isAbstract } from '@kingjs/abstract'
 import { es6CreateThunk } from '@kingjs/es6-create-thunk'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { Es6Compiler } from '@kingjs/es6-compiler'
-import { PartialReflect } from '@kingjs/partial-reflect'
-import { Es6UserReflect } from '@kingjs/es6-user-reflect'
+import { 
+  PartialMetadata,
+  PartialPreconditions, 
+  PartialPostconditions 
+} from '@kingjs/partial-reflect'
 import { trimPojo } from '@kingjs/pojo-trim'
 import { 
   Thunk,
@@ -114,45 +117,26 @@ export class PartialProxy {
 }
 
 export class PartialProxyReflect {
+
   static *getTypeConditions$(type, symbol) {
-    for (const current of Es6UserReflect.getDescriptor(
-      type, symbol, { isStatic: true })) {
-      switch (typeof current) {
-        case 'function': break
-        case 'object': 
-          const { value } = current
-          if (!value) continue
-          assert(typeof value === 'function', 
-            `Expected function but got ${typeof value}`)
-          yield value
-          break
-        default: assert(false, `Unexpected type: ${typeof current}`)
-      }
-    }
+    yield* PartialMetadata.getValue(type, symbol, {
+      includeOverridden: true,
+      descriptorType: 'field',
+      instanceOf: Function,
+    }).map(({ value }) => value)
   }
-  static *conditions$(type, key, symbol) {
-    const isStatic = { isStatic: true }
-    const hosts = new Set(PartialReflect.hosts(type, key))
 
-    for (const host of hosts) {
-      const conditions = Es6UserReflect.getOwnDescriptor(
-        host, symbol, isStatic) ?? { }
-      const pojo = conditions?.value
-      if (!pojo) continue
-      yield host
-
-      const descriptor = Object.getOwnPropertyDescriptor(pojo, key)
-      if (!descriptor) continue
-      const { get, set, value } = descriptor
-      yield { get, set, value }
-    }
-  }
   static getConditions$(type, key, symbol) {
+    assert(symbol == Preconditions || symbol == Postconditions)
+
+    const reflect = symbol == Preconditions
+      ? PartialPreconditions : PartialPostconditions
+
     const getters = []
     const setters = []
     const values = []
 
-    for (const current of PartialProxyReflect.conditions$(type, key, symbol)) {
+    for (const current of reflect.getDescriptor(type, key)) {
       switch (typeof current) {
         case 'function': break
         case 'object':

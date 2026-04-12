@@ -44,8 +44,8 @@ const KnownKeys = [ 'constructor' ]
 const KnownStaticKeys = [ 'length', 'name', 'prototype',
   Implements, Extends,
   Thunk, 
-  Preconditions, Postconditions,
-  TypePrecondition, TypePostcondition,
+  // Preconditions, Postconditions,
+  // TypePrecondition, TypePostcondition,
   // TODO: remove Compile, Declarations, Symbol.hasInstance
   Compile, 'Compile',
   Declarations, 'Declarations',
@@ -201,7 +201,7 @@ export const PartialMetadata = PartialReflect.on({
           case 'object':
             const descriptor = current
             const value = descriptor.value
-            if (!isMetadata(value)) continue
+            // if (!isMetadata(value)) continue
 
             descriptors[key] = descriptor
             break
@@ -264,9 +264,9 @@ function partialReflectOnMetaObject(symbol) {
       const values = [...this.getValue(type, symbol)].reverse()
 
       return values.reduce((prototype, { host, value }) => {
-        const descriptors = Reflect.getOwnPropertyDescriptors(value)
+        const descriptors = Object.getOwnPropertyDescriptors(value)
         return Prototype.createLink(host, prototype, descriptors)
-      }, null)
+      }, null) ?? Prototype.createLink(type)
     }
   })
 }
@@ -277,38 +277,38 @@ export const PartialPreconditions
 export const PartialPostconditions 
   = partialReflectOnMetaObject(Postconditions)
 
-export function isMetadata(value) {
-  const es6Type = es6Typeof(value)
+// export function isMetadata(value) {
+//   const es6Type = es6Typeof(value)
 
-  switch(es6Type) {
-    case 'null':
-    case 'undefined':
-    case 'class':
-    case 'string':
-    case 'number':
-    case 'bigint':
-    case 'boolean':
-    case 'symbol':
-      return true
-    case 'function':
-      return false
-    case 'object':
-      // recursive case: plain objects whose values are metadata
-      if (value?.constructor && value.constructor != Object) 
-        return false
-      for (const key of Reflect.ownKeys(value))
-        if (!isMetadata(value[key])) 
-          return false
-      break
-    case 'array':
-      // recursive case: arrays whose elements are metadata
-      for (const element of value)
-        if (!isMetadata(element)) 
-          return false
-      break
-    default:
-      assert(false, `Unexpected type: ${es6Type}`)
-  }
+//   switch(es6Type) {
+//     case 'null':
+//     case 'undefined':
+//     case 'class':
+//     case 'string':
+//     case 'number':
+//     case 'bigint':
+//     case 'boolean':
+//     case 'symbol':
+//       return true
+//     case 'function':
+//       return false
+//     case 'object':
+//       // recursive case: plain objects whose values are metadata
+//       if (value?.constructor && value.constructor != Object) 
+//         return false
+//       for (const key of Reflect.ownKeys(value))
+//         if (!isMetadata(value[key])) 
+//           return false
+//       break
+//     case 'array':
+//       // recursive case: arrays whose elements are metadata
+//       for (const element of value)
+//         if (!isMetadata(element)) 
+//           return false
+//       break
+//     default:
+//       assert(false, `Unexpected type: ${es6Type}`)
+//   }
 
-  return true
-}
+//   return true
+// }

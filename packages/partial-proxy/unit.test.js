@@ -12,6 +12,11 @@ import {
   PartialProxy,
   PartialProxyReflect,
 } from '@kingjs/partial-proxy'
+import { 
+  PartialReflect,
+  PartialMetadata,
+  PartialPreconditions 
+} from '@kingjs/partial-reflect'
 
 // -- Type Conditions --
 
