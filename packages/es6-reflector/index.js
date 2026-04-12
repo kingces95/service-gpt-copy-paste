@@ -5,9 +5,9 @@ import { es6Typeof } from '@kingjs/es6-typeof'
 import { asIterable } from '@kingjs/as-iterable'
 import { Prototype } from '@kingjs/prototype'
 
-const ObjectCtorWithStatics = Prototype.createLink(
+const ObjectCtorWithStatics = Prototype.create(
       Object, null, Object.getOwnPropertyDescriptors(Object))
-const ObjectCtorWithoutStatics = Prototype.createLink(Object)
+const ObjectCtorWithoutStatics = Prototype.create(Object)
 
 // Es6Reflector supports reflection on ES6 class static and instance members.
 // The static members are copied onto a parallel prototype chain so that the
@@ -180,7 +180,7 @@ export class Es6Reflector {
             : this.getPrototype(baseType)
 
           const descriptors = Object.getOwnPropertyDescriptors(type)
-          return Prototype.createLink(type, basePrototype, descriptors)
+          return Prototype.create(type, basePrototype, descriptors)
         }
       })
     })
@@ -231,7 +231,7 @@ export class Es6Reflector {
             }
           }
 
-          return Prototype.createLink(currentType, prototype, descriptors)
+          return Prototype.create(currentType, prototype, descriptors)
         }, null)
       }
     })

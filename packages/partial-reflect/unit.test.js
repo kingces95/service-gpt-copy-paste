@@ -121,8 +121,8 @@ describe('metadata', () => {
   describe.each(tests)('%s', (_, { type, links }) => {
     it('should have correct metadata links', () => {
       const expectedChain = [...links]
-      const actualChain = Prototype.deconstruct(
-        PartialMetadata.getPrototype(type))
+      const actualChain = [...Prototype.deconstruct(
+        PartialMetadata.getPrototype(type))]
       
       expect(actualChain.length).toBe(expectedChain.length)
 

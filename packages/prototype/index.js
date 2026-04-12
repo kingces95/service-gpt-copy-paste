@@ -1,26 +1,23 @@
 export class Prototype {
 
-  static deconstruct(prototype) {
-    const chain = []
-    do { 
-      const link = Object.create(null)
-      Object.defineProperties(link,
-        Object.getOwnPropertyDescriptors(prototype))
-      chain.push(link) 
-    } 
-    while (prototype = Object.getPrototypeOf(prototype))
-    return chain
+  static *deconstruct(prototype) {
+    yield *Prototype.chain(prototype).map(link => {
+      const result = Object.create(null)
+      Object.defineProperties(result,
+        Object.getOwnPropertyDescriptors(link))
+      return result
+    })
   }
 
-  static create(links) {
+  static reduce(links) {
     // links like { type, descriptors }, subtype first
     return [...links].reverse().reduce((prototype, { type, descriptors }) => {
-      prototype = Prototype.createLink(type, prototype, descriptors)
+      prototype = Prototype.create(type, prototype, descriptors)
       return prototype
     }, null)
   }
 
-  static createLink(type, basePrototype = null, descriptors = { }) {
+  static create(type, basePrototype = null, descriptors = { }) {
     // add link to base prototype chain
     const prototype = Object.create(basePrototype)
 

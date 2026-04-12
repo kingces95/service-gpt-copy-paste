@@ -88,7 +88,7 @@ export const PartialReflect = Es6Reflector.create({
         }
       }
 
-      return Prototype.createLink(currentType, prototype, descriptors)
+      return Prototype.create(currentType, prototype, descriptors)
     }, null)
   },
 })
@@ -208,7 +208,7 @@ export const PartialMetadata = PartialReflect.on({
         }
       }
 
-      return Prototype.createLink(currentType, prototype, descriptors)
+      return Prototype.create(currentType, prototype, descriptors)
     }, null)
   }
 })
@@ -265,8 +265,8 @@ function partialReflectOnMetaObject(symbol) {
 
       return values.reduce((prototype, { host, value }) => {
         const descriptors = Object.getOwnPropertyDescriptors(value)
-        return Prototype.createLink(host, prototype, descriptors)
-      }, null) ?? Prototype.createLink(type)
+        return Prototype.create(host, prototype, descriptors)
+      }, null) ?? Prototype.create(type)
     }
   })
 }

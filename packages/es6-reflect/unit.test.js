@@ -193,8 +193,8 @@ describe('Hierarchy', () => {
     })
     it('should have correct static prototype', () => {
       const expectedChain = [...extensions]
-      const actualChain = Prototype.deconstruct(
-        Es6Reflect.getPrototype(type, { isStatic: true }))
+      const actualChain = [...Prototype.deconstruct(
+        Es6Reflect.getPrototype(type, { isStatic: true }))]
       
       expect(actualChain.length).toBe(expectedChain.length)
   

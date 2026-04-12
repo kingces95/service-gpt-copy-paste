@@ -10,8 +10,6 @@ import { PartialAssociate } from '@kingjs/partial-associate'
 import { PartialType } from '@kingjs/partial-type'
 import { Extensions } from '@kingjs/extensions'
 
-// Operations supporting @kingjs/extend.
-
 function isExtensionOfAny(type, expectedType) {
   if (!expectedType) return true
   

@@ -322,7 +322,7 @@ function runTests(
             : type === MySubType ? MySubTypeLinks
             : null
           expect(links).not.toBeNull()
-          return Prototype.create(links)
+          return Prototype.reduce(links)
         }
       })
 

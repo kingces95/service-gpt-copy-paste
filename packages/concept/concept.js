@@ -69,9 +69,8 @@ export class ImplicitConcept extends PartialType {
 function satisfiesAssociations(concept, instance) {
   const ctor = instance.constructor
 
-  const options = { extensionOf: Concept, includeOverridden: true }
-  for (const { value: associatedConcept, key } of
-    PartialMetadata.values(concept, options)) {
+  for (const { value: associatedConcept, key } of PartialMetadata.values(
+    concept, { extensionOf: Concept, includeOverridden: true })) {
 
     const associatedType = ctor[key]
     if (!(typeof associatedType == 'function')) 
