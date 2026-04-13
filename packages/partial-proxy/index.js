@@ -1,6 +1,7 @@
 import { assert } from '@kingjs/assert'
 import { isAbstract } from '@kingjs/abstract'
-import { es6CreateThunk } from '@kingjs/es6-create-thunk'
+import { trimPojo } from '@kingjs/pojo-trim'
+import { es6CreateThunk } from '@kingjs/es6-thunk'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { Es6Compiler } from '@kingjs/es6-compiler'
 import { 
@@ -8,7 +9,6 @@ import {
   PartialPreconditions, 
   PartialPostconditions 
 } from '@kingjs/partial-reflect'
-import { trimPojo } from '@kingjs/pojo-trim'
 import { 
   Thunk,
   Preconditions,

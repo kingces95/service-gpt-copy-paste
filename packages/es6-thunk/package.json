@@ -1,5 +1,5 @@
 {
-  "name": "@kingjs/es6-create-thunk",
+  "name": "@kingjs/es6-thunk",
   "version": "1.0.0",
   "description": ".",
   "main": "index.js",
