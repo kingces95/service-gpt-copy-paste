@@ -1,21 +1,12 @@
 import { assert } from '@kingjs/assert'
 import { isAbstract } from '@kingjs/abstract'
-import { trimPojo } from '@kingjs/pojo-trim'
 import { es6CreateThunk } from '@kingjs/es6-thunk'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { Es6Compiler } from '@kingjs/es6-compiler'
-import { 
-  PartialMetadata,
-  PartialPreconditions, 
-  PartialPostconditions 
-} from '@kingjs/partial-reflect'
-import { 
-  Thunk,
-  Preconditions,
-  Postconditions,
-  TypePrecondition,
-  TypePostcondition,
-} from '@kingjs/partial-symbols'
+import { Thunk } from '@kingjs/partial-symbols'
+import { Es6Compiler } from '@kingjs/es6-compiler'
+import { Lazy } from '@kingjs/lazy'
+import { getConditions } from '@kingjs/partial-reflect'
 
 export {
   Thunk,
@@ -25,48 +16,43 @@ export {
   TypePostcondition,
 } from '@kingjs/partial-symbols'
 
-function createThunk(type, key, descriptor) {
-  const conditions = PartialProxyReflect.getConditions(type, key)
-  if (!conditions) return descriptor
-  return es6CreateThunk(descriptor, conditions)
-}
-
-function installStub(type, key, descriptor) {
-  const stub = createStub(type, key, descriptor)
-  Object.defineProperty(type.prototype, key, stub)
+export class PartialProxy {
+  static [Thunk](key, descriptor) {
+    if (isAbstract(descriptor)) return descriptor
+    return createStub(this, key, descriptor)
+  }
 }
 
 function createStub(type, key, descriptor) {
-  const loadThunk = () => createThunk(type, key, descriptor)
+  const thunk = new Lazy(() => 
+    es6CreateThunk(descriptor, 
+      getConditions(type, key)))
 
-  let thunk
+  function installStub(ctor) {
+    if (ctor == type) return false
+    Object.defineProperty(ctor.prototype, key, 
+      createStub(ctor, key, descriptor))
+    return true
+  }
 
   const method = function() { 
-    const ctor = this.constructor
-    if (ctor != type) { 
-      installStub(ctor, key, descriptor)
+    if (installStub(this.constructor))
       return this[key](...arguments)
-    }
-    const { value } = thunk || (thunk = loadThunk()) 
+    const { value } = thunk.value
     return value.apply(this, arguments)
   }
   const getter = function() { 
-    const ctor = this.constructor
-    if (ctor != type) { 
-      installStub(ctor, key, descriptor)
+    if (installStub(this.constructor))
       return this[key]
-    }
-    const { get } = thunk || (thunk = loadThunk())
+    const { get } = thunk.value
     return get.call(this)
   }
   const setter = function(value) { 
-    const ctor = this.constructor
-    if (ctor != type) { 
-      installStub(ctor, key, descriptor)
+    if (installStub(this.constructor)) {
       this[key] = value
       return
     }
-    const { set } = thunk || (thunk = loadThunk())
+    const { set } = thunk.value
     return set.call(this, value)
   }
 
@@ -107,75 +93,4 @@ function createStub(type, key, descriptor) {
   }
 
   return stub
-}
-
-export class PartialProxy {
-  static [Thunk](key, descriptor) {
-    if (isAbstract(descriptor)) return descriptor
-    return createStub(this, key, descriptor)
-  }
-}
-
-export class PartialProxyReflect {
-
-  static *getTypeConditions$(type, symbol) {
-    yield* PartialMetadata.getValue(type, symbol, {
-      includeOverridden: true,
-      descriptorType: 'field',
-      instanceOf: Function,
-    }).map(({ value }) => value)
-  }
-
-  static getConditions$(type, key, symbol) {
-    assert(symbol == Preconditions || symbol == Postconditions)
-
-    const reflect = symbol == Preconditions
-      ? PartialPreconditions : PartialPostconditions
-
-    const getters = []
-    const setters = []
-    const values = []
-
-    for (const current of reflect.getDescriptor(type, key)) {
-      switch (typeof current) {
-        case 'function': break
-        case 'object':
-          const { get, set, value } = current
-          if (get) getters.push(get)
-          if (set) setters.push(set)
-          if (value) values.push(value)
-          break
-        default:
-          assert(false, 'Unexpected type: ' + typeof current)
-      }    
-    }
-
-    return { 
-      value: values, 
-      get: getters, 
-      set: setters 
-    }
-  }
-
-  static getConditions(type, key) {
-    const self = PartialProxyReflect
-
-    const typePrecondition = [...self.getTypeConditions$(type, TypePrecondition)]
-    const typePostcondition = [...self.getTypeConditions$(type, TypePostcondition)]
-    const precondition = self.getConditions$(type, key, Preconditions)
-    const postcondition = self.getConditions$(type, key, Postconditions)
-
-    return trimPojo({
-      type: {
-        precondition: typePrecondition.reverse(),
-        postcondition: typePostcondition,
-      },
-      precondition: {
-        value: precondition.value.reverse(),
-        get: precondition.get.reverse(),
-        set: precondition.set.reverse(),
-      },
-      postcondition,
-    })
-  }
 }

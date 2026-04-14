@@ -8,15 +8,9 @@ import {
   TypePostcondition,
   Preconditions,
   Postconditions,
-
   PartialProxy,
-  PartialProxyReflect,
 } from '@kingjs/partial-proxy'
-import { 
-  PartialReflect,
-  PartialMetadata,
-  PartialPreconditions 
-} from '@kingjs/partial-reflect'
+import { getConditions } from '@kingjs/partial-reflect'
 
 // -- Type Conditions --
 
@@ -98,24 +92,20 @@ const TypeWithoutConditions = {
 const AbstractType = {
   type: MyAbstractType,
   conditions: {
-    type: {
-      precondition: [myTypePrecondition],
-      postcondition: [myTypePostcondition],
-    },
-    precondition: { value: [myPrecondition] },
-    postcondition: { value: [myPostcondition] },
+    typePrecondition: [myTypePrecondition],
+    typePostcondition: [myTypePostcondition],
+    precondition: [myPrecondition],
+    postcondition: [myPostcondition],
   },
 }
 
 const Type = {
   type: MyType,
   conditions: {
-    type: {
-      precondition: [myTypePrecondition],
-      postcondition: [myTypePostcondition],
-    },
-    precondition: { value: [myPrecondition] },
-    postcondition: { value: [myPostcondition] },
+    typePrecondition: [myTypePrecondition],
+    typePostcondition: [myTypePostcondition],
+    precondition: [myPrecondition],
+    postcondition: [myPostcondition],
   },
   calls: [
     'MyType:typePrecondition',
@@ -129,12 +119,10 @@ const Type = {
 const ExtendedType = {
   type: MyExtendedType,
   conditions: {
-    type: {
-      precondition: [myTypePrecondition, myExtendedTypePrecondition],
-      postcondition: [myExtendedTypePostcondition, myTypePostcondition],
-    },
-    precondition: { value: [myPrecondition, myExtendedPrecondition] },
-    postcondition: { value: [myExtendedPostcondition, myPostcondition] },
+    typePrecondition: [myTypePrecondition, myExtendedTypePrecondition],
+    typePostcondition: [myExtendedTypePostcondition, myTypePostcondition],
+    precondition: [myPrecondition, myExtendedPrecondition],
+    postcondition: [myExtendedPostcondition, myPostcondition],
   },
   calls: [
     'MyType:typePrecondition',
@@ -153,12 +141,10 @@ const ExtendedTypWithoutConditions = {
   type: MyType,
   instanceType: MyExtendedType,
   conditions: {
-    type: {
-      precondition: [myTypePrecondition, myExtendedTypePrecondition],
-      postcondition: [myExtendedTypePostcondition, myTypePostcondition],
-    },
-    precondition: { value: [myPrecondition, myExtendedPrecondition] },
-    postcondition: { value: [myExtendedPostcondition, myPostcondition] },
+    typePrecondition: [myTypePrecondition, myExtendedTypePrecondition],
+    typePostcondition: [myExtendedTypePostcondition, myTypePostcondition],
+    precondition: [myPrecondition, myExtendedPrecondition],
+    postcondition: [myExtendedPostcondition, myPostcondition],
   },
   calls: [
     'MyType:typePrecondition',
@@ -196,7 +182,7 @@ describe.each(Tests)('%s',
   })
 
   it('should have the correct type conditions', () => {
-    const actual = PartialProxyReflect.getConditions(instanceType, 'member')
+    const actual = getConditions(instanceType, 'member')
     expect(actual).toEqual(conditions)
   })  
   it('should execute the correct conditions in the correct order', () => {

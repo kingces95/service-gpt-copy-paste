@@ -150,20 +150,14 @@ describe.each(tests)('A %s', (_, { descriptor, ...flags }) => {
     let thunk
     beforeEach(() => {
       thunk = es6CreateThunk(descriptor, {
-        type: { 
-          precondition: hasTypePrecondition ? [typePrecondition] : null,
-          postcondition: hasTypePostcondition ? [typePostcondition] : null,
-        },
-        precondition: {
-          value: hasPrecondition ? [precondition] : null,
-          get: hasGetterPrecondition ? [getterPrecondition] : null, 
-          set: hasSetterPrecondition ? [setterPrecondition] : null,
-        },
-        postcondition: {
-          value: hasPostcondition ? [postcondition] : null,
-          get: hasGetterPostcondition ? [getterPostcondition] : null, 
-          set: hasSetterPostcondition ? [setterPostcondition] : null,
-        }
+        typePrecondition: hasTypePrecondition ? [typePrecondition] : null,
+        typePostcondition: hasTypePostcondition ? [typePostcondition] : null,
+        precondition: hasPrecondition ? [precondition] : null,
+        getPrecondition: hasGetterPrecondition ? [getterPrecondition] : null, 
+        setPrecondition: hasSetterPrecondition ? [setterPrecondition] : null,
+        postcondition: hasPostcondition ? [postcondition] : null,
+        getPostcondition: hasGetterPostcondition ? [getterPostcondition] : null, 
+        setPostcondition: hasSetterPostcondition ? [setterPostcondition] : null,
       })
     })
   

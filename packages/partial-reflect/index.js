@@ -1,4 +1,5 @@
 import { assert } from '@kingjs/assert'
+import { trimPojo } from '@kingjs/pojo-trim'
 import { isAbstract } from '@kingjs/abstract'
 import { Prototype } from '@kingjs/prototype'
 import { Es6Reflector } from '@kingjs/es6-reflector'
@@ -15,7 +16,6 @@ import {
   TypePrecondition, 
   TypePostcondition,
 } from '@kingjs/partial-symbols'
-import { es6Typeof } from '@kingjs/es6-typeof'
 
 // Unfies reflection operations over PartialType and Es6 types which
 // may have been merged with vairous PartialTypes (i.e.PartialClass,
@@ -276,6 +276,57 @@ export const PartialPreconditions
 
 export const PartialPostconditions 
   = partialReflectOnMetaObject(Postconditions)
+
+function getTypeConditions(type, symbol) {
+  return [...PartialMetadata.getValue(type, symbol, {
+    includeOverridden: true,
+    descriptorType: 'field',
+    instanceOf: Function,
+  }).map(({ value }) => value)]
+}
+
+function getMemberConditions(reflect, type, key) {
+  const result = {
+    value: [],
+    get: [],
+    set: [],
+  }
+
+  for (const current of reflect.getDescriptor(type, key)) {
+    switch (typeof current) {
+      case 'function': break
+      case 'object':
+        const { get, set, value } = current
+        if (get) result.get.push(get)
+        if (set) result.set.push(set)
+        if (value) result.value.push(value)
+        break
+      default:
+        assert(false, 'Unexpected type: ' + typeof current)
+    }    
+  }
+
+  return result
+}
+
+export function getConditions(type, key) {
+  const typePrecondition = getTypeConditions(type, TypePrecondition)
+  const typePostcondition = getTypeConditions(type, TypePostcondition)
+  const precondition = getMemberConditions(PartialPreconditions, type, key)
+  const postcondition = getMemberConditions(PartialPostconditions, type, key)
+
+  return trimPojo({
+    typePrecondition: typePrecondition.reverse(), 
+    precondition: precondition.value.reverse(),
+    getPrecondition: precondition.get.reverse(),
+    setPrecondition: precondition.set.reverse(), 
+
+    typePostcondition,
+    postcondition: postcondition.value,
+    getPostcondition: postcondition.get,
+    setPostcondition: postcondition.set,
+  })
+}
 
 // export function isMetadata(value) {
 //   const es6Type = es6Typeof(value)

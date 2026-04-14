@@ -3,32 +3,12 @@ import { Es6Compiler } from '@kingjs/es6-compiler'
 import { FunctionBuilder } from '@kingjs/function-builder'
 import { trimPojo } from '@kingjs/pojo-trim'
 
-export function es6CreateThunk(descriptor, {
-    type: { 
-      precondition: typePrecondition, 
-      postcondition: typePostcondition, 
-    } = { },
-    precondition: {
-      value: precondition,
-      get: getPrecondition,
-      set: setPrecondition,
-    } = { },
-    postcondition: {
-      value: postcondition,
-      get: getPostcondition,
-      set: setPostcondition,
-    } = { },
-  } = { }) {
+export function es6CreateThunk(descriptor, conditions) {
+  if (!conditions) 
+    return Es6Compiler.emit({ ...descriptor })
 
   if ('value' in descriptor && typeof descriptor.value != 'function')
     return Es6Compiler.emit({ ...descriptor })
-
-  const conditions = {
-    typePrecondition, typePostcondition,
-    precondition, postcondition,
-    getPrecondition, getPostcondition,
-    setPrecondition, setPostcondition,
-  }
 
   for (const key in conditions)
     conditions[key] = FunctionBuilder.require(conditions[key])
