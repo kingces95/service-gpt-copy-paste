@@ -1,149 +1,114 @@
 import { assert } from '@kingjs/assert'
 import { Es6Compiler } from '@kingjs/es6-compiler'
-import { FunctionBuilder } from '@kingjs/function-builder'
 import { trimPojo } from '@kingjs/pojo-trim'
-import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { Es6Compiler } from '@kingjs/es6-compiler'
 import { Lazy } from '@kingjs/lazy'
 import { Es6Compiler } from '@kingjs/es6-compiler'
+import { Es6Descriptor } from '@kingjs/es6-descriptor'
 
-export function createStub(type, key, descriptor, getConditionsFn) {
-  assert(getConditionsFn, 'getConditionsFn is required')
+function decorate(fn, target, tag) {
+  fn.__target = target
 
-  const thunk = new Lazy(() => 
-    es6CreateThunk(descriptor, 
-      getConditionsFn(type, key)))
+  Object.defineProperty(fn, 'name', {
+    value: target.name + '_' + tag,
+    configurable: true,
+  })
+
+  return fn
+}
+function decorateThunk(fn, target) { 
+  return decorate(fn, target, 'thunk') 
+}
+function decorateStub(fn, target) { 
+  return decorate(fn, target, 'stub') 
+}
+
+export function createStub(type, key, descriptor, getConditions) {
+  const lazyThunk = new Lazy(() => 
+    createThunk(descriptor, getConditions(type, key)))
 
   function installStub(ctor) {
     if (ctor == type) return false
     Object.defineProperty(ctor.prototype, key, 
-      createStub(ctor, key, descriptor, getConditionsFn))
+      createStub(ctor, key, descriptor, getConditions))
     return true
   }
 
-  const method = function() { 
-    if (installStub(this.constructor))
-      return this[key](...arguments)
-    const { value } = thunk.value
-    return value.apply(this, arguments)
-  }
-  const getter = function() { 
-    if (installStub(this.constructor))
-      return this[key]
-    const { get } = thunk.value
-    return get.call(this)
-  }
-  const setter = function(value) { 
-    if (installStub(this.constructor)) {
-      this[key] = value
-      return
-    }
-    const { set } = thunk.value
-    return set.call(this, value)
-  }
-
   const { value, get, set } = descriptor
+  const stub = trimPojo({
+    ...descriptor,
 
-  function setName(fn, name) {
-    Object.defineProperty(fn, 'name', {
-      value: name + '_stub',
-      configurable: true,
-    })
-  }
+    value: value ? decorateStub(function() { 
+      if (installStub(this.constructor))
+        return this[key](...arguments)
+      const thunk = lazyThunk.value
+      return thunk.value.apply(this, arguments)
+    }, value) : undefined,
 
-  setName(method, value?.name)
-  setName(getter, get?.name)
-  setName(setter, set?.name)
+    get: get ? decorateStub(function() { 
+      if (installStub(this.constructor))
+        return this[key]
+      const thunk = lazyThunk.value
+      return thunk.get.call(this)
+    }, get) : undefined,
 
-  method.__target = value
-  getter.__target = get
-  setter.__target = set
-  
-  const stub = Es6Compiler.emit({ ...descriptor })
-  switch (Es6Descriptor.typeof(stub)) {
-    case 'method': 
-      stub.value = method
-      break
-    case 'getter':
-      stub.get = getter
-      break
-    case 'setter':
-      stub.set = setter
-      break
-    case 'property':
-      stub.get = getter
-      stub.set = setter
-      break
-    case 'field':
-    default:
-  }
-
-  return stub
-}
-
-export function es6CreateThunk(descriptor, conditions) {
-  if (!conditions) 
-    return Es6Compiler.emit({ ...descriptor })
-
-  if ('value' in descriptor && typeof descriptor.value != 'function')
-    return Es6Compiler.emit({ ...descriptor })
-
-  for (const key in conditions)
-    conditions[key] = FunctionBuilder.require(conditions[key])
-
-  return Es6Thunk.createDescriptor(descriptor, conditions)
-}
-
-function decorateThunk(thunk, fn) {
-  thunk.__target = fn
-
-  Object.defineProperty(thunk, 'name', {
-    value: fn.name + '_thunk',
-    configurable: true,
+    set: set ? decorateStub(function(value) { 
+      if (installStub(this.constructor)) {
+        this[key] = value
+        return
+      }
+      const thunk = lazyThunk.value
+      return thunk.set.call(this, value)
+    }, set) : undefined,
   })
+
+  return Es6Compiler.emit(stub)
+}
+
+export function createThunk(descriptor, conditions) {
+  if (!conditions || Es6Descriptor.typeof(descriptor) == 'field') 
+    return Es6Compiler.emit({ ...descriptor })
+
+  descriptor = Es6Compiler.emit({ ...descriptor })
+  descriptor.value = createMethodThunk(descriptor.value, conditions)
+  descriptor.get = createGetterThunk(descriptor.get, conditions)
+  descriptor.set = createSetterThunk(descriptor.set, conditions)
+  return trimPojo(descriptor)  
+}
+
+function createMethodThunk(target, conditions) {
+  return Es6TypeThunk.create(
+    Es6MethodThunk.create(target, conditions), 
+  conditions)
+}
+
+function createGetterThunk(target, conditions) {
+  return createMethodThunk(
+    Es6GetterThunk.create(target, conditions), 
+  conditions)    
+}
+
+function createSetterThunk(target, conditions) {
+  return createMethodThunk(
+    Es6SetterThunk.create(target, conditions), 
+  conditions)    
 }
 
 class Es6Thunk {
-  static createDescriptor(descriptor, conditions) {
-    descriptor = Es6Compiler.emit({ ...descriptor })
-    descriptor.get = Es6Thunk.createGetter(descriptor.get, conditions)
-    descriptor.set = Es6Thunk.createSetter(descriptor.set, conditions)
-    descriptor.value = Es6Thunk.createMethod(descriptor.value, conditions)
-    return trimPojo(descriptor)    
-  }
-
-  static createMethod(method, conditions) {
-    return Es6TypeThunk.create(
-      Es6MethodThunk.create(method, conditions), 
-    conditions)    
-  }
-
-  static createGetter(getter, conditions) {
-    return Es6Thunk.createMethod(
-      Es6GetterThunk.create(getter, conditions), 
-    conditions)    
-  }
-
-  static createSetter(setter, conditions) {
-    return Es6Thunk.createMethod(
-      Es6SetterThunk.create(setter, conditions), 
-    conditions)    
-  }
-
-  static create(fn, precondition, postcondition, thunk) {
-    if (!fn) return fn
-    if (!precondition && !postcondition) return fn
-    decorateThunk(thunk, fn)
+  static create(target, precondition, postcondition, thunk) {
+    if (!target) return target
+    if (!precondition && !postcondition) return target
+    decorateThunk(thunk, target)
     return thunk  
   }
 }
 
-class Es6TypeThunk extends Es6Thunk {
-  static create(fn, { typePrecondition, typePostcondition }) {
-    return Es6Thunk.create(fn, typePrecondition, typePostcondition,
+class Es6TypeThunk {
+  static create(target, { typePrecondition, typePostcondition }) {
+    return Es6Thunk.create(target, typePrecondition, typePostcondition,
       function() {
         typePrecondition?.call(this)
-        const result = fn.apply(this, arguments)
+        const result = target.apply(this, arguments)
         typePostcondition?.call(this)
         return result    
       }
@@ -151,12 +116,12 @@ class Es6TypeThunk extends Es6Thunk {
   }
 }
 
-class Es6GetterThunk extends Es6Thunk {
-  static create(fn, { getPrecondition, getPostcondition }) {
-    return Es6Thunk.create(fn, getPrecondition, getPostcondition,
+class Es6GetterThunk {
+  static create(target, { getPrecondition, getPostcondition }) {
+    return Es6Thunk.create(target, getPrecondition, getPostcondition,
       function() {
         getPrecondition?.call(this)
-        const result = fn.call(this)
+        const result = target.call(this)
         getPostcondition?.call(this, result)
         return result    
       }
@@ -164,24 +129,24 @@ class Es6GetterThunk extends Es6Thunk {
   }
 }
 
-class Es6SetterThunk extends Es6Thunk {
-  static create(fn, { setPrecondition, setPostcondition }) {
-    return Es6Thunk.create(fn, setPrecondition, setPostcondition,
+class Es6SetterThunk {
+  static create(target, { setPrecondition, setPostcondition }) {
+    return Es6Thunk.create(target, setPrecondition, setPostcondition,
       function(arg0) {
         setPrecondition?.call(this, arg0)
-        fn.call(this, arg0)
+        target.call(this, arg0)
         setPostcondition?.call(this)
       }
     )
   }
 }
 
-class Es6MethodThunk extends Es6Thunk {
-  static create(fn, { precondition, postcondition }) {
-    return Es6Thunk.create(fn, precondition, postcondition,
+class Es6MethodThunk {
+  static create(target, { precondition, postcondition }) {
+    return Es6Thunk.create(target, precondition, postcondition,
       function() {
         precondition?.apply(this, arguments)
-        const result = fn.apply(this, arguments)
+        const result = target.apply(this, arguments)
         if (result === undefined)
           postcondition?.call(this)
         else

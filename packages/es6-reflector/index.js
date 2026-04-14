@@ -105,42 +105,6 @@ const ObjectCtorWithoutStatics = Prototype.create(Object)
 
 export class Es6Reflector {
 
-  static isMetadata(value) {
-    const es6Type = es6Typeof(value)
-
-    switch(es6Type) {
-      case 'null':
-      case 'undefined':
-      case 'class':
-      case 'string':
-      case 'number':
-      case 'bigint':
-      case 'boolean':
-      case 'symbol':
-        return true
-      case 'function':
-        return false
-      case 'object':
-        // recursive case: plain objects whose values are metadata
-        if (value?.constructor && value.constructor != Object) 
-          return false
-        for (const key of Reflect.ownKeys(value))
-          if (!Es6Reflector.isMetadata(value[key])) 
-            return false
-        break
-      case 'array':
-        // recursive case: arrays whose elements are metadata
-        for (const element of value)
-          if (!Es6Reflector.isMetadata(element)) 
-            return false
-        break
-      default:
-        assert(false, `Unexpected type: ${es6Type}`)
-    }
-
-    return true
-  }
-
   static create({
       knownTypes = [], knownTypeFn,
       knownKeys = [], knownKeyFn,
@@ -188,7 +152,6 @@ export class Es6Reflector {
 
   #instance
   #static
-  #metadata
 
   constructor({
     instance$,
@@ -196,45 +159,6 @@ export class Es6Reflector {
   }) {
     this.#instance = instance$
     this.#static = static$
-
-    const self = this
-    this.#metadata = new Es6Prototype({
-      knownKeys: [ 'constructor' ],
-      getPrototypeFn: function(type) {
-        const hierarchy = [...self.hierarchy(type)]
-
-        return hierarchy.reverse().reduce((prototype, currentType) => {
-          const descriptors = { }
-
-          let key
-          const options = { isStatic: true, descriptorType: 'field' }
-          for (const current of self.ownDescriptors(currentType, options)) {
-            assert(typeof current == 'object'
-              || typeof current == 'string' 
-              || typeof current == 'symbol',
-              `Unexpected type: ${typeof current}`)
-
-            switch (typeof current) {
-              case 'string':
-              case 'symbol':
-                key = current 
-                break
-              case 'object':
-                if (key == 'prototype') continue
-
-                const descriptor = current
-                const value = descriptor.value
-                if (!Es6Reflector.isMetadata(value)) continue
-
-                descriptors[key] = descriptor
-                break
-            }
-          }
-
-          return Prototype.create(currentType, prototype, descriptors)
-        }, null)
-      }
-    })
   }
 
   #reflect(isStatic = false) { 

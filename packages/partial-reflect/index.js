@@ -199,11 +199,7 @@ export const PartialMetadata = PartialReflect.on({
             key = current 
             break
           case 'object':
-            const descriptor = current
-            const value = descriptor.value
-            // if (!isMetadata(value)) continue
-
-            descriptors[key] = descriptor
+            descriptors[key] = current
             break
         }
       }
@@ -315,7 +311,7 @@ export function getConditions(type, key) {
   const precondition = getMemberConditions(PartialPreconditions, type, key)
   const postcondition = getMemberConditions(PartialPostconditions, type, key)
 
-  return trimPojo({
+  const conditions = trimPojo({
     typePrecondition: typePrecondition.reverse(), 
     precondition: precondition.value.reverse(),
     getPrecondition: precondition.get.reverse(),
@@ -326,40 +322,6 @@ export function getConditions(type, key) {
     getPostcondition: postcondition.get,
     setPostcondition: postcondition.set,
   })
+
+  return conditions
 }
-
-// export function isMetadata(value) {
-//   const es6Type = es6Typeof(value)
-
-//   switch(es6Type) {
-//     case 'null':
-//     case 'undefined':
-//     case 'class':
-//     case 'string':
-//     case 'number':
-//     case 'bigint':
-//     case 'boolean':
-//     case 'symbol':
-//       return true
-//     case 'function':
-//       return false
-//     case 'object':
-//       // recursive case: plain objects whose values are metadata
-//       if (value?.constructor && value.constructor != Object) 
-//         return false
-//       for (const key of Reflect.ownKeys(value))
-//         if (!isMetadata(value[key])) 
-//           return false
-//       break
-//     case 'array':
-//       // recursive case: arrays whose elements are metadata
-//       for (const element of value)
-//         if (!isMetadata(element)) 
-//           return false
-//       break
-//     default:
-//       assert(false, `Unexpected type: ${es6Type}`)
-//   }
-
-//   return true
-// }

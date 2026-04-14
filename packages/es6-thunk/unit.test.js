@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { es6CreateThunk } from '@kingjs/es6-thunk'
+import { createThunk } from '@kingjs/es6-thunk'
 import { Es6Compiler } from '@kingjs/es6-compiler'
 
 function getterFn() {
@@ -22,17 +22,26 @@ function methodFn(value) {
 }
 
 const getter = {
-  descriptor: { get: getterFn },
+  descriptor: { 
+    get: getterFn,
+    enumerable: false,
+  },
   hasGetter: true,
 }
 
 const setter = {
-  descriptor: { set: setterFn },
+  descriptor: { 
+    set: setterFn,
+    enumerable: false,
+  },
   hasSetter: true,
 }
 
 const method = {
-  descriptor: { value: methodFn },
+  descriptor: { 
+    value: methodFn,
+    enumerable: false,
+  },
   hasMethod: true,
 }
 
@@ -40,6 +49,7 @@ const property = {
   descriptor: {
     get: getterFn,
     set: setterFn,
+    enumerable: false,
   },
   hasGetter: true,
   hasSetter: true,
@@ -64,7 +74,7 @@ describe('An empty thunk', () => {
   let thunk
   let descriptor = { value: 42 }
   beforeEach(() => {
-    thunk = es6CreateThunk(descriptor)
+    thunk = createThunk(descriptor)
   })
 
   it('returns the compiled descriptor', () => {
@@ -149,15 +159,15 @@ describe.each(tests)('A %s', (_, { descriptor, ...flags }) => {
 
     let thunk
     beforeEach(() => {
-      thunk = es6CreateThunk(descriptor, {
-        typePrecondition: hasTypePrecondition ? [typePrecondition] : null,
-        typePostcondition: hasTypePostcondition ? [typePostcondition] : null,
-        precondition: hasPrecondition ? [precondition] : null,
-        getPrecondition: hasGetterPrecondition ? [getterPrecondition] : null, 
-        setPrecondition: hasSetterPrecondition ? [setterPrecondition] : null,
-        postcondition: hasPostcondition ? [postcondition] : null,
-        getPostcondition: hasGetterPostcondition ? [getterPostcondition] : null, 
-        setPostcondition: hasSetterPostcondition ? [setterPostcondition] : null,
+      thunk = createThunk(descriptor, {
+        typePrecondition: hasTypePrecondition ? typePrecondition : null,
+        typePostcondition: hasTypePostcondition ? typePostcondition : null,
+        precondition: hasPrecondition ? precondition : null,
+        getPrecondition: hasGetterPrecondition ? getterPrecondition : null, 
+        setPrecondition: hasSetterPrecondition ? setterPrecondition : null,
+        postcondition: hasPostcondition ? postcondition : null,
+        getPostcondition: hasGetterPostcondition ? getterPostcondition : null, 
+        setPostcondition: hasSetterPostcondition ? setterPostcondition : null,
       })
     })
   
