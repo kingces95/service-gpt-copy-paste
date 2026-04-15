@@ -1,9 +1,7 @@
 import { assert } from '@kingjs/assert'
 import { Es6Compiler } from '@kingjs/es6-compiler'
 import { trimPojo } from '@kingjs/pojo-trim'
-import { Es6Compiler } from '@kingjs/es6-compiler'
 import { Lazy } from '@kingjs/lazy'
-import { Es6Compiler } from '@kingjs/es6-compiler'
 
 import { decorate } from './decorate.js'
 import { createThunk } from './thunk.js'

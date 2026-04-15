@@ -1,8 +1,6 @@
 import { assert } from '@kingjs/assert'
 import { Es6Compiler } from '@kingjs/es6-compiler'
 import { trimPojo } from '@kingjs/pojo-trim'
-import { Es6Compiler } from '@kingjs/es6-compiler'
-import { Es6Compiler } from '@kingjs/es6-compiler'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
 
 import { decorate } from './decorate.js'
