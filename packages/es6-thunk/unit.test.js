@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { createThunk } from '@kingjs/es6-thunk'
 import { Es6Compiler } from '@kingjs/es6-compiler'
+
+import { createThunk } from './thunk.js'
 
 function getterFn() {
   this.push('get')
