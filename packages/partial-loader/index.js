@@ -6,7 +6,6 @@ import { isAbstract } from '@kingjs/abstract'
 import { es6DefineType } from '@kingjs/es6-define-type'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { Es6UserReflect } from '@kingjs/es6-user-reflect'
-import { PartialAssociate } from '@kingjs/partial-associate'
 import { PartialType } from '@kingjs/partial-type'
 import { Extensions } from '@kingjs/extensions'
 
@@ -22,7 +21,15 @@ function isExtensionOfAny(type, expectedType) {
   return false
 }
 
+const PartialTypes = new Map()
+
 export class PartialLoader {
+
+  static addPartialType(type, partialType) {
+    assert(PartialLoader.#isPartialType(partialType))
+    if (!PartialTypes.has(type)) PartialTypes.set(type, [])
+    PartialTypes.get(type).push(partialType)
+  }
 
   static load(pojoOrType) {
     const type = PartialLoader.#define(pojoOrType)
@@ -67,7 +74,7 @@ export class PartialLoader {
     yield* PartialLoader.#declaredOwnPartialTypes(type)
 
     // added procedurally (e.g by extend() or implement())
-    yield* PartialAssociate.ownPartialTypes(type)
+    yield* PartialTypes.get(type) || []
   }
 
   static *#declaredOwnPartialTypes(type, symbols = PartialType.Declarations) {

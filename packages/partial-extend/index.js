@@ -1,10 +1,8 @@
 import { assert } from '@kingjs/assert'
 import { PartialLoader } from '@kingjs/partial-loader'
 import { PartialReflect } from '@kingjs/partial-reflect'
-import { PartialAssociate } from '@kingjs/partial-associate'
 import { Thunk } from '@kingjs/partial-proxy'
 import { isAbstract } from '@kingjs/abstract'
-import { PartialType } from '@kingjs/partial-type'
 
 // Extend takes copies (merges) descriptors found on a partial type
 // on to a targets type.
@@ -15,7 +13,7 @@ import { PartialType } from '@kingjs/partial-type'
 // @kingjs/abstract).
 
 // All merged partial types are associated with the target type 
-// (PartialAssociate.getPartialObjects).
+// (PartialLoader.addPartialType).
 
 // Transparent partial types are merged but not associated. A transparent
 // partial type is one whose prototype extends Extensions. Members of
@@ -51,21 +49,10 @@ export function extend(type, partialType) {
         Object.defineProperty(prototype, key, thunk)
         break
       case 'function':
+        const partialType = current
+        if (PartialLoader.transparent(partialType)) break
+        PartialLoader.addPartialType(type, partialType)
         break
     }
   }
-  
-  associate(type, partialType)
 }
-
-function associate(type, partialType) {
-  if (PartialLoader.transparent(partialType)) return
-
-  PartialAssociate.addPartialType(type, partialType)
-  for (const current of PartialReflect.baseTypes(partialType)) {
-    assert(PartialReflect.isExtensionOf(
-      partialType, PartialType, { minDepth: 2 }))
-    PartialAssociate.addPartialType(type, current)
-  }
-}
-
