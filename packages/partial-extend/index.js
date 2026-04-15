@@ -6,22 +6,16 @@ import { Thunk } from '@kingjs/partial-proxy'
 import { isAbstract } from '@kingjs/abstract'
 import { PartialType } from '@kingjs/partial-type'
 
-// Extend takes a targets type and a partial type and merges the 
-// partial type into the target type.
+// Extend takes copies (merges) descriptors found on a partial type
+// on to a targets type.
 
-// If the partial type extends other partial types, those are merged
-// in first (depth first). 
+// If the partial type extends other partial types, logically, those 
+// are merged in first. Members on the target type are not 
+// overwritten unless they are abstract (i.e. are implemented as 
+// @kingjs/abstract).
 
 // All merged partial types are associated with the target type 
 // (PartialAssociate.getPartialObjects).
-
-// Existing members on the target type are not overwritten unless they
-// are abstract (i.e. are implemented as @kingjs/abstract).
-
-// A member of a parital type that is copied to the target or was 
-// considered for copying to the target (i.e. was abstract) is associated 
-// with each partial type in the hierarchy that tried to defined it 
-// (PartialAssociate.hosts). 
 
 // Transparent partial types are merged but not associated. A transparent
 // partial type is one whose prototype extends Extensions. Members of
@@ -35,31 +29,6 @@ export function extend(type, partialType) {
     ? type[Thunk](ownKey, descriptor) 
     : descriptor
 
-  define(type, partialType, { createThunk })
-  associate(type, partialType)
-}
-
-function associate(type, partialType) {
-  if (PartialLoader.transparent(partialType)) return
-
-  PartialAssociate.addPartialType(type, partialType)
-  for (const current of PartialReflect.baseTypes(partialType)) {
-    assert(PartialReflect.isExtensionOf(
-      partialType, PartialType, { minDepth: 2 }))
-    PartialAssociate.addPartialType(type, current)
-  }
-}
-
-function defineProperty(type, key, descriptor) {
-  const prototype = type.prototype
-
-  if (key in prototype && isAbstract(descriptor)) return false
-
-  Object.defineProperty(prototype, key, descriptor)
-  return true
-}
-
-function define(type, partialType, { createThunk }) {
   let key
   for (const current of PartialReflect.descriptors(partialType)) {
     assert (typeof current == 'string' 
@@ -75,41 +44,28 @@ function define(type, partialType, { createThunk }) {
         break
       case 'object':
         const descriptor = current
+        const prototype = type.prototype
+        if (key in prototype && isAbstract(descriptor)) break
+
         const thunk = createThunk(key, descriptor)
-        defineProperty(type, key, thunk)
+        Object.defineProperty(prototype, key, thunk)
         break
       case 'function':
         break
     }
   }
+  
+  associate(type, partialType)
 }
 
-// describe('with a method', () => {
-//   let method
-//   let methodResult
-//   beforeEach(() => {
-//     method = function method() { }
-//     methodResult = 
-//       PartialTypeReflect.defineProperty(type, 'method', { value: method })
-//   })
+function associate(type, partialType) {
+  if (PartialLoader.transparent(partialType)) return
 
-//   it('should return method as own descriptor', () => {
-//     const descriptor = 
-//       Es6UserReflect.getOwnDescriptor(type, 'method')
-//     expect(descriptor.value).toBe(method)
-//     expect(methodResult).toBe(true)
-//   })
+  PartialAssociate.addPartialType(type, partialType)
+  for (const current of PartialReflect.baseTypes(partialType)) {
+    assert(PartialReflect.isExtensionOf(
+      partialType, PartialType, { minDepth: 2 }))
+    PartialAssociate.addPartialType(type, current)
+  }
+}
 
-//   describe('after attempting to define as abstract method', () => {
-//     let abstractResult
-//     beforeEach(() => {
-//       abstractResult = 
-//         PartialTypeReflect.defineProperty(type, 'method', { value: abstract })
-//     })
-
-//     it('should not change the method', () => {
-//       expect(type.prototype.method).toBe(method)
-//       expect(abstractResult).toBe(false)
-//     })
-//   })
-// })

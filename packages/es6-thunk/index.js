@@ -23,46 +23,54 @@ function decorateStub(fn, target) {
   return decorate(fn, target, 'stub') 
 }
 
-export function createStub(type, key, descriptor, getConditions) {
-  const lazyThunk = new Lazy(() => 
-    createThunk(descriptor, getConditions(type, key)))
-
-  function installStub(ctor) {
-    if (ctor == type) return false
-    Object.defineProperty(ctor.prototype, key, 
-      createStub(ctor, key, descriptor, getConditions))
-    return true
+export class Es6ThunkFactory {
+  #getConditions
+  
+  constructor(getConditions) {
+    this.#getConditions = getConditions
   }
 
-  const { value, get, set } = descriptor
-  const stub = trimPojo({
-    ...descriptor,
+  create(type, key, descriptor) {
+    const lazyThunk = new Lazy(() => 
+      createThunk(descriptor, this.#getConditions(type, key)))
 
-    value: value ? decorateStub(function() { 
-      if (installStub(this.constructor))
-        return this[key](...arguments)
-      const thunk = lazyThunk.value
-      return thunk.value.apply(this, arguments)
-    }, value) : undefined,
+    const installStub = (ctor) => {
+      if (ctor == type) return false
+      Object.defineProperty(ctor.prototype, key, 
+        this.create(ctor, key, descriptor))
+      return true
+    }
 
-    get: get ? decorateStub(function() { 
-      if (installStub(this.constructor))
-        return this[key]
-      const thunk = lazyThunk.value
-      return thunk.get.call(this)
-    }, get) : undefined,
+    const { value, get, set } = descriptor
+    const stub = trimPojo({
+      ...descriptor,
 
-    set: set ? decorateStub(function(value) { 
-      if (installStub(this.constructor)) {
-        this[key] = value
-        return
-      }
-      const thunk = lazyThunk.value
-      return thunk.set.call(this, value)
-    }, set) : undefined,
-  })
+      value: value ? decorateStub(function() { 
+        if (installStub(this.constructor))
+          return this[key](...arguments)
+        const thunk = lazyThunk.value
+        return thunk.value.apply(this, arguments)
+      }, value) : undefined,
 
-  return Es6Compiler.emit(stub)
+      get: get ? decorateStub(function() { 
+        if (installStub(this.constructor))
+          return this[key]
+        const thunk = lazyThunk.value
+        return thunk.get.call(this)
+      }, get) : undefined,
+
+      set: set ? decorateStub(function(value) { 
+        if (installStub(this.constructor)) {
+          this[key] = value
+          return
+        }
+        const thunk = lazyThunk.value
+        return thunk.set.call(this, value)
+      }, set) : undefined,
+    })
+
+    return Es6Compiler.emit(stub)
+  }
 }
 
 export function createThunk(descriptor, conditions) {
