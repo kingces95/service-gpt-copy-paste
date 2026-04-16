@@ -32,22 +32,14 @@ export class PartialLoader {
   }
 
   static load(pojoOrType) {
-    const type = PartialLoader.#define(pojoOrType)
-    assert(PartialLoader.#isPartialType(type))
-    return type
-  }
-
-  static #define(pojoOrType) {
-    if (!isPojo(pojoOrType)) return pojoOrType
-    return es6DefineType(null, Extensions, pojoOrType)
-  }
-
-  static #isExtensions(type) {
-    return type?.prototype instanceof Extensions
+    if (isPojo(pojoOrType))
+      pojoOrType = es6DefineType(null, Extensions, pojoOrType)
+    assert(PartialLoader.#isPartialType(pojoOrType))
+    return pojoOrType
   }
 
   static transparent(type) {
-    return PartialLoader.#isExtensions(type)
+    return type?.prototype instanceof Extensions
   }
 
   static #getBaseType(type) {

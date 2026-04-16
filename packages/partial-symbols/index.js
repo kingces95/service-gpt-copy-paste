@@ -100,3 +100,5 @@ export const TypePostcondition = Symbol('PartialType.TypePostcondition')
 
 export const Implements = Symbol('Concept.Implements')
 export const Extends = Symbol('PartialClass.Extends')
+
+
