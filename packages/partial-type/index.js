@@ -7,9 +7,6 @@ export {
 } from '@kingjs/partial-symbols'
 
 export class PartialType extends null {
-  static Compile = Compile
-  static Declarations = Declarations
-
   constructor() { 
     throw new TypeError('PartialType cannot be instantiated.') 
   }

@@ -5,7 +5,7 @@ import { Extensions } from '@kingjs/extensions'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { Es6Reflect } from '@kingjs/es6-reflect'
-import { PartialType } from '@kingjs/partial-type'
+import { PartialType, Compile, Declarations } from '@kingjs/partial-type'
 import { extend } from '@kingjs/partial-extend'
 import { PartialLoader } from '@kingjs/partial-loader'
 
@@ -122,7 +122,7 @@ describe('PartialClass', () => {
   
   beforeEach(() => {
     PartialClass = class PartialClass extends PartialType { 
-      static [PartialType.Declarations] = { 
+      static [Declarations] = { 
         [ExtensionSymbol]: { 
           expectedType: [PartialClass, Extensions] 
         } 
@@ -434,7 +434,7 @@ describe('PartialClass', () => {
           beforeEach(() => {
             compileCalled = false
       
-            PartialClass[PartialType.Compile] = function(descriptor) {
+            PartialClass[Compile] = function(descriptor) {
               if (!compileCalled) {
                 compileCalled = true
                 expect(descriptor.value).toBe(mySubExtensionMethod)

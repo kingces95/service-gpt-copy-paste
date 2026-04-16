@@ -1,4 +1,4 @@
-import { PartialType } from '@kingjs/partial-type'
+import { PartialType, Declarations } from '@kingjs/partial-type'
 import { Extensions } from '@kingjs/extensions'
 import { PartialLoader } from '@kingjs/partial-loader'
 import { Extends } from '@kingjs/partial-symbols'
@@ -15,7 +15,7 @@ export { Extends } from '@kingjs/partial-symbols'
 //    extend(MyType, Dumpper)
 
 export class PartialClass extends PartialType {
-  static [PartialType.Declarations] = {
+  static [Declarations] = {
     [Extends]: { 
       expectedType: [ PartialClass, Extensions ],
       map: PartialLoader.load,

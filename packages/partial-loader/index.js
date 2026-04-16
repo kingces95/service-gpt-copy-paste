@@ -6,7 +6,7 @@ import { isAbstract } from '@kingjs/abstract'
 import { es6DefineType } from '@kingjs/es6-define-type'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { Es6UserReflect } from '@kingjs/es6-user-reflect'
-import { PartialType } from '@kingjs/partial-type'
+import { PartialType, Compile, Declarations } from '@kingjs/partial-type'
 import { Extensions } from '@kingjs/extensions'
 
 function isExtensionOfAny(type, expectedType) {
@@ -69,7 +69,7 @@ export class PartialLoader {
     yield* PartialTypes.get(type) || []
   }
 
-  static *#declaredOwnPartialTypes(type, symbols = PartialType.Declarations) {
+  static *#declaredOwnPartialTypes(type, symbols = Declarations) {
 
     // if symbols typeof symbol, pull metadata off of type
     if (typeof symbols == 'symbol') symbols = type[symbols]
@@ -106,7 +106,7 @@ export class PartialLoader {
   }
 
   // todo: remove; in use by tests
-  static *declaredOwnPartialTypes$(type, symbols = PartialType.Declarations) {
+  static *declaredOwnPartialTypes$(type, symbols = Declarations) {
     yield* PartialLoader.#declaredOwnPartialTypes(type, symbols)
   }
 
@@ -138,7 +138,7 @@ export class PartialLoader {
     if (!PartialLoader.#isPartialType(type))
       return descriptor
     
-    return type[PartialType.Compile](descriptor) 
+    return type[Compile](descriptor) 
   }
 
   static *ownDescriptors(type) {

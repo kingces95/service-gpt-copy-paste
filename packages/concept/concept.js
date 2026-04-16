@@ -1,5 +1,5 @@
 import { abstractify } from '@kingjs/abstract'
-import { PartialType } from '@kingjs/partial-type'
+import { PartialType, Declarations, Compile } from '@kingjs/partial-type'
 import { PartialClass } from '@kingjs/partial-class'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { PartialMetadata } from '@kingjs/partial-reflect'
@@ -8,8 +8,8 @@ import { Implements } from '@kingjs/partial-symbols'
 export { Implements } from '@kingjs/partial-symbols'
 
 export class Concept extends PartialType {
-  static [PartialType.Declarations] = {
-    ...PartialClass[PartialType.Declarations],
+  static [Declarations] = {
+    ...PartialClass[Declarations],
     [Implements]: { expectedType: Concept },
   }
 
@@ -33,8 +33,8 @@ export class Concept extends PartialType {
     return Es6Reflect.canDuckCast(this, instance)
   }
 
-  static [PartialType.Compile](descriptor) {
-    const compiledDescriptor = super[PartialType.Compile](descriptor)
+  static [Compile](descriptor) {
+    const compiledDescriptor = super[Compile](descriptor)
     const abstractDescriptor = abstractify(compiledDescriptor)
     return abstractDescriptor
   }
@@ -42,8 +42,8 @@ export class Concept extends PartialType {
 
 // TODO: Remove/combine with Concept or extend with Symbol.hasInstance.
 export class ImplicitConcept extends PartialType { 
-  static [PartialType.Compile](descriptor) {
-    const compiledDescriptor = super[PartialType.Compile](descriptor)
+  static [Compile](descriptor) {
+    const compiledDescriptor = super[Compile](descriptor)
     const abstractDescriptor = abstractify(compiledDescriptor)
     return abstractDescriptor
   }

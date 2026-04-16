@@ -12,7 +12,7 @@ export const Declarations = Symbol('PartialType.declarations')
 // into PartialClass types:
 
 //    class PartialClass extends PartialType {
-//      static [PartialType.Declarations] = {
+//      static [Declarations] = {
 //        [Extends]: { 
 //          expectedType: [ PartialClass, Extensions ],
 //          map: PartialLoader.load,
@@ -62,8 +62,8 @@ export const Compile = Symbol('PartialType.compile')
 
 //    import { abstract } from '@kingjs/abstract'
 //    class Concept extends PartialType {
-//      static [PartialType.Compile](descriptor) {
-//        const result = super[PartialType.Compile](descriptor)
+//      static [Compile](descriptor) {
+//        const result = super[Compile](descriptor)
 //        ... modify result so that all members are abstract ...
 //        return result
 //      }

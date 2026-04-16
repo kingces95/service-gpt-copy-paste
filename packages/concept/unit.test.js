@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { PartialType } from '@kingjs/partial-type'
+import { PartialType, Compile } from '@kingjs/partial-type'
 import { PartialClass, Extends } from '@kingjs/partial-class'
 import { PartialReflect, PartialMetadata } from '@kingjs/partial-reflect'
 import { Concept, Implements } from '@kingjs/concept'
@@ -8,7 +8,6 @@ import { abstract } from '@kingjs/abstract'
 
 describe('Concept', () => {
   it('should compile function descriptor to abstract', () => {
-    const Compile = PartialType.Compile
     const descriptor = {
       value: () => { }
     }
@@ -16,7 +15,6 @@ describe('Concept', () => {
     expect(compiled.value).toBe(abstract)
   })
   it('should compile getter descriptor to abstract', () => {
-    const Compile = PartialType.Compile
     const descriptor = {
       get: () => { }
     }
@@ -24,7 +22,6 @@ describe('Concept', () => {
     expect(compiled.get).toBe(abstract)
   })
   it('should compile setter descriptor to abstract', () => {
-    const Compile = PartialType.Compile
     const descriptor = {
       set: (value) => { }
     }
