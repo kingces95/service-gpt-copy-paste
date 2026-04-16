@@ -1,4 +1,7 @@
-import { PartialType } from '@kingjs/partial-type'
+import { 
+  PartialType, 
+  Transparent 
+} from '@kingjs/partial-type'
 
 // Extensions hosts descriptors that can be copied onto a type.
 
@@ -89,4 +92,6 @@ import { PartialType } from '@kingjs/partial-type'
 //      }
 //    })
 
-export class Extensions extends PartialType { }
+export class Extensions extends PartialType { 
+  static [Transparent] = true
+}

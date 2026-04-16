@@ -1,9 +1,10 @@
 import { Es6Compiler } from '@kingjs/es6-compiler'
-import { Compile, Declarations} from '@kingjs/partial-symbols'
+import { Compile, Declarations } from '@kingjs/partial-symbols'
 
 export {
   Compile,
   Declarations,
+  Transparent,
 } from '@kingjs/partial-symbols'
 
 export class PartialType extends null {

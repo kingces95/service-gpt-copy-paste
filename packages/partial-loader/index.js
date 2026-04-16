@@ -6,7 +6,12 @@ import { isAbstract } from '@kingjs/abstract'
 import { es6DefineType } from '@kingjs/es6-define-type'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { Es6UserReflect } from '@kingjs/es6-user-reflect'
-import { PartialType, Compile, Declarations } from '@kingjs/partial-type'
+import { 
+  PartialType,
+  Compile, 
+  Declarations, 
+  Transparent
+} from '@kingjs/partial-type'
 import { Extensions } from '@kingjs/extensions'
 
 function isExtensionOfAny(type, expectedType) {
@@ -39,7 +44,7 @@ export class PartialLoader {
   }
 
   static transparent(type) {
-    return type?.prototype instanceof Extensions
+    return type[Transparent] == true
   }
 
   static #getBaseType(type) {
