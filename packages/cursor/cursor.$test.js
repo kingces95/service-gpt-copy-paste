@@ -60,7 +60,7 @@ export class CursorFactory extends Interval {
   // cursor factory
   get isEmpty() { return this.begin().equals(this.end()) }
   static {
-    extend(this, {
+    define(this, {
       begin: abstract,
       end: abstract,
     })

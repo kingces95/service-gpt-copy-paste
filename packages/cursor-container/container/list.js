@@ -1,5 +1,5 @@
 import { assert } from '@kingjs/assert'
-import { extend } from '@kingjs/partial-extend'
+import { define } from '@kingjs/partial-define'
 import { implement } from '@kingjs/implement'
 import { PartialProxy, Preconditions } from '@kingjs/partial-proxy'
 import {
@@ -37,7 +37,7 @@ class ListCursor extends ContainerCursor {
   set link(link) { this.token = link }
 
   static {
-    extend(this, {
+    define(this, {
       __isActive$() { return !!this.next },
     })
   }
@@ -108,7 +108,7 @@ export class List extends PartialProxy {
   }
 
   static {
-    extend(this, {
+    define(this, {
       beforeBegin() { return new this.cursorType(this, this._rootLink) },
       insertAfter(cursor, value) { cursor.link.insertAfter(value) },
       removeAfter(cursor) { return cursor.link.removeAfter() },

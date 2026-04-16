@@ -1,7 +1,7 @@
 import { assert } from '@kingjs/assert'
 import { implement } from '@kingjs/implement'
 import { BidirectionalCursorConcept } from '@kingjs/cursor'
-import { extend } from '@kingjs/partial-extend'
+import { define } from '@kingjs/partial-define'
 import { List } from './list.js'
 import { 
   BidirectionalContainerConcept,
@@ -48,7 +48,7 @@ export class Chain extends List {
   }
 
   static {
-    extend(this, {
+    define(this, {
       // TODO: Loader installs stubs so type.prototype does not work. Need
       // to update loader to attach a static [Prototype] symbol that contains
       // the original methods so super methods can be addressed stripped of

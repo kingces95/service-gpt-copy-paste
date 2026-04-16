@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { abstract } from '@kingjs/abstract'
 import { extend } from '@kingjs/partial-extend'
+import { define } from '@kingjs/partial-define'
 import { PartialClass, Extends } from '@kingjs/partial-class'
 import { PartialType, Compile } from '@kingjs/partial-type'
 
@@ -11,49 +12,49 @@ describe('A type', () => {
     type = class { }
   })
   it('can extend null', () => {
-    expect(() => extend(type, null)).toThrow()
+    expect(() => define(type, null)).toThrow()
   })
   it('throws extending a non-partial type', () => {
-    expect(() => extend(type, class { })).toThrow()
+    expect(() => define(type, class { })).toThrow()
   })
   describe('and a partial type as an object', () => {
-    let partialType
+    let pojo
     beforeEach(() => {
-      partialType = { member: { value: () => 'member' } }
+      pojo = { member: { value: () => 'member' } }
     })
     it('can extend the member', () => {
-      extend(type, partialType)
+      define(type, pojo)
       const object = new type()
       object.member()
-      expect(type.prototype.member).toBe(partialType.member.value)
+      expect(type.prototype.member).toBe(pojo.member.value)
     })
   })
   describe('and a partial type with an abstract method', () => {
-    let partialType
+    let pojo
     beforeEach(() => {
-      partialType = { method: { value: abstract } }
+      pojo = { method: { value: abstract } }
     })
     it('can extend the method', () => {
       // integration test
-      extend(type, partialType)
+      define(type, pojo)
       expect(type.prototype.method).toBe(abstract)
     })
   })
   describe('and a partial type with an abstract method', () => {
-    let partialType
+    let pojo
     beforeEach(() => {
-      partialType = { method: abstract }
+      pojo = { method: abstract }
     })
     it('can extend the method', () => {
       // integration test
-      extend(type, partialType)
+      define(type, pojo)
       expect(type.prototype.method).toBe(abstract)
     })
   })
   describe('and a partial type with an abstract accessor', () => {
-    let partialType
+    let pojo
     beforeEach(() => {
-      partialType = {
+      pojo = {
         accessor: {
           get: abstract,
           set: abstract,
@@ -61,7 +62,7 @@ describe('A type', () => {
       }
     })
     it('can extend the accessor', () => {
-      extend(type, partialType)
+      define(type, pojo)
       const descriptor = Object.getOwnPropertyDescriptor(
         type.prototype, 'accessor')
       // an integration test

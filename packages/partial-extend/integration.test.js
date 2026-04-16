@@ -2,6 +2,7 @@ import { beforeEach } from 'vitest'
 import { describe, it, expect } from 'vitest'
 import { TypeInfo } from "@kingjs/info"
 import { extend } from '@kingjs/partial-extend'
+import { define } from '@kingjs/partial-define'
 import { } from "@kingjs/info-to-pojo"
 import { PartialClass } from '@kingjs/partial-class'
 import { PartialLoader } from '@kingjs/partial-loader'
@@ -26,7 +27,7 @@ describe('Extensions with non-standard properties', () => {
     let cls
     beforeEach(() => {
       [cls] = [class { }]
-      extend(cls, pojo)
+      define(cls, pojo)
       const descriptors = Object.getOwnPropertyDescriptors(cls.prototype)
     })
     it('should create an instance with expected property descriptors', () => {

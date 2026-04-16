@@ -3,6 +3,7 @@ import { PartialLoader } from '@kingjs/partial-loader'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { Thunk } from '@kingjs/partial-proxy'
 import { isAbstract } from '@kingjs/abstract'
+import { isPojo } from '@kingjs/pojo-test'
 
 // Extend takes copies (merges) descriptors found on a partial type
 // on to a targets type.
@@ -21,7 +22,7 @@ import { isAbstract } from '@kingjs/abstract'
 // the partial type that "extended" it.
 
 export function extend(type, partialType) {
-  partialType = PartialLoader.load(partialType)
+  assert(!isPojo(partialType))
 
   const createThunk = (ownKey, descriptor) => Thunk in type 
     ? type[Thunk](ownKey, descriptor) 

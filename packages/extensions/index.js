@@ -37,15 +37,15 @@ import {
 // an Extensions type via PartialLoader.load() internally.
 
 // Abstract membeers can be defined via Extensions by using
-// the @kingjs/abstract package and @kingjs/extend. For example:
+// the @kingjs/abstract package and @kingjs/partial-define. For example:
 //   import { abstract } from '@kingjs/abstract'
 //   class MyClass {
 //     static {
-//       extend(this, { method: abstract })
+//       define(this, { method: abstract })
 //     }
 //   }
 // Here the abstract descriptor is copied onto MyClass.prototype
-// via an Extensions type created internally by extend(). This can
+// via an Extensions type created internally by define(). This can
 // also be done using implement() like this:
 //   class MyClass {
 //     static {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { extend } from '@kingjs/partial-extend'
+import { define } from '@kingjs/partial-define'
 import { 
   TypePrecondition,
   TypePostcondition,
@@ -37,7 +37,7 @@ class MyType extends PartialProxy {
   }
 
   static {
-    extend(this, {
+    define(this, {
       method: function() { this.push('MyType:method') },
       get getter() { this.push('MyType:getter') },
       set setter(value) { this.push('MyType:setter') },
