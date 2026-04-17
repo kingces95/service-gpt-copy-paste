@@ -4,7 +4,7 @@ import { ClassInfo } from "@kingjs/info"
 import { } from "@kingjs/info-to-pojo"
 import { PartialClass } from '@kingjs/partial-class'
 import { abstract } from '@kingjs/abstract'
-import { Extensions } from '@kingjs/extensions'
+import { Extensions } from '@kingjs/partial-extensions'
 import { Define } from '@kingjs/partial-symbols'
 
 describe('TypeInfo for PartialClass', () => {

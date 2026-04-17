@@ -1,4 +1,4 @@
-import { Extensions } from '@kingjs/extensions'
+import { Extensions } from '@kingjs/partial-extensions'
 import { extend } from '@kingjs/partial-extend'
 import { Define } from '@kingjs/partial-symbols'
 

@@ -3,7 +3,7 @@ import { PartialClass, Extends } from "@kingjs/partial-class"
 import { implement } from "@kingjs/implement"
 import { Concept, Implements } from "@kingjs/concept"
 import { extend } from "@kingjs/partial-extend"
-import { Extensions } from "@kingjs/extensions"
+import { Extensions } from "@kingjs/partial-extensions"
 import { Define } from "@kingjs/partial-symbols"
 
 const MySymbol = Symbol.for('my-symbol')

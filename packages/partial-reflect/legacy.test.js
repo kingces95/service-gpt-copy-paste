@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { abstract } from '@kingjs/abstract'
-import { Extensions } from '@kingjs/extensions'
+import { Extensions } from '@kingjs/partial-extensions'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { PartialType, Compile, Declarations } from '@kingjs/partial-type'
 import { extend } from '@kingjs/partial-extend'
-import { Extensions } from '@kingjs/extensions'
+import { Extensions } from '@kingjs/partial-extensions'
 import { Define } from '@kingjs/partial-symbols'
 
 function *partialTypes(type) {

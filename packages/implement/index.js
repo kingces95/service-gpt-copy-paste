@@ -3,7 +3,7 @@ import { extend } from '@kingjs/partial-extend'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { Concept } from '@kingjs/concept'
-import { Extensions } from '@kingjs/extensions'
+import { Extensions } from '@kingjs/partial-extensions'
 import { Define } from '@kingjs/partial-symbols'
 
 function isKey(key) {

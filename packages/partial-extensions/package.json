@@ -1,5 +1,5 @@
 {
-  "name": "@kingjs/extensions",
+  "name": "@kingjs/partial-extensions",
   "version": "1.0.0",
   "description": ".",
   "main": "index.js",

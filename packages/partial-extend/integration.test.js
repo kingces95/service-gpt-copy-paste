@@ -5,7 +5,7 @@ import { extend } from '@kingjs/partial-extend'
 import { define } from '@kingjs/partial-define'
 import { } from "@kingjs/info-to-pojo"
 import { PartialClass } from '@kingjs/partial-class'
-import { Extensions } from '@kingjs/extensions'
+import { Extensions } from '@kingjs/partial-extensions'
 import { Define } from '@kingjs/partial-symbols'
 
 const filter = {

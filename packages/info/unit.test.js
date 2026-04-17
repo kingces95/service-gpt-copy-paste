@@ -4,10 +4,10 @@ import { TypeInfo } from "@kingjs/info"
 import { Concept, Implements } from '@kingjs/concept'
 import { PartialType } from '@kingjs/partial-type'
 import { PartialClass, Extends } from '@kingjs/partial-class'
-import { Extensions } from '@kingjs/extensions'
+import { Extensions } from '@kingjs/partial-extensions'
 import { } from "@kingjs/info-to-pojo"
 import { toEqualAsSet } from '@kingjs/vitest'
-import { Extensions } from '@kingjs/extensions'
+import { Extensions } from '@kingjs/partial-extensions'
 import { Define } from '@kingjs/partial-symbols'
 
 expect.extend({ toEqualAsSet })

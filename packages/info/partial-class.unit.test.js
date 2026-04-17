@@ -5,7 +5,7 @@ import { PartialClass, Defines } from '@kingjs/partial-class'
 import { extend } from '@kingjs/partial-extend'
 import { abstract } from '@kingjs/abstract'
 import { } from "@kingjs/info-to-pojo"
-import { Extensions } from '@kingjs/extensions'
+import { Extensions } from '@kingjs/partial-extensions'
 import { Define } from '@kingjs/partial-symbols'
 
 function getMemberValue(cls) {

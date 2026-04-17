@@ -4,7 +4,7 @@ import { beforeEach } from 'vitest'
 import { PartialType } from '@kingjs/partial-type'
 import { PartialClass } from '@kingjs/partial-class'
 import { Concept } from '@kingjs/concept'
-import { Extensions } from '@kingjs/extensions'
+import { Extensions } from '@kingjs/partial-extensions'
 
 import { ClassInfo } from "@kingjs/info"
 import { } from "@kingjs/info-to-pojo"
