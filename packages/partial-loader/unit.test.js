@@ -32,23 +32,10 @@ describe('MyClass that extends MyBase with MySymbol, MyType', () => {
           const associated = [...ownTypes(myClass, myMetadata)]
           expect(associated).toEqual([ myType ])
         })
-        describe('with a mapping...', () => {
-          let myOtherType 
-          beforeEach(() => {
-            myOtherType = class MyOtherType { }
-            myMetadata[mySymbol].map = (obj) => {
-              if (obj == myType) return myOtherType
-            }
-          })
-          it('maps to the other type', () => {
-            const associated = [...ownTypes(myClass, myMetadata)]
-            expect(associated).toEqual([ myOtherType ])
-          })
-        })
         describe('with an unexpected type...', () => {
           beforeEach(() => {
             myClass[mySymbol] = class MyOtherType { }
-            myMetadata[mySymbol].expectedType = [ myBaseType ]
+            myMetadata[mySymbol].expectedType = myBaseType
           })
           it('throws', () => {
             expect(() => {
@@ -58,7 +45,7 @@ describe('MyClass that extends MyBase with MySymbol, MyType', () => {
         })
         describe('with an expected type...', () => {
           beforeEach(() => {
-            myMetadata[mySymbol].expectedType = [ myBaseType ]
+            myMetadata[mySymbol].expectedType = myBaseType
           })
           it('is directly associated', () => {
             const associated = [...ownTypes(myClass, myMetadata)]

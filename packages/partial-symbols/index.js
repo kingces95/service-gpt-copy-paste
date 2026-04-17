@@ -25,7 +25,7 @@ export const Declarations = Symbol('PartialType.declarations')
 // element of an array or unwrapped like this:
 
 //    class MyExtension extends PartialClass {
-//      static [Extends] = { 
+//      static [Defines] = { 
 //        myMethod() { ... } 
 //        myOtherMethod() { ... }
 //      }
@@ -85,7 +85,7 @@ export const Compile = Symbol('PartialType.compile')
 // that uses equals to throw if two instances are not equal:
 
 //   class EqualityConcept extends Concept {
-//     static [Extends] = {
+//     static [Defines] = {
 //       throwIfNotEqual(other) {
 //         if (!this.equals(other)) throw 'Not equal'
 //       }
@@ -100,6 +100,7 @@ export const TypePostcondition = Symbol('PartialType.TypePostcondition')
 
 export const Implements = Symbol('Concept.Implements')
 export const Extends = Symbol('PartialClass.Extends')
+export const Defines = Symbol('PartialType.Defines')
 
 export const Transparent = Symbol('PartialType.Transparent')
 

@@ -32,6 +32,7 @@ export class PartialLoader {
 
   static addPartialType(type, partialType) {
     assert(PartialLoader.#isPartialType(partialType))
+    if (PartialLoader.#isTransparent(partialType)) return
     if (!PartialTypes.has(type)) PartialTypes.set(type, [])
     PartialTypes.get(type).push(partialType)
   }
@@ -43,7 +44,7 @@ export class PartialLoader {
     return pojoOrType
   }
 
-  static transparent(type) {
+  static #isTransparent(type) {
     return type[Transparent] == true
   }
 
@@ -81,31 +82,34 @@ export class PartialLoader {
     if (!symbols) return
     assert(symbols != null, 'failed to find metadata symbols on type.')
     
-    // symbols like { [TheSymbol]: { expectedType, map } }
+    // symbols like { [TheSymbol]: { expectedType } }
     for (const symbol of Object.getOwnPropertySymbols(symbols)) {
       const options = symbols[symbol]
-      const { expectedType, map = o => o } = options
-      const associatedTypes = getOwn(type, symbol)
+      const { expectedType } = options
+      assert(!Array.isArray(expectedType))
+      const actualTypes = getOwn(type, symbol)
 
       // TODO: see RangeConcept: Breaks trying to make iterable.
-      for (let associatedType of asIterable(associatedTypes).map(map)) {
-        assert(isExtensionOfAny(associatedType, expectedType),
-          `Associate type "${associatedType.name}" is of an unexpected type.`)
-        yield associatedType
+      for (let actualType of asIterable(actualTypes)
+        .map(o => !isPojo(o) ? o : es6DefineType(null, expectedType, o))) {
+
+        assert(isExtensionOfAny(actualType, expectedType),
+          `Associate type "${actualType.name}" is of an unexpected type.`)
+        yield actualType
       }
     }
   }
 
   static *#transparentTypes(type) {
     for (const partialType of PartialLoader.#ownPartialTypes(type)) {
-      if (!PartialLoader.transparent(partialType)) continue
+      if (!PartialLoader.#isTransparent(partialType)) continue
       yield partialType
     }
   }
 
   static *ownPartialTypes(type) {
     for (const partialType of PartialLoader.#ownPartialTypes(type)) {
-      if (PartialLoader.transparent(partialType)) continue
+      if (PartialLoader.#isTransparent(partialType)) continue
       yield partialType
     }
   }

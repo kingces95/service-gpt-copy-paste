@@ -3,7 +3,7 @@ import { PartialType, Declarations, Compile } from '@kingjs/partial-type'
 import { PartialClass } from '@kingjs/partial-class'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { PartialMetadata } from '@kingjs/partial-reflect'
-import { Implements } from '@kingjs/partial-symbols'
+import { Implements, Transparent } from '@kingjs/partial-symbols'
 
 export { Implements } from '@kingjs/partial-symbols'
 
@@ -41,7 +41,8 @@ export class Concept extends PartialType {
 }
 
 // TODO: Remove/combine with Concept or extend with Symbol.hasInstance.
-export class ImplicitConcept extends PartialType { 
+export class ImplicitConcept extends PartialType {
+  static [Transparent] = true
   static [Compile](descriptor) {
     const compiledDescriptor = super[Compile](descriptor)
     const abstractDescriptor = abstractify(compiledDescriptor)
@@ -49,7 +50,7 @@ export class ImplicitConcept extends PartialType {
   }
 }
 
-// Associated concepts allow for testign if assoicated metadata of
+// Associated concepts allow for testing if assoicated metadata of
 // an instance satisfies associated metadata of a concept. 
 // For example, 
 

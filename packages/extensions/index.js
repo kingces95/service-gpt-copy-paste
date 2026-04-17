@@ -17,7 +17,7 @@ import {
 // that hosts pojos representing extensions. For example, an
 // CursorConcept might define a next() method like this:
 //   class CursorConcept extends Concept {
-//     static [Extends] = { next() { ... } }
+//     static [Defines] = { next() { ... } }
 //     ...
 //   }
 // Here the pojo { next() { ... } } is converted into an Extensions

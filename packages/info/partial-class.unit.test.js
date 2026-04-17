@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { TypeInfo, TypeInfo } from "@kingjs/info"
-import { PartialClass, Extends } from '@kingjs/partial-class'
+import { PartialClass, Defines } from '@kingjs/partial-class'
 import { extend } from '@kingjs/partial-extend'
 import { abstract } from '@kingjs/abstract'
 import { } from "@kingjs/info-to-pojo"
@@ -112,7 +112,7 @@ describe('A PartialClass with a member', () => {
   describe('extended by a PartialClass', () => {
     let mySubPartialMemberFn = function partialClassFn() { }
     beforeEach(() => {
-      myPartialClass[Extends] =  { member: mySubPartialMemberFn }
+      myPartialClass[Defines] =  { member: mySubPartialMemberFn }
     })
     it('should not overwrite member', async () => {
       const fn = getMemberValue(myPartialClass)

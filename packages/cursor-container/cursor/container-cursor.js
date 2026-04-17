@@ -17,11 +17,14 @@ export class PartialContainer extends PartialClass {
   static [__disposed] = false
 
   get __isDisposed() { return !!this[__disposed] }
+
+  dispose$() { }
   
   static {
-    implement(this, {
-      dispose$() { },
-    })
+    // TODO: use/implement defineAbstract(...)
+    // implement(this, {
+    //   dispose$() { },
+    // })
 
     implement(this, DisposeConcept, {
       dispose() {

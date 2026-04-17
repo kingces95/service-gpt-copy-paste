@@ -118,14 +118,19 @@ describe('MyPojoType', () => {
 
 describe('PartialClass', () => {
   let ExtensionSymbol = Symbol('ExtensionSymbol')
+  let DefinesSymbol = Symbol('DefinesSymbol')
   let PartialClass
   
   beforeEach(() => {
     PartialClass = class PartialClass extends PartialType { 
       static [Declarations] = { 
         [ExtensionSymbol]: { 
-          expectedType: [PartialClass, Extensions] 
-        } 
+          expectedType: Extensions,
+          map: PartialLoader.load,
+        },
+        [DefinesSymbol]: {
+          expectedType: PartialClass,
+        },
       }
     }
   })
@@ -261,7 +266,7 @@ describe('PartialClass', () => {
     
       beforeEach(() => {
         MySubExtension = class extends PartialClass { }
-        MyExtension[ExtensionSymbol] = [ MySubExtension ]
+        MyExtension[DefinesSymbol] = [ MySubExtension ]
       })
 
       it('should have MySubExtension a declaration', () => {
@@ -334,7 +339,7 @@ describe('PartialClass', () => {
 
                 beforeEach(() => {
                   MySubSubExtension = class extends PartialClass { }
-                  MySubExtension[ExtensionSymbol] = [ MySubSubExtension ]
+                  MySubExtension[DefinesSymbol] = [ MySubSubExtension ]
                 })
 
                 it('should have MySubExtension and MySubSubExtension as declarations', () => {

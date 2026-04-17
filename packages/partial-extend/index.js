@@ -51,7 +51,6 @@ export function extend(type, partialType) {
         break
       case 'function':
         const partialType = current
-        if (PartialLoader.transparent(partialType)) break
         PartialLoader.addPartialType(type, partialType)
         break
     }

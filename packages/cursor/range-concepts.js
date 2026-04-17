@@ -7,12 +7,12 @@ import {
   BidirectionalCursorConcept,
   RandomAccessCursorConcept,
   ContiguousCursorConcept } from './cursor-concepts.js'
-import { Extends } from '@kingjs/partial-class'
+import { Defines } from '@kingjs/partial-class'
 
 export class RangeConcept extends Concept {
   static cursorType = CursorConcept
 
-  static [Extends] = [{
+  static [Defines] = [{
     get cursorType() { return this.constructor.cursorType },
     // implement iterator
     *[Symbol.iterator]() { 

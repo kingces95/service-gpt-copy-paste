@@ -1,4 +1,4 @@
-import { Extends } from '@kingjs/partial-class'
+import { Defines } from '@kingjs/partial-class'
 import { Preconditions } from '@kingjs/partial-proxy'
 import {
   RangeConcept,
@@ -24,7 +24,7 @@ import {
 import { Implements } from '@kingjs/concept'
 
 export class ContainerConcept extends RangeConcept {
-  [Extends] = {
+  [Defines] = {
     get cursorType() { return this.constructor.cursorType },
     get isEmpty() { 
       return this.begin({ fixed: true })
@@ -112,7 +112,7 @@ export class EditableContainerConcept extends ContainerConcept {
 }
 
 export class CountableContainerConcept extends ContainerConcept {
-  static [Extends] = {
+  static [Defines] = {
     get isEmpty() { return this.count == 0 }
   }
 
@@ -132,7 +132,7 @@ export class ByteContainerConept extends IndexableContainerConcept {
 }
 
 export class BufferContainerConcept extends ContainerConcept {
-  static [Extends] = {
+  static [Defines] = {
     ensureCapacity(count) {
       if (count <= this.capacity) return this.capacity
       const newCapacity = Math.max(count, this.capacity * 2)

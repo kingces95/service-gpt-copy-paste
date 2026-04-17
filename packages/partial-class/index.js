@@ -1,9 +1,9 @@
 import { PartialType, Declarations } from '@kingjs/partial-type'
 import { Extensions } from '@kingjs/extensions'
 import { PartialLoader } from '@kingjs/partial-loader'
-import { Extends } from '@kingjs/partial-symbols'
+import { Defines, Extends } from '@kingjs/partial-symbols'
 
-export { Extends } from '@kingjs/partial-symbols'
+export { Extends, Defines } from '@kingjs/partial-symbols'
 
 // Extend copies members from one or more extensions to a type prototype.
 // An extension is a class which extends PartialClass. For example, an extension 
@@ -17,8 +17,10 @@ export { Extends } from '@kingjs/partial-symbols'
 export class PartialClass extends PartialType {
   static [Declarations] = {
     [Extends]: { 
-      expectedType: [ PartialClass, Extensions ],
-      map: PartialLoader.load,
-    }
+      expectedType: PartialClass,
+    },
+    [Defines]: {
+      expectedType: Extensions,
+    },
   }
 }

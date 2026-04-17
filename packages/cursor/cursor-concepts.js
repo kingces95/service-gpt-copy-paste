@@ -1,7 +1,7 @@
 import { 
   Implements,
   EquatableConcept } from '@kingjs/concept'
-import { Extends } from '@kingjs/partial-class'
+import { Defines } from '@kingjs/partial-class'
 import { throwNotEquatableTo } from './throw.js'
 import { Preconditions } from '@kingjs/partial-proxy'
 import { 
@@ -18,7 +18,7 @@ export class CursorConcept extends EquatableConcept {
     },
   }
   
-  static [Extends] = {
+  static [Defines] = {
     equatableTo(other) {
       if (other?.constructor != this.constructor) return false
       return this.range == other.range
@@ -116,7 +116,7 @@ export class ContiguousCursorConcept extends RandomAccessCursorConcept {
     }
   }
 
-  static [Extends] = {
+  static [Defines] = {
     read(length = 1, signed = false, littleEndian = false) {
       return this.readAt(0, length, signed, littleEndian)
     },
