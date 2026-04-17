@@ -1,5 +1,5 @@
 import { assert } from '@kingjs/assert'
-import { implement } from '@kingjs/implement'
+import { implement } from '@kingjs/partial-implement'
 import { ContiguousCursor } from '../cursor/contiguous-cursor.js'
 import {
   ByteContainerConept,

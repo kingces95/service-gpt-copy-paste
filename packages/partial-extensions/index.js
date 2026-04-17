@@ -24,7 +24,7 @@ import {
 // type via PartialLoader.load() internally. The next() method is
 // then copied onto the prototype of any type that implements CursorConcept.
 
-// Implementing concepts using @kingjs/implement uses 
+// Implementing concepts using @kingjs/partial-implement uses 
 // PartialLoader.load() internally to convert pojos
 // into Extensions types. For example to implement an equality
 // concept using a pojo:

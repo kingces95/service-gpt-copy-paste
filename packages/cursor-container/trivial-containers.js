@@ -1,4 +1,4 @@
-import { implement } from '@kingjs/implement'
+import { implement } from '@kingjs/partial-implement'
 import { SequenceContainer } from './helpers/sequence-container.js'
 import { RewindContainer } from './helpers/rewind-container.js'
 import { IndexableContainer } from './helpers/indexable-container.js'

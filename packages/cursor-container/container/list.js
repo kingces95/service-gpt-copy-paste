@@ -1,6 +1,6 @@
 import { assert } from '@kingjs/assert'
 import { define } from '@kingjs/partial-define'
-import { implement } from '@kingjs/implement'
+import { implement } from '@kingjs/partial-implement'
 import { PartialProxy, Preconditions } from '@kingjs/partial-proxy'
 import {
   DisposeConcept,

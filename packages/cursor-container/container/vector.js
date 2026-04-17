@@ -1,4 +1,4 @@
-import { implement } from '@kingjs/implement'
+import { implement } from '@kingjs/partial-implement'
 import { extend } from '@kingjs/partial-extend'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { IndexableCursor } from '../cursor/indexable-cursor.js'

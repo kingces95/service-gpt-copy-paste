@@ -1,4 +1,4 @@
-import { implement } from '@kingjs/implement'
+import { implement } from '@kingjs/partial-implement'
 import { Preconditions } from '@kingjs/partial-proxy'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { EquatableConcept } from '@kingjs/partial-concept'

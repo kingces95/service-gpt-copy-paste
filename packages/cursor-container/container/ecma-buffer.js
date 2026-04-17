@@ -1,5 +1,5 @@
 import { assert } from '@kingjs/assert'
-import { implement } from '@kingjs/implement'
+import { implement } from '@kingjs/partial-implement'
 import { extend } from '@kingjs/partial-extend'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { ContiguousCursor } from '../cursor/contiguous-cursor.js'

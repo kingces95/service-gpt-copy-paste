@@ -1,5 +1,5 @@
 import { assert } from '@kingjs/assert'
-import { implement } from '@kingjs/implement'
+import { implement } from '@kingjs/partial-implement'
 import { BidirectionalCursorConcept } from '@kingjs/cursor'
 import { define } from '@kingjs/partial-define'
 import { List } from './list.js'

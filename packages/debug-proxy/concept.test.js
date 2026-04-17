@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { implement } from '@kingjs/implement'
+import { implement } from '@kingjs/partial-implement'
 import { Concept } from '@kingjs/partial-concept'
 import { DebugProxy, Preconditions } from "@kingjs/debug-proxy"
 

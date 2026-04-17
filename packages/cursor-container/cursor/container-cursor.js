@@ -1,4 +1,4 @@
-import { implement } from '@kingjs/implement'
+import { implement } from '@kingjs/partial-implement'
 import { Cursor, throwDisposed } from '@kingjs/cursor'
 import { TypePrecondition } from '@kingjs/partial-proxy'
 import { DisposeConcept } from '@kingjs/partial-concept'
