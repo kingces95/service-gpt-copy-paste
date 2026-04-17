@@ -3,16 +3,15 @@ import { getOwn } from '@kingjs/get-own'
 import { asIterable } from '@kingjs/as-iterable'
 import { isPojo } from '@kingjs/pojo-test'
 import { isAbstract } from '@kingjs/abstract'
-import { es6DefineType } from '@kingjs/es6-define-type'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { Es6UserReflect } from '@kingjs/es6-user-reflect'
-import { 
-  PartialType,
+import { PartialType } from '@kingjs/partial-type'
+import {
   Compile, 
   Declarations, 
-  Transparent
-} from '@kingjs/partial-type'
-import { Extensions } from '@kingjs/extensions'
+  Transparent,
+  Define
+} from '@kingjs/partial-symbols'
 
 function isExtensionOfAny(type, expectedType) {
   if (!expectedType) return true
@@ -32,20 +31,9 @@ export class PartialLoader {
 
   static addPartialType(type, partialType) {
     assert(PartialLoader.#isPartialType(partialType))
-    if (PartialLoader.#isTransparent(partialType)) return
+    if (type[Transparent]) return
     if (!PartialTypes.has(type)) PartialTypes.set(type, [])
     PartialTypes.get(type).push(partialType)
-  }
-
-  static load(pojoOrType) {
-    if (isPojo(pojoOrType))
-      pojoOrType = es6DefineType(null, Extensions, pojoOrType)
-    assert(PartialLoader.#isPartialType(pojoOrType))
-    return pojoOrType
-  }
-
-  static #isTransparent(type) {
-    return type[Transparent] == true
   }
 
   static #getBaseType(type) {
@@ -91,7 +79,7 @@ export class PartialLoader {
 
       // TODO: see RangeConcept: Breaks trying to make iterable.
       for (let actualType of asIterable(actualTypes)
-        .map(o => !isPojo(o) ? o : es6DefineType(null, expectedType, o))) {
+        .map(o => !isPojo(o) ? o : expectedType[Define](o))) {
 
         assert(isExtensionOfAny(actualType, expectedType),
           `Associate type "${actualType.name}" is of an unexpected type.`)
@@ -102,14 +90,14 @@ export class PartialLoader {
 
   static *#transparentTypes(type) {
     for (const partialType of PartialLoader.#ownPartialTypes(type)) {
-      if (!PartialLoader.#isTransparent(partialType)) continue
+      if (!partialType[Transparent]) continue
       yield partialType
     }
   }
 
   static *ownPartialTypes(type) {
     for (const partialType of PartialLoader.#ownPartialTypes(type)) {
-      if (PartialLoader.#isTransparent(partialType)) continue
+      if (partialType[Transparent]) continue
       yield partialType
     }
   }

@@ -3,19 +3,16 @@
 // PartialTypes is a static symbol applied to extensions of 
 // PartialType which describes how those extensions form a poset of 
 // PartialType types.
-export const Declarations = Symbol('PartialType.declarations')
+// export const Declarations = Symbol('PartialType.declarations')
 
 // For example, PartialTypes is used by PartialClass to designate
 // the Extends symbol as containing an adjacency list to other PartialType
-// types of type PartialClass and Extensions. Also specified is
-// a coercion method PartialLoader.load is used to transform POJOs 
-// into PartialClass types:
+// types of type PartialClass and Extensions. 
 
 //    class PartialClass extends PartialType {
 //      static [Declarations] = {
 //        [Extends]: { 
 //          expectedType: [ PartialClass, Extensions ],
-//          map: PartialLoader.load,
 //        }
 //      }
 //    }
@@ -53,7 +50,7 @@ export const Declarations = Symbol('PartialType.declarations')
 
 // Compile is a static symbol applied to extensions of PartialType which
 // designates a function that can be used to "compile" member descriptors.
-export const Compile = Symbol('PartialType.compile')
+// export const Compile = Symbol('PartialType.compile')
 
 // For example, Concept PartialType uses Compile to transform its
 // descriptors so thay are "abstract" by setting all get/set/value to abstract
@@ -92,6 +89,11 @@ export const Compile = Symbol('PartialType.compile')
 //     }
 //     equals(other) { }
 //   }
+
+export const Declarations = Symbol('PartialType.declarations')
+export const Compile = Symbol('PartialType.compile')
+export const Define = Symbol('PartialType.define')
+
 export const Thunk = Symbol('PartialType.Thunk')
 export const Preconditions = Symbol('PartialType.Preconditions')
 export const Postconditions = Symbol('PartialType.Postconditions')
@@ -101,6 +103,7 @@ export const TypePostcondition = Symbol('PartialType.TypePostcondition')
 export const Implements = Symbol('Concept.Implements')
 export const Extends = Symbol('PartialClass.Extends')
 export const Defines = Symbol('PartialType.Defines')
+// export const Extensions = Symbol('PartialType.Extensions')
 
 export const Transparent = Symbol('PartialType.Transparent')
 

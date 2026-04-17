@@ -1,6 +1,5 @@
 import { PartialType, Declarations } from '@kingjs/partial-type'
 import { Extensions } from '@kingjs/extensions'
-import { PartialLoader } from '@kingjs/partial-loader'
 import { Defines, Extends } from '@kingjs/partial-symbols'
 
 export { Extends, Defines } from '@kingjs/partial-symbols'

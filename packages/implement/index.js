@@ -3,7 +3,8 @@ import { extend } from '@kingjs/partial-extend'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { Concept } from '@kingjs/concept'
-import { PartialLoader } from '@kingjs/partial-loader'
+import { Extensions } from '@kingjs/extensions'
+import { Define } from '@kingjs/partial-symbols'
 
 function isKey(key) {
   return typeof key === 'string' || typeof key === 'symbol'
@@ -18,8 +19,7 @@ export function implement(type, concept, implementation = { }) {
   assert(!Es6Reflect.isExtensionOf(type, Concept),
     'Expected type to not be a PartialType.')
 
-  // if pojo, create anonymous partial class from pojo
-  implementation = PartialLoader.load(implementation)
+  implementation = Extensions[Define](implementation)
 
   // restrict implementation to members defined by the concept.
   const conceptMembers = new Set(PartialReflect.keys(concept).filter(isKey))

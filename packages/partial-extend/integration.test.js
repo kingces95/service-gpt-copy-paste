@@ -5,7 +5,8 @@ import { extend } from '@kingjs/partial-extend'
 import { define } from '@kingjs/partial-define'
 import { } from "@kingjs/info-to-pojo"
 import { PartialClass } from '@kingjs/partial-class'
-import { PartialLoader } from '@kingjs/partial-loader'
+import { Extensions } from '@kingjs/extensions'
+import { Define } from '@kingjs/partial-symbols'
 
 const filter = {
   isNonPublic: false, isKnown: false,
@@ -77,7 +78,7 @@ describe('Kitchen sink', () => {
       member1() { return 42 }
       member2() { return 42 }
     }],
-    ['lambda', PartialLoader.load({
+    ['lambda', Extensions[Define]({
       getter0: { get: () => { } },
       get getter1() { },
 

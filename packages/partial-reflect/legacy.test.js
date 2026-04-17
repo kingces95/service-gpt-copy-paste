@@ -7,7 +7,8 @@ import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { PartialType, Compile, Declarations } from '@kingjs/partial-type'
 import { extend } from '@kingjs/partial-extend'
-import { PartialLoader } from '@kingjs/partial-loader'
+import { Extensions } from '@kingjs/extensions'
+import { Define } from '@kingjs/partial-symbols'
 
 function *partialTypes(type) {
   for (const current of PartialReflect.baseTypes(type)) {
@@ -67,7 +68,7 @@ describe('A type', () => {
     beforeEach(() => {
       method = function method() { }
       extend(type, 
-        PartialLoader.load({ method }))
+        Extensions[Define]({ method }))
     })
 
     it('should have the method', () => {
@@ -79,7 +80,7 @@ describe('A type', () => {
 describe('MyPojoType', () => {
   let MyPojoType
   beforeEach(() => {
-    MyPojoType = PartialLoader.load({ })
+    MyPojoType = Extensions[Define]({ })
   })
 
   describe('with method', () => {
@@ -126,7 +127,6 @@ describe('PartialClass', () => {
       static [Declarations] = { 
         [ExtensionSymbol]: { 
           expectedType: Extensions,
-          map: PartialLoader.load,
         },
         [DefinesSymbol]: {
           expectedType: PartialClass,
@@ -217,7 +217,7 @@ describe('PartialClass', () => {
     describe('with MyAnonymousSubExtension', () => {
       let MyAnonymousSubExtension
       beforeEach(() => {
-        MyAnonymousSubExtension = PartialLoader.load({ })
+        MyAnonymousSubExtension = Extensions[Define]({ })
         MyExtension[ExtensionSymbol] = [ MyAnonymousSubExtension ]
       })
 

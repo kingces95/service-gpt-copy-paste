@@ -5,8 +5,8 @@ import { PartialClass, Defines } from '@kingjs/partial-class'
 import { extend } from '@kingjs/partial-extend'
 import { abstract } from '@kingjs/abstract'
 import { } from "@kingjs/info-to-pojo"
-import { PartialLoader } from '@kingjs/partial-loader'
 import { Extensions } from '@kingjs/extensions'
+import { Define } from '@kingjs/partial-symbols'
 
 function getMemberValue(cls) {
   const info = TypeInfo.from(cls)
@@ -68,7 +68,7 @@ describe('A partial class', () => {
     }],
   ])('with %s', (_, cls, expected) => {
     it('has a pojo', async () => {
-      const partialClass = PartialLoader.load(cls)
+      const partialClass = Extensions[Define](cls)
       const fnInfo = TypeInfo.from(partialClass)
       const actual = await fnInfo.toPojo(pojoFilter) 
       expect(actual).toEqual({
