@@ -10,7 +10,8 @@ import {
   Es6DescriptorInfo,
 } from "@kingjs/es6-info"
 import { isAbstract } from "@kingjs/abstract"
-import { PartialReflect, PartialMetadata } from '@kingjs/partial-reflect'
+import { PartialReflect } from '@kingjs/partial-reflect'
+import { PartialMetadata } from '@kingjs/partial-metadata'
 import { getMetadata } from './metadata.js'
 
 const FunctionInfoCache = new WeakMap()

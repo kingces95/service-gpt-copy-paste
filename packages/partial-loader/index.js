@@ -12,17 +12,40 @@ import {
   Transparent,
   Define
 } from '@kingjs/partial-symbols'
+import { Prototype } from '@kingjs/prototype'
 
-function isExtensionOfAny(type, expectedType) {
-  if (!expectedType) return true
+export function createPrototype(type) {
+  const hierarchy = [...PartialLoader.hierarchy(type)]
   
-  const expectedTypes = [...asIterable(expectedType)]
-  if (!expectedTypes.length) return true
+  return hierarchy.reduce((prototype, currentType) => {
+    const descriptors = { }
 
-  for (const expectedType of expectedTypes)
-    if (Es6Reflect.isExtensionOf(type, expectedType))
-      return true
-  return false
+    let ownKey
+    for (const current of PartialLoader.ownDescriptors(currentType)) {
+      assert(typeof current == 'object'
+        || typeof current == 'string' 
+        || typeof current == 'symbol',
+        `Unexpected type: ${typeof current}`)
+
+      switch (typeof current) {
+        case 'string':
+        case 'symbol':
+          ownKey = current 
+        break
+        case 'object':
+          // inherit existing descriptor if current is abstract
+          if (isAbstract(current)) {
+            const existing = descriptors[ownKey]
+            if (existing && !isAbstract(existing))
+              current = existing
+          }
+          descriptors[ownKey] = current
+          break
+      }
+    }
+
+    return Prototype.create(currentType, prototype, descriptors)
+  }, null)
 }
 
 const PartialTypes = new Map()
@@ -69,7 +92,7 @@ export class PartialLoader {
     if (typeof symbols == 'symbol') symbols = type[symbols]
     if (!symbols) return
     assert(symbols != null, 'failed to find metadata symbols on type.')
-    
+
     // symbols like { [TheSymbol]: { expectedType } }
     for (const symbol of Object.getOwnPropertySymbols(symbols)) {
       const options = symbols[symbol]
@@ -81,8 +104,9 @@ export class PartialLoader {
       for (let actualType of asIterable(actualTypes)
         .map(o => !isPojo(o) ? o : expectedType[Define](o))) {
 
-        assert(isExtensionOfAny(actualType, expectedType),
-          `Associate type "${actualType.name}" is of an unexpected type.`)
+        assert(!expectedType 
+          || Es6Reflect.isExtensionOf(actualType, expectedType),
+          `Type "${actualType.name}" is not an extension of expected type "${expectedType?.name}".`)
         yield actualType
       }
     }

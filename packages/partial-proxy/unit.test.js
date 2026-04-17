@@ -10,7 +10,7 @@ import {
   Postconditions,
   PartialProxy,
 } from '@kingjs/partial-proxy'
-import { getConditions } from '@kingjs/partial-reflect'
+import { getConditions } from '@kingjs/partial-metadata'
 
 // -- Type Conditions --
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { PartialMetadata } from '@kingjs/partial-reflect'
+import { PartialMetadata } from '@kingjs/partial-metadata'
 import { Prototype } from '@kingjs/prototype'
 
 describe('metadata', () => {

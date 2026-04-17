@@ -1,20 +1,14 @@
-import { assert } from '@kingjs/assert'
-import { trimPojo } from '@kingjs/pojo-trim'
-import { isAbstract } from '@kingjs/abstract'
-import { Prototype } from '@kingjs/prototype'
 import { Es6Reflector } from '@kingjs/es6-reflector'
-import { PartialLoader } from '@kingjs/partial-loader'
+import { createPrototype } from '@kingjs/partial-loader'
 import { PartialType } from '@kingjs/partial-type'
 import { 
   Implements, 
   Extends,
   Compile,
   Declarations,
+  Define,
+  Transparent,
   Thunk, 
-  Preconditions, 
-  Postconditions,
-  TypePrecondition, 
-  TypePostcondition,
 } from '@kingjs/partial-symbols'
 
 // Unfies reflection operations over PartialType and Es6 types which
@@ -42,13 +36,13 @@ import {
 const KnownTypes = [ Object, Function, PartialType ]
 const KnownKeys = [ 'constructor' ]
 const KnownStaticKeys = [ 'length', 'name', 'prototype',
-  Implements, Extends,
+  Implements, 
+  Extends,
   Thunk, 
-  // Preconditions, Postconditions,
-  // TypePrecondition, TypePostcondition,
-  // TODO: remove Compile, Declarations, Symbol.hasInstance
-  Compile, 'Compile',
-  Declarations, 'Declarations',
+  Transparent,
+  Define,
+  Compile, 
+  Declarations, 
   Symbol.hasInstance,
 ]
 
@@ -58,270 +52,5 @@ export const PartialReflect = Es6Reflector.create({
   knownKeys: KnownKeys,
   knownStaticKeys: KnownStaticKeys,
   // TODO: suppress caching transparent prototypes?
-  getPrototypeFn: function createPrototype(type) {
-    const hierarchy = [...PartialLoader.hierarchy(type)]
-    
-    return hierarchy.reduce((prototype, currentType) => {
-      const descriptors = { }
-
-      let ownKey
-      for (const current of PartialLoader.ownDescriptors(currentType)) {
-        assert(typeof current == 'object'
-          || typeof current == 'string' 
-          || typeof current == 'symbol',
-          `Unexpected type: ${typeof current}`)
-
-        switch (typeof current) {
-          case 'string':
-          case 'symbol':
-            ownKey = current 
-          break
-          case 'object':
-            // inherit existing descriptor if current is abstract
-            if (isAbstract(current)) {
-              const existing = descriptors[ownKey]
-              if (existing && !isAbstract(existing))
-                current = existing
-            }
-            descriptors[ownKey] = current
-            break
-        }
-      }
-
-      return Prototype.create(currentType, prototype, descriptors)
-    }, null)
-  },
+  getPrototypeFn: createPrototype,
 })
-
-
-// METADATA
-
-// PartialReflector supports metadata which is a prototype chain of the 
-// static field descriptors of a type found by traversing the type
-// hiearchy of the instance prototype chain. For example, implementing
-
-  //  myContainer instanceof InputContainerConcept
-  
-// where MyContainer declares an an associated cursorType as an
-// InputCursor like,
-
-  //  class InputCursorConcept extends Concept { 
-  //    next() { }
-  //    get value() { } 
-  //  }
-  //  class InputContainerConcept extends Concept { 
-  //    static cursorType = InputCursorConcept 
-  //  }  
-
-  //  class MyCursor exends Cursor {
-  //    static { extends(this, InputCursorConcept) }
-  //    next() {...}
-  //    get value() {...} 
-  //  }
-  //  class MyPartialContainer extends PartialClass {
-  //    static cursorType = MyCursor
-  //    ...
-  //  }
-  //  class MyContainer extends Container { 
-  //    static { extends(this, MyPartialContainer) }
-  //    // the following members included for illustrative purposes only.
-  //    static myStaticField = ...
-  //    myMember() {...}
-  //  }
-
-// requires testing if MyContainer's cursor is an InputCurosr. Specifically,
-// this requires testing if MyContainer has a static cursorType whose value
-// is a type an instance of which would be instanceof the concept found 
-// in the static cursorType on InputContainerConcept namely 
-// InputCursorConcept. 
-
-// A naive implementation would search the static prototype chain created
-// by Es6Reflector for a field named cursorType on MyContainer and find none. 
-
-  // Es6Reflector Static Prototype Chain:
-
-  // MyContainer (myStaticField)
-  // └── Container
-  //     └── Object
-  //         └── null
-
-// The correct implementation would search for a static named cursorType on 
-// all partial extensions as well (i.e. on MyPartialContainer). Metadata 
-// solves this by allowing querying across the partial extensions for static 
-// field descriptors using the following transform.
-
-// PartialReflector creates an instance prototype chain for MyContainer
-// which includes the partial types defined on MyContainer:
-
-  // PartialReflector Instance Prototype Chain:
-
-  // MyContainer (myMember)
-  // └── MyPartialContainer
-  //     └── Container
-  //         └── Object
-  //             └── null
-
-// Each prototype in this chain has a copy of the instance descriptors of
-// the type it represents. The metadata chain is a transformation of this 
-// instance prototype chain except that each prototype in the chain has a 
-// copy of the *static field* descriptors of the type it represents. 
-
-  // PartialReflector Metadata Prototype Chain:
-
-  // MyContainer (myStaticField)
-  // └── MyPartialContainer (cursorType)
-  //     └── Container
-  //         └── Object
-  //             └── null
-
-// Querying the metadata chain for MyContainer would hence find the static 
-// cursorType on MyPartialContainer.
-
-export const PartialMetadata = PartialReflect.on({
-  knownKeys: [ 'constructor' ],
-  getPrototypeFn: function(type) {
-    const hierarchy = [...this.hierarchy(type)]
-
-    return hierarchy.reverse().reduce((prototype, currentType) => {
-      const descriptors = { }
-
-      let key
-      const options = { isStatic: true, descriptorType: 'field' }
-      for (const current of this.ownDescriptors(currentType, options)) {
-        assert(typeof current == 'object'
-          || typeof current == 'string' 
-          || typeof current == 'symbol',
-          `Unexpected type: ${typeof current}`)
-
-        switch (typeof current) {
-          case 'string':
-          case 'symbol':
-            key = current 
-            break
-          case 'object':
-            descriptors[key] = current
-            break
-        }
-      }
-
-      return Prototype.create(currentType, prototype, descriptors)
-    }, null)
-  }
-})
-
-// PRECONDITIONS AND POSTCONDITIONS
-
-// PartialReflector also supports preconditions and postconditions which are
-// prototypes chains of the function descriptors of a type found by traversing
-// the type hierarchy of the metadata prototype chain. 
-
-// Continuing the above example, if MyCursor, InputCursorConcept and Cursor 
-// defined preconditions like,
-
-  //  MyCursor[Preconditions] = {
-  //    next() { ...precondition... }
-  //  }
-
-  //  Cursor[Preconditions] = {
-  //    value() { ...precondition... }
-  //  }
-
-  //  InputCursorConcept[Preconditions] = {
-  //    value() { ...precondition... }
-  //    next() { ...precondition... }
-  //  }
-
-// then the metadata prototype chain of MyCursor would be like,
-
-  // MyCursor (Preconditions)
-  // └── InputCursorConcept (Preconditions)
-  //     └── Cursor (Preconditions)
-  //         └── Object
-  //             └── null
-
-// which is transformed into a preconditions chain by expanding the 
-// Preconditions POJOs into a chain like,
-
-  // MyCursor (next)
-  // └── InputCursorConcept (value, next)
-  //     └── Cursor (value)
-  //         └── null
-
-// Querying the preconditions chain for MyCursor for precondition by name
-// would yield descriptors for all relevant preconditions. For example, 
-// querying for the next precondition would yield the next preconditions 
-// on MyCursor and InputCursorConcept but not Cursor since Cursor does 
-// not define a next precondition. 
-
-function partialReflectOnMetaObject(symbol) {
-  return PartialMetadata.on({
-    knownKeys: [ 'constructor' ],
-    getPrototypeFn: function(type) {
-      const values = [...this.getValue(type, symbol)].reverse()
-
-      return values.reduce((prototype, { host, value }) => {
-        const descriptors = Object.getOwnPropertyDescriptors(value)
-        return Prototype.create(host, prototype, descriptors)
-      }, null) ?? Prototype.create(type)
-    }
-  })
-}
-
-export const PartialPreconditions 
-  = partialReflectOnMetaObject(Preconditions)
-
-export const PartialPostconditions 
-  = partialReflectOnMetaObject(Postconditions)
-
-function getTypeConditions(type, symbol) {
-  return [...PartialMetadata.getValue(type, symbol, {
-    includeOverridden: true,
-    descriptorType: 'field',
-    instanceOf: Function,
-  }).map(({ value }) => value)]
-}
-
-function getMemberConditions(reflect, type, key) {
-  const result = {
-    value: [],
-    get: [],
-    set: [],
-  }
-
-  for (const current of reflect.getDescriptor(type, key)) {
-    switch (typeof current) {
-      case 'function': break
-      case 'object':
-        const { get, set, value } = current
-        if (get) result.get.push(get)
-        if (set) result.set.push(set)
-        if (value) result.value.push(value)
-        break
-      default:
-        assert(false, 'Unexpected type: ' + typeof current)
-    }    
-  }
-
-  return result
-}
-
-export function getConditions(type, key) {
-  const typePrecondition = getTypeConditions(type, TypePrecondition)
-  const typePostcondition = getTypeConditions(type, TypePostcondition)
-  const precondition = getMemberConditions(PartialPreconditions, type, key)
-  const postcondition = getMemberConditions(PartialPostconditions, type, key)
-
-  const conditions = trimPojo({
-    typePrecondition: typePrecondition.reverse(), 
-    precondition: precondition.value.reverse(),
-    getPrecondition: precondition.get.reverse(),
-    setPrecondition: precondition.set.reverse(), 
-
-    typePostcondition,
-    postcondition: postcondition.value,
-    getPostcondition: postcondition.get,
-    setPostcondition: postcondition.set,
-  })
-
-  return conditions
-}

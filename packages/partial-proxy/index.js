@@ -1,6 +1,6 @@
 import { assert } from '@kingjs/assert'
 import { isAbstract } from '@kingjs/abstract'
-import { getConditions } from '@kingjs/partial-reflect'
+import { getConditions } from '@kingjs/partial-metadata'
 import { Thunk } from '@kingjs/partial-symbols'
 import { Es6ThunkFactory } from '@kingjs/es6-thunk'
 import { FunctionBuilder } from '@kingjs/function-builder'

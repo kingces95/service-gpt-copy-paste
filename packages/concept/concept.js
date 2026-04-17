@@ -2,7 +2,7 @@ import { abstractify } from '@kingjs/abstract'
 import { PartialType, Declarations, Compile } from '@kingjs/partial-type'
 import { PartialClass } from '@kingjs/partial-class'
 import { Es6Reflect } from '@kingjs/es6-reflect'
-import { PartialMetadata } from '@kingjs/partial-reflect'
+import { PartialMetadata } from '@kingjs/partial-metadata'
 import { Implements, Transparent } from '@kingjs/partial-symbols'
 
 export { Implements } from '@kingjs/partial-symbols'
