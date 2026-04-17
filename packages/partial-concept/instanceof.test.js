@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Concept, Implements } from '@kingjs/concept'
+import { Concept, Implements } from '@kingjs/partial-concept'
 
 class MyEmptyConcept extends Concept { }
 class MyGetterConcept extends Concept { get value() { } }

@@ -1,7 +1,7 @@
 import { assert } from '@kingjs/assert'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { Extensions } from '@kingjs/partial-extensions'
-import { Concept } from "@kingjs/concept"
+import { Concept } from "@kingjs/partial-concept"
 import { PartialClass } from '@kingjs/partial-class'
 import { PartialType } from '@kingjs/partial-type'
 import { 

@@ -1,6 +1,6 @@
 import { 
   Implements,
-  EquatableConcept } from '@kingjs/concept'
+  EquatableConcept } from '@kingjs/partial-concept'
 import { Defines } from '@kingjs/partial-class'
 import { throwNotEquatableTo } from './throw.js'
 import { Preconditions } from '@kingjs/partial-proxy'

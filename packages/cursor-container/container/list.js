@@ -5,7 +5,7 @@ import { PartialProxy, Preconditions } from '@kingjs/partial-proxy'
 import {
   DisposeConcept,
   EquatableConcept,
-} from '@kingjs/concept'
+} from '@kingjs/partial-concept'
 import {
   CursorConcept,
   MutableCursorConcept,

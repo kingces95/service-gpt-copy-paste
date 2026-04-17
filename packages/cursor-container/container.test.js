@@ -4,7 +4,7 @@ import { PartialReflect } from '@kingjs/partial-reflect'
 import { 
   Concept,
   DisposeConcept,
-} from '@kingjs/concept'
+} from '@kingjs/partial-concept'
 import { 
   InputCursorConcept,
   OutputCursorConcept,

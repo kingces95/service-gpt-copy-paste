@@ -3,7 +3,7 @@ import { beforeEach } from 'vitest'
 
 import { PartialType } from '@kingjs/partial-type'
 import { PartialClass } from '@kingjs/partial-class'
-import { Concept } from '@kingjs/concept'
+import { Concept } from '@kingjs/partial-concept'
 import { Extensions } from '@kingjs/partial-extensions'
 
 import { ClassInfo } from "@kingjs/info"

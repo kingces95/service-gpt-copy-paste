@@ -1,7 +1,7 @@
 // import { describe, it, expect } from 'vitest'
 // import { beforeEach } from 'vitest'
 // import { PartialClass } from '@kingjs/partial-class'
-// import { Concept } from "@kingjs/concept"
+// import { Concept } from "@kingjs/partial-concept"
 // import { Extends, Implements, load } from '@kingjs/loader'
 
 // class MyPart extends PartialClass { 

@@ -4,7 +4,7 @@ import { Compile } from '@kingjs/partial-type'
 import { PartialClass, Extends } from '@kingjs/partial-class'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { PartialMetadata } from '@kingjs/partial-metadata'
-import { Concept, Implements } from '@kingjs/concept'
+import { Concept, Implements } from '@kingjs/partial-concept'
 import { abstract } from '@kingjs/abstract'
 
 describe('Concept', () => {

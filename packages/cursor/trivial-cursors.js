@@ -1,7 +1,7 @@
 import { implement } from '@kingjs/implement'
 import { Preconditions } from '@kingjs/partial-proxy'
 import { PartialProxy } from '@kingjs/partial-proxy'
-import { EquatableConcept } from '@kingjs/concept'
+import { EquatableConcept } from '@kingjs/partial-concept'
 import { Cursor } from './cursor.js'
 import { 
   CursorConcept,

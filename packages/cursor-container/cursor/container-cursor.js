@@ -1,7 +1,7 @@
 import { implement } from '@kingjs/implement'
 import { Cursor, throwDisposed } from '@kingjs/cursor'
 import { TypePrecondition } from '@kingjs/partial-proxy'
-import { DisposeConcept } from '@kingjs/concept'
+import { DisposeConcept } from '@kingjs/partial-concept'
 import { PartialClass } from '@kingjs/partial-class'
 
 const __disposed = Symbol('__disposed')

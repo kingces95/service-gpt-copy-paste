@@ -1,5 +1,5 @@
 import { implement } from '@kingjs/implement'
-import { Concept } from '@kingjs/concept'
+import { Concept } from '@kingjs/partial-concept'
 import { throwNotEquatableTo } from './throw.js'
 
 export class IntervalConcept extends Concept {

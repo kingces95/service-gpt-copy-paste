@@ -1,4 +1,4 @@
-import { Concept } from '@kingjs/concept'
+import { Concept } from '@kingjs/partial-concept'
 import { 
   CursorConcept, 
   InputCursorConcept, 

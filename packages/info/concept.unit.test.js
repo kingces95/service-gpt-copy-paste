@@ -4,7 +4,7 @@ import { TypeInfo } from "@kingjs/info"
 import { PartialClass } from '@kingjs/partial-class'
 import { extend } from '@kingjs/partial-extend'
 import { implement } from '@kingjs/implement'
-import { Concept, Implements } from '@kingjs/concept'
+import { Concept, Implements } from '@kingjs/partial-concept'
 import { } from "@kingjs/info-to-pojo"
 import { isAbstract } from '@kingjs/abstract'
 

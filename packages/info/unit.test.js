@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { TypeInfo } from "@kingjs/info"
-import { Concept, Implements } from '@kingjs/concept'
+import { Concept, Implements } from '@kingjs/partial-concept'
 import { PartialType } from '@kingjs/partial-type'
 import { PartialClass, Extends } from '@kingjs/partial-class'
 import { Extensions } from '@kingjs/partial-extensions'

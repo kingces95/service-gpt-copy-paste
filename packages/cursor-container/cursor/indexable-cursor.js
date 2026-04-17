@@ -1,6 +1,6 @@
 import { implement } from '@kingjs/implement'
 import { Preconditions, TypePrecondition } from '@kingjs/partial-proxy'
-import { EquatableConcept } from '@kingjs/concept'
+import { EquatableConcept } from '@kingjs/partial-concept'
 import { extend } from '@kingjs/partial-extend'
 import {
   CursorConcept,

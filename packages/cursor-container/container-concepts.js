@@ -21,7 +21,7 @@ import {
   throwNotEquatableTo,
   throwUpdateOutOfBounds,
 } from '@kingjs/cursor'
-import { Implements } from '@kingjs/concept'
+import { Implements } from '@kingjs/partial-concept'
 
 export class ContainerConcept extends RangeConcept {
   [Defines] = {
