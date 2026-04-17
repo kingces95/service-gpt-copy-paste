@@ -1,9 +1,9 @@
 import { assert } from '@kingjs/assert'
-import { PartialLoader } from '@kingjs/partial-loader'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { Thunk } from '@kingjs/partial-proxy'
 import { isAbstract } from '@kingjs/abstract'
 import { isPojo } from '@kingjs/pojo-test'
+import { PartialTypes } from '@kingjs/partial-symbols'
 
 // Extend takes copies (merges) descriptors found on a partial type
 // on to a targets type.
@@ -51,7 +51,9 @@ export function extend(type, partialType) {
         break
       case 'function':
         const partialType = current
-        PartialLoader.addPartialType(type, partialType)
+        if (!type[PartialTypes]) type[PartialTypes] = new Set()
+        type[PartialTypes].delete(partialType) // preserve order
+        type[PartialTypes].add(partialType)
         break
     }
   }

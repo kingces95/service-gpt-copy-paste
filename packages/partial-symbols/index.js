@@ -103,7 +103,7 @@ export const TypePostcondition = Symbol('PartialType.TypePostcondition')
 export const Implements = Symbol('Concept.Implements')
 export const Extends = Symbol('PartialClass.Extends')
 export const Defines = Symbol('PartialType.Defines')
-// export const Extensions = Symbol('PartialType.Extensions')
+export const PartialTypes = Symbol('PartialType.PartialTypes')
 
 export const Transparent = Symbol('PartialType.Transparent')
 

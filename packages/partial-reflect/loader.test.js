@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { PartialLoader } from '@kingjs/partial-loader'
+import { PartialLoader } from '@kingjs/partial-reflect'
 
 function *ownTypes(type, symbol) {
   yield* PartialLoader.declaredOwnPartialTypes$(type, symbol)
