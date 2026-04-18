@@ -1,12 +1,12 @@
 import { assert } from '@kingjs/assert'
 import { isAbstract } from '@kingjs/abstract'
 import { getConditions } from '@kingjs/partial-metadata'
-import { Thunk } from '@kingjs/partial-symbols'
+import { CreateThunk } from '@kingjs/partial-symbols'
 import { Es6ThunkFactory } from '@kingjs/es6-thunk'
 import { FunctionBuilder } from '@kingjs/function-builder'
 
 export {
-  Thunk,
+  CreateThunk,
   Preconditions,
   Postconditions,
   TypePrecondition,
@@ -21,7 +21,7 @@ const thunkFactory = new Es6ThunkFactory((type, key) => {
 })
 
 export class PartialProxy {
-  static [Thunk](key, descriptor) {
+  static [CreateThunk](key, descriptor) {
     if (isAbstract(descriptor)) return descriptor
     return thunkFactory.create(this, key, descriptor)
   }

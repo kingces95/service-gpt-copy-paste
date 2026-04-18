@@ -1,9 +1,10 @@
 import { assert } from '@kingjs/assert'
 import { PartialReflect } from '@kingjs/partial-reflect'
-import { Thunk } from '@kingjs/partial-proxy'
+import { CreateThunk } from '@kingjs/partial-proxy'
 import { isAbstract } from '@kingjs/abstract'
 import { isPojo } from '@kingjs/pojo-test'
 import { PartialTypes } from '@kingjs/partial-symbols'
+import { Transparent } from '@kingjs/partial-symbols'
 
 // Extend takes copies (merges) descriptors found on a partial type
 // on to a targets type.
@@ -22,39 +23,23 @@ import { PartialTypes } from '@kingjs/partial-symbols'
 // the partial type that "extended" it.
 
 export function extend(type, partialType) {
-  assert(!isPojo(partialType))
+  assert(!isPojo(type))
+  
+  const prototype = type.prototype
+  return PartialReflect.copyTo(partialType, prototype, {
+    createThunk: (key, descriptor) => CreateThunk in type 
+      ? type[CreateThunk](key, descriptor) 
+      : descriptor,
 
-  const createThunk = (ownKey, descriptor) => Thunk in type 
-    ? type[Thunk](ownKey, descriptor) 
-    : descriptor
+    predicate: (key, descriptor) =>
+      !(key in prototype && isAbstract(descriptor)),
 
-  let key
-  for (const current of PartialReflect.descriptors(partialType)) {
-    assert (typeof current == 'string' 
-      || typeof current == 'symbol'
-      || typeof current == 'object'
-      || typeof current == 'function',
-      `Unexpected type: ${typeof current}`)
-
-    switch (typeof current) {
-      case 'string':
-      case 'symbol':
-        key = current
-        break
-      case 'object':
-        const descriptor = current
-        const prototype = type.prototype
-        if (key in prototype && isAbstract(descriptor)) break
-
-        const thunk = createThunk(key, descriptor)
-        Object.defineProperty(prototype, key, thunk)
-        break
-      case 'function':
-        const partialType = current
-        if (!type[PartialTypes]) type[PartialTypes] = new Set()
-        type[PartialTypes].delete(partialType) // preserve order
-        type[PartialTypes].add(partialType)
-        break
+    onHost: (partialType) => {
+      if (partialType[Transparent]) return
+      if (!type[PartialTypes]) type[PartialTypes] = new Set()
+      type[PartialTypes].delete(partialType) // preserve order
+      type[PartialTypes].add(partialType)
     }
-  }
+  })
 }
+

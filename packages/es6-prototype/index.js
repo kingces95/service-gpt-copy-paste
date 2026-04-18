@@ -205,7 +205,7 @@ export class Es6Prototype {
 
       yield ctor
       yield descriptor
-    } 
+    }
   }
 
   *descriptors(type, { descriptorType, includeOverridden } = { }) {
@@ -233,6 +233,37 @@ export class Es6Prototype {
           yield descriptor
           break
         }
+      }
+    }
+  }
+
+  copyTo(type, target, {
+    createThunk = (key, descriptor) => descriptor,
+    predicate = (key, descriptor) => true,
+    onHost = (host) => { }
+  }) {
+    let key
+    for (const current of this.descriptors(type)) {
+      assert (typeof current == 'string' 
+        || typeof current == 'symbol'
+        || typeof current == 'object'
+        || typeof current == 'function',
+        `Unexpected type: ${typeof current}`)
+  
+      switch (typeof current) {
+        case 'string':
+        case 'symbol':
+          key = current
+          break
+        case 'object':
+          const descriptor = current
+          if (!predicate(key, descriptor)) break
+          const thunk = createThunk(key, descriptor)
+          Object.defineProperty(target, key, thunk)
+          break
+        case 'function':
+          onHost(current)
+          break
       }
     }
   }

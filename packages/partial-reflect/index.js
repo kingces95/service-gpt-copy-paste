@@ -15,38 +15,115 @@ import {
   Declarations,
   Define,
   Transparent,
-  Thunk, 
+  CreateThunk, 
   PartialTypes,
 } from '@kingjs/partial-symbols'
 
-// Unfies reflection operations over PartialType and Es6 types which
-// may have been merged with vairous PartialTypes (i.e.PartialClass,
-// Concept, etc.). For example, 
+// PROTOTYPE CHAINING
 
-// *PartialReflect.baseTypes(type)
-//    Returns the base types of a type. Since a type may have multiple base
-//    types they are returned in the reverse order they were merged.
-//    For example, if a type extends a base type and a concept, baseTypes 
-//    will return the Concept followed by the base type.  
+// PartialReflect transforms a type's prototype to include the partial types,
+// if any, of which the type is composed. Each link in the prototype chain is
+// expanded to include partial types declared on that type. PartialType 
+// declarations on a type are ordered and later declarations take precidence
+// over earlier ones.  For example, MyType and MyExtendedType:
 
-// *PartialReflect.keys(type, { includeOverridden })
-//    Returns all keys of a type including keys of PartialTypes and Es6 types. 
-//    If includeOverridden is false, overridden keys are not included. If
-//    includeOverridden is true, overridden keys are included and associated
-//    with the type that defined them (i.e. hosts).
+//   class MyType { ... }
+//   class MyExtendedType extends MyType { ... }
 
-// *PartialReflect.hosts(type, key)
-//    Returns all types that defined or were overridden defining a member 
-//    with the key.
+// have a prototype chain like this:
 
-// etc.
+//   MyExtendedType.prototype -> MyType.prototype -> Object.prototype
+
+// which can be represented as a tree where Object is implied:
+
+//   MyExtendedType
+//   └─ MyType
+
+// and if MyExtendedType declares PartialTypse A and B, and MyType declares
+// PartialType A, then MyType would have a prototype chain like this:
+
+//   MyExtendedType
+//   └─ B
+//      └─ A
+//         └─ MyType
+//            └─ A
+
+// Since the A on MyExtendedType reapplies the same members as the A on 
+// MyType, the A on MyType is effectively ignored and can be removed. 
+// So the final prototype chain would look like this:
+
+//   MyExtendedType
+//   └─ B
+//      └─ A
+//         └─ MyType
+
+// PartialTypes can themselves declare PartialTypes, and so on. For example,
+// if B declares PartialType Left and Right which each declare PartialType
+// Base, then B's type hierarchy would look like this:
+
+//   B
+//   ├─ Left
+//   │  └─ Base
+//   └─ Right
+//      └─ Base
+ 
+// and the prototype chain would look like this:
+
+//   B
+//   └─ Right
+//      └─ Base
+//         └─ Left
+//            └─ Base
+
+// which after removig the duplicate Base becomes:
+
+//   B
+//   └─ Right
+//      └─ Base
+//         └─ Left
+
+// then inserting that back into MyExtendedType's hierarchy gives:
+
+//   MyExtendedType
+//   └─ B
+//      └─ Right
+//         └─ Base
+//            └─ Left
+//               └─ MyType
+//                  └─ A
+
+// In general, the order of the prototype chain can be derived by doing
+// a depth first post order walk of the type hierarchy tree where duplicate
+// types are removed leaving the last one. For example, MyExtendedType has
+// a hierarchy tree like this:
+
+//   MyExtendedType
+//   ├─ B
+//   │  ├─ Right
+//   │  │  └─ Base
+//   │  └─ Left
+//   │     └─ Base
+//   └─ MyType
+//      └─ A
+
+// and the depth first post order walk of that tree is:
+
+//   A, MyType, Base, Left, Base, Right, B, MyExtendedType
+
+// which after removing the duplicate Base (keepting the last one) becomes:
+
+//   A, MyType,       Left, Base, Right, B, MyExtendedType
+
+// PARTIAL TYPE DECLARATIONS
+
+
 
 const KnownTypes = [ Object, Function, PartialType ]
 const KnownKeys = [ 'constructor' ]
 const KnownStaticKeys = [ 'length', 'name', 'prototype',
   Implements, 
   Extends,
-  Thunk, 
+  CreateThunk, 
   Transparent,
   Define,
   Compile, 
@@ -98,6 +175,46 @@ export const PartialReflect = Es6Reflector.create({
 
 export class PartialLoader {
 
+  static *#declaredOwnPartialTypes(type) {
+    const symbols = type[Declarations]
+    if (!symbols) return
+
+    // symbols like { [Extends]: { expectedType } }
+    for (const symbol of Object.getOwnPropertySymbols(symbols)) {
+      const options = symbols[symbol]
+      const { expectedType } = options
+      assert(!Array.isArray(expectedType))
+      
+      // TODO: see RangeConcept: Breaks trying to make iterable.
+      const actualTypes = getOwn(type, symbol)
+      for (let actualType of asIterable(actualTypes)) {
+        if (isPojo(actualType))
+          actualType = expectedType[Define](actualType)
+
+        assert(!expectedType 
+          || Es6Reflect.isExtensionOf(actualType, expectedType),
+          `Type "${actualType.name}" is not an extension of expected type "${expectedType?.name}".`)
+        yield actualType
+      }
+    }
+  }
+
+  static *#ownPartialTypes(type) {
+    // added by declaration (e.g. by static [Extends] = PartialType)
+    yield* PartialLoader.#declaredOwnPartialTypes(type)
+      .filter(partialType => !partialType[Transparent])
+
+    // added procedurally (e.g by extend() or implement())
+    yield* type[PartialTypes] || []
+  }
+
+  static #isPartialType(type) {
+    if (!type) return false
+    if (type == PartialType) return true
+    if (Object.getPrototypeOf(type) == PartialType) return false
+    return Es6UserReflect.isExtensionOf(type, PartialType)
+  }
+
   static #getBaseType(type) {
     if (!type) return null
 
@@ -109,65 +226,6 @@ export class PartialLoader {
       return null
 
     return result
-  }
-  static #isPartialType(type) {
-    if (!type) return false
-    if (type == PartialType) return true
-    if (Object.getPrototypeOf(type) == PartialType) return false
-    return Es6UserReflect.isExtensionOf(type, PartialType)
-  }
-
-  static *#ownPartialTypes(type) {
-    // added by declaration (e.g. by static [Extends] = PartialType)
-    yield* PartialLoader.#declaredOwnPartialTypes(type)
-
-    // added procedurally (e.g by extend() or implement())
-    yield* type[PartialTypes] || []
-  }
-
-  static *#declaredOwnPartialTypes(type, symbols = Declarations) {
-
-    // if symbols typeof symbol, pull metadata off of type
-    if (typeof symbols == 'symbol') symbols = type[symbols]
-    if (!symbols) return
-    assert(symbols != null, 'failed to find metadata symbols on type.')
-
-    // symbols like { [TheSymbol]: { expectedType } }
-    for (const symbol of Object.getOwnPropertySymbols(symbols)) {
-      const options = symbols[symbol]
-      const { expectedType } = options
-      assert(!Array.isArray(expectedType))
-      const actualTypes = getOwn(type, symbol)
-
-      // TODO: see RangeConcept: Breaks trying to make iterable.
-      for (let actualType of asIterable(actualTypes)
-        .map(o => !isPojo(o) ? o : expectedType[Define](o))) {
-
-        assert(!expectedType 
-          || Es6Reflect.isExtensionOf(actualType, expectedType),
-          `Type "${actualType.name}" is not an extension of expected type "${expectedType?.name}".`)
-        yield actualType
-      }
-    }
-  }
-
-  static *#ownTransparentTypes(type) {
-    for (const partialType of PartialLoader.#ownPartialTypes(type)) {
-      if (!partialType[Transparent]) continue
-      yield partialType
-    }
-  }
-
-  static *ownPartialTypes(type) {
-    for (const partialType of PartialLoader.#ownPartialTypes(type)) {
-      if (partialType[Transparent]) continue
-      yield partialType
-    }
-  }
-
-  // todo: remove; in use by tests
-  static *declaredOwnPartialTypes$(type, symbols = Declarations) {
-    yield* PartialLoader.#declaredOwnPartialTypes(type, symbols)
   }
 
   static *hierarchy(rootType) {
@@ -181,7 +239,7 @@ export class PartialLoader {
       if (baseType)
         yield* reverseDepthFirstWalk$(baseType)
       
-      const ownPartialTypes = [...PartialLoader.ownPartialTypes(type)]
+      const ownPartialTypes = [...PartialLoader.#ownPartialTypes(type)]
       for (const basePartialType of ownPartialTypes.reverse())
         yield *reverseDepthFirstWalk$(basePartialType)
 
@@ -201,11 +259,17 @@ export class PartialLoader {
     return type[Compile](descriptor) 
   }
 
+  static *#transparentOwnPartialTypes(type) {
+    for (const partialType of PartialLoader.#declaredOwnPartialTypes(type)) {
+      if (!partialType[Transparent]) continue
+      yield partialType
+    }
+  }
+
   static *ownDescriptors(type) {
     const ownKeys = new Map()
-    for (const current of [
-      ...PartialLoader.#ownTransparentTypes(type), type].reverse()) {
-
+    const ownTypes = [...PartialLoader.#transparentOwnPartialTypes(type), type]
+    for (const current of ownTypes.reverse()) {
       for (const key of Es6UserReflect.ownKeys(current)) {
         const descriptor = PartialLoader.#getOwnDescriptor(current, key)
         if (ownKeys.has(key) && !isAbstract(ownKeys.get(key))) continue

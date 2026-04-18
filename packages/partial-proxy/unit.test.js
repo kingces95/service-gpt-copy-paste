@@ -3,7 +3,7 @@ import { beforeEach } from 'vitest'
 import { abstract } from '@kingjs/abstract'
 import { Descriptor } from '@kingjs/descriptor'
 import { 
-  Thunk,
+  CreateThunk,
   TypePrecondition,
   TypePostcondition,
   Preconditions,
@@ -178,7 +178,7 @@ describe.each(Tests)('%s',
   beforeEach(() => {
     instance = new type()
     descriptor = Descriptor.get(type.prototype, 'member')
-    thunk = type[Thunk]('member', descriptor)
+    thunk = type[CreateThunk]('member', descriptor)
   })
 
   it('should have the correct type conditions', () => {

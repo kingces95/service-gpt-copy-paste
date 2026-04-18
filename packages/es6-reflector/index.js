@@ -280,13 +280,13 @@ export class Es6Reflector {
     yield* this.#reflect(isStatic).values(type, options)
       .filter(this.#extensionOfFilter(extensionOf))
   }
-
+  
   // thunks
   static {
     const thunks = [
       'getPrototype', 'isKnown', 'isKnownKey', 'hasOwnKey', 'hasKey',
       'ownKeys', 'keys', 'hosts', 'getOwnDescriptor', 'ownDescriptors',
-      'getDescriptor', 'descriptors', 
+      'getDescriptor', 'descriptors', 'copyTo'
     ]
 
     for (const name of thunks) {

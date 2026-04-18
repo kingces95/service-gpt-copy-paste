@@ -94,7 +94,7 @@ export const Declarations = Symbol('PartialType.declarations')
 export const Compile = Symbol('PartialType.compile')
 export const Define = Symbol('PartialType.define')
 
-export const Thunk = Symbol('PartialType.Thunk')
+export const CreateThunk = Symbol('PartialType.CreateThunk')
 export const Preconditions = Symbol('PartialType.Preconditions')
 export const Postconditions = Symbol('PartialType.Postconditions')
 export const TypePrecondition = Symbol('PartialType.TypePrecondition')
