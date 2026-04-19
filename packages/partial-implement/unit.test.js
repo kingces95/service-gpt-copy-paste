@@ -60,7 +60,12 @@ describe('A type', () => {
       beforeEach(() => {
         extendedMethodFn = () => { }
         extendedConcept = class ExtendedConcept extends MyConcept { }
-        extendedConcept.prototype.method = extendedMethodFn
+        Object.defineProperty(extendedConcept.prototype, 'method', {
+          value: extendedMethodFn,
+          configurable: true,
+          writable: true,
+          enumerable: false,
+        })
         cls = class { }
         implement(cls, extendedConcept)
       })
@@ -162,7 +167,13 @@ describe('A type', () => {
     })
     describe('with a method', () => {
       beforeEach(() => {
-        MyConcept.prototype.method = abstract
+        // MyConcept.prototype.method = abstract
+        Object.defineProperty(MyConcept.prototype, 'method', {
+          value: abstract,
+          configurable: true,
+          writable: true,
+          enumerable: false,
+        })
       })
       it('should not satisfy the concept', () => {
         expect(type.prototype instanceof MyConcept).toBe(false)
@@ -222,7 +233,14 @@ describe('A type', () => {
           associatedMethod() { }
         }
         MyConcept.tagType = associatedConcept
-        MyConcept.prototype.method = abstract
+        // TODO: Find a home for this logic: Es6Define.method maybe?
+        // MyConcept.prototype.method = abstract
+        Object.defineProperty(MyConcept.prototype, 'method', {
+          value: abstract,
+          configurable: true,
+          writable: true,
+          enumerable: false,
+        })
       })
       it('should not satisfy the concept', () => {
         expect(type.prototype).not.toBeInstanceOf(MyConcept)

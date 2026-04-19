@@ -34,8 +34,7 @@ export class Es6Descriptor {
     assert(type == Es6FieldDescriptor.Type 
       || type == Es6MethodDescriptor.Type
       || type == Es6GetterDescriptor.Type
-      || type == Es6PropertyDescriptor.Type, 
-      `Unexpected descriptor type: ${type}`)
+      || type == Es6PropertyDescriptor.Type)
 
     switch (type) {
       case Es6FieldDescriptor.Type:
@@ -57,8 +56,7 @@ export class Es6Descriptor {
       assert(typeof current == 'object'
         || typeof current == 'function'
         || typeof current == 'string'
-        || typeof current == 'symbol',
-        `Unexpected type: ${typeof current}`)
+        || typeof current == 'symbol')
 
       switch (typeof current) {
         case 'function':
@@ -100,6 +98,20 @@ export class Es6Descriptor {
     if (descriptor.enumerable != md.DefaultEnumerable 
       && !descriptor.enumerable == true)
       yield 'hidden'
+  }
+
+  static canDuckCast(expectedDescriptor, actualDescriptor) {
+    const actualType = Es6Descriptor.typeof(actualDescriptor)
+    const expectedType = Es6Descriptor.typeof(expectedDescriptor)
+    if (actualType == expectedType) return true
+    if (actualType == 'field') {
+      if (expectedType == 'getter') return true
+    }
+    if (actualType == 'property') {
+      if (expectedType == 'getter') return true
+      if (expectedType == 'setter') return true
+    }
+    return false
   }
 }
 

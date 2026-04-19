@@ -1,5 +1,4 @@
 import { assert } from '@kingjs/assert'
-import { Descriptor } from '@kingjs/descriptor'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { instanceOf } from '@kingjs/instance-of'
 import { asSet } from '@kingjs/as-set'
@@ -34,12 +33,6 @@ class Es6PrototypeCache {
 }
 
 export class Es6Prototype {
-
-  static #getOwnDescriptor(prototype, name, descriptorType) {
-    const descriptor = Prototype.getOwnDescriptor(prototype, name)
-    if (!Es6Prototype.#isTypeof(descriptor, descriptorType)) return null
-    return descriptor
-  }
 
   static #isTypeof(descriptor, descriptorType) {
     if (!descriptor) return false
@@ -94,8 +87,8 @@ export class Es6Prototype {
 
   *hierarchy(type) {
     const prototype = this.getPrototype(type)
-    for (const link of Prototype.chain(prototype))
-      yield link.constructor
+    yield* Prototype.chain(prototype)
+      .map(link => link.constructor)
   }
   
   getBaseType(type) {
@@ -124,46 +117,86 @@ export class Es6Prototype {
 
   *ownKeys(type) {
     const prototype = this.getPrototype(type)
-    for (const name of Prototype.ownKeys(prototype)) {
-      if (this.isKnownKey(type, name)) continue
-      yield name
-    }
+    yield *Prototype.ownKeys(prototype)
+      .filter(name => !this.isKnownKey(type, name))
   }
 
   *keys(type, { includeOverridden = false } = { }) {
     const prototype = this.getPrototype(type)
-    
-    const visited = new Set()
-    for (const current of Prototype.chain(prototype)) {
-      const ctor = current.constructor
-      yield ctor
-      for (const key of Prototype.ownKeys(current)) {
-        if (!includeOverridden && visited.has(key)) continue
-        if (this.isKnownKey(ctor, key)) 
-          continue
-        visited.add(key)
-        yield key
-      }
-    }
+    yield* Prototype.keys(prototype, { 
+      includeOverridden, 
+      filter: (type, key) => !this.isKnownKey(type, key) 
+    })
   }
 
-  *ownValues(type, { instance, 
-    descriptorType, instanceOf } = { }) {
+  getOwnDescriptor(type, name, { descriptorType } = { }) {
+    if (!this.hasOwnKey(type, name)) return null
+    const prototype = this.getPrototype(type)
+    const descriptor = Prototype.getOwnDescriptor(prototype, name)
+    if (!Es6Prototype.#isTypeof(descriptor, descriptorType)) return null
+    return descriptor
+  }
+
+  *ownDescriptors(type, { descriptorType } = { }) {
+    const prototype = this.getPrototype(type)
+    yield* Prototype.ownDescriptors(prototype, {
+      filter: (key, descriptor) => !this.isKnownKey(type, key)
+        && Es6Prototype.#isTypeof(descriptor, descriptorType)
+    })
+  }  
+
+  *getDescriptor(type, name, { descriptorType } = { }) {
+    const prototype = this.getPrototype(type)
+    yield* Prototype.getDescriptor(prototype, name, {
+      filter: (host, key, descriptor) => !this.isKnownKey(host, key)
+        && Es6Prototype.#isTypeof(descriptor, descriptorType)
+    })
+  }
+
+  *descriptors(type, { descriptorType, includeOverridden } = { }) {
+    const prototype = this.getPrototype(type)
+    yield* Prototype.descriptors(prototype, {
+      includeOverridden,
+      filter: (host, key, descriptor) => !this.isKnownKey(host, key)
+        && Es6Prototype.#isTypeof(descriptor, descriptorType)
+    })
+  }
+
+  copyTo(type, target, {
+    createThunk = (key, descriptor) => descriptor,
+    filter = (host, key, descriptor) => true,
+    onHost = (host) => { }
+  }) {
+    const prototype = this.getPrototype(type)
+    Prototype.copyTo(prototype, target, { createThunk, onHost,
+      filter: (host, key, descriptor) => !this.isKnownKey(host, key) 
+        && filter(host, key, descriptor),
+    })
+  }
+
+  canDuckCast(type, instance) {
+    const prototype = this.getPrototype(type)
+    return Prototype.canDuckCast(prototype, instance, {
+      filter: (host, key, descriptor) => !this.isKnownKey(host, key),
+      compare: Es6Descriptor.canDuckCast,
+    })
+  }
+
+  *ownValues(type, { instance, descriptorType, instanceOf } = { }) {
     const descriptors = this.ownDescriptors(type, { descriptorType })
     yield *Es6Descriptor.values(descriptors, instance)
       .filter(this.#instanceOfFilter(instanceOf))
   }
 
-  *getValue(type, name, { instance, 
-    descriptorType, instanceOf } = { }) {
+  *getValue(type, name, { instance, descriptorType, instanceOf } = { }) {
     const descriptors = this.getDescriptor(type, name, { 
       descriptorType, includeOverridden: true })
     yield* Es6Descriptor.values(descriptors, instance)
       .filter(this.#instanceOfFilter(instanceOf))
   }
 
-  *values(type, { instance, includeOverridden, 
-    descriptorType, instanceOf } = { }) {
+  *values(type, { 
+    instance, includeOverridden, descriptorType, instanceOf } = { }) {
     const descriptors = this.descriptors(type, { 
       includeOverridden, descriptorType })
     yield *Es6Descriptor.values(descriptors, instance, { descriptorType })
@@ -173,132 +206,5 @@ export class Es6Prototype {
   *hosts(type, name) {
     for (const current of this.hierarchy(type))
       if (this.hasKey(current, name)) yield current
-  }
-
-  getOwnDescriptor(type, name, { descriptorType } = { }) {
-    if (!this.hasOwnKey(type, name)) return null
-    const prototype = this.getPrototype(type)
-    return Es6Prototype.#getOwnDescriptor(prototype, name, descriptorType)
-  }
-
-  *ownDescriptors(type, { descriptorType } = { }) {
-    for (const key of this.ownKeys(type)) {
-      const prototype = this.getPrototype(type)
-      const descriptor = Es6Prototype.#getOwnDescriptor(
-        prototype, key, descriptorType)
-      if (!descriptor) continue
-
-      yield key
-      yield descriptor
-    }
-  }  
-
-  *getDescriptor(type, name, { descriptorType } = { }) {
-    const prototype = this.getPrototype(type)
-    for (const current of Prototype.chain(prototype)) {  
-      const ctor = current.constructor
-      if (this.isKnownKey(ctor, name)) continue
-
-      const descriptor = Es6Prototype.#getOwnDescriptor(
-        current, name, descriptorType)
-      if (!descriptor) continue
-
-      yield ctor
-      yield descriptor
-    }
-  }
-
-  *descriptors(type, { descriptorType, includeOverridden } = { }) {
-    const prototype = this.getPrototype(type)
-    const visited = new Set()
-    for (const current of Prototype.chain(prototype)) {
-      const host = current.constructor
-      yield host
-      for (const key of Prototype.ownKeys(current)) {
-        if (!includeOverridden && visited.has(key)) continue
-        if (this.isKnownKey(host, key)) continue
-        visited.add(key)
-
-        const descriptor = Es6Prototype.#getOwnDescriptor(
-          current, key, descriptorType)
-        if (!descriptor) continue
-
-        yield key
-        yield descriptor
-      }
-    }
-  }
-
-  copyTo(type, target, {
-    createThunk = (key, descriptor) => descriptor,
-    predicate = (key, descriptor) => true,
-    onHost = (host) => { }
-  }) {
-    let key
-    let host
-    for (const current of this.descriptors(type)) {
-      assert (typeof current == 'string' 
-        || typeof current == 'symbol'
-        || typeof current == 'object'
-        || typeof current == 'function',
-        `Unexpected type: ${typeof current}`)
-  
-      switch (typeof current) {
-        case 'string':
-        case 'symbol':
-          key = current
-          break
-        case 'object':
-          const descriptor = current
-          const debug = host
-          if (!predicate(key, descriptor)) break
-          const thunk = createThunk(key, descriptor)
-          Object.defineProperty(target, key, thunk)
-          break
-        case 'function':
-          host = current
-          onHost(host)
-          break
-      }
-    }
-  }
-
-  canDuckCast(type, instance) {
-    let owner
-    let name
-    let instanceDescriptor, instanceType
-    for (const current of this.descriptors(type)) {
-      switch (typeof current) {
-        case 'function': 
-          owner = current
-          break
-
-        case 'string': 
-        case 'symbol': 
-          name = current
-          if (!(name in instance)) return false 
-          // TODO: Consider using Es6Descriptor
-          instanceDescriptor = Descriptor.get(instance, name)
-          instanceType = Descriptor.typeof(instanceDescriptor)
-          break
-
-        case 'object': {
-          const descriptorType = Descriptor.typeof(current)
-          assert(descriptorType == 'data' 
-            || descriptorType == 'getter' 
-            || descriptorType == 'setter'
-            || descriptorType == 'property',
-            `Unexpected descriptor type: ${descriptorType}`)
-
-          if (instanceType == descriptorType) continue
-          if (instanceType == 'property') {
-            if (descriptorType == 'getter') continue
-            if (descriptorType == 'setter') continue
-          }
-          return false
-        }
-      }
-    }
-    return true
   }
 }

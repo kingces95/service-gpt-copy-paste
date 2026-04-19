@@ -1,3 +1,6 @@
+import { assert } from '@kingjs/assert'
+import { Descriptor } from '@kingjs/descriptor'
+
 export class Prototype {
 
   static *deconstruct(prototype) {
@@ -52,7 +55,137 @@ export class Prototype {
     yield* Reflect.ownKeys(prototype)
   }
 
+  static *keys(prototype, { 
+    includeOverridden = false,
+    filter = (host, key) => true,
+  } = { }) {
+    const visited = new Set()
+    for (const current of Prototype.chain(prototype)) {
+      const host = current.constructor
+      yield host
+      for (const key of Prototype.ownKeys(current)) {
+        if (!includeOverridden && visited.has(key)) continue
+        if (!filter(host, key)) continue
+        visited.add(key)
+        yield key
+      }
+    }
+  }
+
   static getOwnDescriptor(prototype, name) {
     return Object.getOwnPropertyDescriptor(prototype, name)
+  }
+
+  static *ownDescriptors(prototype, { 
+    filter = (key, descriptor) => true,
+  } = { }) {
+    for (const key of this.ownKeys(prototype)) {
+      const descriptor = Prototype.getOwnDescriptor(prototype, key)
+      if (!descriptor) continue
+      if (!filter(key, descriptor)) continue
+
+      yield key
+      yield descriptor
+    }
+  }  
+
+  static *getDescriptor(prototype, name, { 
+    filter = (host, key, descriptor) => true,
+  } = { }) {
+    for (const current of Prototype.chain(prototype)) {
+      const host = current.constructor
+      const descriptor = Prototype.getOwnDescriptor(current, name)
+      if (!descriptor) continue
+      if (!filter(host, name, descriptor)) continue
+
+      yield host
+      yield descriptor
+    }
+  }
+
+  static *descriptors(prototype, { 
+    includeOverridden,
+    filter = (host, key, descriptor) => true, 
+  } = { }) {
+    const visited = new Set()
+    for (const current of Prototype.chain(prototype)) {
+      const host = current.constructor
+      yield host
+      for (const key of Prototype.ownKeys(current)) {
+        if (!includeOverridden && visited.has(key)) continue
+        const descriptor = Prototype.getOwnDescriptor(current, key)
+        if (!descriptor) continue
+        if (!filter(host, key, descriptor)) continue
+
+        visited.add(key)
+        yield key
+        yield descriptor
+      }
+    }
+  }
+
+  static copyTo(prototype, target, {
+    createThunk = (key, descriptor) => descriptor,
+    filter = (host, key, descriptor) => true,
+    onHost = (host) => { }
+  }) {
+    let key
+    let host
+    for (const current of this.descriptors(prototype, { filter })) {
+      assert (typeof current == 'string' 
+        || typeof current == 'symbol'
+        || typeof current == 'object'
+        || typeof current == 'function',
+        `Unexpected type: ${typeof current}`)
+  
+      switch (typeof current) {
+        case 'string':
+        case 'symbol':
+          key = current
+          break
+        case 'object':
+          const descriptor = current
+          if (!filter(host, key, descriptor)) break
+          const thunk = createThunk(key, descriptor)
+          Object.defineProperty(target, key, thunk)
+          break
+        case 'function':
+          host = current
+          onHost(host)
+          break
+      }
+    }
+  }
+
+  static canDuckCast(prototype, instance, { 
+    filter = (host, key, descriptor) => true,
+    compare = Descriptor.canDuctCast,
+  } = { }) {
+    let name
+    let instanceDescriptor
+    for (const current of this.descriptors(prototype, { filter })) {
+      const typeofCurrent = typeof current
+      assert (typeofCurrent == 'string'
+        || typeofCurrent == 'symbol'
+        || typeofCurrent == 'object'
+        || typeofCurrent == 'function')
+
+      switch (typeofCurrent) {
+        case 'string': 
+        case 'symbol': 
+          name = current
+          if (!(name in instance)) return false 
+          instanceDescriptor = Descriptor.get(instance, name)
+          break
+          
+          case 'object': {
+          const prototypeDescriptor = current
+          if (!compare(prototypeDescriptor, instanceDescriptor))
+            return false
+        }
+        case 'function': break
+      }
+    }
+    return true
   }
 }

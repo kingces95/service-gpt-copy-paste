@@ -158,10 +158,25 @@ import {
 
 // The naive implementation of the meta prototype chain construction  
 // proceeds by doing a post order walk of the type hierarchy tree 
-// followed by deduplication of the resulting list. Deduping can be avoided 
-// by doing a reverse pre order walk of the tree, pruning branches that 
-// have been seen, and then reverse the result, so that is what 
-// PartialReflect does.
+// followed by deduplication of the resulting list. Deduping can be 
+// avoided by doing a reverse pre order walk of the tree, pruning 
+// branches that have been seen, and then reverse the result. That is 
+// what PartialReflect does.
+
+// ABSTRACT MEMBERS
+
+// After the merge order is discovered, each link's constructor property
+// can be assigned its type. Next, the own descriptors of that type's
+// prototype are copied to the link. This is a straightforward copy 
+// except for abstract descriptors. A descriptor is abstract if it's 
+// value/get/set is the well known abstract method. Abstract members do 
+// not overwrite concrete members. Instead, the inherited concrete member
+// is substituted. For example, if the partial type B from the above 
+// example declares an abstract method myMethod, and MyType declares a 
+// concrete method myMethod, then the myMethod will be copied to B's 
+// meta prototype link instead of the well known abstract method. 
+
+
 
 const KnownTypes = [ Object, Function, PartialType ]
 const KnownKeys = [ 'constructor' ]
@@ -184,10 +199,10 @@ export const PartialReflect = Es6Reflector.create({
   knownStaticKeys: KnownStaticKeys,
   // TODO: suppress caching transparent prototypes?
   getPrototypeFn: function createPrototype(type) {
-    const hierarchy = [...PartialLoader.hierarchy(type)].reverse()
+    const mergeOrder = [...PartialLoader.hierarchy(type)].reverse()
     
     const memberTable = new Map()
-    return hierarchy.reduce((prototype, currentType) => {
+    return mergeOrder.reduce((prototype, currentType) => {
       const descriptors = { }
 
       let ownKey
@@ -201,7 +216,7 @@ export const PartialReflect = Es6Reflector.create({
           case 'string':
           case 'symbol':
             ownKey = current 
-          break
+            break
           case 'object':
             let descriptor = current
             // inherit existing descriptor if current is abstract
@@ -276,7 +291,7 @@ export class PartialLoader {
   static *hierarchy(rootType) {
     const visited = new Set()
 
-    function *reverseDepthFirstWalk$(type) {
+    function *reversePreOrderWalk$(type) {
       if (visited.has(type)) return
       visited.add(type)
     
@@ -284,14 +299,14 @@ export class PartialLoader {
       
       const ownPartialTypes = [...PartialLoader.#ownPartialTypes(type)]
       for (const basePartialType of ownPartialTypes.reverse())
-        yield *reverseDepthFirstWalk$(basePartialType)
+        yield *reversePreOrderWalk$(basePartialType)
 
       const baseType = PartialLoader.#getBaseType(type)
       if (baseType)
-        yield* reverseDepthFirstWalk$(baseType)
+        yield* reversePreOrderWalk$(baseType)
     }
 
-    yield *reverseDepthFirstWalk$(rootType)
+    yield *reversePreOrderWalk$(rootType)
   }
 
   static #getOwnDescriptor(type, key) {
@@ -313,7 +328,11 @@ export class PartialLoader {
 
   static *ownDescriptors(type) {
     const ownKeys = new Map()
-    const ownTypes = [...PartialLoader.#transparentOwnPartialTypes(type), type]
+    const ownTypes = [
+      ...PartialLoader.#transparentOwnPartialTypes(type), 
+      type
+    ]
+
     for (const current of ownTypes.reverse()) {
       for (const key of Es6UserReflect.ownKeys(current)) {
         const descriptor = PartialLoader.#getOwnDescriptor(current, key)

@@ -96,6 +96,38 @@ export class Descriptor {
       ? Descriptor.#equalsData(lhs, rhs)
       : Descriptor.#equalsAccessor(lhs, rhs)
   }
+
+  static getValue(descriptor, instance) {
+    const type = Descriptor.typeof(descriptor)
+    assert(type == DataDescriptor.Type  
+      || type == GetterDescriptor.Type
+      || type == PropertyDescriptor.Type)
+
+    const result = { ...descriptor }
+    switch (type) {
+      case DataDescriptor.Type:
+        result.value = descriptor.value
+      case GetterDescriptor.Type:
+        result.value = descriptor.get.call(instance)
+      case PropertyDescriptor.Type:
+        result.value = descriptor.get.call(instance)
+    }
+    return result
+  }
+
+  static canDuctCast(expectedDescriptor, actualDescriptor) {
+    const actualType = Descriptor.typeof(actualDescriptor)
+    const expectedType = Descriptor.typeof(expectedDescriptor)
+    if (actualType == expectedType) return true
+    if (actualType == 'data') {
+      if (expectedType == 'getter') return true
+    }
+    if (actualType == 'property') {
+      if (expectedType == 'getter') return true
+      if (expectedType == 'setter') return true
+    }
+    return false
+  }
 }
 
 export class PropertyDescriptor {

@@ -437,6 +437,9 @@ function runTests(
   class MyDataType {
     static { this.prototype.field = 42 }
   }
+  class MyDataAsGetterType {
+    get field() { }
+  }
   class MyGooseType {
     honk() { }
   }
@@ -464,6 +467,11 @@ function runTests(
     it('can be duck cast to data', () => {
       const instance = new MyQuackerType()
       const canDuckCast = reflector.canDuckCast(MyDataType, instance)
+      expect(canDuckCast).toBe(true)
+    })
+    it('can be duck cast to data as getter', () => {
+      const instance = new MyQuackerType()
+      const canDuckCast = reflector.canDuckCast(MyDataAsGetterType, instance)
       expect(canDuckCast).toBe(true)
     })
     it('cannot be duck cast to goose', () => {

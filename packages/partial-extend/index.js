@@ -33,7 +33,7 @@ export function extend(type, partialType) {
       ? type[CreateThunk](key, descriptor) 
       : descriptor,
 
-    predicate: (key, descriptor) =>
+    filter: (host, key, descriptor) =>
       !(key in prototype && isAbstract(descriptor)),
 
     onHost: (host) => hosts.add(host),
