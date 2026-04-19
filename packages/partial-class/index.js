@@ -15,11 +15,7 @@ export { Extends, Defines } from '@kingjs/partial-symbols'
 
 export class PartialClass extends PartialType {
   static [Declarations] = {
-    [Extends]: { 
-      expectedType: PartialClass,
-    },
-    [Defines]: {
-      expectedType: Extensions,
-    },
+    [Extends]: PartialClass,
+    [Defines]: Extensions,
   }
 }

@@ -125,12 +125,8 @@ describe('PartialClass', () => {
   beforeEach(() => {
     PartialClass = class PartialClass extends PartialType { 
       static [Declarations] = { 
-        [ExtensionSymbol]: { 
-          expectedType: Extensions,
-        },
-        [DefinesSymbol]: {
-          expectedType: PartialClass,
-        },
+        [ExtensionSymbol]: Extensions,
+        [DefinesSymbol]: PartialClass,
       }
     }
   })

@@ -5,6 +5,7 @@ import { isAbstract } from '@kingjs/abstract'
 import { isPojo } from '@kingjs/pojo-test'
 import { PartialTypes } from '@kingjs/partial-symbols'
 import { Transparent } from '@kingjs/partial-symbols'
+import { getOwn } from '@kingjs/get-own'
 
 // Extend takes copies (merges) descriptors found on a partial type
 // on to a targets type.
@@ -36,9 +37,10 @@ export function extend(type, partialType) {
 
     onHost: (partialType) => {
       if (partialType[Transparent]) return
-      if (!type[PartialTypes]) type[PartialTypes] = new Set()
-      type[PartialTypes].delete(partialType) // preserve order
-      type[PartialTypes].add(partialType)
+      let set = getOwn(type, PartialTypes)
+      if (!set) type[PartialTypes] = set = new Set()
+      set.delete(partialType) // preserve order
+      set.add(partialType)
     }
   })
 }

@@ -10,7 +10,7 @@ export { Implements } from '@kingjs/partial-symbols'
 export class Concept extends PartialType {
   static [Declarations] = {
     ...PartialClass[Declarations],
-    [Implements]: { expectedType: Concept },
+    [Implements]: Concept,
   }
 
   // Concept is an abstract type (i.e. it cannot be instantiated) so 

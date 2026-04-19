@@ -19,18 +19,21 @@ import {
   PartialTypes,
 } from '@kingjs/partial-symbols'
 
-// PROTOTYPE CHAINING
+// META PROTOTYPE
 
-// PartialReflect transforms a type's prototype to include the partial types,
-// if any, of which the type is composed. Each link in the prototype chain is
-// expanded to include partial types declared on that type. PartialType 
-// declarations on a type are ordered and later declarations take precidence
-// over earlier ones.  For example, MyType and MyExtendedType:
+// PartialReflect transforms a type's runtime-prototype to include the 
+// partial types, if any, of which the type is composed and provides 
+// reflection over the resulting meta-prototype chain.
+
+// PartialReflect expands Each link in the type's prototype chain to include 
+// the partial types declared on that type. PartialType declarations on a 
+// type are ordered. Later declarations take precidence over earlier ones.  
+// For example, given MyType and MyExtendedType:
 
 //   class MyType { ... }
 //   class MyExtendedType extends MyType { ... }
 
-// have a prototype chain like this:
+// then instance of MyExtendedType have a prototype chain like this:
 
 //   MyExtendedType.prototype -> MyType.prototype -> Object.prototype
 
@@ -39,8 +42,9 @@ import {
 //   MyExtendedType
 //   └─ MyType
 
-// and if MyExtendedType declares PartialTypse A and B, and MyType declares
-// PartialType A, then MyType would have a prototype chain like this:
+// and if MyExtendedType declares PartialTypse A then B, and MyType declares
+// PartialType A, then PartialReflect would expand the prototype chain like 
+// this:
 
 //   MyExtendedType
 //   └─ B
@@ -58,13 +62,14 @@ import {
 //         └─ MyType
 
 // PartialTypes can themselves declare PartialTypes, and so on. For example,
-// if B declares PartialType Left and Right which each declare PartialType
-// Base, then B's type hierarchy would look like this:
+// if B declares PartialType Left then Right which each declare PartialType
+// Base, then B's type hierarchy would look like this (mentally, rotate the
+// ASCII tree 90 degrees clockwise):
 
 //   B
-//   ├─ Left
+//   ├─ Right
 //   │  └─ Base
-//   └─ Right
+//   └─ Left
 //      └─ Base
  
 // and the prototype chain would look like this:
@@ -114,9 +119,49 @@ import {
 
 //   A, MyType,       Left, Base, Right, B, MyExtendedType
 
-// PARTIAL TYPE DECLARATIONS
+// which is the "merge order" of the prototype chain where merge order means
+// the order in which the members would be reduced when building the prototype
+// chain.
 
+// RECURSIVE DEFINITION OF META PROTOTYPE CHAIN
 
+// In general, a type T with base type B nad partial types P0, P1, ... is 
+// defined recursively as:
+
+//    T
+//    ├─ ...
+//    ├─ P1
+//    ├─ P0
+//    └─ B
+
+// The pseudo-code to discover the merge order is:
+
+//    M(T) = dedupLast(M(B) ++ M(P0) ++ M(P1) ++ ... ++ [T])
+
+// where M returns a list of types in merge order. DedupLast removes
+// duplicates from a list keeping the last one. The ++ operator is list
+// concatenation. The [T] is the singleton list containing T. 
+
+// The list returned by M(T) is then reduced into a prototype chain. 
+// Assuming the list is simply [ B, P0, P1, T ], then using mixin idiom, 
+// the reduction is logically this:
+
+//    const B$ = base => class extends base { ...B... }
+//    const P0$ = base => class P0 extends base { ...P0... }
+//    const P1$ = base => class P1 extends base { ...P1... }
+//    const T$ = base => class T extends base { ...T... }
+//    const { prototype } = T$(P1$(P0$(B$(Object))))
+
+// Where the ...B... is copy of the members of B, and so on.
+
+// IMPLEMENTATION OF META PROTOTYPE CHAIN
+
+// The naive implementation of the meta prototype chain construction  
+// proceeds by doing a post order walk of the type hierarchy tree 
+// followed by deduplication of the resulting list. Deduping can be avoided 
+// by doing a reverse pre order walk of the tree, pruning branches that 
+// have been seen, and then reverse the result, so that is what 
+// PartialReflect does.
 
 const KnownTypes = [ Object, Function, PartialType ]
 const KnownKeys = [ 'constructor' ]
@@ -179,11 +224,9 @@ export class PartialLoader {
     const symbols = type[Declarations]
     if (!symbols) return
 
-    // symbols like { [Extends]: { expectedType } }
+    // symbols like { [Extends]: expectedType }
     for (const symbol of Object.getOwnPropertySymbols(symbols)) {
-      const options = symbols[symbol]
-      const { expectedType } = options
-      assert(!Array.isArray(expectedType))
+      const expectedType = symbols[symbol]
       
       // TODO: see RangeConcept: Breaks trying to make iterable.
       const actualTypes = getOwn(type, symbol)
