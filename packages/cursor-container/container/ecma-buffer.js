@@ -12,7 +12,7 @@ import {
 } from '../container-concepts.js'
 
 const {
-  partialContainerType$: PartialBufferContainer,
+  partialContainerType$: PartialContiguousContainer,
 } = ContiguousCursor
 
 export class EcmaBuffer extends PartialProxy {
@@ -43,7 +43,7 @@ export class EcmaBuffer extends PartialProxy {
   dispose$() { this._buffer = null }
 
   static {
-    extend(this, PartialBufferContainer)
+    extend(this, PartialContiguousContainer)
 
     implement(this, CountableContainerConcept, {
       get count() { return this._count }

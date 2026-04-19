@@ -10,6 +10,7 @@ import {
   RandomAccessCursorConcept,
   ContiguousCursorConcept,
 } from './cursor-concepts.js'
+import { PartialReflect } from '@kingjs/partial-reflect'
 
 import {
   TrivialInputRange,
@@ -22,7 +23,7 @@ import {
   TrivialOtherRange,
 } from './trivial-cursors.js'
 
-import { 
+import {
   List,
   Chain,
   Vector,
@@ -30,6 +31,7 @@ import {
   NodeBuffer,
   EcmaBuffer,
 } from '@kingjs/cursor-container'
+import { ForwardRangeConcept } from './range-concepts.js'
 
 const TrivialInputContainerCase = {
   type: TrivialInputRange,
@@ -174,6 +176,7 @@ describe.each(cases)('%s', (_, { type, concepts, bufferType }) => {
   })
 
   it('should have a range that is iterable and empty', () => {
+    const prototype = PartialReflect.getPrototype(type)
     let container = new type()
     const values = [...container]
     expect(values).toEqual([])

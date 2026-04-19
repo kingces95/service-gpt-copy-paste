@@ -25,10 +25,10 @@ import {
 // partial types, if any, of which the type is composed and provides 
 // reflection over the resulting meta-prototype chain.
 
-// PartialReflect expands Each link in the type's prototype chain to include 
-// the partial types declared on that type. PartialType declarations on a 
-// type are ordered. Later declarations take precidence over earlier ones.  
-// For example, given MyType and MyExtendedType:
+// PartialReflect expands each link in the type's runtime-prototype chain 
+// to include the partial types declared on that type. PartialType 
+// declarations on a type are ordered. Later declarations take precidence 
+// over earlier ones. For example, given MyType and MyExtendedType:
 
 //   class MyType { ... }
 //   class MyExtendedType extends MyType { ... }
@@ -184,8 +184,9 @@ export const PartialReflect = Es6Reflector.create({
   knownStaticKeys: KnownStaticKeys,
   // TODO: suppress caching transparent prototypes?
   getPrototypeFn: function createPrototype(type) {
-    const hierarchy = [...PartialLoader.hierarchy(type)]
+    const hierarchy = [...PartialLoader.hierarchy(type)].reverse()
     
+    const memberTable = new Map()
     return hierarchy.reduce((prototype, currentType) => {
       const descriptors = { }
 
@@ -202,13 +203,14 @@ export const PartialReflect = Es6Reflector.create({
             ownKey = current 
           break
           case 'object':
+            let descriptor = current
             // inherit existing descriptor if current is abstract
-            if (isAbstract(current)) {
-              const existing = descriptors[ownKey]
-              if (existing && !isAbstract(existing))
-                current = existing
+            if (isAbstract(descriptor)) {
+              const existing = memberTable.get(ownKey)
+              if (existing) descriptor = existing 
             }
-            descriptors[ownKey] = current
+            descriptors[ownKey] = descriptor
+            memberTable.set(ownKey, descriptor)
             break
         }
       }
@@ -248,7 +250,7 @@ export class PartialLoader {
       .filter(partialType => !partialType[Transparent])
 
     // added procedurally (e.g by extend() or implement())
-    yield* type[PartialTypes] || []
+    yield* getOwn(type, PartialTypes) || []
   }
 
   static #isPartialType(type) {
@@ -278,15 +280,15 @@ export class PartialLoader {
       if (visited.has(type)) return
       visited.add(type)
     
-      const baseType = PartialLoader.#getBaseType(type)
-      if (baseType)
-        yield* reverseDepthFirstWalk$(baseType)
+      yield type
       
       const ownPartialTypes = [...PartialLoader.#ownPartialTypes(type)]
       for (const basePartialType of ownPartialTypes.reverse())
         yield *reverseDepthFirstWalk$(basePartialType)
 
-      yield type
+      const baseType = PartialLoader.#getBaseType(type)
+      if (baseType)
+        yield* reverseDepthFirstWalk$(baseType)
     }
 
     yield *reverseDepthFirstWalk$(rootType)

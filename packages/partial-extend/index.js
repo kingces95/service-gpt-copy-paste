@@ -26,8 +26,9 @@ import { getOwn } from '@kingjs/get-own'
 export function extend(type, partialType) {
   assert(!isPojo(type))
   
+  const hosts = new Set()
   const prototype = type.prototype
-  return PartialReflect.copyTo(partialType, prototype, {
+  PartialReflect.copyTo(partialType, prototype, {
     createThunk: (key, descriptor) => CreateThunk in type 
       ? type[CreateThunk](key, descriptor) 
       : descriptor,
@@ -35,13 +36,19 @@ export function extend(type, partialType) {
     predicate: (key, descriptor) =>
       !(key in prototype && isAbstract(descriptor)),
 
-    onHost: (partialType) => {
-      if (partialType[Transparent]) return
-      let set = getOwn(type, PartialTypes)
-      if (!set) type[PartialTypes] = set = new Set()
-      set.delete(partialType) // preserve order
-      set.add(partialType)
-    }
+    onHost: (host) => hosts.add(host),
   })
+
+  if (partialType[Transparent]) 
+    return
+
+  let set = getOwn(type, PartialTypes)
+  if (!set) type[PartialTypes] = set = new Set()
+    
+  const mergeOrder = [...hosts].reverse()
+  for (const partialType of mergeOrder) {
+    set.delete(partialType) // deduplicate
+    set.add(partialType)
+  }
 }
 

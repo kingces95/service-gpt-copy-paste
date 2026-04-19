@@ -209,30 +209,22 @@ export class Es6Prototype {
   }
 
   *descriptors(type, { descriptorType, includeOverridden } = { }) {
-    let owner
-    for (const current of this.keys(type, { includeOverridden })) {
-      const typeofCurrent = typeof current
-      assert(typeofCurrent == 'function'
-        || typeofCurrent == 'string'
-        || typeofCurrent == 'symbol', 
-        `Unexpected type: ${typeof current}`)
+    const prototype = this.getPrototype(type)
+    const visited = new Set()
+    for (const current of Prototype.chain(prototype)) {
+      const host = current.constructor
+      yield host
+      for (const key of Prototype.ownKeys(current)) {
+        if (!includeOverridden && visited.has(key)) continue
+        if (this.isKnownKey(host, key)) continue
+        visited.add(key)
 
-      switch (typeofCurrent) {
-        case 'function': 
-          owner = current
-          yield owner
-          break
-        case 'string':
-        case 'symbol': {
-          const key = current
-          const descriptor = this.getOwnDescriptor(
-            owner, key, { descriptorType })
-          if (!descriptor) continue
-            
-          yield key
-          yield descriptor
-          break
-        }
+        const descriptor = Es6Prototype.#getOwnDescriptor(
+          current, key, descriptorType)
+        if (!descriptor) continue
+
+        yield key
+        yield descriptor
       }
     }
   }
@@ -243,6 +235,7 @@ export class Es6Prototype {
     onHost = (host) => { }
   }) {
     let key
+    let host
     for (const current of this.descriptors(type)) {
       assert (typeof current == 'string' 
         || typeof current == 'symbol'
@@ -257,12 +250,14 @@ export class Es6Prototype {
           break
         case 'object':
           const descriptor = current
+          const debug = host
           if (!predicate(key, descriptor)) break
           const thunk = createThunk(key, descriptor)
           Object.defineProperty(target, key, thunk)
           break
         case 'function':
-          onHost(current)
+          host = current
+          onHost(host)
           break
       }
     }
