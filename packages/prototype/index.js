@@ -162,7 +162,7 @@ export class Prototype {
     compare = Descriptor.canDuctCast,
   } = { }) {
     let name
-    let instanceDescriptor
+    let actualDescriptor
     for (const current of this.descriptors(prototype, { filter })) {
       const typeofCurrent = typeof current
       assert (typeofCurrent == 'string'
@@ -175,17 +175,35 @@ export class Prototype {
         case 'symbol': 
           name = current
           if (!(name in instance)) return false 
-          instanceDescriptor = Descriptor.get(instance, name)
+          actualDescriptor = Descriptor.get(instance, name)
           break
           
           case 'object': {
-          const prototypeDescriptor = current
-          if (!compare(prototypeDescriptor, instanceDescriptor))
+          const expectedDescriptor = current
+          if (!compare(expectedDescriptor, actualDescriptor))
             return false
         }
         case 'function': break
       }
     }
     return true
+  }
+
+  static *ownValues(prototype, { instance, filter } = { }) {
+    const descriptors = Prototype.ownDescriptors(prototype, { filter })
+    yield *Descriptor.values(descriptors, instance)
+  }
+
+  static *getValue(prototype, name, { instance, filter } = { }) {
+    const descriptors = Prototype.getDescriptor(prototype, name, { filter, 
+      includeOverridden: true })
+    yield* Descriptor.values(descriptors, instance)
+  }
+
+  static *values(prototype, { 
+    instance, includeOverridden, filter } = { }) {
+    const descriptors = Prototype.descriptors(prototype, { filter,
+      includeOverridden })
+    yield *Descriptor.values(descriptors, instance)
   }
 }

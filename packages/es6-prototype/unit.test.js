@@ -115,17 +115,24 @@ function runTests(
     ownKeys: [ ctor, 'myTypeMember', memberKey],
     keys: [ MyType, ctor, 'myTypeMember', memberKey ],
     ownValues: [
-      { key: ctor, value: MyType }, 
-      { key: 'myTypeMember', value: 'myType:myTypeMember' },
-      { key: memberKey, value: 'myType:member' },
+      { key: ctor, value: MyType, 
+          type: 'field', descriptor: MyTypeConstructorDescriptor }, 
+      { key: 'myTypeMember', value: 'myType:myTypeMember',
+          type: 'field', descriptor: MyTypeMemberDescriptor },
+      { key: memberKey, value: 'myType:member',
+          type: 'field', descriptor: MyTypeSharedMemberDescriptor },
     ],
     values: [
-      { host: MyType, key: ctor, value: MyType }, 
-      { host: MyType, key: 'myTypeMember', value: 'myType:myTypeMember' },
-      { host: MyType, key: memberKey, value: 'myType:member' },
+      { host: MyType, key: ctor, value: MyType,
+          type: 'field', descriptor: MyTypeConstructorDescriptor }, 
+      { host: MyType, key: 'myTypeMember', value: 'myType:myTypeMember',
+          type: 'field', descriptor: MyTypeMemberDescriptor },
+      { host: MyType, key: memberKey, value: 'myType:member',
+          type: 'field', descriptor: MyTypeSharedMemberDescriptor },
     ],
     getMemberValue: [
-      { host: MyType, value: 'myType:member' },
+      { host: MyType, value: 'myType:member',
+          type: 'field', descriptor: MyTypeSharedMemberDescriptor },
     ],
     ownDescriptors: [
       ctor, MyTypeConstructorDescriptor,
@@ -171,12 +178,16 @@ function runTests(
     ownKeys: [ ctor, 'myTypeMember' ],
     keys: [ MyType, ctor, 'myTypeMember' ],
     ownValues: [
-      { key: ctor, value: MyType }, 
-      { key: 'myTypeMember', value: 'myType:myTypeMember' },
+      { key: ctor, value: MyType,
+          type: 'field', descriptor: MyTypeConstructorDescriptor },  
+      { key: 'myTypeMember', value: 'myType:myTypeMember',
+          type: 'field', descriptor: MyTypeMemberDescriptor },
     ],
     values: [
-      { host: MyType, key: ctor, value: MyType }, 
-      { host: MyType, key: 'myTypeMember', value: 'myType:myTypeMember' },
+      { host: MyType, key: ctor, value: MyType,
+          type: 'field', descriptor: MyTypeConstructorDescriptor },
+      { host: MyType, key: 'myTypeMember', value: 'myType:myTypeMember',
+          type: 'field', descriptor: MyTypeMemberDescriptor },
     ],
     getMemberValue: [ ],
     ownDescriptors: [
@@ -210,19 +221,28 @@ function runTests(
       MyType, 'myTypeMember' 
     ],
     ownValues: [
-      { key: ctor, value: MySubType }, 
-      { key: 'mySubTypeMember', value: 'mySubType:mySubTypeMember' },
-      { key: memberKey, value: 'mySubType:member' },
+      { key: ctor, value: MySubType,
+          type: 'field', descriptor: MySubTypeConstructorDescriptor },
+      { key: 'mySubTypeMember', value: 'mySubType:mySubTypeMember',
+          type: 'field', descriptor: MySubTypeMemberDescriptor },
+      { key: memberKey, value: 'mySubType:member',
+          type: 'field', descriptor: MySubTypeSharedMemberDescriptor },
     ],
     values: [
-      { host: MySubType, key: ctor, value: MySubType }, 
-      { host: MySubType, key: 'mySubTypeMember', value: 'mySubType:mySubTypeMember' },
-      { host: MySubType, key: memberKey, value: 'mySubType:member' },
-      { host: MyType, key: 'myTypeMember', value: 'myType:myTypeMember' },
+      { host: MySubType, key: ctor, value: MySubType,
+          type: 'field', descriptor: MySubTypeConstructorDescriptor },
+      { host: MySubType, key: 'mySubTypeMember', value: 'mySubType:mySubTypeMember',
+          type: 'field', descriptor: MySubTypeMemberDescriptor },
+      { host: MySubType, key: memberKey, value: 'mySubType:member',
+          type: 'field', descriptor: MySubTypeSharedMemberDescriptor },
+      { host: MyType, key: 'myTypeMember', value: 'myType:myTypeMember',
+          type: 'field', descriptor: MyTypeMemberDescriptor },
     ],
     getMemberValue: [
-      { host: MySubType, value: 'mySubType:member' },
-      { host: MyType, value: 'myType:member' },
+      { host: MySubType, value: 'mySubType:member',
+          type: 'field', descriptor: MySubTypeSharedMemberDescriptor },
+      { host: MyType, value: 'myType:member',
+          type: 'field', descriptor: MyTypeSharedMemberDescriptor },
     ],
     ownDescriptors: [
       ctor, MySubTypeConstructorDescriptor,
@@ -256,16 +276,24 @@ function runTests(
       MyType, ctor, 'myTypeMember', memberKey 
     ],
     values: [
-      { host: MySubType, key: ctor, value: MySubType }, 
-      { host: MySubType, key: 'mySubTypeMember', value: 'mySubType:mySubTypeMember' },
-      { host: MySubType, key: memberKey, value: 'mySubType:member' },
-      { host: MyType, key: ctor, value: MyType }, 
-      { host: MyType, key: 'myTypeMember', value: 'myType:myTypeMember' },
-      { host: MyType, key: memberKey, value: 'myType:member' },
+      { host: MySubType, key: ctor, value: MySubType,
+          type: 'field', descriptor: MySubTypeConstructorDescriptor }, 
+      { host: MySubType, key: 'mySubTypeMember', value: 'mySubType:mySubTypeMember',
+          type: 'field', descriptor: MySubTypeMemberDescriptor },
+      { host: MySubType, key: memberKey, value: 'mySubType:member',
+          type: 'field', descriptor: MySubTypeSharedMemberDescriptor },
+      { host: MyType, key: ctor, value: MyType,
+          type: 'field', descriptor: MyTypeConstructorDescriptor },
+      { host: MyType, key: 'myTypeMember', value: 'myType:myTypeMember',
+          type: 'field', descriptor: MyTypeMemberDescriptor },
+      { host: MyType, key: memberKey, value: 'myType:member',
+          type: 'field', descriptor: MyTypeSharedMemberDescriptor },
     ],
     getMemberValue: [
-      { host: MySubType, value: 'mySubType:member' },
-      { host: MyType, value: 'myType:member' },
+      { host: MySubType, value: 'mySubType:member',
+          type: 'field', descriptor: MySubTypeSharedMemberDescriptor },
+      { host: MyType, value: 'myType:member',
+          type: 'field', descriptor: MyTypeSharedMemberDescriptor },
     ],
     ownDescriptors: [
       ctor, MySubTypeConstructorDescriptor,
@@ -558,18 +586,21 @@ function runTests(
       // getValue
       it('should have expected member value', () => {
         const actual = [...reflector.getValue(type, key, options)]
+        actual.forEach(v => { delete v.type; delete v.descriptor })
         expect(actual).toEqual(gotValue)
       })
 
       // ownValues
       it('should have expected own value', () => {
         const actual = [...reflector.ownValues(type, options)]
+        actual.forEach(v => { delete v.type; delete v.descriptor })
         expect(actual).toEqual(ownValues)
       })
 
       // values
       it('should have expected value', () => {
         const actual = [...reflector.values(type, options)]
+        actual.forEach(v => { delete v.type; delete v.descriptor })
         expect(actual).toEqual(values)
       })
     })

@@ -134,10 +134,14 @@ describe('MyConcept', () => {
         const actual = [...PartialMetadata.values(MyConcept, {
           extensionOf: Concept,
         })]
+        const descriptor =
+          Object.getOwnPropertyDescriptor(MyConcept, 'associatedType')
         const expected = [{ 
           host: MyConcept,
           key:'associatedType', 
-          value: AssociatedConcept 
+          value: AssociatedConcept,
+          type: 'field',
+          descriptor
         }]
         expect(actual).toEqual(expected)
       })
@@ -145,9 +149,13 @@ describe('MyConcept', () => {
         const actual = [...PartialMetadata.ownValues(MyConcept, {
           extensionOf: Concept,
         })]
+        const descriptor =
+          Object.getOwnPropertyDescriptor(MyConcept, 'associatedType')
         const expected = [{
           key: 'associatedType', 
-          value: AssociatedConcept
+          value: AssociatedConcept,
+          type: 'field',
+          descriptor
         }]
         expect(actual).toEqual(expected)
       })

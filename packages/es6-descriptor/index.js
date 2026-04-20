@@ -29,56 +29,22 @@ export class Es6Descriptor {
     return Descriptor.equals(lhs, rhs)
   }
 
-  static getValue(descriptor, instance) {
-    const type = Es6Descriptor.typeof(descriptor)
-    assert(type == Es6FieldDescriptor.Type 
-      || type == Es6MethodDescriptor.Type
-      || type == Es6GetterDescriptor.Type
-      || type == Es6PropertyDescriptor.Type)
+  static promoteValue(result, instance) {
+    const type = Es6Descriptor.typeof(result.descriptor)
+    result.type = type
+    if (type == 'method')
+      result.value = result.value.call(instance)
+    return result
+  }
 
-    switch (type) {
-      case Es6FieldDescriptor.Type:
-        return descriptor.value
-      case Es6MethodDescriptor.Type:
-        return descriptor.value.call(instance)
-      case Es6GetterDescriptor.Type:
-        return descriptor.get.call(instance)
-      case Es6PropertyDescriptor.Type:
-        return descriptor.get.call(instance)
-    }
+  static getValue(descriptor, instance) {
+    const result = Descriptor.getValue(descriptor, instance)
+    return Es6Descriptor.promoteValue(result, instance)
   }
 
   static *values(descriptors, instance) {
-
-    let key
-    let host
-    for (const current of descriptors) {
-      assert(typeof current == 'object'
-        || typeof current == 'function'
-        || typeof current == 'string'
-        || typeof current == 'symbol')
-
-      switch (typeof current) {
-        case 'function':
-          host = current 
-          break
-
-        case 'string':
-        case 'symbol':
-          key = current
-          break
-
-        case 'object': {
-          const descriptor = current
-          const value = Es6Descriptor.getValue(descriptor, instance)
-          const result = { value }
-          if (key) result.key = key
-          if (host) result.host = host
-          yield result
-          break
-        }
-      }
-    }
+    for (const result of Descriptor.values(descriptors, instance))
+      yield Es6Descriptor.promoteValue(result, instance)
   }
   
   static *modifiers(

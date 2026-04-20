@@ -34,18 +34,6 @@ class Es6PrototypeCache {
 
 export class Es6Prototype {
 
-  static #isTypeof(descriptor, descriptorType) {
-    if (!descriptor) return false
-
-    if (descriptorType) {
-      descriptorType = asSet(descriptorType)
-      if (!descriptorType.has(Es6Descriptor.typeof(descriptor))) 
-        return false
-    }
-
-    return true
-  }
-
   #cache
   #knownTypes 
   #knownTypeFn
@@ -62,12 +50,6 @@ export class Es6Prototype {
     this.#knownKeys = new Set(knownKeys)
     this.#knownKeyFn = knownKeyFn
     this.#cache = new Es6PrototypeCache(this, getPrototypeFn)
-  }
-
-  #instanceOfFilter(type) {
-    return type 
-      ? ({ value }) => instanceOf(value, type)
-      : () => true
   }
 
   getPrototype(type) {
@@ -133,7 +115,7 @@ export class Es6Prototype {
     if (!this.hasOwnKey(type, name)) return null
     const prototype = this.getPrototype(type)
     const descriptor = Prototype.getOwnDescriptor(prototype, name)
-    if (!Es6Prototype.#isTypeof(descriptor, descriptorType)) return null
+    if (!isTypeof(descriptor, descriptorType)) return null
     return descriptor
   }
 
@@ -141,7 +123,7 @@ export class Es6Prototype {
     const prototype = this.getPrototype(type)
     yield* Prototype.ownDescriptors(prototype, {
       filter: (key, descriptor) => !this.isKnownKey(type, key)
-        && Es6Prototype.#isTypeof(descriptor, descriptorType)
+        && isTypeof(descriptor, descriptorType)
     })
   }  
 
@@ -149,7 +131,7 @@ export class Es6Prototype {
     const prototype = this.getPrototype(type)
     yield* Prototype.getDescriptor(prototype, name, {
       filter: (host, key, descriptor) => !this.isKnownKey(host, key)
-        && Es6Prototype.#isTypeof(descriptor, descriptorType)
+        && isTypeof(descriptor, descriptorType)
     })
   }
 
@@ -158,7 +140,7 @@ export class Es6Prototype {
     yield* Prototype.descriptors(prototype, {
       includeOverridden,
       filter: (host, key, descriptor) => !this.isKnownKey(host, key)
-        && Es6Prototype.#isTypeof(descriptor, descriptorType)
+        && isTypeof(descriptor, descriptorType)
     })
   }
 
@@ -183,28 +165,53 @@ export class Es6Prototype {
   }
 
   *ownValues(type, { instance, descriptorType, instanceOf } = { }) {
-    const descriptors = this.ownDescriptors(type, { descriptorType })
-    yield *Es6Descriptor.values(descriptors, instance)
-      .filter(this.#instanceOfFilter(instanceOf))
+    const prototype = this.getPrototype(type)
+    yield* Prototype.ownValues(prototype, { instance, descriptorType,
+      filter: (key, descriptor) => !this.isKnownKey(type, key)
+        && isTypeof(descriptor, descriptorType)
+    }).map(result => Es6Descriptor.promoteValue(result, instance))
+        .filter(instanceOfFilter(instanceOf))
   }
 
   *getValue(type, name, { instance, descriptorType, instanceOf } = { }) {
-    const descriptors = this.getDescriptor(type, name, { 
-      descriptorType, includeOverridden: true })
-    yield* Es6Descriptor.values(descriptors, instance)
-      .filter(this.#instanceOfFilter(instanceOf))
+    const prototype = this.getPrototype(type)
+    yield* Prototype.getValue(prototype, name, { instance, descriptorType,
+      filter: (host, key, descriptor) => !this.isKnownKey(host, key)
+        && isTypeof(descriptor, descriptorType) 
+    }).map(result => Es6Descriptor.promoteValue(result, instance))
+        .filter(instanceOfFilter(instanceOf))
   }
 
   *values(type, { 
     instance, includeOverridden, descriptorType, instanceOf } = { }) {
-    const descriptors = this.descriptors(type, { 
-      includeOverridden, descriptorType })
-    yield *Es6Descriptor.values(descriptors, instance, { descriptorType })
-      .filter(this.#instanceOfFilter(instanceOf))
+    const prototype = this.getPrototype(type)
+    yield* Prototype.values(prototype, { instance, includeOverridden,
+      filter: (host, key, descriptor) => !this.isKnownKey(host, key)
+        && isTypeof(descriptor, descriptorType) 
+    }).map(result => Es6Descriptor.promoteValue(result, instance))
+        .filter(instanceOfFilter(instanceOf))
   }
 
   *hosts(type, name) {
     for (const current of this.hierarchy(type))
       if (this.hasKey(current, name)) yield current
   }
+}
+
+function isTypeof(descriptor, descriptorType) {
+  if (!descriptor) return false
+
+  if (descriptorType) {
+    descriptorType = asSet(descriptorType)
+    if (!descriptorType.has(Es6Descriptor.typeof(descriptor))) 
+      return false
+  }
+
+  return true
+}
+
+function instanceOfFilter(type) {
+  return type 
+    ? ({ value }) => instanceOf(value, type)
+    : () => true
 }

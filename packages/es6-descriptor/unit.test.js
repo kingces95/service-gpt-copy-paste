@@ -52,10 +52,10 @@ const TestValue = [
   ['property', PropertyDescriptorValue],
 ]
 
-describe.each(TestValue)('A %s descriptor', (_, descriptor) => {
+describe.each(TestValue)('A %s descriptor', (type, descriptor) => {
   it('has correct value', () => {
     const instance = { value: 42 }
-    const actual = Es6Descriptor.getValue(descriptor, instance)
+    const { value: actual } = Es6Descriptor.getValue(descriptor, instance)
     const expected = 42
     expect(actual).toBe(expected)
   })
@@ -65,7 +65,12 @@ describe.each(TestValue)('A %s descriptor', (_, descriptor) => {
     const actual = [...Es6Descriptor.values([symbolKey, descriptor], 
       instance, { descriptorType: Es6Descriptor.typeof(descriptor) })
     ]
-    const expected = [{ key: symbolKey, value: 42 }]
+    const expected = [{ 
+      type,
+      descriptor,
+      key: symbolKey, 
+      value: 42 
+    }]
     expect(actual).toEqual(expected)
   })
   it('will transmit function in descriptor stream', () => {
@@ -75,7 +80,13 @@ describe.each(TestValue)('A %s descriptor', (_, descriptor) => {
     const actual = [...Es6Descriptor.values([fn, symbolKey, descriptor], 
       instance, { descriptorType: Es6Descriptor.typeof(descriptor) })
     ]
-    const expected = [{ key: symbolKey, value: 42, host: fn }]
+    const expected = [{ 
+      key: symbolKey, 
+      value: 42, 
+      host: fn,
+      type,
+      descriptor
+    }]
     expect(actual).toEqual(expected)
   })
 })

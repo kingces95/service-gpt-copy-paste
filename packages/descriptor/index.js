@@ -103,18 +103,53 @@ export class Descriptor {
       || type == GetterDescriptor.Type
       || type == PropertyDescriptor.Type)
 
-    const result = { ...descriptor }
+    const result = { descriptor, type }
     switch (type) {
       case DataDescriptor.Type:
         result.value = descriptor.value
+        break
       case GetterDescriptor.Type:
         result.value = descriptor.get.call(instance)
+        break
       case PropertyDescriptor.Type:
         result.value = descriptor.get.call(instance)
+        break
     }
     return result
   }
 
+  static *values(descriptors, instance) {
+
+    let key
+    let host
+    for (const current of descriptors) {
+      assert(typeof current == 'object'
+        || typeof current == 'function'
+        || typeof current == 'string'
+        || typeof current == 'symbol')
+
+      switch (typeof current) {
+        case 'function':
+          host = current 
+          break
+
+        case 'string':
+        case 'symbol':
+          key = current
+          break
+
+        case 'object': {
+          const descriptor = current
+          const result = Descriptor.getValue(descriptor, instance)
+          if (key) result.key = key
+          if (host) result.host = host
+          yield result
+          break
+        }
+      }
+    }
+  }
+  
   static canDuctCast(expectedDescriptor, actualDescriptor) {
     const actualType = Descriptor.typeof(actualDescriptor)
     const expectedType = Descriptor.typeof(expectedDescriptor)
