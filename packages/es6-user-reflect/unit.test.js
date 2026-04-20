@@ -183,13 +183,6 @@ describe.each(Cases)('%s', (name, md) => {
         expect(hasKey).toBe(true)
       }
     })
-    it('reports correct hosts for keys', () => {
-      for (const key of expectedKeys) {
-        const hosts = Es6UserReflect.hosts(type, key, { isStatic })
-        const actual = [ ...hosts ]
-        expect(actual).toEqual(expectedHosts[key])
-      }
-    })
     it('reports correct descriptor for own keys', () => {
       for (const key of expectedOwnKeys) {
         const descriptor = Es6UserReflect.getOwnDescriptor(type, key, { isStatic })

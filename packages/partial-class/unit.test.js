@@ -134,11 +134,6 @@ describe('A PartialClass', () => {
           const keys = [...PartialReflect.ownKeys(myPartialClass)]
           expect(keys).toHaveLength(0)
         })
-        it('should report MyPartialClass and BasePartialClass as hosts for baseMember', () => {
-          const hosts = [...PartialReflect.hosts(myPartialClass, 'baseMember')]
-          const expected = new Set([ myPartialClass, basePartialClass ])
-          expect(new Set(hosts)).toEqual(expected)
-        })
       })
       describe('which extended a root PartialClass', () => {
         let rootExtension

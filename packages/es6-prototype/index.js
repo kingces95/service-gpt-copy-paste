@@ -191,11 +191,6 @@ export class Es6Prototype {
     }).map(result => Es6Descriptor.promoteValue(result, instance))
         .filter(instanceOfFilter(instanceOf))
   }
-
-  *hosts(type, name) {
-    for (const current of this.hierarchy(type))
-      if (this.hasKey(current, name)) yield current
-  }
 }
 
 function isTypeof(descriptor, descriptorType) {

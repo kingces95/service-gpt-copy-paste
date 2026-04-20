@@ -324,9 +324,6 @@ export class Es6Reflector {
   // *keys(type, { isStatic, includeOverridden } = { }) {
   //   yield* this.#reflect(isStatic).keys(type, { includeOverridden })
   // }
-  // *hosts(type, name, { isStatic } = { }) {
-  //   yield* this.#reflect(isStatic).hosts(type, name)
-  // }
   // getOwnDescriptor(type, name, { isStatic, descriptorType } = { }) {
   //   return this.#reflect(isStatic)
   //     .getOwnDescriptor(type, name, { descriptorType })

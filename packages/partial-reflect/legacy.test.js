@@ -100,11 +100,6 @@ describe('MyPojoType', () => {
       it('should have the method on type', () => {
         expect(myType.prototype.method).toBe(method)
       })
-      it('should have no hosts for the method', () => {
-        const lookup = [...PartialReflect.hosts(myType, 'method')]
-        expect(lookup).toHaveLength(1)
-        expect(lookup[0]).toBe(myType)
-      })
       it('should have no declarations', () => {
         const declarations = [...partialTypes(myType)]
         expect(declarations).toHaveLength(0)
