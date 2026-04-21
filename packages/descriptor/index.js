@@ -149,7 +149,7 @@ export class Descriptor {
       }
     }
   }
-  
+
   static canDuctCast(expectedDescriptor, actualDescriptor) {
     const actualType = Descriptor.typeof(actualDescriptor)
     const expectedType = Descriptor.typeof(expectedDescriptor)

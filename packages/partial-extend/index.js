@@ -1,7 +1,6 @@
 import { assert } from '@kingjs/assert'
-import { PartialReflect } from '@kingjs/partial-reflect'
+import { PartialReflect, isFirstOrOverride } from '@kingjs/partial-reflect'
 import { CreateThunk } from '@kingjs/partial-proxy'
-import { isAbstract } from '@kingjs/abstract'
 import { isPojo } from '@kingjs/pojo-test'
 import { PartialTypes } from '@kingjs/partial-symbols'
 import { Transparent } from '@kingjs/partial-symbols'
@@ -34,7 +33,7 @@ export function extend(type, partialType) {
       : descriptor,
 
     filter: (host, key, descriptor) =>
-      !(key in prototype && isAbstract(descriptor)),
+      isFirstOrOverride(descriptor, key in prototype),
 
     onHost: (host) => hosts.add(host),
   })

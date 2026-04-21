@@ -19,11 +19,255 @@ import {
   PartialTypes,
 } from '@kingjs/partial-symbols'
 
+// MOTIVATION
+
+// JavaScript before Es6 required the developer to construct prototypes
+// manually. For example, to create a type MyExtendedType that extends MyType, 
+// the developer would do something like this:
+
+//    function MyType() { ... }
+//    function MyExtendedType() { 
+//      constuctor() { MyType.call(this); ... }
+//    }
+//    MyExtendedType.prototype = Object.create(MyType.prototype)
+//    MyExtendedType.prototype.constructor = MyExtendedType
+
+// Any member of MyType would be manually added to MyType.prototype. For 
+// example, to add a 'foo' getter, the developer would do this:
+
+//    Object.defineProperty(MyType.prototype, 'foo', {
+//      get: function() { ... },
+//      configurable: true,
+//      enumerable: false,
+//      writable: false,
+//    })
+ 
+// To ease manual construction of prototypes, a developer could use helper 
+// functions. For example, 'foo' could be added like this:
+
+//    function defineGetter(type, name, getter) {
+//      Object.defineProperty(type.prototype, name, {
+//        get: getter,
+//        configurable: true,
+//        enumerable: false,
+//        writable: false,
+//      })
+//    }
+//    defineGetter(MyType, 'foo', function() { ... })
+
+// This is very powerful but its also clucky. Es6 classes introduced syntactic
+// sugar to hide some of this boilerplate. For example, the above example
+// could be rewritten like this:
+
+//    class MyType { get foo() { ... } }
+//    class MyExtendedType extends MyType { ... }
+
+// Going further, a developer could create a function to add groups of 
+// members, a "partial type", to a prototype. For example, to add 'foo' 
+// and 'bar' to MyType in one go, the developer could do this:
+
+//    function abstract() { throw new Error('Abstract method') }
+//    function defineFubar(prototype, { foo, bar } = { }) {
+//      addGetter(prototype, 'foo', foo || abstract)
+//      addGetter(prototype, 'bar', bar || abstract)
+//    }
+//  
+//    defineFubar(MyType.prototype)
+
+// This would result in Fubar.foo overwriting MyType.foo and adding Foobar.bar.
+
+// Es6 does not provide syntacic sugar for this type of composition. 
+// For example, there is no Es6 syntax to define a partial type 'Fubar' and
+// use that to add 'foo' and 'bar' to MyType. The Partial* family of packages
+// fills this gap. While Partial* cannot introduce new syntax, it can introduce
+// functions that interpret well known symbols to achieve the same effect. 
+// For example, Fubar could be defined and applied to MyType like this:
+
+//    // PartialType and PartialClass are provided out-of-the-box
+//    class PartialType extends null { ... special sauce ... }
+//    class PartialClass extends PartialType { ... more special sauce ... }
+//
+//    class Fubar extends PartialClass {
+//      get foo() { ... }
+//      get bar() { ... }
+//    }
+//    class MyType {
+//      get Foo() { ... }
+//      static { define(this, Fubar) }
+//    }
+
+// This would also result in Foobar.foo overwriting MyType.foo and adding 
+// Foobar.bar. 
+
+// Partial* also allows for composition of a PartialType via extension, 
+// declaration, or procedural means. For example, SitRep could be defined 
+// via extension like this:
+
+//    class SitRep extends Fubar {
+//      get bar() { ... }
+//    }
+
+// or via procedure like this:
+
+//    class SitRep extends PartialClass {
+//      static { define(this, Fubar) }
+//      get bar() { ... }
+//    }
+
+// or via declaration like this:
+
+//    class SitRep extends PartialClass {
+//      static [Extends] = Fubar
+//      get bar() { ... }
+//    }
+
+// In all cases, SitRep.bar would overwrite Fubar.bar and SitRep would 
+// inherit Fubar.foo.
+ 
+// Partial* also allows for "multiple inheritance" of partial types. For 
+// example, SitRep could extend partial classes Fubar and Snafu like this:
+
+//    class Snafu extends PartialClass {
+//      get foo() { ... }
+//      get baz() { ... }
+//    }
+//    class SitRep extends PartialClass {
+//      static [Extends] = [ Snafu, Fubar ]
+//      get bar() { ... }
+//    }
+
+// or via extension and declaration like this:
+
+//    class SitRep extends Snafu {
+//      static [Extends] = Fubar
+//      get bar() { ... }
+//    }
+
+// or via declaration and procedure like this:
+
+//    class SitRep extends PartialClass {
+//      static [Extends] = Snafu
+//      static { define(this, Fubar) }
+//      get bar() { ... }
+//    }
+
+// PartialReflect imposes a total order on the POSET of partial types and
+// exposes the result a meta-prototype chain. In general, PartialReflect 
+// uses a last-declaration-wins ordering when constructing meta-prototype 
+// chains where the precidents of the various means of composition are as 
+// follows: 
+
+//    extension < declaration < procedure = host type
+
+// For example, given that precident chain, all of the above would have a 
+// meta-prototype chain like this:
+
+//    SitRep (bar)
+//    └─ Fubar (foo, bar)
+//       └─ Snafu (foo, baz)
+
+// which indicates: 
+
+//    SitRep.bar takes precidence over Fubar.bar 
+//    Fubar.foo takes precidence over Snafu.foo 
+
+// Note that SitRep.bar takes precidence over Fubar.bar because it was 
+// declared after the call to define. If the order were reversed then the 
+// precidence would be reversed and the meta-prototype chain would be:
+
+//    SitRep (Fubar.bar)
+//    └─ Fubar (foo, bar)
+//       └─ Snafu (foo, baz)
+
+// Hopefully, all of this is expected and in general the precidents 
+// illustrated above feel natural. 
+
+// As an aside, PartialReflect is able to add Fubar to the prototype chain 
+// even when SitRep addes Fubar define (i.e. procedurally) because define 
+// stores the association in a global registry which PartialReflect can query.
+
+// PartialReflect will also construct meta-prototype chains for non-partial
+// types (e.g. types that do not extened PartialType) and those meta-prototype
+// chains will include the partial types of which the type is composed.
+// For example, if MyType composes with SitRep like this:
+
+//    class MyType {
+//      static { define(this, SitRep) }
+//      foo() { ... }
+//    }
+
+// Then PartialReflect would construct a meta-prototype chain like this:
+
+//    MyType (foo)
+//    └─ SitRep (bar)
+//       └─ Fubar (foo, bar)
+//          └─ Snafu (foo, baz)
+//             └─ Object (toString, valueOf, ...)
+
+// and MyType's prototype would be:
+
+//    constructor -> MyType
+//    bar         -> SitRep.bar
+//    foo         -> Fubar.foo
+//    baz         -> Snafu.baz
+
+// Note the utility of the meta-prototype chain in this example. Reflection
+// on the meta-prototype chain using the same algorithms used on a normal 
+// prototype chain would reveal the total set of members, which members 
+// overrode which, which partial types contributed which members, and so 
+// on. The is is the main motivation for PartialReflect. 
+
+// Es6 provides a precedent for including more types in the prototype chain
+// than were declared in source code. Indeed, simply declaring 
+
+//    class MyType { }
+
+// results in a prototype chain that implicitly includes Object. Explictly
+// extending Object does not change the prototype chain but it does change
+// the static-prototype chain (i.e. the prototype of MyType as oppossed to
+// the prototype of MyType.prototype). Furthermore extending null results
+// in a different prototype chain but the same static-prototype chain.
+// Here are the three cases:
+
+// Definition:           Prototype chain:      Static-prototype chain:
+// class MyType { }      MyType.prototype      MyType
+//                       └─ Object.prototype   └─ Function.prototype
+//                          └─ null               └─ Object.prototype
+//                                                   └─ null
+//                                                                   
+// class MyType          MyType.prototype      MyType
+//   extends Object { }  └─ Object.prototype   └─ Object
+//                          └─ null               └─ Function.prototype
+//                                                   └─ Object.prototype
+//                                                      └─ null
+//
+// class MyType          MyType.prototype      MyType
+//   extends null        └─ null               └─ Function.prototype
+//                                                └─ Object.prototype
+//                                                   └─ null
+
+// The point is that Es6 established a precedent that the static-prototype
+// chain reflects the source code declaration of types and the prototype 
+// chain reflects runtime composition of types. 
+
+// PartialReflect expands upon these Es6 precedents and uses them as 
+// justification for the inclusion of partial types in the prototype chain; 
+// Where Es6 includes Object implictly when it makes sense to do so, 
+// PartialReflect include partial types implicitly when it makes sense to 
+// do so. 
+
+// PartialReflect extends Es6Reflector which includes transformations of 
+// both chains. Es6Reflector supplies the transform for the static-prototype 
+// (basically drops Function.prototype and Object.prototype) thus is agnostic 
+// to the presence of partial types. PartialReflect supplies the transform 
+// for the prototype chain. 
+
+
 // META PROTOTYPE
 
 // PartialReflect transforms a type's runtime-prototype to include the 
-// partial types, if any, of which the type is composed and provides 
-// reflection over the resulting meta-prototype chain.
+// partial types of which the type is composed and provides reflection 
+// over the resulting meta-prototype chain.
 
 // PartialReflect expands each link in the type's runtime-prototype chain 
 // to include the partial types declared on that type. PartialType 
@@ -154,55 +398,153 @@ import {
 
 // Where the ...B... is copy of the members of B, and so on.
 
+
 // IMPLEMENTATION OF META PROTOTYPE CHAIN
 
-// The naive implementation of the meta prototype chain construction  
+// The naive implementation of the meta-prototype chain construction  
 // proceeds by doing a post order walk of the type hierarchy tree 
 // followed by deduplication of the resulting list. Deduping can be 
 // avoided by doing a reverse pre order walk of the tree, pruning 
-// branches that have been seen, and then reverse the result. That is 
-// what PartialReflect does.
+// branches that have been seen, and then reverse the result to
+// produce a "merge order". That is what PartialReflect does:
+
+function *hierarchy(rootType) {
+  const visited = new Set()
+
+  function *reversePreOrderWalk$(type) {
+    if (visited.has(type)) return
+    visited.add(type)
+  
+    yield type
+    
+    const ownPartialTypes = [...PartialLoader.ownPartialTypes(type)]
+    for (const basePartialType of ownPartialTypes.reverse())
+      yield *reversePreOrderWalk$(basePartialType)
+
+    const baseType = getBaseType(type)
+    if (baseType)
+      yield* reversePreOrderWalk$(baseType)
+  }
+
+  yield *reversePreOrderWalk$(rootType)
+}
+
+function *mergeOrder(type) {
+  yield* [...hierarchy(type)].reverse()
+}
 
 // ABSTRACT MEMBERS
 
 // After the merge order is discovered, each link's constructor property
 // can be assigned its type. Next, the own descriptors of that type's
 // prototype are copied to the link. This is a straightforward copy 
-// except for abstract descriptors. A descriptor is abstract if it's 
+// except for abstract descriptors. A descriptor is abstract if its 
 // value/get/set is the well known abstract method. Abstract members do 
 // not overwrite concrete members. Instead, the inherited concrete member
 // is substituted. For example, if the partial type B from the above 
 // example declares an abstract method myMethod, and MyType declares a 
 // concrete method myMethod, then the myMethod will be copied to B's 
-// meta prototype link instead of the well known abstract method. 
+// meta-prototype link instead of the well known abstract method.
 
+export function isFirstOrOverride(descriptor, hasExisting) {
+  return !hasExisting || !isAbstract(descriptor)
+}
 
+function override(descriptor, existing) {
+  return isFirstOrOverride(descriptor, existing) 
+    ? descriptor : existing
+}
+
+// PARTIAL TYPE META-META TYPE SYSTEM
+
+// There are many types of PartialTypes (i.e. PartialClass and Concept). 
+// PartialReflect treats them all in the abstract using a meta-meta type
+// system to reflect on them. A type of PartialType is an extension of 
+// PartialType. For example,
+
+//    class PartialType extends null { ... }
+//    class PartialClass extends PartialType { ... }
+//    class Concept extends PartialType { ... }
+
+// An extension of an extension of PartialType is user defined partial 
+// type. For example, A and Base could be defined like,
+
+//    class A extends PartialClass { ... }
+//    class Base extends Concept { ... }
+
+// Testing for user defined partial types is done using isPartialType.
+// Note isPartialType returns false for PartialType and its direct
+// extensions (e.g. PartialClass and Concept) but returns true for user
+// defined partial types (e.g. A and Base). 
+
+// TODO: Export this and drop the test using depth = 2.
+function isPartialType(type) {
+  if (!type) return false
+  if (type == PartialType) return true
+  if (Object.getPrototypeOf(type) == PartialType) return false
+  return Es6UserReflect.isExtensionOf(type, PartialType)
+}
+
+// User defined partial type can extend other user defined partial
+// types. For example, Left and Right could be defined like,
+
+//    class Left extends Base { ... }
+//    class Right extends base { ... }
+
+// The base types are discovered per usual means except for user
+// defined partial types. For user defined partial types, the base
+// type chain only returns other user defined partial types and 
+// then null. This is an optimization since PartialType and its
+// direct extensions do not have any members and so do not need to 
+// be included in the meta-prototype chain. Here are the base type 
+// chains for the above example:
+
+//    MyExtendedType -> MyType -> Object -> null
+//    PartialClass -> PartialType -> null
+//    Concept -> PartialType -> null
+//    Left -> Base -> null
+//    Right -> Base -> null
+//    A -> null
+//    B -> null
+
+function getBaseType(type) {
+  if (!type) return null
+
+  if (!isPartialType(type))
+    return Es6UserReflect.getBaseType(type)
+
+  const result = Es6UserReflect.getBaseType(type)
+  if (!isPartialType(result))
+    return null
+
+  return result
+}
 
 const KnownTypes = [ Object, Function, PartialType ]
+const KnownTypeFn = type => Object.getPrototypeOf(type) === PartialType
 const KnownKeys = [ 'constructor' ]
 const KnownStaticKeys = [ 'length', 'name', 'prototype',
-  Implements, 
-  Extends,
-  CreateThunk, 
+  Declarations, 
+  Compile, 
   Transparent,
   Define,
-  Compile, 
-  Declarations, 
+  Extends,
+  Implements, 
+  // CreateThunk, 
   PartialTypes,
   Symbol.hasInstance,
 ]
 
 export const PartialReflect = Es6Reflector.create({
   knownTypes: KnownTypes, 
-  knownTypeFn: type => Object.getPrototypeOf(type) === PartialType,
+  knownTypeFn: KnownTypeFn,
   knownKeys: KnownKeys,
   knownStaticKeys: KnownStaticKeys,
   // TODO: suppress caching transparent prototypes?
   getPrototypeFn: function createPrototype(type) {
-    const mergeOrder = [...PartialLoader.hierarchy(type)].reverse()
-    
     const memberTable = new Map()
-    return mergeOrder.reduce((prototype, currentType) => {
+    const types = [...mergeOrder(type)]
+    return types.reduce((prototype, currentType) => {
       const descriptors = { }
 
       let ownKey
@@ -219,12 +561,8 @@ export const PartialReflect = Es6Reflector.create({
             break
           case 'object':
             let descriptor = current
-            // inherit existing descriptor if current is abstract
-            if (isAbstract(descriptor)) {
-              const existing = memberTable.get(ownKey)
-              if (existing) descriptor = existing 
-            }
-            descriptors[ownKey] = descriptor
+            const existing = memberTable.get(ownKey)
+            descriptors[ownKey] = override(descriptor, existing)
             memberTable.set(ownKey, descriptor)
             break
         }
@@ -235,9 +573,9 @@ export const PartialReflect = Es6Reflector.create({
   },
 })
 
-export class PartialLoader {
+class PartialLoader {
 
-  static *#declaredOwnPartialTypes(type) {
+  static *declaredOwnPartialTypes(type) {
     const symbols = type[Declarations]
     if (!symbols) return
 
@@ -259,85 +597,41 @@ export class PartialLoader {
     }
   }
 
-  static *#ownPartialTypes(type) {
+  static *ownPartialTypes(type) {
     // added by declaration (e.g. by static [Extends] = PartialType)
-    yield* PartialLoader.#declaredOwnPartialTypes(type)
+    yield* PartialLoader.declaredOwnPartialTypes(type)
       .filter(partialType => !partialType[Transparent])
 
     // added procedurally (e.g by extend() or implement())
     yield* getOwn(type, PartialTypes) || []
   }
 
-  static #isPartialType(type) {
-    if (!type) return false
-    if (type == PartialType) return true
-    if (Object.getPrototypeOf(type) == PartialType) return false
-    return Es6UserReflect.isExtensionOf(type, PartialType)
-  }
-
-  static #getBaseType(type) {
-    if (!type) return null
-
-    if (!PartialLoader.#isPartialType(type))
-      return Es6UserReflect.getBaseType(type)
-
-    const result = Es6UserReflect.getBaseType(type)
-    if (!PartialLoader.#isPartialType(result))
-      return null
-
-    return result
-  }
-
-  static *hierarchy(rootType) {
-    const visited = new Set()
-
-    function *reversePreOrderWalk$(type) {
-      if (visited.has(type)) return
-      visited.add(type)
-    
-      yield type
-      
-      const ownPartialTypes = [...PartialLoader.#ownPartialTypes(type)]
-      for (const basePartialType of ownPartialTypes.reverse())
-        yield *reversePreOrderWalk$(basePartialType)
-
-      const baseType = PartialLoader.#getBaseType(type)
-      if (baseType)
-        yield* reversePreOrderWalk$(baseType)
-    }
-
-    yield *reversePreOrderWalk$(rootType)
-  }
-
-  static #getOwnDescriptor(type, key) {
-    const descriptor = Es6UserReflect.getOwnDescriptor(type, key)
-    if (!descriptor) return null
-
-    if (!PartialLoader.#isPartialType(type))
-      return descriptor
-    
-    return type[Compile](descriptor) 
-  }
-
-  static *#transparentOwnPartialTypes(type) {
-    for (const partialType of PartialLoader.#declaredOwnPartialTypes(type)) {
+  static *transparentOwnPartialTypes(type) {
+    for (const partialType of PartialLoader.declaredOwnPartialTypes(type)) {
       if (!partialType[Transparent]) continue
       yield partialType
     }
   }
 
+  static getOwnDescriptor(type, key) {
+    const descriptor = Es6UserReflect.getOwnDescriptor(type, key)
+    if (!descriptor) return null
+
+    if (!isPartialType(type))
+      return descriptor
+    
+    return type[Compile](descriptor) 
+  }
+
   static *ownDescriptors(type) {
     const ownKeys = new Map()
-    const ownTypes = [
-      ...PartialLoader.#transparentOwnPartialTypes(type), 
-      type
-    ]
-
-    for (const current of ownTypes.reverse()) {
+    const transparentTypes = PartialLoader.transparentOwnPartialTypes(type)
+    
+    for (const current of [...transparentTypes, type]) {
       for (const key of Es6UserReflect.ownKeys(current)) {
-        const descriptor = PartialLoader.#getOwnDescriptor(current, key)
-        if (ownKeys.has(key) && !isAbstract(ownKeys.get(key))) continue
-        ownKeys.set(key, descriptor)
+        const descriptor = PartialLoader.getOwnDescriptor(current, key)
+        const existing = ownKeys.get(key)
+        ownKeys.set(key, override(descriptor, existing))        
       }    
     }
 

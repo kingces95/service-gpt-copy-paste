@@ -285,7 +285,7 @@ export class Es6Reflector {
   static {
     const thunks = [
       'getPrototype', 'isKnown', 'isKnownKey', 'hasOwnKey', 'hasKey',
-      'ownKeys', 'keys', 'hosts', 'getOwnDescriptor', 'ownDescriptors',
+      'ownKeys', 'keys', 'getOwnDescriptor', 'ownDescriptors',
       'getDescriptor', 'descriptors', 'copyTo'
     ]
 

@@ -72,31 +72,31 @@ export class Prototype {
     }
   }
 
-  static getOwnDescriptor(prototype, name) {
-    return Object.getOwnPropertyDescriptor(prototype, name)
+  static getOwnDescriptor(prototype, key) {
+    return Object.getOwnPropertyDescriptor(prototype, key)
   }
 
   static *ownDescriptors(prototype, { 
+    map = (key, descriptor) => descriptor,
     filter = (key, descriptor) => true,
   } = { }) {
     for (const key of this.ownKeys(prototype)) {
-      const descriptor = Prototype.getOwnDescriptor(prototype, key)
+      const descriptor = getOwnDescriptor(prototype, key, { map, filter })
       if (!descriptor) continue
-      if (!filter(key, descriptor)) continue
 
       yield key
       yield descriptor
     }
   }  
 
-  static *getDescriptor(prototype, name, { 
+  static *getDescriptor(prototype, key, { 
+    map = (host, key, descriptor) => descriptor,
     filter = (host, key, descriptor) => true,
   } = { }) {
     for (const current of Prototype.chain(prototype)) {
       const host = current.constructor
-      const descriptor = Prototype.getOwnDescriptor(current, name)
+      const descriptor = getOwnDescriptor(current, key, { map, filter, host })
       if (!descriptor) continue
-      if (!filter(host, name, descriptor)) continue
 
       yield host
       yield descriptor
@@ -105,6 +105,7 @@ export class Prototype {
 
   static *descriptors(prototype, { 
     includeOverridden,
+    map = (host, key, descriptor) => descriptor,
     filter = (host, key, descriptor) => true, 
   } = { }) {
     const visited = new Set()
@@ -113,9 +114,8 @@ export class Prototype {
       yield host
       for (const key of Prototype.ownKeys(current)) {
         if (!includeOverridden && visited.has(key)) continue
-        const descriptor = Prototype.getOwnDescriptor(current, key)
+        const descriptor = getOwnDescriptor(current, key, { map, filter, host })
         if (!descriptor) continue
-        if (!filter(host, key, descriptor)) continue
 
         visited.add(key)
         yield key
@@ -125,13 +125,15 @@ export class Prototype {
   }
 
   static copyTo(prototype, target, {
-    createThunk = (key, descriptor) => descriptor,
+    onHost = (host) => { },
+    map = (host, key, descriptor) => descriptor,
     filter = (host, key, descriptor) => true,
-    onHost = (host) => { }
+    createThunk = (key, descriptor) => descriptor,
+    asDescriptor = false,
   }) {
     let key
     let host
-    for (const current of this.descriptors(prototype, { filter })) {
+    for (const current of this.descriptors(prototype, { map, filter })) {
       assert (typeof current == 'string' 
         || typeof current == 'symbol'
         || typeof current == 'object'
@@ -145,9 +147,9 @@ export class Prototype {
           break
         case 'object':
           const descriptor = current
-          if (!filter(host, key, descriptor)) break
           const thunk = createThunk(key, descriptor)
-          Object.defineProperty(target, key, thunk)
+          if (asDescriptor) target[key] = thunk
+            else Object.defineProperty(target, key, thunk)
           break
         case 'function':
           host = current
@@ -206,4 +208,15 @@ export class Prototype {
       includeOverridden })
     yield *Descriptor.values(descriptors, instance)
   }
+}
+
+// TODO: change lambda order to key, descriptor, host for better currying
+function getOwnDescriptor(prototype, key, { map, filter, host }) {
+  let descriptor = Prototype.getOwnDescriptor(prototype, key)
+  if (!descriptor) return null
+  const args = [key]; if (host) args.unshift(host)
+  descriptor = map(...args, descriptor)
+  if (!descriptor) return null
+  if (!filter(...args, descriptor)) return null
+  return descriptor
 }
