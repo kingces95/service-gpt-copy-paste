@@ -67,8 +67,7 @@ describe('A type', () => {
     let method
     beforeEach(() => {
       method = function method() { }
-      extend(type, 
-        Attachments[Define]({ method }))
+      extend(type, Attachments[Define]({ method }))
     })
 
     it('should have the method', () => {

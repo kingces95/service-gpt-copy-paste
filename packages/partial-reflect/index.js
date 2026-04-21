@@ -7,6 +7,7 @@ import { Prototype } from '@kingjs/prototype'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { Es6Reflector } from '@kingjs/es6-reflector'
+import { Es6Prototype } from '@kingjs/es6-prototype'
 import { PartialType } from '@kingjs/partial-type'
 import { 
   Implements, 
@@ -446,7 +447,7 @@ export function isFirstOrOverride(descriptor, hasExisting) {
   return !hasExisting || !isAbstract(descriptor)
 }
 
-function override(descriptor, existing) {
+function resolve(descriptor, existing) {
   return isFirstOrOverride(descriptor, existing) 
     ? descriptor : existing
 }
@@ -577,46 +578,75 @@ function *ownPartialTypes(type) {
   yield* getOwn(type, PartialTypes) || []
 }
 
-const OwnDescriptorsCache = new WeakMap()
-function *ownDescriptors(type) {
-  let ownDescriptors = OwnDescriptorsCache.get(type)
-  if (!ownDescriptors) {
-    ownDescriptors = [ ...ownDescriptors$(type) ]
-    OwnDescriptorsCache.set(type, ownDescriptors)
+const PartialLink = new Es6Prototype({
+  knownKeys: [ 'constructor' ],
+  getPrototypeFn: function(type) {
+    const transparentTypes = declaredOwnPartialTypes(type)
+      .filter(partialType => partialType[Transparent])
+    
+    const descriptors = { }
+    const memberTable = new Map()
+    for (const current of [...transparentTypes, type]) {
+
+      const compile = current[Compile] || (o => o)
+      for (const key of Es6UserReflect.ownKeys(current)) {
+        const existing = memberTable.get(key)
+
+        // pipeline
+        let descriptor = Es6UserReflect.getOwnDescriptor(current, key)
+        descriptor = compile.call(type, descriptor)
+        descriptor = resolve(descriptor, existing)
+
+        memberTable.set(key, descriptor)   
+        descriptors[key] = descriptor     
+      }
+    }
+
+    // create a prototype of a single link for the type's member 
+    // merged with the members of its transparent partial types 
+    return Prototype.create(type, null, descriptors)
   }
-  yield* ownDescriptors
-}
-function *transparentOwnPartialTypes(type) {
-  yield* declaredOwnPartialTypes(type)
-    .filter(partialType => partialType[Transparent])
-}
-function *ownDescriptors$(type) {
-  const ownKeys = new Map()
-  const transparentTypes = transparentOwnPartialTypes(type)
+})
+
+// const OwnDescriptorsCache = new WeakMap()
+// function *transparentOwnPartialTypes(type) {
+//   yield* declaredOwnPartialTypes(type)
+//     .filter(partialType => partialType[Transparent])
+// }
+// function *ownDescriptors(type) {
+//   let ownDescriptors = OwnDescriptorsCache.get(type)
+//   if (!ownDescriptors) {
+//     ownDescriptors = [ ...ownDescriptors$(type) ]
+//     OwnDescriptorsCache.set(type, ownDescriptors)
+//   }
+//   yield* ownDescriptors
+// }
+// function *ownDescriptors$(type) {
+//   const ownKeys = new Map()
+//   const transparentTypes = transparentOwnPartialTypes(type)
   
-  for (const current of [...transparentTypes, type]) {
-    for (const key of Es6UserReflect.ownKeys(current)) {
-      const descriptor = getOwnDescriptor(current, key)
-      const existing = ownKeys.get(key)
-      ownKeys.set(key, override(descriptor, existing))        
-    }    
-  }
+//   for (const current of [...transparentTypes, type]) {
+//     for (const key of Es6UserReflect.ownKeys(current)) {
+//       const descriptor = getOwnDescriptor(current, key)
+//       const existing = ownKeys.get(key)
+//       ownKeys.set(key, resolve(descriptor, existing))        
+//     }    
+//   }
 
-  for (const [key, descriptor] of ownKeys) {
-    yield key
-    yield descriptor
-  }
-}
+//   for (const [key, descriptor] of ownKeys) {
+//     yield key
+//     yield descriptor
+//   }
+// }
+// function getOwnDescriptor(type, key) {
+//   const descriptor = Es6UserReflect.getOwnDescriptor(type, key)
+//   if (!descriptor) return null
 
-function getOwnDescriptor(type, key) {
-  const descriptor = Es6UserReflect.getOwnDescriptor(type, key)
-  if (!descriptor) return null
-
-  if (!isPartialType(type))
-    return descriptor
+//   if (!isPartialType(type))
+//     return descriptor
   
-  return type[Compile](descriptor) 
-}
+//   return type[Compile](descriptor) 
+// }
 
 const KnownTypes = [ Object, Function, PartialType ]
 const KnownTypeFn = type => Object.getPrototypeOf(type) === PartialType
@@ -645,7 +675,9 @@ export const PartialReflect = Es6Reflector.create({
       const descriptors = { }
 
       let ownKey
-      for (const current of ownDescriptors(currentType)) {
+      let existing
+      // for (const current of ownDescriptors(currentType)) {
+      for (const current of PartialLink.ownDescriptors(currentType)) {
         assert(typeof current == 'object'
           || typeof current == 'string' 
           || typeof current == 'symbol',
@@ -655,12 +687,12 @@ export const PartialReflect = Es6Reflector.create({
           case 'string':
           case 'symbol':
             ownKey = current 
+            existing = memberTable.get(ownKey)
             break
           case 'object':
-            let descriptor = current
-            const existing = memberTable.get(ownKey)
-            descriptors[ownKey] = override(descriptor, existing)
+            const descriptor = resolve(current, existing)
             memberTable.set(ownKey, descriptor)
+            descriptors[ownKey] = descriptor
             break
         }
       }
