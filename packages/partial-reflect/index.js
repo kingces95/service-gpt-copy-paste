@@ -3,7 +3,7 @@ import { getOwn } from '@kingjs/get-own'
 import { asIterable } from '@kingjs/as-iterable'
 import { isPojo } from '@kingjs/pojo-test'
 import { isAbstract } from '@kingjs/abstract'
-import { Prototype } from '@kingjs/prototype'
+import { linearize } from '@kingjs/linearize'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { Es6Reflector } from '@kingjs/es6-reflector'
@@ -19,6 +19,7 @@ import {
   PartialTypes,
 } from '@kingjs/partial-symbols'
 
+// _________________________________________________________________________
 // MOTIVATION
 
 // JavaScript before Es6 required the developer to construct prototypes
@@ -217,6 +218,9 @@ import {
 // overrode which, which partial types contributed which members, and so 
 // on. The is is the main motivation for PartialReflect. 
 
+// _________________________________________________________________________
+// PRECEDENTS
+
 // Es6 provides a precedent for including more types in the prototype chain
 // than were declared in source code. Indeed, simply declaring 
 
@@ -247,22 +251,24 @@ import {
 //                                                   └─ null
 
 // The point is that Es6 established a precedent that the static-prototype
-// chain reflects the source code declaration of types and the prototype 
-// chain reflects runtime composition of types. 
+// chain reflects the source code declaration of a type and the prototype 
+// chain reflects runtime composition of a type. PartialReflect expands upon 
+// these Es6 precedents and uses them as justification for the inclusion of 
+// partial types in the prototype chain and separation of the static-prototype 
+// chain from the prototype chain.
 
-// PartialReflect expands upon these Es6 precedents and uses them as 
-// justification for the inclusion of partial types in the prototype chain; 
 // Where Es6 includes Object implicitly when it makes sense to do so, 
 // PartialReflect includes partial types implicitly when it makes sense 
 // to do so. 
 
-// PartialReflect extends Es6Reflector which includes transformations of 
-// both chains. Es6Reflector supplies the transform for the static-prototype 
-// (basically drops Function.prototype and Object.prototype) thus is agnostic 
-// to the presence of partial types. PartialReflect supplies the transform 
-// for the prototype chain. 
+// Where Es6 maintains two separate chains, a static-prototype chain and 
+// a prototype PartialReflect extends Es6Reflector which includes 
+// transformations of both chains. Es6Reflector supplies the transform for 
+// the static-prototype (basically drops Function.prototype and 
+// Object.prototype) thus is agnostic to the presence of partial types. 
+// PartialReflect supplies the transform for the prototype chain. 
 
-
+// _________________________________________________________________________
 // META PROTOTYPE
 
 // PartialReflect transforms a type's runtime-prototype to include the 
@@ -367,6 +373,7 @@ import {
 // the order in which the members would be reduced when building the prototype
 // chain.
 
+// _________________________________________________________________________
 // RECURSIVE DEFINITION OF META PROTOTYPE CHAIN
 
 // In general, a type T with base type B and partial types P0, P1, ... is 
@@ -398,7 +405,7 @@ import {
 
 // Where the ...B... is copy of the members of B, and so on.
 
-
+// _________________________________________________________________________
 // IMPLEMENTATION OF META PROTOTYPE CHAIN
 
 // The naive implementation of the meta-prototype chain construction  
@@ -408,31 +415,21 @@ import {
 // branches that have been seen, and then reverse the result to
 // produce a "merge order". That is what PartialReflect does:
 
-function *hierarchy(rootType) {
-  const visited = new Set()
+function *adjacentTypes(type) {
+  const baseType = getBaseType(type)
+  if (baseType)
+    yield baseType
 
-  function *reversePreOrderWalk$(type) {
-    if (visited.has(type)) return
-    visited.add(type)
-  
-    yield type
-    
-    const basePartialTypes = [...ownPartialTypes(type)]
-    for (const basePartialType of basePartialTypes.reverse())
-      yield *reversePreOrderWalk$(basePartialType)
-
-    const baseType = getBaseType(type)
-    if (baseType)
-      yield* reversePreOrderWalk$(baseType)
-  }
-
-  yield *reversePreOrderWalk$(rootType)
+  yield* ownPartialTypes(type)
 }
 
 function *mergeOrder(type) {
-  yield* [...hierarchy(type)].reverse()
+  const options = { preOrder: true, reverse: true }
+  const precedenceOrder = [...linearize(type, adjacentTypes, options)]
+  yield* precedenceOrder.reverse()
 }
 
+// _________________________________________________________________________
 // ABSTRACT MEMBERS
 
 // After the merge order is discovered, each link's constructor property
@@ -452,7 +449,7 @@ function resolve(descriptor, existing) {
     ? descriptor : existing
 }
 
-
+// _________________________________________________________________________
 // PARTIAL TYPE META-META TYPE SYSTEM
 
 // There are many types of PartialTypes (i.e. PartialClass and Concept). 
@@ -535,8 +532,6 @@ function getBaseType(type) {
 //      }
 //    }
 
-
-
 function *declaredOwnPartialTypes(type) {
   const symbols = type[Declarations]
   if (!symbols) return
@@ -578,76 +573,6 @@ function *ownPartialTypes(type) {
   yield* getOwn(type, PartialTypes) || []
 }
 
-const PartialLink = new Es6Prototype({
-  knownKeys: [ 'constructor' ],
-  getPrototypeFn: function(type) {
-    const transparentTypes = declaredOwnPartialTypes(type)
-      .filter(partialType => partialType[Transparent])
-    
-    const descriptors = { }
-    const memberTable = new Map()
-    for (const current of [...transparentTypes, type]) {
-
-      const compile = current[Compile] || (o => o)
-      for (const key of Es6UserReflect.ownKeys(current)) {
-        const existing = memberTable.get(key)
-
-        // pipeline
-        let descriptor = Es6UserReflect.getOwnDescriptor(current, key)
-        descriptor = compile.call(type, descriptor)
-        descriptor = resolve(descriptor, existing)
-
-        memberTable.set(key, descriptor)   
-        descriptors[key] = descriptor     
-      }
-    }
-
-    // create a prototype of a single link for the type's member 
-    // merged with the members of its transparent partial types 
-    return Prototype.create(type, null, descriptors)
-  }
-})
-
-// const OwnDescriptorsCache = new WeakMap()
-// function *transparentOwnPartialTypes(type) {
-//   yield* declaredOwnPartialTypes(type)
-//     .filter(partialType => partialType[Transparent])
-// }
-// function *ownDescriptors(type) {
-//   let ownDescriptors = OwnDescriptorsCache.get(type)
-//   if (!ownDescriptors) {
-//     ownDescriptors = [ ...ownDescriptors$(type) ]
-//     OwnDescriptorsCache.set(type, ownDescriptors)
-//   }
-//   yield* ownDescriptors
-// }
-// function *ownDescriptors$(type) {
-//   const ownKeys = new Map()
-//   const transparentTypes = transparentOwnPartialTypes(type)
-  
-//   for (const current of [...transparentTypes, type]) {
-//     for (const key of Es6UserReflect.ownKeys(current)) {
-//       const descriptor = getOwnDescriptor(current, key)
-//       const existing = ownKeys.get(key)
-//       ownKeys.set(key, resolve(descriptor, existing))        
-//     }    
-//   }
-
-//   for (const [key, descriptor] of ownKeys) {
-//     yield key
-//     yield descriptor
-//   }
-// }
-// function getOwnDescriptor(type, key) {
-//   const descriptor = Es6UserReflect.getOwnDescriptor(type, key)
-//   if (!descriptor) return null
-
-//   if (!isPartialType(type))
-//     return descriptor
-  
-//   return type[Compile](descriptor) 
-// }
-
 const KnownTypes = [ Object, Function, PartialType ]
 const KnownTypeFn = type => Object.getPrototypeOf(type) === PartialType
 const KnownKeys = [ 'constructor' ]
@@ -662,42 +587,35 @@ const KnownStaticKeys = [ 'length', 'name', 'prototype',
   Symbol.hasInstance,
 ]
 
+const compiledPrototype = new Es6Prototype({
+  knownKeys: KnownKeys,
+  cacheHint: () => false,
+  getPrototype: function(type) {
+    const compile = type[Compile] || (o => o)
+    return Es6UserReflect.reduce([type], {
+      filterOwn: true,
+      map: (descriptor) => compile.call(type, descriptor)
+    })
+  }
+})
+
+const unifiedPrototype = new Es6Prototype({
+  knownKeys: KnownKeys,
+  getPrototype: function(type) {
+    const transparentTypes = declaredOwnPartialTypes(type)
+      .filter(partialType => partialType[Transparent])
+    const types = [ ...transparentTypes, type ]
+    return compiledPrototype.reduce(types, { map: resolve })
+  }
+})
+
 export const PartialReflect = Es6Reflector.create({
   knownTypes: KnownTypes, 
   knownTypeFn: KnownTypeFn,
   knownKeys: KnownKeys,
   knownStaticKeys: KnownStaticKeys,
-  // TODO: suppress caching transparent prototypes?
-  getPrototypeFn: function createPrototype(type) {
-    const memberTable = new Map()
-    const types = [...mergeOrder(type)]
-    return types.reduce((prototype, currentType) => {
-      const descriptors = { }
-
-      let ownKey
-      let existing
-      // for (const current of ownDescriptors(currentType)) {
-      for (const current of PartialLink.ownDescriptors(currentType)) {
-        assert(typeof current == 'object'
-          || typeof current == 'string' 
-          || typeof current == 'symbol',
-          `Unexpected type: ${typeof current}`)
-
-        switch (typeof current) {
-          case 'string':
-          case 'symbol':
-            ownKey = current 
-            existing = memberTable.get(ownKey)
-            break
-          case 'object':
-            const descriptor = resolve(current, existing)
-            memberTable.set(ownKey, descriptor)
-            descriptors[ownKey] = descriptor
-            break
-        }
-      }
-
-      return Prototype.create(currentType, prototype, descriptors)
-    }, null)
-  },
+  cacheHint: type => !type[Transparent],
+  getPrototype: function(type) {
+    return unifiedPrototype.reduce(mergeOrder(type), { map: resolve })
+  }
 })

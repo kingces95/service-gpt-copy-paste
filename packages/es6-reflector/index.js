@@ -109,7 +109,7 @@ export class Es6Reflector {
       knownTypes = [], knownTypeFn,
       knownKeys = [], knownKeyFn,
       knownStaticKeys = [], knownStaticKeyFn,
-      getPrototypeFn = type => type.prototype,
+      getPrototype = type => type.prototype,
     } = { }) {
 
     knownStaticKeys.push('constructor')
@@ -118,14 +118,14 @@ export class Es6Reflector {
       instance$: new Es6Prototype({
         knownTypes, knownTypeFn,
         knownKeys, knownKeyFn,
-        getPrototypeFn,
+        getPrototype,
       }),
 
       static$: new Es6Prototype({
         knownTypes, knownTypeFn,
         knownKeys: knownStaticKeys,
         knownKeyFn: knownStaticKeyFn,
-        getPrototypeFn: function(type) {
+        getPrototype: function(type) {
           // base case 1: class A { }
           if (type == Function.prototype) 
             return ObjectCtorWithoutStatics
@@ -187,14 +187,14 @@ export class Es6Reflector {
   on({ 
     knownTypes, knownTypeFn,
     knownKeys, knownKeyFn,
-    getPrototypeFn,
+    getPrototype,
   }) {
     return new Es6Reflector({
       static$: this.#static,
       instance$: new Es6Prototype({
         knownTypes, knownTypeFn,
         knownKeys, knownKeyFn,
-        getPrototypeFn: (type) => getPrototypeFn.call(this, type),
+        getPrototype: (type) => getPrototype.call(this, type),
       })
     })
   }
@@ -286,7 +286,7 @@ export class Es6Reflector {
     const thunks = [
       'getPrototype', 'isKnown', 'isKnownKey', 'hasOwnKey', 'hasKey',
       'ownKeys', 'keys', 'getOwnDescriptor', 'ownDescriptors',
-      'getDescriptor', 'descriptors', 'copyTo'
+      'getDescriptor', 'descriptors', 'copyTo', 'reduce'
     ]
 
     for (const name of thunks) {

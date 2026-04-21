@@ -9,7 +9,7 @@ describe('Es6Prototype', () => {
     const expected = Object.create(null)
     const expectedType = class { }
     const reflector = new Es6Prototype({
-      getPrototypeFn: actualType => { 
+      getPrototype: actualType => { 
         expect(actualType).toBe(expectedType)
         return expected 
       }
@@ -32,13 +32,6 @@ describe('Es6Prototype', () => {
       knownKeys: [ knownKey ]
     })
     expect(reflector.isKnownKey(class { }, knownKey)).toBe(true)
-  })
-  it('should return null prototype for null type', () => {
-    const reflector = new Es6Prototype({
-      getPrototypeFn: type => { throw new Error(`Unexpected type: ${type}`) }
-    })
-    const actual = reflector.getPrototype(null)
-    expect(actual).toBeNull()
   })
   it('should return default prototype if no prototypeFn is given', () => {
     const reflector = new Es6Prototype()
@@ -345,7 +338,7 @@ function runTests(
         knownTypes: knownTypes,
         knownTypeFn: knownTypeFn,
         knownKeyFn: knownKeyFn,
-        getPrototypeFn(type) {
+        getPrototype(type) {
           const links = type === MyType ? MyTypeLinks
             : type === MySubType ? MySubTypeLinks
             : null

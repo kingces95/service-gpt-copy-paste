@@ -37,7 +37,8 @@ export function extend(type, partialType) {
     filter: (host, key, descriptor) =>
       isFirstOrOverride(descriptor, key in prototype),
 
-    onHost: (host) => hosts.add(host),
+    onHost: (host) => 
+      hosts.add(host),
   })
 
   if (!partialType[Transparent]) {

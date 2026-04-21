@@ -77,11 +77,12 @@ export class Prototype {
   }
 
   static *ownDescriptors(prototype, { 
-    map = (key, descriptor) => descriptor,
-    filter = (key, descriptor) => true,
+    map = (host, key, descriptor) => descriptor,
+    filter = (host, key, descriptor) => true,
   } = { }) {
+    const host = prototype.constructor
     for (const key of this.ownKeys(prototype)) {
-      const descriptor = getOwnDescriptor(prototype, key, { map, filter })
+      const descriptor = getOwnDescriptor(prototype, key, { map, filter, host })
       if (!descriptor) continue
 
       yield key
@@ -125,21 +126,24 @@ export class Prototype {
   }
 
   static copyTo(prototype, target, {
+    onCopy = (host, key, descriptor) => { },
     onHost = (host) => { },
     map = (host, key, descriptor) => descriptor,
     filter = (host, key, descriptor) => true,
+    filterOwn = false,
     createThunk = (key, descriptor) => descriptor,
     asDescriptor = false,
   }) {
     let key
     let host
-    for (const current of this.descriptors(prototype, { map, filter })) {
+    const fn = filterOwn ? this.ownDescriptors : this.descriptors
+    for (const current of fn.call(this, prototype, { map, filter })) {
       assert (typeof current == 'string' 
         || typeof current == 'symbol'
         || typeof current == 'object'
         || typeof current == 'function',
         `Unexpected type: ${typeof current}`)
-  
+
       switch (typeof current) {
         case 'string':
         case 'symbol':
@@ -150,6 +154,7 @@ export class Prototype {
           const thunk = createThunk(key, descriptor)
           if (asDescriptor) target[key] = thunk
             else Object.defineProperty(target, key, thunk)
+          onCopy(host, key, descriptor)
           break
         case 'function':
           host = current
@@ -213,10 +218,15 @@ export class Prototype {
 // TODO: change lambda order to key, descriptor, host for better currying
 function getOwnDescriptor(prototype, key, { map, filter, host }) {
   let descriptor = Prototype.getOwnDescriptor(prototype, key)
-  if (!descriptor) return null
-  const args = [key]; if (host) args.unshift(host)
-  descriptor = map(...args, descriptor)
-  if (!descriptor) return null
-  if (!filter(...args, descriptor)) return null
+  if (!descriptor) 
+    return null
+
+  if (!filter(host, key, descriptor)) 
+    return null
+
+  descriptor = map(host, key, descriptor)
+  if (!descriptor) 
+    return null
+
   return descriptor
 }

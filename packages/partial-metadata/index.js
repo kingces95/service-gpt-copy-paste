@@ -94,7 +94,7 @@ import {
 
 export const PartialMetadata = PartialReflect.on({
   knownKeys: [ 'constructor' ],
-  getPrototypeFn: function(type) {
+  getPrototype: function(type) {
     const hierarchy = [...this.hierarchy(type)]
 
     return hierarchy.reverse().reduce((prototype, currentType) => {
@@ -171,7 +171,7 @@ export const PartialMetadata = PartialReflect.on({
 function partialReflectOnMetaObject(symbol) {
   return PartialMetadata.on({
     knownKeys: [ 'constructor' ],
-    getPrototypeFn: function(type) {
+    getPrototype: function(type) {
       const values = [...this.getValue(type, symbol)].reverse()
 
       return values.reduce((prototype, { host, value }) => {

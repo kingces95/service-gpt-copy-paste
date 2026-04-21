@@ -7,15 +7,17 @@ import { Prototype } from '@kingjs/prototype'
 class Es6PrototypeCache {
   #host
   #cache
+  #hint
   #getPrototype
 
-  constructor(host, getPrototype) {
+  constructor(host, getPrototype, hint) {
     this.#host = host
+    this.#hint = hint
     this.#getPrototype = getPrototype
   }
 
   getPrototype(type) {
-    if (!type) return null
+    assert(type)
 
     if (!this.#getPrototype)
       return type.prototype
@@ -26,8 +28,11 @@ class Es6PrototypeCache {
     let prototype = this.#cache.get(type)
     if (!prototype) {
       prototype = this.#getPrototype.call(this.#host, type)
-      this.#cache.set(type, prototype)
+      assert(prototype)
+      if (this.#hint(type))
+        this.#cache.set(type, prototype)
     }
+
     return prototype
   }
 }
@@ -43,13 +48,14 @@ export class Es6Prototype {
   constructor({
     knownTypes = [], knownTypeFn,
     knownKeys = [], knownKeyFn,
-    getPrototypeFn = null,
+    getPrototype = null,
+    cacheHint = type => true,
   } = { }) {
     this.#knownTypes = new Set(knownTypes)
     this.#knownTypeFn = knownTypeFn
     this.#knownKeys = new Set(knownKeys)
     this.#knownKeyFn = knownKeyFn
-    this.#cache = new Es6PrototypeCache(this, getPrototypeFn)
+    this.#cache = new Es6PrototypeCache(this, getPrototype, cacheHint)
   }
 
   getPrototype(type) {
@@ -122,7 +128,7 @@ export class Es6Prototype {
   *ownDescriptors(type, { descriptorType } = { }) {
     const prototype = this.getPrototype(type)
     yield* Prototype.ownDescriptors(prototype, {
-      filter: (key, descriptor) => !this.isKnownKey(type, key)
+      filter: (host, key, descriptor) => !this.isKnownKey(host, key)
         && isTypeof(descriptor, descriptorType)
     })
   }  
@@ -145,15 +151,42 @@ export class Es6Prototype {
   }
 
   copyTo(type, target, {
-    createThunk = (key, descriptor) => descriptor,
+    filterOwn = false,
     filter = (host, key, descriptor) => true,
-    onHost = (host) => { }
+    map = (host, key, descriptor) => descriptor,
+    createThunk = (key, descriptor) => descriptor,
+    onCopy = (host, key, descriptor) => { },
+    onHost = (host) => { },
+    asDescriptor = false,
   }) {
     const prototype = this.getPrototype(type)
-    Prototype.copyTo(prototype, target, { createThunk, onHost,
+    Prototype.copyTo(prototype, target, { 
+      createThunk, onCopy, onHost, map, asDescriptor, filterOwn,
       filter: (host, key, descriptor) => !this.isKnownKey(host, key) 
         && filter(host, key, descriptor),
     })
+  }
+
+  reduce(mergeOrder, { 
+    filterOwn = false,
+    filter = (host, key, descriptor) => true,
+    map = (descriptor, existing) => descriptor
+  } = { }) {
+    const memberTable = new Map()
+    return mergeOrder.reduce((prototype, currentType) => {
+      const descriptors = { } 
+
+      this.copyTo(currentType, descriptors, {
+        filterOwn, filter,
+        asDescriptor: true,
+        map: (host, key, descriptor) => 
+          map(descriptor, memberTable.get(key)),
+        onCopy: (host, key, descriptor) =>
+          memberTable.set(key, descriptor)
+      })
+
+      return Prototype.create(currentType, prototype, descriptors)
+    }, null)
   }
 
   canDuckCast(type, instance) {
@@ -167,7 +200,7 @@ export class Es6Prototype {
   *ownValues(type, { instance, descriptorType, instanceOf } = { }) {
     const prototype = this.getPrototype(type)
     yield* Prototype.ownValues(prototype, { instance, descriptorType,
-      filter: (key, descriptor) => !this.isKnownKey(type, key)
+      filter: (host, key, descriptor) => !this.isKnownKey(host, key)
         && isTypeof(descriptor, descriptorType)
     }).map(result => Es6Descriptor.promoteValue(result, instance))
         .filter(instanceOfFilter(instanceOf))
