@@ -15,7 +15,6 @@ import {
   Declarations,
   Define,
   Transparent,
-  CreateThunk, 
   PartialTypes,
 } from '@kingjs/partial-symbols'
 
@@ -417,8 +416,8 @@ function *hierarchy(rootType) {
   
     yield type
     
-    const ownPartialTypes = [...PartialLoader.ownPartialTypes(type)]
-    for (const basePartialType of ownPartialTypes.reverse())
+    const basePartialTypes = [...ownPartialTypes(type)]
+    for (const basePartialType of basePartialTypes.reverse())
       yield *reversePreOrderWalk$(basePartialType)
 
     const baseType = getBaseType(type)
@@ -441,10 +440,7 @@ function *mergeOrder(type) {
 // except for abstract descriptors. A descriptor is abstract if its 
 // value/get/set is the well known abstract method. Abstract members do 
 // not overwrite concrete members. Instead, the inherited concrete member
-// is substituted. For example, if the partial type B from the above 
-// example declares an abstract method myMethod, and MyType declares a 
-// concrete method myMethod, then the myMethod will be copied to B's 
-// meta-prototype link instead of the well known abstract method.
+// is substituted. 
 
 export function isFirstOrOverride(descriptor, hasExisting) {
   return !hasExisting || !isAbstract(descriptor)
@@ -455,27 +451,31 @@ function override(descriptor, existing) {
     ? descriptor : existing
 }
 
+
 // PARTIAL TYPE META-META TYPE SYSTEM
 
 // There are many types of PartialTypes (i.e. PartialClass and Concept). 
 // PartialReflect treats them all in the abstract using a meta-meta type
 // system to reflect on them. A type of PartialType is an extension of 
-// PartialType. For example,
+// PartialType. For example, given
 
 //    class PartialType extends null { ... }
+
+// the these are types of PartialType:
+
 //    class PartialClass extends PartialType { ... }
 //    class Concept extends PartialType { ... }
 
-// An extension of an extension of PartialType is user defined partial 
-// type. For example, A and Base could be defined like,
+// An extension of a type of PartialType is user defined partial type. 
+// For example, A is user defined partial types:
 
 //    class A extends PartialClass { ... }
-//    class Base extends Concept { ... }
+//    class B extends Concept { ... }
 
 // Testing for user defined partial types is done using isPartialType.
 // Note isPartialType returns false for PartialType and its direct
 // extensions (e.g. PartialClass and Concept) but returns true for user
-// defined partial types (e.g. A and Base). 
+// defined partial types (e.g. A, B). 
 
 // TODO: Export this and drop the test using depth = 2.
 function isPartialType(type) {
@@ -486,26 +486,11 @@ function isPartialType(type) {
 }
 
 // User defined partial type can extend other user defined partial
-// types. For example, Left and Right could be defined like,
+// types. For example, Base, Left and Right could be defined like,
 
+//    class Base extends Concept { ... }
 //    class Left extends Base { ... }
-//    class Right extends base { ... }
-
-// The base types are discovered per usual means except for user
-// defined partial types. For user defined partial types, the base
-// type chain only returns other user defined partial types and 
-// then null. This is an optimization since PartialType and its
-// direct extensions do not have any members and so do not need to 
-// be included in the meta-prototype chain. Here are the base type 
-// chains for the above example:
-
-//    MyExtendedType -> MyType -> Object -> null
-//    PartialClass -> PartialType -> null
-//    Concept -> PartialType -> null
-//    Left -> Base -> null
-//    Right -> Base -> null
-//    A -> null
-//    B -> null
+//    class Right extends Base { ... }
 
 function getBaseType(type) {
   if (!type) return null
@@ -520,6 +505,119 @@ function getBaseType(type) {
   return result
 }
 
+// Here are the base type chains for the above example:
+
+//    PartialType -> null
+//    PartialClass -> PartialType -> null
+//    Concept -> PartialType -> null
+//    MyExtendedType -> MyType -> Object -> null
+//    MyType -> Object -> null
+//    A -> null
+//    B -> null
+//    Left -> Base -> null
+//    Right -> Base -> null
+//    Base -> null
+
+// Declarations is a well known symbol declared by the meta-meta type system
+// which allows types of PartialType to declare how its user defined partial 
+// types can declare their partial type extensions. For example,
+
+//    class PartialClass extends PartialType {
+//      static [Declarations] = { 
+//        [Extends]: PartialClass 
+//      }
+//    }
+//    class Concept extends PartialType {
+//      static [Declarations] = { 
+//        [Extends]: PartialClass 
+//        [Implements]: Concept
+//      }
+//    }
+
+
+
+function *declaredOwnPartialTypes(type) {
+  const symbols = type[Declarations]
+  if (!symbols) return
+
+  // symbols like { [Extends]: expectedType }
+  for (const symbol of Object.getOwnPropertySymbols(symbols)) {
+    const expectedType = symbols[symbol]
+    
+    // TODO: see RangeConcept: Breaks trying to make iterable.
+    const actualTypes = getOwn(type, symbol)
+    for (let actualType of asIterable(actualTypes)) {
+      if (isPojo(actualType))
+        actualType = expectedType[Define](actualType)
+
+      assert(!expectedType 
+        || Es6Reflect.isExtensionOf(actualType, expectedType),
+        `Type "${actualType.name}" is not an extension of expected type "${expectedType?.name}".`)
+      yield actualType
+    }
+  }
+}
+
+export function publishExtensions(type, ...partialTypes) {
+  let set = getOwn(type, PartialTypes)
+  if (!set) type[PartialTypes] = set = new Set()
+    
+  for (const partialType of partialTypes) {
+    set.delete(partialType) // deduplicate
+    set.add(partialType)
+  }
+}
+
+function *ownPartialTypes(type) {
+  // via declaration (e.g. static [Extends] = PartialType)
+  yield* declaredOwnPartialTypes(type)
+    .filter(partialType => !partialType[Transparent])
+
+  // via procedure (e.g extend() or implement())
+  yield* getOwn(type, PartialTypes) || []
+}
+
+const OwnDescriptorsCache = new WeakMap()
+function *ownDescriptors(type) {
+  let ownDescriptors = OwnDescriptorsCache.get(type)
+  if (!ownDescriptors) {
+    ownDescriptors = [ ...ownDescriptors$(type) ]
+    OwnDescriptorsCache.set(type, ownDescriptors)
+  }
+  yield* ownDescriptors
+}
+function *transparentOwnPartialTypes(type) {
+  yield* declaredOwnPartialTypes(type)
+    .filter(partialType => partialType[Transparent])
+}
+function *ownDescriptors$(type) {
+  const ownKeys = new Map()
+  const transparentTypes = transparentOwnPartialTypes(type)
+  
+  for (const current of [...transparentTypes, type]) {
+    for (const key of Es6UserReflect.ownKeys(current)) {
+      const descriptor = getOwnDescriptor(current, key)
+      const existing = ownKeys.get(key)
+      ownKeys.set(key, override(descriptor, existing))        
+    }    
+  }
+
+  for (const [key, descriptor] of ownKeys) {
+    yield key
+    yield descriptor
+  }
+}
+
+function getOwnDescriptor(type, key) {
+  const descriptor = Es6UserReflect.getOwnDescriptor(type, key)
+  if (!descriptor) return null
+
+  if (!isPartialType(type))
+    return descriptor
+  
+  return type[Compile](descriptor) 
+}
+
 const KnownTypes = [ Object, Function, PartialType ]
 const KnownTypeFn = type => Object.getPrototypeOf(type) === PartialType
 const KnownKeys = [ 'constructor' ]
@@ -530,7 +628,6 @@ const KnownStaticKeys = [ 'length', 'name', 'prototype',
   Define,
   Extends,
   Implements, 
-  // CreateThunk, 
   PartialTypes,
   Symbol.hasInstance,
 ]
@@ -548,7 +645,7 @@ export const PartialReflect = Es6Reflector.create({
       const descriptors = { }
 
       let ownKey
-      for (const current of PartialLoader.ownDescriptors(currentType)) {
+      for (const current of ownDescriptors(currentType)) {
         assert(typeof current == 'object'
           || typeof current == 'string' 
           || typeof current == 'symbol',
@@ -572,72 +669,3 @@ export const PartialReflect = Es6Reflector.create({
     }, null)
   },
 })
-
-class PartialLoader {
-
-  static *declaredOwnPartialTypes(type) {
-    const symbols = type[Declarations]
-    if (!symbols) return
-
-    // symbols like { [Extends]: expectedType }
-    for (const symbol of Object.getOwnPropertySymbols(symbols)) {
-      const expectedType = symbols[symbol]
-      
-      // TODO: see RangeConcept: Breaks trying to make iterable.
-      const actualTypes = getOwn(type, symbol)
-      for (let actualType of asIterable(actualTypes)) {
-        if (isPojo(actualType))
-          actualType = expectedType[Define](actualType)
-
-        assert(!expectedType 
-          || Es6Reflect.isExtensionOf(actualType, expectedType),
-          `Type "${actualType.name}" is not an extension of expected type "${expectedType?.name}".`)
-        yield actualType
-      }
-    }
-  }
-
-  static *ownPartialTypes(type) {
-    // added by declaration (e.g. by static [Extends] = PartialType)
-    yield* PartialLoader.declaredOwnPartialTypes(type)
-      .filter(partialType => !partialType[Transparent])
-
-    // added procedurally (e.g by extend() or implement())
-    yield* getOwn(type, PartialTypes) || []
-  }
-
-  static *transparentOwnPartialTypes(type) {
-    for (const partialType of PartialLoader.declaredOwnPartialTypes(type)) {
-      if (!partialType[Transparent]) continue
-      yield partialType
-    }
-  }
-
-  static getOwnDescriptor(type, key) {
-    const descriptor = Es6UserReflect.getOwnDescriptor(type, key)
-    if (!descriptor) return null
-
-    if (!isPartialType(type))
-      return descriptor
-    
-    return type[Compile](descriptor) 
-  }
-
-  static *ownDescriptors(type) {
-    const ownKeys = new Map()
-    const transparentTypes = PartialLoader.transparentOwnPartialTypes(type)
-    
-    for (const current of [...transparentTypes, type]) {
-      for (const key of Es6UserReflect.ownKeys(current)) {
-        const descriptor = PartialLoader.getOwnDescriptor(current, key)
-        const existing = ownKeys.get(key)
-        ownKeys.set(key, override(descriptor, existing))        
-      }    
-    }
-
-    for (const [key, descriptor] of ownKeys) {
-      yield key
-      yield descriptor
-    }
-  }
-}

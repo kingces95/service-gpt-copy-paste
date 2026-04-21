@@ -1,10 +1,12 @@
 import { assert } from '@kingjs/assert'
-import { PartialReflect, isFirstOrOverride } from '@kingjs/partial-reflect'
+import { 
+  PartialReflect, 
+  isFirstOrOverride,
+  publishExtensions
+} from '@kingjs/partial-reflect'
 import { CreateThunk } from '@kingjs/partial-proxy'
 import { isPojo } from '@kingjs/pojo-test'
-import { PartialTypes } from '@kingjs/partial-symbols'
 import { Transparent } from '@kingjs/partial-symbols'
-import { getOwn } from '@kingjs/get-own'
 
 // Extend takes copies (merges) descriptors found on a partial type
 // on to a targets type.
@@ -38,16 +40,8 @@ export function extend(type, partialType) {
     onHost: (host) => hosts.add(host),
   })
 
-  if (partialType[Transparent]) 
-    return
-
-  let set = getOwn(type, PartialTypes)
-  if (!set) type[PartialTypes] = set = new Set()
-    
-  const mergeOrder = [...hosts].reverse()
-  for (const partialType of mergeOrder) {
-    set.delete(partialType) // deduplicate
-    set.add(partialType)
+  if (!partialType[Transparent]) {
+    const mergeOrder = [...hosts].reverse()
+    publishExtensions(type, ...mergeOrder)
   }
 }
-
