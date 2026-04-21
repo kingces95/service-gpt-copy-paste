@@ -4,14 +4,14 @@ import { beforeEach } from 'vitest'
 import { PartialType } from '@kingjs/partial-type'
 import { PartialClass } from '@kingjs/partial-class'
 import { Concept } from '@kingjs/partial-concept'
-import { Extensions } from '@kingjs/partial-extensions'
+import { Attachments } from '@kingjs/partial-attachments'
 
 import { ClassInfo } from "@kingjs/info"
 import { } from "@kingjs/info-to-pojo"
 
 import { myClassPojo } from "./pojo/my-class.pojo.js"
 import { myConceptPojo } from "./pojo/my-concept.pojo.js"
-import { myExtensionsPojo } from "./pojo/my-extensions.pojo.js"
+import { myAttachmentsPojo } from "./pojo/my-attachments.pojo.js"
 
 import {
   MyExtensions,
@@ -98,16 +98,16 @@ describe('Concept members', () => {
   })
 })
 
-describe('Extensions members', () => {
+describe('Attachments members', () => {
   let pojo
   beforeEach(async () => {
-    const fnInfo = ClassInfo.from(Extensions)
+    const fnInfo = ClassInfo.from(Attachments)
     pojo = await fnInfo.toPojo()
   })
 
   it('matches expected', () => {
     expect(pojo).toEqual({ 
-      name: 'Extensions', 
+      name: 'Attachments', 
       base: 'PartialType',
       isAbstract: true,
     })
@@ -140,7 +140,7 @@ describe('MyExtensions members', () => {
   })
 
   it('matches expected', () => {
-    expect(pojo).toEqual(myExtensionsPojo)
+    expect(pojo).toEqual(myAttachmentsPojo)
   })
 })
 

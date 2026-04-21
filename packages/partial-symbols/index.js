@@ -7,17 +7,17 @@
 
 // For example, PartialTypes is used by PartialClass to designate
 // the Extends symbol as containing an adjacency list to other PartialType
-// types of type PartialClass and Extensions. 
+// types of type PartialClass and Attachments. 
 
 //    class PartialClass extends PartialType {
 //      static [Declarations] = {
 //        [Extends]: { 
-//          expectedType: [ PartialClass, Extensions ],
+//          expectedType: [ PartialClass, Attachments ],
 //        }
 //      }
 //    }
 
-// The simplest use of the Extends symbol is to apply an Extensions 
+// The simplest use of the Extends symbol is to apply an Attachments 
 // type expressed as a POJO. A single extension can exist as a single 
 // element of an array or unwrapped like this:
 

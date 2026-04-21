@@ -5,7 +5,7 @@ import { PartialClass, Defines } from '@kingjs/partial-class'
 import { extend } from '@kingjs/partial-extend'
 import { abstract } from '@kingjs/abstract'
 import { } from "@kingjs/info-to-pojo"
-import { Extensions } from '@kingjs/partial-extensions'
+import { Attachments } from '@kingjs/partial-attachments'
 import { Define } from '@kingjs/partial-symbols'
 
 function getMemberValue(cls) {
@@ -20,7 +20,7 @@ const pojoFilter = {
   isKnown: false,
 }
 
-const base = { base: 'Extensions' }
+const base = { base: 'Attachments' }
 
 describe('A partial class', () => {
   describe.each([
@@ -68,7 +68,7 @@ describe('A partial class', () => {
     }],
   ])('with %s', (_, cls, expected) => {
     it('has a pojo', async () => {
-      const partialClass = Extensions[Define](cls)
+      const partialClass = Attachments[Define](cls)
       const fnInfo = TypeInfo.from(partialClass)
       const actual = await fnInfo.toPojo(pojoFilter) 
       expect(actual).toEqual({

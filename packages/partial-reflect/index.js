@@ -26,7 +26,7 @@ import {
 
 //    function MyType() { ... }
 //    function MyExtendedType() { 
-//      constuctor() { MyType.call(this); ... }
+//      constructor() { MyType.call(this); ... }
 //    }
 //    MyExtendedType.prototype = Object.create(MyType.prototype)
 //    MyExtendedType.prototype.constructor = MyExtendedType
@@ -54,7 +54,7 @@ import {
 //    }
 //    defineGetter(MyType, 'foo', function() { ... })
 
-// This is very powerful but its also clucky. Es6 classes introduced syntactic
+// This is very powerful but it's also clunky. Es6 classes introduced syntactic
 // sugar to hide some of this boilerplate. For example, the above example
 // could be rewritten like this:
 
@@ -150,10 +150,10 @@ import {
 //      get bar() { ... }
 //    }
 
-// PartialReflect imposes a total order on the POSET of partial types and
-// exposes the result a meta-prototype chain. In general, PartialReflect 
+// PartialReflect imposes a total order on the POSET of partial types and 
+// exposes the result as a meta-prototype chain. In general, PartialReflect 
 // uses a last-declaration-wins ordering when constructing meta-prototype 
-// chains where the precidents of the various means of composition are as 
+// chains where the precedence of the various means of composition are as 
 // follows: 
 
 //    extension < declaration < procedure = host type
@@ -182,7 +182,7 @@ import {
 // illustrated above feel natural. 
 
 // As an aside, PartialReflect is able to add Fubar to the prototype chain 
-// even when SitRep addes Fubar define (i.e. procedurally) because define 
+// even when SitRep adds Fubar via define (i.e. procedurally) because define 
 // stores the association in a global registry which PartialReflect can query.
 
 // PartialReflect will also construct meta-prototype chains for non-partial
@@ -251,9 +251,9 @@ import {
 
 // PartialReflect expands upon these Es6 precedents and uses them as 
 // justification for the inclusion of partial types in the prototype chain; 
-// Where Es6 includes Object implictly when it makes sense to do so, 
-// PartialReflect include partial types implicitly when it makes sense to 
-// do so. 
+// Where Es6 includes Object implicitly when it makes sense to do so, 
+// PartialReflect includes partial types implicitly when it makes sense 
+// to do so. 
 
 // PartialReflect extends Es6Reflector which includes transformations of 
 // both chains. Es6Reflector supplies the transform for the static-prototype 
@@ -323,7 +323,7 @@ import {
 //         └─ Left
 //            └─ Base
 
-// which after removig the duplicate Base becomes:
+// which after removing the duplicate Base (keeping the last one) becomes:
 
 //   B
 //   └─ Right
@@ -358,7 +358,7 @@ import {
 
 //   A, MyType, Base, Left, Base, Right, B, MyExtendedType
 
-// which after removing the duplicate Base (keepting the last one) becomes:
+// which after removing the duplicate Base (keeping the last one) becomes:
 
 //   A, MyType,       Left, Base, Right, B, MyExtendedType
 
@@ -368,7 +368,7 @@ import {
 
 // RECURSIVE DEFINITION OF META PROTOTYPE CHAIN
 
-// In general, a type T with base type B nad partial types P0, P1, ... is 
+// In general, a type T with base type B and partial types P0, P1, ... is 
 // defined recursively as:
 
 //    T

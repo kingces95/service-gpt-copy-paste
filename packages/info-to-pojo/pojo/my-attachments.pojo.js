@@ -1,5 +1,5 @@
-export const myExtensionsPojo = {
-  base: 'Extensions',
+export const myAttachmentsPojo = {
+  base: 'Attachments',
   isAbstract: true,
   isAnonymous: true,
   members: {

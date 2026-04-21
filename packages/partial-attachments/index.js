@@ -3,30 +3,30 @@ import {
   Transparent 
 } from '@kingjs/partial-type'
 
-// Extensions hosts descriptors that can be copied onto a type.
+// Attachments hosts descriptors that can be copied onto a type.
 
-// An Extensions merged with a type is not associated with the 
+// An Attachments merged with a type is not associated with the 
 // type like a PartialClass or Concept. After being copied
 // the descriptors are indistinguishable from descriptors which
 // might have been defined directly on the type. For this reason, 
-// Extensions are said to be "transparent". 
+// Attachments are said to be "transparent". 
 
-// Extensions are typically created dynamically from a pojo by
+// Attachments are typically created dynamically from a pojo by
 // calling PartialLoader.load(pojo). Practically, this
 // call is made transparently when loading declarative metadata
-// that hosts pojos representing extensions. For example, an
+// that hosts pojos representing attachments. For example, an
 // CursorConcept might define a next() method like this:
 //   class CursorConcept extends Concept {
 //     static [Defines] = { next() { ... } }
 //     ...
 //   }
-// Here the pojo { next() { ... } } is converted into an Extensions
+// Here the pojo { next() { ... } } is converted into an Attachments
 // type via PartialLoader.load() internally. The next() method is
 // then copied onto the prototype of any type that implements CursorConcept.
 
 // Implementing concepts using @kingjs/partial-implement uses 
 // PartialLoader.load() internally to convert pojos
-// into Extensions types. For example to implement an equality
+// into Attachments types. For example to implement an equality
 // concept using a pojo:
 //   class MyClass {
 //     static {
@@ -34,9 +34,9 @@ import {
 //     }
 //   }
 // Here the pojo { equals(other) { ... } } is converted into
-// an Extensions type via PartialLoader.load() internally.
+// an Attachments type via PartialLoader.load() internally.
 
-// Abstract membeers can be defined via Extensions by using
+// Abstract membeers can be defined via Attachments by using
 // the @kingjs/abstract package and @kingjs/partial-define. For example:
 //   import { abstract } from '@kingjs/abstract'
 //   class MyClass {
@@ -45,7 +45,7 @@ import {
 //     }
 //   }
 // Here the abstract descriptor is copied onto MyClass.prototype
-// via an Extensions type created internally by define(). This can
+// via an Attachments type created internally by define(). This can
 // also be done using implement() like this:
 //   class MyClass {
 //     static {
@@ -53,7 +53,7 @@ import {
 //     }
 //   }
 
-// The transformation from pojo to Extensions allows for some slick
+// The transformation from pojo to Attachments allows for some slick
 // declarative patterns for defining members. For example, a method 
 // can be defined like this:
 //    const MyPartial = PartialLoader.load({
@@ -92,6 +92,6 @@ import {
 //      }
 //    })
 
-export class Extensions extends PartialType { 
+export class Attachments extends PartialType { 
   static [Transparent] = true
 }

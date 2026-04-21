@@ -38,7 +38,7 @@ function dump(fn) {
 // dump(PartialType)
 // dump(PartialClass)
 // dump(Concept)
-// dump(Extensions)
+// dump(Attachments)
 
 // dump(MyPartialClass)
 // dump(MyExtensionClass)

@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { abstract } from '@kingjs/abstract'
-import { Extensions } from '@kingjs/partial-extensions'
+import { Attachments } from '../partial-attachments'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { PartialType, Compile, Declarations } from '@kingjs/partial-type'
 import { extend } from '@kingjs/partial-extend'
-import { Extensions } from '@kingjs/partial-extensions'
+import { Attachments } from '../partial-attachments'
 import { Define } from '@kingjs/partial-symbols'
 
 function *partialTypes(type) {
@@ -68,7 +68,7 @@ describe('A type', () => {
     beforeEach(() => {
       method = function method() { }
       extend(type, 
-        Extensions[Define]({ method }))
+        Attachments[Define]({ method }))
     })
 
     it('should have the method', () => {
@@ -80,7 +80,7 @@ describe('A type', () => {
 describe('MyPojoType', () => {
   let MyPojoType
   beforeEach(() => {
-    MyPojoType = Extensions[Define]({ })
+    MyPojoType = Attachments[Define]({ })
   })
 
   describe('with method', () => {
@@ -120,7 +120,7 @@ describe('PartialClass', () => {
   beforeEach(() => {
     PartialClass = class PartialClass extends PartialType { 
       static [Declarations] = { 
-        [ExtensionSymbol]: Extensions,
+        [ExtensionSymbol]: Attachments,
         [DefinesSymbol]: PartialClass,
       }
     }
@@ -208,7 +208,7 @@ describe('PartialClass', () => {
     describe('with MyAnonymousSubExtension', () => {
       let MyAnonymousSubExtension
       beforeEach(() => {
-        MyAnonymousSubExtension = Extensions[Define]({ })
+        MyAnonymousSubExtension = Attachments[Define]({ })
         MyExtension[ExtensionSymbol] = [ MyAnonymousSubExtension ]
       })
 

@@ -5,7 +5,7 @@ import { Concept, Implements } from '@kingjs/partial-concept'
 import { PartialType } from '@kingjs/partial-type'
 import { PartialClass, Extends } from '@kingjs/partial-class'
 import { PartialReflect } from '@kingjs/partial-reflect'
-import { Extensions } from '@kingjs/partial-extensions'
+import { Attachments } from '@kingjs/partial-attachments'
 import { } from "@kingjs/info-to-pojo"
 import { toEqualAsSet } from '@kingjs/vitest'
 

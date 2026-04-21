@@ -5,14 +5,14 @@ import { extend } from '@kingjs/partial-extend'
 import { define } from '@kingjs/partial-define'
 import { } from "@kingjs/info-to-pojo"
 import { PartialClass } from '@kingjs/partial-class'
-import { Extensions } from '@kingjs/partial-extensions'
+import { Attachments } from '@kingjs/partial-attachments'
 import { Define } from '@kingjs/partial-symbols'
 
 const filter = {
   isNonPublic: false, isKnown: false,
 }
 
-describe('Extensions with non-standard properties', () => {
+describe('Attachments with non-standard properties', () => {
   let pojo
   beforeEach(() => {
     pojo = {
@@ -78,7 +78,7 @@ describe('Kitchen sink', () => {
       member1() { return 42 }
       member2() { return 42 }
     }],
-    ['lambda', Extensions[Define]({
+    ['lambda', Attachments[Define]({
       getter0: { get: () => { } },
       get getter1() { },
 

@@ -4,10 +4,10 @@ import { TypeInfo } from "@kingjs/info"
 import { Concept, Implements } from '@kingjs/partial-concept'
 import { PartialType } from '@kingjs/partial-type'
 import { PartialClass, Extends } from '@kingjs/partial-class'
-import { Extensions } from '@kingjs/partial-extensions'
+import { Attachments } from '@kingjs/partial-attachments'
 import { } from "@kingjs/info-to-pojo"
 import { toEqualAsSet } from '@kingjs/vitest'
-import { Extensions } from '@kingjs/partial-extensions'
+import { Attachments } from '@kingjs/partial-attachments'
 import { Define } from '@kingjs/partial-symbols'
 
 expect.extend({ toEqualAsSet })
@@ -28,8 +28,8 @@ const PartialObjectMd = {
 }
 
 const PartialPojoMd = {
-  ctor: Extensions,
-  toString: '[classInfo Extensions]',
+  ctor: Attachments,
+  toString: '[classInfo Attachments]',
   isKnown: true,
   isTransparent: false,
   isAbstract: true,
@@ -69,7 +69,7 @@ const ConceptMd = {
 }
 
 const MyExtensionsMd = {
-  ctor: Extensions[Define]({ }),
+  ctor: Attachments[Define]({ }),
   toString: '[partialPojoInfo]',
   isKnown: false,
   isTransparent: true,
@@ -78,7 +78,7 @@ const MyExtensionsMd = {
   isPartialClass: false,
   isConcept: false,
   isAnonymous: true,
-  base: Extensions,
+  base: Attachments,
 }
 
 const MyPartialClassMd = {
@@ -182,7 +182,7 @@ describe('Given', () => {
       ['Es6Object', Es6Object],
       ['Es6Function', Es6Function],
       ['PartialType', PartialObjectMd],
-      ['Extensions', PartialPojoMd],
+      ['Attachments', PartialPojoMd],
       ['PartialClass',  ExtensionsMd],
       ['Concept', ConceptMd],
       ['MyPartialPojo', MyExtensionsMd],
@@ -431,7 +431,7 @@ const MyPartialClassExtensionMemberMd = {
 
 const MyPojoMemberMd = {
   name: 'member',
-  cls: Extensions[Define]({ member() { } }),
+  cls: Attachments[Define]({ member() { } }),
   type: 'method',
   isMethod: true,
   toString: 'member, method, [partialPojoInfo]',
@@ -442,7 +442,7 @@ const MyPojoMemberMd = {
 
 const MyPojoLambdaMd = {
   name: 'member',
-  cls: Extensions[Define]({ member: () => { } }),
+  cls: Attachments[Define]({ member: () => { } }),
   type: 'method',
   isMethod: true,
   toString: 'member, method, [partialPojoInfo]',

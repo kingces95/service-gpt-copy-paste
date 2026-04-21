@@ -1,6 +1,6 @@
 import { assert } from '@kingjs/assert'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
-import { Extensions } from '@kingjs/partial-extensions'
+import { Attachments } from '@kingjs/partial-attachments'
 import { Concept } from "@kingjs/partial-concept"
 import { PartialClass } from '@kingjs/partial-class'
 import { PartialType } from '@kingjs/partial-type'
@@ -29,7 +29,7 @@ export class TypeInfo {
   }
   static #create(fn) {
 
-    if (PartialReflect.isExtensionOf(fn, Extensions)) 
+    if (PartialReflect.isExtensionOf(fn, Attachments)) 
       return new ExtensionsInfo(fn)
     if (PartialReflect.isExtensionOf(fn, PartialClass)) 
       return new PartialClassInfo(fn)
@@ -188,7 +188,7 @@ TypeInfo.String = TypeInfo.from(String)
 TypeInfo.Number = TypeInfo.from(Number)
 TypeInfo.Boolean = TypeInfo.from(Boolean)
 TypeInfo.PartialType = TypeInfo.from(PartialType)
-TypeInfo.Extensions = TypeInfo.from(Extensions)
+TypeInfo.Attachments = TypeInfo.from(Attachments)
 TypeInfo.PartialClass = TypeInfo.from(PartialClass)
 TypeInfo.Concept = TypeInfo.from(Concept)
 
