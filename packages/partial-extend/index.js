@@ -22,7 +22,7 @@ import { Transparent } from '@kingjs/partial-symbols'
 // Transparent partial types are merged but not associated. A transparent
 // partial type is one whose prototype extends Attachments. Members of
 // a transparent partial type are logically considered to be defined by 
-// the partial type that "extended" it.
+// the partial type that "extended" it. 
 
 export function extend(type, partialType) {
   assert(!isPojo(type))

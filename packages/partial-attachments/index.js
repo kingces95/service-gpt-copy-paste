@@ -1,7 +1,9 @@
+import { abstractify } from '@kingjs/abstract'
+import { PartialType} from '@kingjs/partial-type'
 import { 
-  PartialType, 
-  Transparent 
-} from '@kingjs/partial-type'
+  Transparent,
+  Compile 
+} from '@kingjs/partial-symbols'
 
 // Attachments hosts descriptors that can be copied onto a type.
 
@@ -94,4 +96,15 @@ import {
 
 export class Attachments extends PartialType { 
   static [Transparent] = true
+}
+
+export class AbstractAttachments extends PartialType {
+  static [Transparent] = true
+  static [Compile](descriptor) {
+
+    // pipeline
+    descriptor = super[Compile](descriptor)
+    descriptor = abstractify(descriptor)
+    return descriptor
+  }
 }

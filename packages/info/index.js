@@ -12,6 +12,8 @@ import {
 import { isAbstract } from "@kingjs/abstract"
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { PartialMetadata } from '@kingjs/partial-metadata'
+import { Transparent } from '@kingjs/partial-symbols'
+
 import { getMetadata } from './metadata.js'
 
 const FunctionInfoCache = new WeakMap()
@@ -30,7 +32,7 @@ export class TypeInfo {
   static #create(fn) {
 
     if (PartialReflect.isExtensionOf(fn, Attachments)) 
-      return new ExtensionsInfo(fn)
+      return new AttachmentsInfo(fn)
     if (PartialReflect.isExtensionOf(fn, PartialClass)) 
       return new PartialClassInfo(fn)
     if (PartialReflect.isExtensionOf(fn, Concept)) 
@@ -50,7 +52,7 @@ export class TypeInfo {
   }
 
   get isPartialClass() { return this instanceof PartialClassInfo }
-  get isExtensions() { return this instanceof ExtensionsInfo }
+  get isAttachments() { return this instanceof AttachmentsInfo }
   get isConcept() { return this instanceof ConceptInfo }
 
   get ctor() { return this.#fn }
@@ -61,7 +63,7 @@ export class TypeInfo {
   get name() { return this.id.value }
   get isNonPublic() { return this.id.isNonPublic }
   get isAnonymous() { return this.id.isAnonymous }
-  get isTransparent() { return this.isExtensions }
+  get isTransparent() { return !!this.ctor[Transparent] }
 
   get base() { 
     return TypeInfo.from(PartialReflect.getExtendedType(this.ctor)) 
@@ -168,11 +170,11 @@ export class TypeInfo {
 
   //[util.inspect.custom]() { return this.toString() }
 }
+export class AttachmentsInfo extends TypeInfo {
+  toString() { return `[attachmentsInfo]` }
+}
 export class ClassInfo extends TypeInfo { 
   toString() { return `[classInfo ${this.id.toString()}]` }
-}
-export class ExtensionsInfo extends TypeInfo {
-  toString() { return `[partialPojoInfo]` }
 }
 export class PartialClassInfo extends TypeInfo {
   toString() { return `[partialClassInfo ${this.id.toString()}]` }

@@ -210,7 +210,6 @@ describe('A concept with a member', () => {
       let clsInfo
       beforeEach(() => {
         cls = class MyClass { }
-        // [Implements] is ignored when added to a partial class
         extend(cls, type)
         clsInfo = TypeInfo.from(cls)
       })
@@ -218,21 +217,21 @@ describe('A concept with a member', () => {
         const ownNames = [...clsInfo.ownMembers()]
           .map(member => member.name)
           .filter(name => typeof name === 'string')
-        expect(ownNames.includes('member')).toBe(false)
+        expect(ownNames.includes('member')).toBe(true)
       })
       it('should have own symbols excluding the symbol member', () => {
         const ownSymbols = [...clsInfo.ownMembers()]
           .map(member => member.name)
           .filter(name => typeof name === 'symbol')
-        expect(ownSymbols.includes(mySymbol)).toBe(false)
+        expect(ownSymbols.includes(mySymbol)).toBe(true)
       })
       it('should not instance of the concept', () => {
-        expect(cls.prototype).not.toBeInstanceOf(myConcept)
+        expect(cls.prototype).toBeInstanceOf(myConcept)
       })
       it('should not declare the concept', () => {
         const actual = [...clsInfo.concepts(cls)]
         const expected = [myConceptInfo]
-        expect(actual).not.toEqual(expected)
+        expect(actual).toEqual(expected)
       })
     })
   })

@@ -13,7 +13,6 @@ function isKey(key) {
 export function implement(type, concept, implementation = { }) {
   assert(typeof type == 'function',
     'Type must be a function (e.g. class or function).')
-
   assert(Es6Reflect.isExtensionOf(concept, Concept),
     'Argument concept must extend Concept.')
   assert(!Es6Reflect.isExtensionOf(type, Concept),
@@ -23,7 +22,6 @@ export function implement(type, concept, implementation = { }) {
 
   // restrict implementation to members defined by the concept.
   const conceptMembers = new Set(PartialReflect.keys(concept).filter(isKey))
-
   for (const name of PartialReflect.keys(implementation).filter(isKey)) {
     if (conceptMembers.has(name)) continue
     throw new Error(`Concept '${concept.name}' does not define member '${name}'.`)

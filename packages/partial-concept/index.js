@@ -1,4 +1,4 @@
 export * from './concept.js'
-export * from './dispose.js'
-export * from './scope.js'
-export * from './equatable.js'
+export * from './concepts/dispose.js'
+export * from './concepts/scope.js'
+export * from './concepts/equatable.js'

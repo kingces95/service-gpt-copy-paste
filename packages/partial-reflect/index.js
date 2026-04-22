@@ -101,21 +101,22 @@ import {
 // Foobar.bar. 
 
 // Partial* also allows for composition of a PartialType via extension, 
-// declaration, or procedural means. For example, SitRep could be defined 
-// via extension like this:
+// declaration, or procedural means. For example, SitRep could be defined:
+
+// (1) via extension like this:
 
 //    class SitRep extends Fubar {
 //      get bar() { ... }
 //    }
 
-// or via procedure like this:
+// (2) via procedure like this:
 
 //    class SitRep extends PartialClass {
 //      static { define(this, Fubar) }
 //      get bar() { ... }
 //    }
 
-// or via declaration like this:
+// (3) via declaration like this:
 
 //    class SitRep extends PartialClass {
 //      static [Extends] = Fubar
@@ -510,33 +511,83 @@ function getBaseType(type) {
 //    Concept -> PartialType -> null
 //    MyExtendedType -> MyType -> Object -> null
 //    MyType -> Object -> null
+
+// The above chains should come as no surprise. The following chains of
+// partial types may be more surprising since they do not report either
+// PartialClass, Concept, or PartialType as base types:
+
 //    A -> null
 //    B -> null
 //    Left -> Base -> null
 //    Right -> Base -> null
 //    Base -> null
 
-// Declarations is a well known symbol declared by the meta-meta type system
-// which allows types of PartialType to declare how its user defined partial 
-// types can declare their partial type extensions. For example,
+// A resonable argument could be made to include PartialType and its direct
+// extensions in the base type chain of user defined partial types. However,
+// PartialType and its direct extensions have no members so their inclusion
+// would only affect tests for their presence and those checks could be done
+// using the static prototype chain. Additionally, their inclusion may not
+// always appear at the end of the chain given the current implementation 
+// which seems odd. 
 
-//    class PartialClass extends PartialType {
+// _________________________________________________________________________
+// PARTIAL TYPE MULTIPLE INHERITANCE DECLARATIONS
+
+// Declarations is a well known symbol declared by the meta-meta type system
+// which allows types of PartialType to declare how user defined partial 
+// type extensions declare one or more partial type extensions. For example,
+
+//    class Attachments extends PartialType {
 //      static [Declarations] = { 
-//        [Extends]: PartialClass 
+//        [Defines]: Attachments 
 //      }
 //    }
 //    class Concept extends PartialType {
 //      static [Declarations] = { 
-//        [Extends]: PartialClass 
-//        [Implements]: Concept
+//        [Defines]: Attachments 
+//        [Implements]: Concept 
 //      }
 //    }
+//    class PartialClass extends PartialType {
+//      static [Declarations] = { 
+//        [Defines]: Attachments 
+//        [Implements]: Concept
+//        [Extends]: PartialClass 
+//      }
+//    }
+
+// are examples of types of PartialType declaring what symbols host what
+// types of partial type. Neither the types of PartialTypes (e.g. Concept)
+// nor the symbols they declare (e.g. Implements) are known to PartialReflect.
+// PartialReflect only knows that Declarations describe where edges can be
+// found and what type of PartialType those edges should be constrained to 
+// point at. For example, from the above example, B could be defined like 
+// this:
+
+//    class Base extends Concept { ... }
+//    class Left extends Base { ... }
+//    class Right extends Base { ... }
+//    class B extends Concept {
+//      static [Implements] = [ Left, Right ]
+//    } 
+
+// From PartialReflect's perspective, this declares a tree of partial 
+// types, possibly with duplicates (e.g. POSET), from which a merge order
+// (e.g. linearization) and meta-prototype chain can be derived as 
+// discussed above. 
+
+//    POSET:            Merge Order:        Meta-Prototype chain:                  
+//    B                 Right               B                     
+//    ├─ Left           └─ Base             └─ Left                  
+//    │  └─ Base           └─ Left             └─ Base                    
+//    └─ Right                └─ B                └─ Right                  
+//       └─ Base                                                     
 
 function *declaredOwnPartialTypes(type) {
   const symbols = type[Declarations]
   if (!symbols) return
 
-  // symbols like { [Extends]: expectedType }
+  // symbols like { [Extends]: PartialClass, ... }
   for (const symbol of Object.getOwnPropertySymbols(symbols)) {
     const expectedType = symbols[symbol]
     
@@ -548,7 +599,9 @@ function *declaredOwnPartialTypes(type) {
 
       assert(!expectedType 
         || Es6Reflect.isExtensionOf(actualType, expectedType),
-        `Type "${actualType.name}" is not an extension of expected type "${expectedType?.name}".`)
+        `Type "${actualType.name}" is not an extension of ` + 
+        `expected type "${expectedType?.name}".`)
+
       yield actualType
     }
   }
