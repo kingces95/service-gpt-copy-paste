@@ -95,16 +95,17 @@ export const Adjacent = Symbol('PartialType.declarations')
 export const Compile = Symbol('PartialType.compile')
 export const From = Symbol('PartialType.From')
 export const Transparent = Symbol('PartialType.Transparent')
+export const Postcondition = Symbol('PartialType.Postcondition')
 
-export const CreateThunk = Symbol('PartialType.CreateThunk')
-export const Preconditions = Symbol('PartialType.Preconditions')
-export const Postconditions = Symbol('PartialType.Postconditions')
-export const TypePrecondition = Symbol('PartialType.TypePrecondition')
-export const TypePostcondition = Symbol('PartialType.TypePostcondition')
+export const CreateThunk = Symbol('PartialProxy.CreateThunk')
+export const Preconditions = Symbol('PartialProxy.Preconditions')
+export const Postconditions = Symbol('PartialProxy.Postconditions')
+export const TypePrecondition = Symbol('PartialProxy.TypePrecondition')
+export const TypePostcondition = Symbol('PartialProxy.TypePostcondition')
 
 export const Implements = Symbol('Concept.Implements')
 export const Extends = Symbol('PartialClass.Extends')
-export const Defines = Symbol('PartialType.Defines')
+export const Defines = Symbol('Attachments.Defines')
 
 
 

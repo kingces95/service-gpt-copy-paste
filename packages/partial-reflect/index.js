@@ -14,7 +14,8 @@ import {
 
 export { 
   isTransparent,
-  isPartialType 
+  isPartialType,
+  compositionOf,
 } from '@kingjs/partial-reflector'
 
 const MetaKeys = [

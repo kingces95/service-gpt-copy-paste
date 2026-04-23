@@ -1,11 +1,8 @@
 import { assert } from '@kingjs/assert'
 import { getOwn } from '@kingjs/get-own'
-import { asIterable } from '@kingjs/as-iterable'
 import { asMetadata } from '@kingjs/as-metadata'
-import { isPojo } from '@kingjs/pojo-test'
 import { isAbstract } from '@kingjs/abstract'
 import { linearize } from '@kingjs/linearize'
-import { Es6Reflect } from '@kingjs/es6-reflect'
 import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { Es6Reflector } from '@kingjs/es6-reflector'
 import { Es6Prototype } from '@kingjs/es6-prototype'
@@ -16,6 +13,7 @@ import {
   From,
   Transparent,
   PartialTypes,
+  Postcondition,
 } from '@kingjs/partial-symbols'
 
 // _________________________________________________________________________
@@ -463,7 +461,8 @@ const MetaSymbols = [
   Adjacent, 
   From,
   Transparent,  
-  Compile, 
+  Compile,
+  Postcondition,
 ]
 
 // Before a type of PartialType can be decorated with meta symbols, it must
@@ -611,15 +610,62 @@ export function isTransparent(type) {
   return !!type[Transparent]
 }
 
-export function publishExtensions(type, ...partialTypes) {
-  let set = getOwn(type, PartialTypes)
-  if (!set) type[PartialTypes] = set = new Set()
-    
-  for (const partialType of partialTypes) {
-    if (isTransparent(partialType)) continue
-    set.delete(partialType) // deduplicate
-    set.add(partialType)
+class PartialTypesSet {
+  static tryGet(type) {
+    return getOwn(type, PartialTypes)
   }
+  static get(type) {
+    let set = this.tryGet(type)
+    if (!set) type[PartialTypes] = set = new PartialTypesSet()
+    return set
+  }
+
+  #set
+
+  constructor() {
+    this.#set = new Set()
+  }
+
+  [Symbol.iterator]() {
+    return this.#set[Symbol.iterator]()
+  }
+
+  add(...partialTypes) {
+    for (const partialType of partialTypes) {
+      if (isTransparent(partialType)) continue
+      this.#set.delete(partialType) // deduplicate
+      this.#set.add(partialType)
+    }
+  }
+
+  has(partialType) {
+    return this.#set.has(partialType)
+  }
+}
+
+export function compositionOf(instance, partialType) {
+  const type = instance?.constructor
+  if (!type) 
+    return false
+
+  if (type.prototype == instance || isPartialType(type)) 
+    return true // for now...
+
+  const partialTypes = PartialTypesSet.tryGet(type)
+  if (!partialTypes) 
+    return false
+
+  return partialTypes.has(partialType)
+}
+
+export function publishExtensions(type, ...partialTypes) {
+  for (const partialType of partialTypes) {
+    const postcondition = partialType[Postcondition]
+    if (postcondition)
+      postcondition.call(partialType, type)
+  }
+
+  PartialTypesSet.get(type).add(...partialTypes)
 }
 
 function *ownPartialTypes(type) {
@@ -628,7 +674,7 @@ function *ownPartialTypes(type) {
     .filter(partialType => !isTransparent(partialType))
 
   // via procedure (e.g extend() or implement())
-  yield* getOwn(type, PartialTypes) || []
+  yield* PartialTypesSet.tryGet(type) || []
 }
 
 const KnownTypes = [ Object, Function, PartialType ]

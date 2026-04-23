@@ -72,6 +72,8 @@ export class Es6Descriptor {
     if (actualType == expectedType) return true
     if (actualType == 'field') {
       if (expectedType == 'getter') return true
+      const isFunction = typeof actualDescriptor.value == 'function'
+      if (expectedType == 'method' && isFunction) return true
     }
     if (actualType == 'property') {
       if (expectedType == 'getter') return true

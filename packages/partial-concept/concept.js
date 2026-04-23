@@ -1,8 +1,10 @@
+import { assert } from '@kingjs/assert'
 import { abstractify } from '@kingjs/abstract'
 import { PartialType } from '@kingjs/partial-type'
-import { Attachments } from '../partial-attachments'
+import { Attachments } from '@kingjs/partial-attachments'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { PartialMetadata } from '@kingjs/partial-metadata'
+import { compositionOf, isPartialType } from '@kingjs/partial-reflect'
 import { 
   Adjacent,
   Defines, 
