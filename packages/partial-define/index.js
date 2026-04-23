@@ -3,14 +3,14 @@ import {
   AbstractAttachments 
 } from '@kingjs/partial-attachments'
 import { extend } from '@kingjs/partial-extend'
-import { Define } from '@kingjs/partial-symbols'
+import { From } from '@kingjs/partial-symbols'
 
 export function define(type, definitions = { }) {
-  const partialType = Attachments[Define](definitions)
+  const partialType = Attachments[From](definitions)
   extend(type, partialType)
 }
 
 export function defineAbstract(type, definitions = { }) {
-  const partialType = AbstractAttachments[Define](definitions)
+  const partialType = AbstractAttachments[From](definitions)
   extend(type, partialType)
 }

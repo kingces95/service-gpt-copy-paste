@@ -2,18 +2,17 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { abstract } from '@kingjs/abstract'
 import { Attachments } from '../partial-attachments'
-import { PartialReflect } from '@kingjs/partial-reflect'
+import { PartialReflect, isPartialType } from '@kingjs/partial-reflect'
 import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { Es6Reflect } from '@kingjs/es6-reflect'
-import { PartialType, Compile, Declarations } from '@kingjs/partial-type'
+import { PartialType, Compile, Adjacent } from '@kingjs/partial-type'
 import { extend } from '@kingjs/partial-extend'
 import { Attachments } from '../partial-attachments'
-import { Define } from '@kingjs/partial-symbols'
+import { From } from '@kingjs/partial-symbols'
 
 function *partialTypes(type) {
   for (const current of PartialReflect.baseTypes(type)) {
-    if (!PartialReflect.isExtensionOf(
-      current, PartialType, { minDepth: 2 })) continue
+    if (!isPartialType(current)) continue
     yield current
   }
 }
@@ -67,7 +66,7 @@ describe('A type', () => {
     let method
     beforeEach(() => {
       method = function method() { }
-      extend(type, Attachments[Define]({ method }))
+      extend(type, Attachments[From]({ method }))
     })
 
     it('should have the method', () => {
@@ -79,7 +78,7 @@ describe('A type', () => {
 describe('MyPojoType', () => {
   let MyPojoType
   beforeEach(() => {
-    MyPojoType = Attachments[Define]({ })
+    MyPojoType = Attachments[From]({ })
   })
 
   describe('with method', () => {
@@ -118,7 +117,7 @@ describe('PartialClass', () => {
   
   beforeEach(() => {
     PartialClass = class PartialClass extends PartialType { 
-      static [Declarations] = { 
+      static [Adjacent] = { 
         [ExtensionSymbol]: Attachments,
         [DefinesSymbol]: PartialClass,
       }
@@ -126,8 +125,7 @@ describe('PartialClass', () => {
   })
 
   it('should not be recognized as a partial class', () => {
-    expect(PartialReflect.isExtensionOf(
-      PartialClass, PartialType, { minDepth: 2 })).toBe(false)
+    expect(isPartialType(PartialClass)).toBe(false)
   })
   it('should return null for its partial class', () => {
     expect(getPartialType(PartialClass)).toBe(null)
@@ -152,8 +150,7 @@ describe('PartialClass', () => {
     })
 
     it('should be recognized as partial classes', () => {
-      expect(PartialReflect.isExtensionOf(
-      MyExtension, PartialType, { minDepth: 2 })).toBe(true)
+      expect(isPartialType(MyExtension)).toBe(true)
     })
     it('should return PartialClass as their partial class', () => {
       expect(getPartialType(MyExtension)).toBe(PartialClass)
@@ -207,7 +204,7 @@ describe('PartialClass', () => {
     describe('with MyAnonymousSubExtension', () => {
       let MyAnonymousSubExtension
       beforeEach(() => {
-        MyAnonymousSubExtension = Attachments[Define]({ })
+        MyAnonymousSubExtension = Attachments[From]({ })
         MyExtension[ExtensionSymbol] = [ MyAnonymousSubExtension ]
       })
 

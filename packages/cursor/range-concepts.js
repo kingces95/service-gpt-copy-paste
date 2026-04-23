@@ -12,7 +12,7 @@ import { Defines } from '@kingjs/partial-class'
 export class RangeConcept extends Concept {
   static cursorType = CursorConcept
 
-  static [Defines] = [{
+  static [Defines] = {
     get cursorType() { return this.constructor.cursorType },
     // implement iterator
     *[Symbol.iterator]() { 
@@ -21,7 +21,7 @@ export class RangeConcept extends Concept {
       for (let cursor = begin; !cursor.equals(end); cursor.step())
         yield cursor.value
     },
-  }]
+  }
 
   get cursorType() { }
   begin() { }

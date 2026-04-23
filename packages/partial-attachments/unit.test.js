@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Attachments } from '@kingjs/partial-attachments'
-import { Define } from '@kingjs/partial-symbols'
+import { From } from '@kingjs/partial-symbols'
 
 describe('A method', () => {
   let method
@@ -16,7 +16,7 @@ describe('A method', () => {
     describe('defined as Attachments', () => {
       let arg
       beforeEach(() => {
-        arg = Attachments[Define](pojo)
+        arg = Attachments[From](pojo)
       })
       it('should be a type that extends Attachments', () => {
         expect(arg.prototype).toBeInstanceOf(Attachments)

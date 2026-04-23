@@ -8,7 +8,7 @@ import { Attachments } from '@kingjs/partial-attachments'
 import { } from "@kingjs/info-to-pojo"
 import { toEqualAsSet } from '@kingjs/vitest'
 import { Attachments } from '@kingjs/partial-attachments'
-import { Define } from '@kingjs/partial-symbols'
+import { From } from '@kingjs/partial-symbols'
 
 expect.extend({ toEqualAsSet })
 
@@ -69,7 +69,7 @@ const ConceptMd = {
 }
 
 const MyExtensionsMd = {
-  ctor: Attachments[Define]({ }),
+  ctor: Attachments[From]({ }),
   toString: '[attachmentsInfo]',
   isKnown: false,
   isTransparent: true,
@@ -431,7 +431,7 @@ const MyPartialClassExtensionMemberMd = {
 
 const MyPojoMemberMd = {
   name: 'member',
-  cls: Attachments[Define]({ member() { } }),
+  cls: Attachments[From]({ member() { } }),
   type: 'method',
   isMethod: true,
   toString: 'member, method, [attachmentsInfo]',
@@ -442,7 +442,7 @@ const MyPojoMemberMd = {
 
 const MyPojoLambdaMd = {
   name: 'member',
-  cls: Attachments[Define]({ member: () => { } }),
+  cls: Attachments[From]({ member: () => { } }),
   type: 'method',
   isMethod: true,
   toString: 'member, method, [attachmentsInfo]',

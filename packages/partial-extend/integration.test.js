@@ -6,7 +6,7 @@ import { define } from '@kingjs/partial-define'
 import { } from "@kingjs/info-to-pojo"
 import { PartialClass } from '@kingjs/partial-class'
 import { Attachments } from '@kingjs/partial-attachments'
-import { Define } from '@kingjs/partial-symbols'
+import { From } from '@kingjs/partial-symbols'
 
 const filter = {
   isNonPublic: false, isKnown: false,
@@ -78,7 +78,7 @@ describe('Kitchen sink', () => {
       member1() { return 42 }
       member2() { return 42 }
     }],
-    ['lambda', Attachments[Define]({
+    ['lambda', Attachments[From]({
       getter0: { get: () => { } },
       get getter1() { },
 

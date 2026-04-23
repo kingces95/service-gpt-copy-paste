@@ -4,7 +4,7 @@ import { Es6Reflect } from '@kingjs/es6-reflect'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { Concept } from '@kingjs/partial-concept'
 import { Attachments } from '@kingjs/partial-attachments'
-import { Define } from '@kingjs/partial-symbols'
+import { From } from '@kingjs/partial-symbols'
 
 function isKey(key) {
   return typeof key === 'string' || typeof key === 'symbol'
@@ -18,7 +18,7 @@ export function implement(type, concept, implementation = { }) {
   assert(!Es6Reflect.isExtensionOf(type, Concept),
     'Expected type to not be a PartialType.')
 
-  implementation = Attachments[Define](implementation)
+  implementation = Attachments[From](implementation)
 
   // restrict implementation to members defined by the concept.
   const conceptMembers = new Set(PartialReflect.keys(concept).filter(isKey))

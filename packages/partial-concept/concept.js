@@ -4,7 +4,7 @@ import { Attachments } from '../partial-attachments'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { PartialMetadata } from '@kingjs/partial-metadata'
 import { 
-  Declarations,
+  Adjacent,
   Defines, 
   Implements, 
   Compile 
@@ -13,7 +13,7 @@ import {
 export { Defines, Implements } from '@kingjs/partial-symbols'
 
 export class Concept extends PartialType {
-  static [Declarations] = {
+  static [Adjacent] = {
     [Defines]: Attachments,
     [Implements]: Concept,
   }

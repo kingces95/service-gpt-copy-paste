@@ -5,7 +5,7 @@ import { } from "@kingjs/info-to-pojo"
 import { PartialClass } from '@kingjs/partial-class'
 import { abstract } from '@kingjs/abstract'
 import { Attachments } from '@kingjs/partial-attachments'
-import { Define } from '@kingjs/partial-symbols'
+import { From } from '@kingjs/partial-symbols'
 
 describe('TypeInfo for PartialClass', () => {
   let fn
@@ -112,14 +112,14 @@ describe('A member', () => {
     //   'static const hidden sealed prototype { value: object }' ],
     ])('%s', (_, name, cls, expected) => {
     it('has a toString', async () => {
-      const partialType = Attachments[Define](cls)
+      const partialType = Attachments[From](cls)
       const fnInfo = ClassInfo.from(partialType)
       const member = fnInfo.getOwnMember(name) 
         ?? fnInfo.getOwnStaticMember(name)
       expect(member.toString()).toBe(expected) 
     })
     it('does not equal Object.toString member', async () => {
-      const partialType = Attachments[Define](cls)
+      const partialType = Attachments[From](cls)
       const fnInfo = ClassInfo.from(partialType)
       const member = fnInfo.getOwnMember(name) 
         ?? fnInfo.getOwnStaticMember(name)

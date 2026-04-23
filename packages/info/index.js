@@ -10,9 +10,8 @@ import {
   Es6DescriptorInfo,
 } from "@kingjs/es6-info"
 import { isAbstract } from "@kingjs/abstract"
-import { PartialReflect } from '@kingjs/partial-reflect'
+import { PartialReflect, isTransparent } from '@kingjs/partial-reflect'
 import { PartialMetadata } from '@kingjs/partial-metadata'
-import { Transparent } from '@kingjs/partial-symbols'
 
 import { getMetadata } from './metadata.js'
 
@@ -63,7 +62,7 @@ export class TypeInfo {
   get name() { return this.id.value }
   get isNonPublic() { return this.id.isNonPublic }
   get isAnonymous() { return this.id.isAnonymous }
-  get isTransparent() { return !!this.ctor[Transparent] }
+  get isTransparent() { return isTransparent(this.ctor) }
 
   get base() { 
     return TypeInfo.from(PartialReflect.getExtendedType(this.ctor)) 

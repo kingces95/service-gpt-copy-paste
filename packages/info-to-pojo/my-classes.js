@@ -4,12 +4,12 @@ import { implement } from "@kingjs/partial-implement"
 import { Concept, Implements } from "@kingjs/partial-concept"
 import { extend } from "@kingjs/partial-extend"
 import { Attachments } from "@kingjs/partial-attachments"
-import { Define } from "@kingjs/partial-symbols"
+import { From } from "@kingjs/partial-symbols"
 
 const MySymbol = Symbol.for('my-symbol')
 const MyStaticSymbol = Symbol.for('my-static-symbol')
 
-export const MyExtensions = Attachments[Define]({
+export const MyExtensions = Attachments[From]({
   myMethod() { },
   get myGetter() { },
   myAbstractGetter: { get: abstract },

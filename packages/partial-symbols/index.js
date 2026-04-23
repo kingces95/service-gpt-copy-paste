@@ -3,14 +3,14 @@
 // PartialTypes is a static symbol applied to extensions of 
 // PartialType which describes how those extensions form a poset of 
 // PartialType types.
-// export const Declarations = Symbol('PartialType.declarations')
+// export const Adjacent = Symbol('PartialType.declarations')
 
 // For example, PartialTypes is used by PartialClass to designate
 // the Extends symbol as containing an adjacency list to other PartialType
 // types of type PartialClass and Attachments. 
 
 //    class PartialClass extends PartialType {
-//      static [Declarations] = {
+//      static [Adjacent] = {
 //        [Extends]: { 
 //          expectedType: [ PartialClass, Attachments ],
 //        }
@@ -90,9 +90,11 @@
 //     equals(other) { }
 //   }
 
-export const Declarations = Symbol('PartialType.declarations')
+export const PartialTypes = Symbol('PartialType.PartialTypes')
+export const Adjacent = Symbol('PartialType.declarations')
 export const Compile = Symbol('PartialType.compile')
-export const Define = Symbol('PartialType.define')
+export const From = Symbol('PartialType.From')
+export const Transparent = Symbol('PartialType.Transparent')
 
 export const CreateThunk = Symbol('PartialType.CreateThunk')
 export const Preconditions = Symbol('PartialType.Preconditions')
@@ -103,8 +105,6 @@ export const TypePostcondition = Symbol('PartialType.TypePostcondition')
 export const Implements = Symbol('Concept.Implements')
 export const Extends = Symbol('PartialClass.Extends')
 export const Defines = Symbol('PartialType.Defines')
-export const PartialTypes = Symbol('PartialType.PartialTypes')
 
-export const Transparent = Symbol('PartialType.Transparent')
 
 
