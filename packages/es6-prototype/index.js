@@ -1,4 +1,5 @@
 import { assert } from '@kingjs/assert'
+import { Descriptor } from '@kingjs/descriptor'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
 import { instanceOf } from '@kingjs/instance-of'
 import { asSet } from '@kingjs/as-set'
@@ -89,6 +90,11 @@ export class Es6Prototype {
     const hierarchy = this.hierarchy(type)
     hierarchy.next() // skip self
     yield* hierarchy
+  }
+
+  isComposedOf(type, targetType) {
+    return this.hierarchy(type)
+      .some(baseType => baseType === targetType)
   }
 
   hasOwnKey(type, name) {
@@ -190,11 +196,63 @@ export class Es6Prototype {
   }
 
   canDuckCast(type, instance) {
-    const prototype = this.getPrototype(type)
-    return Prototype.canDuckCast(prototype, instance, {
-      filter: (host, key, descriptor) => !this.isKnownKey(host, key),
-      compare: Es6Descriptor.canDuckCast,
-    })
+    let name
+    let instanceDescriptor
+    for (const current of this.descriptors(type)) {
+      const typeofCurrent = typeof current
+      assert (typeofCurrent == 'string'
+        || typeofCurrent == 'symbol'
+        || typeofCurrent == 'object'
+        || typeofCurrent == 'function')
+
+      switch (typeofCurrent) {
+        case 'string': 
+        case 'symbol': 
+          name = current
+          instanceDescriptor = Descriptor.get(instance, name)
+          if (!instanceDescriptor) return false
+          break
+          
+          case 'object': {
+          const shapeDescriptor = current
+          if (!Descriptor.canSoundLike(instanceDescriptor, instance, 
+            Es6Descriptor.soundof(shapeDescriptor)))
+            return false
+        }
+        case 'function': break
+      }
+    }
+    return true
+  }
+
+  canStrictDuckCast(type, instance) {
+    let name
+    let instanceDescriptor
+    for (const current of this.descriptors(type)) {
+      const typeofCurrent = typeof current
+      assert (typeofCurrent == 'string'
+        || typeofCurrent == 'symbol'
+        || typeofCurrent == 'object'
+        || typeofCurrent == 'function')
+
+      switch (typeofCurrent) {
+        case 'string': 
+        case 'symbol': 
+          name = current
+          instanceDescriptor = Descriptor.get(instance, name)
+          if (!instanceDescriptor) return false
+          break
+          
+          case 'object': {
+          const shapeDescriptor = current
+          if (!Es6Descriptor.canSoundLike(instanceDescriptor, 
+            Es6Descriptor.soundof(shapeDescriptor)))
+            return false
+        }
+        case 'function': break
+      }
+    }
+    return true
   }
 
   *ownValues(type, { instance, descriptorType, instanceOf } = { }) {

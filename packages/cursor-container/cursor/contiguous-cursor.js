@@ -11,6 +11,8 @@ import {
   IndexableContainerConcept,
   BufferContainerConcept,
   ByteContainerConept,
+  ContiguousContainerConcept,
+  OutputContainerConcept,
   EditableContainerConcept,
 } from '../container-concepts.js'
 import { IndexableCursor } from './indexable-cursor.js'
@@ -58,6 +60,9 @@ export class ContiguousCursor extends IndexableCursor {
     }
 
     static {
+      implement(this, ContiguousContainerConcept)
+      implement(this, OutputContainerConcept)
+  
       implement(this, FrontEditableContainerConcept, {
         unshift(value) { this.insert(this.begin(), value) },
         shift() { return this.remove(this.begin()) },

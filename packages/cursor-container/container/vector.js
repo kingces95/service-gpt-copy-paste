@@ -7,6 +7,8 @@ import {
   BackEditableContainerConcept,
   CountableContainerConcept,
   IndexableContainerConcept,
+  OutputContainerConcept,
+  RandomAccessContainerConcept,
 } from '../container-concepts.js'
 
 const {
@@ -27,6 +29,9 @@ export class Vector extends PartialProxy {
 
   static {
     extend(this, PartialIndexableContainer)
+
+    implement(this, RandomAccessContainerConcept)
+    implement(this, OutputContainerConcept)
 
     implement(this, FrontEditableContainerConcept, {
       shift() { return this._array.shift() },

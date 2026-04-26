@@ -2,9 +2,8 @@ import { assert } from '@kingjs/assert'
 import { abstractify } from '@kingjs/abstract'
 import { PartialType } from '@kingjs/partial-type'
 import { Attachments } from '@kingjs/partial-attachments'
-import { Es6Reflect } from '@kingjs/es6-reflect'
 import { PartialMetadata } from '@kingjs/partial-metadata'
-import { compositionOf, isPartialType } from '@kingjs/partial-reflect'
+import { PartialReflect } from '@kingjs/partial-reflect'
 import { 
   Adjacent,
   Defines, 
@@ -34,13 +33,14 @@ export class Concept extends PartialType {
     if (this == Concept) 
       return false
 
-    if (typeof instance != 'object' || instance == null) 
+    const ctor = instance?.constructor
+    if (typeof ctor != 'function') 
       return false
 
-    if (!satisfiesAssociations(this, instance)) 
+    if (!satisfiesAssociations(ctor, this)) 
       return false
 
-    return Es6Reflect.canDuckCast(this, instance)
+    return PartialReflect.isComposedOf(ctor, this)
   }
 
   static [Compile](descriptor) {
@@ -69,9 +69,7 @@ export class Concept extends PartialType {
   // static cursorType = InputCursorConcept
 
 // would be true because InputCursor satisfies InputCursorConcept.
-function satisfiesAssociations(concept, instance) {
-  const ctor = instance.constructor
-
+function satisfiesAssociations(ctor, concept) {
   for (const { value: associatedConcept, key } of PartialMetadata.values(
     concept, { extensionOf: Concept, includeOverridden: true })) {
 
@@ -79,8 +77,7 @@ function satisfiesAssociations(concept, instance) {
     if (!(typeof associatedType == 'function')) 
       return false      
     
-    if (!(associatedType.prototype instanceof associatedConcept)) 
-      return false        
+    return PartialReflect.isComposedOf(associatedType, associatedConcept)
   }
   return true
 }

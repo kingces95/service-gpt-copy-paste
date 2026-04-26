@@ -1,7 +1,69 @@
 import { assert } from '@kingjs/assert'
 import { PartialType } from '@kingjs/partial-type'
-import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { Postcondition } from '@kingjs/partial-symbols'
+import { PartialReflect } from '@kingjs/partial-reflect'
+
+// ____________________________________________________________________________
+// DUCK TESTING
+
+// A Shape can be used to test if an instance satisfies a shape using 
+// instanceof. That test is commonly called duck typing or duck casting. 
+// The idea is that if an instance has the right shape, then it can be treated
+// as if it were an instance of the shape. For example, if an instance has a
+// method called "then", then it can be treated as a thenable and used with 
+// Promise.resolve.
+
+// A Shape declaration is precise ES6 metadata:
+
+//    method  => wants callable
+//    getter  => wants readable
+//    setter  => wants writable
+
+// But a candidate object is messy JS reality. For example, EventTarget has 
+// methods that are enumerable where as Es6 can be relied upon to make methods
+// non-enumerable. Additionally, a candidate may have a getter that returns a 
+// function and that should satisfy a method requirement. For example, to know 
+// whether candidate.foo is a a method, we must evaluate:
+
+//    typeof candidate.foo === 'function'
+
+// That can invoke a getter. So duck testing is not a pure descriptor-only 
+// reflection operation. It is closer to:
+
+//    observational structural probe
+
+// That means it may:
+
+//    invoke getters
+//    trigger proxy traps
+//    throw
+//    observe changing state
+//    have side effects
+
+// ____________________________________________________________________________
+// SHAPE vs CONCEPT
+
+// Concepts are opt-in using Es6 syntax so can take dependencies on the
+// types of descriptors Es6 creates. Instances that use Concepts must opt-in. 
+// Shapes, on the other hand, are defined in Es6 but the instances are wild 
+// and unregulated so we have to be permissive and observational when testing 
+// instanceof. So the relationship between shape and concept is:
+
+//    Shape definitions are strict.
+//    Shape matching is permissive and observational.
+//    Concept matching is certified and non-observational.
+
+// ____________________________________________________________________________
+// TYPESCRIPT vs SHAPE vs CONCEPT
+
+//    TypeScript:
+//      structural typing over declarations
+//    
+//    Shape:
+//      structural typing over observations
+//    
+//    Concept:
+//      structural typing over certification
 
 const toString = Object.prototype.toString
 
@@ -42,7 +104,7 @@ export class Shape extends PartialType {
     if (!Shape.#testProtoPrototype(this, instance))
       return false
 
-    return Es6UserReflect.canDuckCast(this, Object(instance))
+    return PartialReflect.canDuckCast(this, Object(instance))
   }
 
   static #testTypeof(shape, instance) {

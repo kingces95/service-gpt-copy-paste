@@ -20,6 +20,7 @@ import {
   ContainerConcept,
   ForwardContainerConcept,
   FrontEditableContainerConcept,
+  OutputContainerConcept,
 } from '../container-concepts.js'
 import { 
   ContainerCursor,
@@ -129,6 +130,8 @@ export class List extends PartialProxy {
     })
 
     implement(this, ForwardContainerConcept)
+
+    implement(this, OutputContainerConcept)
 
     implement(this, FrontEditableContainerConcept, {
       get front() { return this._rootLink.next.value },

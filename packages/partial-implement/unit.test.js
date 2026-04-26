@@ -29,6 +29,7 @@ describe('A type', () => {
     })
     it('should satisfy the concept', () => {
       expect(null).not.toBeInstanceOf(MyConcept)
+      implement(type, MyConcept)
       expect(type.prototype).toBeInstanceOf(MyConcept)
     })
     it('should throw implementing itself', () => {
@@ -143,8 +144,9 @@ describe('A type', () => {
             expect(descriptor.get).toBe(undefined)
             expect(descriptor.set).toBe(abstract)
           })
-          it('should not satisfy the concept', () => {
-            expect(type.prototype instanceof MyConcept).toBe(false)
+          it('should still satisfy the concept', () => {
+            // a type's composition is not dynamic
+            expect(type.prototype instanceof MyConcept).toBe(true)
           })
         })
         describe('and removes the setter', () => {
@@ -159,8 +161,9 @@ describe('A type', () => {
             expect(descriptor.get).toBe(abstract)
             expect(descriptor.set).toBe(undefined)
           })
-          it('should not satisfy the concept', () => {
-            expect(type.prototype instanceof MyConcept).toBe(false)
+          it('should satisfy the concept', () => {
+            // a type's composition is not dynamic
+            expect(type.prototype instanceof MyConcept).toBe(true)
           })
         })
       })
@@ -195,8 +198,9 @@ describe('A type', () => {
               get: abstract,
             })
           }) 
-          it('should not satisfy the concept', () => {
-            expect(type.prototype instanceof MyConcept).toBe(false)
+          it('should still satisfy the concept', () => {
+            // a type's composition is not dynamic
+            expect(type.prototype instanceof MyConcept).toBe(true)
           })
         })
       })
@@ -250,6 +254,7 @@ describe('A type', () => {
           type.tagType = class { 
             associatedMethod() { }
           }
+          implement(type.tagType, associatedConcept)
           implement(type, MyConcept)
         })
         it('should satisfy the concept', () => {

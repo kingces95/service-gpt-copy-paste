@@ -2,17 +2,21 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { abstract } from '@kingjs/abstract'
 import { Attachments } from '../partial-attachments'
-import { PartialReflect, isPartialType } from '@kingjs/partial-reflect'
+import { PartialReflect } from '@kingjs/partial-reflect'
 import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { Es6Reflect } from '@kingjs/es6-reflect'
-import { PartialType, Compile, Adjacent } from '@kingjs/partial-type'
+import { PartialType, isPartialType } from '@kingjs/partial-type'
 import { extend } from '@kingjs/partial-extend'
 import { Attachments } from '../partial-attachments'
-import { From } from '@kingjs/partial-symbols'
+import { 
+  From,
+  Compile, 
+  Adjacent 
+} from '@kingjs/partial-symbols'
 
 function *partialTypes(type) {
   for (const current of PartialReflect.baseTypes(type)) {
-    if (!isPartialType(current)) continue
+    if (!PartialType.isUserDefined(current)) continue
     yield current
   }
 }
@@ -125,7 +129,7 @@ describe('PartialClass', () => {
   })
 
   it('should not be recognized as a partial class', () => {
-    expect(isPartialType(PartialClass)).toBe(false)
+    expect(PartialType.isUserDefined(PartialClass)).toBe(false)
   })
   it('should return null for its partial class', () => {
     expect(getPartialType(PartialClass)).toBe(null)
@@ -150,7 +154,7 @@ describe('PartialClass', () => {
     })
 
     it('should be recognized as partial classes', () => {
-      expect(isPartialType(MyExtension)).toBe(true)
+      expect(PartialType.isUserDefined(MyExtension)).toBe(true)
     })
     it('should return PartialClass as their partial class', () => {
       expect(getPartialType(MyExtension)).toBe(PartialClass)

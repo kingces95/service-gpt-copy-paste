@@ -1,4 +1,5 @@
 import { assert } from '@kingjs/assert'
+import { isPojo } from '@kingjs/pojo-test'
 import { getOwn } from '@kingjs/get-own'
 import { asMetadata } from '@kingjs/as-metadata'
 import { isAbstract } from '@kingjs/abstract'
@@ -11,9 +12,10 @@ import {
   Compile,
   Adjacent,
   From,
-  Transparent,
+  Transparent, isTransparent,
   PartialTypes,
   Postcondition,
+  CreateThunk,
 } from '@kingjs/partial-symbols'
 
 // _________________________________________________________________________
@@ -438,7 +440,7 @@ function *mergeOrder(type) {
 // not overwrite concrete members. Instead, the inherited concrete member
 // is substituted. 
 
-export function isFirstOrOverride(descriptor, hasExisting) {
+function isFirstOrOverride(descriptor, hasExisting) {
   return !hasExisting || !isAbstract(descriptor)
 }
 
@@ -482,17 +484,13 @@ const MetaSymbols = [
 //    class A extends PartialClass { ... }
 //    class B extends Concept { ... }
 
-// Testing for user defined partial types is done using isPartialType().
-// Note isPartialType() returns false for PartialType and its direct
-// extensions (e.g. PartialClass and Concept) but returns true for user
-// defined partial types (e.g. A, B). 
+// Testing for user defined partial types is done using 
 
-export function isPartialType(type) {
-  if (!type) return false
-  if (type == PartialType) return true
-  if (Object.getPrototypeOf(type) == PartialType) return false
-  return Es6UserReflect.isExtensionOf(type, PartialType)
-}
+//    PartialType.isUserDefined(type) // found in @kingjs/partial-type
+
+// Note PartialType.isUserDefined returns false for PartialType and its 
+// direct extensions (e.g. PartialClass and Concept) but returns true for 
+// user defined partial types (e.g. A, B). 
 
 // User defined partial type can extend other user defined partial
 // types. For example, Base, Left and Right could be defined like,
@@ -504,11 +502,11 @@ export function isPartialType(type) {
 function getBaseType(type) {
   if (!type) return null
 
-  if (!isPartialType(type))
+  if (!PartialType.isUserDefined(type))
     return Es6UserReflect.getBaseType(type)
 
   const result = Es6UserReflect.getBaseType(type)
-  if (!isPartialType(result))
+  if (!PartialType.isUserDefined(result))
     return null
 
   return result
@@ -606,66 +604,57 @@ function *ownDeclaredAdjacentPartialTypes(type) {
   }
 }
 
-export function isTransparent(type) {
-  return !!type[Transparent]
-}
+class AdjacentTypes {
 
-class PartialTypesSet {
-  static tryGet(type) {
-    return getOwn(type, PartialTypes)
-  }
-  static get(type) {
-    let set = this.tryGet(type)
-    if (!set) type[PartialTypes] = set = new PartialTypesSet()
-    return set
+  static publish(type, ...types) {
+    AdjacentTypes.#get(type).add(...types)
   }
 
-  #set
+  static *load(type) {
+    const entry = AdjacentTypes.#get(type)
+    yield* entry.load()
+  }
+
+  static #get(type) {
+    let entry = this.#directory.get(type)
+    if (!entry) this.#directory.set(type, entry = new AdjacentTypes())
+    return entry
+  }
+  
+  static #directory = new Map()
+
+  #adjacentTypes
+  #loaded = false
 
   constructor() {
-    this.#set = new Set()
+    this.#adjacentTypes = new Set()
   }
 
-  [Symbol.iterator]() {
-    return this.#set[Symbol.iterator]()
+  *load() { 
+    this.#loaded = true 
+    yield* this.#adjacentTypes
   }
 
-  add(...partialTypes) {
-    for (const partialType of partialTypes) {
-      if (isTransparent(partialType)) continue
-      this.#set.delete(partialType) // deduplicate
-      this.#set.add(partialType)
+  add(...types) {
+    assert(!this.#loaded,
+      'Type cannot be modified after it has been loaded.')
+
+    for (const type of types) {
+      if (isTransparent(type)) continue
+      this.#adjacentTypes.delete(type) // deduplicate
+      this.#adjacentTypes.add(type)
     }
   }
-
-  has(partialType) {
-    return this.#set.has(partialType)
-  }
 }
 
-export function compositionOf(instance, partialType) {
-  const type = instance?.constructor
-  if (!type) 
-    return false
-
-  if (type.prototype == instance || isPartialType(type)) 
-    return true // for now...
-
-  const partialTypes = PartialTypesSet.tryGet(type)
-  if (!partialTypes) 
-    return false
-
-  return partialTypes.has(partialType)
-}
-
-export function publishExtensions(type, ...partialTypes) {
+function publishExtensions(type, ...partialTypes) {
   for (const partialType of partialTypes) {
     const postcondition = partialType[Postcondition]
     if (postcondition)
       postcondition.call(partialType, type)
   }
 
-  PartialTypesSet.get(type).add(...partialTypes)
+  AdjacentTypes.publish(type, ...partialTypes)
 }
 
 function *ownPartialTypes(type) {
@@ -673,8 +662,8 @@ function *ownPartialTypes(type) {
   yield* ownDeclaredAdjacentPartialTypes(type)
     .filter(partialType => !isTransparent(partialType))
 
-  // via procedure (e.g extend() or implement())
-  yield* PartialTypesSet.tryGet(type) || []
+  // via procedure (e.g extend())
+  yield* AdjacentTypes.load(type)
 }
 
 const KnownTypes = [ Object, Function, PartialType ]
@@ -711,7 +700,7 @@ const unifiedPrototype = new Es6Prototype({
 export function create({
   knownStaticKeys
 }) {
-  return Es6Reflector.create({
+  const PartialReflect = Es6Reflector.create({
     knownTypes: KnownTypes, 
     knownTypeFn: KnownTypeFn,
     knownKeys: KnownKeys,
@@ -721,4 +710,27 @@ export function create({
       return unifiedPrototype.reduce(mergeOrder(type), { map: resolve })
     }
   })
+
+  function extend(type, partialType) {
+    assert(!isPojo(type))
+    
+    const hosts = new Set()
+    const prototype = type.prototype
+    PartialReflect.copyTo(partialType, prototype, {
+      createThunk: (key, descriptor) => CreateThunk in type 
+        ? type[CreateThunk](key, descriptor) 
+        : descriptor,
+
+      filter: (host, key, descriptor) =>
+        isFirstOrOverride(descriptor, key in prototype),
+
+      onHost: (host) => 
+        hosts.add(host),
+    })
+
+    const mergeOrder = [...hosts].reverse()
+    publishExtensions(type, ...mergeOrder)
+  }
+  
+  return { PartialReflect, extend }
 }

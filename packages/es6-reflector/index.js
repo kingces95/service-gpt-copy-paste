@@ -228,21 +228,11 @@ export class Es6Reflector {
     yield* this.#areExtensionsOf(types, filter)
   }
   *baseTypes(type, { filter } = { }) { 
-    const types = this.#instance.hierarchy(type)
-    types.next() // skip self
+    const types = this.#instance.baseTypes(type)
     yield* this.#areExtensionsOf(types, filter)
-  }
-  getBaseType(type) {
-    return this.#instance.getBaseType(type)
-  }
-  canDuckCast(type, targetType) {
-    return this.#instance.canDuckCast(type, targetType)
   }
   
   // shared methods
-  getPrototype(type, { isStatic } = { }) {
-    return this.#reflect(isStatic).getPrototype(type)
-  }
   typeof(type, key, descriptor, { isStatic } = { }) {
     const descriptorType = Es6Descriptor.typeof(descriptor)
 
@@ -281,7 +271,38 @@ export class Es6Reflector {
       .filter(this.#extensionOfFilter(extensionOf))
   }
   
-  // thunks
+  // instance thunks
+  static {
+    const staticThunks = [
+      'getBaseType', 'isComposedOf', 'canDuckCast', 'canStrictDuckCast'
+    ]
+
+    for (const name of staticThunks) {
+      const member = function(...args) {
+        return this.#instance[name].apply(this.#instance, args)
+      }
+      Object.defineProperty(this.prototype, name, { 
+        value: member,
+        enumerable: false,
+        configurable: true,
+        writable: true,
+      })
+    }
+  }
+  // getBaseType(type) {
+  //   return this.#instance.getBaseType(type)
+  // }
+  // isComposedOf(type, targetType) {
+  //   return this.#instance.isComposedOf(type, targetType)
+  // }
+  // canDuckCast(sourceType, targetType) {
+  //   return this.#instance.canDuckCast(sourceType, targetType)
+  // }
+  // canStrictDuckCast(sourceType, targetType) {
+  //   return this.#instance.canStrictDuckCast(sourceType, targetType)
+  // }
+
+  // shared thunks
   static {
     const thunks = [
       'getPrototype', 'isKnown', 'isKnownKey', 'hasOwnKey', 'hasKey',

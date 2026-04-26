@@ -6,6 +6,7 @@ import { PartialReflect } from '@kingjs/partial-reflect'
 import { PartialMetadata } from '@kingjs/partial-metadata'
 import { Concept, Implements } from '@kingjs/partial-concept'
 import { abstract } from '@kingjs/abstract'
+import { implement } from '@kingjs/partial-implement'
 
 describe('Concept', () => {
   it('should compile function descriptor to abstract', () => {
@@ -53,9 +54,6 @@ describe('MyConcept', () => {
     const actual = PartialMetadata.ownValues(MyConcept)
     expect([...actual]).toEqual([])
   })
-  it('should be found on an empty object', () => {
-    expect({ }).toBeInstanceOf(MyConcept)
-  })
   it('should not be found on an empty class', () => {
     expect(class { }).not.toBeInstanceOf(MyConcept)
   })
@@ -69,8 +67,8 @@ describe('MyConcept', () => {
     it('should have prototype that is instance of itself', () => {
       expect(MyConcept.prototype).toBeInstanceOf(MyConcept)
     })
-    it('should be found on an object with the member', () => {
-      expect({ member() { } }).toBeInstanceOf(MyConcept)
+    it('should not be found on an object with the member', () => {
+      expect({ member() { } }).not.toBeInstanceOf(MyConcept)
     })
     it('should not be found on an object without the member', () => {
       expect({ }).not.toBeInstanceOf(MyConcept)
@@ -85,8 +83,8 @@ describe('MyConcept', () => {
     it('should have prototype that is instance of itself', () => {
       expect(MyConcept.prototype).toBeInstanceOf(MyConcept)
     })
-    it('should be found on an object with the getter', () => {
-      expect({ get value() { } }).toBeInstanceOf(MyConcept)
+    it('should not be found on an object with the getter', () => {
+      expect({ get value() { } }).not.toBeInstanceOf(MyConcept)
     })
     it('should not be found on an object without the getter', () => {
       expect({ }).not.toBeInstanceOf(MyConcept)
@@ -177,8 +175,10 @@ describe('MyConcept', () => {
       it('should be found on a class with associated type', () => {
         class MyType {
           static get associatedType() { return AssociatedConcept }
+          static { implement(this, MyConcept) }
         }
         expect(MyType.prototype).toBeInstanceOf(MyConcept)
+        expect(MyType.prototype).toBeInstanceOf(MySubConcept)
       })
     })
   })

@@ -164,38 +164,6 @@ export class Prototype {
     }
   }
 
-  static canDuckCast(prototype, instance, { 
-    filter = (host, key, descriptor) => true,
-    compare = Descriptor.canDuctCast,
-  } = { }) {
-    let name
-    let actualDescriptor
-    for (const current of this.descriptors(prototype, { filter })) {
-      const typeofCurrent = typeof current
-      assert (typeofCurrent == 'string'
-        || typeofCurrent == 'symbol'
-        || typeofCurrent == 'object'
-        || typeofCurrent == 'function')
-
-      switch (typeofCurrent) {
-        case 'string': 
-        case 'symbol': 
-          name = current
-          if (!(name in instance)) return false 
-          actualDescriptor = Descriptor.get(instance, name)
-          break
-          
-          case 'object': {
-          const expectedDescriptor = current
-          if (!compare(expectedDescriptor, actualDescriptor))
-            return false
-        }
-        case 'function': break
-      }
-    }
-    return true
-  }
-
   static *ownValues(prototype, { instance, filter } = { }) {
     const descriptors = Prototype.ownDescriptors(prototype, { filter })
     yield *Descriptor.values(descriptors, instance)

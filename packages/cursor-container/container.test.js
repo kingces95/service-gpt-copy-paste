@@ -98,7 +98,8 @@ const ChainCase = {
 const indexableContainerConcepts = [
   ...reversibleContainerConcepts,
   BackEditableContainerConcept,
-  RandomAccessContainerConcept,
+  RandomAccessContainerConcept, 
+  RandomAccessRangeConcept,
   IndexableContainerConcept,
   CountableContainerConcept]
 
@@ -127,6 +128,7 @@ const DequeCase = {
 const bufferConainerConcepts = [
   ...indexableContainerConcepts,
   ContiguousContainerConcept,
+  ContiguousRangeConcept,
   EditableContainerConcept,
   BufferContainerConcept,
   ByteContainerConept,

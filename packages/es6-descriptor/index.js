@@ -25,15 +25,72 @@ export class Es6Descriptor {
     return Es6FieldDescriptor.Type
   }
 
+  static soundof(descriptor) {
+    const type = Es6Descriptor.typeof(descriptor)
+    assert(type == 'getter'
+      || type == 'setter'
+      || type == 'method'
+      || type == 'property'
+      || type == 'field')
+
+    if (type == 'method') return 'callable'
+    if (type == 'getter') return 'readable'
+    if (type == 'setter') return 'writable'
+    if (type == 'property') return 'mutable'
+    
+    assert(type == 'field')
+    return 'mutable'
+  }
+
+  static canSoundLike(descriptor, sound) {
+    assert(sound == 'readable' 
+      || sound == 'writable' 
+      || sound == 'callable'
+      || sound == 'mutable')
+
+    const type = Es6Descriptor.typeof(descriptor)
+    assert(type == 'field'
+      || type == 'method'
+      || type == 'getter'
+      || type == 'setter'
+      || type == 'property')
+
+    if (sound == 'mutable') 
+      return Es6Descriptor.canSoundLike(descriptor, 'readable')
+        && Es6Descriptor.canSoundLike(descriptor, 'writable')
+
+    if (sound == 'readable') {
+      if (type == 'field') return true
+      if (type == 'getter') return true
+      if (type == 'property') return true
+      return false
+    }
+
+    if (sound == 'writable') {
+      if (type == 'field' && descriptor.writable) return true
+      if (type == 'setter') return true
+      if (type == 'property') return true
+      return false
+    }
+
+    assert(sound == 'callable')
+    return type == 'method'
+  }
+
   static equals(lhs, rhs) {
     return Descriptor.equals(lhs, rhs)
   }
 
   static promoteValue(result, instance) {
+    
+    // promote type
     const type = Es6Descriptor.typeof(result.descriptor)
     result.type = type
+    
+    // promote value
     if (type == 'method')
       result.value = result.value.call(instance)
+
     return result
   }
 
@@ -64,22 +121,6 @@ export class Es6Descriptor {
     if (descriptor.enumerable != md.DefaultEnumerable 
       && !descriptor.enumerable == true)
       yield 'hidden'
-  }
-
-  static canDuckCast(expectedDescriptor, actualDescriptor) {
-    const actualType = Es6Descriptor.typeof(actualDescriptor)
-    const expectedType = Es6Descriptor.typeof(expectedDescriptor)
-    if (actualType == expectedType) return true
-    if (actualType == 'field') {
-      if (expectedType == 'getter') return true
-      const isFunction = typeof actualDescriptor.value == 'function'
-      if (expectedType == 'method' && isFunction) return true
-    }
-    if (actualType == 'property') {
-      if (expectedType == 'getter') return true
-      if (expectedType == 'setter') return true
-    }
-    return false
   }
 }
 

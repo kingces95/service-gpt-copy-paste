@@ -18,6 +18,14 @@ export {
 } from '@kingjs/partial-symbols'
 
 export class PartialType extends null {
+  
+  static isUserDefined(type) {
+    if (!type) return false
+    if (type == PartialType) return false
+    if (Object.getPrototypeOf(type) == PartialType) return false
+    return Es6UserReflect.isExtensionOf(type, PartialType)    
+  }
+
   constructor() { 
     throw new TypeError('PartialType cannot be instantiated.') 
   }

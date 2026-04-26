@@ -444,68 +444,87 @@ function runTests(
     get property() { }
     set property(value) { }
     method() { }
-    static { this.prototype.field = 42 }
+    constructor() {
+      this.field = 42
+    }
   }
-  class MyGetterType {
-    get property() { }
-  }
-  class MySetterType {
-    set property(value) { }
-  }
-  class MyMethodType {
-    method() { }
-  }
-  class MyDataType {
-    static { this.prototype.field = 42 }
-  }
-  class MyDataAsGetterType {
-    get field() { }
-  }
-  class MyGooseType {
-    honk() { }
-  }
-  class MyFakeMethodType {
-    get method() { }
+
+  const Tests = {
+    MyGetterType: {
+      type: class MyGetterType {
+        get property() { }
+      },
+    },
+    MySetterType: {
+      type: class MySetterType {
+        set property(value) { }
+      },
+    },
+    MyPropertyType: {
+      type: class MyPropertyType {
+        get property() { }
+        set property(value) { }
+      },
+    },
+    MyMethodType: {
+      type: class MyMethodType {
+        method() { }
+      },
+    },
+    MyDataType: {
+      type: class MyDataType {
+        static { this.prototype.field = 42 }
+      },
+    },
+    MyDataAsGetterType: {
+      type: class MyDataAsGetterType {
+        get field() { }
+      },
+    },
+    MyGooseType: {
+      type: class MyGooseType {
+        honk() { }
+      },
+      canDuckCast: false,
+      canStrictDuckCast: false,
+    },
+    MyGetterAsMethod: {
+      type: class MyGetterAsMethod {
+        get method() { }
+      },
+      canStrictDuckCast: false,
+    },  
+    MyMethodAsGetter: {
+      type: class MyMethodAsGetter {
+        property() { }
+      },
+      canDuckCast: false,
+      canStrictDuckCast: false,
+    },
   }
 
   describe('Quacker', () => {
-    const reflector = activate()
-    it('can be duck cast to getter', () => {
-      const instance = new MyQuackerType()
-      const canDuckCast = reflector.canDuckCast(MyGetterType, instance)
-      expect(canDuckCast).toBe(true)
+
+    describe.each(Object.entries(Tests))('%s', (_, { 
+      type, canDuckCast = true, canStrictDuckCast = true }) => {
+
+      let reflector
+      let instance
+      beforeEach(() => {
+        reflector = activate()
+        instance = new MyQuackerType()
+      })
+
+      it ('should have expected duck castability', () => {
+        const actual = reflector.canDuckCast(type, instance)
+        expect(actual).toBe(canDuckCast)
+      })
+      it ('should have expected strict duck castability', () => {
+        const actual = reflector.canStrictDuckCast(type, instance)
+        expect(actual).toBe(canStrictDuckCast)
+      })
     })
-    it('can be duck cast to setter', () => {
-      const instance = new MyQuackerType()
-      const canDuckCast = reflector.canDuckCast(MySetterType, instance)
-      expect(canDuckCast).toBe(true)
-    })
-    it('can be duck cast to method', () => {
-      const instance = new MyQuackerType()
-      const canDuckCast = reflector.canDuckCast(MyMethodType, instance)
-      expect(canDuckCast).toBe(true)
-    })
-    it('can be duck cast to data', () => {
-      const instance = new MyQuackerType()
-      const canDuckCast = reflector.canDuckCast(MyDataType, instance)
-      expect(canDuckCast).toBe(true)
-    })
-    it('can be duck cast to data as getter', () => {
-      const instance = new MyQuackerType()
-      const canDuckCast = reflector.canDuckCast(MyDataAsGetterType, instance)
-      expect(canDuckCast).toBe(true)
-    })
-    it('cannot be duck cast to goose', () => {
-      const instance = new MyQuackerType()
-      const canDuckCast = reflector.canDuckCast(MyGooseType, instance)
-      expect(canDuckCast).toBe(false)
-    })
-    it('cannot be duck cast to fake method', () => {
-      const instance = new MyQuackerType()
-      const canDuckCast = reflector.canDuckCast(MyFakeMethodType, instance)
-      expect(canDuckCast).toBe(false)
-    })
-  })  
+  })
   
   describe('Value filters', () => {
     class MyGetterFilter {

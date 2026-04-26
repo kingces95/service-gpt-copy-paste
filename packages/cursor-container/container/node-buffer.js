@@ -2,8 +2,7 @@ import { assert } from '@kingjs/assert'
 import { implement } from '@kingjs/partial-implement'
 import { ContiguousCursor } from '../cursor/contiguous-cursor.js'
 import {
-  ByteContainerConept,
-  BufferContainerConcept } from '../container-concepts.js'
+  ByteContainerConept } from '../container-concepts.js'
 import { EcmaBuffer } from './ecma-buffer.js'
 
 export class NodeBuffer extends EcmaBuffer {
@@ -24,7 +23,6 @@ export class NodeBuffer extends EcmaBuffer {
   }
 
   static {
-
     implement(this, ByteContainerConept, {
       writeAt(index, value, length = 1, signed = false, littleEndian = false) {
         const { buffer } = this

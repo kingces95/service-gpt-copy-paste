@@ -20,14 +20,59 @@ export class Descriptor {
     if (hasValue) {
       assert(!hasGetter && !hasSetter,
         'Invalid descriptor: value and accessor are mutually exclusive.')
-      return DataDescriptor.Type
+      return 'data'
     }
 
     assert(hasGetter || hasSetter,
       'Invalid descriptor: must have value or accessor.')
-    if (!hasGetter) return SetterDescriptor.Type
-    if (!hasSetter) return GetterDescriptor.Type
-    return PropertyDescriptor.Type
+    if (!hasGetter) return 'setter'
+    if (!hasSetter) return 'getter'
+    return 'property'
+  }
+
+  static canSoundLike(descriptor, instance, sound) {
+    assert(sound == 'readable' 
+      || sound == 'writable' 
+      || sound == 'callable'
+      || sound == 'mutable')
+
+    const type = Descriptor.typeof(descriptor)
+    assert(type == 'data'
+      || type == 'getter'
+      || type == 'setter'
+      || type == 'property')
+
+    if (sound == 'mutable') 
+      return Descriptor.canSoundLike(descriptor, instance, 'readable')
+        && Descriptor.canSoundLike(descriptor, instance, 'writable')
+
+    if (sound == 'readable') {
+      if (type == 'data') return true
+      if (type == 'getter') return true
+      if (type == 'property') return true
+      return false
+    }
+
+    if (sound == 'writable') {
+      if (type == 'data' && descriptor.writable) return true
+      if (type == 'setter') return true
+      if (type == 'property') return true
+      return false
+    }
+
+    assert(sound == 'callable')
+    if (type == 'setter') return false
+
+    assert(type == 'data'
+      || type == 'getter'
+      || type == 'property')
+
+    try {
+      const value = Descriptor.#getValue(descriptor, instance, type)
+      return typeof value == 'function'
+    } catch (error) {
+      return false
+    }
   }
 
   static hasValue(descriptor) {
@@ -97,25 +142,29 @@ export class Descriptor {
       : Descriptor.#equalsAccessor(lhs, rhs)
   }
 
+  static #getValue(descriptor, instance, type) {
+    assert(type == 'data'  
+      || type == 'getter'
+      || type == 'property')
+
+    switch (type) {
+      case 'data':
+        return descriptor.value
+      case 'getter':
+      case 'property':
+        return descriptor.get.call(instance)
+    }
+  }
+
   static getValue(descriptor, instance) {
     const type = Descriptor.typeof(descriptor)
-    assert(type == DataDescriptor.Type  
-      || type == GetterDescriptor.Type
-      || type == PropertyDescriptor.Type)
+    assert(type == 'data'  
+      || type == 'getter'
+      || type == 'property')
 
-    const result = { descriptor, type }
-    switch (type) {
-      case DataDescriptor.Type:
-        result.value = descriptor.value
-        break
-      case GetterDescriptor.Type:
-        result.value = descriptor.get.call(instance)
-        break
-      case PropertyDescriptor.Type:
-        result.value = descriptor.get.call(instance)
-        break
+    return { descriptor, type,
+      value: Descriptor.#getValue(descriptor, instance, type),
     }
-    return result
   }
 
   static *values(descriptors, instance) {
@@ -148,20 +197,6 @@ export class Descriptor {
         }
       }
     }
-  }
-
-  static canDuctCast(expectedDescriptor, actualDescriptor) {
-    const actualType = Descriptor.typeof(actualDescriptor)
-    const expectedType = Descriptor.typeof(expectedDescriptor)
-    if (actualType == expectedType) return true
-    if (actualType == 'data') {
-      if (expectedType == 'getter') return true
-    }
-    if (actualType == 'property') {
-      if (expectedType == 'getter') return true
-      if (expectedType == 'setter') return true
-    }
-    return false
   }
 }
 

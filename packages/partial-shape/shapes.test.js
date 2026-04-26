@@ -57,7 +57,7 @@ const IterableShapeTest = {
     { name: 'array', value: [] },
     { name: 'string', value: '' },
     { name: 'Set', value: new Set() },
-    { name: 'custom', value: { [Symbol.iterator]() { } } },
+    { name: 'custom', value: new (class Foo { [Symbol.iterator]() { } })() },
   ],
   negative: [
     { name: 'object literal', value: { } },
@@ -67,7 +67,7 @@ const IterableShapeTest = {
 const IteratorShapeTest = {
   shape: IteratorShape,
   positive: [
-    { name: 'custom', value: { next() { } } },
+    { name: 'custom', value: new (class { next() { } })() },
     { name: 'array iterator', value: [][Symbol.iterator]() },
   ],
   negative: [
@@ -79,7 +79,8 @@ const ErrorShapeTest = {
   shape: ErrorShape,
   positive: [
     { name: 'Error', value: new Error() },
-    { name: 'custom', value: { name: 'MyError', message: 'An error occurred' } },
+    { name: 'custom getters', 
+      value: new (class { get name() { }; get message() { }})() },
   ],
   negative: [
     { name: 'object without name and message properties', value: { } },
@@ -89,7 +90,8 @@ const ErrorShapeTest = {
 const DisposableShapeTest = {
   shape: DisposableShape,
   positive: [
-    { name: 'custom with dispose method', value: { [Symbol.dispose]() { } } },
+    { name: 'custom with dispose method', 
+      value: new (class { [Symbol.dispose]() { } })() },
   ],
   negative: [
     { name: 'object literal', value: { } },
@@ -101,12 +103,13 @@ const DisposableShapeTest = {
 const AbortSignalShapeTest = {
   shape: AbortSignalShape,
   positive: [
-    { name: 'AbortSignal', value: new AbortController().signal },
+    { name: 'AbortSignal', 
+      value: new AbortController().signal },
     { name: 'custom', 
-      value: { 
-        get aborted() { return false },
+      value: new (class { 
+        get aborted() { return false }
         addEventListener() { }
-      } 
+      })() 
     },
   ],
   negative: [
@@ -117,12 +120,13 @@ const AbortSignalShapeTest = {
 const EventEmitterShapeTest = {
   shape: EventEmitterShape,
   positive: [
-    { name: 'EventEmitter', value: new (require('events').EventEmitter)() },
+    { name: 'EventEmitter', 
+      value: new (require('events').EventEmitter)() },
     { name: 'custom', 
-      value: { 
-        on() { },
+      value: new (class{ 
+        on() { }
         emit() { }
-      } 
+      })()
     },
   ],
   negative: [
@@ -135,11 +139,11 @@ const EventTargetShapeTest = {
   positive: [
     { name: 'EventTarget', value: new EventTarget() },
     { name: 'custom', 
-      value: { 
-        addEventListener() { },
-        removeEventListener() { },
+      value: new (class { 
+        addEventListener() { }
+        removeEventListener() { }
         dispatchEvent() { }
-      } 
+      })()
     },
   ],
   negative: [
@@ -153,7 +157,7 @@ const DateShapeTest = {
   shape: DateShape,
   positive: [
     { name: 'Date instance', value: new Date() },
-    { name: 'custom', value: { getTime() { return 0 } } },
+    { name: 'custom', value: new (class { getTime() { return 0 } })() },
   ],
   negative: [
     { name: 'array literal', value: [] },
@@ -165,7 +169,11 @@ const RegExpShapeTest = {
   shape: RegExpShape,
   positive: [
     { name: 'RegExp instance', value: /./ },
-    { name: 'custom', value: { test() { return true }, exec() { return null } } },
+    { name: 'custom', 
+      value: new (class { 
+        test() { return true }
+        exec() { return null } 
+      })() },
   ],
   negative: [
     { name: 'array literal', value: [] },
@@ -256,7 +264,11 @@ const PromiseShapeTest = {
   positive: [
     { name: 'Promise', value: Promise.resolve() },
     { name: 'custom thenable with catch and finally', 
-      value: { then() { }, catch() { }, finally() { } } },
+      value: new (class { 
+        then() { }
+        catch() { }
+        finally() { } 
+      })() },
   ],
   negative: [
     { name: 'custom thenable without catch and finally', 
@@ -268,8 +280,9 @@ const PromiseShapeTest = {
 const ThenableShapeTest = {
   shape: ThenableShape,
   positive: [
-    { name: 'object with then method', value: { then() { } } },
     { name: 'Promise', value: Promise.resolve() },
+    { name: 'custom', 
+      value: new (class { then() { } })() },
   ],
   negative: [
     { name: 'object without then method', value: { } },
@@ -279,9 +292,10 @@ const ThenableShapeTest = {
 const AsyncIterableShapeTest = {
   shape: AsyncIterableShape,
   positive: [
-    { name: 'custom', value: { [Symbol.asyncIterator]() { } } },
     { name: 'async generator', value: (async function*() { })() },
     { name: 'ReadableStream', value: new ReadableStream() },
+    { name: 'custom', 
+      value: new (class { [Symbol.asyncIterator]() { } })() },
   ],
   negative: [
     { name: 'object without async iterator method', value: { } },
@@ -292,7 +306,7 @@ const AsyncDisposableShapeTest = {
   shape: AsyncDisposableShape,
   positive: [
     { name: 'custom with async dispose method', 
-      value: { [Symbol.asyncDispose]() { } } },
+      value: new (class { [Symbol.asyncDispose]() { } })() },
   ],
   negative: [
     { name: 'object literal', value: { } },

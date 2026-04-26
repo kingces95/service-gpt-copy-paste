@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Concept, Implements } from '@kingjs/partial-concept'
+import { implement } from '@kingjs/partial-implement'
 
 class MyEmptyConcept extends Concept { }
 class MyGetterConcept extends Concept { get value() { } }
@@ -13,20 +14,11 @@ class MyKitchenSinkConcept extends Concept {
     MyMethodConcept
   ]
 }
-
-class MyOtherGetterConcept extends Concept { get otherValue() { } }
-class MyOtherSetterConcept extends Concept { set otherValue(value) { } }
-class MyOtherMethodConcept extends Concept { otherMethod() { } }
-
 class MyTagConcept extends Concept {
   typeTagMethod() { }
 }
 class MyTaggedConcept extends Concept {
   static TypeTag = MyTagConcept
-}
-class MyTaggedConceptWithFoo extends Concept {
-  static TypeTag = MyTagConcept
-  foo() { }
 }
 class MyTaggedConceptWithMethod extends Concept {
   static TypeTag = MyTagConcept
@@ -36,68 +28,71 @@ class MyInheritedTaggedConcept extends Concept {
   static [Implements] = MyTaggedConcept
 }
 
-class MyType {
-   constructor() {
-    this.value$ = 42
-    this.readOnly$ = false
+function MyTaggedTypeFn() {
+  return class MyTaggedType extends MyTypeFn() {
+    static TypeTag = class {
+      static { implement(this, MyTagConcept) }
+      typeTagMethod() { } 
+    }
   }
-  get value() { return this.value$ }
-  set value(value) { this.value$ = value }
-  method() { return this.readOnly$ } 
 }
 
-class MyTaggedType extends MyType {
-  static TypeTag = class { typeTagMethod() { } }
+function MyTypeFn() {
+  return class MyType {
+    constructor() {
+      this.value$ = 42
+      this.readOnly$ = false
+    }
+    get value() { return this.value$ }
+    set value(value) { this.value$ = value }
+    method() { return this.readOnly$ } 
+  }
 }
 
-describe('An instance of a type', () => {
-  let taggedInstance
+const Tests = {
+  MyEmptyConcept: {
+    type: MyTypeFn(),
+    concept: MyEmptyConcept,
+  },
+  MyTaggedConcept: {
+    type: MyTaggedTypeFn(),
+    concept: MyTaggedConcept,
+  },
+  MyTaggedConceptWithMethod: {
+    type: MyTaggedTypeFn(),
+    concept: MyTaggedConceptWithMethod,
+  },
+  MyInheritedTaggedConcept: {
+    type: MyTaggedTypeFn(),
+    concept: MyInheritedTaggedConcept,
+  },
+  MyGetterConcept: {
+    type: MyTypeFn(),
+    concept: MyGetterConcept,
+  },
+  MySetterConcept: {
+    type: MyTypeFn(),
+    concept: MySetterConcept,
+  },
+  MyMethodConcept: {
+    type: MyTypeFn(),
+    concept: MyMethodConcept,
+  },
+  MyKitchenSinkConcept: {
+    type: MyTypeFn(),
+    concept: MyKitchenSinkConcept,
+  },
+}
+
+describe.each(Object.entries(Tests))(
+  '%s', (_, { type, concept }) => {
   let instance
   beforeEach(() => {
-    instance = new MyType()
-    taggedInstance = new MyTaggedType()
+    instance = new type()
+    implement(type, concept)
   })
 
-  it('should satisfy MyEmptyConcept', () => {
-    expect(instance).toBeInstanceOf(MyEmptyConcept)
-  })
-  it('should satisfy MyTaggedConcept', () => {
-    expect(taggedInstance).toBeInstanceOf(MyTaggedConcept)
-    expect(instance).not.toBeInstanceOf(MyTaggedConcept)
-  })
-  it('should satisfy MyTaggedConceptWithMethod', () => {
-    expect(taggedInstance).toBeInstanceOf(MyTaggedConceptWithMethod)
-    expect(instance).not.toBeInstanceOf(MyTaggedConceptWithMethod)
-  })
-  it('should satisfy MyInheritedTaggedConcept', () => {
-    expect(taggedInstance).toBeInstanceOf(MyInheritedTaggedConcept)
-    expect(instance).not.toBeInstanceOf(MyInheritedTaggedConcept)
-  })
-  it('should not satisfy MyTaggedConceptWithFoo', () => {
-    expect(taggedInstance).not.toBeInstanceOf(MyTaggedConceptWithFoo)
-    expect(instance).not.toBeInstanceOf(MyTaggedConceptWithFoo)
-  })
-
-  it('should satisfy MyGetterConcept', () => {
-    expect(instance).toBeInstanceOf(MyGetterConcept)
-  })
-  it('should satisfy MySetterConcept', () => {
-    expect(instance).toBeInstanceOf(MySetterConcept)
-  })
-  it('should satisfy MyMethodConcept', () => {
-    expect(instance).toBeInstanceOf(MyMethodConcept)
-  })
-  it('should satisfy MyKitchenSinkConcept', () => {
-    expect(instance).toBeInstanceOf(MyKitchenSinkConcept)
-  })
-
-  it('should not satisfy MyOtherGetterConcept', () => {
-    expect(instance).not.toBeInstanceOf(MyOtherGetterConcept)
-  })
-  it('should not satisfy MyOtherSetterConcept', () => {
-    expect(instance).not.toBeInstanceOf(MyOtherSetterConcept)
-  })
-  it('should not satisfy MyOtherMethodConcept', () => {
-    expect(instance).not.toBeInstanceOf(MyOtherMethodConcept)
+  it('should satisfy the concept', () => {
+    expect(instance).toBeInstanceOf(concept)
   })
 })

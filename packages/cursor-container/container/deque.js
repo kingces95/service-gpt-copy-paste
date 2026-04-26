@@ -7,6 +7,8 @@ import {
   BackEditableContainerConcept,
   CountableContainerConcept,
   IndexableContainerConcept,
+  OutputContainerConcept,
+  RandomAccessContainerConcept,
 } from '../container-concepts.js'
 import { IndexableCursor } from '../cursor/indexable-cursor.js'
 
@@ -28,6 +30,9 @@ export class Deque extends PartialProxy {
 
   static {
     extend(this, PartialIndexableContainer)
+
+    implement(this, RandomAccessContainerConcept)
+    implement(this, OutputContainerConcept)
 
     implement(this, FrontEditableContainerConcept, {
       shift() { return this._denque.shift() },
