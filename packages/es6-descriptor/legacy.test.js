@@ -67,14 +67,6 @@ describe('A class with a method and accessor', () => {
 
 describe('A descriptor', () => {
   let descriptor
-  describe('when an empty object', () => {
-    beforeEach(() => {
-      descriptor = { }
-    })
-    it('should not be an instance of Descriptor', () => {
-      expect(descriptor instanceof Es6Descriptor).toBe(false)
-    })
-  })
   describe('when null', () => {
     beforeEach(() => {
       descriptor = null
@@ -90,9 +82,6 @@ describe('A descriptor', () => {
     })
     it('should not have a value', () => {
       expect(hasValue(descriptor)).toBe(false)
-    })
-    it('should not be an instance of Descriptor', () => {
-      expect(descriptor instanceof Es6Descriptor).toBe(false)
     })
   })
   describe('accessor', () => {
@@ -112,9 +101,6 @@ describe('A descriptor', () => {
       it('should not have a value', () => {
         expect(hasValue(descriptor)).toBe(false)
       })
-      it('should be an instance of Descriptor', () => {
-        expect(descriptor instanceof Descriptor).toBe(true)
-      })
     })
     describe('with a setter', () => {
       beforeEach(() => {
@@ -132,9 +118,6 @@ describe('A descriptor', () => {
       it('should not have a value', () => {
         expect(hasValue(descriptor)).toBe(false)
       })
-      it('should be an instance of Descriptor', () => {
-        expect(descriptor instanceof Descriptor).toBe(true)
-      })
     })
     describe('with a getter and setter', () => {
       beforeEach(() => {
@@ -151,9 +134,6 @@ describe('A descriptor', () => {
       })
       it('should not have a value', () => {
         expect(hasValue(descriptor)).toBe(false)
-      })
-      it('should be an instance of Descriptor', () => {
-        expect(descriptor instanceof Descriptor).toBe(true)
       })
     })
   })
@@ -174,9 +154,6 @@ describe('A descriptor', () => {
       it('should have a value', () => {
         expect(hasValue(descriptor)).toBe(true)
       })
-      it('should be an instance of Descriptor', () => {
-        expect(descriptor instanceof Descriptor).toBe(true)
-      })
     })
     describe('with a class', () => {
       beforeEach(() => {
@@ -195,9 +172,6 @@ describe('A descriptor', () => {
       it('should have a value', () => {
         expect(hasValue(descriptor)).toBe(true)
       })
-      it('should be an instance of Descriptor', () => {
-        expect(descriptor instanceof Descriptor).toBe(true)
-      })
     })
     describe('with null', () => {
       beforeEach(() => {
@@ -214,9 +188,6 @@ describe('A descriptor', () => {
       })
       it('should have a value', () => {
         expect(hasValue(descriptor)).toBe(true)
-      })
-      it('should be an instance of Descriptor', () => {
-        expect(descriptor instanceof Descriptor).toBe(true)
       })
     })
   })

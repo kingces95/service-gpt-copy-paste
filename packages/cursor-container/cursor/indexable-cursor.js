@@ -30,8 +30,7 @@ const {
 
 const __version = Symbol('__version')
 
-class PartialIndexableContainer 
-  extends PartialContainer {
+class PartialIndexableContainer extends PartialContainer {
 
   static [Preconditions] = {
     shift() { this[__version]++ || 1 },

@@ -478,6 +478,9 @@ const MetaSymbols = [
 //    class PartialClass extends PartialType { ... }
 //    class Concept extends PartialType { ... }
 
+// _________________________________________________________________________
+// ADJACENT PARTIAL TYPE BY EXTENSION
+
 // An extension of a type of PartialType is user defined partial type. 
 // For example, A and B are user defined partial types:
 
@@ -531,15 +534,15 @@ function getBaseType(type) {
 //    Base -> null
 
 // A resonable argument could be made to include PartialType and its direct
-// extensions in the base type chain of user defined partial types. However,
+// extensions in the base type chain of user defined partial types however
 // PartialType and its direct extensions have no members so their inclusion
 // would only affect tests for their presence and those checks could be done
 // using the static prototype chain. Additionally, their inclusion may not
-// always appear at the end of the chain given the current implementation 
-// which seems odd. 
+// always appear at the end of the meta prototype chain given the current 
+// implementation which seems odd. 
 
 // _________________________________________________________________________
-// PARTIAL TYPE ADJACENT PARTIAL TYPE DECLARATIONS
+// ADJACENT PARTIAL TYPE BY DECLARATION
 
 // Adjacent is a symbol declared by the meta type system which allows 
 // types of PartialType to declare how user defined partial types can append 
@@ -567,9 +570,8 @@ function getBaseType(type) {
 
 // are examples of types of PartialType declaring what symbols host what
 // types of adjacent partial type. The symbols declared as keys of the
-// Adjacent object are not well known to PartialReflect. They are meta
-// symbols (well known to a type of PartialType), not meta symbols
-// (used by PartialReflect to reflect on typs of PartialType).
+// Adjacent object are not well known to PartialReflect. They are well 
+// known to a type of PartialType like Concept or PartialClass.
 
 // For example, from the above example, B could be defined like this:
 
@@ -604,6 +606,54 @@ function *ownDeclaredAdjacentPartialTypes(type) {
   }
 }
 
+// _________________________________________________________________________
+// ADJACENT PARTIAL TYPE BY PROCEDURE
+
+// Adjacent partial types can also be declared procedurally. For example, 
+// given MyType, the following would declare MyExtenedPartialClass as an
+// adjacent partial type of MyType:
+
+//    class MyPartialClass extends PartialClass { ... }
+//    class MyExtenedPartialClass extends PartialClass {
+//      static { extend(this, MyPartialClass) }
+//    }
+
+// This is the only way to declare adjacent partial types on non-partial 
+// types. For example, given MyType, the following would declare 
+// MyPartialClass as an adjacent partial type of MyType:
+
+//    class MyType { static { extend(this, MyPartialType) } ... }
+
+// The placement of the static block is important. Members declared before the
+// static block could be overridden by members of MyPartialType while members
+// declared after the static block would override members of MyPartialType.
+
+// The extends function is provided by PartialReflect and it stores the 
+// adjacent partial type in a global registry which PartialReflect can query 
+// when constructing the meta-prototype chain.
+
+// The AdjacentTypes class is the implementation of the global registry for
+// adjacent partial types declared procedurally. The AdjacentTypes registry is 
+// keyed by the host type and the value is a set of adjacent partial types. For 
+// example, if MyType declares MyPartialType as an adjacent partial type, then 
+// the registry would have an entry like this:
+
+//    MyType -> Set { MyPartialType }
+
+// The adjacent type list is ordered. If a type is added multiple times, the 
+// prior occurrence is removed and the type is added to the end of the list. 
+
+// The adjacent type list is mutable until it is loaded. Once it is loaded, 
+// it cannot be modified. Loading happens when the adjacent types are queried 
+// for the first time. This is to prevent procedural declaration of adjacent 
+// types after the meta-prototype chain has been constructed which typically
+// happens at the first the type is extened by another type. For example,
+// after MyType is extended by MyExtendedType, the meta-prototype chain of 
+// MyPartialType would be constructed so any subsequent calls to extend 
+// MyPartialType would generate an error:
+
+//    extend(MyPartialType, MyExtendedPartialType) // error
+
 class AdjacentTypes {
 
   static publish(type, ...types) {
@@ -635,29 +685,19 @@ class AdjacentTypes {
     yield* this.#adjacentTypes
   }
 
-  add(...types) {
+  add(type) {
     assert(!this.#loaded,
       'Type cannot be modified after it has been loaded.')
+    assert(!isTransparent(type),
+      'Transparent types cannot be adjacent types.')
 
-    for (const type of types) {
-      if (isTransparent(type)) continue
-      this.#adjacentTypes.delete(type) // deduplicate
-      this.#adjacentTypes.add(type)
-    }
+    this.#adjacentTypes.delete(type) // maintain order
+    this.#adjacentTypes.add(type)
   }
-}
-
-function publishExtensions(type, ...partialTypes) {
-  for (const partialType of partialTypes) {
-    const postcondition = partialType[Postcondition]
-    if (postcondition)
-      postcondition.call(partialType, type)
-  }
-
-  AdjacentTypes.publish(type, ...partialTypes)
 }
 
 function *ownPartialTypes(type) {
+
   // via declaration (e.g. static [Extends] = PartialType)
   yield* ownDeclaredAdjacentPartialTypes(type)
     .filter(partialType => !isTransparent(partialType))
@@ -698,10 +738,11 @@ const unifiedPrototype = new Es6Prototype({
 })
 
 export function create({
-  knownStaticKeys
+  knownTypes = [],
+  knownStaticKeys = [],
 }) {
   const PartialReflect = Es6Reflector.create({
-    knownTypes: KnownTypes, 
+    knownTypes: [ ...knownTypes, ...KnownTypes ], 
     knownTypeFn: KnownTypeFn,
     knownKeys: KnownKeys,
     knownStaticKeys: [ ...KnownStaticKeys, ...knownStaticKeys ],
@@ -714,7 +755,7 @@ export function create({
   function extend(type, partialType) {
     assert(!isPojo(type))
     
-    const hosts = new Set()
+    const hosts = []
     const prototype = type.prototype
     PartialReflect.copyTo(partialType, prototype, {
       createThunk: (key, descriptor) => CreateThunk in type 
@@ -724,12 +765,15 @@ export function create({
       filter: (host, key, descriptor) =>
         isFirstOrOverride(descriptor, key in prototype),
 
-      onHost: (host) => 
-        hosts.add(host),
+      onHost: (host) =>
+        hosts.push(host)
     })
 
-    const mergeOrder = [...hosts].reverse()
-    publishExtensions(type, ...mergeOrder)
+    for (const host of hosts) {
+      host[Postcondition]?.call(host, type)
+      if (!isTransparent(host)) 
+        AdjacentTypes.publish(type, host)
+    }
   }
   
   return { PartialReflect, extend }

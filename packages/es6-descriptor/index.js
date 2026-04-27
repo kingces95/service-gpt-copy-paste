@@ -25,7 +25,7 @@ export class Es6Descriptor {
     return Es6FieldDescriptor.Type
   }
 
-  static soundof(descriptor) {
+  static shapeof(descriptor) {
     const type = Es6Descriptor.typeof(descriptor)
     assert(type == 'getter'
       || type == 'setter'
@@ -33,52 +33,31 @@ export class Es6Descriptor {
       || type == 'property'
       || type == 'field')
 
-    if (type == 'method') return 'callable'
     if (type == 'getter') return 'readable'
     if (type == 'setter') return 'writable'
     if (type == 'property') return 'mutable'
+    if (type == 'method') return 'callable'
     
     assert(type == 'field')
+    if (descriptor.writable == false) 
+      return 'readable'
     return 'mutable'
   }
 
-  static canSoundLike(descriptor, sound) {
-    assert(sound == 'readable' 
-      || sound == 'writable' 
-      || sound == 'callable'
-      || sound == 'mutable')
+  static formof(descriptor, shape) {
+    assert(shape == 'readable' 
+      || shape == 'writable' 
+      || shape == 'callable'
+      || shape == 'mutable')
 
-    const type = Es6Descriptor.typeof(descriptor)
-    assert(type == 'field'
-      || type == 'method'
-      || type == 'getter'
-      || type == 'setter'
-      || type == 'property')
+    const sound = Es6Descriptor.shapeof(descriptor)
+    if (sound == shape) 
+      return true
 
     if (sound == 'mutable') 
-      return Es6Descriptor.canSoundLike(descriptor, 'readable')
-        && Es6Descriptor.canSoundLike(descriptor, 'writable')
+      return shape == 'readable' || shape == 'writable'
 
-    if (sound == 'readable') {
-      if (type == 'field') return true
-      if (type == 'getter') return true
-      if (type == 'property') return true
-      return false
-    }
-
-    if (sound == 'writable') {
-      if (type == 'field' && descriptor.writable) return true
-      if (type == 'setter') return true
-      if (type == 'property') return true
-      return false
-    }
-
-    assert(sound == 'callable')
-    return type == 'method'
-  }
-
-  static equals(lhs, rhs) {
-    return Descriptor.equals(lhs, rhs)
+    return false
   }
 
   static promoteValue(result, instance) {
@@ -97,11 +76,6 @@ export class Es6Descriptor {
   static getValue(descriptor, instance) {
     const result = Descriptor.getValue(descriptor, instance)
     return Es6Descriptor.promoteValue(result, instance)
-  }
-
-  static *values(descriptors, instance) {
-    for (const result of Descriptor.values(descriptors, instance))
-      yield Es6Descriptor.promoteValue(result, instance)
   }
   
   static *modifiers(

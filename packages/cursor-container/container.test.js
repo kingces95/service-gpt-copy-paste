@@ -69,7 +69,7 @@ const ListCase = {
     FrontEditableContainerConcept],
   members: {
     front: true, shift: true, unshift: true,
-    // beforeBegin: true, insertAfter: true, removeAfter: true,
+    beforeBegin: true, insertAfter: true, removeAfter: true,
   }
 }
 

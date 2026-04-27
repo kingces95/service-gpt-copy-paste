@@ -215,8 +215,8 @@ export class Es6Prototype {
           
           case 'object': {
           const shapeDescriptor = current
-          if (!Descriptor.canSoundLike(instanceDescriptor, instance, 
-            Es6Descriptor.soundof(shapeDescriptor)))
+          if (!Descriptor.formof(instanceDescriptor, instance, 
+            Es6Descriptor.shapeof(shapeDescriptor)))
             return false
         }
         case 'function': break
@@ -245,8 +245,8 @@ export class Es6Prototype {
           
           case 'object': {
           const shapeDescriptor = current
-          if (!Es6Descriptor.canSoundLike(instanceDescriptor, 
-            Es6Descriptor.soundof(shapeDescriptor)))
+          if (!Es6Descriptor.formof(instanceDescriptor, 
+            Es6Descriptor.shapeof(shapeDescriptor)))
             return false
         }
         case 'function': break

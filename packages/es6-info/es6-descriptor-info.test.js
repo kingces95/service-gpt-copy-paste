@@ -12,22 +12,8 @@ describe('DescriptorInfo', () => {
       info = Es6DescriptorInfo.create(md.descriptor)
     })
 
-    it('does not equal null', () => {
-      expect(info.equals(null)).toBe(false)
-    })
-    it('does not equal the other descriptors', () => {
-      for (const [_, otherMd] of Descriptors) {
-        if (otherMd === md) continue
-        const otherInfo = Es6DescriptorInfo.create(otherMd.descriptor)
-        expect(info.equals(otherInfo)).toBe(false)
-        expect(otherInfo.equals(info)).toBe(false)
-      }
-    })
     it('is correct info type', () => {
       expect(info instanceof md.infoType).toBe(true)
-    })
-    it('equals itself', () => {
-      expect(info.equals(info)).toBe(true)
     })
     it('has a descriptor', () => {
       expect(info.descriptor).toBe(md.descriptor)

@@ -184,7 +184,7 @@ export class Es6Reflector {
       : () => true
   }
 
-  on({ 
+  map({ 
     knownTypes, knownTypeFn,
     knownKeys, knownKeyFn,
     getPrototype,

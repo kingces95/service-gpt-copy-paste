@@ -56,8 +56,6 @@ export class Es6Compiler {
   static parse(descriptor) {
     if (!descriptor) return null
 
-    assert(descriptor instanceof Descriptor, 'descriptor must be a Descriptor')
-
     // accessor
     if (hasAccessor(descriptor)) {
       const result = { }
@@ -68,17 +66,13 @@ export class Es6Compiler {
       return result
     }
 
-    // deta
+    // data
     const value = descriptor.value
     const type = typeof value
 
     // dereference indirect descriptor
-    if (type == 'object' && value != null) {
-      assert(descriptor.value instanceof Descriptor, 
-        'descriptor.value must be a Descriptor')
-
+    if (type == 'object' && value != null)
       return value
-    }
       
     // method or other data
     return { value }
@@ -92,9 +86,6 @@ export class Es6Compiler {
   //    - Data: enumerable: true, configurable: true, writable: true
   static emit(descriptor) {
     if (!descriptor) return null
-
-    assert(descriptor instanceof Descriptor, 
-      'descriptor must be a Descriptor')
 
     const result = { ...descriptor }
 

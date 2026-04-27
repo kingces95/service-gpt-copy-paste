@@ -287,7 +287,6 @@ export class MemberInfo {
     if (!(other instanceof MemberInfo)) return false
     if (this.#isStatic !== other.#isStatic) return false
     if (!this.#host.equals(other.#host)) return false
-    if (!this.#descriptorInfo.equals(other.#descriptorInfo)) return false
     if (!this.#keyInfo.equals(other.#keyInfo)) return false
     return true  
   }

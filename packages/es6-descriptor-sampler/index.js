@@ -25,6 +25,8 @@ const GetterMd = {
   type: 'getter',
   modifiers: [  ],
   toString: 'getter',
+  shape: 'readable',
+  formof: [ 'readable' ],
 }
 
 const EnumerableGetterMd = {
@@ -38,6 +40,8 @@ const EnumerableGetterMd = {
   type: 'getter',
   modifiers: [ 'visible' ],
   toString: 'visible getter',
+  shape: 'readable',
+  formof: [ 'readable' ],
 }
 
 const OtherGetterMd = {
@@ -48,6 +52,8 @@ const OtherGetterMd = {
     enumerable: Es6GetterDescriptor.DefaultEnumerable,
     configurable: Es6GetterDescriptor.DefaultConfigurable,
   },
+  shape: 'readable',
+  formof: [ 'readable' ],
 }
 
 const SetterMd = {
@@ -61,6 +67,8 @@ const SetterMd = {
   type: 'setter',
   modifiers: [  ],
   toString: 'setter',
+  shape: 'writable',
+  formof: [ 'writable' ],
 }
 
 const OtherSetterMd = {
@@ -71,6 +79,8 @@ const OtherSetterMd = {
     enumerable: Es6SetterDescriptor.DefaultEnumerable,
     configurable: Es6SetterDescriptor.DefaultConfigurable,
   },
+  shape: 'writable',
+  formof: [ 'writable' ],
 }
 
 const PropertyMd = {
@@ -85,6 +95,8 @@ const PropertyMd = {
   type: 'property',
   modifiers: [ ],
   toString: 'property',
+  shape: 'mutable',
+  formof: [ 'mutable', 'readable', 'writable' ],
 }
 
 const MethodMd = {
@@ -99,6 +111,8 @@ const MethodMd = {
   type: 'method',
   modifiers: [  ],
   toString: 'method',
+  shape: 'callable',
+  formof: [ 'callable' ],
 }
 
 const FunctionMd = {
@@ -114,6 +128,8 @@ const FunctionMd = {
   fieldType: 'function',
   modifiers: [  ],
   toString: 'field [function]',
+  shape: 'mutable',
+  formof: [ 'mutable', 'readable', 'writable' ],
 }
 
 const ConstMethodMd = {
@@ -128,6 +144,8 @@ const ConstMethodMd = {
   type: 'method',
   modifiers: [ 'const' ],
   toString: 'const method',
+  shape: 'callable',
+  formof: [ 'callable' ],
 }
 
 const SealedMethodMd = {
@@ -142,6 +160,8 @@ const SealedMethodMd = {
   type: 'method',
   modifiers: [ 'sealed' ],
   toString: 'sealed method',
+  shape: 'callable',
+  formof: [ 'callable' ],
 }
 
 const NumberMd = {
@@ -157,6 +177,8 @@ const NumberMd = {
   fieldType: 'number',
   modifiers: [  ],
   toString: 'field [number]',
+  shape: 'mutable',
+  formof: [ 'mutable', 'readable', 'writable' ],
 }
 
 const HiddenNumberMd = {
@@ -172,6 +194,8 @@ const HiddenNumberMd = {
   fieldType: 'number',
   modifiers: [ 'hidden' ],
   toString: 'hidden field [number]',
+  shape: 'mutable',
+  formof: [ 'mutable', 'readable', 'writable' ],
 }
 
 const ConstNumberMd = {
@@ -187,6 +211,8 @@ const ConstNumberMd = {
   fieldType: 'number',
   modifiers: [ 'const' ],
   toString: 'const field [number]',
+  shape: 'readable',
+  formof: [ 'readable' ],
 }
 
 const NanNumberMd = {
@@ -202,6 +228,8 @@ const NanNumberMd = {
   fieldType: 'number',
   modifiers: [  ],
   toString: 'field [number]',
+  shape: 'mutable',
+  formof: [ 'mutable', 'readable', 'writable' ],
 }
 
 export const Descriptors = [

@@ -166,20 +166,51 @@ export class Prototype {
 
   static *ownValues(prototype, { instance, filter } = { }) {
     const descriptors = Prototype.ownDescriptors(prototype, { filter })
-    yield *Descriptor.values(descriptors, instance)
+    yield *values(descriptors, instance)
   }
 
   static *getValue(prototype, name, { instance, filter } = { }) {
     const descriptors = Prototype.getDescriptor(prototype, name, { filter, 
       includeOverridden: true })
-    yield* Descriptor.values(descriptors, instance)
+    yield* values(descriptors, instance)
   }
 
   static *values(prototype, { 
     instance, includeOverridden, filter } = { }) {
     const descriptors = Prototype.descriptors(prototype, { filter,
       includeOverridden })
-    yield *Descriptor.values(descriptors, instance)
+    yield *values(descriptors, instance)
+  }
+}
+
+function *values(descriptors, instance) {
+  let key
+  let host
+  for (const current of descriptors) {
+    assert(typeof current == 'object'
+      || typeof current == 'function'
+      || typeof current == 'string'
+      || typeof current == 'symbol')
+
+    switch (typeof current) {
+      case 'function':
+        host = current 
+        break
+
+      case 'string':
+      case 'symbol':
+        key = current
+        break
+
+      case 'object': {
+        const descriptor = current
+        const result = Descriptor.getValue(descriptor, instance)
+        if (key) result.key = key
+        if (host) result.host = host
+        yield result
+        break
+      }
+    }
   }
 }
 

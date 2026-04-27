@@ -50,11 +50,6 @@ export class Es6DescriptorInfo {
   get isConfigurable() { return this.descriptor.configurable }
   get isWritable() { return !!this.descriptor.writable }
 
-  equals(other) {
-    if (!(other instanceof Es6DescriptorInfo)) return false
-    return Es6Descriptor.equals(this.descriptor, other.descriptor)
-  }
-
   *modifiers() { yield* Es6Descriptor.modifiers(this.descriptor) }
 
   toString() {

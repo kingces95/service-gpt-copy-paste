@@ -92,7 +92,7 @@ import {
 // Querying the metadata chain for MyContainer would hence find the static 
 // cursorType on MyPartialContainer.
 
-export const PartialMetadata = PartialReflect.on({
+export const PartialMetadata = PartialReflect.map({
   knownKeys: [ 'constructor' ],
   getPrototype: function(type) {
     const hierarchy = [...this.hierarchy(type)]
@@ -169,7 +169,7 @@ export const PartialMetadata = PartialReflect.on({
 // not define a next precondition. 
 
 function partialReflectOnMetaObject(symbol) {
-  return PartialMetadata.on({
+  return PartialMetadata.map({
     knownKeys: [ 'constructor' ],
     getPrototype: function(type) {
       const values = [...this.getValue(type, symbol)].reverse()
