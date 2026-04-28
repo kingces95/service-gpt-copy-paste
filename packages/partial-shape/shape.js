@@ -1,7 +1,7 @@
 import { assert } from '@kingjs/assert'
 import { PartialType } from '@kingjs/partial-type'
-import { Postcondition } from '@kingjs/partial-symbols'
 import { PartialReflect } from '@kingjs/partial-reflect'
+import { Precondition } from '@kingjs/partial-symbols'
 
 // ____________________________________________________________________________
 // DUCK TESTING
@@ -68,6 +68,11 @@ import { PartialReflect } from '@kingjs/partial-reflect'
 const toString = Object.prototype.toString
 
 export class Shape extends PartialType {
+  static [Precondition](type) {
+    assert(false,
+      'Shapes cannot be extended.')
+  }
+
   // The default instanceof behavior would always be false because
   // Shape is an abstract type in that Shape is a pure metadata
   // construct so should never be instantiated so no instance would
@@ -160,9 +165,5 @@ export class Shape extends PartialType {
       return true
 
     return Object.getPrototypeOf(instance) === shape.proto
-  }
-
-  static [Postcondition](type) {
-    assert(false, 'Shapes cannot be extended.')
   }
 }

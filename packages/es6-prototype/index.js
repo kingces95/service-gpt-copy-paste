@@ -94,8 +94,10 @@ export class Es6Prototype {
 
   isComposedOf(type, targetType) {
     return this.hierarchy(type)
-      .some(baseType => baseType === targetType)
+      .some(type => type === targetType)
   }
+
+  hasBaseType() {}
 
   hasOwnKey(type, name) {
     if (this.isKnownKey(type, name)) return false

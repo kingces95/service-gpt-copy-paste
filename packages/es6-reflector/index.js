@@ -200,6 +200,7 @@ export class Es6Reflector {
   }
 
   // static exclusive methods
+  // TODO: drop minDepth
   isExtensionOf(type, targetType, { minDepth = 1 } = { }) {
     if (!type) return false
     if (typeof type != 'function') return false

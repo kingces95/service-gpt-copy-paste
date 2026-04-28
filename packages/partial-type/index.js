@@ -43,7 +43,7 @@ export class PartialType extends null {
     assert(isPojo(typeOrPojo),
       'Argument must be a type or pojo.')
     assert(this[Transparent],
-      'Only transparent PartialTypes can be defined from a pojo.')
+      'Only a transparent PartialType can be defined from a pojo.')
       
     return es6DefineType(null, this, typeOrPojo)
   }

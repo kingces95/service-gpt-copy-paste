@@ -144,9 +144,10 @@ describe('A type', () => {
             expect(descriptor.get).toBe(undefined)
             expect(descriptor.set).toBe(abstract)
           })
-          it('should still satisfy the concept', () => {
-            // a type's composition is not dynamic
-            expect(type.prototype instanceof MyConcept).toBe(true)
+          it('will throw noting extension cannot be duck cast', () => {
+            // expect(type.prototype instanceof MyConcept).toBe(true)
+            expect(() => type.prototype instanceof MyConcept).toThrow(
+              'Type extends but cannot be duck cast to MyConcept')
           })
         })
         describe('and removes the setter', () => {
@@ -161,9 +162,10 @@ describe('A type', () => {
             expect(descriptor.get).toBe(abstract)
             expect(descriptor.set).toBe(undefined)
           })
-          it('should satisfy the concept', () => {
-            // a type's composition is not dynamic
-            expect(type.prototype instanceof MyConcept).toBe(true)
+          it('will throw noting extension cannot be duck cast', () => {
+            // expect(type.prototype instanceof MyConcept).toBe(true)
+            expect(() => type.prototype instanceof MyConcept).toThrow(
+              'Type extends but cannot be duck cast to MyConcept')
           })
         })
       })
@@ -198,9 +200,10 @@ describe('A type', () => {
               get: abstract,
             })
           }) 
-          it('should still satisfy the concept', () => {
-            // a type's composition is not dynamic
-            expect(type.prototype instanceof MyConcept).toBe(true)
+          it('will throw noting extension cannot be duck cast', () => {
+            expect(() => type.prototype instanceof MyConcept).toThrow(
+              'Type extends but cannot be duck cast to MyConcept')
+            // expect(type.prototype instanceof MyConcept).toBe(true)
           })
         })
       })

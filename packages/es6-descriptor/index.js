@@ -50,11 +50,11 @@ export class Es6Descriptor {
       || shape == 'callable'
       || shape == 'mutable')
 
-    const sound = Es6Descriptor.shapeof(descriptor)
-    if (sound == shape) 
+    const form = Es6Descriptor.shapeof(descriptor)
+    if (form == shape) 
       return true
 
-    if (sound == 'mutable') 
+    if (form == 'mutable') 
       return shape == 'readable' || shape == 'writable'
 
     return false

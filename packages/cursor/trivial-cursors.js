@@ -14,7 +14,7 @@ import {
   ContiguousCursorConcept,
 } from './cursor-concepts.js'
 import { 
-  ForwardRangeConcept
+  RangeConcept
 } from './range-concepts.js'
 import {
   throwMoveOutOfBounds,
@@ -132,7 +132,7 @@ export class TrivialRange extends PartialProxy {
   static cursorType = TrivialCursor
 
   static {
-    implement(this, ForwardRangeConcept, {
+    implement(this, RangeConcept, {
       begin() { return new this.cursorType(this) },
       end() { return new this.cursorType(this) },
     })

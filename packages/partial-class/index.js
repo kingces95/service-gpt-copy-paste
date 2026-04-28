@@ -1,5 +1,5 @@
 import { PartialType, Adjacent } from '@kingjs/partial-type'
-import { Attachments } from '../partial-attachments'
+import { Attachments } from '@kingjs/partial-attachments'
 import { Concept } from '@kingjs/partial-concept'
 import { Defines, Extends, Implements } from '@kingjs/partial-symbols'
 

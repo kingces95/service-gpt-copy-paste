@@ -64,8 +64,9 @@ describe('MyConcept', () => {
     beforeEach(() => {
       MyConcept.prototype.member = abstract
     })
-    it('should have prototype that is instance of itself', () => {
-      expect(MyConcept.prototype).toBeInstanceOf(MyConcept)
+    it('should have prototype that is not an instance of itself', () => {
+      // duck cast would work, but Concepts must be explicitly implemented.
+      expect(MyConcept.prototype).not.toBeInstanceOf(MyConcept)
     })
     it('should not be found on an object with the member', () => {
       expect({ member() { } }).not.toBeInstanceOf(MyConcept)
@@ -79,9 +80,6 @@ describe('MyConcept', () => {
       Object.defineProperty(MyConcept.prototype, 'value', {
         get: abstract,
       })
-    })
-    it('should have prototype that is instance of itself', () => {
-      expect(MyConcept.prototype).toBeInstanceOf(MyConcept)
     })
     it('should not be found on an object with the getter', () => {
       expect({ get value() { } }).not.toBeInstanceOf(MyConcept)
@@ -111,9 +109,6 @@ describe('MyConcept', () => {
       const expected = [ MySubConcept ]
       expect(actual).toEqual(expected)
     })
-    it('should have prototype that is instance of itself', () => {
-      expect(MyConcept.prototype).toBeInstanceOf(MyConcept)
-    })
 
     describe('with an associated concept', () => {
       let AssociatedConcept
@@ -124,9 +119,6 @@ describe('MyConcept', () => {
         MyConcept.associatedType = AssociatedConcept
         MyConcept.notAssociatedType = class { }
         MyConcept.justAStatic = 42
-      })
-      it('should have prototype that is instance of itself', () => {
-        expect(MyConcept.prototype).toBeInstanceOf(MyConcept)
       })
       it('should have associated concept', () => {
         const actual = [...PartialMetadata.values(MyConcept, {

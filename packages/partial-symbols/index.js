@@ -1,11 +1,12 @@
 // PartialType + extend is Object.defineProperties with richer descriptors. 
 
-// PartialTypes is a static symbol applied to extensions of 
+// Adjacent is a static symbol applied to extensions of 
 // PartialType which describes how those extensions form a poset of 
 // PartialType types.
-// export const Adjacent = Symbol('PartialType.declarations')
 
-// For example, PartialTypes is used by PartialClass to designate
+//    export const Adjacent = Symbol('PartialType.adjacent')
+
+// For example, Adjacent is used by PartialClass to designate
 // the Extends symbol as containing an adjacency list to other PartialType
 // types of type PartialClass and Attachments. 
 
@@ -90,12 +91,11 @@
 //     equals(other) { }
 //   }
 
-export const PartialTypes = Symbol('PartialType.PartialTypes')
 export const Adjacent = Symbol('PartialType.declarations')
 export const Compile = Symbol('PartialType.compile')
 export const From = Symbol('PartialType.From')
 export const Transparent = Symbol('PartialType.Transparent')
-export const Postcondition = Symbol('PartialType.Postcondition')
+export const Precondition = Symbol('PartialType.Precondition')
 
 export const CreateThunk = Symbol('PartialProxy.CreateThunk')
 export const Preconditions = Symbol('PartialProxy.Preconditions')

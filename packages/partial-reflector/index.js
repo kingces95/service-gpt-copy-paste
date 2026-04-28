@@ -13,8 +13,7 @@ import {
   Adjacent,
   From,
   Transparent, isTransparent,
-  PartialTypes,
-  Postcondition,
+  Precondition,
   CreateThunk,
 } from '@kingjs/partial-symbols'
 
@@ -459,12 +458,11 @@ function resolve(descriptor, existing) {
 // symbols.
 
 const MetaSymbols = [
-  PartialTypes,
   Adjacent, 
   From,
   Transparent,  
   Compile,
-  Postcondition,
+  Precondition,
 ]
 
 // Before a type of PartialType can be decorated with meta symbols, it must
@@ -753,7 +751,10 @@ export function create({
   })
 
   function extend(type, partialType) {
-    assert(!isPojo(type))
+    assert(typeof type === 'function',
+      'Argument must be a type.')
+    assert(PartialType.isUserDefined(partialType),
+      'Argument must be a user defined PartialType.')
     
     const hosts = []
     const prototype = type.prototype
@@ -765,15 +766,14 @@ export function create({
       filter: (host, key, descriptor) =>
         isFirstOrOverride(descriptor, key in prototype),
 
-      onHost: (host) =>
+      onHost: (host) => {
+        host[Precondition]?.call(host, type)
         hosts.push(host)
+      }
     })
 
-    for (const host of hosts) {
-      host[Postcondition]?.call(host, type)
-      if (!isTransparent(host)) 
-        AdjacentTypes.publish(type, host)
-    }
+    for (const host of hosts.filter(host =>!isTransparent(host)))
+      AdjacentTypes.publish(type, host)
   }
   
   return { PartialReflect, extend }

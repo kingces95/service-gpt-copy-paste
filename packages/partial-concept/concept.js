@@ -8,7 +8,8 @@ import {
   Adjacent,
   Defines, 
   Implements, 
-  Compile 
+  Compile,
+  Precondition,
 } from '@kingjs/partial-symbols'
 
 export { Defines, Implements } from '@kingjs/partial-symbols'
@@ -30,17 +31,18 @@ export class Concept extends PartialType {
   //    (2) the instance satisfies all associated concepts of MyConcept.
   
   static [Symbol.hasInstance](instance) {
-    if (this == Concept) 
-      return false
+    // happens if MyConcept.prototype passed as instance.
+    if (instance instanceof PartialType) return false
 
     const ctor = instance?.constructor
-    if (typeof ctor != 'function') 
-      return false
+    if (typeof ctor != 'function') return false
+    
+    const result = PartialReflect.isComposedOf(ctor, this)
+    
+    assert(!result || PartialReflect.canStrictDuckCast(this, instance),
+      `Type extends but cannot be duck cast to ${this.name}`)
 
-    if (!satisfiesAssociations(ctor, this)) 
-      return false
-
-    return PartialReflect.isComposedOf(ctor, this)
+    return result 
   }
 
   static [Compile](descriptor) {
@@ -49,6 +51,12 @@ export class Concept extends PartialType {
     descriptor = super[Compile](descriptor)
     descriptor = abstractify(descriptor)
     return descriptor
+  }
+
+  static [Precondition](type) {
+    const isPartialType = PartialType.isUserDefined(type)
+    assert(isPartialType || satisfiesAssociations(type, this), 
+      `Type ${type.name} does not satisfy associated concepts of ${this.name}`)
   }
 }
 

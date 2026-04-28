@@ -14,7 +14,7 @@ export class RangeConcept extends Concept {
 
   static [Defines] = {
     get cursorType() { return this.constructor.cursorType },
-    // implement iterator
+
     *[Symbol.iterator]() { 
       const begin = this.begin()
       const end = this.end()
