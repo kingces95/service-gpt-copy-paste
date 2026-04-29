@@ -60,19 +60,7 @@ const universalContainerConcepts = [
   InputContainerConcept,
   OutputContainerConcept,
   ForwardContainerConcept]
-
-const ListCase = {
-  name: 'List',
-  type: List,
-  concepts: [
-    ...universalContainerConcepts,
-    FrontEditableContainerConcept],
-  members: {
-    front: true, shift: true, unshift: true,
-    beforeBegin: true, insertAfter: true, removeAfter: true,
-  }
-}
-
+  
 const reversibleContainerConcepts = [
   ...universalContainerConcepts,
   BidirectionalRangeConcept,
@@ -81,20 +69,6 @@ const reversibleContainerConcepts = [
   BackEditableContainerConcept,
   EditableContainerConcept]
 
-const ChainCase = {
-  name: 'Chain',
-  type: Chain,
-  concepts: [
-    ...reversibleContainerConcepts,
-    SpliceableContainerConcept,
-    CountableContainerConcept],
-  members: {
-    front: true, shift: true, unshift: true,
-    back: true, pop: true, push: true, count: true,
-    insert: true, remove: true,
-  }
-}
-
 const indexableContainerConcepts = [
   ...reversibleContainerConcepts,
   BackEditableContainerConcept,
@@ -102,78 +76,91 @@ const indexableContainerConcepts = [
   RandomAccessRangeConcept,
   IndexableContainerConcept,
   CountableContainerConcept]
-
-const VectorCase = {
-  name: 'Vector',
-  type: Vector,
-  concepts: [...indexableContainerConcepts],
-  members: {
-    front: true, shift: true, unshift: true,
-    back: true, pop: true, push: true, count: true,
-    // insert: true, remove: true,
-  }
-}
-const DequeCase = {
-  name: 'Deque',
-  type: Deque,
-  concepts: [...indexableContainerConcepts],
-  members: {
-    front: true, shift: true, unshift: true,
-    back: true, pop: true, push: true, count: true,
-    // insert: true, remove: true,
-    at: true, // setAt: true,
-  }
-}
-
+  
 const bufferConainerConcepts = [
   ...indexableContainerConcepts,
   ContiguousContainerConcept,
   ContiguousRangeConcept,
   EditableContainerConcept,
   BufferContainerConcept,
-  ByteContainerConept,
-]
+  ByteContainerConept]
+  
+const Tests = {
+  List: {
+    type: List,
+    concepts: [
+      ...universalContainerConcepts,
+      FrontEditableContainerConcept],
+    members: {
+      front: true, shift: true, unshift: true,
+      beforeBegin: true, insertAfter: true, removeAfter: true,
+    }
+  },
+  
+  Chain: {
+    type: Chain,
+    concepts: [
+      ...reversibleContainerConcepts,
+      SpliceableContainerConcept,
+      CountableContainerConcept],
+    members: {
+      front: true, shift: true, unshift: true,
+      back: true, pop: true, push: true, count: true,
+      insert: true, remove: true,
+    }
+  },
+  
+  Vector: {
+    type: Vector,
+    concepts: [...indexableContainerConcepts],
+    members: {
+      front: true, shift: true, unshift: true,
+      back: true, pop: true, push: true, count: true,
+      // insert: true, remove: true,
+    }
+  },
+  
+  Deque: {
+    type: Deque,
+    concepts: [...indexableContainerConcepts],
+    members: {
+      front: true, shift: true, unshift: true,
+      back: true, pop: true, push: true, count: true,
+      // insert: true, remove: true,
+      at: true, // setAt: true,
+    }
+  },
+  
+  EcmaBuffer: {
+    type: EcmaBuffer,
+    concepts: [...bufferConainerConcepts],
+    members: {
+      front: true, shift: true, unshift: true,
+      back: true, pop: true, push: true, count: true,
+      insert: true, remove: true,
+      at: true, setAt: true, readAt: true,
+      capacity: true, setCapacity: true, ensureCapacity: true,
+      copy: true, // insertRange: true, removeRange: true,
+      data: true,
+    }
+  },
 
-const EcmaBufferCase = {
-  name: 'EcmaBuffer',
-  type: EcmaBuffer,
-  concepts: [...bufferConainerConcepts],
-  members: {
-    front: true, shift: true, unshift: true,
-    back: true, pop: true, push: true, count: true,
-    insert: true, remove: true,
-    at: true, setAt: true, readAt: true,
-    capacity: true, setCapacity: true, ensureCapacity: true,
-    copy: true, // insertRange: true, removeRange: true,
-    data: true,
+  NodeBuffer: {
+    type: NodeBuffer,
+    concepts: [...bufferConainerConcepts],
+    members: {
+      front: true, shift: true, unshift: true,
+      back: true, pop: true, push: true, count: true,
+      insert: true, remove: true,
+      at: true, setAt: true, readAt: true,
+      capacity: true, setCapacity: true, // ensureCapacity: true,
+      copy: true, // insertRange: true, removeRange: true,
+      data: true,
+    }
   }
 }
-const NodeBufferCase = {
-  name: 'NodeBuffer',
-  type: NodeBuffer,
-  concepts: [...bufferConainerConcepts],
-  members: {
-    front: true, shift: true, unshift: true,
-    back: true, pop: true, push: true, count: true,
-    insert: true, remove: true,
-    at: true, setAt: true, readAt: true,
-    capacity: true, setCapacity: true, // ensureCapacity: true,
-    copy: true, // insertRange: true, removeRange: true,
-    data: true,
-  }
-}
 
-
-const cases = [
-  [ListCase.name, ListCase],
-  [ChainCase.name, ChainCase],
-  [VectorCase.name, VectorCase],
-  [DequeCase.name, DequeCase],
-  [NodeBufferCase.name, NodeBufferCase],
-  [EcmaBufferCase.name, EcmaBufferCase],
-]
-
-describe.each(cases)('A %s', (name, { type, concepts, members }) => {
+describe.each(Object.entries(Tests))('A %s', (name, { type, concepts, members }) => {  
   describe('type', () => {
     it('should be instanceof its concepts', () => {
       for (const concept of concepts) {
@@ -208,35 +195,33 @@ describe.each(cases)('A %s', (name, { type, concepts, members }) => {
     beforeEach(() => {
       container = new type()
     })
-    describe('always', () => {
-      if (members.copy) it('should be able to null copy', () => {
-        const begin = container.begin()
-        const end = container.end()
-        container.copy(begin, begin, end)
-      })
-      if (members.data) it('data should be a Uint8Array', () => { 
-        expect(container.data()).toBeInstanceOf(Uint8Array)
-      })
-      if (members.setCapacity || members.ensureCapacity) {
-        let capacity
-        beforeEach(() => {
-          capacity = container.capacity
-        })
-        it('should be able to +0 capacity', () => {
-          expect(container.setCapacity(capacity)).toBe(capacity)
-        })
-        it('should be able to +1 capacity', () => {
-          expect(container.setCapacity(capacity + 1)).toBe(capacity + 1)
-        })
-        it('should not change capacity when ensuring current capacity', () => { 
-          expect(container.ensureCapacity(capacity)).toBe(capacity)
-        })
-        it('should double capacity when ensureing +1 capacity', () => {
-          const newCapacity = container.ensureCapacity(capacity + 1)
-          expect(newCapacity).toBe(capacity * 2)
-        })
-      }
+    if (members.copy) it('should be able to null copy', () => {
+      const begin = container.begin()
+      const end = container.end()
+      container.copy(begin, begin, end)
     })
+    if (members.data) it('data should be a Uint8Array', () => { 
+      expect(container.data()).toBeInstanceOf(Uint8Array)
+    })
+    if (members.setCapacity || members.ensureCapacity) {
+      let capacity
+      beforeEach(() => {
+        capacity = container.capacity
+      })
+      it('should be able to +0 capacity', () => {
+        expect(container.setCapacity(capacity)).toBe(capacity)
+      })
+      it('should be able to +1 capacity', () => {
+        expect(container.setCapacity(capacity + 1)).toBe(capacity + 1)
+      })
+      it('should not change capacity when ensuring current capacity', () => { 
+        expect(container.ensureCapacity(capacity)).toBe(capacity)
+      })
+      it('should double capacity when ensureing +1 capacity', () => {
+        const newCapacity = container.ensureCapacity(capacity + 1)
+        expect(newCapacity).toBe(capacity * 2)
+      })
+    }
 
     function withCount(count) {
       describe(`now with count ${count}`, () => {
@@ -332,6 +317,10 @@ describe.each(cases)('A %s', (name, { type, concepts, members }) => {
 
           let result
           beforeEach(() => {
+            // container.pop()
+            // container.shift()
+            // container.removeAfter(container.beforeBegin())
+            // container.remove(container.begin())
             result = cursorFn ?
               container[fn](container[cursorFn]()) :
               container[fn]()
