@@ -164,7 +164,7 @@ const Tests = {
 
 describe.each(Object.entries(Tests))('A %s', (name, { 
   type, concepts, members }) => {  
-    
+
   describe('type', () => {
     it('should be instanceof its concepts', () => {
       for (const concept of concepts) {

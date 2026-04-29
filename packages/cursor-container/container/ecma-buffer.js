@@ -4,16 +4,14 @@ import { extend } from '@kingjs/partial-extend'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { ContiguousCursor } from '../cursor/contiguous-cursor.js'
 import {
-  BackEditableContainerConcept,
   SizedContainerConcept,
   IndexableContainerConcept,
   ReservableContainerConcept,
   ByteContainerConept,
 } from '../container-concepts.js'
-
-const {
-  partialContainerType$: PartialContiguousContainer,
-} = ContiguousCursor
+import {
+  PartialContiguousContainer,
+} from '../partial/partial-contiguous-container.js'
 
 export class EcmaBuffer extends PartialProxy {
   static cursorType = ContiguousCursor

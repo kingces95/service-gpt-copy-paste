@@ -11,10 +11,9 @@ import {
   RandomAccessContainerConcept,
   EditableContainerConcept,
 } from '../container-concepts.js'
-
-const {
-  partialContainerType$: PartialIndexableContainer,
-} = IndexableCursor
+import { 
+  PartialIndexableContainer 
+} from '../partial/partial-indexable-container.js'
 
 export class Vector extends PartialProxy {
   static cursorType = IndexableCursor

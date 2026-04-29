@@ -11,10 +11,9 @@ import {
   RandomAccessContainerConcept,
 } from '../container-concepts.js'
 import { IndexableCursor } from '../cursor/indexable-cursor.js'
-
-const {
-  partialContainerType$: PartialIndexableContainer,
-} = IndexableCursor
+import {
+  PartialIndexableContainer,
+} from '../partial/partial-indexable-container.js'
 
 export class Deque extends PartialProxy {
   static cursorType = IndexableCursor
