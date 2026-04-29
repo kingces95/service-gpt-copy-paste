@@ -82,7 +82,7 @@ export class List extends PartialProxy {
       const end = this.end({ fixed: true })
       if (cursor.equals(end)) throwUpdateOutOfBounds()
     },
-    removeAfter(cursor) {
+    eraseAfter(cursor) {
       if (!cursor) throwNull()
       if (cursor.range != this) throwNotEquatableTo()
       const end = this.end({ fixed: true })
@@ -112,7 +112,7 @@ export class List extends PartialProxy {
     define(this, {
       beforeBegin() { return new this.cursorType(this, this._rootLink) },
       insertAfter(cursor, value) { cursor.link.insertAfter(value) },
-      removeAfter(cursor) { return cursor.link.removeAfter() },
+      eraseAfter(cursor) { return cursor.link.eraseAfter() },
     })
 
     implement(this, DisposeConcept, {
@@ -135,7 +135,7 @@ export class List extends PartialProxy {
 
     implement(this, FrontEditableContainerConcept, {
       get front() { return this._rootLink.next.value },
-      shift() { return this.removeAfter(this.beforeBegin()) },
+      shift() { return this.eraseAfter(this.beforeBegin()) },
       unshift(value) { this.insertAfter(this.beforeBegin(), value) },
     })
   }

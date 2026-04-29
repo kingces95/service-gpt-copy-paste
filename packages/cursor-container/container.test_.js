@@ -80,8 +80,8 @@ describe.each(cases)('A %s', (name, type, cursorType, concepts) => {
         expect(() => { f0.insertAfter(f1.beforeBegin(), value0) })
           .toThrow('Cursor is from another container.')
       })
-      it('should throw trying to remove after', () => {
-        expect(() => { f0.removeAfter(f1.beforeBegin()) })
+      it('should throw trying to erase after', () => {
+        expect(() => { f0.eraseAfter(f1.beforeBegin()) })
           .toThrow('Cursor is from another container.')
       })
     })
@@ -94,8 +94,8 @@ describe.each(cases)('A %s', (name, type, cursorType, concepts) => {
         expect(() => { f0.insertAfter(cursor, value0) }).toThrow(
           'Cannot update container at this location.')
       })
-      it('should throw trying to remove after end', () => {
-        expect(() => { f0.removeAfter(cursor) }).toThrow(
+      it('should throw trying to erase after end', () => {
+        expect(() => { f0.eraseAfter(cursor) }).toThrow(
           'Cannot update container at this location.')
       })
     })
@@ -131,9 +131,9 @@ describe.each(cases)('A %s', (name, type, cursorType, concepts) => {
         it('should not be empty', () => {
           expect(f0.isEmpty).toBe(false)
         })
-        describe('then removeAfter', () => {
+        describe('then eraseAfter', () => {
           beforeEach(() => {
-            f0.removeAfter(cursor)
+            f0.eraseAfter(cursor)
           })
           it('should be empty', () => {
             expect(f0.isEmpty).toBe(true)
@@ -433,8 +433,8 @@ describe.each(cases)('A %s', (name, type, cursorType, concepts) => {
           expect(() => { f0.insertAfter(f0.beforeBegin(), value0) }).toThrow(
             'Container is disposed and cannot be used.')
         })
-        it('should throw trying to remove after', () => {
-          expect(() => { f0.removeAfter(f0.beforeBegin()) }).toThrow(
+        it('should throw trying to erase after', () => {
+          expect(() => { f0.eraseAfter(f0.beforeBegin()) }).toThrow(
             'Container is disposed and cannot be used.')
         })
       })
@@ -502,7 +502,7 @@ describe.each(cases)('A %s', (name, type, cursorType, concepts) => {
             'Container is disposed and cannot be used.')
         })
         it('should throw if removed', () => {
-          expect(() => { f0.remove(f0.begin()) }).toThrow(
+          expect(() => { f0.erase(f0.begin()) }).toThrow(
             'Container is disposed and cannot be used.')
         })
       })

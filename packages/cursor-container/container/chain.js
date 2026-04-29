@@ -52,19 +52,20 @@ export class Chain extends List {
       // TODO: Loader installs stubs so type.prototype does not work. Need
       // to update loader to attach a static [Prototype] symbol that contains
       // the original methods so super methods can be addressed stripped of
-      // stubs and proxies. 
+      // stubs and proxies. OR make the proxies detect a super call and forward
+      // to the original method.
 
       // insertAfter(cursor, value) { cursor.link.insertAfter(value) },
-      // removeAfter(cursor) { return cursor.link.removeAfter() },
+      // eraseAfter(cursor) { return cursor.link.eraseAfter() },
 
       insertAfter(cursor, value) {
         // List.prototype.insertAfter.call(this, cursor, value)
         cursor.link.insertAfter(value)
         this._count++
       },
-      removeAfter(cursor) {
-        // const result = List.prototype.removeAfter.call(this, cursor)
-        const result = cursor.link.removeAfter()
+      eraseAfter(cursor) {
+        // const result = List.prototype.eraseAfter.call(this, cursor)
+        const result = cursor.link.eraseAfter()
         this._count--
         return result
       },
@@ -80,7 +81,7 @@ export class Chain extends List {
       pop() {
         const cursor = this.end()
         cursor.stepBack()
-        return this.remove(cursor)
+        return this.erase(cursor)
       },
     })
 
@@ -93,8 +94,8 @@ export class Chain extends List {
         cursor.link.insert(value)
         this._count++
       },
-      remove(cursor) {
-        const result = cursor.link.remove()
+      erase(cursor) {
+        const result = cursor.link.erase()
         this._count--
         return result
       }
@@ -103,7 +104,7 @@ export class Chain extends List {
     implement(this, SpliceableContainerConcept, {
       splice(cursor, outCount = 0, ...values) {
         const beforeCursor = cursor.clone().stepBack()
-        while (outCount-- > 0) this.removeAfter(beforeCursor)
+        while (outCount-- > 0) this.eraseAfter(beforeCursor)
         for (let i = values.length - 1; i >= 0; i--)
           this.insertAfter(beforeCursor, values[i])
       },

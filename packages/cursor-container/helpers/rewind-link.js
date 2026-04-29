@@ -18,15 +18,15 @@ export class RewindLink extends ForwardLink {
     node.next.setPrevious$(node)
     return node
   }
-  removeAfter() {
+  eraseAfter() {
     const node = this.next
     const nextNode = node.next
-    const result = super.removeAfter()
+    const result = super.eraseAfter()
     node.setPrevious$(null)
     nextNode.setPrevious$(this)
     return result
   }
 
   insert(value) { return this.previous.insertAfter(value) }
-  remove() { return this.previous.removeAfter() }
+  erase() { return this.previous.eraseAfter() }
 }

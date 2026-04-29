@@ -108,7 +108,7 @@ export class EditableContainerConcept extends ContainerConcept {
     BackEditableContainerConcept,
   ]
   insert(cursor, value) { }
-  remove(cursor) { }
+  erase(cursor) { }
 }
 
 export class CountableContainerConcept extends ContainerConcept {

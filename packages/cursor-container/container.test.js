@@ -93,7 +93,7 @@ const Tests = {
       FrontEditableContainerConcept],
     members: {
       front: true, shift: true, unshift: true,
-      beforeBegin: true, insertAfter: true, removeAfter: true,
+      beforeBegin: true, insertAfter: true, eraseAfter: true,
     }
   },
   
@@ -106,7 +106,7 @@ const Tests = {
     members: {
       front: true, shift: true, unshift: true,
       back: true, pop: true, push: true, count: true,
-      insert: true, remove: true,
+      insert: true, erase: true,
     }
   },
   
@@ -116,7 +116,7 @@ const Tests = {
     members: {
       front: true, shift: true, unshift: true,
       back: true, pop: true, push: true, count: true,
-      // insert: true, remove: true,
+      // insert: true, erase: true,
     }
   },
   
@@ -126,7 +126,7 @@ const Tests = {
     members: {
       front: true, shift: true, unshift: true,
       back: true, pop: true, push: true, count: true,
-      // insert: true, remove: true,
+      // insert: true, erase: true,
       at: true, // setAt: true,
     }
   },
@@ -137,7 +137,7 @@ const Tests = {
     members: {
       front: true, shift: true, unshift: true,
       back: true, pop: true, push: true, count: true,
-      insert: true, remove: true,
+      insert: true, erase: true,
       at: true, setAt: true, readAt: true,
       capacity: true, setCapacity: true, ensureCapacity: true,
       copy: true, // insertRange: true, removeRange: true,
@@ -151,7 +151,7 @@ const Tests = {
     members: {
       front: true, shift: true, unshift: true,
       back: true, pop: true, push: true, count: true,
-      insert: true, remove: true,
+      insert: true, erase: true,
       at: true, setAt: true, readAt: true,
       capacity: true, setCapacity: true, // ensureCapacity: true,
       copy: true, // insertRange: true, removeRange: true,
@@ -310,8 +310,8 @@ describe.each(Object.entries(Tests))('A %s', (name, { type, concepts, members })
         describe.each([
           ['pop', ''],
           ['shift', ''],
-          ['removeAfter', 'beforeBegin'],
-          ['remove', 'begin'],
+          ['eraseAfter', 'beforeBegin'],
+          ['erase', 'begin'],
         ].filter(([method]) => members[method]))(
           'then %s-ing', (fn, cursorFn) => {
 
@@ -319,8 +319,8 @@ describe.each(Object.entries(Tests))('A %s', (name, { type, concepts, members })
           beforeEach(() => {
             // container.pop()
             // container.shift()
-            // container.removeAfter(container.beforeBegin())
-            // container.remove(container.begin())
+            // container.eraseAfter(container.beforeBegin())
+            // container.erase(container.begin())
             result = cursorFn ?
               container[fn](container[cursorFn]()) :
               container[fn]()
@@ -344,11 +344,11 @@ describe.each(Object.entries(Tests))('A %s', (name, { type, concepts, members })
   //   if (type == List || type.prototype instanceof List) {
   //     const listCursorTest = [
   //       ['beforeBegin', {
-  //         throws: ['removeAfter'],
+  //         throws: ['eraseAfter'],
   //         inserts: ['insertAfter']
   //       }],
   //       ['end', {
-  //         throws: ['removeAfter', 'insertAfter']
+  //         throws: ['eraseAfter', 'insertAfter']
   //       }],
   //     ]
   //     describe.each(listCursorTest)('%s cursor', (name, { 
@@ -408,8 +408,8 @@ describe.each(Object.entries(Tests))('A %s', (name, { type, concepts, members })
 //         expect(() => { f0.insertAfter(f1.beforeBegin(), value0) })
 //           .toThrow('Cursor is from another container.')
 //       })
-//       it('should throw trying to remove after', () => {
-//         expect(() => { f0.removeAfter(f1.beforeBegin()) })
+//       it('should throw trying to erase after', () => {
+//         expect(() => { f0.eraseAfter(f1.beforeBegin()) })
 //           .toThrow('Cursor is from another container.')
 //       })
 //     })
@@ -422,8 +422,8 @@ describe.each(Object.entries(Tests))('A %s', (name, { type, concepts, members })
 //         expect(() => { f0.insertAfter(cursor, value0) }).toThrow(
 //           'Cannot update container at this location.')
 //       })
-//       it('should throw trying to remove after end', () => {
-//         expect(() => { f0.removeAfter(cursor) }).toThrow(
+//       it('should throw trying to erase after end', () => {
+//         expect(() => { f0.eraseAfter(cursor) }).toThrow(
 //           'Cannot update container at this location.')
 //       })
 //     })
@@ -459,9 +459,9 @@ describe.each(Object.entries(Tests))('A %s', (name, { type, concepts, members })
 //         it('should not be empty', () => {
 //           expect(f0.isEmpty).toBe(false)
 //         })
-//         describe('then removeAfter', () => {
+//         describe('then eraseAfter', () => {
 //           beforeEach(() => {
-//             f0.removeAfter(cursor)
+//             f0.eraseAfter(cursor)
 //           })
 //           it('should be empty', () => {
 //             expect(f0.isEmpty).toBe(true)
@@ -761,8 +761,8 @@ describe.each(Object.entries(Tests))('A %s', (name, { type, concepts, members })
 //           expect(() => { f0.insertAfter(f0.beforeBegin(), value0) }).toThrow(
 //             'Container is disposed and cannot be used.')
 //         })
-//         it('should throw trying to remove after', () => {
-//           expect(() => { f0.removeAfter(f0.beforeBegin()) }).toThrow(
+//         it('should throw trying to erase after', () => {
+//           expect(() => { f0.eraseAfter(f0.beforeBegin()) }).toThrow(
 //             'Container is disposed and cannot be used.')
 //         })
 //       })
@@ -830,7 +830,7 @@ describe.each(Object.entries(Tests))('A %s', (name, { type, concepts, members })
 //             'Container is disposed and cannot be used.')
 //         })
 //         it('should throw if removed', () => {
-//           expect(() => { f0.remove(f0.begin()) }).toThrow(
+//           expect(() => { f0.erase(f0.begin()) }).toThrow(
 //             'Container is disposed and cannot be used.')
 //         })
 //       })

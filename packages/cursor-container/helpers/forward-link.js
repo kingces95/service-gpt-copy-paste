@@ -24,7 +24,7 @@ export class ForwardLink {
     this.setNext$(node)
     return node
   }
-  removeAfter() {
+  eraseAfter() {
     const node = this.next
     this.setNext$(node.next)
     node.setNext$(null)

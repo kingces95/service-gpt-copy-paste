@@ -54,7 +54,7 @@ export class ContiguousCursor extends IndexableCursor {
       insert(begin, end) { 
         return
       },
-      remove(begin, end) { 
+      erase(begin, end) { 
         return
       }
     }
@@ -65,7 +65,7 @@ export class ContiguousCursor extends IndexableCursor {
   
       implement(this, FrontEditableContainerConcept, {
         unshift(value) { this.insert(this.begin(), value) },
-        shift() { return this.remove(this.begin()) },
+        shift() { return this.erase(this.begin()) },
       })
 
       implement(this, BackEditableContainerConcept, {
@@ -73,7 +73,7 @@ export class ContiguousCursor extends IndexableCursor {
         pop() { 
           const end = this.end()
           end.stepBack()
-          return this.remove(end)
+          return this.erase(end)
         }
       })
 

@@ -83,7 +83,7 @@ class PartialIndexableContainer extends PartialContainer {
         this.copy(cursorPlusOne, begin, end)
         cursor.value = value
       },
-      remove(cursor) {
+      erase(cursor) {
         const value = cursor.value
         const begin = cursor.clone().step()
         const end = this.end()
