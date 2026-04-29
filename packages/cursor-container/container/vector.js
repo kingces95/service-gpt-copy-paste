@@ -5,10 +5,11 @@ import { IndexableCursor } from '../cursor/indexable-cursor.js'
 import {
   FrontEditableContainerConcept,
   BackEditableContainerConcept,
-  CountableContainerConcept,
+  SizedContainerConcept,
   IndexableContainerConcept,
   OutputContainerConcept,
   RandomAccessContainerConcept,
+  EditableContainerConcept,
 } from '../container-concepts.js'
 
 const {
@@ -43,13 +44,21 @@ export class Vector extends PartialProxy {
       pop() { return this._array.pop() },
     })
 
-    implement(this, CountableContainerConcept, {
+    implement(this, SizedContainerConcept, {
       get count() { return this._array.length },
     })
 
     implement(this, IndexableContainerConcept, {
       at(index) { return this._array[index] },
       setAt(index, value) { this._array[index] = value },
+    })
+
+    implement(this, EditableContainerConcept, {
+      insert(cursor, value) { this._array.splice(cursor.index, 0, value) },
+      erase(cursor) { 
+        this._array.splice(cursor.index, 1)
+        return cursor.clone()
+      },
     })
   }
 }

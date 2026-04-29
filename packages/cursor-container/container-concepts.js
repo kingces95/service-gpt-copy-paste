@@ -107,11 +107,18 @@ export class EditableContainerConcept extends ContainerConcept {
     FrontEditableContainerConcept,
     BackEditableContainerConcept,
   ]
+  static [Defines] = {
+    take(cursor) {
+      const result = cursor.value
+      this.erase(cursor)
+      return result 
+    }
+  }
   insert(cursor, value) { }
   erase(cursor) { }
 }
 
-export class CountableContainerConcept extends ContainerConcept {
+export class SizedContainerConcept extends ContainerConcept {
   static [Defines] = {
     get isEmpty() { return this.count == 0 }
   }
@@ -119,19 +126,33 @@ export class CountableContainerConcept extends ContainerConcept {
   get count() { }
 }
 
-export class IndexableContainerConcept extends CountableContainerConcept {
+export class IndexableContainerConcept extends SizedContainerConcept {
+  static [Defines] = {
+    copy(cursor, begin, end) {
+      const source = begin.clone()
+      const target = cursor.clone()
+      while(!begin.equals(end)) {
+        target.value = source.value
+        source.step()
+        target.step()
+      }
+    }
+  }
   at(index) { }
   setAt(index, value) { }
 }
 
 export class ByteContainerConept extends IndexableContainerConcept {
-  copy(cursor, begin, end) { }
   readAt(cursor, offset, length, signed, littleEndian) { }
   writeAt(cursor, offset, value, length, signed, littleEndian) { }
   data(index, other) { }
 }
 
-export class BufferContainerConcept extends ContainerConcept {
+export class CapacityContainerConcept extends ContainerConcept {
+  get capacity() { }
+}
+
+export class ReservableContainerConcept extends CapacityContainerConcept {
   static [Defines] = {
     ensureCapacity(count) {
       if (count <= this.capacity) return this.capacity
@@ -140,9 +161,5 @@ export class BufferContainerConcept extends ContainerConcept {
       return newCapacity
     },
   }
-  ensureCapacity(count) { } // TODO: Remove once loader fixed
-  get capacity() { }
   setCapacity(count) { }
 }
-
-

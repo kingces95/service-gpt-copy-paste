@@ -5,9 +5,9 @@ import { PartialProxy } from '@kingjs/partial-proxy'
 import { ContiguousCursor } from '../cursor/contiguous-cursor.js'
 import {
   BackEditableContainerConcept,
-  CountableContainerConcept,
+  SizedContainerConcept,
   IndexableContainerConcept,
-  BufferContainerConcept,
+  ReservableContainerConcept,
   ByteContainerConept,
 } from '../container-concepts.js'
 
@@ -45,7 +45,7 @@ export class EcmaBuffer extends PartialProxy {
   static {
     extend(this, PartialContiguousContainer)
 
-    implement(this, CountableContainerConcept, {
+    implement(this, SizedContainerConcept, {
       get count() { return this._count }
     })
 
@@ -54,7 +54,7 @@ export class EcmaBuffer extends PartialProxy {
       setAt(index, value) { this.writeAt(index, value) }
     })
 
-    implement(this, BufferContainerConcept, {
+    implement(this, ReservableContainerConcept, {
       get capacity() { return this.bytes$.byteLength },
       setCapacity(capacity) {
         const newBytes = new ArrayBuffer(capacity)

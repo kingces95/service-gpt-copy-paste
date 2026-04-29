@@ -7,9 +7,9 @@ import {
 import {
   FrontEditableContainerConcept,
   BackEditableContainerConcept,
-  CountableContainerConcept,
+  SizedContainerConcept,
   IndexableContainerConcept,
-  BufferContainerConcept,
+  ReservableContainerConcept,
   ByteContainerConept,
   ContiguousContainerConcept,
   OutputContainerConcept,
@@ -65,7 +65,12 @@ export class ContiguousCursor extends IndexableCursor {
   
       implement(this, FrontEditableContainerConcept, {
         unshift(value) { this.insert(this.begin(), value) },
-        shift() { return this.erase(this.begin()) },
+        shift() { 
+          const begin = this.begin()
+          const result = begin.value
+          this.erase(begin)
+          return result
+        },
       })
 
       implement(this, BackEditableContainerConcept, {
@@ -73,7 +78,9 @@ export class ContiguousCursor extends IndexableCursor {
         pop() { 
           const end = this.end()
           end.stepBack()
-          return this.erase(end)
+          const value = end.value
+          this.erase(end)
+          return value
         }
       })
 
@@ -84,13 +91,13 @@ export class ContiguousCursor extends IndexableCursor {
         setAt(index, value) { },
       })
 
-      implement(this, CountableContainerConcept, { 
+      implement(this, SizedContainerConcept, { 
         // none
       }, {
         get count() { return this._count }
       })
 
-      implement(this, BufferContainerConcept, {
+      implement(this, ReservableContainerConcept, {
         // none
       }, {
         get capacity() { },

@@ -5,7 +5,7 @@ import { define } from '@kingjs/partial-define'
 import { List } from './list.js'
 import { 
   BidirectionalContainerConcept,
-  CountableContainerConcept,
+  SizedContainerConcept,
   BackEditableContainerConcept,
   SpliceableContainerConcept,
   EditableContainerConcept,
@@ -81,11 +81,13 @@ export class Chain extends List {
       pop() {
         const cursor = this.end()
         cursor.stepBack()
-        return this.erase(cursor)
+        const result = cursor.value
+        this.erase(cursor)
+        return result
       },
     })
 
-    implement(this, CountableContainerConcept, {
+    implement(this, SizedContainerConcept, {
       get count() { return this._count },
     })
 
@@ -95,7 +97,8 @@ export class Chain extends List {
         this._count++
       },
       erase(cursor) {
-        const result = cursor.link.erase()
+        const result = cursor.clone().step()
+        cursor.link.erase()
         this._count--
         return result
       }

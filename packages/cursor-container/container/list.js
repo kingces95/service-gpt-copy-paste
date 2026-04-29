@@ -112,7 +112,10 @@ export class List extends PartialProxy {
     define(this, {
       beforeBegin() { return new this.cursorType(this, this._rootLink) },
       insertAfter(cursor, value) { cursor.link.insertAfter(value) },
-      eraseAfter(cursor) { return cursor.link.eraseAfter() },
+      eraseAfter(cursor) { 
+        cursor.link.eraseAfter() 
+        return cursor.clone().step()
+      },
     })
 
     implement(this, DisposeConcept, {
@@ -135,7 +138,11 @@ export class List extends PartialProxy {
 
     implement(this, FrontEditableContainerConcept, {
       get front() { return this._rootLink.next.value },
-      shift() { return this.eraseAfter(this.beforeBegin()) },
+      shift() { 
+        const result = this._rootLink.next.value
+        this.eraseAfter(this.beforeBegin())
+        return result
+      },
       unshift(value) { this.insertAfter(this.beforeBegin(), value) },
     })
   }

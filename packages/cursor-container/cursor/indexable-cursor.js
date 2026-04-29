@@ -19,7 +19,7 @@ import {
   FrontEditableContainerConcept,
   BackEditableContainerConcept,
   EditableContainerConcept,
-  CountableContainerConcept,
+  SizedContainerConcept,
   IndexableContainerConcept,
 } from '../container-concepts.js'
 import { ContainerCursor } from './container-cursor.js'
@@ -89,11 +89,13 @@ class PartialIndexableContainer extends PartialContainer {
         const end = this.end()
         this.copy(cursor, begin, end)
         this._count--
-        return value
+        return cursor.clone()
       },
     })
 
-    implement(this, CountableContainerConcept, {
+    implement(this, SizedContainerConcept, {
+      // none
+    }, {
       get count() { },
     })
 

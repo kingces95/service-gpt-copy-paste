@@ -5,7 +5,7 @@ import { PartialProxy } from '@kingjs/partial-proxy'
 import {
   FrontEditableContainerConcept,
   BackEditableContainerConcept,
-  CountableContainerConcept,
+  SizedContainerConcept,
   IndexableContainerConcept,
   OutputContainerConcept,
   RandomAccessContainerConcept,
@@ -44,7 +44,7 @@ export class Deque extends PartialProxy {
       pop() { return this._denque.pop() },
     })
 
-    implement(this, CountableContainerConcept, {
+    implement(this, SizedContainerConcept, {
       get count() { return this._denque.length },
     })
 

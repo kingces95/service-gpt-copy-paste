@@ -26,9 +26,10 @@ import {
   BackEditableContainerConcept,
   FrontEditableContainerConcept,
   EditableContainerConcept,
-  CountableContainerConcept,
+  SizedContainerConcept,
   IndexableContainerConcept,
-  BufferContainerConcept,
+  CapacityContainerConcept,
+  ReservableContainerConcept,
   ByteContainerConept,
 } from '@kingjs/cursor-container'
 import {
@@ -75,14 +76,15 @@ const indexableContainerConcepts = [
   RandomAccessContainerConcept, 
   RandomAccessRangeConcept,
   IndexableContainerConcept,
-  CountableContainerConcept]
+  SizedContainerConcept]
   
 const bufferConainerConcepts = [
   ...indexableContainerConcepts,
   ContiguousContainerConcept,
   ContiguousRangeConcept,
   EditableContainerConcept,
-  BufferContainerConcept,
+  CapacityContainerConcept,
+  ReservableContainerConcept,
   ByteContainerConept]
   
 const Tests = {
@@ -102,7 +104,7 @@ const Tests = {
     concepts: [
       ...reversibleContainerConcepts,
       SpliceableContainerConcept,
-      CountableContainerConcept],
+      SizedContainerConcept],
     members: {
       front: true, shift: true, unshift: true,
       back: true, pop: true, push: true, count: true,
@@ -116,7 +118,7 @@ const Tests = {
     members: {
       front: true, shift: true, unshift: true,
       back: true, pop: true, push: true, count: true,
-      // insert: true, erase: true,
+      insert: true, erase: true,
     }
   },
   
@@ -160,7 +162,9 @@ const Tests = {
   }
 }
 
-describe.each(Object.entries(Tests))('A %s', (name, { type, concepts, members }) => {  
+describe.each(Object.entries(Tests))('A %s', (name, { 
+  type, concepts, members }) => {  
+    
   describe('type', () => {
     it('should be instanceof its concepts', () => {
       for (const concept of concepts) {
@@ -277,6 +281,11 @@ describe.each(Object.entries(Tests))('A %s', (name, { type, concepts, members })
 
       let value = 42
       beforeEach(() => {
+        // container.unshift(value)
+        // container.push(value)
+        // container.insert(container.begin(), value)
+        // container.insert(container.end(), value)
+        // container.insertAfter(container.beforeBegin(), value)
         if (cursorFn) {
           const cursor = container[cursorFn]()
           container[fn](cursor, value)
@@ -285,53 +294,67 @@ describe.each(Object.entries(Tests))('A %s', (name, { type, concepts, members })
       })
       withCount(1)
 
-      function whenNotEmpty() {
-        describe('now not empty', () => {
-          it('should not be empty', () => {
-            expect(container.isEmpty).toBe(false)
-          })
-          if (members.front) it('should have a front value', () => {
-            expect(container.front).toBe(value)
-          })
-          if (members.at) it('should have a value at index 0', () => {
-            expect(container.at(0)).toBe(value)
-          })
-          if (members.setAt) it('should be able to set a value at index 0', () => {
-            container.setAt(0, value + 1)
-            expect(container.at(0)).toBe(value + 1)
-          })
-          if (members.readAt) it('shoud read a value at index 0', () => {
-            expect(container.readAt(0)).toBe(value)
-          })
-          if (members.data) it('should have data matching the value', () => {
-            expect(container.data()[0]).toBe(value)
-          })
+      describe('now not empty', () => {
+        it('should not be empty', () => {
+          expect(container.isEmpty).toBe(false)
         })
-        describe.each([
-          ['pop', ''],
-          ['shift', ''],
-          ['eraseAfter', 'beforeBegin'],
-          ['erase', 'begin'],
-        ].filter(([method]) => members[method]))(
-          'then %s-ing', (fn, cursorFn) => {
+        if (members.front) it('should have a front value', () => {
+          expect(container.front).toBe(value)
+        })
+        if (members.at) it('should have a value at index 0', () => {
+          expect(container.at(0)).toBe(value)
+        })
+        if (members.setAt) it('should be able to set a value at index 0', () => {
+          container.setAt(0, value + 1)
+          expect(container.at(0)).toBe(value + 1)
+        })
+        if (members.readAt) it('shoud read a value at index 0', () => {
+          expect(container.readAt(0)).toBe(value)
+        })
+        if (members.data) it('should have data matching the value', () => {
+          expect(container.data()[0]).toBe(value)
+        })
+      })
+      describe.each([
+        ['pop'],
+        ['shift'],
+      ].filter(([method]) => members[method]))(
+        'then %s-ing', (fn) => {
 
-          let result
-          beforeEach(() => {
-            // container.pop()
-            // container.shift()
-            // container.eraseAfter(container.beforeBegin())
-            // container.erase(container.begin())
-            result = cursorFn ?
-              container[fn](container[cursorFn]()) :
-              container[fn]()
-          })
-          it('should have shifted the value', () => {
-            expect(result).toBe(value)
-          })
-          whenEmpty()
+        let result
+        beforeEach(() => {
+          // container.pop()
+          // container.shift()
+          result = container[fn]()
         })
-      }
-      whenNotEmpty()
+        it('should return cursor or end', () => {
+          expect(result).toBe(value)
+        })
+        whenEmpty()
+      })        
+      describe.each([
+        ['eraseAfter', 'beforeBegin'],
+        ['erase', 'begin'],
+      ].filter(([method]) => members[method]))(
+        'then %s-ing', (fn, cursorFn) => {
+
+        let result
+        let cursor
+        beforeEach(() => {
+          // container.eraseAfter(container.beforeBegin())
+          // container.erase(container.begin())
+          cursor = container[cursorFn]()
+          result = container[fn](cursor)
+        })
+        it('should not return the cursor', () => {
+          expect(result).not.toBe(cursor)
+        })
+        it('result should equal end', () => {
+          const end = container.end()
+          expect(result.equals(end)).toBe(true)
+        })
+        whenEmpty()
+      })
     })
   })
 
