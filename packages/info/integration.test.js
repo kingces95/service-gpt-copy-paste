@@ -11,6 +11,7 @@ import { extend } from '@kingjs/partial-extend'
 expect.extend({ toEqualAsSet })
 
 import { abstract } from '@kingjs/abstract'
+import { implement } from '@kingjs/partial-implement'
 
 const MySymbol = Symbol('test-symbol')
 
@@ -129,7 +130,7 @@ describe('MyClass', () => {
       describe('merged with MyExtendedConcept', () => {
         let info
         beforeEach(() => {
-          extend(cls, myExtendedConcept)
+          implement(cls, myExtendedConcept)
           info = TypeInfo.from(cls)
         })
         it('should report having the merged member', () => {
@@ -171,7 +172,7 @@ describe('MyClass', () => {
     describe('merged with MyConcept', () => {
       let info
       beforeEach(() => {
-        extend(cls, myConcept)
+        implement(cls, myConcept)
         info = TypeInfo.from(cls)
       })
       it('should report having the merged member', () => {
@@ -223,7 +224,7 @@ describe('MyClass', () => {
         myPartialClass.prototype.myMethod = conceptualFn
         myPartialClassInfo = TypeInfo.from(myPartialClass)
         extend(cls, myPartialClass)
-        extend(cls, myConcept)
+        implement(cls, myConcept)
         info = TypeInfo.from(cls)
       })
       it('should report being merged with MyPartialClass', () => {
@@ -245,7 +246,7 @@ describe('MyClass', () => {
         myPartialClass = class MyPartialClass extends PartialClass { }
         myPartialClass.prototype.myMethod = conceptualFn
         myPartialClassInfo = TypeInfo.from(myPartialClass)
-        extend(cls, myConcept)
+        implement(cls, myConcept)
         extend(cls, myPartialClass)
         info = TypeInfo.from(cls)
       })

@@ -147,7 +147,7 @@ describe('A type', () => {
           it('will throw noting extension cannot be duck cast', () => {
             // expect(type.prototype instanceof MyConcept).toBe(true)
             expect(() => type.prototype instanceof MyConcept).toThrow(
-              'Type extends but cannot be duck cast to MyConcept')
+              'Instance composed of but cannot be duck cast to MyConcept')
           })
         })
         describe('and removes the setter', () => {
@@ -165,7 +165,7 @@ describe('A type', () => {
           it('will throw noting extension cannot be duck cast', () => {
             // expect(type.prototype instanceof MyConcept).toBe(true)
             expect(() => type.prototype instanceof MyConcept).toThrow(
-              'Type extends but cannot be duck cast to MyConcept')
+              'Instance composed of but cannot be duck cast to MyConcept')
           })
         })
       })
@@ -202,7 +202,7 @@ describe('A type', () => {
           }) 
           it('will throw noting extension cannot be duck cast', () => {
             expect(() => type.prototype instanceof MyConcept).toThrow(
-              'Type extends but cannot be duck cast to MyConcept')
+              'Instance composed of but cannot be duck cast to MyConcept')
             // expect(type.prototype instanceof MyConcept).toBe(true)
           })
         })

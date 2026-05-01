@@ -2,6 +2,7 @@ import { assert } from '@kingjs/assert'
 import { trimPojo } from '@kingjs/pojo-trim'
 import { Prototype } from '@kingjs/prototype'
 import { PartialReflect } from '@kingjs/partial-reflect'
+import { PartialType } from '@kingjs/partial-type'
 import { 
   Preconditions, 
   Postconditions,
@@ -9,13 +10,14 @@ import {
   TypePostcondition,
 } from '@kingjs/partial-symbols'
 
+// ____________________________________________________________________________
 // METADATA
 
 // PartialReflector supports metadata which is a prototype chain of the 
 // static field descriptors of a type found by traversing the type
 // hiearchy of the instance prototype chain. For example, implementing
 
-  //  myContainer instanceof InputContainerConcept
+  //  myContainer instanceof InputContainerPart
   
 // where MyContainer declares an an associated cursorType as an
 // InputCursor like,
@@ -24,7 +26,7 @@ import {
   //    next() { }
   //    get value() { } 
   //  }
-  //  class InputContainerConcept extends Concept { 
+  //  class InputContainerPart extends Concept { 
   //    static cursorType = InputCursorConcept 
   //  }  
 
@@ -47,7 +49,7 @@ import {
 // requires testing if MyContainer's cursor is an InputCurosr. Specifically,
 // this requires testing if MyContainer has a static cursorType whose value
 // is a type an instance of which would be instanceof the concept found 
-// in the static cursorType on InputContainerConcept namely 
+// in the static cursorType on InputContainerPart namely 
 // InputCursorConcept. 
 
 // A naive implementation would search the static prototype chain created
@@ -76,10 +78,10 @@ import {
   //         └── Object
   //             └── null
 
-// Each prototype in this chain has a copy of the instance descriptors of
+// Each prototype in this chain has a copy of the _instance_ descriptors of
 // the type it represents. The metadata chain is a transformation of this 
-// instance prototype chain except that each prototype in the chain has a 
-// copy of the *static field* descriptors of the type it represents. 
+// instance prototype chain where each prototype in the chain has a 
+// copy of the _static_ descriptors of the type it represents. 
 
   // PartialReflector Metadata Prototype Chain:
 
@@ -124,6 +126,26 @@ export const PartialMetadata = PartialReflect.map({
   }
 })
 
+// ____________________________________________________________________________
+// ASSOCIATED PARTIAL TYPES
+
+// Associated partial types allow for testing if assoicated metadata of
+// an instance satisfies associated metadata of a PartialType. 
+
+export function satisfiesAssociations(ctor, partialType) {
+  for (const { value: associatedPartialType, key } of PartialMetadata.values(
+    partialType, { extensionOf: PartialType, includeOverridden: true })) {
+
+    const associatedType = ctor[key]
+    if (!(typeof associatedType == 'function')) 
+      return false      
+    
+    return PartialReflect.isComposedOf(associatedType, associatedPartialType)
+  }
+  return true
+}
+
+// ____________________________________________________________________________
 // PRECONDITIONS AND POSTCONDITIONS
 
 // PartialReflector also supports preconditions and postconditions which are

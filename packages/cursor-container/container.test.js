@@ -3,7 +3,6 @@ import { beforeEach } from 'vitest'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { 
   Concept,
-  DisposeConcept,
 } from '@kingjs/partial-concept'
 import { 
   InputCursorConcept,
@@ -15,22 +14,23 @@ import {
   ContiguousCursorConcept,
 } from '../cursor/cursor-concepts.js'
 import {
-  ContainerConcept,
-  InputContainerConcept,
-  OutputContainerConcept,
-  ForwardContainerConcept,
-  BidirectionalContainerConcept,
-  RandomAccessContainerConcept,
-  ContiguousContainerConcept,
-  SpliceableContainerConcept,
-  BackEditableContainerConcept,
-  FrontEditableContainerConcept,
-  EditableContainerConcept,
-  SizedContainerConcept,
-  IndexableContainerConcept,
-  CapacityContainerConcept,
-  ReservableContainerConcept,
-  ByteContainerConept,
+  ContainerPart,
+  InputContainerPart,
+  OutputContainerPart,
+  ForwardContainerPart,
+  BidirectionalContainerPart,
+  RandomAccessContainerPart,
+  ContiguousContainerPart,
+  SpliceableContainerPart,
+  BackEditableContainerPart,
+  FrontEditableContainerPart,
+  EditableContainerPart,
+  SizedContainerPart,
+  IndexableContainerPart,
+  CapacityContainerPart,
+  ReservableContainerPart,
+  ByteContainerPart,
+  ClearableContainerPart,
 } from '@kingjs/cursor-container'
 import {
   RangeConcept,
@@ -52,47 +52,46 @@ import {
 } from '@kingjs/cursor-container'
 
 const universalContainerConcepts = [
-  DisposeConcept,
   RangeConcept,
   InputRangeConcept,
   OutputRangeConcept,
-  ContainerConcept,
+  ContainerPart,
   ForwardRangeConcept,
-  InputContainerConcept,
-  OutputContainerConcept,
-  ForwardContainerConcept]
+  InputContainerPart,
+  OutputContainerPart,
+  ForwardContainerPart]
   
 const reversibleContainerConcepts = [
   ...universalContainerConcepts,
   BidirectionalRangeConcept,
-  BidirectionalContainerConcept,
-  FrontEditableContainerConcept,
-  BackEditableContainerConcept,
-  EditableContainerConcept]
+  BidirectionalContainerPart,
+  FrontEditableContainerPart,
+  BackEditableContainerPart,
+  EditableContainerPart]
 
 const indexableContainerConcepts = [
   ...reversibleContainerConcepts,
-  BackEditableContainerConcept,
-  RandomAccessContainerConcept, 
+  BackEditableContainerPart,
+  RandomAccessContainerPart, 
   RandomAccessRangeConcept,
-  IndexableContainerConcept,
-  SizedContainerConcept]
+  IndexableContainerPart,
+  SizedContainerPart]
   
 const bufferConainerConcepts = [
   ...indexableContainerConcepts,
-  ContiguousContainerConcept,
+  ContiguousContainerPart,
   ContiguousRangeConcept,
-  EditableContainerConcept,
-  CapacityContainerConcept,
-  ReservableContainerConcept,
-  ByteContainerConept]
+  EditableContainerPart,
+  CapacityContainerPart,
+  ReservableContainerPart,
+  ByteContainerPart]
   
 const Tests = {
   List: {
     type: List,
     concepts: [
       ...universalContainerConcepts,
-      FrontEditableContainerConcept],
+      FrontEditableContainerPart],
     members: {
       front: true, shift: true, unshift: true,
       beforeBegin: true, insertAfter: true, eraseAfter: true,
@@ -103,8 +102,8 @@ const Tests = {
     type: Chain,
     concepts: [
       ...reversibleContainerConcepts,
-      SpliceableContainerConcept,
-      SizedContainerConcept],
+      SpliceableContainerPart,
+      SizedContainerPart],
     members: {
       front: true, shift: true, unshift: true,
       back: true, pop: true, push: true, count: true,
@@ -114,7 +113,9 @@ const Tests = {
   
   Vector: {
     type: Vector,
-    concepts: [...indexableContainerConcepts],
+    concepts: [
+      ClearableContainerPart,
+      ...indexableContainerConcepts],
     members: {
       front: true, shift: true, unshift: true,
       back: true, pop: true, push: true, count: true,
@@ -124,7 +125,9 @@ const Tests = {
   
   Deque: {
     type: Deque,
-    concepts: [...indexableContainerConcepts],
+    concepts: [
+      ClearableContainerPart,
+      ...indexableContainerConcepts],
     members: {
       front: true, shift: true, unshift: true,
       back: true, pop: true, push: true, count: true,
@@ -498,7 +501,7 @@ describe.each(Object.entries(Tests))('A %s', (name, {
 //     })
 //   })
 //   describe.each([ 
-//     type.prototype instanceof BackEditableContainerConcept,
+//     type.prototype instanceof BackEditableContainerPart,
 //   ].filter(Boolean))
 //   ('bidirectional container', (isBidirectional) => {
 //     it('should throw if popped', () => {
@@ -791,7 +794,7 @@ describe.each(Object.entries(Tests))('A %s', (name, {
 //       })
 //     }
 
-//     if (type.prototype instanceof FrontEditableContainerConcept) {
+//     if (type.prototype instanceof FrontEditableContainerPart) {
 //       describe('accessing a sequence container', () => {
 //         it('should not have a front value', () => {
 //           expect(() => { f0.front }).toThrow(
@@ -808,7 +811,7 @@ describe.each(Object.entries(Tests))('A %s', (name, {
 //       })
 //     }
 
-//     if (type.prototype instanceof BackEditableContainerConcept) {
+//     if (type.prototype instanceof BackEditableContainerPart) {
 //       describe('accessing a rewind container', () => {
 //         it('should throw on count', () => {
 //           expect(() => { f0.count }).toThrow(
@@ -829,7 +832,7 @@ describe.each(Object.entries(Tests))('A %s', (name, {
 //       })
 //     }
 
-//     if (type.prototype instanceof IndexableContainerConcept) {
+//     if (type.prototype instanceof IndexableContainerPart) {
 //       describe('accessing an indexable container', () => {
 //         it('should throw when at', () => {
 //           expect(() => { f0.at(0) }).toThrow(
@@ -842,7 +845,7 @@ describe.each(Object.entries(Tests))('A %s', (name, {
 //       })
 //     }
 
-//     if (type.prototype instanceof ContiguousContainerConcept) {
+//     if (type.prototype instanceof ContiguousContainerPart) {
 //       describe('accessing a contiguous container', () => {
 //         // it('should throw if expanded', () => {
 //         //   expect(() => { f0.expand(1) }).toThrow(

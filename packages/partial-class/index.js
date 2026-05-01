@@ -1,14 +1,30 @@
 import { PartialType, Adjacent } from '@kingjs/partial-type'
-import { Attachments } from '@kingjs/partial-attachments'
 import { Concept } from '@kingjs/partial-concept'
-import { Defines, Extends, Implements } from '@kingjs/partial-symbols'
+import { 
+  Attachments, AbstractAttachments 
+} from '@kingjs/partial-attachments'
+import { 
+  Defines, 
+  Extends, 
+  Implements, 
+  Abstracts, 
+  Precondition,
+} from '@kingjs/partial-symbols'
 
-export { Extends, Defines, Implements } from '@kingjs/partial-symbols'
+export { 
+  Extends, 
+  Defines, 
+  Implements, 
+  Abstracts,
+} from '@kingjs/partial-symbols'
 
 export class PartialClass extends PartialType {
   static [Adjacent] = {
     [Defines]: Attachments,
+    [Abstracts]: AbstractAttachments,
     [Extends]: PartialClass,
     [Implements]: Concept,
   }
+  static [Symbol.hasInstance] = Concept[Symbol.hasInstance]
+  static [Precondition] = Concept[Precondition]
 }

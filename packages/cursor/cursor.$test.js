@@ -6,13 +6,13 @@ import { Cursor } from './cursor.js'
 import { Interval } from './interval.js'
 import { Range } from './range.js'
 import {
-  ContainerConcept,
-  InputContainerConcept,
-  OutputContainerConcept,
-  ForwardContainerConcept,
-  BidirectionalContainerConcept,
-  RandomAccessContainerConcept,
-  ContiguousContainerConcept,
+  ContainerPart,
+  InputContainerPart,
+  OutputContainerPart,
+  ForwardContainerPart,
+  BidirectionalContainerPart,
+  RandomAccessContainerPart,
+  ContiguousContainerPart,
   PrologContainerConcept,
 } from '@kingjs/cursor-container'
 import { 
@@ -75,7 +75,7 @@ class TrivialCursor extends Cursor {
   equals$(cursor, other) { return true }
 }
 class TrivialCursorFactory extends CursorFactory {
-  static { implement(this, ContainerConcept) }
+  static { implement(this, ContainerPart) }
   static get cursorType() { return TrivialCursor }
 }
 
@@ -88,7 +88,7 @@ class TrivialInputCursor extends TrivialCursor {
   get value() { return undefined }
 }
 class TrivialInputCursorFactory extends CursorFactory {
-  static { implement(this, InputContainerConcept) }
+  static { implement(this, InputContainerPart) }
   static get cursorType() { return TrivialInputCursor }
 }
 
@@ -101,7 +101,7 @@ class TrivialOutputCursor extends TrivialCursor {
   set value(value) { throw new RangeError() }
 }
 class TrivialOutputCursorFactory extends CursorFactory {
-  static { implement(this, OutputContainerConcept) }
+  static { implement(this, OutputContainerPart) }
   static get cursorType() { return TrivialOutputCursor }
 }
 
@@ -116,8 +116,8 @@ class TrivialMutableCursor extends TrivialCursor {
 }
 class TrivialMutableCursorFactory extends CursorFactory {
   static { 
-    implement(this, InputContainerConcept)
-    implement(this, OutputContainerConcept)
+    implement(this, InputContainerPart)
+    implement(this, OutputContainerPart)
   }
   static get cursorType() { return TrivialMutableCursor }
 }
@@ -127,7 +127,7 @@ class TrivialForwardCursor extends TrivialMutableCursor {
   clone() { return new this.constructor() }
 }
 class TrivialForwardCursorFactory extends CursorFactory {
-  static { implement(this, ForwardContainerConcept) }
+  static { implement(this, ForwardContainerPart) }
   static get cursorType() { return TrivialForwardCursor }
 }
 
@@ -136,7 +136,7 @@ class TrivialBidirectionalCursor extends TrivialForwardCursor {
   stepBack() { throwMoveOutOfBounds() }
 }
 class TrivialBidirectionalCursorFactory extends CursorFactory {
-  static { implement(this, BidirectionalContainerConcept) }
+  static { implement(this, BidirectionalContainerPart) }
   static get cursorType() { return TrivialBidirectionalCursor }
 }
 
@@ -158,7 +158,7 @@ class TrivialRandomAccessCursor extends TrivialBidirectionalCursor {
   compareTo(other) { return 0 }
 }
 class TrivialRandomAccessCursorFactory extends CursorFactory {
-  static { implement(this, RandomAccessContainerConcept) }
+  static { implement(this, RandomAccessContainerPart) }
   static get cursorType() { return TrivialRandomAccessCursor }
 }
 
@@ -174,7 +174,7 @@ class TrivialContiguousCursor extends TrivialRandomAccessCursor {
   data(other) { return Buffer.alloc(0) }
 }
 class TrivialContiguousCursorFactory extends CursorFactory {
-  static { implement(this, ContiguousContainerConcept) }
+  static { implement(this, ContiguousContainerPart) }
   static get cursorType() { return TrivialContiguousCursor }
 }
 
@@ -224,7 +224,7 @@ describe.each(intervals.map(type => [
     expect(end.equals(begin)).toBe(true)
   })
   describe.each([
-    type.prototype instanceof ContainerConcept
+    type.prototype instanceof ContainerPart
   ].filter(Boolean))('as a container', (isContainer) => {
     let container
     beforeEach(() => {
@@ -264,7 +264,7 @@ describe.each(intervals.map(type => [
         "Cannot move cursor out of bounds.")
     })
     describe.each([
-      type.prototype instanceof InputContainerConcept
+      type.prototype instanceof InputContainerPart
     ].filter(Boolean))('from an input container', (isInput) => {
       it('should be an input cursor', () => {
         expect(end).toBeInstanceOf(InputCursorConcept)
@@ -275,7 +275,7 @@ describe.each(intervals.map(type => [
       })
     })
     describe.each([
-      type.prototype instanceof OutputContainerConcept
+      type.prototype instanceof OutputContainerPart
     ].filter(Boolean))('from an output container', (isOutput) => {
       it('should be an output cursor', () => {
         expect(end).toBeInstanceOf(OutputCursorConcept)
@@ -286,7 +286,7 @@ describe.each(intervals.map(type => [
       })
     })
     describe.each([
-      type.prototype instanceof ForwardContainerConcept
+      type.prototype instanceof ForwardContainerPart
     ].filter(Boolean))('from a forward container', (isForward) => {
       it('should be a forward cursor', () => {
         expect(end).toBeInstanceOf(ForwardCursorConcept)
@@ -296,7 +296,7 @@ describe.each(intervals.map(type => [
       })
     })
     describe.each([
-      type.prototype instanceof BidirectionalContainerConcept
+      type.prototype instanceof BidirectionalContainerPart
     ].filter(Boolean))('from a rewind container', (isRewind) => {
       it('should be a rewind cursor', () => {
         expect(end).toBeInstanceOf(BidirectionalCursorConcept)
@@ -332,7 +332,7 @@ describe.each(intervals.map(type => [
       })
     })
     describe.each([
-      type.prototype instanceof RandomAccessContainerConcept
+      type.prototype instanceof RandomAccessContainerPart
     ].filter(Boolean))('from a random access container', (isRandomAccess) => {
       it('should be a random access cursor', () => {
         expect(end).toBeInstanceOf(RandomAccessCursorConcept)
@@ -369,7 +369,7 @@ describe.each(intervals.map(type => [
       })
     })
     describe.each([
-      type.prototype instanceof ContiguousContainerConcept
+      type.prototype instanceof ContiguousContainerPart
     ].filter(Boolean))('from a contiguous container', (isContiguous) => {
       it('should be a contiguous cursor', () => {
         expect(end).toBeInstanceOf(ContiguousCursorConcept)

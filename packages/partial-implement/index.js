@@ -1,7 +1,6 @@
 import { assert } from '@kingjs/assert'
-import { extend } from '@kingjs/partial-extend'
 import { Es6Reflect } from '@kingjs/es6-reflect'
-import { PartialReflect } from '@kingjs/partial-reflect'
+import { PartialReflect, copyTo } from '@kingjs/partial-reflect'
 import { Concept } from '@kingjs/partial-concept'
 import { Attachments } from '@kingjs/partial-attachments'
 import { From } from '@kingjs/partial-symbols'
@@ -27,6 +26,6 @@ export function implement(type, concept, implementation = { }) {
     throw new Error(`Concept '${concept.name}' does not define member '${name}'.`)
   }
 
-  extend(type, concept)
-  extend(type, implementation)
+  copyTo(concept, type)
+  copyTo(implementation, type)
 }

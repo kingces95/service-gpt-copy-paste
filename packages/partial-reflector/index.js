@@ -750,7 +750,7 @@ export function create({
     }
   })
 
-  function extend(type, partialType) {
+  function copyTo(partialType, type) {
     assert(typeof type === 'function',
       'Argument must be a type.')
     assert(PartialType.isUserDefined(partialType),
@@ -776,5 +776,5 @@ export function create({
       AdjacentTypes.publish(type, host)
   }
   
-  return { PartialReflect, extend }
+  return { PartialReflect, copyTo }
 }

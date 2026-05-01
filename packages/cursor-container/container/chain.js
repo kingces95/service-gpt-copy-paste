@@ -2,13 +2,14 @@ import { assert } from '@kingjs/assert'
 import { implement } from '@kingjs/partial-implement'
 import { BidirectionalCursorConcept } from '@kingjs/cursor'
 import { define } from '@kingjs/partial-define'
+import { extend } from '@kingjs/partial-extend'
 import { List } from './list.js'
 import { 
-  BidirectionalContainerConcept,
-  SizedContainerConcept,
-  BackEditableContainerConcept,
-  SpliceableContainerConcept,
-  EditableContainerConcept,
+  BidirectionalContainerPart,
+  SizedContainerPart,
+  BackEditableContainerPart,
+  SpliceableContainerPart,
+  EditableContainerPart,
 } from '../container-concepts.js'
 import {
   RewindLink,
@@ -71,9 +72,9 @@ export class Chain extends List {
       },
     })
 
-    implement(this, BidirectionalContainerConcept)
+    extend(this, BidirectionalContainerPart)
 
-    implement(this, BackEditableContainerConcept, {
+    extend(this, BackEditableContainerPart, {
       get back() { return this.endLink$.previous.value },
       push(value) { 
         this.insert(this.end(), value)
@@ -87,11 +88,11 @@ export class Chain extends List {
       },
     })
 
-    implement(this, SizedContainerConcept, {
+    extend(this, SizedContainerPart, {
       get count() { return this._count },
     })
 
-    implement(this, EditableContainerConcept, {
+    extend(this, EditableContainerPart, {
       insert(cursor, value) {
         cursor.link.insert(value)
         this._count++
@@ -104,7 +105,7 @@ export class Chain extends List {
       }
     })
 
-    implement(this, SpliceableContainerConcept, {
+    extend(this, SpliceableContainerPart, {
       splice(cursor, outCount = 0, ...values) {
         const beforeCursor = cursor.clone().stepBack()
         while (outCount-- > 0) this.eraseAfter(beforeCursor)

@@ -1,14 +1,17 @@
 import Denque from "denque"
 import { implement } from '@kingjs/partial-implement'
 import { extend } from '@kingjs/partial-extend'
+import { define } from '@kingjs/partial-define'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import {
-  FrontEditableContainerConcept,
-  BackEditableContainerConcept,
-  SizedContainerConcept,
-  IndexableContainerConcept,
-  OutputContainerConcept,
-  RandomAccessContainerConcept,
+  ContainerPart,
+  ClearableContainerPart,
+  FrontEditableContainerPart,
+  BackEditableContainerPart,
+  SizedContainerPart,
+  IndexableContainerPart,
+  OutputContainerPart,
+  RandomAccessContainerPart,
 } from '../container-concepts.js'
 import { IndexableCursor } from '../cursor/indexable-cursor.js'
 import {
@@ -25,29 +28,35 @@ export class Deque extends PartialProxy {
     this._denque = new Denque()
   }
   
-  dispose$() { this._denque.clear() }
-
   static {
     extend(this, PartialIndexableContainer)
 
-    implement(this, RandomAccessContainerConcept)
-    implement(this, OutputContainerConcept)
+    extend(this, ContainerPart, {
+      get isEmpty() { return this._denque.isEmpty() },
+    })
 
-    implement(this, FrontEditableContainerConcept, {
+    extend(this, ClearableContainerPart, {
+      clear() { this._denque.clear() },
+    })
+
+    extend(this, RandomAccessContainerPart)
+    extend(this, OutputContainerPart)
+
+    extend(this, FrontEditableContainerPart, {
       shift() { return this._denque.shift() },
       unshift(value) { this._denque.unshift(value) },
     })
     
-    implement(this, BackEditableContainerConcept, {
+    extend(this, BackEditableContainerPart, {
       push(value) { this._denque.push(value) },
       pop() { return this._denque.pop() },
     })
 
-    implement(this, SizedContainerConcept, {
+    extend(this, SizedContainerPart, {
       get count() { return this._denque.length },
     })
 
-    implement(this, IndexableContainerConcept, {
+    extend(this, IndexableContainerPart, {
       at(index) { return this._denque.get(index) },
       setAt(index, offset, value) { throwNotSupported() },
     })

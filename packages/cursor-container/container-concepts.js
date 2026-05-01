@@ -1,5 +1,7 @@
-import { Defines } from '@kingjs/partial-class'
+import { Defines, Abstracts, Extends } from '@kingjs/partial-class'
 import { Preconditions } from '@kingjs/partial-proxy'
+import { Concept } from '@kingjs/partial-concept'
+import { PartialClass } from '@kingjs/partial-class'
 import {
   RangeConcept,
   InputRangeConcept,
@@ -23,50 +25,51 @@ import {
 } from '@kingjs/cursor'
 import { Implements } from '@kingjs/partial-concept'
 
-export class ContainerConcept extends RangeConcept {
-  [Defines] = {
-    get cursorType() { return this.constructor.cursorType },
-    get isEmpty() { 
-      return this.begin({ fixed: true })
-        .equals(this.end({ fixed: true }))
-    }
+export class ContainerPart extends PartialClass {
+  static [Implements] = RangeConcept
+  static [Abstracts] = {
+    get isEmpty() { }
   }
-
-  get isEmpty() { }
+  
+  get cursorType() { return this.constructor.cursorType }
+  get isEmpty() { 
+    return this.begin({ fixed: true })
+      .equals(this.end({ fixed: true }))
+  }
 }
 
-export class InputContainerConcept
-  extends ContainerConcept {
+export class InputContainerPart
+  extends ContainerPart {
   static cursorType = InputCursorConcept
   static [Implements] = InputRangeConcept
 }
-export class OutputContainerConcept 
-  extends ContainerConcept {
+export class OutputContainerPart 
+  extends ContainerPart {
   static cursorType = OutputCursorConcept
   static [Implements] = OutputRangeConcept
 }
-export class ForwardContainerConcept 
-  extends InputContainerConcept {
+export class ForwardContainerPart 
+  extends InputContainerPart {
   static cursorType = ForwardCursorConcept
   static [Implements] = ForwardRangeConcept
 }
-export class BidirectionalContainerConcept 
-  extends ForwardContainerConcept {
+export class BidirectionalContainerPart 
+  extends ForwardContainerPart {
   static cursorType = BidirectionalCursorConcept
   static [Implements] = BidirectionalRangeConcept
 }
-export class RandomAccessContainerConcept 
-  extends BidirectionalContainerConcept {
+export class RandomAccessContainerPart 
+  extends BidirectionalContainerPart {
   static cursorType = RandomAccessCursorConcept
   static [Implements] = RandomAccessRangeConcept
 }
-export class ContiguousContainerConcept 
-  extends RandomAccessContainerConcept {
+export class ContiguousContainerPart 
+  extends RandomAccessContainerPart {
   static cursorType = ContiguousCursorConcept
   static [Implements] = ContiguousRangeConcept
 }
 
-export class SpliceableContainerConcept extends ContainerConcept {
+export class SpliceableContainerPart extends ContainerPart {
   static [Preconditions] = {
     splice(cursor, outCount = 0, ...values) {
       if (cursor == null) throwNull()
@@ -80,86 +83,101 @@ export class SpliceableContainerConcept extends ContainerConcept {
   splice(cursor, outCount = 1, ...values) { }
 }
 
-export class FrontEditableContainerConcept extends ContainerConcept { 
+export class FrontEditableContainerPart extends ContainerPart { 
   static [Preconditions] = {
     shift() { if (this.isEmpty) throwEmpty() },
     get front() { if (this.isEmpty) throwEmpty() }
   }
-
-  get front() { }
-  unshift(value) { }
-  shift() { }
+  static [Abstracts] = {
+    get front() { },
+    unshift(value) { },
+    shift() { },
+  }
 }
 
-export class BackEditableContainerConcept extends ContainerConcept {
+export class BackEditableContainerPart extends ContainerPart {
   static [Preconditions] = {
     pop() { if (this.isEmpty) throwEmpty() },
     get back() { if (this.isEmpty) throwEmpty() },
   }
-  
-  get back() { }
-  pop() { }
-  push(value) { }
+  static [Abstracts] = {
+    get back() { },
+    pop() { },
+    push(value) { },
+  }
 }
 
-export class EditableContainerConcept extends ContainerConcept {
-  static [Implements] = [
-    FrontEditableContainerConcept,
-    BackEditableContainerConcept,
+export class EditableContainerPart extends ContainerPart {
+  static [Extends] = [
+    FrontEditableContainerPart,
+    BackEditableContainerPart,
   ]
-  static [Defines] = {
-    take(cursor) {
-      const result = cursor.value
-      this.erase(cursor)
-      return result 
+  static [Abstracts] = {
+    insert(cursor, value) { },
+    erase(cursor) { },
+  }
+
+  take(cursor) {
+    const result = cursor.value
+    this.erase(cursor)
+    return result 
+  }
+}
+
+export class ClearableContainerPart extends ContainerPart {
+  static [Abstracts] = {
+    clear() { }
+  }
+}
+
+export class SizedContainerPart extends ContainerPart {
+  static [Abstracts] = {
+    get count() { }
+  }
+
+  get isEmpty() { return this.count == 0 }
+}
+
+export class IndexableContainerPart extends SizedContainerPart {
+  static [Abstracts] = {
+    at(index) { },
+    setAt(index, value) { }
+  }
+
+  copy(cursor, begin, end) {
+    const source = begin.clone()
+    const target = cursor.clone()
+    while(!begin.equals(end)) {
+      target.value = source.value
+      source.step()
+      target.step()
     }
   }
-  insert(cursor, value) { }
-  erase(cursor) { }
 }
 
-export class SizedContainerConcept extends ContainerConcept {
-  static [Defines] = {
-    get isEmpty() { return this.count == 0 }
+export class ByteContainerPart extends IndexableContainerPart {
+  static [Abstracts] = {
+    readAt(cursor, offset, length, signed, littleEndian) { },
+    writeAt(cursor, offset, value, length, signed, littleEndian) { },
+    data(index, other) { },
+  }
+}
+
+export class CapacityContainerPart extends ContainerPart {
+  static [Abstracts] = {
+    get capacity() { }
+  }
+}
+
+export class ReservableContainerPart extends CapacityContainerPart {
+  static [Abstracts] = {
+    setCapacity(count) { }
   }
 
-  get count() { }
-}
-
-export class IndexableContainerConcept extends SizedContainerConcept {
-  static [Defines] = {
-    copy(cursor, begin, end) {
-      const source = begin.clone()
-      const target = cursor.clone()
-      while(!begin.equals(end)) {
-        target.value = source.value
-        source.step()
-        target.step()
-      }
-    }
+  ensureCapacity(count) {
+    if (count <= this.capacity) return this.capacity
+    const newCapacity = Math.max(count, this.capacity * 2)
+    this.setCapacity(newCapacity)
+    return newCapacity
   }
-  at(index) { }
-  setAt(index, value) { }
-}
-
-export class ByteContainerConept extends IndexableContainerConcept {
-  readAt(cursor, offset, length, signed, littleEndian) { }
-  writeAt(cursor, offset, value, length, signed, littleEndian) { }
-  data(index, other) { }
-}
-
-export class CapacityContainerConcept extends ContainerConcept {
-  get capacity() { }
-}
-
-export class ReservableContainerConcept extends CapacityContainerConcept {
-  static [Defines] = {
-    ensureCapacity(count) {
-      if (count <= this.capacity) return this.capacity
-      const newCapacity = Math.max(count, this.capacity * 2)
-      this.setCapacity(newCapacity)
-      return newCapacity
-    },
-  }
-  setCapacity(count) { }
 }

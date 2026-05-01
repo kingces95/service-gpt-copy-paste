@@ -1,24 +1,26 @@
 import { implement } from '@kingjs/partial-implement'
 import { Preconditions } from '@kingjs/partial-proxy'
+import { PartialClass } from '@kingjs/partial-class'
+import { define } from '@kingjs/partial-define'
+import { extend } from '@kingjs/partial-extend'
 import {
   ForwardRangeConcept,
   throwReadOutOfBounds,
   throwWriteOutOfBounds,
 } from '@kingjs/cursor'
 import {
-  ContainerConcept,
-  FrontEditableContainerConcept,
-  BackEditableContainerConcept,
-  EditableContainerConcept,
-  SizedContainerConcept,
-  IndexableContainerConcept,
+  ContainerPart,
+  FrontEditableContainerPart,
+  BackEditableContainerPart,
+  EditableContainerPart,
+  SizedContainerPart,
+  IndexableContainerPart,
 } from '../container-concepts.js'
 import { IndexableCursor } from '../cursor/indexable-cursor.js'
-import { PartialContainer } from './partial-container.js'
 
 const __version = Symbol('__version')
 
-export class PartialIndexableContainer extends PartialContainer {
+export class PartialIndexableContainer extends PartialClass {
   static cursorType = IndexableCursor
 
   static [Preconditions] = {
@@ -44,25 +46,25 @@ export class PartialIndexableContainer extends PartialContainer {
       end() { return new this.cursorType(this, this.count) },
     })
 
-    implement(this, ContainerConcept, {
+    extend(this, ContainerPart, {
       get isEmpty() { return this.count == 0 },
     })
 
-    implement(this, FrontEditableContainerConcept, {
+    extend(this, FrontEditableContainerPart, {
       get front() { return this.at(0) },
     }, {
       unshift(value) { },
       shift() { },
     })
 
-    implement(this, BackEditableContainerConcept, {
+    extend(this, BackEditableContainerPart, {
       get back() { return this.at(this.count - 1) },
     }, {
       pop() { },
       push(value) { },
     })
 
-    implement(this, EditableContainerConcept, {
+    extend(this, EditableContainerPart, {
       insert(cursor, value) {
         const begin = cursor.clone()
         const end = this.end()
@@ -82,13 +84,13 @@ export class PartialIndexableContainer extends PartialContainer {
       },
     })
 
-    implement(this, SizedContainerConcept, {
+    extend(this, SizedContainerPart, {
       // none
     }, {
       get count() { },
     })
 
-    implement(this, IndexableContainerConcept, { 
+    extend(this, IndexableContainerPart, { 
       // none
     }, {
       at(index) { },

@@ -106,6 +106,7 @@ export const TypePostcondition = Symbol('PartialProxy.TypePostcondition')
 export const Implements = Symbol('Concept.Implements')
 export const Extends = Symbol('PartialClass.Extends')
 export const Defines = Symbol('Attachments.Defines')
+export const Abstracts = Symbol('Attachments.Abstracts')
 
 export function isTransparent(type) {
   return !!type[Transparent]

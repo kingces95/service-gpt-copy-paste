@@ -6,6 +6,7 @@ import { PartialReflect } from '@kingjs/partial-reflect'
 import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { PartialType, isPartialType } from '@kingjs/partial-type'
+import { define } from '@kingjs/partial-define'
 import { extend } from '@kingjs/partial-extend'
 import { Attachments } from '../partial-attachments'
 import { 
@@ -70,7 +71,7 @@ describe('A type', () => {
     let method
     beforeEach(() => {
       method = function method() { }
-      extend(type, Attachments[From]({ method }))
+      define(type, Attachments[From]({ method }))
     })
 
     it('should have the method', () => {
@@ -96,7 +97,7 @@ describe('MyPojoType', () => {
       let myType
       beforeEach(() => {
         myType = class { }
-        extend(myType, MyPojoType)
+        define(myType, MyPojoType)
       })
 
       it('should have the method on type', () => {
@@ -196,7 +197,7 @@ describe('PartialClass', () => {
           type = class { }
           method = function() { }
           type.prototype.method = method
-          extend(type, MyExtension)
+          define(type, MyExtension)
         })
 
         it('should have have the concrete method on type', () => {
@@ -234,7 +235,7 @@ describe('PartialClass', () => {
           let myType
           beforeEach(() => {
             myType = class { }
-            extend(myType, MyExtension)
+            define(myType, MyExtension)
           })
   
           it('should have method as own member name or symbol', () => {
@@ -367,7 +368,7 @@ describe('PartialClass', () => {
       
           describe('after defining on myType', () => {
             beforeEach(() => {
-              extend(myType, MyExtension)
+              define(myType, MyExtension)
             })
 
             describe('method', () => {
@@ -441,7 +442,7 @@ describe('PartialClass', () => {
               return descriptor 
             }
         
-            extend(myType, MyExtension)
+            define(myType, MyExtension)
           })
           it('should have the method', () => {
             expect(myType.prototype.method).toBe(mySubExtensionMethod)
@@ -464,7 +465,7 @@ describe('PartialClass', () => {
             type = class { }
             method = function() { }
             type.prototype.method = method
-            extend(type, MyExtension)
+            define(type, MyExtension)
           })
           
           it('should have have the concrete method on type', () => {

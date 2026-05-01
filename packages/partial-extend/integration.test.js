@@ -1,7 +1,6 @@
 import { beforeEach } from 'vitest'
 import { describe, it, expect } from 'vitest'
 import { TypeInfo } from "@kingjs/info"
-import { extend } from '@kingjs/partial-extend'
 import { define } from '@kingjs/partial-define'
 import { } from "@kingjs/info-to-pojo"
 import { PartialClass } from '@kingjs/partial-class'
@@ -119,7 +118,7 @@ describe('Kitchen sink', () => {
       let cls
       beforeEach(() => {
         [cls] = [class { }]
-        extend(cls, partialClass)
+        define(cls, partialClass)
       })
       
       it('should have expected info pojo', async () => {

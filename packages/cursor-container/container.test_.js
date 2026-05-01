@@ -9,15 +9,15 @@ import {
   ContiguousCursorConcept,
 } from '../cursor/cursor-concepts.js'
 import {
-  ContainerConcept,
-  InputContainerConcept,
-  OutputContainerConcept,
-  ForwardContainerConcept,
-  BackEditableContainerConcept,
-  RandomAccessContainerConcept,
-  FrontEditableContainerConcept,
-  IndexableContainerConcept,
-  ContiguousContainerConcept,
+  ContainerPart,
+  InputContainerPart,
+  OutputContainerPart,
+  ForwardContainerPart,
+  BackEditableContainerPart,
+  RandomAccessContainerPart,
+  FrontEditableContainerPart,
+  IndexableContainerPart,
+  ContiguousContainerPart,
 } from '@kingjs/cursor-container'
 
 import { 
@@ -147,7 +147,7 @@ describe.each(cases)('A %s', (name, type, cursorType, concepts) => {
     })
   })
   describe.each([ 
-    type.prototype instanceof BackEditableContainerConcept,
+    type.prototype instanceof BackEditableContainerPart,
   ].filter(Boolean))
   ('bidirectional container', (isBidirectional) => {
     it('should throw if popped', () => {
@@ -440,7 +440,7 @@ describe.each(cases)('A %s', (name, type, cursorType, concepts) => {
       })
     }
 
-    if (type.prototype instanceof FrontEditableContainerConcept) {
+    if (type.prototype instanceof FrontEditableContainerPart) {
       describe('accessing a sequence container', () => {
         it('should not have a front value', () => {
           expect(() => { f0.front }).toThrow(
@@ -457,7 +457,7 @@ describe.each(cases)('A %s', (name, type, cursorType, concepts) => {
       })
     }
 
-    if (type.prototype instanceof BackEditableContainerConcept) {
+    if (type.prototype instanceof BackEditableContainerPart) {
       describe('accessing a rewind container', () => {
         it('should throw on count', () => {
           expect(() => { f0.count }).toThrow(
@@ -478,7 +478,7 @@ describe.each(cases)('A %s', (name, type, cursorType, concepts) => {
       })
     }
 
-    if (type.prototype instanceof IndexableContainerConcept) {
+    if (type.prototype instanceof IndexableContainerPart) {
       describe('accessing an indexable container', () => {
         it('should throw when at', () => {
           expect(() => { f0.at(0) }).toThrow(
@@ -491,7 +491,7 @@ describe.each(cases)('A %s', (name, type, cursorType, concepts) => {
       })
     }
 
-    if (type.prototype instanceof ContiguousContainerConcept) {
+    if (type.prototype instanceof ContiguousContainerPart) {
       describe('accessing a contiguous container', () => {
         // it('should throw if expanded', () => {
         //   expect(() => { f0.expand(1) }).toThrow(

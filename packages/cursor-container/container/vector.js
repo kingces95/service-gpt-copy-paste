@@ -1,15 +1,18 @@
 import { implement } from '@kingjs/partial-implement'
 import { extend } from '@kingjs/partial-extend'
+import { define } from '@kingjs/partial-define'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { IndexableCursor } from '../cursor/indexable-cursor.js'
 import {
-  FrontEditableContainerConcept,
-  BackEditableContainerConcept,
-  SizedContainerConcept,
-  IndexableContainerConcept,
-  OutputContainerConcept,
-  RandomAccessContainerConcept,
-  EditableContainerConcept,
+  ContainerPart,
+  ClearableContainerPart,
+  FrontEditableContainerPart,
+  BackEditableContainerPart,
+  SizedContainerPart,
+  IndexableContainerPart,
+  OutputContainerPart,
+  RandomAccessContainerPart,
+  EditableContainerPart,
 } from '../container-concepts.js'
 import { 
   PartialIndexableContainer 
@@ -25,34 +28,40 @@ export class Vector extends PartialProxy {
     this._array = elements
   }
 
-  dispose$() { this._array.length = 0 }
-
   static {
     extend(this, PartialIndexableContainer)
 
-    implement(this, RandomAccessContainerConcept)
-    implement(this, OutputContainerConcept)
+    extend(this, ContainerPart, {
+      get isEmpty() { return this._array.length == 0 },
+    })
 
-    implement(this, FrontEditableContainerConcept, {
+    extend(this, ClearableContainerPart, {
+      clear() { this._array.length = 0 },
+    })
+
+    extend(this, RandomAccessContainerPart)
+    extend(this, OutputContainerPart)
+
+    extend(this, FrontEditableContainerPart, {
       shift() { return this._array.shift() },
       unshift(value) { this._array.unshift(value) },
     })
 
-    implement(this, BackEditableContainerConcept, {
+    extend(this, BackEditableContainerPart, {
       push(value) { this._array.push(value) },
       pop() { return this._array.pop() },
     })
 
-    implement(this, SizedContainerConcept, {
+    extend(this, SizedContainerPart, {
       get count() { return this._array.length },
     })
 
-    implement(this, IndexableContainerConcept, {
+    extend(this, IndexableContainerPart, {
       at(index) { return this._array[index] },
       setAt(index, value) { this._array[index] = value },
     })
 
-    implement(this, EditableContainerConcept, {
+    extend(this, EditableContainerPart, {
       insert(cursor, value) { this._array.splice(cursor.index, 0, value) },
       erase(cursor) { 
         this._array.splice(cursor.index, 1)

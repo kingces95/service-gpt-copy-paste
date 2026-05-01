@@ -100,6 +100,8 @@ export class Attachments extends PartialType {
 
 export class AbstractAttachments extends PartialType {
   static [Transparent] = true
+  
+  // static [Compile] = Concept[Compile]
   static [Compile](descriptor) {
 
     // pipeline

@@ -18,17 +18,17 @@ import {
 } from "@kingjs/cursor"
 
 import {
-  ContainerConcept,
-  InputContainerConcept,
-  OutputContainerConcept,
-  ForwardContainerConcept,
-  BidirectionalContainerConcept,
-  RandomAccessContainerConcept,
-  ContiguousContainerConcept,
+  ContainerPart,
+  InputContainerPart,
+  OutputContainerPart,
+  ForwardContainerPart,
+  BidirectionalContainerPart,
+  RandomAccessContainerPart,
+  ContiguousContainerPart,
 
-  FrontEditableContainerConcept,
-  BackEditableContainerConcept,
-  IndexableContainerConcept,
+  FrontEditableContainerPart,
+  BackEditableContainerPart,
+  IndexableContainerPart,
 
   ContainerCursor,
   SequenceCursor,
@@ -78,16 +78,16 @@ function dump(fn) {
 // dumpToFile(Range, 'range')
 // dumpToFile(IntervalConcept, 'interval-concept')
 
-// dumpToFile(ContainerConcept, 'container-concept')
-// dumpToFile(InputContainerConcept, 'input-container-concept')
-// dumpToFile(OutputContainerConcept, 'output-container-concept')
-// dumpToFile(ForwardContainerConcept, 'forward-container-concept')
-// dumpToFile(BidirectionalContainerConcept, 'bidirectional-container-concept')
-// dumpToFile(RandomAccessContainerConcept, 'random-access-container-concept')
-// dumpToFile(ContiguousContainerConcept, 'contiguous-container-concept')
-// dumpToFile(FrontEditableContainerConcept, 'sequence-container-concept')
-// dumpToFile(BackEditableContainerConcept, 'rewind-container-concept')
-// dumpToFile(IndexableContainerConcept, 'indexable-container-concept')
+// dumpToFile(ContainerPart, 'container-concept')
+// dumpToFile(InputContainerPart, 'input-container-concept')
+// dumpToFile(OutputContainerPart, 'output-container-concept')
+// dumpToFile(ForwardContainerPart, 'forward-container-concept')
+// dumpToFile(BidirectionalContainerPart, 'bidirectional-container-concept')
+// dumpToFile(RandomAccessContainerPart, 'random-access-container-concept')
+// dumpToFile(ContiguousContainerPart, 'contiguous-container-concept')
+// dumpToFile(FrontEditableContainerPart, 'sequence-container-concept')
+// dumpToFile(BackEditableContainerPart, 'rewind-container-concept')
+// dumpToFile(IndexableContainerPart, 'indexable-container-concept')
 
 // dumpToFile(ContainerCursor, 'container-cursor')
 // dumpToFile(SequenceCursor, 'sequence-cursor')

@@ -1,13 +1,14 @@
 import { assert } from '@kingjs/assert'
 import { implement } from '@kingjs/partial-implement'
+import { define } from '@kingjs/partial-define'
 import { extend } from '@kingjs/partial-extend'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { ContiguousCursor } from '../cursor/contiguous-cursor.js'
 import {
-  SizedContainerConcept,
-  IndexableContainerConcept,
-  ReservableContainerConcept,
-  ByteContainerConept,
+  SizedContainerPart,
+  IndexableContainerPart,
+  ReservableContainerPart,
+  ByteContainerPart,
 } from '../container-concepts.js'
 import {
   PartialContiguousContainer,
@@ -43,16 +44,16 @@ export class EcmaBuffer extends PartialProxy {
   static {
     extend(this, PartialContiguousContainer)
 
-    implement(this, SizedContainerConcept, {
+    extend(this, SizedContainerPart, {
       get count() { return this._count }
     })
 
-    implement(this, IndexableContainerConcept, {
+    extend(this, IndexableContainerPart, {
       at(index) { return this.readAt(index) },
       setAt(index, value) { this.writeAt(index, value) }
     })
 
-    implement(this, ReservableContainerConcept, {
+    extend(this, ReservableContainerPart, {
       get capacity() { return this.bytes$.byteLength },
       setCapacity(capacity) {
         const newBytes = new ArrayBuffer(capacity)
@@ -64,7 +65,7 @@ export class EcmaBuffer extends PartialProxy {
       },
     })
 
-    implement(this, ByteContainerConept, {
+    extend(this, ByteContainerPart, {
       copy(cursor, begin, end) { 
         const { buffer: target } = cursor.range
         const { index: targetStart } = cursor

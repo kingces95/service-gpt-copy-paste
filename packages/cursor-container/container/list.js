@@ -1,9 +1,9 @@
 import { assert } from '@kingjs/assert'
 import { define } from '@kingjs/partial-define'
+import { extend } from '@kingjs/partial-extend'
 import { implement } from '@kingjs/partial-implement'
 import { PartialProxy, Preconditions } from '@kingjs/partial-proxy'
 import {
-  DisposeConcept,
   EquatableConcept,
 } from '@kingjs/partial-concept'
 import {
@@ -17,10 +17,10 @@ import {
   throwNotEquatableTo,
 } from '@kingjs/cursor'
 import { 
-  ContainerConcept,
-  ForwardContainerConcept,
-  FrontEditableContainerConcept,
-  OutputContainerConcept,
+  ContainerPart,
+  ForwardContainerPart,
+  FrontEditableContainerPart,
+  OutputContainerPart,
 } from '../container-concepts.js'
 import { 
   ContainerCursor,
@@ -118,25 +118,15 @@ export class List extends PartialProxy {
       },
     })
 
-    implement(this, DisposeConcept, {
-      dispose() { this.dispose$() }
-    })
-
-    implement(this, RangeConcept, {
-      get cursorType() { return this.constructor.cursorType },
-      begin() { return new this.cursorType(this, this._rootLink.next) },
-      end() { return new this.cursorType(this, this._endLink) },
-    })
-
-    implement(this, ContainerConcept, {
+    extend(this, ContainerPart, {
       get isEmpty() { return this._endLink == this._rootLink.next },
     })
 
-    implement(this, ForwardContainerConcept)
+    extend(this, ForwardContainerPart)
 
-    implement(this, OutputContainerConcept)
+    extend(this, OutputContainerPart)
 
-    implement(this, FrontEditableContainerConcept, {
+    extend(this, FrontEditableContainerPart, {
       get front() { return this._rootLink.next.value },
       shift() { 
         const result = this._rootLink.next.value
@@ -144,6 +134,12 @@ export class List extends PartialProxy {
         return result
       },
       unshift(value) { this.insertAfter(this.beforeBegin(), value) },
+    })
+
+    implement(this, RangeConcept, {
+      get cursorType() { return this.constructor.cursorType },
+      begin() { return new this.cursorType(this, this._rootLink.next) },
+      end() { return new this.cursorType(this, this._endLink) },
     })
   }
 }

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { Shape } from './shape.js'
 import { extend } from '@kingjs/partial-extend'
+import { copyTo } from '@kingjs/partial-reflect'
 import { 
   PojoShape,
   NojoShape,
@@ -385,7 +386,7 @@ describe.each(Tests)("$shape.name", ({ shape, positive, negative }) => {
 describe('Shapes', () => {
   it('should throw if defined on a non-function', () => {
     const myShape = class extends Shape { }
-    expect(() => extend(class { }, myShape))
+    expect(() => copyTo(myShape, class { }))
       .toThrow('Assertion failed: Shapes cannot be extended.')
   })
   it('should be false if null or undefined', () => {

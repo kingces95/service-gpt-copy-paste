@@ -1,15 +1,17 @@
 import { assert } from '@kingjs/assert'
 import { implement } from '@kingjs/partial-implement'
+import { define } from '@kingjs/partial-define'
+import { extend } from '@kingjs/partial-extend'
 import { Preconditions } from '@kingjs/partial-proxy'
 import {
-  FrontEditableContainerConcept,
-  BackEditableContainerConcept,
-  SizedContainerConcept,
-  IndexableContainerConcept,
-  ReservableContainerConcept,
-  ByteContainerConept,
-  ContiguousContainerConcept,
-  OutputContainerConcept,
+  FrontEditableContainerPart,
+  BackEditableContainerPart,
+  SizedContainerPart,
+  IndexableContainerPart,
+  ReservableContainerPart,
+  ByteContainerPart,
+  ContiguousContainerPart,
+  OutputContainerPart,
 } from '../container-concepts.js'
 import { ContiguousCursor } from '../cursor/contiguous-cursor.js'
 import { PartialIndexableContainer } from './partial-indexable-container.js'
@@ -54,10 +56,10 @@ export class PartialContiguousContainer extends PartialIndexableContainer {
     }
 
     static {
-      implement(this, ContiguousContainerConcept)
-      implement(this, OutputContainerConcept)
+      extend(this, ContiguousContainerPart)
+      extend(this, OutputContainerPart)
   
-      implement(this, FrontEditableContainerConcept, {
+      extend(this, FrontEditableContainerPart, {
         unshift(value) { this.insert(this.begin(), value) },
         shift() { 
           const begin = this.begin()
@@ -67,7 +69,7 @@ export class PartialContiguousContainer extends PartialIndexableContainer {
         },
       })
 
-      implement(this, BackEditableContainerConcept, {
+      extend(this, BackEditableContainerPart, {
         push(value) { this.insert(this.end(), value) },
         pop() { 
           const end = this.end()
@@ -78,27 +80,27 @@ export class PartialContiguousContainer extends PartialIndexableContainer {
         }
       })
 
-      implement(this, IndexableContainerConcept, { 
+      extend(this, IndexableContainerPart, { 
         // none
       }, {
         at(index) { },
         setAt(index, value) { },
       })
 
-      implement(this, SizedContainerConcept, { 
+      extend(this, SizedContainerPart, { 
         // none
       }, {
         get count() { return this._count }
       })
 
-      implement(this, ReservableContainerConcept, {
+      extend(this, ReservableContainerPart, {
         // none
       }, {
         get capacity() { },
         setCapacity(count) { },
       })
 
-      implement(this, ByteContainerConept, {
+      extend(this, ByteContainerPart, {
         // none
       }, {
         copy(cursor, begin, end) { },
