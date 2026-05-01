@@ -9,7 +9,7 @@ import {
   IndexableContainerPart,
   ReservableContainerPart,
   ByteContainerPart,
-} from '../container-concepts.js'
+} from '../container-parts.js'
 import {
   PartialContiguousContainer,
 } from '../partial/partial-contiguous-container.js'

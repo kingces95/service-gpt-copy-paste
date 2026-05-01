@@ -17,17 +17,20 @@ import {
 // static field descriptors of a type found by traversing the type
 // hiearchy of the instance prototype chain. For example, implementing
 
-  //  myContainer instanceof InputContainerPart
+  //  myContainer instanceof InputCursorConcept
   
 // where MyContainer declares an an associated cursorType as an
 // InputCursor like,
 
+
+// TODO Fix up. Replace InputCursorConcept with InputRangeConcept
+
   //  class InputCursorConcept extends Concept { 
+  //    static cursorType = InputCursorConcept 
   //    next() { }
   //    get value() { } 
   //  }
-  //  class InputContainerPart extends Concept { 
-  //    static cursorType = InputCursorConcept 
+  //  class InputCursorConcept extends Concept { 
   //  }  
 
   //  class MyCursor exends Cursor {

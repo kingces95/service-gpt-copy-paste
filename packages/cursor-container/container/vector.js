@@ -1,8 +1,11 @@
 import { implement } from '@kingjs/partial-implement'
 import { extend } from '@kingjs/partial-extend'
-import { define } from '@kingjs/partial-define'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { IndexableCursor } from '../cursor/indexable-cursor.js'
+import {
+  OutputRangeConcept,
+  RandomAccessRangeConcept,
+} from '@kingjs/cursor'
 import {
   ContainerPart,
   ClearableContainerPart,
@@ -10,10 +13,8 @@ import {
   BackEditableContainerPart,
   SizedContainerPart,
   IndexableContainerPart,
-  OutputContainerPart,
-  RandomAccessContainerPart,
   EditableContainerPart,
-} from '../container-concepts.js'
+} from '../container-parts.js'
 import { 
   PartialIndexableContainer 
 } from '../partial/partial-indexable-container.js'
@@ -29,6 +30,9 @@ export class Vector extends PartialProxy {
   }
 
   static {
+    implement(this, RandomAccessRangeConcept)
+    implement(this, OutputRangeConcept)
+
     extend(this, PartialIndexableContainer)
 
     extend(this, ContainerPart, {
@@ -38,9 +42,6 @@ export class Vector extends PartialProxy {
     extend(this, ClearableContainerPart, {
       clear() { this._array.length = 0 },
     })
-
-    extend(this, RandomAccessContainerPart)
-    extend(this, OutputContainerPart)
 
     extend(this, FrontEditableContainerPart, {
       shift() { return this._array.shift() },

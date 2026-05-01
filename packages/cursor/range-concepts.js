@@ -33,7 +33,7 @@ export class InputRangeConcept extends RangeConcept {
 export class OutputRangeConcept extends RangeConcept {
   static cursorType = OutputCursorConcept
 }
-export class ForwardRangeConcept extends RangeConcept {
+export class ForwardRangeConcept extends InputRangeConcept {
   static cursorType = ForwardCursorConcept
 }
 export class BidirectionalRangeConcept extends ForwardRangeConcept {

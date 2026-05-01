@@ -9,4 +9,4 @@ export * from "./container/vector.js"
 export * from "./container/node-buffer.js"
 export * from "./container/ecma-buffer.js"
 
-export * from "./container-concepts.js"
+export * from "./container-parts.js"

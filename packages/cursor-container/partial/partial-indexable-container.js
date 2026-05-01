@@ -15,7 +15,7 @@ import {
   EditableContainerPart,
   SizedContainerPart,
   IndexableContainerPart,
-} from '../container-concepts.js'
+} from '../container-parts.js'
 import { IndexableCursor } from '../cursor/indexable-cursor.js'
 
 const __version = Symbol('__version')

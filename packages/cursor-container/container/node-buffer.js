@@ -3,7 +3,7 @@ import { implement } from '@kingjs/partial-implement'
 import { extend } from '@kingjs/partial-extend'
 import { ContiguousCursor } from '../cursor/contiguous-cursor.js'
 import {
-  ByteContainerPart } from '../container-concepts.js'
+  ByteContainerPart } from '../container-parts.js'
 import { EcmaBuffer } from './ecma-buffer.js'
 
 export class NodeBuffer extends EcmaBuffer {

@@ -1,16 +1,18 @@
 import { assert } from '@kingjs/assert'
 import { implement } from '@kingjs/partial-implement'
-import { BidirectionalCursorConcept } from '@kingjs/cursor'
 import { define } from '@kingjs/partial-define'
 import { extend } from '@kingjs/partial-extend'
 import { List } from './list.js'
 import { 
-  BidirectionalContainerPart,
+  BidirectionalCursorConcept, 
+  BidirectionalRangeConcept 
+} from '@kingjs/cursor'
+import { 
   SizedContainerPart,
   BackEditableContainerPart,
   SpliceableContainerPart,
   EditableContainerPart,
-} from '../container-concepts.js'
+} from '../container-parts.js'
 import {
   RewindLink,
 } from '../helpers/rewind-link.js'
@@ -49,6 +51,8 @@ export class Chain extends List {
   }
 
   static {
+    implement(this, BidirectionalRangeConcept)
+
     define(this, {
       // TODO: Loader installs stubs so type.prototype does not work. Need
       // to update loader to attach a static [Prototype] symbol that contains
@@ -71,8 +75,6 @@ export class Chain extends List {
         return result
       },
     })
-
-    extend(this, BidirectionalContainerPart)
 
     extend(this, BackEditableContainerPart, {
       get back() { return this.endLink$.previous.value },

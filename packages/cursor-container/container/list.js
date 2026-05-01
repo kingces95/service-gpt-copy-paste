@@ -11,6 +11,8 @@ import {
   MutableCursorConcept,
   ForwardCursorConcept,
   RangeConcept,
+  OutputRangeConcept,
+  ForwardRangeConcept,
 
   throwNull,
   throwUpdateOutOfBounds,
@@ -18,10 +20,8 @@ import {
 } from '@kingjs/cursor'
 import { 
   ContainerPart,
-  ForwardContainerPart,
   FrontEditableContainerPart,
-  OutputContainerPart,
-} from '../container-concepts.js'
+} from '../container-parts.js'
 import { 
   ContainerCursor,
 } from '../cursor/container-cursor.js'
@@ -109,6 +109,9 @@ export class List extends PartialProxy {
   }
 
   static {
+    implement(this, ForwardRangeConcept)
+    implement(this, OutputRangeConcept)
+
     define(this, {
       beforeBegin() { return new this.cursorType(this, this._rootLink) },
       insertAfter(cursor, value) { cursor.link.insertAfter(value) },
@@ -121,10 +124,6 @@ export class List extends PartialProxy {
     extend(this, ContainerPart, {
       get isEmpty() { return this._endLink == this._rootLink.next },
     })
-
-    extend(this, ForwardContainerPart)
-
-    extend(this, OutputContainerPart)
 
     extend(this, FrontEditableContainerPart, {
       get front() { return this._rootLink.next.value },

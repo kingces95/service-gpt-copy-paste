@@ -1,8 +1,11 @@
 import Denque from "denque"
 import { implement } from '@kingjs/partial-implement'
 import { extend } from '@kingjs/partial-extend'
-import { define } from '@kingjs/partial-define'
 import { PartialProxy } from '@kingjs/partial-proxy'
+import {
+  OutputRangeConcept,
+  RandomAccessRangeConcept,
+} from '@kingjs/cursor'
 import {
   ContainerPart,
   ClearableContainerPart,
@@ -10,9 +13,7 @@ import {
   BackEditableContainerPart,
   SizedContainerPart,
   IndexableContainerPart,
-  OutputContainerPart,
-  RandomAccessContainerPart,
-} from '../container-concepts.js'
+} from '../container-parts.js'
 import { IndexableCursor } from '../cursor/indexable-cursor.js'
 import {
   PartialIndexableContainer,
@@ -29,6 +30,9 @@ export class Deque extends PartialProxy {
   }
   
   static {
+    implement(this, RandomAccessRangeConcept)
+    implement(this, OutputRangeConcept)
+    
     extend(this, PartialIndexableContainer)
 
     extend(this, ContainerPart, {
@@ -38,9 +42,6 @@ export class Deque extends PartialProxy {
     extend(this, ClearableContainerPart, {
       clear() { this._denque.clear() },
     })
-
-    extend(this, RandomAccessContainerPart)
-    extend(this, OutputContainerPart)
 
     extend(this, FrontEditableContainerPart, {
       shift() { return this._denque.shift() },

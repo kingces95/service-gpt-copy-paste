@@ -1,6 +1,5 @@
 import { Defines, Abstracts, Extends } from '@kingjs/partial-class'
 import { Preconditions } from '@kingjs/partial-proxy'
-import { Concept } from '@kingjs/partial-concept'
 import { PartialClass } from '@kingjs/partial-class'
 import {
   RangeConcept,
@@ -38,37 +37,6 @@ export class ContainerPart extends PartialClass {
   }
 }
 
-export class InputContainerPart
-  extends ContainerPart {
-  static cursorType = InputCursorConcept
-  static [Implements] = InputRangeConcept
-}
-export class OutputContainerPart 
-  extends ContainerPart {
-  static cursorType = OutputCursorConcept
-  static [Implements] = OutputRangeConcept
-}
-export class ForwardContainerPart 
-  extends InputContainerPart {
-  static cursorType = ForwardCursorConcept
-  static [Implements] = ForwardRangeConcept
-}
-export class BidirectionalContainerPart 
-  extends ForwardContainerPart {
-  static cursorType = BidirectionalCursorConcept
-  static [Implements] = BidirectionalRangeConcept
-}
-export class RandomAccessContainerPart 
-  extends BidirectionalContainerPart {
-  static cursorType = RandomAccessCursorConcept
-  static [Implements] = RandomAccessRangeConcept
-}
-export class ContiguousContainerPart 
-  extends RandomAccessContainerPart {
-  static cursorType = ContiguousCursorConcept
-  static [Implements] = ContiguousRangeConcept
-}
-
 export class SpliceableContainerPart extends ContainerPart {
   static [Preconditions] = {
     splice(cursor, outCount = 0, ...values) {
@@ -81,6 +49,20 @@ export class SpliceableContainerPart extends ContainerPart {
   }
   
   splice(cursor, outCount = 1, ...values) { }
+}
+
+export class SizedContainerPart extends ContainerPart {
+  static [Abstracts] = {
+    get count() { }
+  }
+
+  get isEmpty() { return this.count == 0 }
+}
+
+export class ClearableContainerPart extends ContainerPart {
+  static [Abstracts] = {
+    clear() { }
+  }
 }
 
 export class FrontEditableContainerPart extends ContainerPart { 
@@ -122,20 +104,6 @@ export class EditableContainerPart extends ContainerPart {
     this.erase(cursor)
     return result 
   }
-}
-
-export class ClearableContainerPart extends ContainerPart {
-  static [Abstracts] = {
-    clear() { }
-  }
-}
-
-export class SizedContainerPart extends ContainerPart {
-  static [Abstracts] = {
-    get count() { }
-  }
-
-  get isEmpty() { return this.count == 0 }
 }
 
 export class IndexableContainerPart extends SizedContainerPart {

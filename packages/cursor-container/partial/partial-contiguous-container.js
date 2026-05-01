@@ -1,8 +1,10 @@
 import { assert } from '@kingjs/assert'
-import { implement } from '@kingjs/partial-implement'
-import { define } from '@kingjs/partial-define'
 import { extend } from '@kingjs/partial-extend'
 import { Preconditions } from '@kingjs/partial-proxy'
+import {
+  OutputRangeConcept,
+  ContiguousRangeConcept,
+} from '@kingjs/cursor'
 import {
   FrontEditableContainerPart,
   BackEditableContainerPart,
@@ -10,11 +12,10 @@ import {
   IndexableContainerPart,
   ReservableContainerPart,
   ByteContainerPart,
-  ContiguousContainerPart,
-  OutputContainerPart,
-} from '../container-concepts.js'
+} from '../container-parts.js'
 import { ContiguousCursor } from '../cursor/contiguous-cursor.js'
 import { PartialIndexableContainer } from './partial-indexable-container.js'
+import { implement } from '@kingjs/partial-implement'
 
 export class PartialContiguousContainer extends PartialIndexableContainer {
     static cursorType = ContiguousCursor
@@ -56,8 +57,8 @@ export class PartialContiguousContainer extends PartialIndexableContainer {
     }
 
     static {
-      extend(this, ContiguousContainerPart)
-      extend(this, OutputContainerPart)
+      implement(this, ContiguousRangeConcept)
+      implement(this, OutputRangeConcept)
   
       extend(this, FrontEditableContainerPart, {
         unshift(value) { this.insert(this.begin(), value) },

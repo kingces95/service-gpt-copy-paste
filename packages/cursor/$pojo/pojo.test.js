@@ -19,12 +19,6 @@ import {
 
 import {
   ContainerPart,
-  InputContainerPart,
-  OutputContainerPart,
-  ForwardContainerPart,
-  BidirectionalContainerPart,
-  RandomAccessContainerPart,
-  ContiguousContainerPart,
 
   FrontEditableContainerPart,
   BackEditableContainerPart,
@@ -79,12 +73,6 @@ function dump(fn) {
 // dumpToFile(IntervalConcept, 'interval-concept')
 
 // dumpToFile(ContainerPart, 'container-concept')
-// dumpToFile(InputContainerPart, 'input-container-concept')
-// dumpToFile(OutputContainerPart, 'output-container-concept')
-// dumpToFile(ForwardContainerPart, 'forward-container-concept')
-// dumpToFile(BidirectionalContainerPart, 'bidirectional-container-concept')
-// dumpToFile(RandomAccessContainerPart, 'random-access-container-concept')
-// dumpToFile(ContiguousContainerPart, 'contiguous-container-concept')
 // dumpToFile(FrontEditableContainerPart, 'sequence-container-concept')
 // dumpToFile(BackEditableContainerPart, 'rewind-container-concept')
 // dumpToFile(IndexableContainerPart, 'indexable-container-concept')
