@@ -91,32 +91,6 @@ const Value = 42
 const Key = 'key'
 
 const Tests = {
-  List: {
-    type: List,
-    concepts: [
-      ...sequenceContainerConcepts,
-      FrontEditableContainerPart],
-    members: {
-      insert: true, erase: true,
-      front: true, shift: true, unshift: true,
-      beforeBegin: true, insertAfter: true, eraseAfter: true,
-    }
-  },
-  
-  Chain: {
-    type: Chain,
-    concepts: [
-      ...reversibleContainerConcepts,
-      SpliceableContainerPart,
-      SizedContainerPart],
-    members: {
-      insert: true, erase: true,
-      size: true,
-      front: true, shift: true, unshift: true,
-      back: true, pop: true, push: true,
-    }
-  },
-
   UnorderedMap: {
     type: UnorderedMap,
     concepts: [
@@ -149,6 +123,32 @@ const Tests = {
     key: Value,
   },
   
+  List: {
+    type: List,
+    concepts: [
+      ...sequenceContainerConcepts,
+      FrontEditableContainerPart],
+    members: {
+      insert: true, erase: true,
+      front: true, shift: true, unshift: true,
+      beforeBegin: true, insertAfter: true, eraseAfter: true,
+    }
+  },
+  
+  Chain: {
+    type: Chain,
+    concepts: [
+      ...reversibleContainerConcepts,
+      SpliceableContainerPart,
+      SizedContainerPart],
+    members: {
+      insert: true, erase: true,
+      size: true,
+      front: true, shift: true, unshift: true,
+      back: true, pop: true, push: true,
+    }
+  },
+
   VectorMap: {
     type: VectorMap,
     concepts: [
@@ -159,6 +159,7 @@ const Tests = {
       size: true,
       front: true, shift: true, unshift: true,
       back: true, pop: true, push: true,
+      at: true, setAt: true,
       clear: true,
     }
   },
@@ -173,7 +174,7 @@ const Tests = {
       size: true,
       front: true, shift: true, unshift: true,
       back: true, pop: true, push: true,
-      at: true, // setAt: true,
+      at: true, // setAt: true, // should, but does not
       clear: true,
     }
   },
@@ -367,6 +368,21 @@ describe.each(Object.entries(Tests))('A %s', (name, {
       })
       withCount(1)
 
+      if (cursorFn) {
+        // test argument checking: null, equatable, end, out of bounds, etc.
+        it('should throw if cursor is null', () => {
+          expect(() => { container[fn](value, null) }).toThrow()
+        })
+        it('should throw if cursor is not from the container', () => {
+          const otherCursor = otherContainer.begin()
+          expect(() => { container[fn](value, otherCursor) }).toThrow()
+        })
+        it('should throw if cursor is out of bounds', () => {
+          const endCursor = container.end()
+          expect(() => { container[fn](value, endCursor) }).toThrow()
+        })
+      }
+
       describe('now not empty', () => {
         it('should not be empty', () => {
           expect(container.isEmpty).toBe(false)
@@ -383,6 +399,10 @@ describe.each(Object.entries(Tests))('A %s', (name, {
         })
         if (members.readAt) it('shoud read a value at index 0', () => {
           expect(container.readAt(0)).toBe(value)
+        })
+        if (members.setAt) it('should be able to set a value at index 0', () => {
+          container.setAt(0, value + 1)
+          expect(container.at(0)).toBe(value + 1)
         })
         if (members.data) it('should have data matching the value', () => {
           expect(container.data()[0]).toBe(value)

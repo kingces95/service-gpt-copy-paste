@@ -26,7 +26,7 @@ import {
 
 const EmptyMap = new Map()
 
-export class MapCursor extends IteratorCursor {
+class MapCursor extends IteratorCursor {
   constructor(range, map) {
     assert(map instanceof Map)
     super(range, map)

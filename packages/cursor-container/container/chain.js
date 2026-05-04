@@ -16,7 +16,7 @@ import {
 } from '../container-parts.js'
 import {
   RewindLink,
-} from '../helpers/rewind-link.js'
+} from '../link/rewind-link.js'
 
 class ChainCursor extends List.cursorType {
   static linkType$ = RewindLink
@@ -43,11 +43,6 @@ export class Chain extends List {
 
   constructor() {
     super()
-    this._count = 0
-  }
-
-  dispose$() {
-    super.dispose$()
     this._count = 0
   }
 

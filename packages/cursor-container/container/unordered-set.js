@@ -19,7 +19,7 @@ import {
 
 const EmptySet = new Set()
 
-export class SetCursor extends IteratorCursor {
+class SetCursor extends IteratorCursor {
   constructor(range, set) {
     assert(set instanceof Set)
     super(range, set)

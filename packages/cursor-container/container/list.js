@@ -25,7 +25,7 @@ import {
 import { 
   ContainerCursor,
 } from '../cursor/container-cursor.js'
-import { ForwardLink } from '../helpers/forward-link.js'
+import { ForwardLink } from '../link/forward-link.js'
 
 class ListCursor extends ContainerCursor {
   static linkType$ = ForwardLink
@@ -101,11 +101,6 @@ export class List extends PartialProxy {
     assert(root instanceof ForwardLink, 'linkType must be a ForwardLink')
     this._rootLink = root
     this._endLink = root.insertAfter()
-  }
-
-  dispose$() {
-    this._rootLink = null
-    this._endLink = null
   }
 
   static {

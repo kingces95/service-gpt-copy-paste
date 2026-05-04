@@ -31,15 +31,28 @@ export class ContainerPart extends PartialClass {
     insert(value, { at = this.begin(), after }) { },
     erase({ at = this.begin(), after }) { }
   }
-  
+
+  throwIfNull$(value) { 
+    if (value == null) throwNull() 
+  }
+  throwIfEmpty$() { 
+    if (this.isEmpty) throwEmpty() 
+  }
+  throwIfForeignCursor$(other) { 
+    this.throwIfNull$(other)
+    if (other.range != this) throwNotEquatableTo()
+  }
+  throwIfEnd$(cursor) {
+    if (cursor.equals(this.end())) throwUpdateOutOfBounds()
+  }  
+
   get cursorType() { return this.constructor.cursorType }
 }
 
 export class SpliceableContainerPart extends ContainerPart {
   static [Preconditions] = {
     splice(cursor, outCount = 0, ...values) {
-      if (cursor == null) throwNull()
-      if (cursor.range != this) throwNotEquatableTo()
+      this.throwIfForeignCursor$(cursor)
       if (outCount < 0) throw new RangeError(
         `outCount must be non-negative.`)
     }
@@ -64,8 +77,8 @@ export class ClearableContainerPart extends ContainerPart {
 
 export class FrontEditableContainerPart extends ContainerPart { 
   static [Preconditions] = {
-    shift() { if (this.isEmpty) throwEmpty() },
-    get front() { if (this.isEmpty) throwEmpty() }
+    shift() { this.throwIfEmpty$() },
+    get front() { this.throwIfEmpty$() },
   }
   static [Abstracts] = {
     get front() { },
@@ -76,8 +89,8 @@ export class FrontEditableContainerPart extends ContainerPart {
 
 export class BackEditableContainerPart extends ContainerPart {
   static [Preconditions] = {
-    pop() { if (this.isEmpty) throwEmpty() },
-    get back() { if (this.isEmpty) throwEmpty() },
+    pop() { this.throwIfEmpty$() },
+    get back() { this.throwIfEmpty$() },
   }
   static [Abstracts] = {
     get back() { },
