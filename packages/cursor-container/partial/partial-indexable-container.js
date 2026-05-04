@@ -48,6 +48,8 @@ export class PartialIndexableContainer extends PartialClass {
 
     extend(this, ContainerPart, {
       get isEmpty() { return this.count == 0 },
+      insert(value, { at = this.begin() } = { }) { this.insertAt(value, at) },
+      erase({ at = this.begin() } = { }) { this.eraseAt(at) },
     })
 
     extend(this, FrontEditableContainerPart, {
@@ -65,7 +67,7 @@ export class PartialIndexableContainer extends PartialClass {
     })
 
     extend(this, EditableContainerPart, {
-      insert(cursor, value) {
+      insertAt(value, cursor) {
         const begin = cursor.clone()
         const end = this.end()
         this.ensureCapacity(this.count + 1)
@@ -74,7 +76,7 @@ export class PartialIndexableContainer extends PartialClass {
         this.copy(cursorPlusOne, begin, end)
         cursor.value = value
       },
-      erase(cursor) {
+      eraseAt(cursor) {
         const value = cursor.value
         const begin = cursor.clone().step()
         const end = this.end()

@@ -26,7 +26,7 @@ import {
 import {
   List,
   Chain,
-  Vector,
+  VectorMap,
   Deque,
   NodeBuffer,
   EcmaBuffer,
@@ -95,7 +95,7 @@ const ChainCase = {
     BidirectionalCursorConcept],
 }
 const VectorCase = {
-  type: Vector,
+  type: VectorMap,
   concepts: [
     InputCursorConcept,
     OutputCursorConcept,

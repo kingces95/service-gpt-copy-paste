@@ -51,7 +51,7 @@ export class PartialContiguousContainer extends PartialIndexableContainer {
       insert(begin, end) { 
         return
       },
-      erase(begin, end) { 
+      eraseAt(begin, end) { 
         return
       }
     }
@@ -61,22 +61,22 @@ export class PartialContiguousContainer extends PartialIndexableContainer {
       implement(this, OutputRangeConcept)
   
       extend(this, FrontEditableContainerPart, {
-        unshift(value) { this.insert(this.begin(), value) },
+        unshift(value) { this.insertAt(value, this.begin()) },
         shift() { 
           const begin = this.begin()
           const result = begin.value
-          this.erase(begin)
+          this.eraseAt(begin)
           return result
         },
       })
 
       extend(this, BackEditableContainerPart, {
-        push(value) { this.insert(this.end(), value) },
+        push(value) { this.insertAt(value, this.end()) },
         pop() { 
           const end = this.end()
           end.stepBack()
           const value = end.value
-          this.erase(end)
+          this.eraseAt(end)
           return value
         }
       })

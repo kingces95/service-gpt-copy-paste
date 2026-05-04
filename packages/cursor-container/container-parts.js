@@ -27,14 +27,12 @@ import { Implements } from '@kingjs/partial-concept'
 export class ContainerPart extends PartialClass {
   static [Implements] = RangeConcept
   static [Abstracts] = {
-    get isEmpty() { }
+    get isEmpty() { },
+    insert(value, { at = this.begin(), after }) { },
+    erase({ at = this.begin(), after }) { }
   }
   
   get cursorType() { return this.constructor.cursorType }
-  get isEmpty() { 
-    return this.begin({ fixed: true })
-      .equals(this.end({ fixed: true }))
-  }
 }
 
 export class SpliceableContainerPart extends ContainerPart {
@@ -95,13 +93,16 @@ export class EditableContainerPart extends ContainerPart {
     BackEditableContainerPart,
   ]
   static [Abstracts] = {
-    insert(cursor, value) { },
-    erase(cursor) { },
+    insertAt(value, cursor) { },
+    eraseAt(cursor) { },
   }
-
+  
+  insert(value, { at = this.end() } = { }) {
+    this.insertAt(value, at)
+  }
   take(cursor) {
     const result = cursor.value
-    this.erase(cursor)
+    this.eraseAt(cursor)
     return result 
   }
 }
@@ -149,3 +150,24 @@ export class ReservableContainerPart extends CapacityContainerPart {
     return newCapacity
   }
 }
+
+export class AssociativeContainerPart extends ContainerPart {
+  static [Abstracts] = {
+    has(key) { },
+    remove(key) { }
+  }
+}
+
+export class UnorderedSetContainerPart extends AssociativeContainerPart {
+  static [Abstracts] = {
+    add(key) { }
+  }
+}
+
+export class UnorderedMapContainerPart extends AssociativeContainerPart {
+  static [Abstracts] = {
+    get(key) { },
+    add(key, value) { },
+  }
+}
+

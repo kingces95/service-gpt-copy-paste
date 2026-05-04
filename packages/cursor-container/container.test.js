@@ -25,6 +25,9 @@ import {
   ReservableContainerPart,
   ByteContainerPart,
   ClearableContainerPart,
+  AssociativeContainerPart,
+  UnorderedSetContainerPart,
+  UnorderedMapContainerPart,
 } from '@kingjs/cursor-container'
 import {
   RangeConcept,
@@ -39,21 +42,27 @@ import {
 import { 
   List,
   Chain,
-  Vector,
+  VectorMap,
   Deque,
   NodeBuffer,
-  EcmaBuffer 
+  EcmaBuffer,
+  UnorderedMap,
+  UnorderedSet,
 } from '@kingjs/cursor-container'
+import { value } from '@kingjs/abstract'
 
 const universalContainerConcepts = [
   RangeConcept,
   InputRangeConcept,
-  OutputRangeConcept,
-  ForwardRangeConcept,
   ContainerPart]
+
+const sequenceContainerConcepts = [
+  ...universalContainerConcepts,
+  ForwardRangeConcept,
+  OutputRangeConcept]
   
 const reversibleContainerConcepts = [
-  ...universalContainerConcepts,
+  ...sequenceContainerConcepts,
   BidirectionalRangeConcept,
   FrontEditableContainerPart,
   BackEditableContainerPart,
@@ -73,14 +82,22 @@ const bufferConainerConcepts = [
   CapacityContainerPart,
   ReservableContainerPart,
   ByteContainerPart]
+
+const associativeContainerConcepts = [
+  ...universalContainerConcepts,
+  AssociativeContainerPart]
   
+const Value = 42
+const Key = 'key'
+
 const Tests = {
   List: {
     type: List,
     concepts: [
-      ...universalContainerConcepts,
+      ...sequenceContainerConcepts,
       FrontEditableContainerPart],
     members: {
+      insert: true, erase: true,
       front: true, shift: true, unshift: true,
       beforeBegin: true, insertAfter: true, eraseAfter: true,
     }
@@ -93,21 +110,56 @@ const Tests = {
       SpliceableContainerPart,
       SizedContainerPart],
     members: {
-      front: true, shift: true, unshift: true,
-      back: true, pop: true, push: true, count: true,
       insert: true, erase: true,
+      count: true,
+      front: true, shift: true, unshift: true,
+      back: true, pop: true, push: true,
     }
   },
+
+  UnorderedMap: {
+    type: UnorderedMap,
+    concepts: [
+      ClearableContainerPart,
+      UnorderedMapContainerPart,
+      ...associativeContainerConcepts],
+    members: {
+      insert: true, erase: true,
+      count: true,
+      has: true, remove: true,
+      get: true, add: true,
+      clear: true,
+    },
+    value: [Key, Value],
+  },
+
+  UnorderedSet: {
+    type: UnorderedSet,
+    concepts: [
+      ClearableContainerPart,
+      UnorderedSetContainerPart,
+      ...associativeContainerConcepts],
+    members: {
+      insert: true, erase: true,
+      count: true,
+      has: true, remove: true,
+      add: true,
+      clear: true,
+    },
+    key: Value,
+  },
   
-  Vector: {
-    type: Vector,
+  VectorMap: {
+    type: VectorMap,
     concepts: [
       ClearableContainerPart,
       ...indexableContainerConcepts],
     members: {
-      front: true, shift: true, unshift: true,
-      back: true, pop: true, push: true, count: true,
       insert: true, erase: true,
+      count: true,
+      front: true, shift: true, unshift: true,
+      back: true, pop: true, push: true,
+      clear: true,
     }
   },
   
@@ -117,10 +169,12 @@ const Tests = {
       ClearableContainerPart,
       ...indexableContainerConcepts],
     members: {
+      insert: true, erase: true,
+      count: true,
       front: true, shift: true, unshift: true,
-      back: true, pop: true, push: true, count: true,
-      // insert: true, erase: true,
+      back: true, pop: true, push: true,
       at: true, // setAt: true,
+      clear: true,
     }
   },
   
@@ -128,13 +182,15 @@ const Tests = {
     type: EcmaBuffer,
     concepts: [...bufferConainerConcepts],
     members: {
-      front: true, shift: true, unshift: true,
-      back: true, pop: true, push: true, count: true,
       insert: true, erase: true,
+      count: true,
+      front: true, shift: true, unshift: true,
+      back: true, pop: true, push: true,
       at: true, setAt: true, readAt: true,
       capacity: true, setCapacity: true, ensureCapacity: true,
       copy: true, // insertRange: true, removeRange: true,
       data: true,
+      // clear: true,
     }
   },
 
@@ -142,19 +198,21 @@ const Tests = {
     type: NodeBuffer,
     concepts: [...bufferConainerConcepts],
     members: {
-      front: true, shift: true, unshift: true,
-      back: true, pop: true, push: true, count: true,
       insert: true, erase: true,
+      count: true,
+      front: true, shift: true, unshift: true,
+      back: true, pop: true, push: true,
       at: true, setAt: true, readAt: true,
       capacity: true, setCapacity: true, // ensureCapacity: true,
       copy: true, // insertRange: true, removeRange: true,
       data: true,
+      // clear: true,
     }
   }
 }
 
 describe.each(Object.entries(Tests))('A %s', (name, { 
-  type, concepts, members }) => {  
+  type, concepts, members, value = Value, key = Key }) => {  
 
   describe('type', () => {
     it('should be instanceof its concepts', () => {
@@ -187,8 +245,15 @@ describe.each(Object.entries(Tests))('A %s', (name, {
 
   describe('instance', () => {
     let container
+    let otherContainer
     beforeEach(() => {
       container = new type()
+      otherContainer = new type()
+    })
+    it('should not have cursors equal to another container', () => {
+      const begin1 = container.begin()
+      const begin2 = otherContainer.begin()
+      expect(begin1.equals(begin2)).toBe(false)
     })
     if (members.copy) it('should be able to null copy', () => {
       const begin = container.begin()
@@ -220,6 +285,21 @@ describe.each(Object.entries(Tests))('A %s', (name, {
 
     function withCount(count) {
       describe(`now with count ${count}`, () => {
+        it('should have equal begin cursors', () => {
+          const begin1 = container.begin()
+          const begin2 = container.begin()
+          expect(begin1.equals(begin2)).toBe(true)
+        })
+        it('should have equal end cursors', () => {
+          const end1 = container.end()
+          const end2 = container.end()
+          expect(end1.equals(end2)).toBe(true)
+        })      
+        it('should have begin equal end iff count is 0', () => {
+          const begin = container.begin()
+          const end = container.end()
+          expect(begin.equals(end)).toBe(count == 0)
+        })
         if (members.count) it(`should have a count of ${count}`, () => {
           expect(container.count).toBe(count)
         })
@@ -234,6 +314,7 @@ describe.each(Object.entries(Tests))('A %s', (name, {
 
     function whenEmpty() {
       describe('now empty', () => {
+
         it('should be empty', () => {
           expect(container.isEmpty).toBe(true)
         })
@@ -262,24 +343,25 @@ describe.each(Object.entries(Tests))('A %s', (name, {
     whenEmpty()
 
     describe.each([
+      // ['add', ''],
       ['unshift', ''], 
       ['push', ''],
-      ['insert', 'begin'],
-      ['insert', 'end'],
+      ['insert', ''],
+      ['insertAt', 'begin'],
+      ['insertAt', 'end'],
       ['insertAfter', 'beforeBegin'],
     ].filter(([method]) => members[method]))(
       'then %s(%s)', (fn, cursorFn) => {
 
-      let value = 42
       beforeEach(() => {
         // container.unshift(value)
         // container.push(value)
-        // container.insert(container.begin(), value)
-        // container.insert(container.end(), value)
-        // container.insertAfter(container.beforeBegin(), value)
+        // container.insert(value, container.begin())
+        // container.insert(value, container.end())
+        // container.insertAfter(value, container.beforeBegin())
         if (cursorFn) {
           const cursor = container[cursorFn]()
-          container[fn](cursor, value)
+          container[fn](value, cursor)
         }
         else container[fn](value)
       })
@@ -305,6 +387,12 @@ describe.each(Object.entries(Tests))('A %s', (name, {
         if (members.data) it('should have data matching the value', () => {
           expect(container.data()[0]).toBe(value)
         })
+        if (members.has) it('should have the value', () => {
+          expect(container.has(key)).toBe(true)
+        })
+        if (members.get) it('should get the value by key', () => {
+          expect(container.get(key)).toBe(value[1])
+        })
       })
       describe.each([
         ['pop'],
@@ -325,7 +413,7 @@ describe.each(Object.entries(Tests))('A %s', (name, {
       })        
       describe.each([
         ['eraseAfter', 'beforeBegin'],
-        ['erase', 'begin'],
+        ['eraseAt', 'begin'],
       ].filter(([method]) => members[method]))(
         'then %s-ing', (fn, cursorFn) => {
 
@@ -346,6 +434,20 @@ describe.each(Object.entries(Tests))('A %s', (name, {
         })
         whenEmpty()
       })
+      if (members.erase) {
+        describe('then erase-ing', () => {
+          beforeEach(() => { container.erase() })
+          whenEmpty()
+        })
+      }
+      if (members.clear) {
+        describe('then clear-ing', () => {
+          beforeEach(() => {
+            container.clear()
+          })
+          whenEmpty()
+        })
+      }
     })
   })
 })

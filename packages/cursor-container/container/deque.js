@@ -1,4 +1,5 @@
 import Denque from "denque"
+import { assert } from '@kingjs/assert'
 import { implement } from '@kingjs/partial-implement'
 import { extend } from '@kingjs/partial-extend'
 import { PartialProxy } from '@kingjs/partial-proxy'
@@ -19,6 +20,8 @@ import {
   PartialIndexableContainer,
 } from '../partial/partial-indexable-container.js'
 
+const Fixed = { fixed: true }
+
 export class Deque extends PartialProxy {
   static cursorType = IndexableCursor
 
@@ -37,6 +40,26 @@ export class Deque extends PartialProxy {
 
     extend(this, ContainerPart, {
       get isEmpty() { return this._denque.isEmpty() },
+      insert(value, { at = this.begin(Fixed) } = { }) {
+        assert(this.end(Fixed).equals(at) 
+          || this.begin(Fixed).equals(at),
+          `Invalid cursor: ${at}. Must be at the beginning or end of the deque.`)
+
+        if (this.end(Fixed).equals(at)) 
+          return this.push(value)
+        else
+          return this.unshift(value)
+      },
+      erase({ at = this.begin(Fixed) } = { }) {
+        assert(this.end(Fixed).equals(at) 
+          || this.begin(Fixed).equals(at),
+          `Invalid cursor: ${at}. Must be at the beginning or end of the deque.`)
+
+        if (this.end(Fixed).equals(at))
+          return this.pop()
+        else
+          return this.shift()
+      }
     })
 
     extend(this, ClearableContainerPart, {

@@ -8,7 +8,6 @@ import {
   throwMoveOutOfBounds, 
   throwReadOutOfBounds, 
   throwWriteOutOfBounds } from './throw.js'
-import { write } from 'fast-csv'
 
 export class CursorConcept extends EquatableConcept {
   static [Preconditions] = {

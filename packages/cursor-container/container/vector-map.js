@@ -19,7 +19,7 @@ import {
   PartialIndexableContainer 
 } from '../partial/partial-indexable-container.js'
 
-export class Vector extends PartialProxy {
+export class VectorMap extends PartialProxy {
   static cursorType = IndexableCursor
 
   _array
@@ -34,10 +34,6 @@ export class Vector extends PartialProxy {
     implement(this, OutputRangeConcept)
 
     extend(this, PartialIndexableContainer)
-
-    extend(this, ContainerPart, {
-      get isEmpty() { return this._array.length == 0 },
-    })
 
     extend(this, ClearableContainerPart, {
       clear() { this._array.length = 0 },
@@ -63,8 +59,8 @@ export class Vector extends PartialProxy {
     })
 
     extend(this, EditableContainerPart, {
-      insert(cursor, value) { this._array.splice(cursor.index, 0, value) },
-      erase(cursor) { 
+      insertAt(value, cursor) { this._array.splice(cursor.index, 0, value) },
+      eraseAt(cursor) { 
         this._array.splice(cursor.index, 1)
         return cursor.clone()
       },

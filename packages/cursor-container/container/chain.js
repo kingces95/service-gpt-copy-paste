@@ -8,6 +8,7 @@ import {
   BidirectionalRangeConcept 
 } from '@kingjs/cursor'
 import { 
+  ContainerPart,
   SizedContainerPart,
   BackEditableContainerPart,
   SpliceableContainerPart,
@@ -60,11 +61,11 @@ export class Chain extends List {
       // stubs and proxies. OR make the proxies detect a super call and forward
       // to the original method.
 
-      // insertAfter(cursor, value) { cursor.link.insertAfter(value) },
+      // insertAfter(value, cursor) { cursor.link.insertAfter(value) },
       // eraseAfter(cursor) { return cursor.link.eraseAfter() },
 
-      insertAfter(cursor, value) {
-        // List.prototype.insertAfter.call(this, cursor, value)
+      insertAfter(value, cursor) {
+        // List.prototype.insertAfter.call(this, value, cursor)
         cursor.link.insertAfter(value)
         this._count++
       },
@@ -76,10 +77,16 @@ export class Chain extends List {
       },
     })
 
+    extend(this, ContainerPart, {
+      insert(value, { after = this.beforeBegin() }) {
+        this.insertAfter(value, after)
+      },
+    })
+
     extend(this, BackEditableContainerPart, {
       get back() { return this.endLink$.previous.value },
       push(value) { 
-        this.insert(this.end(), value)
+        this.insertAt(value, this.end())
       },
       pop() {
         const cursor = this.end()
@@ -95,11 +102,11 @@ export class Chain extends List {
     })
 
     extend(this, EditableContainerPart, {
-      insert(cursor, value) {
+      insertAt(value, cursor) {
         cursor.link.insert(value)
         this._count++
       },
-      erase(cursor) {
+      eraseAt(cursor) {
         const result = cursor.clone().step()
         cursor.link.erase()
         this._count--
@@ -112,7 +119,7 @@ export class Chain extends List {
         const beforeCursor = cursor.clone().stepBack()
         while (outCount-- > 0) this.eraseAfter(beforeCursor)
         for (let i = values.length - 1; i >= 0; i--)
-          this.insertAfter(beforeCursor, values[i])
+          this.insertAfter(values[i], beforeCursor)
       },
     })
   }

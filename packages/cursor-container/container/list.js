@@ -76,7 +76,7 @@ export class List extends PartialProxy {
   static cursorType = ListCursor
 
   static [Preconditions] = {
-    insertAfter(cursor, value) {
+    insertAfter(value, cursor) {
       if (!cursor) throwNull()
       if (cursor.range != this) throwNotEquatableTo()
       const end = this.end({ fixed: true })
@@ -114,7 +114,7 @@ export class List extends PartialProxy {
 
     define(this, {
       beforeBegin() { return new this.cursorType(this, this._rootLink) },
-      insertAfter(cursor, value) { cursor.link.insertAfter(value) },
+      insertAfter(value, cursor) { cursor.link.insertAfter(value) },
       eraseAfter(cursor) { 
         cursor.link.eraseAfter() 
         return cursor.clone().step()
@@ -123,6 +123,10 @@ export class List extends PartialProxy {
 
     extend(this, ContainerPart, {
       get isEmpty() { return this._endLink == this._rootLink.next },
+      insert(value, { after = this.beforeBegin() } = { }) { 
+        this.insertAfter(value, after) 
+      },
+      erase({ after = this.beforeBegin() } = { }) { this.eraseAfter(after) },
     })
 
     extend(this, FrontEditableContainerPart, {
@@ -132,7 +136,7 @@ export class List extends PartialProxy {
         this.eraseAfter(this.beforeBegin())
         return result
       },
-      unshift(value) { this.insertAfter(this.beforeBegin(), value) },
+      unshift(value) { this.insertAfter(value, this.beforeBegin()) },
     })
 
     implement(this, RangeConcept, {
