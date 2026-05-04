@@ -98,7 +98,7 @@ export class Chain extends List {
     })
 
     extend(this, SizedContainerPart, {
-      get count() { return this._count },
+      get size() { return this._count },
     })
 
     extend(this, EditableContainerPart, {

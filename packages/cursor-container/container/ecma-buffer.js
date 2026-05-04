@@ -45,7 +45,7 @@ export class EcmaBuffer extends PartialProxy {
     extend(this, PartialContiguousContainer)
 
     extend(this, SizedContainerPart, {
-      get count() { return this._count }
+      get size() { return this._count }
     })
 
     extend(this, IndexableContainerPart, {

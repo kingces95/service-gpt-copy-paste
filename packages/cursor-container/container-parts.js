@@ -42,7 +42,6 @@ export class SpliceableContainerPart extends ContainerPart {
       if (cursor.range != this) throwNotEquatableTo()
       if (outCount < 0) throw new RangeError(
         `outCount must be non-negative.`)
-      const count = this.count
     }
   }
   
@@ -51,10 +50,10 @@ export class SpliceableContainerPart extends ContainerPart {
 
 export class SizedContainerPart extends ContainerPart {
   static [Abstracts] = {
-    get count() { }
+    get size() { }
   }
 
-  get isEmpty() { return this.count == 0 }
+  get isEmpty() { return this.size == 0 }
 }
 
 export class ClearableContainerPart extends ContainerPart {

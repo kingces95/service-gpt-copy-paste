@@ -52,7 +52,7 @@ export class UnorderedSet extends PartialProxy {
     })
 
     extend(this, SizedContainerPart, {
-      get count() { return this._set.size },
+      get size() { return this._set.size },
     })
 
     extend(this, AssociativeContainerPart, {

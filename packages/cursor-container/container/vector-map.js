@@ -35,6 +35,10 @@ export class VectorMap extends PartialProxy {
 
     extend(this, PartialIndexableContainer)
 
+    extend(this, SizedContainerPart, {
+      get size() { return this._array.length },
+    })
+
     extend(this, ClearableContainerPart, {
       clear() { this._array.length = 0 },
     })
@@ -47,10 +51,6 @@ export class VectorMap extends PartialProxy {
     extend(this, BackEditableContainerPart, {
       push(value) { this._array.push(value) },
       pop() { return this._array.pop() },
-    })
-
-    extend(this, SizedContainerPart, {
-      get count() { return this._array.length },
     })
 
     extend(this, IndexableContainerPart, {

@@ -32,7 +32,7 @@ export class PartialContiguousContainer extends PartialIndexableContainer {
         if (index < 0) throw new RangeError(
           `Cannot read at negative index: ${index}.`)
 
-        if (index + length > this.count) throw new RangeError(
+        if (index + length > this.size) throw new RangeError(
           `Cannot read ${length} byte(s) at index ${index + length}.`)
       },
       copy(cursor, begin, end) {
@@ -45,7 +45,7 @@ export class PartialContiguousContainer extends PartialIndexableContainer {
         const { index: endIndex } = end
         assert(beginIndex >= 0, 
           `Cannot read at negative index: ${beginIndex}.`)
-        assert(endIndex <= this.count, 
+        assert(endIndex <= this.size, 
           `Cannot read at index ${endIndex}.`)        
       },
       insert(begin, end) { 
@@ -91,7 +91,7 @@ export class PartialContiguousContainer extends PartialIndexableContainer {
       extend(this, SizedContainerPart, { 
         // none
       }, {
-        get count() { return this._count }
+        get size() { return this._count }
       })
 
       extend(this, ReservableContainerPart, {

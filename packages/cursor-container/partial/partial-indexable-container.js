@@ -29,11 +29,11 @@ export class PartialIndexableContainer extends PartialClass {
 
     at(index) {
       if (index < 0) throwReadOutOfBounds()
-      if (index >= this.count) throwReadOutOfBounds()
+      if (index >= this.size) throwReadOutOfBounds()
     },
     setAt(index, value) {
       if (index < 0) throwWriteOutOfBounds()
-      if (index >= this.count) throwWriteOutOfBounds()
+      if (index >= this.size) throwWriteOutOfBounds()
     },
   }
   
@@ -43,11 +43,11 @@ export class PartialIndexableContainer extends PartialClass {
     implement(this, ForwardRangeConcept, {
       get cursorType() { return this.constructor.cursorType },
       begin() { return new this.cursorType(this, 0) },
-      end() { return new this.cursorType(this, this.count) },
+      end() { return new this.cursorType(this, this.size) },
     })
 
     extend(this, ContainerPart, {
-      get isEmpty() { return this.count == 0 },
+      get isEmpty() { return this.size == 0 },
       insert(value, { at = this.begin() } = { }) { this.insertAt(value, at) },
       erase({ at = this.begin() } = { }) { this.eraseAt(at) },
     })
@@ -60,7 +60,7 @@ export class PartialIndexableContainer extends PartialClass {
     })
 
     extend(this, BackEditableContainerPart, {
-      get back() { return this.at(this.count - 1) },
+      get back() { return this.at(this.size - 1) },
     }, {
       pop() { },
       push(value) { },
@@ -70,7 +70,7 @@ export class PartialIndexableContainer extends PartialClass {
       insertAt(value, cursor) {
         const begin = cursor.clone()
         const end = this.end()
-        this.ensureCapacity(this.count + 1)
+        this.ensureCapacity(this.size + 1)
         this._count++
         const cursorPlusOne = cursor.clone().step()
         this.copy(cursorPlusOne, begin, end)
@@ -89,7 +89,7 @@ export class PartialIndexableContainer extends PartialClass {
     extend(this, SizedContainerPart, {
       // none
     }, {
-      get count() { },
+      get size() { },
     })
 
     extend(this, IndexableContainerPart, { 

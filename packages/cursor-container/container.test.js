@@ -111,7 +111,7 @@ const Tests = {
       SizedContainerPart],
     members: {
       insert: true, erase: true,
-      count: true,
+      size: true,
       front: true, shift: true, unshift: true,
       back: true, pop: true, push: true,
     }
@@ -125,7 +125,7 @@ const Tests = {
       ...associativeContainerConcepts],
     members: {
       insert: true, erase: true,
-      count: true,
+      size: true,
       has: true, remove: true,
       get: true, add: true,
       clear: true,
@@ -141,7 +141,7 @@ const Tests = {
       ...associativeContainerConcepts],
     members: {
       insert: true, erase: true,
-      count: true,
+      size: true,
       has: true, remove: true,
       add: true,
       clear: true,
@@ -156,7 +156,7 @@ const Tests = {
       ...indexableContainerConcepts],
     members: {
       insert: true, erase: true,
-      count: true,
+      size: true,
       front: true, shift: true, unshift: true,
       back: true, pop: true, push: true,
       clear: true,
@@ -170,7 +170,7 @@ const Tests = {
       ...indexableContainerConcepts],
     members: {
       insert: true, erase: true,
-      count: true,
+      size: true,
       front: true, shift: true, unshift: true,
       back: true, pop: true, push: true,
       at: true, // setAt: true,
@@ -183,7 +183,7 @@ const Tests = {
     concepts: [...bufferConainerConcepts],
     members: {
       insert: true, erase: true,
-      count: true,
+      size: true,
       front: true, shift: true, unshift: true,
       back: true, pop: true, push: true,
       at: true, setAt: true, readAt: true,
@@ -199,7 +199,7 @@ const Tests = {
     concepts: [...bufferConainerConcepts],
     members: {
       insert: true, erase: true,
-      count: true,
+      size: true,
       front: true, shift: true, unshift: true,
       back: true, pop: true, push: true,
       at: true, setAt: true, readAt: true,
@@ -283,8 +283,8 @@ describe.each(Object.entries(Tests))('A %s', (name, {
       })
     }
 
-    function withCount(count) {
-      describe(`now with count ${count}`, () => {
+    function withCount(size) {
+      describe(`now with size ${size}`, () => {
         it('should have equal begin cursors', () => {
           const begin1 = container.begin()
           const begin2 = container.begin()
@@ -295,19 +295,19 @@ describe.each(Object.entries(Tests))('A %s', (name, {
           const end2 = container.end()
           expect(end1.equals(end2)).toBe(true)
         })      
-        it('should have begin equal end iff count is 0', () => {
+        it('should have begin equal end iff size is 0', () => {
           const begin = container.begin()
           const end = container.end()
-          expect(begin.equals(end)).toBe(count == 0)
+          expect(begin.equals(end)).toBe(size == 0)
         })
-        if (members.count) it(`should have a count of ${count}`, () => {
-          expect(container.count).toBe(count)
+        if (members.size) it(`should have a size of ${size}`, () => {
+          expect(container.size).toBe(size)
         })
-        if (members.capacity) it(`should have a capacity of ${count} or more`, () => {
-          expect(container.capacity).toBeGreaterThan(count)
+        if (members.capacity) it(`should have a capacity of ${size} or more`, () => {
+          expect(container.capacity).toBeGreaterThan(size)
         })
-        if (members.data) it(`should have data length of ${count}`, () => {
-          expect(container.data().length).toBe(count)
+        if (members.data) it(`should have data length of ${size}`, () => {
+          expect(container.data().length).toBe(size)
         })
       })
     }

@@ -77,7 +77,7 @@ export class Deque extends PartialProxy {
     })
 
     extend(this, SizedContainerPart, {
-      get count() { return this._denque.length },
+      get size() { return this._denque.length },
     })
 
     extend(this, IndexableContainerPart, {

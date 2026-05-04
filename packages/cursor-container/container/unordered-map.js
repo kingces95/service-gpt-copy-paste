@@ -65,7 +65,7 @@ export class UnorderedMap extends PartialProxy {
     })
 
     extend(this, SizedContainerPart, {
-      get count() { return this._map.size },
+      get size() { return this._map.size },
     })
 
     extend(this, AssociativeContainerPart, {
