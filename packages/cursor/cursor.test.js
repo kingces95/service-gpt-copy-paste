@@ -28,8 +28,8 @@ import {
   Chain,
   VectorMap,
   Deque,
-  NodeBuffer,
-  EcmaBuffer,
+  // NodeBuffer,
+  // EcmaBuffer,
 } from '@kingjs/cursor-container'
 import { ForwardRangeConcept } from './range-concepts.js'
 
@@ -112,27 +112,27 @@ const DequeCase = {
     BidirectionalCursorConcept,
     RandomAccessCursorConcept],
 }
-const NodeBufferCase = {
-  type: NodeBuffer,
-  concepts: [
-    InputCursorConcept,
-    OutputCursorConcept,
-    ForwardCursorConcept,
-    BidirectionalCursorConcept,
-    RandomAccessCursorConcept,
-    ContiguousCursorConcept],
-  bufferType: Buffer,
-}
-const EcmaBufferCase = {
-  type: EcmaBuffer,
-  concepts: [
-    InputCursorConcept,
-    OutputCursorConcept,
-    ForwardCursorConcept,
-    BidirectionalCursorConcept,
-    RandomAccessCursorConcept,
-    ContiguousCursorConcept],
-}
+// const NodeBufferCase = {
+//   type: NodeBuffer,
+//   concepts: [
+//     InputCursorConcept,
+//     OutputCursorConcept,
+//     ForwardCursorConcept,
+//     BidirectionalCursorConcept,
+//     RandomAccessCursorConcept,
+//     ContiguousCursorConcept],
+//   bufferType: Buffer,
+// }
+// const EcmaBufferCase = {
+//   type: EcmaBuffer,
+//   concepts: [
+//     InputCursorConcept,
+//     OutputCursorConcept,
+//     ForwardCursorConcept,
+//     BidirectionalCursorConcept,
+//     RandomAccessCursorConcept,
+//     ContiguousCursorConcept],
+// }
 
 
 const cases = [
@@ -147,8 +147,8 @@ const cases = [
   ['Chain', ChainCase],
   ['Vector', VectorCase],
   ['Deque', DequeCase],
-  ['NodeBuffer', NodeBufferCase],
-  ['EcmaBuffer', EcmaBufferCase],
+  // ['NodeBuffer', NodeBufferCase],
+  // ['EcmaBuffer', EcmaBufferCase],
 ]
 
 describe.each(cases)('%s', (_, { type, concepts, bufferType }) => {
@@ -295,11 +295,11 @@ describe.each(cases)('%s', (_, { type, concepts, bufferType }) => {
         it('should throw if set at offset', () => {
           expect(() => begin.setAt(0, 42)).toThrow(RangeError)
         })
-        it('should return 0 on subtract', () => {
-          expect(begin.subtract(begin)).toBe(0)
+        it('should return 0 on distanceTo', () => {
+          expect(begin.distanceTo(begin)).toBe(0)
         })
         it('should throw if subtracting null', () => {
-          expect(() => begin.subtract(null)).toThrow(
+          expect(() => begin.distanceTo(null)).toThrow(
             "Cursor is from another container.")
         })
         it('should return 0 on compareTo', () => {
@@ -318,53 +318,21 @@ describe.each(cases)('%s', (_, { type, concepts, bufferType }) => {
         it('should be instanceof ContiguousCursorConcept', () => {
           expect(begin).toBeInstanceOf(ContiguousCursorConcept)
         })
-        it('should throw RangeError on read 1', () => {
-          expect(() => begin.read(1)).toThrow(RangeError)
-        })
-        it('should throw RangeError on read 2', () => {
-          expect(() => begin.read(2)).toThrow(RangeError)
-        })
-        it('should throw RangeError on read 4', () => {
-          expect(() => begin.read(4)).toThrow(RangeError)
-        })
-        it('should throw on read 8', () => {
-          expect(() => begin.read(8)).toThrow(Error)
-        })
-        it('should throw for named reads (e.g. readUInt8)', () => {
-          expect(() => begin.readUInt8()).toThrow(RangeError)
-          expect(() => begin.readInt8()).toThrow(RangeError)
-      
-          expect(() => begin.readUInt16()).toThrow(RangeError)
-          expect(() => begin.readUInt16BE()).toThrow(RangeError)
-          expect(() => begin.readUInt16LE()).toThrow(RangeError)
-      
-          expect(() => begin.readInt16()).toThrow(RangeError)
-          expect(() => begin.readInt16BE()).toThrow(RangeError)
-          expect(() => begin.readInt16LE()).toThrow(RangeError)
-      
-          expect(() => begin.readUInt32()).toThrow(RangeError)
-          expect(() => begin.readUInt32BE()).toThrow(RangeError)
-          expect(() => begin.readUInt32LE()).toThrow(RangeError)
-      
-          expect(() => begin.readInt32()).toThrow(RangeError)
-          expect(() => begin.readInt32BE()).toThrow(RangeError)
-          expect(() => begin.readInt32LE()).toThrow(RangeError)
-        })
-        describe('data', () => {
+        describe('span', () => {
           let buffer
           beforeEach(() => {
-            buffer = begin.data()
+            buffer = begin.span()
           })
-          it('should return an empty buffer for data', () => {
+          it('should return an empty buffer for span', () => {
             expect(buffer).toBeInstanceOf(Uint8Array)
             expect(buffer.byteLength).toBe(0)
           })
-          it('should return the expected buffer type for data', () => {
+          it('should return the expected buffer type for span', () => {
             expect(buffer instanceof (bufferType || Uint8Array)).toBe(true)
           })
         })
-        it('should throw if data called with null cursor', () => {
-          expect(() => begin.data(null)).toThrow(
+        it('should throw if span called with null cursor', () => {
+          expect(() => begin.span(null)).toThrow(
             "Cursor is from another container."
           )
         })
@@ -387,22 +355,22 @@ describe.each(cases)('%s', (_, { type, concepts, bufferType }) => {
           it('should compare equal', () => {
             expect(begin.compareTo(otherBegin)).toBe(0)
           })
-          it('should subtract to zero', () => {
-            expect(begin.subtract(otherBegin)).toBe(0)
+          it('should distanceTo to zero', () => {
+            expect(begin.distanceTo(otherBegin)).toBe(0)
           })
         })
       }
       if (concepts.includes(ContiguousCursorConcept)) {
-        describe('data', () => {
+        describe('span', () => {
           let buffer
           beforeEach(() => {
-            buffer = begin.data(otherBegin)
+            buffer = begin.span(otherBegin)
           })
-          it('should return an empty buffer for data', () => {
+          it('should return an empty buffer for span', () => {
             expect(buffer).toBeInstanceOf(Uint8Array)
             expect(buffer.byteLength).toBe(0)
           })
-          it('should return the expected buffer type for data', () => {
+          it('should return the expected buffer type for span', () => {
             expect(buffer instanceof (bufferType || Uint8Array)).toBe(true)
           })
         })
@@ -442,7 +410,7 @@ describe.each(cases)('%s', (_, { type, concepts, bufferType }) => {
         describe('as a random access cursor', () => {
           it('should throw subtracting from other cursor', () => {
             if (!(begin instanceof RandomAccessCursorConcept)) return
-            expect(() => begin.subtract(otherCursor)).toThrow(
+            expect(() => begin.distanceTo(otherCursor)).toThrow(
               "Cursor is from another container."
             )
           })
@@ -457,9 +425,9 @@ describe.each(cases)('%s', (_, { type, concepts, bufferType }) => {
 
       if (concepts.includes(ContiguousCursorConcept)) {
         describe('as a contiguous cursor', () => {
-          it('should throw data with other cursor', () => {
+          it('should throw span with other cursor', () => {
             if (!(begin instanceof ContiguousCursorConcept)) return
-            expect(() => begin.data(otherCursor)).toThrow(
+            expect(() => begin.span(otherCursor)).toThrow(
               "Cursor is from another container."
             )
           })

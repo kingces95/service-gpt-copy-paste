@@ -24,18 +24,16 @@ describe.each([
       const end = container.end()
       expect(distance(begin, end)).toBe(itemCount)
     })
-    it('should advance the begin cursor to the end cursor', () => {
+    it('should not advance a random access begin cursor', () => {
       const begin = container.begin()
       const end = container.end()
       distance(begin, end)
-      expect(begin.equals(end)).toBe(true)
+      expect(begin.equals(container.begin())).toBe(true)
     })
-    it('should throw an error if the end cursor is not reachable', () => {
+    it('should return negative distance between reversed random access cursors', () => {
       const begin = container.begin()
       const end = container.end()
-      expect(() => distance(end, begin)).toThrow(
-        "Cannot move cursor out of bounds."
-      )
+      expect(distance(end, begin)).toBe(-itemCount)
     })
   })
   describe('advance', () => {

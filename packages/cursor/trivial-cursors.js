@@ -21,6 +21,7 @@ import {
   throwReadOutOfBounds,
   throwWriteOutOfBounds,
 } from './throw.js'
+import { distance } from '../cursor-algorithm/distance.js'
 
 // End cursor implementations; Cursors (1) are empty and (2) cannot move. 
 
@@ -107,21 +108,16 @@ export class TrivialRandomAccessCursor extends TrivialBidirectionalCursor {
       },
       at(offset) { },
       setAt(offset, value) { },
-      subtract(other) { return 0 },
+      distanceTo(other) { return 0 },
       compareTo(other) { return 0 },
     }) 
   }
 }
 
 export class TrivialContiguousCursor extends TrivialRandomAccessCursor {
-  static [Preconditions] = {
-    readAt(offset, length, signed, littleEndian) { throwReadOutOfBounds() },
-  }
-
   static { 
     implement(this, ContiguousCursorConcept, {
-      readAt(offset = 0, length = 1, signed = false, littleEndian = false) { },
-      data(other) { return Buffer.alloc(0) }
+      span(other) { return Buffer.alloc(0) }
     }) 
   }
 }

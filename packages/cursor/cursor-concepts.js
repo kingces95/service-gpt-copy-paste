@@ -5,6 +5,7 @@ import { Defines } from '@kingjs/partial-class'
 import { throwNotEquatableTo } from './throw.js'
 import { Preconditions } from '@kingjs/partial-proxy'
 import { 
+  throwNull,
   throwMoveOutOfBounds, 
   throwReadOutOfBounds, 
   throwWriteOutOfBounds } from './throw.js'
@@ -86,14 +87,14 @@ export class RandomAccessCursorConcept extends BidirectionalCursorConcept {
     compareTo(other) {
       if (!this.equatableTo(other)) throwNotEquatableTo(other)
     },
-    subtract(other) {
+    distanceTo(other) {
       if (!this.equatableTo(other)) throwNotEquatableTo(other)
     },
     move(offset) {
       const { range } = this
       const begin = range.begin({ constant: true })
       const end = range.end({ constant: true })
-      const count = end.subtract(begin)
+      const count = begin.distanceTo(end)
       offset += this.index
       if (offset < 0) throwMoveOutOfBounds()
       if (offset > count) throwMoveOutOfBounds()
@@ -104,73 +105,17 @@ export class RandomAccessCursorConcept extends BidirectionalCursorConcept {
   at(offset) { }
   setAt(offset, value) { }
   compareTo(other) { }
-  subtract(other) { }
+  distanceTo(other) { }
 }
 
 export class ContiguousCursorConcept extends RandomAccessCursorConcept {
   static [Preconditions] = {
-    data(begin, end) {
+    span(begin, end) {
       if (begin !== undefined && !this.equatableTo(begin)) throwNotEquatableTo()
       if (end !== undefined && !this.equatableTo(end)) throwNotEquatableTo()
     }
   }
 
-  static [Defines] = {
-    read(length = 1, signed = false, littleEndian = false) {
-      return this.readAt(0, length, signed, littleEndian)
-    },
-    write(value, length = 1, signed = false, littleEndian = false) {
-      return this.writeAt(0, value, length, signed, littleEndian)
-    },
-
-    // 8 bit
-    readUInt8() { return this.read() },
-    readInt8() { return this.read(1, true) },
-    writeUInt8(value) { return this.write(value) },
-    writeInt8(value) { return this.write(value, 1, true) },
-  
-    // 16 bit unsigned
-    readUInt16(littleEndian = false) { 
-      return this.read(2, false, littleEndian) },
-    readUInt16BE() { return this.readUInt16() },
-    readUInt16LE() { return this.readUInt16(true) },
-    writeUInt16(value, littleEndian = false) { 
-      return this.write(value, 2, false, littleEndian) },
-    writeUInt16BE(value) { return this.writeUInt16(value) },
-    writeUInt16LE(value) { return this.writeUInt16(value, true) },
-    
-    // 16 bit signed
-    readInt16(littleEndian = false) { 
-      return this.read(2, true, littleEndian) },
-    readInt16BE() { return this.readInt16() },
-    readInt16LE() { return this.readInt16(true) },
-    writeInt16(value, littleEndian = false) { 
-      return this.write(value, 2, true, littleEndian) },
-    writeInt16BE(value) { return this.writeInt16(value) },
-    writeInt16LE(value) { return this.writeInt16(value, true) },
-  
-    // 32 bit unsigned
-    readUInt32(littleEndian = false) { 
-      return this.read(4, false, littleEndian) },
-    readUInt32BE() { return this.readUInt32() },
-    readUInt32LE() { return this.readUInt32(true) },
-    writeUInt32(value, littleEndian = false) { 
-      return this.write(value, 4, false, littleEndian) },
-    writeUInt32BE(value) { return this.writeUInt32(value) },
-    writeUInt32LE(value) { return this.writeUInt32(value, true) },
-  
-    // 32 bit signed
-    readInt32(littleEndian = false) { 
-      return this.read(4, true, littleEndian) },
-    readInt32BE() { return this.readInt32() },
-    readInt32LE() { return this.readInt32(true) },
-    writeInt32(value, littleEndian = false) { 
-      return this.write(value, 4, true, littleEndian) },
-    writeInt32BE(value) { return this.writeInt32(value) },
-    writeInt32LE(value) { return this.writeInt32(value, true) },
-  }
-
-  data(begin, end) { }
-  readAt(offset, length, signed, littleEndian) { }
-  writeAt(offset, value, length, signed, littleEndian) { }
+  get spanType() { }
+  span(begin, end) { }
 }

@@ -1,6 +1,15 @@
 import { Defines, Abstracts, Extends } from '@kingjs/partial-class'
 import { Preconditions } from '@kingjs/partial-proxy'
 import { PartialClass } from '@kingjs/partial-class'
+import { extend } from '@kingjs/partial-extend'
+import { 
+  copy, 
+  copyBackward, 
+} from '@kingjs/cursor-algorithm'
+import {
+  repeat,
+  single,
+} from '@kingjs/cursor-adapter'
 import {
   RangeConcept,
   InputRangeConcept,
@@ -100,10 +109,6 @@ export class BackEditableContainerPart extends ContainerPart {
 }
 
 export class EditableContainerPart extends ContainerPart {
-  static [Extends] = [
-    FrontEditableContainerPart,
-    BackEditableContainerPart,
-  ]
   static [Abstracts] = {
     insertAt(value, cursor) { },
     eraseAt(cursor) { },
@@ -116,6 +121,29 @@ export class EditableContainerPart extends ContainerPart {
     const result = cursor.value
     this.eraseAt(cursor)
     return result 
+  }
+
+  static {
+    extend(this, FrontEditableContainerPart, {
+      unshift(value) { this.insertAt(value, this.begin()) },
+      shift() { 
+        const begin = this.begin()
+        const result = begin.value
+        this.eraseAt(begin)
+        return result
+      },
+    })
+
+    extend(this, BackEditableContainerPart, {
+      push(value) { this.insertAt(value, this.end()) },
+      pop() { 
+        const end = this.end()
+        end.stepBack()
+        const value = end.value
+        this.eraseAt(end)
+        return value
+      }
+    })    
   }
 }
 
@@ -138,10 +166,10 @@ export class IndexableContainerPart extends SizedContainerPart {
 
 export class ByteContainerPart extends IndexableContainerPart {
   static [Abstracts] = {
-    readAt(cursor, offset, length, signed, littleEndian) { },
-    writeAt(cursor, offset, value, length, signed, littleEndian) { },
-    data(index, other) { },
+    span(first, last) { },
   }
+
+  get spanType() { return this.constructor.spanType }
 }
 
 export class CapacityContainerPart extends ContainerPart {
@@ -151,6 +179,15 @@ export class CapacityContainerPart extends ContainerPart {
 }
 
 export class ReservableContainerPart extends CapacityContainerPart {
+  static [Preconditions] = {
+    setCapacity(count) {
+      if (count < 0) throw new RangeError(
+        `capacity must be non-negative.`)
+      if (count < this.capacity) throw new RangeError(
+        `Cannot shrink capacity from ${this.capacity} to ${count}.`)
+    }
+  }
+
   static [Abstracts] = {
     setCapacity(count) { }
   }
@@ -183,3 +220,111 @@ export class UnorderedMapContainerPart extends AssociativeContainerPart {
   }
 }
 
+export class BulkEditableContainerPart extends EditableContainerPart {
+  static [Implements] = ClearableContainerPart
+  static [Abstracts] = {
+    insertRange(cursor, first, last) { },
+    eraseRange(first, last) { },
+    resizeTo(count, value) { },
+    assignRange(first, last) { },
+  }
+
+  // attachments that depend on abstract operations
+  static [Defines] = {
+
+    insertAt(value, cursor = this.begin()) {
+      const range = single(value)
+      return this.insertRange(cursor, range.begin(), range.end())
+    },
+
+    eraseAt(cursor = this.begin()) {
+      return this.eraseRange(cursor, cursor.clone().step())
+    },
+
+    appendRange(first, last) {
+      return this.insertRange(this.end(), first, last)
+    },
+
+    prependRange(first, last) {
+      return this.insertRange(this.begin(), first, last)
+    },
+
+    insertCount(cursor, count, value) {
+      const range = repeat(value, count)
+      return this.insertRange(cursor, range.begin(), range.end())
+    },
+
+    appendCount(count, value) {
+      return this.insertCount(this.end(), count, value)
+    },
+
+    prependCount(count, value) {
+      return this.insertCount(this.begin(), count, value)
+    },
+
+    eraseCount(cursor, count) {
+      const last = cursor.clone()
+      last.advance(count)
+      return this.eraseRange(cursor, last)
+    },
+
+    eraseFrom(cursor) {
+      return this.eraseRange(cursor, this.end())
+    },
+
+    eraseUntil(cursor) {
+      return this.eraseRange(this.begin(), cursor)
+    },
+
+    clear() {
+      return this.eraseRange(this.begin(), this.end())
+    },
+
+    growTo(count, value = 0) {
+      return this.resizeTo(count, value)
+    },
+
+    truncateTo(count) {
+      return this.resizeTo(count)
+    },
+
+    replaceRange(first, last, replacementFirst, replacementLast) {
+      const cursor = this.eraseRange(first, last)
+      return this.insertRange(cursor, replacementFirst, replacementLast)
+    },
+
+    assignCount(count, value) {
+      const range = new FillRange(value, count)
+      return this.assignRange(range.begin(), range.end())
+    },
+  }
+
+  insertRange(cursor, first, last) {
+    const count = first.distanceTo(last)
+
+    copyBackward(
+      this.end(),
+      cursor.clone().advance(count),
+      cursor,
+    )
+
+    copy(cursor, first, last)
+
+    return this
+  }
+
+  eraseRange(first, last) {
+    copy(first, last, this.end())
+    return first
+  }
+
+  resizeTo(count, value = 0) {
+    fill(this.end(), count - this.size, value)
+    return this
+  }
+
+  assignRange(first, last) {
+    copy(this.begin(), first, last)
+    return this
+  }
+}

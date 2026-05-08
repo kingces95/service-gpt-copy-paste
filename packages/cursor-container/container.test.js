@@ -44,10 +44,11 @@ import {
   Chain,
   VectorMap,
   Deque,
-  NodeBuffer,
-  EcmaBuffer,
+  // NodeBuffer,
+  // EcmaBuffer,
   UnorderedMap,
   UnorderedSet,
+  Uint8Vector, Uint16Vector, Uint32Vector, Float64Vector,
 } from '@kingjs/cursor-container'
 import { value } from '@kingjs/abstract'
 
@@ -65,8 +66,7 @@ const reversibleContainerConcepts = [
   ...sequenceContainerConcepts,
   BidirectionalRangeConcept,
   FrontEditableContainerPart,
-  BackEditableContainerPart,
-  EditableContainerPart]
+  BackEditableContainerPart]
 
 const indexableContainerConcepts = [
   ...reversibleContainerConcepts,
@@ -148,21 +148,6 @@ const Tests = {
       back: true, pop: true, push: true,
     }
   },
-
-  VectorMap: {
-    type: VectorMap,
-    concepts: [
-      ClearableContainerPart,
-      ...indexableContainerConcepts],
-    members: {
-      insert: true, erase: true,
-      size: true,
-      front: true, shift: true, unshift: true,
-      back: true, pop: true, push: true,
-      at: true, setAt: true,
-      clear: true,
-    }
-  },
   
   Deque: {
     type: Deque,
@@ -178,38 +163,70 @@ const Tests = {
       clear: true,
     }
   },
+
+  VectorMap: {
+    type: VectorMap,
+    concepts: [
+      ClearableContainerPart,
+      EditableContainerPart,
+      ...indexableContainerConcepts],
+    members: {
+      insert: true, erase: true,
+      size: true,
+      front: true, shift: true, unshift: true,
+      back: true, pop: true, push: true,
+      at: true, setAt: true,
+      clear: true,
+    }
+  },
   
-  EcmaBuffer: {
-    type: EcmaBuffer,
+  Uint8Vector: {
+    type: Uint8Vector,
     concepts: [...bufferConainerConcepts],
     members: {
       insert: true, erase: true,
       size: true,
       front: true, shift: true, unshift: true,
       back: true, pop: true, push: true,
-      at: true, setAt: true, readAt: true,
+      at: true, setAt: true, // readAt: true,
       capacity: true, setCapacity: true, ensureCapacity: true,
-      copy: true, // insertRange: true, removeRange: true,
-      data: true,
+      // copy: true, // insertRange: true, removeRange: true,
+      span: true,
       // clear: true,
     }
   },
 
-  NodeBuffer: {
-    type: NodeBuffer,
-    concepts: [...bufferConainerConcepts],
-    members: {
-      insert: true, erase: true,
-      size: true,
-      front: true, shift: true, unshift: true,
-      back: true, pop: true, push: true,
-      at: true, setAt: true, readAt: true,
-      capacity: true, setCapacity: true, // ensureCapacity: true,
-      copy: true, // insertRange: true, removeRange: true,
-      data: true,
-      // clear: true,
-    }
-  }
+  // EcmaBuffer: {
+  //   type: EcmaBuffer,
+  //   concepts: [...bufferConainerConcepts],
+  //   members: {
+  //     insert: true, erase: true,
+  //     size: true,
+  //     front: true, shift: true, unshift: true,
+  //     back: true, pop: true, push: true,
+  //     at: true, setAt: true, readAt: true,
+  //     capacity: true, setCapacity: true, ensureCapacity: true,
+  //     copy: true, // insertRange: true, removeRange: true,
+  //     span: true,
+  //     // clear: true,
+  //   }
+  // },
+
+  // NodeBuffer: {
+  //   type: NodeBuffer,
+  //   concepts: [...bufferConainerConcepts],
+  //   members: {
+  //     insert: true, erase: true,
+  //     size: true,
+  //     front: true, shift: true, unshift: true,
+  //     back: true, pop: true, push: true,
+  //     at: true, setAt: true, readAt: true,
+  //     capacity: true, setCapacity: true, // ensureCapacity: true,
+  //     copy: true, // insertRange: true, removeRange: true,
+  //     span: true,
+  //     // clear: true,
+  //   }
+  // }
 }
 
 describe.each(Object.entries(Tests))('A %s', (name, { 
@@ -261,8 +278,8 @@ describe.each(Object.entries(Tests))('A %s', (name, {
       const end = container.end()
       container.copy(begin, begin, end)
     })
-    if (members.data) it('data should be a Uint8Array', () => { 
-      expect(container.data()).toBeInstanceOf(Uint8Array)
+    if (members.span) it('span should be a Uint8Array', () => { 
+      expect(container.span()).toBeInstanceOf(Uint8Array)
     })
     if (members.setCapacity || members.ensureCapacity) {
       let capacity
@@ -307,8 +324,8 @@ describe.each(Object.entries(Tests))('A %s', (name, {
         if (members.capacity) it(`should have a capacity of ${size} or more`, () => {
           expect(container.capacity).toBeGreaterThan(size)
         })
-        if (members.data) it(`should have data length of ${size}`, () => {
-          expect(container.data().length).toBe(size)
+        if (members.span) it(`should have span length of ${size}`, () => {
+          expect(container.span().length).toBe(size)
         })
       })
     }
@@ -404,8 +421,8 @@ describe.each(Object.entries(Tests))('A %s', (name, {
           container.setAt(0, value + 1)
           expect(container.at(0)).toBe(value + 1)
         })
-        if (members.data) it('should have data matching the value', () => {
-          expect(container.data()[0]).toBe(value)
+        if (members.span) it('should have span matching the value', () => {
+          expect(container.span()[0]).toBe(value)
         })
         if (members.has) it('should have the value', () => {
           expect(container.has(key)).toBe(true)

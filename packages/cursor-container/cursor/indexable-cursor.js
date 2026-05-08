@@ -8,6 +8,7 @@ import {
   RandomAccessCursorConcept,
 } from '@kingjs/cursor'
 import { ContainerCursor } from './container-cursor.js'
+import { distance } from '../../cursor-algorithm/distance.js'
 
 const __version = Symbol('__version')
 
@@ -68,8 +69,8 @@ export class IndexableCursor extends ContainerCursor {
       setAt(offset, value) {
         this.container.setAt(this.index + offset, value)
       },
-      subtract(otherCursor) {
-        return this.index - otherCursor.index
+      distanceTo(otherCursor) {
+        return otherCursor.index - this.index
       },
       compareTo(otherCursor) {
         if (this.index < otherCursor.index) return -1

@@ -1,19 +1,18 @@
 import { implement } from '@kingjs/partial-implement'
 import { extend } from '@kingjs/partial-extend'
 import { PartialProxy } from '@kingjs/partial-proxy'
-import { IndexableCursor } from '../cursor/indexable-cursor.js'
 import {
   OutputRangeConcept,
   RandomAccessRangeConcept,
 } from '@kingjs/cursor'
+import { iterate } from '@kingjs/cursor-algorithm'
+import { IndexableCursor } from '../cursor/indexable-cursor.js'
 import {
-  ContainerPart,
   ClearableContainerPart,
-  FrontEditableContainerPart,
-  BackEditableContainerPart,
   SizedContainerPart,
   IndexableContainerPart,
   EditableContainerPart,
+  BulkEditableContainerPart,
 } from '../container-parts.js'
 import { 
   PartialIndexableContainer 
@@ -39,31 +38,49 @@ export class VectorMap extends PartialProxy {
       get size() { return this._array.length },
     })
 
-    extend(this, ClearableContainerPart, {
-      clear() { this._array.length = 0 },
-    })
-
-    extend(this, FrontEditableContainerPart, {
-      shift() { return this._array.shift() },
-      unshift(value) { this._array.unshift(value) },
-    })
-
-    extend(this, BackEditableContainerPart, {
-      push(value) { this._array.push(value) },
-      pop() { return this._array.pop() },
-    })
-
     extend(this, IndexableContainerPart, {
       at(index) { return this._array[index] },
       setAt(index, value) { this._array[index] = value },
     })
 
-    extend(this, EditableContainerPart, {
-      insertAt(value, cursor) { this._array.splice(cursor.index, 0, value) },
-      eraseAt(cursor) { 
-        this._array.splice(cursor.index, 1)
-        return cursor.clone()
+    extend(this, BulkEditableContainerPart, {
+      insertRange(cursor, first, last) {
+        const offset = this.begin().distanceTo(cursor)
+        this._array.splice(offset, 0, 
+          ...Array.from(iterate(first, last)))
+        return this
       },
+
+      eraseRange(first, last) {
+        const offset = this.begin().distanceTo(first)
+        const count = first.distanceTo(last)
+        this._array.splice(offset, count)
+        return first
+      },
+
+      resizeTo(count, value = undefined) {
+        if (count < this.size)
+          this._array.length = count
+        else
+          this._array.splice(this.size, 0, 
+            ...Array(count - this.size).fill(value))
+
+        return this
+      },
+
+      assignRange(first, last) {
+        this._array.splice(0, this._array.length, 
+          ...Array.from(iterate(first, last)))
+        return this
+      }
+    })
+
+    extend(this, EditableContainerPart, {
+      // insertAt(value, cursor) { this._array.splice(cursor.index, 0, value) },
+      // eraseAt(cursor) { 
+      //   this._array.splice(cursor.index, 1)
+      //   return cursor.clone()
+      // },
     })
   }
 }

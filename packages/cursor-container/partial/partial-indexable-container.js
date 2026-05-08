@@ -4,7 +4,9 @@ import { PartialClass } from '@kingjs/partial-class'
 import { define } from '@kingjs/partial-define'
 import { extend } from '@kingjs/partial-extend'
 import {
+  OutputRangeConcept,
   ForwardRangeConcept,
+  RandomAccessRangeConcept,
   throwReadOutOfBounds,
   throwWriteOutOfBounds,
 } from '@kingjs/cursor'
@@ -40,7 +42,8 @@ export class PartialIndexableContainer extends PartialClass {
   static [__version] = 0
 
   static {
-    implement(this, ForwardRangeConcept, {
+    implement(this, OutputRangeConcept),
+    implement(this, RandomAccessRangeConcept, {
       get cursorType() { return this.constructor.cursorType },
       begin() { return new this.cursorType(this, 0) },
       end() { return new this.cursorType(this, this.size) },
@@ -64,26 +67,6 @@ export class PartialIndexableContainer extends PartialClass {
     }, {
       pop() { },
       push(value) { },
-    })
-
-    extend(this, EditableContainerPart, {
-      insertAt(value, cursor) {
-        const begin = cursor.clone()
-        const end = this.end()
-        this.ensureCapacity(this.size + 1)
-        this._count++
-        const cursorPlusOne = cursor.clone().step()
-        this.copy(cursorPlusOne, begin, end)
-        cursor.value = value
-      },
-      eraseAt(cursor) {
-        const value = cursor.value
-        const begin = cursor.clone().step()
-        const end = this.end()
-        this.copy(cursor, begin, end)
-        this._count--
-        return cursor.clone()
-      },
     })
 
     extend(this, SizedContainerPart, {
