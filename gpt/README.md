@@ -19,6 +19,7 @@ long chat:
 - terse interaction logs
 - recursive package/system notes such as `partial/`
 - marketing/explanation patterns
+- spine/system notes such as `meta-prototype-chain/`
 
 ## How Assistants Should Use This Directory
 
@@ -39,6 +40,10 @@ catch-all note.
 
 Use `log/` for terse monthly interaction summaries. Use `sessions/` for richer
 summaries of especially important sessions.
+
+Use `meta-prototype-chain/` for notes on the design spine: transforming
+prototype chains, reflecting over the transformed chain, and documenting what
+the transform means.
 
 Assistants should update `gpt/` more proactively than normal source files. When
 a durable preference, policy, naming convention, or root mapping becomes clear,

@@ -17,6 +17,7 @@ Good candidates usually have one of these shapes:
 - "this cursor category unlocks a faster algorithm"
 - "this reflection result can become help or docs"
 - "this resource protocol prevents lifecycle mistakes"
+- "this root POJO test matrix exposes the capability vocabulary of a surface"
 
 ## Current Harvest Notes
 
@@ -43,8 +44,8 @@ Good candidates usually have one of these shapes:
   where a cursor can satisfy input, output, forward, bidirectional, random
   access, and contiguous concepts.
 - `packages/cursor-algorithm/unit.test.js`: market as "algorithm dispatch by
-  capability", where `distance` can use random access without advancing the
-  cursor and still fall back to stepping.
+  capability", where a root `Containers` POJO and an `Algorithms` POJO produce
+  per-case `it` clauses selected by runtime concept checks.
 - `packages/cursor-container/container.test.js`: market as "STL containers in
   JavaScript clothing", where begin/end cursors provide the common algorithm
   surface.

@@ -8,31 +8,35 @@ import {
 import { iterate } from '@kingjs/cursor-algorithm'
 import { IndexableCursor } from '../cursor/indexable-cursor.js'
 import {
-  ClearableContainerPart,
+  ContainerPart,
   SizedContainerPart,
   IndexableContainerPart,
   EditableContainerPart,
   BulkEditableContainerPart,
 } from '../container-parts.js'
-import { 
-  PartialIndexableContainer 
-} from '../partial/partial-indexable-container.js'
 
 export class VectorMap extends PartialProxy {
   static cursorType = IndexableCursor
+  static {
+    implement(this, OutputRangeConcept)
+    implement(this, RandomAccessRangeConcept, {
+      begin() { return new this.cursorType(this, 0) },
+      end() { return new this.cursorType(this, this.size) },
+    })  
+  }
 
   _array
 
-  constructor(elements = []) { 
+  constructor() { 
     super()
-    this._array = elements
+    this._array = []
   }
 
   static {
-    implement(this, RandomAccessRangeConcept)
-    implement(this, OutputRangeConcept)
-
-    extend(this, PartialIndexableContainer)
+    extend(this, ContainerPart, {
+      insert(value, { at = this.begin() } = { }) { this.insertAt(value, at) },
+      erase({ at = this.begin() } = { }) { this.eraseAt(at) },
+    })
 
     extend(this, SizedContainerPart, {
       get size() { return this._array.length },

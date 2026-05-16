@@ -15,15 +15,21 @@ import {
   SizedContainerPart,
   IndexableContainerPart,
 } from '../container-parts.js'
-import { IndexableCursor } from '../cursor/indexable-cursor.js'
-import {
-  PartialIndexableContainer,
-} from '../partial/partial-indexable-container.js'
+import { 
+  IndexableCursor 
+} from '../cursor/indexable-cursor.js'
 
 const Fixed = { fixed: true }
 
 export class Deque extends PartialProxy {
   static cursorType = IndexableCursor
+  static {
+    implement(this, OutputRangeConcept)
+    implement(this, RandomAccessRangeConcept, {
+      begin() { return new this.cursorType(this, 0) },
+      end() { return new this.cursorType(this, this.size) },
+    })  
+  }
 
   _denque
   
@@ -33,11 +39,6 @@ export class Deque extends PartialProxy {
   }
   
   static {
-    implement(this, RandomAccessRangeConcept)
-    implement(this, OutputRangeConcept)
-    
-    extend(this, PartialIndexableContainer)
-
     extend(this, ContainerPart, {
       get isEmpty() { return this._denque.isEmpty() },
       insert(value, { at = this.begin(Fixed) } = { }) {
@@ -46,9 +47,9 @@ export class Deque extends PartialProxy {
           `Invalid cursor: ${at}. Must be at the beginning or end of the deque.`)
 
         if (this.end(Fixed).equals(at)) 
-          return this.push(value)
+          return this._denque.push(value)
         else
-          return this.unshift(value)
+          return this._denque.unshift(value)
       },
       erase({ at = this.begin(Fixed) } = { }) {
         assert(this.end(Fixed).equals(at) 
@@ -56,9 +57,9 @@ export class Deque extends PartialProxy {
           `Invalid cursor: ${at}. Must be at the beginning or end of the deque.`)
 
         if (this.end(Fixed).equals(at))
-          return this.pop()
+          return this._denque.pop()
         else
-          return this.shift()
+          return this._denque.shift()
       }
     })
 

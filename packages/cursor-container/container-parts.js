@@ -30,6 +30,8 @@ import {
   throwEmpty,
   throwNotEquatableTo,
   throwUpdateOutOfBounds,
+  throwWriteOutOfBounds,
+  throwReadOutOfBounds,
 } from '@kingjs/cursor'
 import { Implements } from '@kingjs/partial-concept'
 
@@ -87,10 +89,8 @@ export class ClearableContainerPart extends ContainerPart {
 export class FrontEditableContainerPart extends ContainerPart { 
   static [Preconditions] = {
     shift() { this.throwIfEmpty$() },
-    get front() { this.throwIfEmpty$() },
   }
   static [Abstracts] = {
-    get front() { },
     unshift(value) { },
     shift() { },
   }
@@ -99,10 +99,8 @@ export class FrontEditableContainerPart extends ContainerPart {
 export class BackEditableContainerPart extends ContainerPart {
   static [Preconditions] = {
     pop() { this.throwIfEmpty$() },
-    get back() { this.throwIfEmpty$() },
   }
   static [Abstracts] = {
-    get back() { },
     pop() { },
     push(value) { },
   }
@@ -147,26 +145,27 @@ export class EditableContainerPart extends ContainerPart {
   }
 }
 
-export class IndexableContainerPart extends SizedContainerPart {
+export class IndexableContainerPart extends SizedContainerPart {  
+  static [Preconditions] = {
+    at(index) {
+      if (index < 0) throwReadOutOfBounds()
+      if (index >= this.size) throwReadOutOfBounds()
+    },
+    setAt(index, value) {
+      if (index < 0) throwWriteOutOfBounds()
+      if (index >= this.size) throwWriteOutOfBounds()
+    },
+  }
+  
   static [Abstracts] = {
     at(index) { },
     setAt(index, value) { }
-  }
-
-  copy(cursor, begin, end) {
-    const source = begin.clone()
-    const target = cursor.clone()
-    while(!begin.equals(end)) {
-      target.value = source.value
-      source.step()
-      target.step()
-    }
   }
 }
 
 export class ByteContainerPart extends IndexableContainerPart {
   static [Abstracts] = {
-    span(first, last) { },
+    span(range) { },
   }
 
   get spanType() { return this.constructor.spanType }

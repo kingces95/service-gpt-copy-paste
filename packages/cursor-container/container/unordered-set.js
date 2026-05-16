@@ -28,6 +28,12 @@ class SetCursor extends IteratorCursor {
 
 export class UnorderedSet extends PartialProxy {
   static cursorType = SetCursor
+  static {
+    implement(this, InputRangeConcept, {
+      begin() { return new this.cursorType(this, this._set) },
+      end() { return new this.cursorType(this, EmptySet) }
+    })
+  }
 
   _set
 
@@ -37,11 +43,6 @@ export class UnorderedSet extends PartialProxy {
   }
 
   static {
-    implement(this, InputRangeConcept, {
-      begin() { return new SetCursor(this, this._set) },
-      end() { return new SetCursor(this, EmptySet) }
-    })
-
     extend(this, ContainerPart, {
       insert(value) { this.add(value) },
       erase({ at = this.begin() } = { }) { this.remove(at.value) },

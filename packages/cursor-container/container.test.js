@@ -130,7 +130,7 @@ const Tests = {
       FrontEditableContainerPart],
     members: {
       insert: true, erase: true,
-      front: true, shift: true, unshift: true,
+      shift: true, unshift: true,
       beforeBegin: true, insertAfter: true, eraseAfter: true,
     }
   },
@@ -144,8 +144,8 @@ const Tests = {
     members: {
       insert: true, erase: true,
       size: true,
-      front: true, shift: true, unshift: true,
-      back: true, pop: true, push: true,
+      shift: true, unshift: true,
+      pop: true, push: true,
     }
   },
   
@@ -157,8 +157,8 @@ const Tests = {
     members: {
       insert: true, erase: true,
       size: true,
-      front: true, shift: true, unshift: true,
-      back: true, pop: true, push: true,
+      shift: true, unshift: true,
+      pop: true, push: true,
       at: true, // setAt: true, // should, but does not
       clear: true,
     }
@@ -173,8 +173,8 @@ const Tests = {
     members: {
       insert: true, erase: true,
       size: true,
-      front: true, shift: true, unshift: true,
-      back: true, pop: true, push: true,
+      shift: true, unshift: true,
+      pop: true, push: true,
       at: true, setAt: true,
       clear: true,
     }
@@ -186,8 +186,8 @@ const Tests = {
     members: {
       insert: true, erase: true,
       size: true,
-      front: true, shift: true, unshift: true,
-      back: true, pop: true, push: true,
+      shift: true, unshift: true,
+      pop: true, push: true,
       at: true, setAt: true, // readAt: true,
       capacity: true, setCapacity: true, ensureCapacity: true,
       // copy: true, // insertRange: true, removeRange: true,
@@ -195,38 +195,6 @@ const Tests = {
       // clear: true,
     }
   },
-
-  // EcmaBuffer: {
-  //   type: EcmaBuffer,
-  //   concepts: [...bufferConainerConcepts],
-  //   members: {
-  //     insert: true, erase: true,
-  //     size: true,
-  //     front: true, shift: true, unshift: true,
-  //     back: true, pop: true, push: true,
-  //     at: true, setAt: true, readAt: true,
-  //     capacity: true, setCapacity: true, ensureCapacity: true,
-  //     copy: true, // insertRange: true, removeRange: true,
-  //     span: true,
-  //     // clear: true,
-  //   }
-  // },
-
-  // NodeBuffer: {
-  //   type: NodeBuffer,
-  //   concepts: [...bufferConainerConcepts],
-  //   members: {
-  //     insert: true, erase: true,
-  //     size: true,
-  //     front: true, shift: true, unshift: true,
-  //     back: true, pop: true, push: true,
-  //     at: true, setAt: true, readAt: true,
-  //     capacity: true, setCapacity: true, // ensureCapacity: true,
-  //     copy: true, // insertRange: true, removeRange: true,
-  //     span: true,
-  //     // clear: true,
-  //   }
-  // }
 }
 
 describe.each(Object.entries(Tests))('A %s', (name, { 
@@ -339,12 +307,6 @@ describe.each(Object.entries(Tests))('A %s', (name, {
         if (members.shift) it('should throw on shift', () => {
           expect(() => { container.shift() }).toThrow(isEmpty)
         })
-        if (members.front) it('should not have a front value', () => {
-          expect(() => { container.front }).toThrow(isEmpty)
-        })
-        if (members.back) it('should not have a back value', () => {
-          expect(() => { container.back }).toThrow(isEmpty)
-        })
         if (members.at) it('should throw on at', () => {
           expect(() => { container.at(0) }).toThrow(readOutOfBounds)
         })
@@ -403,9 +365,6 @@ describe.each(Object.entries(Tests))('A %s', (name, {
       describe('now not empty', () => {
         it('should not be empty', () => {
           expect(container.isEmpty).toBe(false)
-        })
-        if (members.front) it('should have a front value', () => {
-          expect(container.front).toBe(value)
         })
         if (members.at) it('should have a value at index 0', () => {
           expect(container.at(0)).toBe(value)

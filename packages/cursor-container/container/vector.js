@@ -6,32 +6,34 @@ import { PartialProxy } from '@kingjs/partial-proxy'
 import { 
   copy,
   copyBackward,
-  materialize,
 } from '@kingjs/cursor-algorithm'
+import { materialize } from '../algorithms/materialize.js'
 import { 
   ContiguousRangeConcept, 
-  RandomAccessCursorConcept 
+  RandomAccessCursorConcept,
+  OutputRangeConcept,
 } from '@kingjs/cursor'
 import { 
-  ContiguousCursor 
+  ContiguousCursor,
 } from '../cursor/contiguous-cursor.js'
 import {
+  ContainerPart,
   SizedContainerPart,
   IndexableContainerPart,
   ReservableContainerPart,
   ByteContainerPart,
   BulkEditableContainerPart,
 } from '../container-parts.js'
-import { 
-  VectorMap
-} from './vector-map.js'
-import {
-  PartialIndexableContainer,
-} from '../partial/partial-indexable-container.js'
-// import { VectorMap } from './vector-map.js'
 
 export class Vector extends PartialProxy {
   static cursorType = ContiguousCursor
+  static {
+    implement(this, OutputRangeConcept)
+    implement(this, ContiguousRangeConcept, {
+      begin() { return new this.cursorType(this, 0) },
+      end() { return new this.cursorType(this, this.size) },
+    })
+  }
 
   _size
   _bytes
@@ -47,9 +49,10 @@ export class Vector extends PartialProxy {
   get buffer() { return this._buffer.value }
 
   static {
-    implement(this, ContiguousRangeConcept)
-
-    extend(this, PartialIndexableContainer)
+    extend(this, ContainerPart, {
+      insert(value, { at = this.begin() } = { }) { this.insertAt(value, at) },
+      erase({ at = this.begin() } = { }) { this.eraseAt(at) },
+    })
 
     extend(this, SizedContainerPart, {
       get size() { return this._size }
@@ -63,7 +66,7 @@ export class Vector extends PartialProxy {
     extend(this, BulkEditableContainerPart, {
       insertRange(cursor, first, last) {
         if (first instanceof RandomAccessCursorConcept == false) {
-          const vectorMap = materialize(first, last, VectorMap)
+          const vectorMap = materialize(first, last)
           first = vectorMap.begin()
           last = vectorMap.end()
         }
@@ -78,7 +81,7 @@ export class Vector extends PartialProxy {
 
       eraseRange(first, last) {
         if (first instanceof RandomAccessCursorConcept == false) {
-          const vectorMap = materialize(first, last, VectorMap)
+          const vectorMap = materialize(first, last)
           first = vectorMap.begin()
           last = vectorMap.end()
         }
@@ -102,7 +105,7 @@ export class Vector extends PartialProxy {
 
       assignRange(first, last) {
         if (first instanceof RandomAccessCursorConcept == false) {
-          const vectorMap = materialize(first, last, VectorMap)
+          const vectorMap = materialize(first, last)
           first = vectorMap.begin()
           last = vectorMap.end()
         }

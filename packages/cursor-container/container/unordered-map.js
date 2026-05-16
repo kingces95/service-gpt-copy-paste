@@ -41,6 +41,12 @@ class MapCursor extends IteratorCursor {
 
 export class UnorderedMap extends PartialProxy {
   static cursorType = MapCursor
+  static {
+    implement(this, InputRangeConcept, {
+      begin() { return new this.cursorType(this, this._map) },
+      end() { return new this.cursorType(this, EmptyMap) }
+    })
+  }
 
   _map
 
@@ -50,11 +56,6 @@ export class UnorderedMap extends PartialProxy {
   }
 
   static {
-    implement(this, InputRangeConcept, {
-      begin() { return new MapCursor(this, this._map) },
-      end() { return new MapCursor(this, EmptyMap) }
-    })
-
     extend(this, ContainerPart, {
       insert(value) { this.add(value[0], value[1]) },
       erase({ at = this.begin() } = { }) { this.remove(at.value[0]) },

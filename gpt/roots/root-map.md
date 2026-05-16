@@ -88,6 +88,7 @@ The generic algorithm root:
 - containers
 - free algorithms
 - category-based optimization
+- templates and type parameters
 
 This informs `cursor-*`.
 
@@ -103,7 +104,8 @@ adapter           -> cursor-adapter
 ```
 
 See `stl/iterator-categories.md`, `stl/algorithms.md`, and
-`stl/requires-expressions.md`.
+`stl/requires-expressions.md`. See `stl/templates.md` for the emerging
+`generic(..., T => contract(...))` mapping.
 
 ## XSD
 

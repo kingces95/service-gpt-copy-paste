@@ -38,12 +38,6 @@ class ListCursor extends ContainerCursor {
   set link(link) { this.token = link }
 
   static {
-    define(this, {
-      __isActive$() { return !!this.next },
-    })
-  }
-
-  static {
     implement(this, EquatableConcept, { 
       equals(other) { 
         if (!this.equatableTo(other)) return false
@@ -74,6 +68,13 @@ class ListCursor extends ContainerCursor {
 
 export class List extends PartialProxy {
   static cursorType = ListCursor
+  static {
+    implement(this, ForwardRangeConcept, {
+      begin() { return new this.cursorType(this, this._rootLink.next) },
+      end() { return new this.cursorType(this, this._endLink) },
+    })
+    implement(this, OutputRangeConcept)
+  }
 
   static [Preconditions] = {
     insertAfter(value, cursor) {
@@ -104,9 +105,6 @@ export class List extends PartialProxy {
   }
 
   static {
-    implement(this, ForwardRangeConcept)
-    implement(this, OutputRangeConcept)
-
     define(this, {
       beforeBegin() { return new this.cursorType(this, this._rootLink) },
       insertAfter(value, cursor) { cursor.link.insertAfter(value) },
@@ -115,7 +113,9 @@ export class List extends PartialProxy {
         return cursor.clone().step()
       },
     })
+  }
 
+  static {
     extend(this, ContainerPart, {
       get isEmpty() { return this._endLink == this._rootLink.next },
       insert(value, { after = this.beforeBegin() } = { }) { 
@@ -125,19 +125,12 @@ export class List extends PartialProxy {
     })
 
     extend(this, FrontEditableContainerPart, {
-      get front() { return this._rootLink.next.value },
       shift() { 
         const result = this._rootLink.next.value
         this.eraseAfter(this.beforeBegin())
         return result
       },
       unshift(value) { this.insertAfter(value, this.beforeBegin()) },
-    })
-
-    implement(this, RangeConcept, {
-      get cursorType() { return this.constructor.cursorType },
-      begin() { return new this.cursorType(this, this._rootLink.next) },
-      end() { return new this.cursorType(this, this._endLink) },
     })
   }
 }

@@ -35,52 +35,91 @@ void append(C& container, Value value) {
 The anonymous form is useful for one-off constraints. The named form is useful
 when the requirement becomes vocabulary.
 
+## Local Vocabulary
+
+The current naming direction separates three nearby ideas:
+
+```text
+Concept
+  named, certified, opt-in semantic vocabulary
+
+Shape
+  anonymous-concept-style expression requirement
+
+Probe
+  observational duck test for wild JavaScript values
+```
+
+This makes `Shape` the close local analog to a small C++ `requires` expression:
+it can name a tiny surface like "has `push(value)`" without requiring the
+candidate type to explicitly implement a grand public concept.
+
+`Probe` gets the old observational role: inspect a messy runtime value and ask
+whether it appears to satisfy a surface, even if that requires getters, proxy
+traps, or other live JavaScript observations.
+
 ## Local Translation
 
-The local translation is function contract metadata that can hold both
-anonymous procedural checks and named `Check` types.
+The local translation is function contract metadata that holds types. The
+loader stays deliberately boring:
+
+```js
+value instanceof type
+```
+
+Anonymous expression checks can still exist, but they are wrapped behind a type
+surface with `Symbol.hasInstance` instead of being a special procedural branch
+inside `contract`.
 
 The preferred declaration shape puts metadata before the function, closer to
 C# custom attributes visually appearing above a member. Use a metadata POJO
 with symbol keys so the shape can grow without making `contract(...)` depend on
 positional arguments.
 
-Anonymous procedural check:
+Anonymous expression check wrapped as a type:
 
 ```js
-function hasPush(Type) {
-  if (typeof Type?.prototype?.push == 'function') return
-  throw new TypeError(`${Type?.name ?? 'Type'} must define push(value).`)
+class PushBackContainer {
+  static [Symbol.hasInstance](type) {
+    if (typeof type?.prototype?.push == 'function')
+      return true
+
+    throw new TypeError(
+      `${type?.name ?? 'Type'} must define push(value).`)
+  }
 }
 
-export const materialize = contract({
-  [Preconditions]: [
+export const materialize = contract(
+  [
     null,
     null,
-    hasPush,
+    PushBackContainer,
   ],
-  [Defaults]: [
+  [
     null,
     null,
     VectorMap,
   ],
-}, function materialize(first, last, Type = VectorMap) {
+  function materialize(first, last, type = VectorMap) {
   // ...
-})
+  })
 ```
 
 Named check:
 
 ```js
-export class PushBackContainer extends Check {
-  static check(Type) {
-    if (typeof Type?.prototype?.push == 'function') return
-    throw new TypeError(`${Type?.name ?? 'Type'} must define push(value).`)
+export class PushBackContainer {
+  static [Symbol.hasInstance](type) {
+    if (typeof type?.prototype?.push == 'function')
+      return true
+
+    throw new TypeError(
+      `${type?.name ?? 'Type'} must define push(value).`)
   }
 }
 
-export const materialize = contract({
-  [Preconditions]: [
+export const materialize = contract(
+  [
     null,
     null,
     [
@@ -88,13 +127,13 @@ export const materialize = contract({
       PushBackContainer,
     ],
   ],
-  [Defaults]: [
+  [
     null,
     null,
     VectorMap,
   ],
-}, function materialize(first, last, Type = VectorMap) {
-  const result = new Type()
+  function materialize(first, last, type = VectorMap) {
+  const result = new type()
 
   if (first.clone)
     first = first.clone()
@@ -105,11 +144,12 @@ export const materialize = contract({
   }
 
   return result
-})
+  })
 ```
 
-Ordinary types in the metadata can use existing `instanceof` semantics, while
-`Check` types provide custom expression-style validation and better errors.
+Ordinary types in the metadata use existing `instanceof` semantics. Custom
+expression-style validation and better errors are still possible by defining
+`Symbol.hasInstance`.
 
 The explicit `[Defaults]` metadata exists because a wrapper can intercept call
 arguments but cannot reliably reflect JavaScript default parameter expressions.
@@ -142,8 +182,8 @@ contract({
 The path mirrors the preferred evolution:
 
 ```text
-anonymous local check
-  -> named Check type
+anonymous local expression
+  -> named instanceof type
   -> reusable restriction/facet
   -> public concept, if it earns the weight
 ```

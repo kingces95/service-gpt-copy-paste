@@ -38,6 +38,9 @@ class ChainCursor extends List.cursorType {
 
 export class Chain extends List {
   static cursorType = ChainCursor
+  static {
+    implement(this, BidirectionalRangeConcept)
+  }
   
   _count
 
@@ -47,8 +50,6 @@ export class Chain extends List {
   }
 
   static {
-    implement(this, BidirectionalRangeConcept)
-
     define(this, {
       // TODO: Loader installs stubs so type.prototype does not work. Need
       // to update loader to attach a static [Prototype] symbol that contains
@@ -71,7 +72,9 @@ export class Chain extends List {
         return result
       },
     })
+  }
 
+  static {
     extend(this, ContainerPart, {
       insert(value, { after = this.beforeBegin() }) {
         this.insertAfter(value, after)
@@ -79,7 +82,6 @@ export class Chain extends List {
     })
 
     extend(this, BackEditableContainerPart, {
-      get back() { return this.endLink$.previous.value },
       push(value) { 
         this.insertAt(value, this.end())
       },

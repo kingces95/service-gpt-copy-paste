@@ -117,5 +117,5 @@ export class ContiguousCursorConcept extends RandomAccessCursorConcept {
   }
 
   get spanType() { }
-  span(begin, end) { }
+  span(range) { }
 }
