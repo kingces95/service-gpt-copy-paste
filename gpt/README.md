@@ -20,6 +20,7 @@ long chat:
 - recursive package/system notes such as `partial/`
 - marketing/explanation patterns
 - spine/system notes such as `meta-prototype-chain/`
+- larger deferred design quests
 
 ## How Assistants Should Use This Directory
 
@@ -44,6 +45,9 @@ summaries of especially important sessions.
 Use `meta-prototype-chain/` for notes on the design spine: transforming
 prototype chains, reflecting over the transformed chain, and documenting what
 the transform means.
+
+Use `quests/` for larger deferred design efforts that should be remembered but
+not casually started as side quests.
 
 Assistants should update `gpt/` more proactively than normal source files. When
 a durable preference, policy, naming convention, or root mapping becomes clear,

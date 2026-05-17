@@ -10,7 +10,10 @@ contract that can be implemented, checked, and documented.
 JavaScript often relies on informal contracts:
 
 ```js
-function copy(target, first, last) {
+function copy(target, range) {
+  const first = range.begin()
+  const last = range.end()
+
   while (!first.equals(last)) {
     target.value = first.value
     first.step()
@@ -56,7 +59,7 @@ Now call sites can talk about the capability by name:
 const cursor = list.begin()
 
 cursor instanceof InputCursorConcept // true
-copy(target.begin(), cursor, list.end())
+copy(target.begin(), list)
 ```
 
 ## Why This Matters

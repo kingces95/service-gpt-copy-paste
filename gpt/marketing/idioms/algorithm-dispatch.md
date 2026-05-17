@@ -10,7 +10,9 @@ shape works in JavaScript when cursor concepts are runtime-visible.
 A distance helper usually mutates a cursor until it reaches the end.
 
 ```js
-function distance(first, last) {
+function distance(range) {
+  const first = range.begin()
+  const last = range.end()
   let count = 0
 
   while (!first.equals(last)) {
@@ -30,7 +32,10 @@ cursors and it may move an object the caller still cares about.
 Dispatch on the cursor capability.
 
 ```js
-function distance(first, last) {
+function distance(range) {
+  const first = range.begin()
+  const last = range.end()
+
   if (first instanceof RandomAccessCursorConcept)
     return first.distanceTo(last)
 
@@ -49,8 +54,8 @@ function distance(first, last) {
 The same algorithm now respects richer cursors:
 
 ```js
-distance(vector.begin(), vector.end()) // O(1)
-distance(list.begin(), list.end()) // stepping fallback
+distance(vector) // O(1)
+distance(list) // stepping fallback
 ```
 
 ## Why This Matters

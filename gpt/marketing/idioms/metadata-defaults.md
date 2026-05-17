@@ -11,15 +11,15 @@ layer apply them before checks run.
 JavaScript default parameters live inside the function call mechanics.
 
 ```js
-function materialize(first, last, Type = VectorMap) {
+function materialize(range, Type = VectorMap) {
   const result = new Type()
   // ...
   return result
 }
 ```
 
-A wrapper can intercept `first`, `last`, and maybe `Type`, but it cannot
-reflect the default expression in a reliable runtime way.
+A wrapper can intercept `range` and maybe `Type`, but it cannot reflect the
+default expression in a reliable runtime way.
 
 ## Declarative Translation
 
@@ -27,14 +27,15 @@ Declare defaults beside the function contract.
 
 ```js
 const materialize = contract({
-  [Defaults]: [null, null, VectorMap],
+  [Defaults]: [null, VectorMap],
   [Preconditions]: [
-    InputCursorConcept,
-    InputCursorConcept,
+    InputRangeConcept,
     [DefaultConstructible, PushBackContainer],
   ],
-}, function materialize(first, last, Type) {
+}, function materialize(range, Type) {
   const result = new Type()
+  const first = range.begin()
+  const last = range.end()
 
   while (!first.equals(last)) {
     result.push(first.value)
@@ -48,7 +49,7 @@ const materialize = contract({
 The call site stays pleasant:
 
 ```js
-const buffered = materialize(first, last)
+const buffered = materialize(range)
 ```
 
 The contract layer still validates the actual `Type` that will be used.
@@ -76,8 +77,8 @@ The JavaScript translation keeps defaults in metadata the wrapper can see:
 
 ```js
 contract({
-  [Defaults]: [null, null, VectorMap],
-}, function materialize(first, last, Type) {
+  [Defaults]: [null, VectorMap],
+}, function materialize(range, Type) {
   // ...
 })
 ```

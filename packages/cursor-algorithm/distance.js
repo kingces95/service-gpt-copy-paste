@@ -1,13 +1,15 @@
-import { RandomAccessCursorConcept } from '@kingjs/cursor'
+import { RandomAccessRangeProbe } from '@kingjs/cursor'
 
-export function distance(begin, end) {
-  if (begin instanceof RandomAccessCursorConcept)
+export function distance(range) {
+  const begin = range.begin()
+  const end = range.end()
+
+  if (range instanceof RandomAccessRangeProbe)
     return begin.distanceTo(end)
 
   let count = 0
   while (!begin.equals(end)) {
-    if (!begin.step()) throw new Error(
-      "Cannot calculate distance: failed to find end.")
+    begin.step()
     count++
   }
   return count

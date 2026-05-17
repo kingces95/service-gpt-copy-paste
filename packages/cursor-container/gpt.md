@@ -49,15 +49,17 @@ All of these are convenience/contract APIs you expose publicly; internally they 
   freeSlots(pos, pos+1);
   ```
 
-* `insertRange(pos, first, last)`
+* `insertRange(pos, range)`
 
   ```js
-  const n = distance(first,last);
+  range = sourceRange$(range);
+  const n = distance(range);
   allocSlots(pos, n);
-  for (i = 0; i < n; ++i) constructAt(pos+i, *first++);
+  for (const value of range) constructAt(pos++, value);
   ```
 
-  (If caller passes move-iterator equivalent, construct via move.)
+  (If caller passes move-iterator equivalent, construct via move. Source
+  ranges that alias the target are snapshotted before mutation.)
 
 * `moveRange(destPos, src, first, last)` (contiguous, element-wise move)
 

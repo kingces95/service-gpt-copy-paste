@@ -12,7 +12,7 @@ import {
   SizedContainerPart,
   IndexableContainerPart,
   EditableContainerPart,
-  BulkEditableContainerPart,
+  GapEditableContainerPart,
 } from '../container-parts.js'
 
 export class VectorMap extends PartialProxy {
@@ -47,44 +47,28 @@ export class VectorMap extends PartialProxy {
       setAt(index, value) { this._array[index] = value },
     })
 
-    extend(this, BulkEditableContainerPart, {
-      insertRange(cursor, first, last) {
+    extend(this, GapEditableContainerPart, {
+      openGap$(cursor, count) {
         const offset = this.begin().distanceTo(cursor)
-        this._array.splice(offset, 0, 
-          ...Array.from(iterate(first, last)))
-        return this
+        this._array.splice(offset, 0, ...Array(count))
+        return cursor
       },
 
-      eraseRange(first, last) {
+      closeGap$(first, last) {
         const offset = this.begin().distanceTo(first)
         const count = first.distanceTo(last)
         this._array.splice(offset, count)
         return first
       },
 
-      resizeTo(count, value = undefined) {
-        if (count < this.size)
-          this._array.length = count
-        else
-          this._array.splice(this.size, 0, 
-            ...Array(count - this.size).fill(value))
+      insertRange(cursor, range) {
+        range = this.sourceRange$(range)
 
+        const offset = this.begin().distanceTo(cursor)
+        this._array.splice(offset, 0, 
+          ...Array.from(iterate(range)))
         return this
       },
-
-      assignRange(first, last) {
-        this._array.splice(0, this._array.length, 
-          ...Array.from(iterate(first, last)))
-        return this
-      }
-    })
-
-    extend(this, EditableContainerPart, {
-      // insertAt(value, cursor) { this._array.splice(cursor.index, 0, value) },
-      // eraseAt(cursor) { 
-      //   this._array.splice(cursor.index, 1)
-      //   return cursor.clone()
-      // },
     })
   }
 }

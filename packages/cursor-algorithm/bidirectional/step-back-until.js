@@ -5,7 +5,7 @@ export function stepBackUntil(current, predicate) {
   if (!(current instanceof BidirectionalCursorConcept)) throw new Error(
     "Cannot step back until: cursor is not a BidirectionalCursor.")
 
-  if (!current.stepBack()) return false
+  current.stepBack()
 
   return rewindUntil(current, predicate)
 }

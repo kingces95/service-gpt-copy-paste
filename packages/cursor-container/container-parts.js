@@ -4,12 +4,12 @@ import { PartialClass } from '@kingjs/partial-class'
 import { extend } from '@kingjs/partial-extend'
 import { 
   copy, 
-  copyBackward, 
 } from '@kingjs/cursor-algorithm'
 import {
   repeat,
   single,
 } from '@kingjs/cursor-adapter'
+import { snapshot } from '@kingjs/cursor-view'
 import {
   RangeConcept,
   InputRangeConcept,
@@ -222,10 +222,10 @@ export class UnorderedMapContainerPart extends AssociativeContainerPart {
 export class BulkEditableContainerPart extends EditableContainerPart {
   static [Implements] = ClearableContainerPart
   static [Abstracts] = {
-    insertRange(cursor, first, last) { },
+    insertRange(cursor, range) { },
     eraseRange(first, last) { },
     resizeTo(count, value) { },
-    assignRange(first, last) { },
+    assignRange(range) { },
   }
 
   // attachments that depend on abstract operations
@@ -233,24 +233,24 @@ export class BulkEditableContainerPart extends EditableContainerPart {
 
     insertAt(value, cursor = this.begin()) {
       const range = single(value)
-      return this.insertRange(cursor, range.begin(), range.end())
+      return this.insertRange(cursor, range)
     },
 
     eraseAt(cursor = this.begin()) {
       return this.eraseRange(cursor, cursor.clone().step())
     },
 
-    appendRange(first, last) {
-      return this.insertRange(this.end(), first, last)
+    appendRange(range) {
+      return this.insertRange(this.end(), range)
     },
 
-    prependRange(first, last) {
-      return this.insertRange(this.begin(), first, last)
+    prependRange(range) {
+      return this.insertRange(this.begin(), range)
     },
 
     insertCount(cursor, count, value) {
       const range = repeat(value, count)
-      return this.insertRange(cursor, range.begin(), range.end())
+      return this.insertRange(cursor, range)
     },
 
     appendCount(count, value) {
@@ -263,7 +263,7 @@ export class BulkEditableContainerPart extends EditableContainerPart {
 
     eraseCount(cursor, count) {
       const last = cursor.clone()
-      last.advance(count)
+      last.move(count)
       return this.eraseRange(cursor, last)
     },
 
@@ -287,43 +287,71 @@ export class BulkEditableContainerPart extends EditableContainerPart {
       return this.resizeTo(count)
     },
 
-    replaceRange(first, last, replacementFirst, replacementLast) {
+    replaceRange(first, last, replacementRange) {
+      replacementRange = this.sourceRange$(replacementRange)
+
       const cursor = this.eraseRange(first, last)
-      return this.insertRange(cursor, replacementFirst, replacementLast)
+      return this.insertRange(cursor, replacementRange)
     },
 
     assignCount(count, value) {
-      const range = new FillRange(value, count)
-      return this.assignRange(range.begin(), range.end())
+      const range = repeat(value, count)
+      return this.assignRange(range)
     },
   }
 
-  insertRange(cursor, first, last) {
+  sourceRange$(range) {
+    const first = range.begin()
+    if (first.range == this)
+      return snapshot(range)
+
+    return range
+  }
+}
+
+export class GapEditableContainerPart extends BulkEditableContainerPart {
+  static [Abstracts] = {
+    openGap$(cursor, count) { },
+    closeGap$(first, last) { },
+  }
+
+  get defaultValue$() { return undefined }
+
+  insertRange(cursor, range) {
+    range = this.sourceRange$(range)
+
+    const first = range.begin()
+    const last = range.end()
     const count = first.distanceTo(last)
 
-    copyBackward(
-      this.end(),
-      cursor.clone().advance(count),
-      cursor,
-    )
-
-    copy(cursor, first, last)
+    this.openGap$(cursor, count)
+    copy(cursor, range)
 
     return this
   }
 
   eraseRange(first, last) {
-    copy(first, last, this.end())
-    return first
+    return this.closeGap$(first, last)
   }
 
-  resizeTo(count, value = 0) {
-    fill(this.end(), count - this.size, value)
+  resizeTo(count, value = this.defaultValue$) {
+    if (count < this.size) {
+      const first = this.begin().move(count)
+      this.closeGap$(first, this.end())
+      return this
+    }
+
+    const cursor = this.end()
+    const delta = count - this.size
+    this.openGap$(cursor, delta)
+    copy(cursor, repeat(value, delta))
     return this
   }
 
-  assignRange(first, last) {
-    copy(this.begin(), first, last)
-    return this
+  assignRange(range) {
+    range = this.sourceRange$(range)
+
+    this.clear()
+    return this.insertRange(this.begin(), range)
   }
 }

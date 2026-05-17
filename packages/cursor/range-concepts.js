@@ -13,6 +13,10 @@ export class RangeConcept extends Concept {
   static cursorType = CursorConcept
 
   static [Defines] = {
+    get prototypeCursor() {
+      return this.constructor.cursorType?.prototype ?? this.begin()
+    },
+
     get cursorType() { return this.constructor.cursorType },
 
     *[Symbol.iterator]() { 
@@ -23,6 +27,7 @@ export class RangeConcept extends Concept {
     },
   }
 
+  get prototypeCursor() { }
   get cursorType() { }
   begin() { }
   end() { }
@@ -44,4 +49,80 @@ export class RandomAccessRangeConcept extends BidirectionalRangeConcept {
 }
 export class ContiguousRangeConcept extends RandomAccessRangeConcept {
   static cursorType = ContiguousCursorConcept
+}
+
+export function isRange(range) {
+  return range instanceof RangeConcept
+}
+
+export function isInputRange(range) {
+  return isRange(range) &&
+    range.prototypeCursor instanceof InputCursorConcept
+}
+
+export function isOutputRange(range) {
+  return isRange(range) &&
+    range.prototypeCursor instanceof OutputCursorConcept
+}
+
+export function isForwardRange(range) {
+  return isInputRange(range) &&
+    range.prototypeCursor instanceof ForwardCursorConcept
+}
+
+export function isBidirectionalRange(range) {
+  return isForwardRange(range) &&
+    range.prototypeCursor instanceof BidirectionalCursorConcept
+}
+
+export function isRandomAccessRange(range) {
+  return isBidirectionalRange(range) &&
+    range.prototypeCursor instanceof RandomAccessCursorConcept
+}
+
+export function isContiguousRange(range) {
+  return isRandomAccessRange(range) &&
+    range.prototypeCursor instanceof ContiguousCursorConcept
+}
+
+export class RangeProbe {
+  static [Symbol.hasInstance](range) {
+    return isRange(range)
+  }
+}
+
+export class InputRangeProbe extends RangeProbe {
+  static [Symbol.hasInstance](range) {
+    return isInputRange(range)
+  }
+}
+
+export class OutputRangeProbe extends RangeProbe {
+  static [Symbol.hasInstance](range) {
+    return isOutputRange(range)
+  }
+}
+
+export class ForwardRangeProbe extends InputRangeProbe {
+  static [Symbol.hasInstance](range) {
+    return isForwardRange(range)
+  }
+}
+
+export class BidirectionalRangeProbe extends ForwardRangeProbe {
+  static [Symbol.hasInstance](range) {
+    return isBidirectionalRange(range)
+  }
+}
+
+export class RandomAccessRangeProbe extends BidirectionalRangeProbe {
+  static [Symbol.hasInstance](range) {
+    return isRandomAccessRange(range)
+  }
+}
+
+export class ContiguousRangeProbe extends RandomAccessRangeProbe {
+  static [Symbol.hasInstance](range) {
+    return isContiguousRange(range)
+  }
 }

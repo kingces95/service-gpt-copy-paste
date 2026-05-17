@@ -8,27 +8,14 @@ import {
   RandomAccessCursorConcept,
 } from '@kingjs/cursor'
 import { ContainerCursor } from './container-cursor.js'
-import { distance } from '../../cursor-algorithm/distance.js'
-
-const __version = Symbol('__version')
 
 export class IndexableCursor extends ContainerCursor {
-
-  // static [TypePrecondition] = function() {
-  //   const { _range, __version } = this
-  //   if (_range[__version] !== __version) throwStale()
-  // }
-
-  __version
   _index
 
   constructor(indexable, index) {
     super(indexable, index)
     this._index = index
-    this.__version = indexable[__version]
   }
-
-  get __version$() { return this.__version }
 
   static { 
     implement(this, EquatableConcept, { 
@@ -82,4 +69,3 @@ export class IndexableCursor extends ContainerCursor {
 
   get index() { return this._index }
 }
-

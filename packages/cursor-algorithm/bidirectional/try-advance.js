@@ -11,11 +11,7 @@ export function tryAdvance(current, count) {
 
   let steps = 0
   while (steps < count) {
-    if (!current.step()) {
-      // if we cannot step, rewind to the initial position
-      rewind(current, steps)
-      return false
-    }
+    current.step()
     steps++
   }
 

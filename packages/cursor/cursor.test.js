@@ -31,6 +31,7 @@ import {
   // NodeBuffer,
   // EcmaBuffer,
 } from '@kingjs/cursor-container'
+import { SnapshotView } from '@kingjs/cursor-view'
 import { ForwardRangeConcept } from './range-concepts.js'
 
 const TrivialInputContainerCase = {
@@ -112,6 +113,15 @@ const DequeCase = {
     BidirectionalCursorConcept,
     RandomAccessCursorConcept],
 }
+const SnapshotCase = {
+  type: SnapshotView,
+  create: () => new SnapshotView([]),
+  concepts: [
+    InputCursorConcept,
+    ForwardCursorConcept,
+    BidirectionalCursorConcept,
+    RandomAccessCursorConcept],
+}
 // const NodeBufferCase = {
 //   type: NodeBuffer,
 //   concepts: [
@@ -147,11 +157,17 @@ const cases = [
   ['Chain', ChainCase],
   ['Vector', VectorCase],
   ['Deque', DequeCase],
+  ['Snapshot', SnapshotCase],
   // ['NodeBuffer', NodeBufferCase],
   // ['EcmaBuffer', EcmaBufferCase],
 ]
 
-describe.each(cases)('%s', (_, { type, concepts, bufferType }) => {
+describe.each(cases)('%s', (_, { 
+  type, 
+  create = () => new type(), 
+  concepts, 
+  bufferType 
+}) => {
   let begin0, end0, begin1
   let begin, end
   let cursorType, cursorPrototype
@@ -177,7 +193,7 @@ describe.each(cases)('%s', (_, { type, concepts, bufferType }) => {
 
   it('should have a range that is iterable and empty', () => {
     const prototype = PartialReflect.getPrototype(type)
-    let container = new type()
+    let container = create()
     const values = [...container]
     expect(values).toEqual([])
   })
@@ -187,7 +203,7 @@ describe.each(cases)('%s', (_, { type, concepts, bufferType }) => {
     let begin
 
     beforeEach(() => {
-      container = new type()
+      container = create()
       begin = container.begin()
     })
 
@@ -221,11 +237,6 @@ describe.each(cases)('%s', (_, { type, concepts, bufferType }) => {
         it('should throw read out of bounds if read', () => {
           expect(() => begin.value).toThrow(
             'Cannot read value out of bounds of cursor.'
-          )
-        })
-        it('should throw on next', () => { 
-          expect(() => begin.next()).toThrow(
-            "Cannot read value out of bounds of cursor."
           )
         })
       })
@@ -381,7 +392,7 @@ describe.each(cases)('%s', (_, { type, concepts, bufferType }) => {
       let otherContainer
       let otherBegin
       beforeEach(() => {
-        otherContainer = new type()
+        otherContainer = create()
         otherBegin = otherContainer.begin()
       })
       it('should not be equatable', () => {

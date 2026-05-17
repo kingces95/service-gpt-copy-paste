@@ -66,7 +66,10 @@ export class IteratorCursor extends ContainerCursor {
     })
 
     implement(this, CursorConcept, { 
-      step() { this._current = this.token.next() },
+      step() {
+        this._current = this.token.next()
+        return this
+      },
     })
 
     implement(this, InputCursorConcept, { 

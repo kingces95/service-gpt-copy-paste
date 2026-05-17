@@ -14,14 +14,16 @@ function memcopy(target, begin, end) {
   return end.index - begin.index
 }
 
-export function copy(target, begin, end) {
+export function copy(target, range) {
+  const begin = range.begin()
+  const end = range.end()
+
   if (target instanceof ContiguousCursorConcept
     && begin instanceof ContiguousCursorConcept
     && begin.spanType == target.spanType) 
     return memcopy(target, begin, end)
 
   target = target.clone()
-  begin = begin.clone()
 
   let count = 0
   while(!begin.equals(end)) {

@@ -12,11 +12,10 @@ const Materialize = templatize(
     DefaultConstructible,
     Constructs.as(PushShape),
   ]],
-  type => contract(function materialize(first, last) {
+  type => contract(function materialize(range) {
     const result = new type()
-
-    if (first.clone)
-      first = first.clone()
+    const first = range.begin()
+    const last = range.end()
 
     while (!first.equals(last)) {
       result.push(first.value)

@@ -10,6 +10,7 @@
   "dependencies": {
     "@kingjs/constructs": "1.0.0",
     "@kingjs/cursor-checks": "1.0.0",
+    "@kingjs/cursor-view": "1.0.0",
     "@kingjs/function-contract": "1.0.0",
     "@kingjs/templatize": "1.0.0"
   },

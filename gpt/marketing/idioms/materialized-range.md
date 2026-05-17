@@ -25,10 +25,10 @@ The copy is doing real semantic work, but it reads like a convenience trick.
 Name the operation as a cursor algorithm.
 
 ```js
-function materialize(first, last, Type = VectorMap) {
+function materialize(range, Type = VectorMap) {
   const result = new Type()
-
-  first = first.clone()
+  const first = range.begin()
+  const last = range.end()
 
   while (!first.equals(last)) {
     result.push(first.value)
@@ -42,11 +42,23 @@ function materialize(first, last, Type = VectorMap) {
 Then an insertion algorithm can normalize its input deliberately:
 
 ```js
-function insertRange(target, at, first, last) {
-  const buffer = materialize(first, last)
+function insertRange(target, at, range) {
+  const buffer = materialize(range)
 
   for (let cursor = buffer.begin(); !cursor.equals(buffer.end()); cursor.step())
     target.insert(at, cursor.value)
+}
+```
+
+In the container bulk-edit surface, this became a policy hook:
+
+```js
+sourceRange$(range) {
+  const first = range.begin()
+  if (first.range == this)
+    return snapshot(range)
+
+  return range
 }
 ```
 
@@ -57,3 +69,7 @@ was given" to "a stable push-back container I can inspect."
 
 That is a good fit for STL-inspired design: preserve generic input, but make
 the cost of needing stronger guarantees visible.
+
+The current rule is deliberately memorable: source ranges are stable values. If
+a source range points into the container being mutated, snapshot it before the
+mutation begins.

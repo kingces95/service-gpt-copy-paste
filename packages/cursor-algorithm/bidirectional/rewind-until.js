@@ -12,10 +12,8 @@ export function rewindUntil(current, predicate) {
   if (typeof predicate !== 'function') throw new Error(
     "Cannot rewind until: predicate is not a function.")
 
-  do {
+  while (true) {
     if (predicate(current.value)) return true
     current.stepBack()
-  } while (!current.isBegin)
-
-  return false
+  }
 }

@@ -23,11 +23,6 @@ export class CursorConcept extends EquatableConcept {
       if (other?.constructor != this.constructor) return false
       return this.range == other.range
     },
-    next() {
-      const value = this.value 
-      if (!this.step()) return
-      return value
-    }
   }
 
   get range() { }

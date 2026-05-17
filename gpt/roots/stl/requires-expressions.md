@@ -58,6 +58,105 @@ candidate type to explicitly implement a grand public concept.
 whether it appears to satisfy a surface, even if that requires getters, proxy
 traps, or other live JavaScript observations.
 
+## Probes as Runtime Requires Expressions
+
+C++ `requires` expressions are source code that looks executable, but in that
+context the expressions are checked rather than run:
+
+```cpp
+template<class R>
+concept random_access_range =
+  range<R> &&
+  random_access_iterator<iterator_t<R>>;
+```
+
+The compiler extracts the iterator type from `ranges::begin(r)` and checks
+whether expressions over that iterator are valid. The expression tree is acting
+like compile-time metadata: ordinary-looking code used as structured data for
+overload selection and template validation.
+
+JavaScript cannot ask the compiler whether `range.begin()` returns a
+random-access cursor. The local runtime translation is therefore:
+
+```text
+Raw expression check
+└─ named predicate function
+   └─ Probe type wrapping Symbol.hasInstance
+      └─ declarative metadata can refer to the type
+```
+
+Example:
+
+```js
+export function isRandomAccessRange(range) {
+  return isRange(range) &&
+    cursorOf(range) instanceof RandomAccessCursorConcept
+}
+
+export class RandomAccessRangeProbe {
+  static [Symbol.hasInstance](range) {
+    return isRandomAccessRange(range)
+  }
+}
+```
+
+Then declarations can stay metadata-shaped:
+
+```js
+ReversedSubrange: {
+  range(source) {
+    return subrange(source.end(), source.begin())
+  },
+  expected: -3,
+  requires: RandomAccessRangeProbe,
+}
+```
+
+This is not claiming that a range type explicitly implements a
+`RandomAccessRangeConcept`. It is a runtime probe that does what STL does at
+compile time: dig through `begin`, derive the cursor capability, and answer a
+named predicate. The type wrapper exists so the declarative testing and
+contract systems can point at a reflectable value instead of embedding an
+inline function.
+
+This also explains why a ladder of `SubrangeView` specializations is not the
+right first move. C++ does not build separate subrange classes for every range
+concept; it computes named predicates from the iterator type. The JS analog is
+to compute named probes from the runtime cursor object, optionally using a
+static `cursorType` associated type as a cache or declaration hint when a
+concrete range has one.
+
+The local range vocabulary now has a more precise hook for this:
+`prototypeCursor`. It is the representative cursor used for cursor-concept
+queries:
+
+```js
+range.prototypeCursor instanceof RandomAccessCursorConcept
+```
+
+For concrete containers, `prototypeCursor` can be derived cheaply from
+`static cursorType`:
+
+```js
+get prototypeCursor() {
+  return this.constructor.cursorType?.prototype ?? this.begin()
+}
+```
+
+For instance-shaped views such as `subrange(first, last)`, the view can
+implement the same concept member by returning the captured cursor:
+
+```js
+get prototypeCursor() {
+  return this._first
+}
+```
+
+This is the runtime JS analog of `iterator_t<R>`: not necessarily a type, but
+the prototype-style representative that makes `instanceof CursorConcept`
+queries possible without manufacturing a specialized `SubrangeViewOf<TCursor>`
+type.
+
 ## Local Translation
 
 The local translation is function contract metadata that holds types. The
@@ -92,15 +191,13 @@ class PushBackContainer {
 export const materialize = contract(
   [
     null,
-    null,
     PushBackContainer,
   ],
   [
     null,
-    null,
     VectorMap,
   ],
-  function materialize(first, last, type = VectorMap) {
+  function materialize(range, type = VectorMap) {
   // ...
   })
 ```
@@ -121,7 +218,6 @@ export class PushBackContainer {
 export const materialize = contract(
   [
     null,
-    null,
     [
       DefaultConstructible,
       PushBackContainer,
@@ -129,14 +225,12 @@ export const materialize = contract(
   ],
   [
     null,
-    null,
     VectorMap,
   ],
-  function materialize(first, last, type = VectorMap) {
+  function materialize(range, type = VectorMap) {
   const result = new type()
-
-  if (first.clone)
-    first = first.clone()
+  const first = range.begin()
+  const last = range.end()
 
   while (!first.equals(last)) {
     result.push(first.value)

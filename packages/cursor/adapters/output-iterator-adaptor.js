@@ -9,6 +9,6 @@ export class OutputIteratorAdaptor extends Cursor {
   }
 
   set(value) { this.#action(value) }
-  step() { }
+  step() { return this }
   equatableTo(other) { return false }
 }

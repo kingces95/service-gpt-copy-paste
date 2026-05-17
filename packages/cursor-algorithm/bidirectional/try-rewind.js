@@ -7,11 +7,7 @@ export function tryRewind(current, count) {
 
   let steps = 0
   while (steps < count) {
-    if (!current.stepBack()) {
-      // if we cannot step back, advance to the initial position
-      advance(current, steps)
-      return false
-    }
+    current.stepBack()
     steps++
   }
 

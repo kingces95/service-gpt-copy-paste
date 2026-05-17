@@ -8,6 +8,7 @@ import {
   copyBackward,
 } from '@kingjs/cursor-algorithm'
 import { materialize } from '../algorithms/materialize.js'
+import { subrange } from '@kingjs/cursor-view'
 import { 
   ContiguousRangeConcept, 
   RandomAccessCursorConcept,
@@ -22,7 +23,7 @@ import {
   IndexableContainerPart,
   ReservableContainerPart,
   ByteContainerPart,
-  BulkEditableContainerPart,
+  GapEditableContainerPart,
 } from '../container-parts.js'
 
 export class Vector extends PartialProxy {
@@ -63,59 +64,42 @@ export class Vector extends PartialProxy {
       setAt(index, value) { this.buffer[index] = value },
     })
 
-    extend(this, BulkEditableContainerPart, {
-      insertRange(cursor, first, last) {
+    extend(this, GapEditableContainerPart, {
+      get defaultValue$() { return 0 },
+
+      insertRange(cursor, range) {
+        range = this.sourceRange$(range)
+
+        let first = range.begin()
+        let last = range.end()
+
         if (first instanceof RandomAccessCursorConcept == false) {
-          const vectorMap = materialize(first, last)
+          const vectorMap = materialize(range)
           first = vectorMap.begin()
           last = vectorMap.end()
+          range = vectorMap
         }
 
         const count = first.distanceTo(last)
+        this.openGap$(cursor, count)
+        copy(cursor, range)
+        return this
+      },
+
+      openGap$(cursor, count) {
+        const oldEnd = this.end()
         this.ensureCapacity(this.size + count)
         this._size += count
 
-        copy(cursor, first, last)
-        return this
+        copyBackward(this.end(), cursor, oldEnd)
+        return cursor
       },
 
-      eraseRange(first, last) {
-        if (first instanceof RandomAccessCursorConcept == false) {
-          const vectorMap = materialize(first, last)
-          first = vectorMap.begin()
-          last = vectorMap.end()
-        }
-
-        copy(first, last, this.end())
+      closeGap$(first, last) {
         const count = first.distanceTo(last)
+        copy(first, subrange(last, this.end()))
         this._size -= count
-        
-        const result = last.clone()
-        return result
-      },
-
-      resizeTo(count, value = 0) {
-        const oldSize = this.size
-        this.ensureCapacity(count)
-        this._size = count
-        if (count > oldSize)
-          fill(this.cursorAt(oldSize), count - oldSize, value)
-        return this
-      },
-
-      assignRange(first, last) {
-        if (first instanceof RandomAccessCursorConcept == false) {
-          const vectorMap = materialize(first, last)
-          first = vectorMap.begin()
-          last = vectorMap.end()
-        }
-
-        const count = first.distanceTo(last)
-        this.ensureCapacity(count)
-        this._size = count
-
-        copy(this.begin(), first, last)
-        return this
+        return first
       }
     })
 
@@ -123,7 +107,7 @@ export class Vector extends PartialProxy {
       get capacity() { return this._bytes.byteLength },
       setCapacity(capacity) {
         const newVector = new this.constructor(capacity)
-        copy(newVector.begin(), this.begin(), this.end())
+        copy(newVector.begin(), subrange(this.begin(), this.end()))
         
         const { _bytes, _buffer, _size } = newVector
         this._bytes = _bytes

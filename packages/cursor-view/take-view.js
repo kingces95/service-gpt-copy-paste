@@ -34,6 +34,7 @@ class TakeCursor extends Cursor {
       step() { 
         this._remaining--
         this._cursor.step()
+        return this
       },
       value() { return this._cursor.value },
     })
