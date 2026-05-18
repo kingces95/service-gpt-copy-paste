@@ -44,7 +44,7 @@ import {
 import { 
   ForwardList,
   List,
-  VectorMap,
+  ArrayMap,
   Deque,
   // NodeBuffer,
   // EcmaBuffer,
@@ -272,8 +272,8 @@ const Tests = {
     }
   },
 
-  VectorMap: {
-    type: VectorMap,
+  ArrayMap: {
+    type: ArrayMap,
     concepts: [
       ClearableContainerPart,
       EditableContainerPart,

@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { VectorMap } from '@kingjs/cursor-container'
+import { ArrayMap } from '@kingjs/cursor-container'
 import { subrange } from '@kingjs/cursor-view'
 import { iterate } from '@kingjs/cursor-algorithm'
 
-function createVectorMap(...values) {
-  const result = new VectorMap()
+function createArrayMap(...values) {
+  const result = new ArrayMap()
 
   for (const value of values)
     result.push(value)
@@ -32,7 +32,7 @@ const Tests = {
 
 describe.each(Object.entries(Tests))('%s', (_, test) => {
   it('should iterate', () => {
-    const source = createVectorMap(...test.values)
+    const source = createArrayMap(...test.values)
     const range = test.range(source)
 
     expect([...iterate(range)]).toEqual(test.expected)

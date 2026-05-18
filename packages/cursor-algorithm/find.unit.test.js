@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { VectorMap } from '@kingjs/cursor-container'
+import { ArrayMap } from '@kingjs/cursor-container'
 import { subrange } from '@kingjs/cursor-view'
 import { find } from '@kingjs/cursor-algorithm'
 
-function createVectorMap(...values) {
-  const result = new VectorMap()
+function createArrayMap(...values) {
+  const result = new ArrayMap()
 
   for (const value of values)
     result.push(value)
@@ -48,7 +48,7 @@ const Tests = {
 
 describe.each(Object.entries(Tests))('%s', (_, test) => {
   it('should find a matching cursor', () => {
-    const source = createVectorMap(...test.values)
+    const source = createArrayMap(...test.values)
     const range = test.range(source)
 
     expect(find(range, test.predicate)).toBe(test.expected)
@@ -57,7 +57,7 @@ describe.each(Object.entries(Tests))('%s', (_, test) => {
 
 describe('find', () => {
   it('should not mutate the begin cursor of a subrange', () => {
-    const source = createVectorMap(1, 2, 3)
+    const source = createArrayMap(1, 2, 3)
     const first = source.begin()
     first.step()
 

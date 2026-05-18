@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   List,
   ForwardList,
-  VectorMap,
+  ArrayMap,
 } from '@kingjs/cursor-container'
 import { iterate } from '@kingjs/cursor-algorithm'
 import { SnapshotView } from '@kingjs/cursor-view'
@@ -202,7 +202,7 @@ const AfterTests = {
 }
 
 const BulkEditableContainers = [
-  VectorMap,
+  ArrayMap,
 ]
 
 const AfterBulkEditableContainers = [

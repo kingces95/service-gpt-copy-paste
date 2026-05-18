@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 
-import { VectorMap } from '@kingjs/cursor-container'
+import { ArrayMap } from '@kingjs/cursor-container'
 import { distance } from './distance.js'
 import { advance } from './advance.js'
 
 describe.each([
-  VectorMap
+  ArrayMap
 ])('Given a sequence container with n items', (Container) => {
   let container
   let itemCount = 10

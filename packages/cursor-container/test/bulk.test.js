@@ -4,7 +4,7 @@ import {
   Deque,
   ForwardList,
   Uint8Vector,
-  VectorMap,
+  ArrayMap,
 } from '@kingjs/cursor-container'
 import { iterate } from '@kingjs/cursor-algorithm'
 import { SnapshotView } from '@kingjs/cursor-view'
@@ -36,7 +36,7 @@ function supportedCases(cases) {
 
 const BulkEditableContainers = [
   Deque,
-  VectorMap,
+  ArrayMap,
   Uint8Vector,
 ]
 

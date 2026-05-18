@@ -26,7 +26,7 @@ import {
 import {
   ForwardList,
   List,
-  VectorMap,
+  ArrayMap,
   Deque,
   // NodeBuffer,
   // EcmaBuffer,
@@ -96,7 +96,7 @@ const ListCase = {
     BidirectionalCursorConcept],
 }
 const VectorCase = {
-  type: VectorMap,
+  type: ArrayMap,
   concepts: [
     InputCursorConcept,
     OutputCursorConcept,

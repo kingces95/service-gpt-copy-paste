@@ -15,7 +15,7 @@ import {
   GapEditableContainerPart,
 } from '../container-parts.js'
 
-export class VectorMap extends PartialProxy {
+export class ArrayMap extends PartialProxy {
   static cursorType = IndexableCursor
   static {
     implement(this, OutputRangeConcept)

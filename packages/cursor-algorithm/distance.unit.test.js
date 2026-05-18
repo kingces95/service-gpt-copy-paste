@@ -7,7 +7,7 @@ import {
   ForwardList,
   Deque,
   List,
-  VectorMap,
+  ArrayMap,
   Uint8Vector,
   Uint16Vector,
   Uint32Vector,
@@ -22,7 +22,7 @@ const Containers = {
   ForwardList,
   List,
   Deque,
-  VectorMap,
+  ArrayMap,
   Uint8Vector,
   Uint16Vector,
   Uint32Vector,
@@ -96,7 +96,7 @@ describe.each(Object.entries(Tests))('%s', (_, {
 
 describe('distance', () => {
   it('should not mutate the begin cursor of a subrange', () => {
-    const source = createContainer(VectorMap)
+    const source = createContainer(ArrayMap)
     const first = source.begin()
     first.step()
 

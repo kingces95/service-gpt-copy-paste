@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import { RangeConcept, RandomAccessRangeProbe } from '@kingjs/cursor'
-import { VectorMap } from '@kingjs/cursor-container'
+import { ArrayMap } from '@kingjs/cursor-container'
 import { iterate } from '@kingjs/cursor-algorithm'
 import { snapshot, subrange } from '@kingjs/cursor-view'
 
-function createVectorMap(...values) {
-  const result = new VectorMap()
+function createArrayMap(...values) {
+  const result = new ArrayMap()
 
   for (const value of values)
     result.push(value)
@@ -15,7 +15,7 @@ function createVectorMap(...values) {
 
 describe('subrange', () => {
   it('should adapt a cursor pair to a range', () => {
-    const source = createVectorMap(1, 2, 3)
+    const source = createArrayMap(1, 2, 3)
     const first = source.begin()
     const last = source.end()
     const range = subrange(first, last)
@@ -28,7 +28,7 @@ describe('subrange', () => {
   })
 
   it('should clone begin and end cursors when possible', () => {
-    const source = createVectorMap(1, 2, 3)
+    const source = createArrayMap(1, 2, 3)
     const first = source.begin()
     const last = source.end()
     const range = subrange(first, last)
@@ -38,7 +38,7 @@ describe('subrange', () => {
   })
 
   it('should not mutate the original begin cursor while iterating', () => {
-    const source = createVectorMap(1, 2, 3)
+    const source = createArrayMap(1, 2, 3)
     const first = source.begin()
     first.step()
 
@@ -51,7 +51,7 @@ describe('subrange', () => {
 
 describe('snapshot', () => {
   it('should copy a range into an independent random-access range', () => {
-    const source = createVectorMap(1, 2, 3)
+    const source = createArrayMap(1, 2, 3)
     const range = snapshot(source)
 
     source.clear()

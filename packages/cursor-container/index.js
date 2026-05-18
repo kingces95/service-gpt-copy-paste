@@ -5,7 +5,7 @@
 export * from "./container/forward-list.js"
 export * from "./container/list.js"
 export * from "./container/deque.js"
-export * from "./container/vector-map.js"
+export * from "./container/array-map.js"
 // export * from "./container/node-buffer.js"
 // export * from "./container/ecma-buffer.js"
 export * from "./container/unordered-map.js"

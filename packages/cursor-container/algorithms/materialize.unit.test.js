@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { materialize, VectorMap } from '@kingjs/cursor-container'
+import { materialize, ArrayMap } from '@kingjs/cursor-container'
 import { subrange } from '@kingjs/cursor-view'
 
-function createVectorMap(...values) {
-  const result = new VectorMap()
+function createArrayMap(...values) {
+  const result = new ArrayMap()
 
   for (const value of values)
     result.push(value)
@@ -31,11 +31,11 @@ const Tests = {
 
 describe.each(Object.entries(Tests))('%s', (_, test) => {
   it('should materialize', () => {
-    const source = createVectorMap(...test.values)
+    const source = createArrayMap(...test.values)
     const range = test.range(source)
     const result = materialize(range)
 
-    expect(result).toBeInstanceOf(VectorMap)
+    expect(result).toBeInstanceOf(ArrayMap)
     expect(result.size).toBe(test.expected.length)
     for (let i = 0; i < test.expected.length; i++)
       expect(result.at(i)).toBe(test.expected[i])
@@ -44,7 +44,7 @@ describe.each(Object.entries(Tests))('%s', (_, test) => {
 
 describe('materialize', () => {
   it('should not mutate the original begin cursor', () => {
-    const source = createVectorMap(1, 2, 3)
+    const source = createArrayMap(1, 2, 3)
     const first = source.begin()
     first.step()
 

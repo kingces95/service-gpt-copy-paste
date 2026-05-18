@@ -7,7 +7,7 @@ import {
   Uint8Vector,
   Uint16Vector,
   Uint32Vector,
-  VectorMap,
+  ArrayMap,
 } from '@kingjs/cursor-container'
 import { subrange } from '@kingjs/cursor-view'
 import { copy, iterate } from '@kingjs/cursor-algorithm'
@@ -18,7 +18,7 @@ const Containers = {
   ForwardList,
   List,
   Deque,
-  VectorMap,
+  ArrayMap,
   Uint8Vector,
   Uint16Vector,
   Uint32Vector,
@@ -35,7 +35,7 @@ function createContainer(Type, values = Values) {
 }
 
 function createTarget(size) {
-  const result = new VectorMap()
+  const result = new ArrayMap()
 
   for (let i = 0; i < size; i++)
     result.insert(0, { })

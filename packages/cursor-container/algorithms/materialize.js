@@ -5,7 +5,7 @@ import {
   DefaultConstructible,
   PushShape,
 } from '@kingjs/cursor-checks'
-import { VectorMap } from '../container/vector-map.js'
+import { ArrayMap } from '../container/array-map.js'
 
 const Materialize = templatize(
   [[ // type
@@ -26,4 +26,4 @@ const Materialize = templatize(
   })
 )
 
-export const materialize = Materialize.as(VectorMap)
+export const materialize = Materialize.as(ArrayMap)

@@ -74,10 +74,10 @@ export class Vector extends PartialProxy {
         let last = range.end()
 
         if (first instanceof RandomAccessCursorConcept == false) {
-          const vectorMap = materialize(range)
-          first = vectorMap.begin()
-          last = vectorMap.end()
-          range = vectorMap
+          const arrayMap = materialize(range)
+          first = arrayMap.begin()
+          last = arrayMap.end()
+          range = arrayMap
         }
 
         const count = first.distanceTo(last)
