@@ -24,6 +24,7 @@ import {
   ReservableContainerPart,
   ByteContainerPart,
   ClearableContainerPart,
+  BulkEditableContainerPart,
   AssociativeContainerPart,
   UnorderedSetContainerPart,
   UnorderedMapContainerPart,
@@ -90,7 +91,7 @@ const associativeContainerConcepts = [
 const Value = 42
 const Key = 'key'
 
-const AddOne = {
+const PopulateOne = {
   Value: {
     unshift: {},
     push: {},
@@ -106,6 +107,7 @@ const AddOne = {
   Range: {
     appendRange: {},
     prependRange: {},
+    assignRange: {},
   },
   CursorCountValue: {
     insertCount: { cursor: 'begin' },
@@ -120,7 +122,7 @@ const AddOne = {
   },
 }
 
-const RemoveOne = {
+const DepopulateOne = {
   NoArgs: {
     pop: { returns: 'value' },
     shift: { returns: 'value' },
@@ -131,53 +133,35 @@ const RemoveOne = {
     eraseAfter: { cursor: 'beforeBegin', returns: 'end' },
     eraseAt: { cursor: 'begin', returns: 'end' },
   },
+  CursorRange: {
+    eraseRange: {
+      first: 'begin',
+      last: cursor => cursor.clone().step(),
+      returns: 'end',
+    },
+  },
+  SizeValue: {
+    resizeTo: { size: 0 },
+  },
 }
 
-function withCount(context, size) {
-  it('has equal begin cursors', () => {
-    const begin1 = context.container.begin()
-    const begin2 = context.container.begin()
-    expect(begin1.equals(begin2)).toBe(true)
-  })
-  it('has equal end cursors', () => {
-    const end1 = context.container.end()
-    const end2 = context.container.end()
-    expect(end1.equals(end2)).toBe(true)
-  })      
-  it(size == 0 ? 'has begin equal to end' : 'has begin distinct from end', () => {
-    const begin = context.container.begin()
-    const end = context.container.end()
-    expect(begin.equals(end)).toBe(size == 0)
-  })
-  if (context.members.size) it(`reports size ${size}`, () => {
-    expect(context.container.size).toBe(size)
-  })
-  if (context.members.capacity) it(`has capacity greater than ${size}`, () => {
-    expect(context.container.capacity).toBeGreaterThan(size)
-  })
-  if (context.members.span) it(`has span length ${size}`, () => {
-    expect(context.container.span().length).toBe(size)
-  })
-}
-
-function whenEmpty(context) {
-  it('is empty', () => {
-    expect(context.container.isEmpty).toBe(true)
-  })
-  if (context.members.shift) it('rejects shift', () => {
-    expect(() => { context.container.shift() }).toThrow(context.isEmpty)
-  })
-  if (context.members.at) it('rejects at', () => {
-    expect(() => { context.container.at(0) }).toThrow(context.readOutOfBounds)
-  })
-  if (context.members.setAt) it('rejects setAt', () => {
-    expect(() => { context.container.setAt(0, 42) }).toThrow(context.writeOutOfBounds)
-  })
-  if (context.members.readAt) it('rejects readAt', () => {
-    expect(() => { context.container.readAt(0) }).toThrow(
-      'Cannot read 1 byte(s) at index 1.')
-  })
-  withCount(context, 0)
+// Flatten grouped metadata to the members supported by a container while
+// preserving the group name as `kind` metadata.
+//
+// supportedCases({
+//   Range: { appendRange: {} },
+//   Value: { push: {}, insert: {} },
+// }, { push: true })
+//
+// returns [['push', { kind: 'Value' }]]
+function supportedCases(groups, members) {
+  return Object.entries(groups)
+    .flatMap(([kind, tests]) => Object.entries(tests)
+      .filter(([member]) => members[member])
+      .map(([member, metadata]) => [
+        member,
+        { kind, ...metadata }
+      ]))
 }
 
 const Tests = {
@@ -243,6 +227,7 @@ const Tests = {
     type: Deque,
     concepts: [
       ClearableContainerPart,
+      BulkEditableContainerPart,
       ...indexableContainerConcepts],
     members: {
       insert: true, erase: true,
@@ -251,6 +236,12 @@ const Tests = {
       pop: true, push: true,
       at: true, // setAt: true, // should, but does not
       clear: true,
+      
+      // BulkEditableContainerPart members
+      insertRange: true,
+      eraseRange: true,
+      resizeTo: true,
+      assignRange: true,
     }
   },
 
@@ -259,6 +250,7 @@ const Tests = {
     concepts: [
       ClearableContainerPart,
       EditableContainerPart,
+      BulkEditableContainerPart,
       ...indexableContainerConcepts],
     members: {
       insert: true, erase: true,
@@ -267,20 +259,20 @@ const Tests = {
       pop: true, push: true,
       at: true, setAt: true,
       clear: true,
+
+      // BulkEditableContainerPart members
       insertRange: true,
-      appendRange: true, prependRange: true,
-      insertCount: true, appendCount: true, prependCount: true,
       eraseRange: true,
-      eraseCount: true, eraseFrom: true, eraseUntil: true,
-      resizeTo: true, growTo: true, truncateTo: true,
-      replaceRange: true,
-      assignRange: true, assignCount: true,
+      resizeTo: true,
+      assignRange: true,
     }
   },
   
   Uint8Vector: {
     type: Uint8Vector,
-    concepts: [...bufferConainerConcepts],
+    concepts: [
+      BulkEditableContainerPart,
+      ...bufferConainerConcepts],
     members: {
       insert: true, erase: true,
       size: true,
@@ -288,37 +280,63 @@ const Tests = {
       pop: true, push: true,
       at: true, setAt: true, // readAt: true,
       capacity: true, setCapacity: true, ensureCapacity: true,
-      insertRange: true,
-      appendRange: true, prependRange: true,
-      insertCount: true, appendCount: true, prependCount: true,
-      eraseRange: true,
-      eraseCount: true, eraseFrom: true, eraseUntil: true,
-      resizeTo: true, growTo: true, truncateTo: true,
-      replaceRange: true,
-      assignRange: true, assignCount: true,
       span: true,
       // clear: true,
+
+      // BulkEditableContainerPart members
+      insertRange: true,
+      eraseRange: true,
+      resizeTo: true,
+      assignRange: true,
     }
   },
 }
 
-// Flatten grouped metadata to the members supported by a container while
-// preserving the group name as `kind` metadata.
-//
-// supportedCases({
-//   Range: { appendRange: {} },
-//   Value: { push: {}, insert: {} },
-// }, { push: true })
-//
-// returns [['push', { kind: 'Value' }]]
-function supportedCases(groups, members) {
-  return Object.entries(groups)
-    .flatMap(([kind, tests]) => Object.entries(tests)
-      .filter(([member]) => members[member])
-      .map(([member, metadata]) => [
-        member,
-        { kind, ...metadata }
-      ]))
+function withCount(context, size) {
+  it('has equal begin cursors', () => {
+    const begin1 = context.container.begin()
+    const begin2 = context.container.begin()
+    expect(begin1.equals(begin2)).toBe(true)
+  })
+  it('has equal end cursors', () => {
+    const end1 = context.container.end()
+    const end2 = context.container.end()
+    expect(end1.equals(end2)).toBe(true)
+  })      
+  it(size == 0 ? 'has begin equal to end' : 'has begin distinct from end', () => {
+    const begin = context.container.begin()
+    const end = context.container.end()
+    expect(begin.equals(end)).toBe(size == 0)
+  })
+  if (context.members.size) it(`reports size ${size}`, () => {
+    expect(context.container.size).toBe(size)
+  })
+  if (context.members.capacity) it(`has capacity greater than ${size}`, () => {
+    expect(context.container.capacity).toBeGreaterThan(size)
+  })
+  if (context.members.span) it(`has span length ${size}`, () => {
+    expect(context.container.span().length).toBe(size)
+  })
+}
+
+function whenEmpty(context) {
+  it('is empty', () => {
+    expect(context.container.isEmpty).toBe(true)
+  })
+  if (context.members.shift) it('rejects shift', () => {
+    expect(() => { context.container.shift() }).toThrow(context.isEmpty)
+  })
+  if (context.members.at) it('rejects at', () => {
+    expect(() => { context.container.at(0) }).toThrow(context.readOutOfBounds)
+  })
+  if (context.members.setAt) it('rejects setAt', () => {
+    expect(() => { context.container.setAt(0, 42) }).toThrow(context.writeOutOfBounds)
+  })
+  if (context.members.readAt) it('rejects readAt', () => {
+    expect(() => { context.container.readAt(0) }).toThrow(
+      'Cannot read 1 byte(s) at index 1.')
+  })
+  withCount(context, 0)
 }
 
 describe.each(Object.entries(Tests))('A %s', (name, { 
@@ -407,7 +425,7 @@ describe.each(Object.entries(Tests))('A %s', (name, {
   }
 
   describe('when populated with', () => {
-    describe.each(supportedCases(AddOne, members))(
+    describe.each(supportedCases(PopulateOne, members))(
       '%s', (fn, { kind, cursor: cursorFn }) => {
 
       beforeEach(() => {
@@ -476,8 +494,15 @@ describe.each(Object.entries(Tests))('A %s', (name, {
   })
 
   describe('when depopulated with', () => {
-    describe.each(supportedCases(RemoveOne, members))(
-      '%s', (fn, { kind, cursor: cursorFn, returns }) => {
+    describe.each(supportedCases(DepopulateOne, members))(
+      '%s', (fn, {
+        kind,
+        cursor: cursorFn,
+        first,
+        last,
+        size,
+        returns,
+      }) => {
 
       let result
       let cursor
@@ -487,6 +512,13 @@ describe.each(Object.entries(Tests))('A %s', (name, {
         if (kind == 'Cursor') {
           cursor = container[cursorFn]()
           result = container[fn](cursor)
+        }
+        else if (kind == 'CursorRange') {
+          cursor = container[first]()
+          result = container[fn](cursor, last(cursor))
+        }
+        else if (kind == 'SizeValue') {
+          result = container[fn](size, value)
         }
         else if (kind == 'NoArgs') {
           result = container[fn]()

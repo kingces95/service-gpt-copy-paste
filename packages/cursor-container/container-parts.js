@@ -325,7 +325,9 @@ export class GapEditableContainerPart extends BulkEditableContainerPart {
   }
 
   eraseRange(first, last) {
-    return this.closeGap$(first, last)
+    const result = first.clone()
+    this.closeGap$(first, last)
+    return result
   }
 
   resizeTo(count, value = this.defaultValue$) {
