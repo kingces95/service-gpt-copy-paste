@@ -16,7 +16,6 @@ import {
 import {
   ContainerPart,
   IndexableContainerPart,
-  SpliceableContainerPart,
   BackEditableContainerPart,
   FrontEditableContainerPart,
   EditableContainerPart,
@@ -51,6 +50,7 @@ import {
   Uint8Vector, Uint16Vector, Uint32Vector, Float64Vector,
 } from '@kingjs/cursor-container'
 import { value } from '@kingjs/abstract'
+import { single } from '@kingjs/cursor-adapter'
 
 const universalContainerConcepts = [
   RangeConcept,
@@ -89,6 +89,96 @@ const associativeContainerConcepts = [
   
 const Value = 42
 const Key = 'key'
+
+const AddOne = {
+  Value: {
+    unshift: {},
+    push: {},
+    insert: {},
+  },
+  CursorValue: {
+    insertAt: { cursor: 'begin' },
+    insertAfter: { cursor: 'beforeBegin' },
+  },
+  CursorRange: {
+    insertRange: { cursor: 'begin' },
+  },
+  Range: {
+    appendRange: {},
+    prependRange: {},
+  },
+  CursorCountValue: {
+    insertCount: { cursor: 'begin' },
+  },
+  CountValue: {
+    appendCount: {},
+    prependCount: {},
+  },
+  SizeValue: {
+    resizeTo: {},
+    growTo: {},
+  },
+}
+
+const RemoveOne = {
+  NoArgs: {
+    pop: { returns: 'value' },
+    shift: { returns: 'value' },
+    erase: {},
+    clear: {},
+  },
+  Cursor: {
+    eraseAfter: { cursor: 'beforeBegin', returns: 'end' },
+    eraseAt: { cursor: 'begin', returns: 'end' },
+  },
+}
+
+function withCount(context, size) {
+  it('has equal begin cursors', () => {
+    const begin1 = context.container.begin()
+    const begin2 = context.container.begin()
+    expect(begin1.equals(begin2)).toBe(true)
+  })
+  it('has equal end cursors', () => {
+    const end1 = context.container.end()
+    const end2 = context.container.end()
+    expect(end1.equals(end2)).toBe(true)
+  })      
+  it(size == 0 ? 'has begin equal to end' : 'has begin distinct from end', () => {
+    const begin = context.container.begin()
+    const end = context.container.end()
+    expect(begin.equals(end)).toBe(size == 0)
+  })
+  if (context.members.size) it(`reports size ${size}`, () => {
+    expect(context.container.size).toBe(size)
+  })
+  if (context.members.capacity) it(`has capacity greater than ${size}`, () => {
+    expect(context.container.capacity).toBeGreaterThan(size)
+  })
+  if (context.members.span) it(`has span length ${size}`, () => {
+    expect(context.container.span().length).toBe(size)
+  })
+}
+
+function whenEmpty(context) {
+  it('is empty', () => {
+    expect(context.container.isEmpty).toBe(true)
+  })
+  if (context.members.shift) it('rejects shift', () => {
+    expect(() => { context.container.shift() }).toThrow(context.isEmpty)
+  })
+  if (context.members.at) it('rejects at', () => {
+    expect(() => { context.container.at(0) }).toThrow(context.readOutOfBounds)
+  })
+  if (context.members.setAt) it('rejects setAt', () => {
+    expect(() => { context.container.setAt(0, 42) }).toThrow(context.writeOutOfBounds)
+  })
+  if (context.members.readAt) it('rejects readAt', () => {
+    expect(() => { context.container.readAt(0) }).toThrow(
+      'Cannot read 1 byte(s) at index 1.')
+  })
+  withCount(context, 0)
+}
 
 const Tests = {
   UnorderedMap: {
@@ -139,10 +229,10 @@ const Tests = {
     type: Chain,
     concepts: [
       ...reversibleContainerConcepts,
-      SpliceableContainerPart,
       SizedContainerPart],
     members: {
       insert: true, erase: true,
+      beforeBegin: true, insertAfter: true, eraseAfter: true,
       size: true,
       shift: true, unshift: true,
       pop: true, push: true,
@@ -177,6 +267,14 @@ const Tests = {
       pop: true, push: true,
       at: true, setAt: true,
       clear: true,
+      insertRange: true,
+      appendRange: true, prependRange: true,
+      insertCount: true, appendCount: true, prependCount: true,
+      eraseRange: true,
+      eraseCount: true, eraseFrom: true, eraseUntil: true,
+      resizeTo: true, growTo: true, truncateTo: true,
+      replaceRange: true,
+      assignRange: true, assignCount: true,
     }
   },
   
@@ -190,25 +288,69 @@ const Tests = {
       pop: true, push: true,
       at: true, setAt: true, // readAt: true,
       capacity: true, setCapacity: true, ensureCapacity: true,
-      // copy: true, // insertRange: true, removeRange: true,
+      insertRange: true,
+      appendRange: true, prependRange: true,
+      insertCount: true, appendCount: true, prependCount: true,
+      eraseRange: true,
+      eraseCount: true, eraseFrom: true, eraseUntil: true,
+      resizeTo: true, growTo: true, truncateTo: true,
+      replaceRange: true,
+      assignRange: true, assignCount: true,
       span: true,
       // clear: true,
     }
   },
 }
 
+// Flatten grouped metadata to the members supported by a container while
+// preserving the group name as `kind` metadata.
+//
+// supportedCases({
+//   Range: { appendRange: {} },
+//   Value: { push: {}, insert: {} },
+// }, { push: true })
+//
+// returns [['push', { kind: 'Value' }]]
+function supportedCases(groups, members) {
+  return Object.entries(groups)
+    .flatMap(([kind, tests]) => Object.entries(tests)
+      .filter(([member]) => members[member])
+      .map(([member, metadata]) => [
+        member,
+        { kind, ...metadata }
+      ]))
+}
+
 describe.each(Object.entries(Tests))('A %s', (name, { 
   type, concepts, members, value = Value, key = Key }) => {  
 
+  let container
+  let otherContainer
+  beforeEach(() => {
+    container = new type()
+    otherContainer = new type()
+  })
+
+  const isEmpty = 'Container is empty.'
+  const readOutOfBounds = 'Cannot read value out of bounds of cursor.'
+  const writeOutOfBounds = 'Cannot write value out of bounds of cursor.'
+  const context = {
+    get container() { return container },
+    members,
+    isEmpty,
+    readOutOfBounds,
+    writeOutOfBounds,
+  }
+
   describe('type', () => {
-    it('should be instanceof its concepts', () => {
+    it('implements its expected concepts', () => {
       for (const concept of concepts) {
         if (type.prototype instanceof concept == false) throw new Error(
           `${type.name} does not implement ${concept.name}.`)
         expect(type.prototype instanceof concept).toBe(true)
       }
     })
-    it('should have only expected concepts', () => {
+    it('implements only its expected concepts', () => {
       const set = new Set(concepts)
       const baseConcepts = [...PartialReflect.baseTypes(type)]
         .filter(current => PartialReflect.isExtensionOf(current, Concept))
@@ -218,232 +360,155 @@ describe.each(Object.entries(Tests))('A %s', (name, {
         expect(set.has(concept)).toBe(true)
       }
     })
-    it('should define expected members', () => {
+    it('defines its expected members', () => {
       for (const member of Reflect.ownKeys(members)) {
         expect(member in type.prototype)
       }
     })
   })
 
-  const isEmpty = 'Container is empty.'
-  const readOutOfBounds = 'Cannot read value out of bounds of cursor.'
-  const writeOutOfBounds = 'Cannot write value out of bounds of cursor.'
-
-  describe('instance', () => {
-    let container
-    let otherContainer
-    beforeEach(() => {
-      container = new type()
-      otherContainer = new type()
-    })
-    it('should not have cursors equal to another container', () => {
+  describe('when empty', () => {
+    it('has cursors distinct from another container', () => {
       const begin1 = container.begin()
       const begin2 = otherContainer.begin()
       expect(begin1.equals(begin2)).toBe(false)
     })
-    if (members.copy) it('should be able to null copy', () => {
+    if (members.copy) it('accepts a null copy', () => {
       const begin = container.begin()
       const end = container.end()
       container.copy(begin, begin, end)
     })
-    if (members.span) it('span should be a Uint8Array', () => { 
+    if (members.span) it('has a Uint8Array span', () => { 
       expect(container.span()).toBeInstanceOf(Uint8Array)
     })
-    if (members.setCapacity || members.ensureCapacity) {
+    whenEmpty(context)
+  })
+
+  if (members.setCapacity || members.ensureCapacity) {
+    describe('Capacity', () => {
       let capacity
       beforeEach(() => {
         capacity = container.capacity
       })
-      it('should be able to +0 capacity', () => {
+      it('accepts the current capacity', () => {
         expect(container.setCapacity(capacity)).toBe(capacity)
       })
-      it('should be able to +1 capacity', () => {
+      it('accepts one more capacity', () => {
         expect(container.setCapacity(capacity + 1)).toBe(capacity + 1)
       })
-      it('should not change capacity when ensuring current capacity', () => { 
+      it('keeps capacity when ensuring current capacity', () => { 
         expect(container.ensureCapacity(capacity)).toBe(capacity)
       })
-      it('should double capacity when ensureing +1 capacity', () => {
+      it('doubles capacity when ensuring one more capacity', () => {
         const newCapacity = container.ensureCapacity(capacity + 1)
         expect(newCapacity).toBe(capacity * 2)
       })
-    }
+    })
+  }
 
-    function withCount(size) {
-      describe(`now with size ${size}`, () => {
-        it('should have equal begin cursors', () => {
-          const begin1 = container.begin()
-          const begin2 = container.begin()
-          expect(begin1.equals(begin2)).toBe(true)
-        })
-        it('should have equal end cursors', () => {
-          const end1 = container.end()
-          const end2 = container.end()
-          expect(end1.equals(end2)).toBe(true)
-        })      
-        it('should have begin equal end iff size is 0', () => {
-          const begin = container.begin()
-          const end = container.end()
-          expect(begin.equals(end)).toBe(size == 0)
-        })
-        if (members.size) it(`should have a size of ${size}`, () => {
-          expect(container.size).toBe(size)
-        })
-        if (members.capacity) it(`should have a capacity of ${size} or more`, () => {
-          expect(container.capacity).toBeGreaterThan(size)
-        })
-        if (members.span) it(`should have span length of ${size}`, () => {
-          expect(container.span().length).toBe(size)
-        })
-      })
-    }
-
-    function whenEmpty() {
-      describe('now empty', () => {
-
-        it('should be empty', () => {
-          expect(container.isEmpty).toBe(true)
-        })
-        if (members.shift) it('should throw on shift', () => {
-          expect(() => { container.shift() }).toThrow(isEmpty)
-        })
-        if (members.at) it('should throw on at', () => {
-          expect(() => { container.at(0) }).toThrow(readOutOfBounds)
-        })
-        if (members.setAt) it('should throw on setAt', () => {
-          expect(() => { container.setAt(0, 42) }).toThrow(writeOutOfBounds)
-        })
-        if (members.readAt) it('should throw on readAt', () => {
-          expect(() => { container.readAt(0) }).toThrow(
-            'Cannot read 1 byte(s) at index 1.')
-        })
-      })
-      withCount(0)
-    }
-    whenEmpty()
-
-    describe.each([
-      // ['add', ''],
-      ['unshift', ''], 
-      ['push', ''],
-      ['insert', ''],
-      ['insertAt', 'begin'],
-      ['insertAt', 'end'],
-      ['insertAfter', 'beforeBegin'],
-    ].filter(([method]) => members[method]))(
-      'then %s(%s)', (fn, cursorFn) => {
+  describe('when populated with', () => {
+    describe.each(supportedCases(AddOne, members))(
+      '%s', (fn, { kind, cursor: cursorFn }) => {
 
       beforeEach(() => {
-        // container.unshift(value)
-        // container.push(value)
-        // container.insert(value, container.begin())
-        // container.insert(value, container.end())
-        // container.insertAfter(value, container.beforeBegin())
-        if (cursorFn) {
-          const cursor = container[cursorFn]()
-          container[fn](value, cursor)
+        if (kind == 'Range') {
+          container[fn](single(value))
         }
-        else container[fn](value)
+        else if (kind == 'CursorRange') {
+          container[fn](container[cursorFn](), single(value))
+        }
+        else if (kind == 'CountValue') {
+          container[fn](1, value)
+        }
+        else if (kind == 'CursorCountValue') {
+          container[fn](container[cursorFn](), 1, value)
+        }
+        else if (kind == 'SizeValue') {
+          container[fn](1, value)
+        }
+        else if (kind == 'CursorValue') {
+          container[fn](value, container[cursorFn]())
+        }
+        else if (kind == 'Value') {
+          container[fn](value)
+        }
       })
-      withCount(1)
+      withCount(context, 1)
 
-      if (cursorFn) {
+      if (kind == 'CursorValue') {
         // test argument checking: null, equatable, end, out of bounds, etc.
-        it('should throw if cursor is null', () => {
+        it('rejects a null cursor', () => {
           expect(() => { container[fn](value, null) }).toThrow()
         })
-        it('should throw if cursor is not from the container', () => {
+        it('rejects a cursor from another container', () => {
           const otherCursor = otherContainer.begin()
           expect(() => { container[fn](value, otherCursor) }).toThrow()
         })
-        it('should throw if cursor is out of bounds', () => {
+        it('rejects an out-of-bounds cursor', () => {
           const endCursor = container.end()
           expect(() => { container[fn](value, endCursor) }).toThrow()
         })
       }
 
-      describe('now not empty', () => {
-        it('should not be empty', () => {
-          expect(container.isEmpty).toBe(false)
-        })
-        if (members.at) it('should have a value at index 0', () => {
-          expect(container.at(0)).toBe(value)
-        })
-        if (members.setAt) it('should be able to set a value at index 0', () => {
-          container.setAt(0, value + 1)
-          expect(container.at(0)).toBe(value + 1)
-        })
-        if (members.readAt) it('shoud read a value at index 0', () => {
-          expect(container.readAt(0)).toBe(value)
-        })
-        if (members.setAt) it('should be able to set a value at index 0', () => {
-          container.setAt(0, value + 1)
-          expect(container.at(0)).toBe(value + 1)
-        })
-        if (members.span) it('should have span matching the value', () => {
-          expect(container.span()[0]).toBe(value)
-        })
-        if (members.has) it('should have the value', () => {
-          expect(container.has(key)).toBe(true)
-        })
-        if (members.get) it('should get the value by key', () => {
-          expect(container.get(key)).toBe(value[1])
-        })
+      it('is not empty', () => {
+        expect(container.isEmpty).toBe(false)
       })
-      describe.each([
-        ['pop'],
-        ['shift'],
-      ].filter(([method]) => members[method]))(
-        'then %s-ing', (fn) => {
+      if (members.at) it('has value at index 0', () => {
+        expect(container.at(0)).toBe(value)
+      })
+      if (members.setAt) it('sets value at index 0', () => {
+        container.setAt(0, value + 1)
+        expect(container.at(0)).toBe(value + 1)
+      })
+      if (members.readAt) it('reads value at index 0', () => {
+        expect(container.readAt(0)).toBe(value)
+      })
+      if (members.span) it('has span matching the value', () => {
+        expect(container.span()[0]).toBe(value)
+      })
+      if (members.has) it('has the value', () => {
+        expect(container.has(key)).toBe(true)
+      })
+      if (members.get) it('gets the value by key', () => {
+        expect(container.get(key)).toBe(value[1])
+      })
+    })
+  })
 
-        let result
-        beforeEach(() => {
-          // container.pop()
-          // container.shift()
-          result = container[fn]()
-        })
-        it('should return cursor or end', () => {
-          expect(result).toBe(value)
-        })
-        whenEmpty()
-      })        
-      describe.each([
-        ['eraseAfter', 'beforeBegin'],
-        ['eraseAt', 'begin'],
-      ].filter(([method]) => members[method]))(
-        'then %s-ing', (fn, cursorFn) => {
+  describe('when depopulated with', () => {
+    describe.each(supportedCases(RemoveOne, members))(
+      '%s', (fn, { kind, cursor: cursorFn, returns }) => {
 
-        let result
-        let cursor
-        beforeEach(() => {
-          // container.eraseAfter(container.beforeBegin())
-          // container.erase(container.begin())
+      let result
+      let cursor
+      beforeEach(() => {
+        container.insert(value)
+
+        if (kind == 'Cursor') {
           cursor = container[cursorFn]()
           result = container[fn](cursor)
+        }
+        else if (kind == 'NoArgs') {
+          result = container[fn]()
+        }
+      })
+
+      if (returns == 'value') {
+        it('returns the value', () => {
+          expect(result).toBe(value)
         })
-        it('should not return the cursor', () => {
+      }
+      if (returns == 'end') {
+        it('does not return the original cursor', () => {
           expect(result).not.toBe(cursor)
         })
-        it('result should equal end', () => {
+        it('returns end', () => {
           const end = container.end()
           expect(result.equals(end)).toBe(true)
         })
-        whenEmpty()
+      }
+
+      whenEmpty(context)
       })
-      if (members.erase) {
-        describe('then erase-ing', () => {
-          beforeEach(() => { container.erase() })
-          whenEmpty()
-        })
-      }
-      if (members.clear) {
-        describe('then clear-ing', () => {
-          beforeEach(() => {
-            container.clear()
-          })
-          whenEmpty()
-        })
-      }
-    })
   })
 })

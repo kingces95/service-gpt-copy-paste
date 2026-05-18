@@ -13,7 +13,7 @@ class RepeatCursor extends InfiniteCursor {
 
   static {
     implement(this, InputCursorConcept, {
-      value() { return this.range._value },
+      get value() { return this.range._value },
     })
   }
 }

@@ -39,8 +39,8 @@ export class ContainerPart extends PartialClass {
   static [Implements] = RangeConcept
   static [Abstracts] = {
     get isEmpty() { },
-    insert(value, { at = this.begin(), after }) { },
-    erase({ at = this.begin(), after }) { }
+    insert(value, { at = this.end(), after }) { },
+    erase({ at = this.end(), after }) { }
   }
 
   throwIfNull$(value) { 
@@ -58,18 +58,6 @@ export class ContainerPart extends PartialClass {
   }  
 
   get cursorType() { return this.constructor.cursorType }
-}
-
-export class SpliceableContainerPart extends ContainerPart {
-  static [Preconditions] = {
-    splice(cursor, outCount = 0, ...values) {
-      this.throwIfForeignCursor$(cursor)
-      if (outCount < 0) throw new RangeError(
-        `outCount must be non-negative.`)
-    }
-  }
-  
-  splice(cursor, outCount = 1, ...values) { }
 }
 
 export class SizedContainerPart extends ContainerPart {
@@ -112,9 +100,6 @@ export class EditableContainerPart extends ContainerPart {
     eraseAt(cursor) { },
   }
   
-  insert(value, { at = this.end() } = { }) {
-    this.insertAt(value, at)
-  }
   take(cursor) {
     const result = cursor.value
     this.eraseAt(cursor)
@@ -122,6 +107,15 @@ export class EditableContainerPart extends ContainerPart {
   }
 
   static {
+    extend(this, ContainerPart, {
+      insert(value, { at = this.end(), after } = { }) {
+        this.insertAt(value, at)
+      },
+      erase({ at = this.begin(), after } = { }) {
+        return this.eraseAt(at)
+      },
+    })
+
     extend(this, FrontEditableContainerPart, {
       unshift(value) { this.insertAt(value, this.begin()) },
       shift() { 

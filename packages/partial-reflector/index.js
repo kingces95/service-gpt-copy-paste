@@ -440,7 +440,7 @@ function *mergeOrder(type) {
 // is substituted. 
 
 function isFirstOrOverride(descriptor, hasExisting) {
-  return !hasExisting || !isAbstract(descriptor)
+  return !isAbstract(descriptor) || !hasExisting
 }
 
 function resolve(descriptor, existing) {

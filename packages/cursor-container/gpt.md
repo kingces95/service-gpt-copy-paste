@@ -93,12 +93,6 @@ All of these are convenience/contract APIs you expose publicly; internally they 
   }
   ```
 
-* `splice(dstPos, src, first, last)` (node-only)
-
-  ```js
-  relinkNodes(dstPos, src, first, last);
-  ```
-
 * `compactInPlace(predicate)` (erase-remove style convenience)
   Implement with `transferGuts` + `destroyAt` and `freeSlots` or a cheaper specialized path for contiguous types.
 

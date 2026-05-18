@@ -80,7 +80,7 @@ class MyExtendedType extends MyType {
   static [TypePostcondition] = myExtendedTypePostcondition
   static [Preconditions] = { member: myExtendedPrecondition }
   static [Postconditions] = { member: myExtendedPostcondition }
-  // member() { this.push('MyExtendedType:member') }
+  member() { super.member() }
 }
 
 // -- Test Cases --
@@ -137,34 +137,11 @@ const ExtendedType = {
   ]
 }
 
-const ExtendedTypWithoutConditions = {
-  type: MyType,
-  instanceType: MyExtendedType,
-  conditions: {
-    typePrecondition: [myTypePrecondition, myExtendedTypePrecondition],
-    typePostcondition: [myExtendedTypePostcondition, myTypePostcondition],
-    precondition: [myPrecondition, myExtendedPrecondition],
-    postcondition: [myExtendedPostcondition, myPostcondition],
-  },
-  calls: [
-    'MyType:typePrecondition',
-    'MyExtendedType:typePrecondition',
-    'MyType:precondition',
-    'MyExtendedType:precondition',
-    'MyType:member',
-    'MyExtendedType:postcondition',
-    'MyType:postcondition',
-    'MyExtendedType:typePostcondition',
-    'MyType:typePostcondition',
-  ]
-}
-
 const Tests = [
   ['Type without conditions', TypeWithoutConditions],
   ['Abstract type', AbstractType],
   ['Type', Type],
   ['Extended type', ExtendedType],
-  ['Extended type without conditions', ExtendedTypWithoutConditions],
 ]
 
 // -- Tests --

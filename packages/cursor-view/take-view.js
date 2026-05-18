@@ -1,4 +1,5 @@
 import { implement } from '@kingjs/partial-implement'
+import { EquatableConcept } from '@kingjs/partial-concept'
 import { 
   Cursor,
   InputRangeConcept,
@@ -30,13 +31,20 @@ class TakeCursor extends Cursor {
   }
 
   static {
+    implement(this, EquatableConcept, {
+      equals(other) {
+        if (!this.equatableTo(other)) return false
+        return this._remaining == other._remaining
+      },
+    })
+
     implement(this, InputCursorConcept, {
       step() { 
         this._remaining--
         this._cursor.step()
         return this
       },
-      value() { return this._cursor.value },
+      get value() { return this._cursor.value },
     })
   }
 }
@@ -59,7 +67,7 @@ export class TakeView extends AdapterView {
       },
       end() { 
         const end = this.range.end()
-        return new this.cursorType(this, end) 
+        return new this.cursorType(this, end, 0) 
       },
     })
   }
