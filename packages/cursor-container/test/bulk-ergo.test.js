@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
-  Chain,
   List,
+  ForwardList,
   VectorMap,
 } from '@kingjs/cursor-container'
 import { iterate } from '@kingjs/cursor-algorithm'
@@ -10,7 +10,7 @@ import { SnapshotView } from '@kingjs/cursor-view'
 function createContainer(type, values = []) {
   const result = new type()
 
-  if (type == List)
+  if (type == ForwardList)
     values = [...values].reverse()
 
   for (const value of values)
@@ -176,8 +176,8 @@ const BulkEditableContainers = [
 ]
 
 const BulkAssignableContainers = [
+  ForwardList,
   List,
-  Chain,
   ...BulkEditableContainers,
 ]
 

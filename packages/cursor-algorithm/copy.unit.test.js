@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  Chain,
+  ForwardList,
   Deque,
   Float64Vector,
   List,
@@ -15,8 +15,8 @@ import { copy, iterate } from '@kingjs/cursor-algorithm'
 const Values = [1, 2, 3]
 
 const Containers = {
+  ForwardList,
   List,
-  Chain,
   Deque,
   VectorMap,
   Uint8Vector,

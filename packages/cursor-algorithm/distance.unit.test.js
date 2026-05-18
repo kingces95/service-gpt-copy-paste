@@ -4,7 +4,7 @@ import {
   RandomAccessRangeProbe,
 } from '@kingjs/cursor'
 import {
-  Chain,
+  ForwardList,
   Deque,
   List,
   VectorMap,
@@ -19,8 +19,8 @@ import { distance } from '@kingjs/cursor-algorithm'
 const Values = [1, 2, 3]
 
 const Containers = {
+  ForwardList,
   List,
-  Chain,
   Deque,
   VectorMap,
   Uint8Vector,

@@ -41,8 +41,8 @@ import {
 } from '@kingjs/cursor'
 
 import { 
+  ForwardList,
   List,
-  Chain,
   VectorMap,
   Deque,
   // NodeBuffer,
@@ -198,8 +198,8 @@ const Tests = {
     key: Value,
   },
   
-  List: {
-    type: List,
+  ForwardList: {
+    type: ForwardList,
     concepts: [
       ClearableContainerPart,
       BulkAssignableContainerPart,
@@ -215,8 +215,8 @@ const Tests = {
     }
   },
   
-  Chain: {
-    type: Chain,
+  List: {
+    type: List,
     concepts: [
       ...reversibleContainerConcepts,
       ClearableContainerPart,

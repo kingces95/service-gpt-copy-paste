@@ -1,158 +1,92 @@
 import { assert } from '@kingjs/assert'
+import { implement } from '@kingjs/partial-implement'
 import { define } from '@kingjs/partial-define'
 import { extend } from '@kingjs/partial-extend'
-import { implement } from '@kingjs/partial-implement'
-import { PartialProxy, Preconditions } from '@kingjs/partial-proxy'
-import {
-  EquatableConcept,
-} from '@kingjs/partial-concept'
-import {
-  CursorConcept,
-  MutableCursorConcept,
-  ForwardCursorConcept,
-  RangeConcept,
-  OutputRangeConcept,
-  ForwardRangeConcept,
-
-  throwNull,
-  throwUpdateOutOfBounds,
-  throwNotEquatableTo,
+import { ForwardList } from './forward-list.js'
+import { 
+  BidirectionalCursorConcept, 
+  BidirectionalRangeConcept 
 } from '@kingjs/cursor'
 import { 
-  ContainerPart,
+  SizedContainerPart,
+  EditableContainerPart,
   BulkAssignableContainerPart,
-  FrontEditableContainerPart,
 } from '../container-parts.js'
 import { iterate } from '@kingjs/cursor-algorithm'
-import { 
-  ContainerCursor,
-} from '../cursor/container-cursor.js'
-import { ForwardLink } from '../link/forward-link.js'
+import {
+  RewindLink,
+} from '../link/rewind-link.js'
 
-class ListCursor extends ContainerCursor {
-  static linkType$ = ForwardLink
+class ListCursor extends ForwardList.cursorType {
+  static linkType$ = RewindLink
 
   constructor(container, link) {
     super(container, link)
   }
 
-  get link() { return this.token }
-  set link(link) { this.token = link }
-
-  static {
-    implement(this, EquatableConcept, { 
-      equals(other) { 
-        if (!this.equatableTo(other)) return false
-        return this.link == other.link
-      }
-    })
-
-    implement(this, CursorConcept, { 
-      step() { 
-        this.link = this.link.next
+  static { 
+    implement(this, BidirectionalCursorConcept, {
+      stepBack() {
+        this.link = this.link.previous
+        assert(this.link)
         return this
-      },
-    })
-
-    implement(this, MutableCursorConcept, { 
-      get value() { return this.link.value },
-      set value(value) { this.link.value = value },
-    })
-
-    implement(this, ForwardCursorConcept, {
-      clone() {
-        const { constructor, container, link } = this
-        return new constructor(container, link)
-      }
-    })
+      }    
+    }) 
   }
 }
 
-export class List extends PartialProxy {
+export class List extends ForwardList {
   static cursorType = ListCursor
   static {
-    implement(this, ForwardRangeConcept, {
-      begin() { return new this.cursorType(this, this._rootLink.next) },
-      end() { return new this.cursorType(this, this._endLink) },
-    })
-    implement(this, OutputRangeConcept)
+    implement(this, BidirectionalRangeConcept)
   }
-
-  static [Preconditions] = {
-    insertAfter(value, cursor) {
-      if (!cursor) throwNull()
-      if (cursor.range != this) throwNotEquatableTo()
-      const end = this.end({ fixed: true })
-      if (cursor.equals(end)) throwUpdateOutOfBounds()
-    },
-    eraseAfter(cursor) {
-      if (!cursor) throwNull()
-      if (cursor.range != this) throwNotEquatableTo()
-      const end = this.end({ fixed: true })
-      if (cursor.equals(end)) throwUpdateOutOfBounds()
-      const next = cursor.clone().step()
-      if (next.equals(end)) throwUpdateOutOfBounds()
-    }
-  }
-
-  _rootLink
-  _endLink
+  
+  _count
 
   constructor() {
     super()
-    const root = new this.constructor.cursorType.linkType$()
-    assert(root instanceof ForwardLink, 'linkType must be a ForwardLink')
-    this._rootLink = root
-    this._endLink = root.insertAfter()
+    this._count = 0
   }
 
   static {
     define(this, {
-      beforeBegin() { return new this.cursorType(this, this._rootLink) },
-      insertAfter(value, cursor) { cursor.link.insertAfter(value) },
-      eraseAfter(cursor) { 
-        cursor.link.eraseAfter() 
-        return cursor.clone().step()
+      insertAfter(value, cursor) {
+        ForwardList.prototype.insertAfter.call(this, value, cursor)
+        this._count++
+      },
+      eraseAfter(cursor) {
+        const result = ForwardList.prototype.eraseAfter.call(this, cursor)
+        this._count--
+        return result
       },
     })
   }
 
   static {
-    extend(this, ContainerPart, {
-      get isEmpty() { return this._endLink == this._rootLink.next },
-      insert(value, { after = this.beforeBegin() } = { }) { 
-        this.insertAfter(value, after) 
-      },
-      erase({ after = this.beforeBegin() } = { }) { this.eraseAfter(after) },
+    extend(this, SizedContainerPart, {
+      get size() { return this._count },
     })
 
-    extend(this, FrontEditableContainerPart, {
-      shift() { 
-        const result = this._rootLink.next.value
-        this.eraseAfter(this.beforeBegin())
-        return result
+    extend(this, EditableContainerPart, {
+      insertAt(value, cursor) {
+        cursor.link.insert(value)
+        this._count++
       },
-      unshift(value) { this.insertAfter(value, this.beforeBegin()) },
+      eraseAt(cursor) {
+        const result = cursor.clone().step()
+        cursor.link.erase()
+        this._count--
+        return result
+      }
     })
 
     extend(this, BulkAssignableContainerPart, {
       resizeTo(count, value = undefined) {
-        let tail = this.beforeBegin()
+        while (this.size > count)
+          this.pop()
 
-        while (count > 0) {
-          const next = tail.clone().step()
-          if (next.equals(this.end())) {
-            tail.link = tail.link.insertAfter(value)
-          }
-          else {
-            tail = next
-          }
-
-          count--
-        }
-
-        while (!tail.clone().step().equals(this.end()))
-          this.eraseAfter(tail)
+        while (this.size < count)
+          this.push(value)
 
         return this
       },
@@ -161,10 +95,8 @@ export class List extends PartialProxy {
         range = this.sourceRange$(range)
 
         this.clear()
-        let tail = this.beforeBegin()
-        for (const value of iterate(range)) {
-          tail.link = tail.link.insertAfter(value)
-        }
+        for (const value of iterate(range))
+          this.push(value)
 
         return this
       },
