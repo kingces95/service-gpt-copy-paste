@@ -171,8 +171,42 @@ const Tests = {
   },
 }
 
+const AfterTests = {
+  insertCountAfter: {
+    'in the middle of existing values': {
+      initial: [1, 5],
+      cursor: target => target.begin(),
+      count: 3,
+      value: 0,
+      end: [1, 0, 0, 0, 5],
+    },
+  },
+
+  replaceRangeAfter: {
+    'in the middle of existing values': {
+      initial: [1, -2, -3, 5],
+      first: target => target.begin(),
+      last: target => target.begin().step().step().step(),
+      source: [2, 3, 4],
+      end: [1, 2, 3, 4, 5],
+    },
+
+    'with the target used as source': {
+      initial: [1, 9, 8, 5],
+      first: target => target.begin(),
+      last: target => target.begin().step().step().step(),
+      source: target => target,
+      end: [1, 1, 9, 8, 5, 5],
+    },
+  },
+}
+
 const BulkEditableContainers = [
   VectorMap,
+]
+
+const AfterBulkEditableContainers = [
+  ForwardList,
 ]
 
 const BulkAssignableContainers = [
@@ -348,6 +382,72 @@ describe.each(BulkEditableContainers.map(Type => [Type.name, Type]))(
     })
   })
 
+})
+
+describe.each(AfterBulkEditableContainers.map(Type => [Type.name, Type]))(
+  '%s', (_, type) => {
+  describe('appendRange', () => {
+    it.each(supportedCases(Tests.appendRange))('%s', (_, {
+      initial,
+      source,
+      end,
+    }) => {
+      const target = createContainer(type, initial)
+
+      target.appendRange(createSource(source, target))
+
+      expect(valuesOf(target)).toEqual(end)
+    })
+  })
+
+  describe('prependRange', () => {
+    it.each(supportedCases(Tests.prependRange))('%s', (_, {
+      initial,
+      source,
+      end,
+    }) => {
+      const target = createContainer(type, initial)
+
+      target.prependRange(createSource(source, target))
+
+      expect(valuesOf(target)).toEqual(end)
+    })
+  })
+
+  describe('insertCountAfter', () => {
+    it.each(supportedCases(AfterTests.insertCountAfter))('%s', (_, {
+      initial,
+      cursor,
+      count,
+      value,
+      end,
+    }) => {
+      const target = createContainer(type, initial)
+
+      target.insertCountAfter(cursor(target), count, value)
+
+      expect(valuesOf(target)).toEqual(end)
+    })
+  })
+
+  describe('replaceRangeAfter', () => {
+    it.each(supportedCases(AfterTests.replaceRangeAfter))('%s', (_, {
+      initial,
+      first,
+      last,
+      source,
+      end,
+    }) => {
+      const target = createContainer(type, initial)
+
+      target.replaceRangeAfter(
+        first(target),
+        last(target),
+        createSource(source, target))
+
+      expect(valuesOf(target)).toEqual(end)
+    })
+  })
 })
 
 describe.each(BulkAssignableContainers.map(Type => [Type.name, Type]))(

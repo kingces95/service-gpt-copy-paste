@@ -311,6 +311,72 @@ export class BulkEditableContainerPart extends BulkAssignableContainerPart {
 
 }
 
+export class AfterBulkEditableContainerPart extends ContainerPart {
+  static [Abstracts] = {
+    beforeBegin() { },
+    insertRangeAfter(cursor, range) { },
+    eraseRangeAfter(first, last) { },
+  }
+
+  static [Defines] = {
+    appendRange(range) {
+      let cursor = this.beforeBegin()
+      const end = this.end()
+
+      while (!cursor.clone().step().equals(end))
+        cursor.step()
+
+      return this.insertRangeAfter(cursor, range)
+    },
+
+    prependRange(range) {
+      return this.insertRangeAfter(this.beforeBegin(), range)
+    },
+
+    insertCountAfter(cursor, count, value) {
+      const range = repeat(value, count)
+      return this.insertRangeAfter(cursor, range)
+    },
+
+    appendCount(count, value) {
+      let cursor = this.beforeBegin()
+      const end = this.end()
+
+      while (!cursor.clone().step().equals(end))
+        cursor.step()
+
+      return this.insertCountAfter(cursor, count, value)
+    },
+
+    prependCount(count, value) {
+      return this.insertCountAfter(this.beforeBegin(), count, value)
+    },
+
+    eraseCountAfter(cursor, count) {
+      const last = cursor.clone()
+      for (let i = 0; i <= count; i++)
+        last.step()
+
+      return this.eraseRangeAfter(cursor, last)
+    },
+
+    eraseFromAfter(cursor) {
+      return this.eraseRangeAfter(cursor, this.end())
+    },
+
+    eraseUntilAfter(cursor) {
+      return this.eraseRangeAfter(this.beforeBegin(), cursor)
+    },
+
+    replaceRangeAfter(first, last, replacementRange) {
+      replacementRange = this.sourceRange$(replacementRange)
+
+      this.eraseRangeAfter(first, last)
+      return this.insertRangeAfter(first, replacementRange)
+    },
+  }
+}
+
 export class GapEditableContainerPart extends BulkEditableContainerPart {
   static [Implements] = SizedContainerPart
   static [Abstracts] = {

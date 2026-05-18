@@ -25,6 +25,7 @@ import {
   ByteContainerPart,
   ClearableContainerPart,
   BulkAssignableContainerPart,
+  AfterBulkEditableContainerPart,
   BulkEditableContainerPart,
   AssociativeContainerPart,
   UnorderedSetContainerPart,
@@ -203,6 +204,7 @@ const Tests = {
     concepts: [
       ClearableContainerPart,
       BulkAssignableContainerPart,
+      AfterBulkEditableContainerPart,
       ...sequenceContainerConcepts,
       FrontEditableContainerPart],
     members: {
@@ -212,6 +214,17 @@ const Tests = {
       clear: true,
       resizeTo: true,
       assignRange: true,
+      insertRangeAfter: true,
+      eraseRangeAfter: true,
+      appendRange: true,
+      prependRange: true,
+      insertCountAfter: true,
+      appendCount: true,
+      prependCount: true,
+      eraseCountAfter: true,
+      eraseFromAfter: true,
+      eraseUntilAfter: true,
+      replaceRangeAfter: true,
     }
   },
   

@@ -40,6 +40,10 @@ const BulkEditableContainers = [
   Uint8Vector,
 ]
 
+const AfterBulkEditableContainers = [
+  ForwardList,
+]
+
 const BulkAssignableContainers = [
   ForwardList,
   List,
@@ -110,6 +114,73 @@ const Tests = {
       initial: [1, -2, -3, -4, 2],
       first: target => target.begin().move(1),
       last: target => target.begin().move(4),
+      end: [1, 2],
+    },
+  },
+
+  insertRangeAfter: {
+    'with an empty range': {
+      initial: [],
+      source: [],
+      after: target => target.beforeBegin(),
+      end: [],
+    },
+
+    'with a single value': {
+      initial: [],
+      source: [1],
+      after: target => target.beforeBegin(),
+      end: [1],
+    },
+
+    'with many values': {
+      initial: [],
+      source: [1, 2, 3],
+      after: target => target.beforeBegin(),
+      end: [1, 2, 3],
+    },
+
+    'in the middle of existing values': {
+      initial: [1, 5],
+      source: [2, 3, 4],
+      after: target => target.begin(),
+      end: [1, 2, 3, 4, 5],
+    },
+
+    'with the target used as source': {
+      initial: [1, 4],
+      source: target => target,
+      after: target => target.begin(),
+      end: [1, 1, 4, 4],
+    },
+  },
+
+  eraseRangeAfter: {
+    'with an empty range': {
+      initial: [1],
+      first: target => target.beforeBegin(),
+      last: target => target.begin(),
+      end: [1],
+    },
+
+    'with a single value': {
+      initial: [-1],
+      first: target => target.beforeBegin(),
+      last: target => target.end(),
+      end: [],
+    },
+
+    'with many values': {
+      initial: [-1, -2, -3],
+      first: target => target.beforeBegin(),
+      last: target => target.end(),
+      end: [],
+    },
+
+    'in the middle of existing values': {
+      initial: [1, -2, -3, -4, 2],
+      first: target => target.begin(),
+      last: target => target.begin().step().step().step().step(),
       end: [1, 2],
     },
   },
@@ -190,6 +261,39 @@ describe.each(BulkEditableContainers.map(Type => [Type.name, Type]))(
       const target = createContainer(type, initial)
 
       target.eraseRange(first(target), last(target))
+
+      expect(valuesOf(target)).toEqual(end)
+    })
+  })
+})
+
+describe.each(AfterBulkEditableContainers.map(Type => [Type.name, Type]))(
+  '%s', (_, type) => {
+  describe('insertRangeAfter', () => {
+    it.each(supportedCases(Tests.insertRangeAfter))('%s', (_, {
+      initial,
+      source,
+      after,
+      end,
+    }) => {
+      const target = createContainer(type, initial)
+
+      target.insertRangeAfter(after(target), createSource(source, target))
+
+      expect(valuesOf(target)).toEqual(end)
+    })
+  })
+
+  describe('eraseRangeAfter', () => {
+    it.each(supportedCases(Tests.eraseRangeAfter))('%s', (_, {
+      initial,
+      first,
+      last,
+      end,
+    }) => {
+      const target = createContainer(type, initial)
+
+      target.eraseRangeAfter(first(target), last(target))
 
       expect(valuesOf(target)).toEqual(end)
     })

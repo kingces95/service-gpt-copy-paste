@@ -21,6 +21,7 @@ import {
 import { 
   ContainerPart,
   BulkAssignableContainerPart,
+  AfterBulkEditableContainerPart,
   FrontEditableContainerPart,
 } from '../container-parts.js'
 import { iterate } from '@kingjs/cursor-algorithm'
@@ -167,6 +168,25 @@ export class ForwardList extends PartialProxy {
         }
 
         return this
+      },
+    })
+
+    extend(this, AfterBulkEditableContainerPart, {
+      insertRangeAfter(cursor, range) {
+        range = this.sourceRange$(range)
+
+        const tail = cursor.clone()
+        for (const value of iterate(range))
+          tail.link = tail.link.insertAfter(value)
+
+        return this
+      },
+
+      eraseRangeAfter(first, last) {
+        while (!first.clone().step().equals(last))
+          this.eraseAfter(first)
+
+        return last
       },
     })
   }
