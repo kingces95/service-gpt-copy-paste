@@ -10,7 +10,9 @@ import {
 import { 
   SizedContainerPart,
   EditableContainerPart,
+  BulkAssignableContainerPart,
 } from '../container-parts.js'
+import { iterate } from '@kingjs/cursor-algorithm'
 import {
   RewindLink,
 } from '../link/rewind-link.js'
@@ -76,6 +78,28 @@ export class Chain extends List {
         this._count--
         return result
       }
+    })
+
+    extend(this, BulkAssignableContainerPart, {
+      resizeTo(count, value = undefined) {
+        while (this.size > count)
+          this.pop()
+
+        while (this.size < count)
+          this.push(value)
+
+        return this
+      },
+
+      assignRange(range) {
+        range = this.sourceRange$(range)
+
+        this.clear()
+        for (const value of iterate(range))
+          this.push(value)
+
+        return this
+      },
     })
   }
 }

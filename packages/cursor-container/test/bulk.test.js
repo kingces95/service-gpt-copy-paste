@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import {
+  Chain,
   Deque,
+  List,
   Uint8Vector,
   VectorMap,
 } from '@kingjs/cursor-container'
@@ -9,6 +11,9 @@ import { SnapshotView } from '@kingjs/cursor-view'
 
 function createContainer(Type, values = []) {
   const result = new Type()
+
+  if (Type == List)
+    values = [...values].reverse()
 
   for (const value of values)
     result.insert(value, { })
@@ -29,10 +34,16 @@ function supportedCases(cases) {
   return Object.entries(cases)
 }
 
-const Containers = [
+const BulkEditableContainers = [
   Deque,
   VectorMap,
   Uint8Vector,
+]
+
+const BulkAssignableContainers = [
+  List,
+  Chain,
+  ...BulkEditableContainers,
 ]
 
 const Tests = {
@@ -152,7 +163,8 @@ const Tests = {
   },
 }
 
-describe.each(Containers.map(Type => [Type.name, Type]))('%s', (_, type) => {
+describe.each(BulkEditableContainers.map(Type => [Type.name, Type]))(
+  '%s', (_, type) => {
   describe('insertRange', () => {
     it.each(supportedCases(Tests.insertRange))('%s', (_, {
       initial,
@@ -182,7 +194,10 @@ describe.each(Containers.map(Type => [Type.name, Type]))('%s', (_, type) => {
       expect(valuesOf(target)).toEqual(end)
     })
   })
+})
 
+describe.each(BulkAssignableContainers.map(Type => [Type.name, Type]))(
+  '%s', (_, type) => {
   describe('resizeTo', () => {
     it.each(supportedCases(Tests.resizeTo))('%s', (_, {
       initial,

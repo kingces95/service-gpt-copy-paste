@@ -20,8 +20,10 @@ import {
 } from '@kingjs/cursor'
 import { 
   ContainerPart,
+  BulkAssignableContainerPart,
   FrontEditableContainerPart,
 } from '../container-parts.js'
+import { iterate } from '@kingjs/cursor-algorithm'
 import { 
   ContainerCursor,
 } from '../cursor/container-cursor.js'
@@ -131,6 +133,41 @@ export class List extends PartialProxy {
         return result
       },
       unshift(value) { this.insertAfter(value, this.beforeBegin()) },
+    })
+
+    extend(this, BulkAssignableContainerPart, {
+      resizeTo(count, value = undefined) {
+        let tail = this.beforeBegin()
+
+        while (count > 0) {
+          const next = tail.clone().step()
+          if (next.equals(this.end())) {
+            tail.link = tail.link.insertAfter(value)
+          }
+          else {
+            tail = next
+          }
+
+          count--
+        }
+
+        while (!tail.clone().step().equals(this.end()))
+          this.eraseAfter(tail)
+
+        return this
+      },
+
+      assignRange(range) {
+        range = this.sourceRange$(range)
+
+        this.clear()
+        let tail = this.beforeBegin()
+        for (const value of iterate(range)) {
+          tail.link = tail.link.insertAfter(value)
+        }
+
+        return this
+      },
     })
   }
 }

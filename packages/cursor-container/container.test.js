@@ -24,6 +24,7 @@ import {
   ReservableContainerPart,
   ByteContainerPart,
   ClearableContainerPart,
+  BulkAssignableContainerPart,
   BulkEditableContainerPart,
   AssociativeContainerPart,
   UnorderedSetContainerPart,
@@ -200,12 +201,17 @@ const Tests = {
   List: {
     type: List,
     concepts: [
+      ClearableContainerPart,
+      BulkAssignableContainerPart,
       ...sequenceContainerConcepts,
       FrontEditableContainerPart],
     members: {
       insert: true, erase: true,
       shift: true, unshift: true,
       beforeBegin: true, insertAfter: true, eraseAfter: true,
+      clear: true,
+      resizeTo: true,
+      assignRange: true,
     }
   },
   
@@ -213,13 +219,18 @@ const Tests = {
     type: Chain,
     concepts: [
       ...reversibleContainerConcepts,
+      ClearableContainerPart,
+      BulkAssignableContainerPart,
       SizedContainerPart],
     members: {
       insert: true, erase: true,
       beforeBegin: true, insertAfter: true, eraseAfter: true,
       size: true,
+      clear: true,
       shift: true, unshift: true,
       pop: true, push: true,
+      resizeTo: true,
+      assignRange: true,
     }
   },
   
@@ -227,6 +238,7 @@ const Tests = {
     type: Deque,
     concepts: [
       ClearableContainerPart,
+      BulkAssignableContainerPart,
       BulkEditableContainerPart,
       ...indexableContainerConcepts],
     members: {
@@ -237,11 +249,13 @@ const Tests = {
       at: true, // setAt: true, // should, but does not
       clear: true,
       
+      // BulkAssignableContainerPart members
+      resizeTo: true,
+      assignRange: true,
+
       // BulkEditableContainerPart members
       insertRange: true,
       eraseRange: true,
-      resizeTo: true,
-      assignRange: true,
     }
   },
 
@@ -250,6 +264,7 @@ const Tests = {
     concepts: [
       ClearableContainerPart,
       EditableContainerPart,
+      BulkAssignableContainerPart,
       BulkEditableContainerPart,
       ...indexableContainerConcepts],
     members: {
@@ -260,17 +275,20 @@ const Tests = {
       at: true, setAt: true,
       clear: true,
 
+      // BulkAssignableContainerPart members
+      resizeTo: true,
+      assignRange: true,
+
       // BulkEditableContainerPart members
       insertRange: true,
       eraseRange: true,
-      resizeTo: true,
-      assignRange: true,
     }
   },
   
   Uint8Vector: {
     type: Uint8Vector,
     concepts: [
+      BulkAssignableContainerPart,
       BulkEditableContainerPart,
       ...bufferConainerConcepts],
     members: {
@@ -283,11 +301,13 @@ const Tests = {
       span: true,
       // clear: true,
 
+      // BulkAssignableContainerPart members
+      resizeTo: true,
+      assignRange: true,
+
       // BulkEditableContainerPart members
       insertRange: true,
       eraseRange: true,
-      resizeTo: true,
-      assignRange: true,
     }
   },
 }

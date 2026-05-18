@@ -50,17 +50,6 @@ export class Deque extends PartialProxy {
     })
 
     extend(this, BulkEditableContainerPart, {
-      insertRange(cursor, range) {
-        this._denque.splice(cursor.index, 0, ...range)
-        return this
-      },
-
-      eraseRange(first, last) {
-        const result = first.clone()
-        this._denque.remove(first.index, last.index - first.index)
-        return result
-      },
-
       resizeTo(count, value = undefined) {
         if (count < this.size) {
           this._denque.remove(count, this.size - count)
@@ -78,6 +67,17 @@ export class Deque extends PartialProxy {
 
         this.clear()
         return this.insertRange(this.begin(), range)
+      },
+      
+      insertRange(cursor, range) {
+        this._denque.splice(cursor.index, 0, ...range)
+        return this
+      },
+
+      eraseRange(first, last) {
+        const result = first.clone()
+        this._denque.remove(first.index, last.index - first.index)
+        return result
       },
     })
 

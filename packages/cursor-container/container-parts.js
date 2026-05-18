@@ -213,13 +213,45 @@ export class UnorderedMapContainerPart extends AssociativeContainerPart {
   }
 }
 
-export class BulkEditableContainerPart extends EditableContainerPart {
-  static [Implements] = ClearableContainerPart
+export class BulkAssignableContainerPart extends ClearableContainerPart {
+  static [Abstracts] = {
+    resizeTo(count, value) { },
+    assignRange(range) { },
+  }
+
+  static [Defines] = {
+    growTo(count, value = 0) {
+      return this.resizeTo(count, value)
+    },
+
+    truncateTo(count) {
+      return this.resizeTo(count)
+    },
+
+    clear() {
+      return this.resizeTo(0)
+    },
+
+    assignCount(count, value) {
+      const range = repeat(value, count)
+      return this.assignRange(range)
+    },
+  }
+
+  sourceRange$(range) {
+    const first = range.begin()
+    if (first.range == this)
+      return snapshot(range)
+
+    return range
+  }
+}
+
+export class BulkEditableContainerPart extends BulkAssignableContainerPart {
+  static [Implements] = EditableContainerPart
   static [Abstracts] = {
     insertRange(cursor, range) { },
     eraseRange(first, last) { },
-    resizeTo(count, value) { },
-    assignRange(range) { },
   }
 
   // attachments that depend on abstract operations
@@ -269,41 +301,18 @@ export class BulkEditableContainerPart extends EditableContainerPart {
       return this.eraseRange(this.begin(), cursor)
     },
 
-    clear() {
-      return this.eraseRange(this.begin(), this.end())
-    },
-
-    growTo(count, value = 0) {
-      return this.resizeTo(count, value)
-    },
-
-    truncateTo(count) {
-      return this.resizeTo(count)
-    },
-
     replaceRange(first, last, replacementRange) {
       replacementRange = this.sourceRange$(replacementRange)
 
       const cursor = this.eraseRange(first, last)
       return this.insertRange(cursor, replacementRange)
     },
-
-    assignCount(count, value) {
-      const range = repeat(value, count)
-      return this.assignRange(range)
-    },
   }
 
-  sourceRange$(range) {
-    const first = range.begin()
-    if (first.range == this)
-      return snapshot(range)
-
-    return range
-  }
 }
 
 export class GapEditableContainerPart extends BulkEditableContainerPart {
+  static [Implements] = SizedContainerPart
   static [Abstracts] = {
     openGap$(cursor, count) { },
     closeGap$(first, last) { },

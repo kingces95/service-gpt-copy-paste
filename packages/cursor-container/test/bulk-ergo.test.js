@@ -1,12 +1,17 @@
 import { describe, it, expect } from 'vitest'
 import {
+  Chain,
+  List,
   VectorMap,
 } from '@kingjs/cursor-container'
 import { iterate } from '@kingjs/cursor-algorithm'
 import { SnapshotView } from '@kingjs/cursor-view'
 
-function createContainer(values = []) {
-  const result = new VectorMap()
+function createContainer(type, values = []) {
+  const result = new type()
+
+  if (type == List)
+    values = [...values].reverse()
 
   for (const value of values)
     result.insert(value, { })
@@ -166,7 +171,18 @@ const Tests = {
   },
 }
 
-describe('VectorMap', () => {
+const BulkEditableContainers = [
+  VectorMap,
+]
+
+const BulkAssignableContainers = [
+  List,
+  Chain,
+  ...BulkEditableContainers,
+]
+
+describe.each(BulkEditableContainers.map(Type => [Type.name, Type]))(
+  '%s', (_, type) => {
   describe('insertAt', () => {
     it.each(supportedCases(Tests.insertAt))('%s', (_, {
       initial,
@@ -174,7 +190,7 @@ describe('VectorMap', () => {
       cursor,
       end,
     }) => {
-      const target = createContainer(initial)
+      const target = createContainer(type, initial)
 
       target.insertAt(value, cursor(target))
 
@@ -188,7 +204,7 @@ describe('VectorMap', () => {
       cursor,
       end,
     }) => {
-      const target = createContainer(initial)
+      const target = createContainer(type, initial)
 
       target.eraseAt(cursor(target))
 
@@ -202,7 +218,7 @@ describe('VectorMap', () => {
       source,
       end,
     }) => {
-      const target = createContainer(initial)
+      const target = createContainer(type, initial)
 
       target.appendRange(createSource(source, target))
 
@@ -216,7 +232,7 @@ describe('VectorMap', () => {
       source,
       end,
     }) => {
-      const target = createContainer(initial)
+      const target = createContainer(type, initial)
 
       target.prependRange(createSource(source, target))
 
@@ -232,7 +248,7 @@ describe('VectorMap', () => {
       value,
       end,
     }) => {
-      const target = createContainer(initial)
+      const target = createContainer(type, initial)
 
       target.insertCount(cursor(target), count, value)
 
@@ -247,7 +263,7 @@ describe('VectorMap', () => {
       value,
       end,
     }) => {
-      const target = createContainer(initial)
+      const target = createContainer(type, initial)
 
       target.appendCount(count, value)
 
@@ -262,7 +278,7 @@ describe('VectorMap', () => {
       value,
       end,
     }) => {
-      const target = createContainer(initial)
+      const target = createContainer(type, initial)
 
       target.prependCount(count, value)
 
@@ -277,7 +293,7 @@ describe('VectorMap', () => {
       count,
       end,
     }) => {
-      const target = createContainer(initial)
+      const target = createContainer(type, initial)
 
       target.eraseCount(cursor(target), count)
 
@@ -291,7 +307,7 @@ describe('VectorMap', () => {
       cursor,
       end,
     }) => {
-      const target = createContainer(initial)
+      const target = createContainer(type, initial)
 
       target.eraseFrom(cursor(target))
 
@@ -305,7 +321,7 @@ describe('VectorMap', () => {
       cursor,
       end,
     }) => {
-      const target = createContainer(initial)
+      const target = createContainer(type, initial)
 
       target.eraseUntil(cursor(target))
 
@@ -313,12 +329,35 @@ describe('VectorMap', () => {
     })
   })
 
+  describe('replaceRange', () => {
+    it.each(supportedCases(Tests.replaceRange))('%s', (_, {
+      initial,
+      first,
+      last,
+      source,
+      end,
+    }) => {
+      const target = createContainer(type, initial)
+
+      target.replaceRange(
+        first(target),
+        last(target),
+        createSource(source, target))
+
+      expect(valuesOf(target)).toEqual(end)
+    })
+  })
+
+})
+
+describe.each(BulkAssignableContainers.map(Type => [Type.name, Type]))(
+  '%s', (_, type) => {
   describe('clear', () => {
     it.each(supportedCases(Tests.clear))('%s', (_, {
       initial,
       end,
     }) => {
-      const target = createContainer(initial)
+      const target = createContainer(type, initial)
 
       target.clear()
 
@@ -333,7 +372,7 @@ describe('VectorMap', () => {
       value,
       end,
     }) => {
-      const target = createContainer(initial)
+      const target = createContainer(type, initial)
 
       target.growTo(count, value)
 
@@ -347,28 +386,9 @@ describe('VectorMap', () => {
       count,
       end,
     }) => {
-      const target = createContainer(initial)
+      const target = createContainer(type, initial)
 
       target.truncateTo(count)
-
-      expect(valuesOf(target)).toEqual(end)
-    })
-  })
-
-  describe('replaceRange', () => {
-    it.each(supportedCases(Tests.replaceRange))('%s', (_, {
-      initial,
-      first,
-      last,
-      source,
-      end,
-    }) => {
-      const target = createContainer(initial)
-
-      target.replaceRange(
-        first(target),
-        last(target),
-        createSource(source, target))
 
       expect(valuesOf(target)).toEqual(end)
     })
@@ -381,7 +401,7 @@ describe('VectorMap', () => {
       value,
       end,
     }) => {
-      const target = createContainer(initial)
+      const target = createContainer(type, initial)
 
       target.assignCount(count, value)
 
