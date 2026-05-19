@@ -7,6 +7,9 @@ import { FunctionBuilder } from '@kingjs/function-builder'
 
 export {
   CreateThunk,
+  TypeChecks,
+  ThisChecks,
+  ArgChecks,
   Preconditions,
   Postconditions,
   TypePrecondition,

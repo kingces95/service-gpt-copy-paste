@@ -4,6 +4,9 @@ import { abstract } from '@kingjs/abstract'
 import { Descriptor } from '@kingjs/descriptor'
 import { 
   CreateThunk,
+  TypeChecks,
+  ThisChecks,
+  ArgChecks,
   TypePrecondition,
   TypePostcondition,
   Preconditions,
@@ -42,6 +45,57 @@ function myExtendedPostcondition() {
   this.push('MyExtendedType:postcondition')
 }
 
+// -- Declarative Checks --
+
+class TypeReady {
+  static [Symbol.hasInstance](value) {
+    value.push('MyType:typeCheck')
+    return true
+  }
+}
+
+class ExtendedTypeReady {
+  static [Symbol.hasInstance](value) {
+    value.push('MyExtendedType:typeCheck')
+    return true
+  }
+}
+
+class ThisReady {
+  static [Symbol.hasInstance](value) {
+    value.push('MyType:thisCheck')
+    return true
+  }
+}
+
+class ExtendedThisReady {
+  static [Symbol.hasInstance](value) {
+    value.push('MyExtendedType:thisCheck')
+    return true
+  }
+}
+
+class FirstArg {
+  static [Symbol.hasInstance](value) {
+    value.push('MyType:firstArgCheck')
+    return true
+  }
+}
+
+class ExtendedFirstArg {
+  static [Symbol.hasInstance](value) {
+    value.push('MyExtendedType:firstArgCheck')
+    return true
+  }
+}
+
+class SecondArg {
+  static [Symbol.hasInstance](value) {
+    value.push('MyType:secondArgCheck')
+    return true
+  }
+}
+
 // -- Types --
 
 class MyVanillaType extends PartialProxy {
@@ -68,19 +122,25 @@ class MyAbstractType extends MyBaseType {
 MyAbstractType.prototype.member = abstract
 
 class MyType extends MyBaseType {
+  static [TypeChecks] = TypeReady
   static [TypePrecondition] = myTypePrecondition
   static [TypePostcondition] = myTypePostcondition
+  static [ThisChecks] = { member: ThisReady }
+  static [ArgChecks] = { member: [FirstArg, SecondArg] }
   static [Preconditions] = { member: myPrecondition }
   static [Postconditions] = { member: myPostcondition }
-  member() { this.push('MyType:member') }
+  member(first, second) { this.push('MyType:member') }
 }
 
 class MyExtendedType extends MyType { 
+  static [TypeChecks] = [ExtendedTypeReady]
   static [TypePrecondition] = myExtendedTypePrecondition
   static [TypePostcondition] = myExtendedTypePostcondition
+  static [ThisChecks] = { member: [ExtendedThisReady] }
+  static [ArgChecks] = { member: [ExtendedFirstArg] }
   static [Preconditions] = { member: myExtendedPrecondition }
   static [Postconditions] = { member: myExtendedPostcondition }
-  member() { super.member() }
+  member(first, second) { super.member(first, second) }
 }
 
 // -- Test Cases --
@@ -102,31 +162,62 @@ const AbstractType = {
 const Type = {
   type: MyType,
   conditions: {
-    typePrecondition: [myTypePrecondition],
+    typePrecondition: [
+      expect.any(Function),
+      myTypePrecondition,
+    ],
     typePostcondition: [myTypePostcondition],
-    precondition: [myPrecondition],
+    precondition: [
+      expect.any(Function),
+      expect.any(Function),
+      myPrecondition,
+    ],
     postcondition: [myPostcondition],
   },
   calls: [
+    'MyType:typeCheck',
     'MyType:typePrecondition',
+    'MyType:thisCheck',
+    'MyType:firstArgCheck',
+    'MyType:secondArgCheck',
     'MyType:precondition',
     'MyType:member',
     'MyType:postcondition',
     'MyType:typePostcondition',
-  ]
+  ],
+  args: actual => [actual, actual],
 }
 
 const ExtendedType = {
   type: MyExtendedType,
   conditions: {
-    typePrecondition: [myTypePrecondition, myExtendedTypePrecondition],
+    typePrecondition: [
+      expect.any(Function),
+      expect.any(Function),
+      myTypePrecondition,
+      myExtendedTypePrecondition,
+    ],
     typePostcondition: [myExtendedTypePostcondition, myTypePostcondition],
-    precondition: [myPrecondition, myExtendedPrecondition],
+    precondition: [
+      expect.any(Function),
+      expect.any(Function),
+      expect.any(Function),
+      expect.any(Function),
+      myPrecondition,
+      myExtendedPrecondition,
+    ],
     postcondition: [myExtendedPostcondition, myPostcondition],
   },
   calls: [
+    'MyType:typeCheck',
+    'MyExtendedType:typeCheck',
     'MyType:typePrecondition',
     'MyExtendedType:typePrecondition',
+    'MyType:thisCheck',
+    'MyExtendedType:thisCheck',
+    'MyType:firstArgCheck',
+    'MyType:secondArgCheck',
+    'MyExtendedType:firstArgCheck',
     'MyType:precondition',
     'MyExtendedType:precondition',
     'MyType:member',
@@ -134,7 +225,8 @@ const ExtendedType = {
     'MyType:postcondition',
     'MyExtendedType:typePostcondition',
     'MyType:typePostcondition',
-  ]
+  ],
+  args: actual => [actual, actual],
 }
 
 const Tests = [
@@ -147,7 +239,7 @@ const Tests = [
 // -- Tests --
 
 describe.each(Tests)('%s', 
-  (_, { type, instanceType = type, conditions, calls }) => {
+  (_, { type, instanceType = type, conditions, calls, args }) => {
 
   let thunk
   let instance
@@ -166,7 +258,8 @@ describe.each(Tests)('%s',
     if (!calls) return
 
     const actual = new instanceType()
-    thunk.value.call(actual)
+    const actualArgs = typeof args == 'function' ? args(actual) : args
+    thunk.value.call(actual, ...(actualArgs ?? []))
     expect(actual.array).toEqual(calls)
   })
 })

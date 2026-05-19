@@ -3,9 +3,13 @@ import { trimPojo } from '@kingjs/pojo-trim'
 import { Prototype } from '@kingjs/prototype'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { PartialType } from '@kingjs/partial-type'
+import { contract } from '@kingjs/function-contract'
 import { 
   Preconditions, 
   Postconditions,
+  TypeChecks,
+  ThisChecks,
+  ArgChecks,
   TypePrecondition, 
   TypePostcondition,
 } from '@kingjs/partial-symbols'
@@ -13,29 +17,26 @@ import {
 // ____________________________________________________________________________
 // METADATA
 
-// PartialReflector supports metadata which is a prototype chain of the 
+// PartialMetadata supports metadata which is a prototype chain of the 
 // static field descriptors of a type found by traversing the type
 // hiearchy of the instance prototype chain. For example, implementing
 
-  //  myContainer instanceof InputCursorConcept
+  //  myContainer instanceof InputRangeConcept
   
 // where MyContainer declares an an associated cursorType as an
 // InputCursor like,
 
-
-// TODO Fix up. Replace InputCursorConcept with InputRangeConcept
-
-  //  class InputCursorConcept extends Concept { 
-  //    static cursorType = InputCursorConcept 
-  //    next() { }
-  //    get value() { } 
-  //  }
-  //  class InputCursorConcept extends Concept { 
-  //  }  
+    //  class InputCursorConcept extends Concept { 
+    //    step() { }
+    //    get value() { } 
+    //  }
+    //  class InputRangeConcept extends Concept { 
+    //    static cursorType = InputCursorConcept 
+    //  }  
 
   //  class MyCursor exends Cursor {
   //    static { extends(this, InputCursorConcept) }
-  //    next() {...}
+  //    step() {...}
   //    get value() {...} 
   //  }
   //  class MyPartialContainer extends PartialClass {
@@ -52,7 +53,7 @@ import {
 // requires testing if MyContainer's cursor is an InputCurosr. Specifically,
 // this requires testing if MyContainer has a static cursorType whose value
 // is a type an instance of which would be instanceof the concept found 
-// in the static cursorType on InputContainerPart namely 
+// in the static cursorType on InputRangeConcept namely 
 // InputCursorConcept. 
 
 // A naive implementation would search the static prototype chain created
@@ -86,7 +87,7 @@ import {
 // instance prototype chain where each prototype in the chain has a 
 // copy of the _static_ descriptors of the type it represents. 
 
-  // PartialReflector Metadata Prototype Chain:
+  // PartialMetadata Instance Prototype Chain:
 
   // MyContainer (myStaticField)
   // └── MyPartialContainer (cursorType)
@@ -102,6 +103,8 @@ export const PartialMetadata = PartialReflect.map({
   getPrototype: function(type) {
     const hierarchy = [...this.hierarchy(type)]
 
+    // reverse because prototype chains are created from the bottome up
+    // by Prototype.create but hierarchy is returned from the top down. 
     return hierarchy.reverse().reduce((prototype, currentType) => {
       const descriptors = { }
 
@@ -151,15 +154,15 @@ export function satisfiesAssociations(ctor, partialType) {
 // ____________________________________________________________________________
 // PRECONDITIONS AND POSTCONDITIONS
 
-// PartialReflector also supports preconditions and postconditions which are
-// prototypes chains of the function descriptors of a type found by traversing
-// the type hierarchy of the metadata prototype chain. 
+// PartialPreconditions supports preconditions which is a prototype chains of 
+// the function descriptors of a type found by traversing the type hierarchy of 
+// the metadata prototype chain. 
 
 // Continuing the above example, if MyCursor, InputCursorConcept and Cursor 
 // defined preconditions like,
 
   //  MyCursor[Preconditions] = {
-  //    next() { ...precondition... }
+  //    step() { ...precondition... }
   //  }
 
   //  Cursor[Preconditions] = {
@@ -168,7 +171,7 @@ export function satisfiesAssociations(ctor, partialType) {
 
   //  InputCursorConcept[Preconditions] = {
   //    value() { ...precondition... }
-  //    next() { ...precondition... }
+  //    step() { ...precondition... }
   //  }
 
 // then the metadata prototype chain of MyCursor would be like,
@@ -182,16 +185,20 @@ export function satisfiesAssociations(ctor, partialType) {
 // which is transformed into a preconditions chain by expanding the 
 // Preconditions POJOs into a chain like,
 
-  // MyCursor (next)
-  // └── InputCursorConcept (value, next)
+  // MyCursor (step)
+  // └── InputCursorConcept (value, step)
   //     └── Cursor (value)
   //         └── null
 
 // Querying the preconditions chain for MyCursor for precondition by name
 // would yield descriptors for all relevant preconditions. For example, 
-// querying for the next precondition would yield the next preconditions 
+// querying for the step precondition would yield the step preconditions 
 // on MyCursor and InputCursorConcept but not Cursor since Cursor does 
-// not define a next precondition. 
+// not define a step precondition. 
+
+// PartialPostconditions, PartialThisChecks and PartialArgChecks are 
+// similarly defined and useful for quering metadata defined use their 
+// respective symbols.
 
 function partialReflectOnMetaObject(symbol) {
   return PartialMetadata.map({
@@ -213,11 +220,24 @@ export const PartialPreconditions
 export const PartialPostconditions 
   = partialReflectOnMetaObject(Postconditions)
 
+export const PartialThisChecks
+  = partialReflectOnMetaObject(ThisChecks)
+
+export const PartialArgChecks
+  = partialReflectOnMetaObject(ArgChecks)
+
 function getTypeConditions(type, symbol) {
   return [...PartialMetadata.getValue(type, symbol, {
     includeOverridden: true,
     descriptorType: 'field',
     instanceOf: Function,
+  }).map(({ value }) => value)]
+}
+
+function getTypeChecks(type) {
+  return [...PartialMetadata.getValue(type, TypeChecks, {
+    includeOverridden: true,
+    descriptorType: 'field',
   }).map(({ value }) => value)]
 }
 
@@ -245,15 +265,57 @@ function getMemberConditions(reflect, type, key) {
   return result
 }
 
+function getMemberChecks(reflect, type, key) {
+  const result = []
+
+  for (const current of reflect.getDescriptor(type, key)) {
+    switch (typeof current) {
+      case 'function': break
+      case 'object':
+        if ('value' in current)
+          result.push(current.value)
+        break
+      default:
+        assert(false, 'Unexpected type: ' + typeof current)
+    }
+  }
+
+  return result
+}
+
+function createTypeCheck(requirements) {
+  const check = contract([requirements])
+  return function() { check(this) }
+}
+
+function createThisCheck(requirements) {
+  const check = contract([requirements])
+  return function() { check(this) }
+}
+
+function createArgCheck(requirements) {
+  return contract(requirements)
+}
+
 export function getConditions(type, key) {
+  const typeCheck = getTypeChecks(type)
   const typePrecondition = getTypeConditions(type, TypePrecondition)
   const typePostcondition = getTypeConditions(type, TypePostcondition)
   const precondition = getMemberConditions(PartialPreconditions, type, key)
   const postcondition = getMemberConditions(PartialPostconditions, type, key)
+  const thisCheck = getMemberChecks(PartialThisChecks, type, key)
+  const argCheck = getMemberChecks(PartialArgChecks, type, key)
 
   const conditions = trimPojo({
-    typePrecondition: typePrecondition.reverse(), 
-    precondition: precondition.value.reverse(),
+    typePrecondition: [
+      ...typeCheck.reverse().map(createTypeCheck),
+      ...typePrecondition.reverse(),
+    ], 
+    precondition: [
+      ...thisCheck.reverse().map(createThisCheck),
+      ...argCheck.reverse().map(createArgCheck),
+      ...precondition.value.reverse(),
+    ],
     getPrecondition: precondition.get.reverse(),
     setPrecondition: precondition.set.reverse(), 
 

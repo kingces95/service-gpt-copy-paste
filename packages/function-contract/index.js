@@ -1,4 +1,5 @@
 import { assert } from '@kingjs/assert'
+import { asArray } from '@kingjs/as-array'
 
 export { Preconditions } from '@kingjs/partial-symbols'
 
@@ -14,6 +15,8 @@ export function contract(requirements, fn) {
   assert(typeof fn == 'function',
     'Argument must be a function.')
 
+  requirements = normalizeRequirements(requirements)
+
   const thunk = function(...args) {
     checkSlots(requirements, args)
     return fn.apply(this, args)
@@ -27,12 +30,19 @@ export function contract(requirements, fn) {
   return thunk
 }
 
+function normalizeRequirements(requirements) {
+  if (requirements == null)
+    return null
+
+  assert(Array.isArray(requirements),
+    'Function contract types must be an array.')
+
+  return requirements.map(asArray)
+}
+
 function checkSlots(types, values) {
   if (types == null)
     return
-
-  assert(Array.isArray(types),
-    'Function contract types must be an array.')
 
   for (let i = 0; i < types.length; i++)
     checkSlot(types[i], values[i])

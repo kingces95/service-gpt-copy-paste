@@ -41,6 +41,17 @@ describe('contract', () => {
       'Value must be less than ten.')
   })
 
+  it('should wrap unwrapped slot checks', () => {
+    function add(left, right) { return left + right }
+    const checkedAdd = contract([Positive, LessThanTen], add)
+
+    expect(checkedAdd(1, 2)).toBe(3)
+    expect(() => checkedAdd(0, 2)).toThrow(
+      'Value must be positive.')
+    expect(() => checkedAdd(1, 10)).toThrow(
+      'Value must be less than ten.')
+  })
+
   it('should treat ordinary types as instanceof checks', () => {
     function identity(value) { return value }
     const checkedIdentity = contract([[Thing]], identity)
