@@ -259,7 +259,7 @@ const Tests = {
       size: true,
       shift: true, unshift: true,
       pop: true, push: true,
-      at: true, // setAt: true, // should, but does not
+      at: true, setAt: true,
       clear: true,
       
       // BulkAssignableContainerPart members

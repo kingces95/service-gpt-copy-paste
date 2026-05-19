@@ -6,6 +6,8 @@ import {
   ForwardCursorConcept,
   BidirectionalCursorConcept,
   RandomAccessCursorConcept,
+  OffsetReadableCursorConcept,
+  OffsetWritableCursorConcept,
   ContiguousCursorConcept } from './cursor-concepts.js'
 import { Defines } from '@kingjs/partial-class'
 
@@ -80,6 +82,16 @@ export function isRandomAccessRange(range) {
     range.prototypeCursor instanceof RandomAccessCursorConcept
 }
 
+export function isOffsetReadableRange(range) {
+  return isRandomAccessRange(range) &&
+    range.prototypeCursor instanceof OffsetReadableCursorConcept
+}
+
+export function isOffsetWritableRange(range) {
+  return isRandomAccessRange(range) &&
+    range.prototypeCursor instanceof OffsetWritableCursorConcept
+}
+
 export function isContiguousRange(range) {
   return isRandomAccessRange(range) &&
     range.prototypeCursor instanceof ContiguousCursorConcept
@@ -118,6 +130,18 @@ export class BidirectionalRangeProbe extends ForwardRangeProbe {
 export class RandomAccessRangeProbe extends BidirectionalRangeProbe {
   static [Symbol.hasInstance](range) {
     return isRandomAccessRange(range)
+  }
+}
+
+export class OffsetReadableRangeProbe extends RandomAccessRangeProbe {
+  static [Symbol.hasInstance](range) {
+    return isOffsetReadableRange(range)
+  }
+}
+
+export class OffsetWritableRangeProbe extends RandomAccessRangeProbe {
+  static [Symbol.hasInstance](range) {
+    return isOffsetWritableRange(range)
   }
 }
 

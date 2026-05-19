@@ -46,7 +46,7 @@ export class Deque extends PartialProxy {
 
     extend(this, IndexableContainerPart, {
       at(index) { return this._denque.get(index) },
-      setAt(index, offset, value) { throwNotSupported() },
+      setAt(index, value) { this._denque.splice(index, 1, value) },
     })
 
     extend(this, BulkEditableContainerPart, {

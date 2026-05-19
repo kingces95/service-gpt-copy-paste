@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { RangeConcept, RandomAccessRangeProbe } from '@kingjs/cursor'
+import { 
+  RangeConcept, 
+  RandomAccessRangeProbe,
+  OffsetReadableRangeProbe,
+  OffsetWritableRangeProbe,
+} from '@kingjs/cursor'
 import { ArrayMap } from '@kingjs/cursor-container'
 import { iterate } from '@kingjs/cursor-algorithm'
 import { snapshot, subrange } from '@kingjs/cursor-view'
@@ -22,6 +27,8 @@ describe('subrange', () => {
 
     expect(range).toBeInstanceOf(RangeConcept)
     expect(range).toBeInstanceOf(RandomAccessRangeProbe)
+    expect(range).toBeInstanceOf(OffsetReadableRangeProbe)
+    expect(range).toBeInstanceOf(OffsetWritableRangeProbe)
     expect(range.prototypeCursor).toBe(first)
     expect(range.begin().equals(first)).toBe(true)
     expect(range.end().equals(last)).toBe(true)
@@ -58,6 +65,8 @@ describe('snapshot', () => {
 
     expect(range).toBeInstanceOf(RangeConcept)
     expect(range).toBeInstanceOf(RandomAccessRangeProbe)
+    expect(range).toBeInstanceOf(OffsetReadableRangeProbe)
+    expect(range).not.toBeInstanceOf(OffsetWritableRangeProbe)
     expect([...iterate(range)]).toEqual([1, 2, 3])
   })
 })
