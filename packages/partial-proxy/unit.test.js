@@ -197,7 +197,7 @@ const ExtendedType = {
       myTypePrecondition,
       myExtendedTypePrecondition,
     ],
-    typePostcondition: [myExtendedTypePostcondition, myTypePostcondition],
+    typePostcondition: [myTypePostcondition, myExtendedTypePostcondition],
     precondition: [
       expect.any(Function),
       expect.any(Function),
@@ -206,7 +206,7 @@ const ExtendedType = {
       myPrecondition,
       myExtendedPrecondition,
     ],
-    postcondition: [myExtendedPostcondition, myPostcondition],
+    postcondition: [myPostcondition, myExtendedPostcondition],
   },
   calls: [
     'MyType:typeCheck',
@@ -221,10 +221,10 @@ const ExtendedType = {
     'MyType:precondition',
     'MyExtendedType:precondition',
     'MyType:member',
-    'MyExtendedType:postcondition',
     'MyType:postcondition',
-    'MyExtendedType:typePostcondition',
+    'MyExtendedType:postcondition',
     'MyType:typePostcondition',
+    'MyExtendedType:typePostcondition',
   ],
   args: actual => [actual, actual],
 }

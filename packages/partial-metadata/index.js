@@ -229,6 +229,7 @@ export const PartialArgChecks
 function getTypeConditions(type, symbol) {
   return [...PartialMetadata.getValue(type, symbol, {
     includeOverridden: true,
+    reverseHierarchy: true,
     descriptorType: 'field',
     instanceOf: Function,
   }).map(({ value }) => value)]
@@ -237,6 +238,7 @@ function getTypeConditions(type, symbol) {
 function getTypeChecks(type) {
   return [...PartialMetadata.getValue(type, TypeChecks, {
     includeOverridden: true,
+    reverseHierarchy: true,
     descriptorType: 'field',
   }).map(({ value }) => value)]
 }
@@ -248,7 +250,9 @@ function getMemberConditions(reflect, type, key) {
     set: [],
   }
 
-  for (const current of reflect.getDescriptor(type, key)) {
+  for (const current of reflect.getDescriptor(type, key, {
+    reverseHierarchy: true,
+  })) {
     switch (typeof current) {
       case 'function': break
       case 'object':
@@ -268,7 +272,9 @@ function getMemberConditions(reflect, type, key) {
 function getMemberChecks(reflect, type, key) {
   const result = []
 
-  for (const current of reflect.getDescriptor(type, key)) {
+  for (const current of reflect.getDescriptor(type, key, {
+    reverseHierarchy: true,
+  })) {
     switch (typeof current) {
       case 'function': break
       case 'object':
@@ -308,16 +314,16 @@ export function getConditions(type, key) {
 
   const conditions = trimPojo({
     typePrecondition: [
-      ...typeCheck.reverse().map(createTypeCheck),
-      ...typePrecondition.reverse(),
+      ...typeCheck.map(createTypeCheck),
+      ...typePrecondition,
     ], 
     precondition: [
-      ...thisCheck.reverse().map(createThisCheck),
-      ...argCheck.reverse().map(createArgCheck),
-      ...precondition.value.reverse(),
+      ...thisCheck.map(createThisCheck),
+      ...argCheck.map(createArgCheck),
+      ...precondition.value,
     ],
-    getPrecondition: precondition.get.reverse(),
-    setPrecondition: precondition.set.reverse(), 
+    getPrecondition: precondition.get,
+    setPrecondition: precondition.set, 
 
     typePostcondition,
     postcondition: postcondition.value,

@@ -74,9 +74,9 @@ export class Es6Prototype {
       || this.#knownKeyFn?.(type, name) == true
   }
 
-  *hierarchy(type) {
+  *hierarchy(type, { reverseHierarchy } = { }) {
     const prototype = this.getPrototype(type)
-    yield* Prototype.chain(prototype)
+    yield* Prototype.chain(prototype, { reverseHierarchy })
       .map(link => link.constructor)
   }
   
@@ -117,10 +117,14 @@ export class Es6Prototype {
       .filter(name => !this.isKnownKey(type, name))
   }
 
-  *keys(type, { includeOverridden = false } = { }) {
+  *keys(type, { 
+    includeOverridden = false,
+    reverseHierarchy,
+  } = { }) {
     const prototype = this.getPrototype(type)
     yield* Prototype.keys(prototype, { 
       includeOverridden, 
+      reverseHierarchy,
       filter: (type, key) => !this.isKnownKey(type, key) 
     })
   }
@@ -141,18 +145,27 @@ export class Es6Prototype {
     })
   }  
 
-  *getDescriptor(type, name, { descriptorType } = { }) {
+  *getDescriptor(type, name, { 
+    descriptorType,
+    reverseHierarchy,
+  } = { }) {
     const prototype = this.getPrototype(type)
     yield* Prototype.getDescriptor(prototype, name, {
+      reverseHierarchy,
       filter: (host, key, descriptor) => !this.isKnownKey(host, key)
         && isTypeof(descriptor, descriptorType)
     })
   }
 
-  *descriptors(type, { descriptorType, includeOverridden } = { }) {
+  *descriptors(type, { 
+    descriptorType, 
+    includeOverridden,
+    reverseHierarchy,
+  } = { }) {
     const prototype = this.getPrototype(type)
     yield* Prototype.descriptors(prototype, {
       includeOverridden,
+      reverseHierarchy,
       filter: (host, key, descriptor) => !this.isKnownKey(host, key)
         && isTypeof(descriptor, descriptorType)
     })
@@ -266,9 +279,11 @@ export class Es6Prototype {
         .filter(instanceOfFilter(instanceOf))
   }
 
-  *getValue(type, name, { instance, descriptorType, instanceOf } = { }) {
+  *getValue(type, name, { 
+    instance, descriptorType, instanceOf, reverseHierarchy 
+  } = { }) {
     const prototype = this.getPrototype(type)
-    yield* Prototype.getValue(prototype, name, { instance, descriptorType,
+    yield* Prototype.getValue(prototype, name, { instance, reverseHierarchy,
       filter: (host, key, descriptor) => !this.isKnownKey(host, key)
         && isTypeof(descriptor, descriptorType) 
     }).map(result => Es6Descriptor.promoteValue(result, instance))
@@ -276,9 +291,12 @@ export class Es6Prototype {
   }
 
   *values(type, { 
-    instance, includeOverridden, descriptorType, instanceOf } = { }) {
+    instance, includeOverridden, descriptorType, instanceOf, 
+    reverseHierarchy,
+  } = { }) {
     const prototype = this.getPrototype(type)
     yield* Prototype.values(prototype, { instance, includeOverridden,
+      reverseHierarchy,
       filter: (host, key, descriptor) => !this.isKnownKey(host, key)
         && isTypeof(descriptor, descriptorType) 
     }).map(result => Es6Descriptor.promoteValue(result, instance))

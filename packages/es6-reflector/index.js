@@ -224,8 +224,8 @@ export class Es6Reflector {
   }
 
   // instance exclusive methods
-  *hierarchy(type, { filter } = { }) { 
-    const types = this.#instance.hierarchy(type)
+  *hierarchy(type, { filter, reverseHierarchy } = { }) { 
+    const types = this.#instance.hierarchy(type, { reverseHierarchy })
     yield* this.#areExtensionsOf(types, filter)
   }
   *baseTypes(type, { filter } = { }) { 
@@ -258,16 +258,18 @@ export class Es6Reflector {
       .filter(this.#extensionOfFilter(extensionOf))
   }
   *getValue(type, name, { isStatic, includeOverridden, 
-    descriptorType, extensionOf, instanceOf } = { }) {
+    descriptorType, extensionOf, instanceOf, reverseHierarchy } = { }) {
     const instance = isStatic ? type : type.prototype
-    const options = { instance, includeOverridden, descriptorType, instanceOf }
+    const options = { instance, includeOverridden, descriptorType, instanceOf,
+      reverseHierarchy }
     yield* this.#reflect(isStatic).getValue(type, name, options)
       .filter(this.#extensionOfFilter(extensionOf))
   }
   *values(type, { isStatic, includeOverridden, 
-    descriptorType, extensionOf, instanceOf } = { }) {
+    descriptorType, extensionOf, instanceOf, reverseHierarchy } = { }) {
     const instance = isStatic ? type : type.prototype
-    const options = { instance, includeOverridden, descriptorType, instanceOf }
+    const options = { instance, includeOverridden, descriptorType, instanceOf,
+      reverseHierarchy }
     yield* this.#reflect(isStatic).values(type, options)
       .filter(this.#extensionOfFilter(extensionOf))
   }
@@ -290,18 +292,6 @@ export class Es6Reflector {
       })
     }
   }
-  // getBaseType(type) {
-  //   return this.#instance.getBaseType(type)
-  // }
-  // isComposedOf(type, targetType) {
-  //   return this.#instance.isComposedOf(type, targetType)
-  // }
-  // canDuckCast(sourceType, targetType) {
-  //   return this.#instance.canDuckCast(sourceType, targetType)
-  // }
-  // canStrictDuckCast(sourceType, targetType) {
-  //   return this.#instance.canStrictDuckCast(sourceType, targetType)
-  // }
 
   // shared thunks
   static {

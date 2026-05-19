@@ -38,7 +38,16 @@ export class Prototype {
     return prototype    
   }
 
-  static *chain(prototype) {
+  static *chain(prototype, { reverseHierarchy } = { }) {
+    if (reverseHierarchy) {
+      const chain = []
+      do chain.push(prototype)
+      while (prototype = Object.getPrototypeOf(prototype))
+
+      yield* chain.reverse()
+      return
+    }
+
     do { yield prototype } 
     while (prototype = Object.getPrototypeOf(prototype))
   }
@@ -57,10 +66,14 @@ export class Prototype {
 
   static *keys(prototype, { 
     includeOverridden = false,
+    reverseHierarchy,
     filter = (host, key) => true,
   } = { }) {
+    assert(!reverseHierarchy || includeOverridden,
+      'reverseHierarchy requires includeOverridden.')
+
     const visited = new Set()
-    for (const current of Prototype.chain(prototype)) {
+    for (const current of Prototype.chain(prototype, { reverseHierarchy })) {
       const host = current.constructor
       yield host
       for (const key of Prototype.ownKeys(current)) {
@@ -91,10 +104,11 @@ export class Prototype {
   }  
 
   static *getDescriptor(prototype, key, { 
+    reverseHierarchy,
     map = (host, key, descriptor) => descriptor,
     filter = (host, key, descriptor) => true,
   } = { }) {
-    for (const current of Prototype.chain(prototype)) {
+    for (const current of Prototype.chain(prototype, { reverseHierarchy })) {
       const host = current.constructor
       const descriptor = getOwnDescriptor(current, key, { map, filter, host })
       if (!descriptor) continue
@@ -105,12 +119,16 @@ export class Prototype {
   }
 
   static *descriptors(prototype, { 
-    includeOverridden,
+    includeOverridden = false,
+    reverseHierarchy,
     map = (host, key, descriptor) => descriptor,
     filter = (host, key, descriptor) => true, 
   } = { }) {
+    assert(!reverseHierarchy || includeOverridden,
+      'reverseHierarchy requires includeOverridden.')
+
     const visited = new Set()
-    for (const current of Prototype.chain(prototype)) {
+    for (const current of Prototype.chain(prototype, { reverseHierarchy })) {
       const host = current.constructor
       yield host
       for (const key of Prototype.ownKeys(current)) {
@@ -169,16 +187,17 @@ export class Prototype {
     yield *values(descriptors, instance)
   }
 
-  static *getValue(prototype, name, { instance, filter } = { }) {
-    const descriptors = Prototype.getDescriptor(prototype, name, { filter, 
-      includeOverridden: true })
+  static *getValue(prototype, name, { 
+    instance, reverseHierarchy, filter } = { }) {
+    const descriptors = Prototype.getDescriptor(prototype, name, { 
+      filter, reverseHierarchy })
     yield* values(descriptors, instance)
   }
 
   static *values(prototype, { 
-    instance, includeOverridden, filter } = { }) {
+    instance, includeOverridden, reverseHierarchy, filter } = { }) {
     const descriptors = Prototype.descriptors(prototype, { filter,
-      includeOverridden })
+      includeOverridden, reverseHierarchy })
     yield *values(descriptors, instance)
   }
 }
