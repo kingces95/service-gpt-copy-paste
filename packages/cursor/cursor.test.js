@@ -236,7 +236,7 @@ describe.each(cases)('%s', (_, {
         })
         it('should throw read out of bounds if read', () => {
           expect(() => begin.value).toThrow(
-            'Cannot read value out of bounds of cursor.'
+            'Cannot access value out of bounds of cursor.'
           )
         })
       })
@@ -300,7 +300,7 @@ describe.each(cases)('%s', (_, {
         })
         it('should throw at 0', () => {
           expect(() => begin.at(0)).toThrow(
-            "Cannot read value out of bounds of cursor."
+            "Cannot access value out of bounds of cursor."
           )
         })
         it('should throw if set at offset', () => {

@@ -270,7 +270,11 @@ function getMemberConditions(reflect, type, key) {
 }
 
 function getMemberChecks(reflect, type, key) {
-  const result = []
+  const result = {
+    value: [],
+    get: [],
+    set: [],
+  }
 
   for (const current of reflect.getDescriptor(type, key, {
     reverseHierarchy: true,
@@ -278,8 +282,12 @@ function getMemberChecks(reflect, type, key) {
     switch (typeof current) {
       case 'function': break
       case 'object':
+        if (current.get)
+          result.get.push(current.get())
+        if (current.set)
+          result.set.push(current.set())
         if ('value' in current)
-          result.push(current.value)
+          result.value.push(current.value)
         break
       default:
         assert(false, 'Unexpected type: ' + typeof current)
@@ -318,12 +326,18 @@ export function getConditions(type, key) {
       ...typePrecondition,
     ], 
     precondition: [
-      ...thisCheck.map(createThisCheck),
-      ...argCheck.map(createArgCheck),
+      ...thisCheck.value.map(createThisCheck),
+      ...argCheck.value.map(createArgCheck),
       ...precondition.value,
     ],
-    getPrecondition: precondition.get,
-    setPrecondition: precondition.set, 
+    getPrecondition: [
+      ...thisCheck.get.map(createThisCheck),
+      ...precondition.get,
+    ],
+    setPrecondition: [
+      ...thisCheck.set.map(createThisCheck),
+      ...precondition.set,
+    ], 
 
     typePostcondition,
     postcondition: postcondition.value,

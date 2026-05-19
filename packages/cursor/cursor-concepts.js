@@ -3,19 +3,18 @@ import {
   EquatableConcept } from '@kingjs/partial-concept'
 import { Defines } from '@kingjs/partial-class'
 import { throwNotEquatableTo } from './throw.js'
-import { Preconditions } from '@kingjs/partial-proxy'
+import { Preconditions, ThisChecks } from '@kingjs/partial-proxy'
 import { 
-  throwNull,
   throwMoveOutOfBounds, 
-  throwReadOutOfBounds, 
-  throwWriteOutOfBounds } from './throw.js'
+} from './throw.js'
+import {
+  HasValue,
+  NotAtEnd,
+} from './checks.js'
 
 export class CursorConcept extends EquatableConcept {
-  static [Preconditions] = {
-    step() { 
-      if (this.equals(this.range.end({ constant: true }))) 
-        throwMoveOutOfBounds() 
-    },
+  static [ThisChecks] = {
+    step: NotAtEnd,
   }
   
   static [Defines] = {
@@ -30,22 +29,16 @@ export class CursorConcept extends EquatableConcept {
 }
 
 export class InputCursorConcept extends CursorConcept {
-  static [Preconditions] = {
-    get value() { 
-      if (this.equals(this.range.end({ constant: true })))
-        throwReadOutOfBounds()
-    },
+  static [ThisChecks] = {
+    value: HasValue,
   }
 
   get value() { }
 }
 
 export class OutputCursorConcept extends CursorConcept {
-  static [Preconditions] = {
-    set value(value) { 
-      if (this.equals(this.range.end({ constant: true })))
-        throwWriteOutOfBounds()
-    },
+  static [ThisChecks] = {
+    value: HasValue,
   }
   
   set value(value) { }

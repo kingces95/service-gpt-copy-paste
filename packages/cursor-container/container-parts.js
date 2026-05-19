@@ -1,5 +1,5 @@
 import { Defines, Abstracts, Extends } from '@kingjs/partial-class'
-import { Preconditions } from '@kingjs/partial-proxy'
+import { Preconditions, ThisChecks } from '@kingjs/partial-proxy'
 import { PartialClass } from '@kingjs/partial-class'
 import { extend } from '@kingjs/partial-extend'
 import { 
@@ -34,6 +34,7 @@ import {
   throwReadOutOfBounds,
 } from '@kingjs/cursor'
 import { Implements } from '@kingjs/partial-concept'
+import { NotEmpty } from './checks.js'
 
 export class ContainerPart extends PartialClass {
   static [Implements] = RangeConcept
@@ -75,8 +76,8 @@ export class ClearableContainerPart extends ContainerPart {
 }
 
 export class FrontEditableContainerPart extends ContainerPart { 
-  static [Preconditions] = {
-    shift() { this.throwIfEmpty$() },
+  static [ThisChecks] = {
+    shift: NotEmpty,
   }
   static [Abstracts] = {
     unshift(value) { },
@@ -85,8 +86,8 @@ export class FrontEditableContainerPart extends ContainerPart {
 }
 
 export class BackEditableContainerPart extends ContainerPart {
-  static [Preconditions] = {
-    pop() { this.throwIfEmpty$() },
+  static [ThisChecks] = {
+    pop: NotEmpty,
   }
   static [Abstracts] = {
     pop() { },
