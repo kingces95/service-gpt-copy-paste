@@ -7,9 +7,8 @@ import {
   ForwardCursorConcept,
   BidirectionalCursorConcept,
   RandomAccessCursorConcept,
+  OffsetReadableCursorConcept,
   RandomAccessRangeConcept,
-  throwReadOutOfBounds,
-  throwWriteOutOfBounds,
 } from '@kingjs/cursor'
 
 class SnapshotCursor extends Cursor {
@@ -48,20 +47,6 @@ class SnapshotCursor extends Cursor {
         this._index += offset
         return this
       },
-      at(offset) {
-        // TODO: Move this into cursor concepts after the cursor read/write
-        // split quest separates random-access traversal from indexed write.
-        const index = this.index + offset
-        if (index < 0 || index >= this.range._values.length)
-          throwReadOutOfBounds()
-
-        return this.range._values[index]
-      },
-      setAt() {
-        // TODO: Move this into cursor concepts after the cursor read/write
-        // split quest separates random-access traversal from indexed write.
-        throwWriteOutOfBounds()
-      },
       compareTo(other) {
         if (this.index < other.index) return -1
         if (this.index > other.index) return 1
@@ -69,6 +54,12 @@ class SnapshotCursor extends Cursor {
       },
       distanceTo(other) {
         return other.index - this.index
+      },
+    })
+
+    implement(this, OffsetReadableCursorConcept, {
+      at(offset) {
+        return this.range._values[this.index + offset]
       },
     })
   }

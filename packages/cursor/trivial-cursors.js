@@ -11,6 +11,8 @@ import {
   ForwardCursorConcept,
   BidirectionalCursorConcept,
   RandomAccessCursorConcept,
+  OffsetReadableCursorConcept,
+  OffsetWritableCursorConcept,
   ContiguousCursorConcept,
 } from './cursor-concepts.js'
 import { 
@@ -95,26 +97,46 @@ export class TrivialBidirectionalCursor extends TrivialForwardCursor {
 }
 
 export class TrivialRandomAccessCursor extends TrivialBidirectionalCursor {
-  static [Preconditions] = {
-    setAt(offset, value) { throwWriteOutOfBounds() },
-    at(offset) { throwReadOutOfBounds() },
-  }
-
   static { 
     implement(this, RandomAccessCursorConcept, {
       move(offset) { 
         if (offset === 0) return this
         throwMoveOutOfBounds()
       },
-      at(offset) { },
-      setAt(offset, value) { },
       distanceTo(other) { return 0 },
       compareTo(other) { return 0 },
     }) 
   }
 }
 
-export class TrivialContiguousCursor extends TrivialRandomAccessCursor {
+export class TrivialOffsetReadableCursor extends TrivialRandomAccessCursor {
+  static {
+    implement(this, OffsetReadableCursorConcept, {
+      at(offset) { },
+    })
+  }
+}
+
+export class TrivialOffsetWritableCursor extends TrivialRandomAccessCursor {
+  static {
+    implement(this, OffsetWritableCursorConcept, {
+      setAt(offset, value) { },
+    })
+  }
+}
+
+export class TrivialOffsetCursor extends TrivialRandomAccessCursor {
+  static {
+    implement(this, OffsetReadableCursorConcept, {
+      at(offset) { },
+    })
+    implement(this, OffsetWritableCursorConcept, {
+      setAt(offset, value) { },
+    })
+  }
+}
+
+export class TrivialContiguousCursor extends TrivialOffsetCursor {
   static { 
     implement(this, ContiguousCursorConcept, {
       span(other) { return Buffer.alloc(0) }
@@ -154,6 +176,15 @@ export class TrivialBidirectionalRange extends TrivialRange {
 }
 export class TrivialRandomAccessRange extends TrivialRange {
   static cursorType = TrivialRandomAccessCursor
+}
+export class TrivialOffsetReadableRange extends TrivialRange {
+  static cursorType = TrivialOffsetReadableCursor
+}
+export class TrivialOffsetWritableRange extends TrivialRange {
+  static cursorType = TrivialOffsetWritableCursor
+}
+export class TrivialOffsetRange extends TrivialRange {
+  static cursorType = TrivialOffsetCursor
 }
 export class TrivialContiguousRange extends TrivialRange {
   static cursorType = TrivialContiguousCursor

@@ -90,10 +90,32 @@ export class RandomAccessCursorConcept extends BidirectionalCursorConcept {
   }
 
   move(offset) { }
-  at(offset) { }
-  setAt(offset, value) { }
   compareTo(other) { }
   distanceTo(other) { }
+}
+
+export class OffsetReadableCursorConcept extends InputCursorConcept {
+  static [Implements] = RandomAccessCursorConcept
+
+  static [Preconditions] = {
+    at(offset) {
+      this.clone().move(offset) instanceof HasValue
+    },
+  }
+
+  at(offset) { }
+}
+
+export class OffsetWritableCursorConcept extends OutputCursorConcept {
+  static [Implements] = RandomAccessCursorConcept
+
+  static [Preconditions] = {
+    setAt(offset, value) {
+      this.clone().move(offset) instanceof HasValue
+    },
+  }
+
+  setAt(offset, value) { }
 }
 
 export class ContiguousCursorConcept extends RandomAccessCursorConcept {

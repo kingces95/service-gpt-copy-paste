@@ -6,6 +6,8 @@ import {
   ForwardCursorConcept,
   BidirectionalCursorConcept,
   RandomAccessCursorConcept,
+  OffsetReadableCursorConcept,
+  OffsetWritableCursorConcept,
 } from '@kingjs/cursor'
 import { ContainerCursor } from './container-cursor.js'
 
@@ -50,12 +52,6 @@ export class IndexableCursor extends ContainerCursor {
         this._index += offset
         return this
       },
-      at(offset) {
-        return this.container.at(this.index + offset)
-      },
-      setAt(offset, value) {
-        this.container.setAt(this.index + offset, value)
-      },
       distanceTo(otherCursor) {
         return otherCursor.index - this.index
       },
@@ -65,6 +61,18 @@ export class IndexableCursor extends ContainerCursor {
         return 0
       },
     }) 
+
+    implement(this, OffsetReadableCursorConcept, {
+      at(offset) {
+        return this.container.at(this.index + offset)
+      },
+    })
+
+    implement(this, OffsetWritableCursorConcept, {
+      setAt(offset, value) {
+        this.container.setAt(this.index + offset, value)
+      },
+    })
   }
 
   get index() { return this._index }
