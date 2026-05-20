@@ -1,19 +1,18 @@
 import { assert } from '@kingjs/assert'
-import { PartialType } from '@kingjs/partial-type'
-import { PartialReflect } from '@kingjs/partial-reflect'
-import { Precondition } from '@kingjs/partial-symbols'
+import { Es6Reflector } from '@kingjs/es6-reflector'
+import { Metadata } from '@kingjs/metadata'
 
 // ____________________________________________________________________________
 // DUCK TESTING
 
-// A Shape can be used to test if an instance satisfies a shape using 
+// A Probe can be used to test if an instance satisfies a probe using 
 // instanceof. That test is commonly called duck typing or duck casting. 
-// The idea is that if an instance has the right shape, then it can be treated
-// as if it were an instance of the shape. For example, if an instance has a
+// The idea is that if an instance has the right probe, then it can be treated
+// as if it were an instance of the probe. For example, if an instance has a
 // method called "then", then it can be treated as a thenable and used with 
 // Promise.resolve.
 
-// A Shape declaration is precise ES6 metadata:
+// A Probe declaration is precise ES6 metadata:
 
 //    method  => wants callable
 //    getter  => wants readable
@@ -45,12 +44,12 @@ import { Precondition } from '@kingjs/partial-symbols'
 
 // Concepts are opt-in using Es6 syntax so can take dependencies on the
 // types of descriptors Es6 creates. Instances that use Concepts must opt-in. 
-// Shapes, on the other hand, are defined in Es6 but the instances are wild 
+// Probes, on the other hand, are defined in Es6 but the instances are wild 
 // and unregulated so we have to be permissive and observational when testing 
-// instanceof. So the relationship between shape and concept is:
+// instanceof. So the relationship between probe and concept is:
 
-//    Shape definitions are strict.
-//    Shape matching is permissive and observational.
+//    Probe definitions are strict.
+//    Probe matching is permissive and observational.
 //    Concept matching is certified and non-observational.
 
 // ____________________________________________________________________________
@@ -59,68 +58,67 @@ import { Precondition } from '@kingjs/partial-symbols'
 //    TypeScript:
 //      structural typing over declarations
 //    
-//    Shape:
+//    Probe:
 //      structural typing over observations
 //    
 //    Concept:
 //      structural typing over certification
 
 const toString = Object.prototype.toString
+const ProbeReflect = Es6Reflector.create({
+  knownTypes: [ Metadata, Object ],
+  knownKeys: [ 'constructor' ],
+})
 
-export class Shape extends PartialType {
-  static [Precondition](type) {
-    assert(false,
-      'Shapes cannot be extended.')
-  }
-
+export class Probe extends Metadata {
   // The default instanceof behavior would always be false because
-  // Shape is an abstract type in that Shape is a pure metadata
+  // Probe is an abstract type in that Probe is a pure metadata
   // construct so should never be instantiated so no instance would
   // ever exist. This fact justifies overriding Symbol.hasInstance
   // to provide an alternative behavior which is to test if an instance
-  // satisfies a shape.
+  // satisfies a probe.
   //
-  // A shape is satisfied if:
+  // A probe is satisfied if:
   //
   //   (1) the instance satisfies any static whole-value constraints
   //       such as typeof, tag, prototype, or constructability
-  //   (2) the instance can be duck cast to the shape.
+  //   (2) the instance can be duck cast to the probe.
 
   static [Symbol.hasInstance](instance) {
-    if (this == Shape)
+    if (this == Probe)
       return false
 
-    // assert directly extends shape
-    assert(Object.getPrototypeOf(this) === Shape,
-      `Shape "${this.name}" must directly extend Shape.`)
+    // assert directly extends probe
+    assert(Object.getPrototypeOf(this) === Probe,
+      `Probe "${this.name}" must directly extend Probe.`)
 
     if (instance == null)
       return false
 
-    if (!Shape.#testTypeof(this, instance))
+    if (!Probe.#testTypeof(this, instance))
       return false
 
-    if (!Shape.#testTag(this, instance))
+    if (!Probe.#testTag(this, instance))
       return false
 
-    if (!Shape.#testPrototype(this, instance))
+    if (!Probe.#testPrototype(this, instance))
       return false
 
-    if (!Shape.#testProtoPrototype(this, instance))
+    if (!Probe.#testProtoPrototype(this, instance))
       return false
 
-    return PartialReflect.canDuckCast(this, Object(instance))
+    return ProbeReflect.canDuckCast(this, Object(instance))
   }
 
-  static #testTypeof(shape, instance) {
-    if (!('typeof' in shape))
+  static #testTypeof(probe, instance) {
+    if (!('typeof' in probe))
       return true
 
-    return typeof instance == shape.typeof
+    return typeof instance == probe.typeof
   }
 
-  static #testProtoPrototype(shape, instance) {
-    if (!('protoPrototype' in shape))
+  static #testProtoPrototype(probe, instance) {
+    if (!('protoPrototype' in probe))
       return true
 
     const descriptor = Object.getOwnPropertyDescriptor(instance, 'prototype')
@@ -137,7 +135,7 @@ export class Shape extends PartialType {
     if (prototype.constructor != instance)
       return false
 
-    const protoPrototype = shape.protoPrototype
+    const protoPrototype = probe.protoPrototype
 
     if (descriptor.enumerable != protoPrototype.enumerable)
       return false
@@ -152,18 +150,18 @@ export class Shape extends PartialType {
     return true
   }
 
-  static #testTag(shape, instance) {
-    const expectedTag = shape.tag
+  static #testTag(probe, instance) {
+    const expectedTag = probe.tag
     if (expectedTag === undefined)
       return true
 
     return toString.call(instance) == `[object ${expectedTag}]`
   }
 
-  static #testPrototype(shape, instance) {
-    if (!('proto' in shape))
+  static #testPrototype(probe, instance) {
+    if (!('proto' in probe))
       return true
 
-    return Object.getPrototypeOf(instance) === shape.proto
+    return Object.getPrototypeOf(instance) === probe.proto
   }
 }

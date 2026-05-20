@@ -99,7 +99,7 @@ function defineTemplateSurface(target, metadata) {
   Object.defineProperties(target, descriptors)
 }
 
-// TODO: make partial-shape just @kingjs/shape and use that instead of this.
+// TODO: replace this with a general constructor probe.
 function isType(value) {
   if (typeof value != 'function')
     return false

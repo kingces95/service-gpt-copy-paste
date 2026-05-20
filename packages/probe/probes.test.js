@@ -1,37 +1,35 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
-import { Shape } from './shape.js'
-import { extend } from '@kingjs/partial-extend'
-import { copyTo } from '@kingjs/partial-reflect'
+import { Probe } from './probe.js'
 import { 
-  PojoShape,
-  NojoShape,
-  ThenableShape,
-  IterableShape,
-  AsyncIterableShape,
-  IteratorShape,
-  ErrorShape,
-  PromiseShape,
-  DisposableShape,
-  AsyncDisposableShape,
-  AbortSignalShape,
-  EventEmitterShape,
-  EventTargetShape,
-  DateShape,
-  RegExpShape,
+  PojoProbe,
+  NojoProbe,
+  ThenableProbe,
+  IterableProbe,
+  AsyncIterableProbe,
+  IteratorProbe,
+  ErrorProbe,
+  PromiseProbe,
+  DisposableProbe,
+  AsyncDisposableProbe,
+  AbortSignalProbe,
+  EventEmitterProbe,
+  EventTargetProbe,
+  DateProbe,
+  RegExpProbe,
 
-  AsyncFunctionShape,
-  GeneratorFunctionShape,
-  AsyncGeneratorFunctionShape,
-  CallableShape,
-  ClassConstructorShape,
-  ConstructorShape,
-  FunctionConstructorShape,
-} from './shapes.js'
+  AsyncFunctionProbe,
+  GeneratorFunctionProbe,
+  AsyncGeneratorFunctionProbe,
+  CallableProbe,
+  ClassConstructorProbe,
+  ConstructorProbe,
+  FunctionConstructorProbe,
+} from './probes.js'
 
-// general shapes
-const PojoShapeTest = {
-  shape: PojoShape,
+// general probes
+const PojoProbeTest = {
+  probe: PojoProbe,
   positive: [
     { name: 'object literal', value: { } },
     { name: 'object literal with properties', value: { a: 1, b: 2 } },
@@ -41,8 +39,8 @@ const PojoShapeTest = {
     { name: 'object extends null', value: Object.create(null) },
   ]
 }
-const NojoShapeTest = {
-  shape: NojoShape,
+const NojoProbeTest = {
+  probe: NojoProbe,
   positive: [
     { name: 'object extends null', value: Object.create(null) },
   ],
@@ -52,8 +50,8 @@ const NojoShapeTest = {
     { name: 'array', value: [] },
   ]
 }
-const IterableShapeTest = {
-  shape: IterableShape,
+const IterableProbeTest = {
+  probe: IterableProbe,
   positive: [
     { name: 'array', value: [] },
     { name: 'string', value: '' },
@@ -65,8 +63,8 @@ const IterableShapeTest = {
     { name: 'object extends null', value: Object.create(null) },
   ]
 }
-const IteratorShapeTest = {
-  shape: IteratorShape,
+const IteratorProbeTest = {
+  probe: IteratorProbe,
   positive: [
     { name: 'custom', value: new (class { next() { } })() },
     { name: 'array iterator', value: [][Symbol.iterator]() },
@@ -76,8 +74,8 @@ const IteratorShapeTest = {
     { name: 'array', value: [] },
   ]
 }
-const ErrorShapeTest = {
-  shape: ErrorShape,
+const ErrorProbeTest = {
+  probe: ErrorProbe,
   positive: [
     { name: 'Error', value: new Error() },
     { name: 'custom getters', 
@@ -88,8 +86,8 @@ const ErrorShapeTest = {
     { name: 'array', value: [] },
   ]
 }
-const DisposableShapeTest = {
-  shape: DisposableShape,
+const DisposableProbeTest = {
+  probe: DisposableProbe,
   positive: [
     { name: 'custom with dispose method', 
       value: new (class { [Symbol.dispose]() { } })() },
@@ -100,9 +98,9 @@ const DisposableShapeTest = {
   ]
 }
 
-// Node / platform-oriented shapes
-const AbortSignalShapeTest = {
-  shape: AbortSignalShape,
+// Node / platform-oriented probes
+const AbortSignalProbeTest = {
+  probe: AbortSignalProbe,
   positive: [
     { name: 'AbortSignal', 
       value: new AbortController().signal },
@@ -118,8 +116,8 @@ const AbortSignalShapeTest = {
     { name: 'array', value: [] },
   ]
 }
-const EventEmitterShapeTest = {
-  shape: EventEmitterShape,
+const EventEmitterProbeTest = {
+  probe: EventEmitterProbe,
   positive: [
     { name: 'EventEmitter', 
       value: new (require('events').EventEmitter)() },
@@ -135,8 +133,8 @@ const EventEmitterShapeTest = {
     { name: 'array', value: [] },
   ]
 }
-const EventTargetShapeTest = {
-  shape: EventTargetShape,
+const EventTargetProbeTest = {
+  probe: EventTargetProbe,
   positive: [
     { name: 'EventTarget', value: new EventTarget() },
     { name: 'custom', 
@@ -153,9 +151,9 @@ const EventTargetShapeTest = {
   ]
 }
 
-// other useful shapes
-const DateShapeTest = {
-  shape: DateShape,
+// other useful probes
+const DateProbeTest = {
+  probe: DateProbe,
   positive: [
     { name: 'Date instance', value: new Date() },
     { name: 'custom', value: new (class { getTime() { return 0 } })() },
@@ -166,8 +164,8 @@ const DateShapeTest = {
     { name: 'object extends null', value: Object.create(null) },
   ]
 }
-const RegExpShapeTest = {
-  shape: RegExpShape,
+const RegExpProbeTest = {
+  probe: RegExpProbe,
   positive: [
     { name: 'RegExp instance', value: /./ },
     { name: 'custom', 
@@ -183,9 +181,9 @@ const RegExpShapeTest = {
   ]
 }
 
-// function and class shapes
-const GeneratorFunctionShapeTest = {
-  shape: GeneratorFunctionShape,
+// function and class probes
+const GeneratorFunctionProbeTest = {
+  probe: GeneratorFunctionProbe,
   positive: [
     { name: 'generator function declaration', value: function*() { } },
   ],
@@ -198,8 +196,8 @@ const GeneratorFunctionShapeTest = {
     { name: 'array', value: [] },
   ]
 }
-const CallableShapeTest = {
-  shape: CallableShape,
+const CallableProbeTest = {
+  probe: CallableProbe,
   positive: [
     { name: 'function declaration', value: function() { } },
     { name: 'function expression', value: () => { } },
@@ -213,8 +211,8 @@ const CallableShapeTest = {
     { name: 'array', value: [] },
   ]
 }
-const ConstructorShapeTest = {
-  shape: ConstructorShape,
+const ConstructorProbeTest = {
+  probe: ConstructorProbe,
   positive: [
     { name: 'class constructor', value: class { } },
     { name: 'function declaration', value: function() { } },
@@ -228,8 +226,8 @@ const ConstructorShapeTest = {
     { name: 'array', value: [] },
   ]
 }
-const ClassConstructorShapeTest = {
-  shape: ClassConstructorShape,
+const ClassConstructorProbeTest = {
+  probe: ClassConstructorProbe,
   positive: [
     { name: 'class constructor', value: class { } },
   ],
@@ -243,8 +241,8 @@ const ClassConstructorShapeTest = {
     { name: 'array', value: [] },
   ]
 }
-const FunctionConstructorShapeTest = {
-  shape: FunctionConstructorShape,
+const FunctionConstructorProbeTest = {
+  probe: FunctionConstructorProbe,
   positive: [
     { name: 'function declaration', value: function() { } },
   ],
@@ -259,9 +257,9 @@ const FunctionConstructorShapeTest = {
   ]
 }
 
-// async shapes
-const PromiseShapeTest = {
-  shape: PromiseShape,
+// async probes
+const PromiseProbeTest = {
+  probe: PromiseProbe,
   positive: [
     { name: 'Promise', value: Promise.resolve() },
     { name: 'custom thenable with catch and finally', 
@@ -278,8 +276,8 @@ const PromiseShapeTest = {
     { name: 'array', value: [] },
   ]
 }
-const ThenableShapeTest = {
-  shape: ThenableShape,
+const ThenableProbeTest = {
+  probe: ThenableProbe,
   positive: [
     { name: 'Promise', value: Promise.resolve() },
     { name: 'custom', 
@@ -290,8 +288,8 @@ const ThenableShapeTest = {
     { name: 'array', value: [] },
   ]
 }
-const AsyncIterableShapeTest = {
-  shape: AsyncIterableShape,
+const AsyncIterableProbeTest = {
+  probe: AsyncIterableProbe,
   positive: [
     { name: 'async generator', value: (async function*() { })() },
     { name: 'ReadableStream', value: new ReadableStream() },
@@ -303,8 +301,8 @@ const AsyncIterableShapeTest = {
     { name: 'array', value: [] },
   ]
 }
-const AsyncDisposableShapeTest = {
-  shape: AsyncDisposableShape,
+const AsyncDisposableProbeTest = {
+  probe: AsyncDisposableProbe,
   positive: [
     { name: 'custom with async dispose method', 
       value: new (class { [Symbol.asyncDispose]() { } })() },
@@ -314,8 +312,8 @@ const AsyncDisposableShapeTest = {
     { name: 'array', value: [] },
   ]
 }
-const AsyncFunctionShapeTest = {
-  shape: AsyncFunctionShape,
+const AsyncFunctionProbeTest = {
+  probe: AsyncFunctionProbe,
   positive: [
     { name: 'async function declaration', value: async function() { } },
     { name: 'async function expression', value: async () => { } },
@@ -328,8 +326,8 @@ const AsyncFunctionShapeTest = {
     { name: 'array', value: [] },
   ]
 }
-const AsyncGeneratorFunctionShapeTest = {
-  shape: AsyncGeneratorFunctionShape,
+const AsyncGeneratorFunctionProbeTest = {
+  probe: AsyncGeneratorFunctionProbe,
   positive: [
     { name: 'async generator function declaration', value: async function*() { } },
   ],
@@ -344,57 +342,56 @@ const AsyncGeneratorFunctionShapeTest = {
 }
 
 const Tests = [
-  PojoShapeTest,
-  NojoShapeTest,
-  IterableShapeTest,
-  IteratorShapeTest,
-  ErrorShapeTest,
-  DisposableShapeTest,
-  AbortSignalShapeTest,
-  EventEmitterShapeTest,
-  EventTargetShapeTest,
-  DateShapeTest,
-  RegExpShapeTest,
+  PojoProbeTest,
+  NojoProbeTest,
+  IterableProbeTest,
+  IteratorProbeTest,
+  ErrorProbeTest,
+  DisposableProbeTest,
+  AbortSignalProbeTest,
+  EventEmitterProbeTest,
+  EventTargetProbeTest,
+  DateProbeTest,
+  RegExpProbeTest,
   
-  GeneratorFunctionShapeTest,
-  CallableShapeTest,
-  ClassConstructorShapeTest,
-  ConstructorShapeTest,
-  FunctionConstructorShapeTest,
+  GeneratorFunctionProbeTest,
+  CallableProbeTest,
+  ClassConstructorProbeTest,
+  ConstructorProbeTest,
+  FunctionConstructorProbeTest,
   
-  PromiseShapeTest,
-  ThenableShapeTest,
-  AsyncIterableShapeTest,
-  AsyncDisposableShapeTest,
-  AsyncFunctionShapeTest,
-  AsyncGeneratorFunctionShapeTest,
+  PromiseProbeTest,
+  ThenableProbeTest,
+  AsyncIterableProbeTest,
+  AsyncDisposableProbeTest,
+  AsyncFunctionProbeTest,
+  AsyncGeneratorFunctionProbeTest,
 ]
 
-describe.each(Tests)("$shape.name", ({ shape, positive, negative }) => {
+describe.each(Tests)("$probe.name", ({ probe, positive, negative }) => {
   for (const { name, value } of positive) {
     it(`is ${name}`, () => {
-      expect(value).toBeInstanceOf(shape)
+      expect(value).toBeInstanceOf(probe)
     })  
   }
   for (const { name, value } of negative) {
     it(`is not ${name}`, () => {
-      expect(value).not.toBeInstanceOf(shape)
+      expect(value).not.toBeInstanceOf(probe)
     })  
   }
 })
 
-describe('Shapes', () => {
-  it('should throw if defined on a non-function', () => {
-    const myShape = class extends Shape { }
-    expect(() => copyTo(myShape, class { }))
-      .toThrow('Assertion failed: Shapes cannot be extended.')
+describe('Probes', () => {
+  it('should not be instantiable', () => {
+    expect(() => new Probe()).toThrow(
+      'Metadata cannot be instantiated.')
   })
   it('should be false if null or undefined', () => {
-    expect(null).not.toBeInstanceOf(PojoShape)
-    expect(undefined).not.toBeInstanceOf(PojoShape)
+    expect(null).not.toBeInstanceOf(PojoProbe)
+    expect(undefined).not.toBeInstanceOf(PojoProbe)
   })
-  it('should be false for Shape itself', () => {
-    expect({ }).not.toBeInstanceOf(Shape)
+  it('should be false for Probe itself', () => {
+    expect({ }).not.toBeInstanceOf(Probe)
   })
   describe('with odd an ctor prototype', () => {
     let proto
@@ -411,12 +408,12 @@ describe('Shapes', () => {
     })
 
     it('should be false if configurable is true', () => {
-      expect(fn).not.toBeInstanceOf(ConstructorShape)
+      expect(fn).not.toBeInstanceOf(ConstructorProbe)
     })
     it('should be false if enumerable is true', () => {
       Object.defineProperty(fn, 'prototype', { enumerable: true })
       Object.defineProperty(fn, 'prototype', { configurable: false })
-      expect(fn).not.toBeInstanceOf(ConstructorShape)
+      expect(fn).not.toBeInstanceOf(ConstructorProbe)
     })
     describe('that is not configurable', () => {
       beforeEach(() => {
@@ -424,19 +421,19 @@ describe('Shapes', () => {
       })
       it('should be false if no value descriptor', () => {
         Object.defineProperty(fn, 'prototype', { value: undefined })
-        expect(fn).not.toBeInstanceOf(ConstructorShape)
+        expect(fn).not.toBeInstanceOf(ConstructorProbe)
       })
       it('should be false if prototype is not an object', () => {
         fn.prototype = 42
-        expect(fn).not.toBeInstanceOf(ConstructorShape)
+        expect(fn).not.toBeInstanceOf(ConstructorProbe)
       })
       it('should be false if prototype is null', () => {
         fn.prototype = null
-        expect(fn).not.toBeInstanceOf(ConstructorShape)
+        expect(fn).not.toBeInstanceOf(ConstructorProbe)
       })
       it('should be false if prototype.constructor is not the function', () => {
         fn.prototype = { constructor: function() { } }
-        expect(fn).not.toBeInstanceOf(ConstructorShape)
+        expect(fn).not.toBeInstanceOf(ConstructorProbe)
       })
     })  
   })

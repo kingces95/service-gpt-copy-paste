@@ -3,14 +3,14 @@ import { templatize } from '@kingjs/templatize'
 import { Constructs } from '@kingjs/constructs'
 import {
   DefaultConstructible,
-  PushShape,
+  PushProbe,
 } from '@kingjs/cursor-checks'
 import { ArrayMap } from '../container/array-map.js'
 
 const Materialize = templatize(
   [[ // type
     DefaultConstructible,
-    Constructs.as(PushShape),
+    Constructs.as(PushProbe),
   ]],
   type => contract(function materialize(range) {
     const result = new type()

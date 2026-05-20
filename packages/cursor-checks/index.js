@@ -1,4 +1,4 @@
-import { Shape } from '@kingjs/partial-shape'
+import { Probe } from '@kingjs/probe'
 
 export class DefaultConstructible {
   static [Symbol.hasInstance](type) {
@@ -16,7 +16,7 @@ export class DefaultConstructible {
   }
 }
 
-export class PushShape extends Shape {
+export class PushProbe extends Probe {
   push(value) { }
 }
 

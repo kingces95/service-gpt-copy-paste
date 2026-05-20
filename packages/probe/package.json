@@ -1,5 +1,5 @@
 {
-  "name": "@kingjs/partial-shape",
+  "name": "@kingjs/probe",
   "version": "1.0.0",
   "description": ".",
   "main": "index.js",
@@ -7,7 +7,10 @@
   "exports": {
     ".": "./index.js"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@kingjs/es6-reflector": "1.0.0",
+    "@kingjs/metadata": "1.0.0"
+  },
   "devDependencies": {},
   "peerDependencies": {},
   "author": "Chris King",

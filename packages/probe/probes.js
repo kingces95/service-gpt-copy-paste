@@ -1,79 +1,79 @@
-import { Shape } from './shape.js'
+import { Probe } from './probe.js'
 
 // ____________________________________________________________________________
 // Most compelling — core JS semantics
 
-export class PojoShape extends Shape {
+export class PojoProbe extends Probe {
   static typeof = 'object'
   static proto = Object.prototype
 }
 
-export class NojoShape extends Shape {
+export class NojoProbe extends Probe {
   static typeof = 'object'
   static proto = null
 }
 
-export class IterableShape extends Shape {
+export class IterableProbe extends Probe {
   [Symbol.iterator]() { }
 }
 
-export class IteratorShape extends Shape {
+export class IteratorProbe extends Probe {
   next() { }
 }
 
-export class ErrorShape extends Shape {
+export class ErrorProbe extends Probe {
   get name() { }
   get message() { }
 }
 
-export class DisposableShape extends Shape {
+export class DisposableProbe extends Probe {
   [Symbol.dispose]() { }
 }
 
 // ____________________________________________________________________________
 // Node / platform-oriented
 
-export class AbortSignalShape extends Shape {
+export class AbortSignalProbe extends Probe {
   get aborted() { }
   addEventListener() { }
 }
 
-export class EventEmitterShape extends Shape {
+export class EventEmitterProbe extends Probe {
   on() { }
   emit() { }
 }
 
-export class EventTargetShape extends Shape {
+export class EventTargetProbe extends Probe {
   addEventListener() { }
   removeEventListener() { }
   dispatchEvent() { }
 }
 
 // ____________________________________________________________________________
-// Other useful shapes
+// Other useful probes
 
-export class DateShape extends Shape {
+export class DateProbe extends Probe {
   getTime() { }
 }
 
-export class RegExpShape extends Shape {
+export class RegExpProbe extends Probe {
   test() { }
   exec() { }
 }
 
 // ____________________________________________________________________________
-// Function shapes
+// Function probes
 
-export class CallableShape extends Shape {
+export class CallableProbe extends Probe {
   static typeof = 'function'
 }
 
-export class GeneratorFunctionShape extends Shape {
+export class GeneratorFunctionProbe extends Probe {
   static typeof = 'function'
   static tag = 'GeneratorFunction'
 }
 
-export class FunctionConstructorShape extends Shape {
+export class FunctionConstructorProbe extends Probe {
   static typeof = 'function'
   static protoPrototype = {
     enumerable: false,
@@ -82,7 +82,7 @@ export class FunctionConstructorShape extends Shape {
   }
 }
 
-export class ClassConstructorShape extends Shape {
+export class ClassConstructorProbe extends Probe {
   static typeof = 'function'
   static protoPrototype = {
     enumerable: false,
@@ -91,7 +91,7 @@ export class ClassConstructorShape extends Shape {
   }
 }
 
-export class ConstructorShape extends Shape {
+export class ConstructorProbe extends Probe {
   static typeof = 'function'
   static protoPrototype = {
     enumerable: false,
@@ -100,32 +100,32 @@ export class ConstructorShape extends Shape {
 }
 
 // ____________________________________________________________________________
-// Async shapes
+// Async probes
 
-export class PromiseShape extends Shape {
+export class PromiseProbe extends Probe {
   then() { }
   catch() { }
   finally() { }
 }
 
-export class ThenableShape extends Shape {
+export class ThenableProbe extends Probe {
   then() { }
 }
 
-export class AsyncIterableShape extends Shape {
+export class AsyncIterableProbe extends Probe {
   [Symbol.asyncIterator]() { }
 }
 
-export class AsyncDisposableShape extends Shape {
+export class AsyncDisposableProbe extends Probe {
   [Symbol.asyncDispose]() { }
 }
 
-export class AsyncFunctionShape extends Shape {
+export class AsyncFunctionProbe extends Probe {
   static typeof = 'function'
   static tag = 'AsyncFunction'
 }
 
-export class AsyncGeneratorFunctionShape extends Shape {
+export class AsyncGeneratorFunctionProbe extends Probe {
   static typeof = 'function'
   static tag = 'AsyncGeneratorFunction'
 }
