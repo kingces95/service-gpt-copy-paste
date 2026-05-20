@@ -1,13 +1,21 @@
 import { implement } from '@kingjs/partial-implement'
+import { extend } from '@kingjs/partial-extend'
 import { EquatableConcept } from '@kingjs/partial-concept'
 import {
   CursorConcept,
+  CursorPart,
   MutableCursorConcept,
+  InputCursorPart,
+  OutputCursorPart,
   ForwardCursorConcept,
   BidirectionalCursorConcept,
+  BidirectionalCursorPart,
   RandomAccessCursorConcept,
+  RandomAccessCursorPart,
   OffsetReadableCursorConcept,
+  OffsetReadableCursorPart,
   OffsetWritableCursorConcept,
+  OffsetWritableCursorPart,
 } from '@kingjs/cursor'
 import { ContainerCursor } from './container-cursor.js'
 
@@ -71,6 +79,51 @@ export class IndexableCursor extends ContainerCursor {
     implement(this, OffsetWritableCursorConcept, {
       setAt(offset, value) {
         this.container.setAt(this.index + offset, value)
+      },
+    })
+  }
+
+  static {
+    extend(this, CursorPart, {
+      isAtEnd$() { return this.index == this.container.size },
+      canStep$() { return this.index < this.container.size },
+    })
+
+    extend(this, InputCursorPart, {
+      isAccessible$() {
+        return this.index >= 0 && this.index < this.container.size
+      },
+    })
+
+    extend(this, OutputCursorPart, {
+      isAccessible$() {
+        return this.index >= 0 && this.index < this.container.size
+      },
+    })
+
+    extend(this, BidirectionalCursorPart, {
+      isAtBegin$() { return this.index == 0 },
+      canStepBack$() { return this.index > 0 },
+    })
+
+    extend(this, RandomAccessCursorPart, {
+      canMove$(offset) {
+        const index = this.index + offset
+        return index >= 0 && index <= this.container.size
+      },
+    })
+
+    extend(this, OffsetReadableCursorPart, {
+      isReadableAt$(offset) {
+        const index = this.index + offset
+        return index >= 0 && index < this.container.size
+      },
+    })
+
+    extend(this, OffsetWritableCursorPart, {
+      isWritableAt$(offset) {
+        const index = this.index + offset
+        return index >= 0 && index < this.container.size
       },
     })
   }

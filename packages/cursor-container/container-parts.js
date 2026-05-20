@@ -1,5 +1,5 @@
 import { Defines, Abstracts, Extends } from '@kingjs/partial-class'
-import { Preconditions, ThisChecks } from '@kingjs/partial-proxy'
+import { ArgChecks, Preconditions } from '@kingjs/partial-proxy'
 import { PartialClass } from '@kingjs/partial-class'
 import { extend } from '@kingjs/partial-extend'
 import { 
@@ -34,7 +34,7 @@ import {
   throwReadOutOfBounds,
 } from '@kingjs/cursor'
 import { Implements } from '@kingjs/partial-concept'
-import { NotEmpty } from './checks.js'
+import { NormalNumber } from './checks.js'
 
 export class ContainerPart extends PartialClass {
   static [Implements] = RangeConcept
@@ -43,20 +43,21 @@ export class ContainerPart extends PartialClass {
     insert(value, { at = this.end(), after }) { },
     erase({ at = this.end(), after }) { }
   }
-
-  throwIfNull$(value) { 
-    if (value == null) throwNull() 
+  static [Defines] = {
+    throwIfNull$(value) { 
+      if (value == null) throwNull() 
+    },
+    throwIfEmpty$() { 
+      if (this.isEmpty) throwEmpty() 
+    },
+    throwIfForeignCursor$(other) { 
+      this.throwIfNull$(other)
+      if (other.range != this) throwNotEquatableTo()
+    },
+    throwIfEnd$(cursor) {
+      if (cursor.equals(this.end())) throwUpdateOutOfBounds()
+    }  
   }
-  throwIfEmpty$() { 
-    if (this.isEmpty) throwEmpty() 
-  }
-  throwIfForeignCursor$(other) { 
-    this.throwIfNull$(other)
-    if (other.range != this) throwNotEquatableTo()
-  }
-  throwIfEnd$(cursor) {
-    if (cursor.equals(this.end())) throwUpdateOutOfBounds()
-  }  
 
   get cursorType() { return this.constructor.cursorType }
 }
@@ -76,9 +77,12 @@ export class ClearableContainerPart extends ContainerPart {
 }
 
 export class FrontEditableContainerPart extends ContainerPart { 
-  static [ThisChecks] = {
-    shift: NotEmpty,
+  static [Preconditions] = {
+    shift() {
+      this.throwIfEmpty$()
+    },
   }
+
   static [Abstracts] = {
     unshift(value) { },
     shift() { },
@@ -86,9 +90,12 @@ export class FrontEditableContainerPart extends ContainerPart {
 }
 
 export class BackEditableContainerPart extends ContainerPart {
-  static [ThisChecks] = {
-    pop: NotEmpty,
+  static [Preconditions] = {
+    pop() {
+      this.throwIfEmpty$()
+    },
   }
+
   static [Abstracts] = {
     pop() { },
     push(value) { },
@@ -140,14 +147,17 @@ export class EditableContainerPart extends ContainerPart {
   }
 }
 
-export class IndexableContainerPart extends SizedContainerPart {  
+export class IndexableContainerPart extends SizedContainerPart {
+  static [ArgChecks] = {
+    at: [NormalNumber],
+    setAt: [NormalNumber],
+  }
+
   static [Preconditions] = {
     at(index) {
-      if (index < 0) throwReadOutOfBounds()
       if (index >= this.size) throwReadOutOfBounds()
     },
     setAt(index, value) {
-      if (index < 0) throwWriteOutOfBounds()
       if (index >= this.size) throwWriteOutOfBounds()
     },
   }
@@ -173,10 +183,12 @@ export class CapacityContainerPart extends ContainerPart {
 }
 
 export class ReservableContainerPart extends CapacityContainerPart {
+  static [ArgChecks] = {
+    setCapacity: [NormalNumber],
+  }
+
   static [Preconditions] = {
     setCapacity(count) {
-      if (count < 0) throw new RangeError(
-        `capacity must be non-negative.`)
       if (count < this.capacity) throw new RangeError(
         `Cannot shrink capacity from ${this.capacity} to ${count}.`)
     }

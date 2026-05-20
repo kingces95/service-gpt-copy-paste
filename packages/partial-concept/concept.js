@@ -7,12 +7,13 @@ import { PartialReflect } from '@kingjs/partial-reflect'
 import { 
   Adjacent,
   Defines, 
+  DependsOn,
   Implements, 
   Compile,
   Precondition,
 } from '@kingjs/partial-symbols'
 
-export { Defines, Implements } from '@kingjs/partial-symbols'
+export { Defines, DependsOn, Implements } from '@kingjs/partial-symbols'
 
 export class Concept extends PartialType {
   static [Adjacent] = {

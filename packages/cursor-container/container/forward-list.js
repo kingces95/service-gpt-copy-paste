@@ -8,7 +8,10 @@ import {
 } from '@kingjs/partial-concept'
 import {
   CursorConcept,
+  CursorPart,
   MutableCursorConcept,
+  InputCursorPart,
+  OutputCursorPart,
   ForwardCursorConcept,
   RangeConcept,
   OutputRangeConcept,
@@ -65,6 +68,21 @@ class ForwardListCursor extends ContainerCursor {
         const { constructor, container, link } = this
         return new constructor(container, link)
       }
+    })
+  }
+
+  static {
+    extend(this, CursorPart, {
+      isAtEnd$() { return this.link == this.container._endLink },
+      canStep$() { return this.link != this.container._endLink },
+    })
+
+    extend(this, InputCursorPart, {
+      isAccessible$() { return this.link != this.container._endLink },
+    })
+
+    extend(this, OutputCursorPart, {
+      isAccessible$() { return this.link != this.container._endLink },
     })
   }
 }
@@ -189,5 +207,6 @@ export class ForwardList extends PartialProxy {
         return last
       },
     })
+
   }
 }

@@ -14,6 +14,7 @@ import {
   From,
   Transparent, isTransparent,
   Precondition,
+  DependsOn,
   CreateThunk,
 } from '@kingjs/partial-symbols'
 
@@ -654,6 +655,10 @@ function *ownDeclaredAdjacentPartialTypes(type) {
 
 class AdjacentTypes {
 
+  static get(type) {
+    return AdjacentTypes.#get(type)
+  }
+
   static publish(type, ...types) {
     AdjacentTypes.#get(type).add(...types)
   }
@@ -665,16 +670,18 @@ class AdjacentTypes {
 
   static #get(type) {
     let entry = this.#directory.get(type)
-    if (!entry) this.#directory.set(type, entry = new AdjacentTypes())
+    if (!entry) this.#directory.set(type, entry = new AdjacentTypes(type))
     return entry
   }
   
   static #directory = new Map()
 
+  #type
   #adjacentTypes
   #loaded = false
 
-  constructor() {
+  constructor(type) {
+    this.#type = type
     this.#adjacentTypes = new Set()
   }
 
@@ -691,6 +698,18 @@ class AdjacentTypes {
 
     this.#adjacentTypes.delete(type) // maintain order
     this.#adjacentTypes.add(type)
+  }
+
+  has(type) {
+    if (this.#adjacentTypes.has(type))
+      return true
+
+    const baseType = getBaseType(this.#type)
+    if (!baseType)
+      return false
+
+    const baseEntry = AdjacentTypes.#directory.get(baseType)
+    return baseEntry?.has(type) == true
   }
 }
 
@@ -756,24 +775,32 @@ export function create({
     assert(PartialType.isUserDefined(partialType),
       'Argument must be a user defined PartialType.')
     
-    const hosts = []
+    const adjacentTypes = AdjacentTypes.get(type)
+    const isPartialType = PartialType.isUserDefined(type)
     const prototype = type.prototype
     PartialReflect.copyTo(partialType, prototype, {
       createThunk: (key, descriptor) => CreateThunk in type 
         ? type[CreateThunk](key, descriptor) 
         : descriptor,
+      includeOverridden: true,
+      reverseHierarchy: true,
 
       filter: (host, key, descriptor) =>
         isFirstOrOverride(descriptor, key in prototype),
 
       onHost: (host) => {
         host[Precondition]?.call(host, type)
-        hosts.push(host)
+
+        if (!isPartialType)
+          for (const requirement of asMetadata(getOwn(host, DependsOn)))
+            if (!adjacentTypes.has(requirement))
+              throw new TypeError(
+                `${type.name} requires ${requirement.name}.`)
+
+        if (!isTransparent(host))
+          adjacentTypes.add(host)
       }
     })
-
-    for (const host of hosts.filter(host =>!isTransparent(host)))
-      AdjacentTypes.publish(type, host)
   }
   
   return { PartialReflect, copyTo }

@@ -8,6 +8,7 @@ import {
   Extends, 
   Implements, 
   Abstracts, 
+  DependsOn,
   Precondition,
 } from '@kingjs/partial-symbols'
 
@@ -16,6 +17,7 @@ export {
   Defines, 
   Implements, 
   Abstracts,
+  DependsOn,
 } from '@kingjs/partial-symbols'
 
 export class PartialClass extends PartialType {

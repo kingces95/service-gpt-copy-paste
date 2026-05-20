@@ -149,13 +149,20 @@ export class Prototype {
     map = (host, key, descriptor) => descriptor,
     filter = (host, key, descriptor) => true,
     filterOwn = false,
+    includeOverridden = false,
+    reverseHierarchy,
     createThunk = (key, descriptor) => descriptor,
     asDescriptor = false,
   }) {
     let key
     let host
     const fn = filterOwn ? this.ownDescriptors : this.descriptors
-    for (const current of fn.call(this, prototype, { map, filter })) {
+    for (const current of fn.call(this, prototype, {
+      includeOverridden,
+      map,
+      filter,
+      reverseHierarchy,
+    })) {
       assert (typeof current == 'string' 
         || typeof current == 'symbol'
         || typeof current == 'object'

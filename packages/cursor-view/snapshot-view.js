@@ -1,13 +1,19 @@
 import { implement } from '@kingjs/partial-implement'
+import { extend } from '@kingjs/partial-extend'
 import { EquatableConcept } from '@kingjs/partial-concept'
 import {
   Cursor,
   Range,
   InputCursorConcept,
+  CursorPart,
+  InputCursorPart,
   ForwardCursorConcept,
   BidirectionalCursorConcept,
+  BidirectionalCursorPart,
   RandomAccessCursorConcept,
+  RandomAccessCursorPart,
   OffsetReadableCursorConcept,
+  OffsetReadableCursorPart,
   RandomAccessRangeConcept,
 } from '@kingjs/cursor'
 
@@ -60,6 +66,38 @@ class SnapshotCursor extends Cursor {
     implement(this, OffsetReadableCursorConcept, {
       at(offset) {
         return this.range._values[this.index + offset]
+      },
+    })
+  }
+
+  static {
+    extend(this, CursorPart, {
+      isAtEnd$() { return this.index == this.range._values.length },
+      canStep$() { return this.index < this.range._values.length },
+    })
+
+    extend(this, InputCursorPart, {
+      isAccessible$() {
+        return this.index >= 0 && this.index < this.range._values.length
+      },
+    })
+
+    extend(this, BidirectionalCursorPart, {
+      isAtBegin$() { return this.index == 0 },
+      canStepBack$() { return this.index > 0 },
+    })
+
+    extend(this, RandomAccessCursorPart, {
+      canMove$(offset) {
+        const index = this.index + offset
+        return index >= 0 && index <= this.range._values.length
+      },
+    })
+
+    extend(this, OffsetReadableCursorPart, {
+      isReadableAt$(offset) {
+        const index = this.index + offset
+        return index >= 0 && index < this.range._values.length
       },
     })
   }

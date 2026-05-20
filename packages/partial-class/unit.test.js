@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
+import { abstract } from '@kingjs/abstract'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { 
   PartialClass, 
+  DependsOn,
   Extends } from '@kingjs/partial-class'
 import { extend } from '@kingjs/partial-extend'
 import { PartialReflect } from '@kingjs/partial-reflect'
@@ -53,6 +55,25 @@ describe('A type', () => {
     })
     it('should have the member', () => {
       expect(type.prototype.member).toBe(member)
+    })
+  })
+  describe('after being extended by a PartialClass with an abstract override', () => {
+    let baseMember
+    beforeEach(() => {
+      baseMember = function baseMember() { }
+
+      class BaseExtension extends PartialClass { }
+      BaseExtension.prototype.member = baseMember
+
+      class Extension extends PartialClass {
+        static [Extends] = BaseExtension
+      }
+      Extension.prototype.member = abstract
+
+      extend(type, Extension)
+    })
+    it('should preserve the concrete base member', () => {
+      expect(type.prototype.member).toBe(baseMember)
     })
   })
   describe('after being extended by an empty extension', () => {
@@ -203,5 +224,54 @@ describe('A PartialClass', () => {
       expect(keys).toHaveLength(1)
       expect(keys[0]).toBe(symbol)
     })
+  })
+})
+
+describe('DependsOn', () => {
+  it('should accept a dependency satisfied earlier in the same copy', () => {
+    class Requirement extends PartialClass { }
+    class Requiring extends PartialClass {
+      static [Extends] = Requirement
+      static [DependsOn] = Requirement
+    }
+
+    class Type { }
+
+    expect(() => extend(Type, Requiring)).not.toThrow()
+  })
+
+  it('should accept a dependency satisfied by an earlier copy', () => {
+    class Requirement extends PartialClass { }
+    class Requiring extends PartialClass {
+      static [DependsOn] = Requirement
+    }
+
+    class Type { }
+    extend(Type, Requirement)
+
+    expect(() => extend(Type, Requiring)).not.toThrow()
+  })
+
+  it('should reject a missing dependency on a non-partial type', () => {
+    class Requirement extends PartialClass { }
+    class Requiring extends PartialClass {
+      static [DependsOn] = Requirement
+    }
+
+    class Type { }
+
+    expect(() => extend(Type, Requiring)).toThrow(
+      'Type requires Requirement.')
+  })
+
+  it('should not check dependencies when copying to a partial type', () => {
+    class Requirement extends PartialClass { }
+    class Requiring extends PartialClass {
+      static [DependsOn] = Requirement
+    }
+
+    class Type extends PartialClass { }
+
+    expect(() => extend(Type, Requiring)).not.toThrow()
   })
 })

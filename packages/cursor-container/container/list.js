@@ -5,6 +5,7 @@ import { extend } from '@kingjs/partial-extend'
 import { ForwardList } from './forward-list.js'
 import { 
   BidirectionalCursorConcept, 
+  BidirectionalCursorPart,
   BidirectionalRangeConcept 
 } from '@kingjs/cursor'
 import { 
@@ -32,6 +33,13 @@ class ListCursor extends ForwardList.cursorType {
         return this
       }    
     }) 
+  }
+
+  static {
+    extend(this, BidirectionalCursorPart, {
+      isAtBegin$() { return this.link == this.container._rootLink },
+      canStepBack$() { return this.link != this.container._rootLink },
+    })
   }
 }
 
@@ -101,5 +109,6 @@ export class List extends ForwardList {
         return this
       },
     })
+
   }
 }

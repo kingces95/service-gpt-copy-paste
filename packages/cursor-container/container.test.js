@@ -383,8 +383,8 @@ describe.each(Object.entries(Tests))('A %s', (name, {
   })
 
   const isEmpty = 'Container is empty.'
-  const readOutOfBounds = 'Cannot access value out of bounds of cursor.'
-  const writeOutOfBounds = 'Cannot access value out of bounds of cursor.'
+  const readOutOfBounds = 'Cannot read value out of bounds of cursor.'
+  const writeOutOfBounds = 'Cannot write value out of bounds of cursor.'
   const context = {
     get container() { return container },
     members,

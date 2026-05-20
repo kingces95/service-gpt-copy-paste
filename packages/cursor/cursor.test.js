@@ -230,7 +230,7 @@ describe.each(Object.entries(Tests))('%s', (_, {
 
         it('rejects value read', () => {
           expect(() => begin.value).toThrow(
-            'Cannot access value out of bounds of cursor.')
+            'Cannot read value out of bounds of cursor.')
         })
       })
     }
@@ -242,7 +242,8 @@ describe.each(Object.entries(Tests))('%s', (_, {
         })
 
         it('rejects value write', () => {
-          expect(() => begin.value = 42).toThrow(RangeError)
+          expect(() => begin.value = 42).toThrow(
+            'Cannot write value out of bounds of cursor.')
         })
       })
     }
@@ -322,7 +323,7 @@ describe.each(Object.entries(Tests))('%s', (_, {
 
         it('rejects at zero by precondition', () => {
           expect(() => begin.at(0)).toThrow(
-            'Cannot access value out of bounds of cursor.')
+            'Cannot read value out of bounds of cursor.')
         })
       })
     }
@@ -335,7 +336,7 @@ describe.each(Object.entries(Tests))('%s', (_, {
 
         it('rejects setAt zero by precondition', () => {
           expect(() => begin.setAt(0, 42)).toThrow(
-            'Cannot access value out of bounds of cursor.')
+            'Cannot write value out of bounds of cursor.')
         })
       })
     }

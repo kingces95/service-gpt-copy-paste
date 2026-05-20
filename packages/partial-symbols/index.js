@@ -107,6 +107,7 @@ export const TypePrecondition = Symbol('PartialProxy.TypePrecondition')
 export const TypePostcondition = Symbol('PartialProxy.TypePostcondition')
 
 export const Implements = Symbol('Concept.Implements')
+export const DependsOn = Symbol('Concept.DependsOn')
 export const Extends = Symbol('PartialClass.Extends')
 export const Defines = Symbol('Attachments.Defines')
 export const Abstracts = Symbol('Attachments.Abstracts')

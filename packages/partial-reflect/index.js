@@ -2,6 +2,7 @@ import {
   Implements, 
   Extends,
   Defines,
+  DependsOn,
 } from '@kingjs/partial-symbols'
 import { create } from '@kingjs/partial-reflector'
 
@@ -12,5 +13,6 @@ export const { PartialReflect, copyTo } = create({
     Defines,      // from Attachments
     Extends,      // from PartialClass
     Implements,   // from Concept
+    DependsOn,    // from PartialReflect
   ]
 })

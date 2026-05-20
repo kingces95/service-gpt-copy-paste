@@ -12,6 +12,16 @@ import {
   ArgChecks,
   TypePrecondition, 
   TypePostcondition,
+
+  // this file intentially does not import 
+  //    DependsOn
+  //    Extends
+  //    Implements
+  //    Defines
+  //    Abstracts
+  // since these relate to extensions of PartialTypes and this file concerns
+  // itself with querying metadata across all extensions of PartialTypes in
+  // the abstract.
 } from '@kingjs/partial-symbols'
 
 // ____________________________________________________________________________

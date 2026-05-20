@@ -1,29 +1,34 @@
 import { implement } from '@kingjs/partial-implement'
-import { Preconditions } from '@kingjs/partial-proxy'
+import { extend } from '@kingjs/partial-extend'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { EquatableConcept } from '@kingjs/partial-concept'
 import { Cursor } from './cursor.js'
 import { 
   CursorConcept,
+  CursorPart,
   InputCursorConcept,
+  InputCursorPart,
   OutputCursorConcept,
+  OutputCursorPart,
   MutableCursorConcept,
   ForwardCursorConcept,
   BidirectionalCursorConcept,
+  BidirectionalCursorPart,
   RandomAccessCursorConcept,
+  RandomAccessCursorPart,
   OffsetReadableCursorConcept,
+  OffsetReadableCursorPart,
   OffsetWritableCursorConcept,
+  OffsetWritableCursorPart,
   ContiguousCursorConcept,
+  ContiguousCursorPart,
 } from './cursor-concepts.js'
 import { 
   RangeConcept
 } from './range-concepts.js'
 import {
   throwMoveOutOfBounds,
-  throwReadOutOfBounds,
-  throwWriteOutOfBounds,
 } from './throw.js'
-import { distance } from '../cursor-algorithm/distance.js'
 
 // End cursor implementations; Cursors (1) are empty and (2) cannot move. 
 
@@ -40,43 +45,47 @@ export class TrivialCursor extends Cursor {
       equals(other) { return this.equatableTo(other) }
     })
   }
+
+  static {
+    extend(this, CursorPart)
+  }
 }
 
 export class TrivialInputCursor extends TrivialCursor {
-  static [Preconditions] = {
-    get value() { throwReadOutOfBounds() }
-  }
-
   static { 
     implement(this, InputCursorConcept, {
       get value() { }
     }) 
   }
+
+  static {
+    extend(this, InputCursorPart)
+  }
 }
 
 export class TrivialOutputCursor extends TrivialCursor {
-  static [Preconditions] = {
-    set value(value) { throwWriteOutOfBounds() }
-  }
-
   static { 
     implement(this, OutputCursorConcept, {
       set value(value) { }
     }) 
   }
+
+  static {
+    extend(this, OutputCursorPart)
+  }
 }
 
 export class TrivialMutableCursor extends TrivialCursor {
-  static [Preconditions] = {
-    get value() { throwReadOutOfBounds() },
-    set value(value) { throwWriteOutOfBounds() }
-  }
-
   static {
     implement(this, MutableCursorConcept, {
       get value() { },
       set value(value) { },
     })
+  }
+
+  static {
+    extend(this, InputCursorPart)
+    extend(this, OutputCursorPart)
   }
 }
 
@@ -94,9 +103,15 @@ export class TrivialBidirectionalCursor extends TrivialForwardCursor {
       stepBack() { throwMoveOutOfBounds() }
     }) 
   }
+
+  static {
+    extend(this, BidirectionalCursorPart)
+  }
 }
 
 export class TrivialRandomAccessCursor extends TrivialBidirectionalCursor {
+  get index() { return 0 }
+
   static { 
     implement(this, RandomAccessCursorConcept, {
       move(offset) { 
@@ -107,6 +122,10 @@ export class TrivialRandomAccessCursor extends TrivialBidirectionalCursor {
       compareTo(other) { return 0 },
     }) 
   }
+
+  static {
+    extend(this, RandomAccessCursorPart)
+  }
 }
 
 export class TrivialOffsetReadableCursor extends TrivialRandomAccessCursor {
@@ -115,6 +134,10 @@ export class TrivialOffsetReadableCursor extends TrivialRandomAccessCursor {
       at(offset) { },
     })
   }
+
+  static {
+    extend(this, OffsetReadableCursorPart)
+  }
 }
 
 export class TrivialOffsetWritableCursor extends TrivialRandomAccessCursor {
@@ -122,6 +145,10 @@ export class TrivialOffsetWritableCursor extends TrivialRandomAccessCursor {
     implement(this, OffsetWritableCursorConcept, {
       setAt(offset, value) { },
     })
+  }
+
+  static {
+    extend(this, OffsetWritableCursorPart)
   }
 }
 
@@ -134,6 +161,11 @@ export class TrivialOffsetCursor extends TrivialRandomAccessCursor {
       setAt(offset, value) { },
     })
   }
+
+  static {
+    extend(this, OffsetReadableCursorPart)
+    extend(this, OffsetWritableCursorPart)
+  }
 }
 
 export class TrivialContiguousCursor extends TrivialOffsetCursor {
@@ -141,6 +173,10 @@ export class TrivialContiguousCursor extends TrivialOffsetCursor {
     implement(this, ContiguousCursorConcept, {
       span(other) { return Buffer.alloc(0) }
     }) 
+  }
+
+  static {
+    extend(this, ContiguousCursorPart)
   }
 }
 

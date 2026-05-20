@@ -173,6 +173,8 @@ export class Es6Prototype {
 
   copyTo(type, target, {
     filterOwn = false,
+    includeOverridden = false,
+    reverseHierarchy,
     filter = (host, key, descriptor) => true,
     map = (host, key, descriptor) => descriptor,
     createThunk = (key, descriptor) => descriptor,
@@ -182,7 +184,8 @@ export class Es6Prototype {
   }) {
     const prototype = this.getPrototype(type)
     Prototype.copyTo(prototype, target, { 
-      createThunk, onCopy, onHost, map, asDescriptor, filterOwn,
+      createThunk, includeOverridden, onCopy, onHost, map, asDescriptor,
+      filterOwn, reverseHierarchy,
       filter: (host, key, descriptor) => !this.isKnownKey(host, key) 
         && filter(host, key, descriptor),
     })

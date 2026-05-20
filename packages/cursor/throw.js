@@ -13,8 +13,10 @@ export function throwStale() { throw new Error(
 
 export function throwValueOutOfBounds() { throw new RangeError(
   'Cannot access value out of bounds of cursor.') }
-export function throwReadOutOfBounds() { throwValueOutOfBounds() }
-export function throwWriteOutOfBounds() { throwValueOutOfBounds() }
+export function throwReadOutOfBounds() { throw new RangeError(
+  'Cannot read value out of bounds of cursor.') }
+export function throwWriteOutOfBounds() { throw new RangeError(
+  'Cannot write value out of bounds of cursor.') }
 export function throwMoveOutOfBounds() { throw new RangeError(
   'Cannot move cursor out of bounds.') }
 export function throwFixed() { throw new Error(
