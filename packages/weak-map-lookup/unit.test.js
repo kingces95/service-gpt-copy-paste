@@ -7,7 +7,7 @@ describe('WeakMapLookup', () => {
     const a = { }
     const b = { }
 
-    expect(lookup.get([a, b])).toBe(lookup.get([a, b]))
+    expect(lookup.of(a, b)).toBe(lookup.of(a, b))
   })
 
   it('should return different weak maps for different tuples', () => {
@@ -16,7 +16,7 @@ describe('WeakMapLookup', () => {
     const b = { }
     const c = { }
 
-    expect(lookup.get([a, b])).not.toBe(lookup.get([a, c]))
+    expect(lookup.of(a, b)).not.toBe(lookup.of(a, c))
   })
 
   it('should expose the leaf weak map', () => {
@@ -26,9 +26,9 @@ describe('WeakMapLookup', () => {
     const key = { }
     const value = { }
 
-    const leaf = lookup.get([a, b])
+    const leaf = lookup.of(a, b)
     leaf.set(key, value)
 
-    expect(lookup.get([a, b]).get(key)).toBe(value)
+    expect(lookup.of(a, b).get(key)).toBe(value)
   })
 })

@@ -52,3 +52,30 @@ Remaining work:
 - Reclaim `Shape` for transparent structural requirements.
 - Decide which cursor/range `Concept` names should become structural shapes.
 - Revisit range movement/access declarations after the vocabulary settles.
+
+## Proposed Names
+
+- `Includes`: shape adjacency symbol for composing one shape from other shapes.
+- `satisfy(type, shape)`: procedural API for attaching structural satisfaction.
+
+## Settled Policy
+
+- `satisfy` takes one constructor type and one shape.
+- `satisfy` is the procedural declaration; `instanceof Shape` is the query.
+- `Includes` includes only other shapes.
+- Shape checks are strict descriptor checks over constructor types.
+- Shape satisfaction caches positive and negative results.
+- Shape copies descriptors like `Concept`, without default helper members.
+- Probe remains the value-level runtime observation abstraction.
+- Shape remains the STL-ish type-level probing abstraction.
+
+The detailed sketch is in
+[Partial shape design](../notes/2026-05-20-partial-shape-design.md).
+
+Update: `satisfy` moved to `@kingjs/partial-satisfy` and now mirrors
+`implement` by copying Shape descriptors onto a type. Shape is transparent
+outside its own family, so those descriptors flatten into normal types without
+publishing Shape as nominal composition.
+
+The checkin note is
+[Partial Shape and Satisfy](../notes/2026-05-20-partial-shape-and-satisfy.md).

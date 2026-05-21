@@ -1,0 +1,22 @@
+{
+  "name": "@kingjs/partial-shape",
+  "version": "1.0.0",
+  "description": ".",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {
+    "@kingjs/abstract": "1.0.0",
+    "@kingjs/assert": "1.0.0",
+    "@kingjs/partial-reflect": "1.0.0",
+    "@kingjs/partial-symbols": "1.0.0",
+    "@kingjs/partial-type": "1.0.0",
+    "@kingjs/weak-map-lookup": "1.0.0"
+  },
+  "devDependencies": {},
+  "peerDependencies": {},
+  "author": "Chris King",
+  "license": "MIT"
+}

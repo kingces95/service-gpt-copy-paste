@@ -1,8 +1,14 @@
-export function *linearize(root, adjacent, { 
+export function *linearize(rootOrRoots, adjacent, { 
   preOrder = false,
   reverse = false,
 } = { }) {
+  const roots = Array.isArray(rootOrRoots)
+    ? [ ...rootOrRoots ]
+    : [ rootOrRoots ]
   const visited = new Set()
+
+  if (reverse)
+    roots.reverse()
 
   function *walk$(node) {
     if (visited.has(node)) return
@@ -22,5 +28,6 @@ export function *linearize(root, adjacent, {
       yield node
   }
 
-  yield* walk$(root)
+  for (const root of roots)
+    yield* walk$(root)
 }

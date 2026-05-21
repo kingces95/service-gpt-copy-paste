@@ -1,4 +1,4 @@
-# STL Concepts vs Runtime Concepts
+# Reframing STL Concepts as Shapes
 
 ## Starting Point
 
@@ -89,6 +89,19 @@ Shape
 └─ transparent, not nominal
 ```
 
+That split is now sharper:
+
+```txt
+Probe
+└─ asks about a live object
+
+Shape
+└─ asks about a constructor type
+```
+
+The constructor-type rule is what makes Shape cacheable in the STL-ish way.
+It does not observe runtime object state. It checks descriptors.
+
 That suggests the current `partial-shape` naming may be backwards:
 
 ```txt
@@ -152,3 +165,24 @@ STL forward_iterator is a named structural predicate instead.
 
 That mismatch is the root reason to explore demoting/renaming the current
 `Shape` machinery and introducing a stronger, transparent structural contract.
+
+## Next Note
+
+The concrete `Shape` design is sketched in
+[Partial shape design](./2026-05-20-partial-shape-design.md). That note records
+the emerging names:
+
+```txt
+Includes
+└─ shape adjacency symbol
+
+satisfy(type, shape)
+└─ procedural declaration that a type satisfies a shape
+```
+
+The settled policy is: `satisfy` accepts constructor types only, `Includes`
+accepts shapes only, satisfaction is strict descriptor checking, `satisfy`
+mirrors `implement`, and `instanceof Shape` is the query surface.
+
+The implemented package split is summarized in
+[Partial Shape and Satisfy](./2026-05-20-partial-shape-and-satisfy.md).

@@ -112,4 +112,5 @@ Future Shape
 ## Links
 
 - [STL concepts vs runtime concepts](./2026-05-20-stl-concepts-vs-requirements.md)
+- [Partial shape design](./2026-05-20-partial-shape-design.md)
 - [STL-shaped requirements quest](../quests/stl-shaped-requirements.md)

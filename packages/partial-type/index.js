@@ -17,13 +17,49 @@ export {
   From,
 } from '@kingjs/partial-symbols'
 
+const families = new WeakMap()
+
 export class PartialType extends null {
   
   static isUserDefined(type) {
-    if (!type) return false
-    if (type == PartialType) return false
+    if (!type || type == PartialType) return false
     if (Object.getPrototypeOf(type) == PartialType) return false
-    return Es6UserReflect.isExtensionOf(type, PartialType)    
+    return Es6UserReflect.isExtensionOf(type, PartialType)
+  }
+
+  static getFamily(type) {
+    if (!PartialType.isUserDefined(type))
+      return null
+
+    let result = families.get(type)
+
+    if (!result) {
+      result = PartialType.#family(type)
+      families.set(type, result)
+    }
+
+    return result
+  }
+
+  static isSameFamily(left, right) {
+    const family = PartialType.getFamily(left)
+    return family != null && family == PartialType.getFamily(right)
+  }
+
+  static #family(type) {
+    let result = type
+
+    while (true) {
+      const baseType = Es6UserReflect.getBaseType(result)
+
+      if (!baseType || baseType == PartialType)
+        return result
+
+      if (!Es6UserReflect.isExtensionOf(baseType, PartialType))
+        return result
+
+      result = baseType
+    }
   }
 
   constructor() { 

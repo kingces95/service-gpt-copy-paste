@@ -3,7 +3,7 @@ export class WeakMapLookup {
     this.root = root
   }
 
-  get(keys) {
+  of(...keys) {
     let map = this.root
 
     for (const key of keys) {

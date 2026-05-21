@@ -32,10 +32,10 @@ function templatizeType(requirements, type) {
   const cache = new WeakMapLookup()
 
   const specialize = function(...targs) {
-    const leaf = cache.get(targs)
+    const typesOfTargs = cache.of(...targs)
 
-    if (leaf.has(key))
-      return leaf.get(key)
+    if (typesOfTargs.has(key))
+      return typesOfTargs.get(key)
 
     class TypeOf extends type { }
 
@@ -46,7 +46,7 @@ function templatizeType(requirements, type) {
 
     defineTemplateSurface(TypeOf, { targs })
 
-    leaf.set(key, TypeOf)
+    typesOfTargs.set(key, TypeOf)
     return TypeOf
   }
 
@@ -60,16 +60,16 @@ function templatizeFunction(requirements, fn) {
   const cache = new WeakMapLookup()
 
   const specialize = function(...targs) {
-    const leaf = cache.get(targs)
+    const functionsOfTargs = cache.of(...targs)
 
-    if (leaf.has(key))
-      return leaf.get(key)
+    if (functionsOfTargs.has(key))
+      return functionsOfTargs.get(key)
 
     const fnOf = fn(...targs)
 
     defineTemplateSurface(fnOf, { targs, as })
 
-    leaf.set(key, fnOf)
+    functionsOfTargs.set(key, fnOf)
     return fnOf
   }
 

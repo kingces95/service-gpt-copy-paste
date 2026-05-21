@@ -713,14 +713,31 @@ class AdjacentTypes {
   }
 }
 
+function canAdjoin(type, partialType) {
+  if (!PartialType.isUserDefined(partialType))
+    return false
+
+  if (!isTransparent(partialType))
+    return true
+
+  return PartialType.isSameFamily(type, partialType)
+}
+
 function *ownPartialTypes(type) {
 
   // via declaration (e.g. static [Extends] = PartialType)
-  yield* ownDeclaredAdjacentPartialTypes(type)
-    .filter(partialType => !isTransparent(partialType))
+  for (const partialType of ownDeclaredAdjacentPartialTypes(type))
+    if (canAdjoin(type, partialType))
+      yield partialType
 
   // via procedure (e.g extend())
   yield* AdjacentTypes.load(type)
+}
+
+function *ownTransparentPartialTypes(type) {
+  for (const partialType of ownDeclaredAdjacentPartialTypes(type))
+    if (!canAdjoin(type, partialType))
+      yield partialType
 }
 
 const KnownTypes = [ Object, Function, PartialType ]
@@ -747,10 +764,9 @@ const compiledPrototype = new Es6Prototype({
 const unifiedPrototype = new Es6Prototype({
   knownKeys: KnownKeys,
   getPrototype: function(type) {
-    const transparentTypes = ownDeclaredAdjacentPartialTypes(type)
-      .filter(partialType => isTransparent(partialType))
-    const types = [ ...transparentTypes, type ]
-    return compiledPrototype.reduce(types, { map: resolve })
+    const transparentTypes = [...ownTransparentPartialTypes(type)]
+    const mergeOrderTypes = [...mergeOrder(transparentTypes), type]
+    return compiledPrototype.reduce(mergeOrderTypes, { map: resolve })
   }
 })
 
