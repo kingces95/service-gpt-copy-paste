@@ -84,7 +84,8 @@ generic/template checks
   type/template parameter checks
 ```
 
-For generic functions, a C++-template-inspired shape is acceptable:
+For generic functions, a C++-template-inspired structural requirement is
+acceptable:
 
 ```js
 export const materialize = generic(
@@ -153,7 +154,8 @@ value instanceof type
 ```
 
 Custom behavior belongs behind the type's `Symbol.hasInstance`, not in a
-well-known procedural branch in the loader.
+well-known procedural branch in the loader. For values, that usually means a
+`Probe`; for constructor/prototype structure, that usually means a `Shape`.
 
 Keep defaults out of `contract`; defaults belong to the caller, the function
 signature, or the template/export choice. The contract layer should remain:
@@ -241,7 +243,7 @@ Part
   internal capability bundle / implementation composition unit
 
 Shape
-  anonymous concept / requires-expression-shaped capability
+  structural, descriptor-bound type requirement
 
 Check
   argument/value constraint with custom runtime behavior and documentation
@@ -260,7 +262,7 @@ Concept
   grand, certified, opt-in vocabulary
 
 Shape
-  small, leaf-y, structural requirement that does not need explicit opt-in
+  structural type-level requirement attached with satisfy(...)
 
 Probe
   observational runtime duck test over wild JavaScript values
@@ -269,6 +271,6 @@ Check
   procedural validation hook with custom errors and docs
 ```
 
-This keeps `Shape` close to C++ anonymous `requires` expressions: a named local
-bundle of expression requirements, not a public semantic noun unless it earns
-that weight.
+This keeps `Shape` close to C++ named concepts and anonymous `requires`
+expressions: a structural requirement checked against type shape, not a nominal
+base class. `Probe` keeps the looser runtime duck-test role.

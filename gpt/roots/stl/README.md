@@ -8,7 +8,7 @@ and the local JavaScript translation.
 
 Current notes:
 
-- `iterator-categories.md`
-- `algorithms.md`
-- `requires-expressions.md`
-- `templates.md`
+- `iterator-categories.root.md`
+- `algorithms.root.md`
+- `requires-expressions.root.md`
+- `templates.root.md`

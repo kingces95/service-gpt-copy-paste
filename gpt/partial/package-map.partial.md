@@ -20,9 +20,14 @@ partial chain.
 
 `partial-class` defines implementation/capability parts.
 
-`partial-concept` defines certified runtime concepts.
+`partial-concept` defines certified nominal runtime concepts.
 
-`partial-shape` defines loose observational duck types.
+`partial-shape` defines structural type-level requirements.
+
+`partial-satisfy` copies shapes and shape implementations onto types.
+
+Loose observational duck checks moved to `probe`; see
+[Shape to Probe](../notes/2026-05-20-001-shape-to-probe.notes.md).
 
 ## Verbs
 
@@ -31,6 +36,8 @@ partial chain.
 `partial-extend` composes partial classes.
 
 `partial-implement` composes concepts and their implementations.
+
+`partial-satisfy` composes shapes and their implementations.
 
 ## Runtime
 

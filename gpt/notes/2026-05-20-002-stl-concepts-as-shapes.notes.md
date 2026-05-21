@@ -102,16 +102,16 @@ Shape
 The constructor-type rule is what makes Shape cacheable in the STL-ish way.
 It does not observe runtime object state. It checks descriptors.
 
-That suggests the current `partial-shape` naming may be backwards:
+That suggested the old observational `partial-shape` naming was backwards:
 
 ```txt
-Current partial-shape
-└─ should likely become Probe
+Old observational shape
+└─ became Probe
    └─ demoted out of partial
       └─ works on wild objects
 
-Future Shape
-└─ transparent Concept-like requirement
+New Shape
+└─ transparent structural requirement
    └─ structural and cached
       └─ closer to STL named concepts
 ```
@@ -169,7 +169,7 @@ That mismatch is the root reason to explore demoting/renaming the current
 ## Next Note
 
 The concrete `Shape` design is sketched in
-[Partial shape design](./2026-05-20-partial-shape-design.md). That note records
+[Partial shape design](./2026-05-20-003-partial-shape-design.notes.md). That note records
 the emerging names:
 
 ```txt
@@ -185,4 +185,4 @@ accepts shapes only, satisfaction is strict descriptor checking, `satisfy`
 mirrors `implement`, and `instanceof Shape` is the query surface.
 
 The implemented package split is summarized in
-[Partial Shape and Satisfy](./2026-05-20-partial-shape-and-satisfy.md).
+[Partial Shape and Satisfy](./2026-05-20-004-partial-shape-and-satisfy.notes.md).

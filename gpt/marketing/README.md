@@ -27,7 +27,7 @@ a tiny story:
 3. a failure case that explains why the abstraction matters
 
 As a GPT compile step, periodically scan focused test files and harvest examples
-into `toc.md` or future idiom notes. Prefer tests that demonstrate a complete
+into `toc.marketing.md` or future idiom notes. Prefer tests that demonstrate a complete
 developer payoff: metadata becomes behavior, reflection becomes documentation,
 or a protocol becomes composable.
 

@@ -14,7 +14,8 @@ value instanceof ThenableShape
 
 That test may inspect live properties, trigger getters, trip proxy traps, or
 observe values whose shape changes over time. That behavior is useful, but it
-is more of a probe than a compile-time-style requirement.
+is more of a probe than a compile-time-style requirement. In the current
+vocabulary, that example would be `value instanceof ThenableProbe`.
 
 ## Rename
 
@@ -42,8 +43,10 @@ export class PushProbe extends Probe {
 }
 ```
 
-This frees the word `Shape` for a future stronger abstraction: a transparent,
-descriptor-bound, cached structural requirement closer to STL named concepts.
+This freed the word `Shape` for the stronger abstraction we wanted next: a
+transparent, descriptor-bound structural requirement closer to STL named
+concepts. That abstraction was later implemented as
+[`@kingjs/partial-shape` with `@kingjs/partial-satisfy`](./2026-05-20-004-partial-shape-and-satisfy.notes.md).
 
 ## Decoupling
 
@@ -102,7 +105,7 @@ Concept
 └─ explicitly composed into a type
 └─ appears in the meta-prototype chain
 
-Future Shape
+Shape
 └─ transparent structural requirement
 └─ descriptor-bound
 └─ cached by tested type
@@ -111,6 +114,7 @@ Future Shape
 
 ## Links
 
-- [STL concepts vs runtime concepts](./2026-05-20-stl-concepts-vs-requirements.md)
-- [Partial shape design](./2026-05-20-partial-shape-design.md)
-- [STL-shaped requirements quest](../quests/stl-shaped-requirements.md)
+- [Reframing STL Concepts as Shapes](./2026-05-20-002-stl-concepts-as-shapes.notes.md)
+- [Partial shape design](./2026-05-20-003-partial-shape-design.notes.md)
+- [Partial Shape and Satisfy](./2026-05-20-004-partial-shape-and-satisfy.notes.md)
+- [STL-shaped requirements quest](../quests/stl-shaped-requirements.quest.md)

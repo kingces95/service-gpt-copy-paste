@@ -14,7 +14,8 @@ source.
 | Partial metadata | Partial meta-prototype chain | Static-field metadata chain | Associated types and symbol-attached metadata |
 | Condition chains | Metadata chain containing condition POJOs | Member-keyed pre/postcondition chain | Thunkable method/getter/setter guards |
 | Reflection info | Transformed reflection queries | `TypeInfo`/`MemberInfo` graph | Docs, help, POJO output, conceptual ownership |
-| Shape observation | Shape declaration plus wild value | Runtime `instanceof` result | Duck typing over live JavaScript observations |
+| Probe observation | Probe declaration plus wild value | Runtime `instanceof` result | Duck typing over live JavaScript observations |
+| Shape satisfaction | Shape declaration plus constructor type | Structural `instanceof` result | STL-ish type-level requirements |
 
 ## Architectural Pattern
 
@@ -45,7 +46,8 @@ Es6Reflector
    │  ├─ partial metadata
    │  └─ condition chains
    ├─ reflection info
-   └─ shape observation
+   ├─ probe observation
+   └─ shape satisfaction
 ```
 
 The important nested branch is `PartialMetadata`: it is not a peer of
@@ -64,4 +66,5 @@ symbol-attached POJOs into member-keyed guard chains.
 - `packages/partial-proxy/index.js`: thunk creation from condition metadata.
 - `packages/info/index.js`: docs/tooling projection over `PartialReflect` and
   `PartialMetadata`.
-- `packages/partial-shape/shape.js`: observational shape matching.
+- `packages/probe/probe.js`: observational probe matching.
+- `packages/partial-shape/index.js`: structural shape matching.

@@ -2,7 +2,7 @@
 
 If it quacks, write down which duck you meant.
 
-Turn one-off `typeof` probes into reusable shape or check metadata.
+Turn one-off `typeof` probes into reusable probe or check metadata.
 
 ## The JavaScript Idiom
 
@@ -21,14 +21,14 @@ The check is useful but local. It cannot easily be reused or documented.
 
 ## Declarative Translation
 
-For wild external values, use a `Shape`.
+For wild external values, use a `Probe`.
 
 ```js
-class ThenableShape extends Shape {
+class ThenableProbe extends Probe {
   then() { }
 }
 
-if (!(value instanceof ThenableShape))
+if (!(value instanceof ThenableProbe))
   throw new TypeError('Expected thenable.')
 ```
 
@@ -49,8 +49,11 @@ load[Preconditions] = [
 
 ## Why This Matters
 
-Shapes and checks make runtime assumptions reusable and documentable.
+Probes and checks make runtime assumptions reusable and documentable.
 
-Use `Shape` when the object is wild JS and observational duck typing is the
+Use `Probe` when the object is wild JS and observational duck typing is the
 right model. Use `Check` when the validation is part of function metadata and
 needs a good error message.
+
+Use `Shape` for type-level structural requirements copied by `satisfy`, not
+for wild runtime values.

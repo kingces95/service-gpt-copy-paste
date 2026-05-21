@@ -4,66 +4,66 @@
 
 ### Descriptor Idioms
 
-- `idioms/const-field.md`: turning `Object.defineProperty` for const fields
+- `idioms/const-field.idiom.md`: turning `Object.defineProperty` for const fields
   into declarative `Defines` metadata.
-- `idioms/static-metadata-block.md`: turning imperative static setup into
+- `idioms/static-metadata-block.idiom.md`: turning imperative static setup into
   symbol-keyed metadata a loader can consume.
-- `idioms/associated-type.md`: turning related type conventions into
+- `idioms/associated-type.idiom.md`: turning related type conventions into
   reflectable associated-type declarations.
 
 ### Contract Idioms
 
-- `idioms/abstract-method.md`: turning hand-written throwing stubs into
+- `idioms/abstract-method.idiom.md`: turning hand-written throwing stubs into
   declarative `Abstracts`.
-- `idioms/interface-contract.md`: turning informal method expectations into
+- `idioms/interface-contract.idiom.md`: turning informal method expectations into
   certified `Concept` implementation.
-- `idioms/method-precondition.md`: turning hand-written guard clauses into
+- `idioms/method-precondition.idiom.md`: turning hand-written guard clauses into
   metadata-driven preconditions.
-- `idioms/requires-expression.md`: turning inline capability probes into named
+- `idioms/requires-expression.idiom.md`: turning inline capability probes into named
   or anonymous runtime checks.
-- `idioms/default-constructible-container.md`: turning "new Type(); push into
+- `idioms/default-constructible-container.idiom.md`: turning "new Type(); push into
   it" into a named function contract check.
-- `idioms/metadata-defaults.md`: turning function default parameter behavior
+- `idioms/metadata-defaults.idiom.md`: turning function default parameter behavior
   into explicit metadata wrappers can see.
 
 ### Composition Idioms
 
-- `idioms/mixin.md`: turning prototype-copying mixins into `PartialClass`
+- `idioms/mixin.idiom.md`: turning prototype-copying mixins into `PartialClass`
   extension.
-- `idioms/default-helper-method.md`: turning helper methods bundled with a
+- `idioms/default-helper-method.idiom.md`: turning helper methods bundled with a
   contract into concept `Defines`.
 
 ### Runtime Shape Idioms
 
-- `idioms/runtime-duck-check.md`: turning ad hoc `typeof` checks into reusable
+- `idioms/runtime-duck-check.idiom.md`: turning ad hoc `typeof` checks into reusable
   `Shape`/`Check` declarations.
 
 ### Cursor And Container Idioms
 
-- `idioms/algorithm-dispatch.md`: turning cursor category checks into
+- `idioms/algorithm-dispatch.idiom.md`: turning cursor category checks into
   capability-sensitive algorithm fast paths.
-- `idioms/materialized-range.md`: turning a single-pass range into a named,
+- `idioms/materialized-range.idiom.md`: turning a single-pass range into a named,
   explicit buffer when an algorithm needs stronger guarantees.
 
 ### CLI And Shell Idioms
 
-- `idioms/read-style-parser.md`: turning Bash-like `read` expectations into
+- `idioms/read-style-parser.idiom.md`: turning Bash-like `read` expectations into
   metadata-driven line parsing.
-- `idioms/field-type-schema.md`: turning CLI string conversion rules into tiny
+- `idioms/field-type-schema.idiom.md`: turning CLI string conversion rules into tiny
   reflected field schemas.
-- `idioms/help-from-metadata.md`: turning command declarations into generated
+- `idioms/help-from-metadata.idiom.md`: turning command declarations into generated
   help and tool discovery.
 
 ### Unix And Stream Idioms
 
-- `idioms/byte-positioned-read.md`: turning decoded reads into byte-accurate
+- `idioms/byte-positioned-read.idiom.md`: turning decoded reads into byte-accurate
   stream handoff.
-- `idioms/pipeline-resource-disposal.md`: turning ad hoc stream cleanup into an
+- `idioms/pipeline-resource-disposal.idiom.md`: turning ad hoc stream cleanup into an
   explicit pipeline lifecycle protocol.
 
 ### Reflection Idioms
 
-- `idioms/reflection-to-pojo.md`: turning runtime declarations into stable data
+- `idioms/reflection-to-pojo.idiom.md`: turning runtime declarations into stable data
   for docs, help, tests, and tool manifests.
 
 ## Future Examples
@@ -84,7 +84,7 @@ conversation themes.
   named check derivations.
 - `idioms/concept-instanceof.md`: turning `instanceof` from nominal class
   ancestry into certified capability membership.
-- `idioms/shape-vs-concept.md`: showing when loose duck checks are enough and
+- `idioms/shape-vs-concept.idiom.md`: showing when loose duck checks are enough and
   when an opted-in concept is the better promise.
 
 ### Cursor And Container Stories

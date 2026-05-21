@@ -263,8 +263,8 @@ question becomes a normal reflection query.
 
 ## Reading Order
 
-- `toc.md`: index of notes in this directory.
-- `catalog.md`: quick catalog of known transforms and what each one describes.
+- `toc.meta.md`: index of notes in this directory.
+- `catalog.meta.md`: quick catalog of known transforms and what each one describes.
 - `transforms/`: one note per transform.
 
 ## Documentation Policy

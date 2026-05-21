@@ -57,10 +57,10 @@ someone who already knows the source system.
 
 Examples:
 
-- `stl/requires-expressions.md`
-- `stl/iterator-categories.md`
-- `csharp/custom-attributes.md`
-- `csharp/partial-classes-and-interfaces.md`
+- `stl/requires-expressions.root.md`
+- `stl/iterator-categories.root.md`
+- `csharp/custom-attributes.root.md`
+- `csharp/partial-classes-and-interfaces.root.md`
 
 Avoid naming root notes after the local implementation unless the source system
 uses the same term.

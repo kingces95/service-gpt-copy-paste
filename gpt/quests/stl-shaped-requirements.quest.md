@@ -70,7 +70,7 @@ Remaining work:
 - Shape remains the STL-ish type-level probing abstraction.
 
 The detailed sketch is in
-[Partial shape design](../notes/2026-05-20-partial-shape-design.md).
+[Partial shape design](../notes/2026-05-20-003-partial-shape-design.notes.md).
 
 Update: `satisfy` moved to `@kingjs/partial-satisfy` and now mirrors
 `implement` by copying Shape descriptors onto a type. Shape is transparent
@@ -78,4 +78,4 @@ outside its own family, so those descriptors flatten into normal types without
 publishing Shape as nominal composition.
 
 The checkin note is
-[Partial Shape and Satisfy](../notes/2026-05-20-partial-shape-and-satisfy.md).
+[Partial Shape and Satisfy](../notes/2026-05-20-004-partial-shape-and-satisfy.notes.md).

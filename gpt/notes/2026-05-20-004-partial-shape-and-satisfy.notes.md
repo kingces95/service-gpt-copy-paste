@@ -34,6 +34,10 @@ stays uncached because it observes object state and runtime traps directly.
 
 ## Motivation
 
+This follows from the earlier rename captured in
+[Shape to Probe](./2026-05-20-001-shape-to-probe.notes.md) and the design sketch in
+[Partial Shape Design](./2026-05-20-003-partial-shape-design.notes.md).
+
 The cursor/range names inherited from STL, such as `ForwardCursorConcept` and
 `RandomAccessRangeConcept`, are not really nominal interfaces in STL. They are
 structural predicates checked by compiler machinery.

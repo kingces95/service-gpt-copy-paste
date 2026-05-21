@@ -21,7 +21,7 @@ CLIs are neutral, installable, sandboxable, inspectable, and community-friendly.
 An AI agent can discover a CLI with `--help` and operate it the same way a
 human would.
 
-See `unix/cli-protocol.md`.
+See `unix/cli-protocol.root.md`.
 
 ## Bash
 
@@ -36,7 +36,7 @@ The shell workflow root:
 This motivates cursor work because Node streams and decoders do not naturally
 support exact Bash-style byte/codepoint interop.
 
-See `bash/read-and-ifs.md`.
+See `bash/read-and-ifs.root.md`.
 
 ## Azure CLI
 
@@ -50,7 +50,7 @@ The command UX root:
 
 This informs the `cli-*` packages.
 
-See `azure-cli/command-hierarchy.md`.
+See `azure-cli/command-hierarchy.root.md`.
 
 ## C# Reflection and Attributes
 
@@ -63,7 +63,7 @@ The runtime metadata root:
 
 This informs `partial-*`, `cli-*`, and function contracts.
 
-See `csharp/custom-attributes.md`.
+See `csharp/custom-attributes.root.md`.
 
 ## C# Partial Types and Interfaces
 
@@ -77,7 +77,7 @@ The composition root:
 This informs `PartialClass`, `Concept`, `Attachments`, and the way descriptor
 sets are copied into concrete types.
 
-See `csharp/partial-classes-and-interfaces.md`.
+See `csharp/partial-classes-and-interfaces.root.md`.
 
 ## STL
 
@@ -103,8 +103,8 @@ view              -> cursor-view
 adapter           -> cursor-adapter
 ```
 
-See `stl/iterator-categories.md`, `stl/algorithms.md`, and
-`stl/requires-expressions.md`. See `stl/templates.md` for the emerging
+See `stl/iterator-categories.root.md`, `stl/algorithms.root.md`, and
+`stl/requires-expressions.root.md`. See `stl/templates.root.md` for the emerging
 `generic(..., T => contract(...))` mapping.
 
 ## XSD
@@ -121,7 +121,7 @@ The constraint root:
 This informs `Check`, future `[Restrictions]`, and metadata-driven validation
 that can also generate docs.
 
-See `xsd/simple-type-restrictions.md`.
+See `xsd/simple-type-restrictions.root.md`.
 
 ## Trello
 
@@ -138,7 +138,7 @@ The human workflow root:
 The long-term workflow front end could use Trello or a Trello-like surface as
 the durable human control plane.
 
-See `trello/workflow-cards.md`.
+See `trello/workflow-cards.root.md`.
 
 ## NPM
 
@@ -148,4 +148,4 @@ Small JavaScript CLIs can be published, installed, versioned, and composed.
 This makes tool contribution feel neutral instead of requiring a bespoke agent
 plugin ecosystem.
 
-See `npm/tool-distribution.md`.
+See `npm/tool-distribution.root.md`.

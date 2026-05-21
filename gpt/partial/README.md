@@ -40,6 +40,9 @@ Concept
   certified runtime interface/concept
 
 Shape
+  structural type-level requirement
+
+Probe
   loose observational duck type
 
 PartialReflect
@@ -68,11 +71,12 @@ That lets the repo answer questions like:
 
 Start with:
 
-1. `toc.md`
-2. `recursive-policy.md`
+1. `toc.partial.md`
+2. `recursive-policy.partial.md`
 3. `packages/partial-type/README.md`
 4. `packages/partial-reflector/README.md`
 5. `packages/partial-concept/README.md`
 6. `packages/partial-class/README.md`
+7. `packages/partial-shape/README.md`
 
 Then follow links outward to the smaller verb packages.

@@ -3,8 +3,8 @@
 ## Orientation
 
 - `README.md`: conceptual summary.
-- `recursive-policy.md`: how assistants should deepen these notes.
-- `package-map.md`: package-level map.
+- `recursive-policy.partial.md`: how assistants should deepen these notes.
+- `package-map.partial.md`: package-level map.
 
 ## Core Engine
 
@@ -26,6 +26,7 @@
 - `packages/partial-define/README.md`
 - `packages/partial-extend/README.md`
 - `packages/partial-implement/README.md`
+- `packages/partial-satisfy/README.md`
 
 ## Runtime Wrapping
 
@@ -44,3 +45,4 @@
 9. `partial-proxy`
 10. the verb packages
 11. `partial-shape`
+12. `partial-satisfy`

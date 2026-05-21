@@ -13,3 +13,6 @@ Prefer filenames of the form:
 ```txt
 YYYY-MM-DD-short-topic.md
 ```
+
+For commit-message policy and cross-linking expectations, see
+[Note Policy](./2026-05-20-005-note-policy.notes.md).

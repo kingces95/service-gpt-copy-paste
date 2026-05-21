@@ -20,7 +20,7 @@ Each root should have its own subdirectory, such as:
 
 Inside each root directory, prefer one file per source-system feature being
 translated. Name the file after the familiar source feature, not after the local
-implementation. For example, use `requires-expressions.md`, not
+implementation. For example, use `requires-expressions.root.md`, not
 `function-preconditions.md`.
 
 Each concept note should include:

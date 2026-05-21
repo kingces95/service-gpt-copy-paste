@@ -16,3 +16,6 @@ YYYY-MM-DD-short-topic.md
 Avoid using the commit hash in the filename. The note itself may be added by
 amending the commit, which changes the hash and makes hash-based filenames chase
 their own tail.
+
+Current policy favors a terse plain-text commit message with a link to a
+rendered note. See [Note Policy](../notes/2026-05-20-005-note-policy.notes.md).

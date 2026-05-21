@@ -310,4 +310,4 @@ transparent different family
 `instance.constructor.prototype`. The cache-only idea is postponed.
 
 The fuller implementation note is
-[Partial Shape and Satisfy](./2026-05-20-partial-shape-and-satisfy.md).
+[Partial Shape and Satisfy](./2026-05-20-004-partial-shape-and-satisfy.notes.md).

@@ -2,60 +2,62 @@
 
 ## Summary
 
-Defines loose observational duck types.
+Defines structural type-level requirements.
 
-Shapes are for external or wild JavaScript values that did not opt into
-concept certification.
+`Shape` is the STL-ish sibling of `Concept`: it describes a required descriptor
+surface over constructor types, but it does not publish itself as nominal
+composition on ordinary types.
 
 ## Root Analogy
 
-Structural typing and duck typing. Compared to `Concept`, this is closer to
-TypeScript structural checks or runtime "does it quack?" validation.
+STL named concepts.
+
+```txt
+std::forward_iterator<I>
+└─ compile-time structural predicate
+
+Shape
+└─ runtime-reflective descriptor predicate over constructor prototypes
+```
 
 ## Key Distinction
 
-```text
+```txt
 Concept
-  certified, opt-in, non-observational
+└─ nominal
+└─ published into the normal meta-prototype chain
 
 Shape
-  observational, permissive, may invoke getters/proxies
+└─ structural
+└─ transparent outside its own family
+└─ copied by satisfy
+
+Probe
+└─ observational
+└─ works on wild runtime values
 ```
 
-## Important Ideas
+The old observational `partial-shape` role moved to `@kingjs/probe`. See
+[Shape to Probe](../../../notes/2026-05-20-001-shape-to-probe.notes.md).
 
-`Shape` extends `PartialType` but cannot be extended/composed like a normal
-partial type.
+## Public Surface
 
-`Shape[Symbol.hasInstance]` tests whole-value constraints such as `typeof`,
-`tag`, prototype, constructability, and then uses duck-cast reflection.
+`Shape` declares:
 
-Built-in shapes include POJO, iterable, iterator, error, event target, promise,
-thenable, callable, constructors, async shapes, and disposable shapes.
+```js
+static [Transparent] = true
 
-## File Notes
+static [Adjacent] = {
+  [Defines]: Attachments,
+  [Includes]: Shape,
+}
+```
 
-### `index.js`
+`Includes` composes shapes with other shapes.
 
-Exports `Shape` and the built-in shapes.
+`Defines` gives shapes the same implementation lane that concepts have.
 
-### `shape.js`
+## Related
 
-Implements the `Shape` base class and `instanceof` behavior.
-
-### `shapes.js`
-
-Defines common shapes such as `PojoShape`, `IterableShape`,
-`PromiseShape`, `ThenableShape`, `CallableShape`, and constructor shapes.
-
-### `unit.test.js`
-
-Tests shape behavior.
-
-### `shapes.test.js`
-
-Tests built-in shapes.
-
-### `package.json`
-
-Declares the package as `@kingjs/partial-shape`.
+- [Partial Shape Design](../../../notes/2026-05-20-003-partial-shape-design.notes.md)
+- [Partial Shape and Satisfy](../../../notes/2026-05-20-004-partial-shape-and-satisfy.notes.md)
