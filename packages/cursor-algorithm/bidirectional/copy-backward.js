@@ -1,9 +1,9 @@
-import { BidirectionalCursorConcept } from "@kingjs/cursor"
+import { BidirectionalCursorShape } from "@kingjs/cursor-shape"
 
 export function copyBackward(target, first, last) {
-  if (!(last instanceof BidirectionalCursorConcept)) throw new Error(
+  if (!(last instanceof BidirectionalCursorShape)) throw new Error(
     "Cannot copyBackward: last is not a BidirectionalCursor.")
-  if (!(target instanceof BidirectionalCursorConcept)) throw new Error(
+  if (!(target instanceof BidirectionalCursorShape)) throw new Error(
     "Cannot copyBackward: result is not a BidirectionalCursor.")
 
   while (!last.equals(first)) {

@@ -176,13 +176,12 @@ the emerging names:
 Includes
 └─ shape adjacency symbol
 
-satisfy(type, shape)
-└─ procedural declaration that a type satisfies a shape
+instance instanceof Shape
+└─ structural descriptor query over the instance constructor prototype
 ```
 
-The settled policy is: `satisfy` accepts constructor types only, `Includes`
-accepts shapes only, satisfaction is strict descriptor checking, `satisfy`
-mirrors `implement`, and `instanceof Shape` is the query surface.
+The settled policy is: `Includes` accepts shapes only, satisfaction is strict
+descriptor checking, and `instanceof Shape` is the query surface.
 
 The implemented package split is summarized in
 [Partial Shape and Satisfy](./2026-05-20-004-partial-shape-and-satisfy.notes.md).

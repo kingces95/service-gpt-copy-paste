@@ -1,6 +1,6 @@
-import { Range } from "@kingjs/cursor"
+import { PartialProxy } from '@kingjs/partial-proxy'
 
-export class AdapterView extends Range {
+export class AdapterView extends PartialProxy {
   _range
 
   constructor(range) {

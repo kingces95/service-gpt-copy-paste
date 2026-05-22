@@ -1,14 +1,15 @@
 import { implement } from '@kingjs/partial-implement'
 import { EquatableConcept } from '@kingjs/partial-concept'
 import { 
-  Cursor,
-  InputRangeConcept,
-  InputCursorConcept, 
+  RangeConcept,
+  ReadableCursorConcept,
+  SteppableCursorConcept,
 } from "@kingjs/cursor"
 import { Precondition } from '@kingjs/partial-symbols'
 import { AdapterView } from "./adapter-view.js"
+import { ViewCursor } from './cursor/view-cursor.js'
 
-class TakeCursor extends Cursor {
+class TakeCursor extends ViewCursor {
   static [Precondition] = {
     step() {
       if (this._remaining <= 0) throw new Error(
@@ -23,8 +24,8 @@ class TakeCursor extends Cursor {
   _cursor
   _remaining
 
-  constructor(range, cursor, _remaining) {
-    super(range)
+  constructor(view, cursor, _remaining) {
+    super(view)
 
     this._cursor = cursor
     this._remaining = _remaining
@@ -38,12 +39,15 @@ class TakeCursor extends Cursor {
       },
     })
 
-    implement(this, InputCursorConcept, {
+    implement(this, SteppableCursorConcept, {
       step() { 
         this._remaining--
         this._cursor.step()
         return this
       },
+    })
+
+    implement(this, ReadableCursorConcept, {
       get value() { return this._cursor.value },
     })
   }
@@ -60,7 +64,7 @@ export class TakeView extends AdapterView {
   }
   
   static {
-    implement(this, InputRangeConcept, {
+    implement(this, RangeConcept, {
       begin() {
         const begin = this.range.begin() 
         return new this.cursorType(this, begin, this._count) 

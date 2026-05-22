@@ -1,8 +1,8 @@
 import { implement } from '@kingjs/partial-implement'
 import { extend } from '@kingjs/partial-extend'
 import { 
-  ContiguousCursorConcept,
-  ContiguousCursorPart,
+  SpannableCursorConcept,
+  SpannableCursorPart,
 } from '@kingjs/cursor'
 import { IndexableCursor } from './indexable-cursor.js'
 
@@ -13,13 +13,13 @@ export class ContiguousCursor extends IndexableCursor {
   }
 
   static { 
-    implement(this, ContiguousCursorConcept, {
+    implement(this, SpannableCursorConcept, {
       get spanType() { return this.container.spanType },
       span(other) { return this.container.span(this, other) },
     }) 
   }
 
   static {
-    extend(this, ContiguousCursorPart)
+    extend(this, SpannableCursorPart)
   }
 }

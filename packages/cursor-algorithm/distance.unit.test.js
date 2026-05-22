@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import {
-  InputRangeProbe,
+  ReadableRangeProbe,
   RandomAccessRangeProbe,
-} from '@kingjs/cursor'
+} from '@kingjs/cursor-shape'
 import {
   ForwardList,
   Deque,
@@ -75,7 +75,7 @@ describe.each(Object.entries(Tests))('%s', (_, {
   values,
   createRange,
   expected,
-  requires = InputRangeProbe,
+  requires = ReadableRangeProbe,
 }) => {
   const containers = Object.entries(Containers).flatMap(([name, Type]) => {
     const source = createContainer(Type, values)

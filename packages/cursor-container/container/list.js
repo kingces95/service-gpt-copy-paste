@@ -4,9 +4,8 @@ import { define } from '@kingjs/partial-define'
 import { extend } from '@kingjs/partial-extend'
 import { ForwardList } from './forward-list.js'
 import { 
-  BidirectionalCursorConcept, 
-  BidirectionalCursorPart,
-  BidirectionalRangeConcept 
+  BacktrackableCursorConcept,
+  BacktrackableCursorPart,
 } from '@kingjs/cursor'
 import { 
   SizedContainerPart,
@@ -26,7 +25,7 @@ class ListCursor extends ForwardList.cursorType {
   }
 
   static { 
-    implement(this, BidirectionalCursorConcept, {
+    implement(this, BacktrackableCursorConcept, {
       stepBack() {
         this.link = this.link.previous
         assert(this.link)
@@ -36,7 +35,7 @@ class ListCursor extends ForwardList.cursorType {
   }
 
   static {
-    extend(this, BidirectionalCursorPart, {
+    extend(this, BacktrackableCursorPart, {
       isAtBegin$() { return this.link == this.container._rootLink },
       canStepBack$() { return this.link != this.container._rootLink },
     })
@@ -45,10 +44,6 @@ class ListCursor extends ForwardList.cursorType {
 
 export class List extends ForwardList {
   static cursorType = ListCursor
-  static {
-    implement(this, BidirectionalRangeConcept)
-  }
-  
   _count
 
   constructor() {

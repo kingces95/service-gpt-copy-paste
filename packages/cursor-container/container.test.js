@@ -1,18 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { PartialReflect } from '@kingjs/partial-reflect'
-import { 
+import {
   Concept,
 } from '@kingjs/partial-concept'
-import { 
-  InputCursorConcept,
-  OutputCursorConcept,
-  MutableCursorConcept,
-  ForwardCursorConcept,
-  BidirectionalCursorConcept,
-  RandomAccessCursorConcept,
-  ContiguousCursorConcept,
-} from '../cursor/cursor-concepts.js'
 import {
   ContainerPart,
   IndexableContainerPart,
@@ -32,16 +23,20 @@ import {
   UnorderedMapContainerPart,
 } from '@kingjs/cursor-container'
 import {
+  RangeProbe,
+  ReadableRangeProbe,
+  WritableRangeProbe,
+  ForwardRangeProbe,
+  BidirectionalRangeProbe,
+  RandomAccessRangeProbe,
+  ContiguousRangeProbe,
+  RangeShape,
+} from '@kingjs/cursor-shape'
+import {
   RangeConcept,
-  InputRangeConcept,
-  OutputRangeConcept,
-  ForwardRangeConcept,
-  BidirectionalRangeConcept,
-  RandomAccessRangeConcept,
-  ContiguousRangeConcept,
 } from '@kingjs/cursor'
 
-import { 
+import {
   ForwardList,
   List,
   ArrayMap,
@@ -57,39 +52,56 @@ import { single } from '@kingjs/cursor-adapter'
 
 const universalContainerConcepts = [
   RangeConcept,
-  InputRangeConcept,
   ContainerPart]
 
+const universalRangeProbes = [
+  RangeProbe,
+  ReadableRangeProbe]
+
 const sequenceContainerConcepts = [
-  ...universalContainerConcepts,
-  ForwardRangeConcept,
-  OutputRangeConcept]
-  
+  ...universalContainerConcepts]
+
+const sequenceRangeProbes = [
+  ...universalRangeProbes,
+  ForwardRangeProbe,
+  WritableRangeProbe]
+
 const reversibleContainerConcepts = [
   ...sequenceContainerConcepts,
-  BidirectionalRangeConcept,
   FrontEditableContainerPart,
   BackEditableContainerPart]
+
+const reversibleRangeProbes = [
+  ...sequenceRangeProbes,
+  BidirectionalRangeProbe]
 
 const indexableContainerConcepts = [
   ...reversibleContainerConcepts,
   IndexableContainerPart,
   BackEditableContainerPart,
-  RandomAccessRangeConcept,
   SizedContainerPart]
-  
+
+const indexableRangeProbes = [
+  ...reversibleRangeProbes,
+  RandomAccessRangeProbe]
+
 const bufferConainerConcepts = [
   ...indexableContainerConcepts,
-  ContiguousRangeConcept,
   EditableContainerPart,
   CapacityContainerPart,
   ReservableContainerPart,
   ByteContainerPart]
 
+const bufferRangeProbes = [
+  ...indexableRangeProbes,
+  ContiguousRangeProbe]
+
 const associativeContainerConcepts = [
   ...universalContainerConcepts,
   AssociativeContainerPart]
-  
+
+const associativeRangeProbes = universalRangeProbes
+
 const Value = 42
 const Key = 'key'
 
@@ -173,6 +185,7 @@ const Tests = {
       ClearableContainerPart,
       UnorderedMapContainerPart,
       ...associativeContainerConcepts],
+    probes: associativeRangeProbes,
     members: {
       insert: true, erase: true,
       size: true,
@@ -189,6 +202,7 @@ const Tests = {
       ClearableContainerPart,
       UnorderedSetContainerPart,
       ...associativeContainerConcepts],
+    probes: associativeRangeProbes,
     members: {
       insert: true, erase: true,
       size: true,
@@ -198,7 +212,7 @@ const Tests = {
     },
     key: Value,
   },
-  
+
   ForwardList: {
     type: ForwardList,
     concepts: [
@@ -207,6 +221,7 @@ const Tests = {
       AfterBulkEditableContainerPart,
       ...sequenceContainerConcepts,
       FrontEditableContainerPart],
+    probes: sequenceRangeProbes,
     members: {
       insert: true, erase: true,
       shift: true, unshift: true,
@@ -227,7 +242,7 @@ const Tests = {
       replaceRangeAfter: true,
     }
   },
-  
+
   List: {
     type: List,
     concepts: [
@@ -235,6 +250,7 @@ const Tests = {
       ClearableContainerPart,
       BulkAssignableContainerPart,
       SizedContainerPart],
+    probes: reversibleRangeProbes,
     members: {
       insert: true, erase: true,
       beforeBegin: true, insertAfter: true, eraseAfter: true,
@@ -246,7 +262,7 @@ const Tests = {
       assignRange: true,
     }
   },
-  
+
   Deque: {
     type: Deque,
     concepts: [
@@ -254,6 +270,7 @@ const Tests = {
       BulkAssignableContainerPart,
       BulkEditableContainerPart,
       ...indexableContainerConcepts],
+    probes: indexableRangeProbes,
     members: {
       insert: true, erase: true,
       size: true,
@@ -261,7 +278,7 @@ const Tests = {
       pop: true, push: true,
       at: true, setAt: true,
       clear: true,
-      
+
       // BulkAssignableContainerPart members
       resizeTo: true,
       assignRange: true,
@@ -280,6 +297,7 @@ const Tests = {
       BulkAssignableContainerPart,
       BulkEditableContainerPart,
       ...indexableContainerConcepts],
+    probes: indexableRangeProbes,
     members: {
       insert: true, erase: true,
       size: true,
@@ -297,13 +315,14 @@ const Tests = {
       eraseRange: true,
     }
   },
-  
+
   Uint8Vector: {
     type: Uint8Vector,
     concepts: [
       BulkAssignableContainerPart,
       BulkEditableContainerPart,
       ...bufferConainerConcepts],
+    probes: bufferRangeProbes,
     members: {
       insert: true, erase: true,
       size: true,
@@ -335,7 +354,7 @@ function withCount(context, size) {
     const end1 = context.container.end()
     const end2 = context.container.end()
     expect(end1.equals(end2)).toBe(true)
-  })      
+  })
   it(size == 0 ? 'has begin equal to end' : 'has begin distinct from end', () => {
     const begin = context.container.begin()
     const end = context.container.end()
@@ -372,8 +391,8 @@ function whenEmpty(context) {
   withCount(context, 0)
 }
 
-describe.each(Object.entries(Tests))('A %s', (name, { 
-  type, concepts, members, value = Value, key = Key }) => {  
+describe.each(Object.entries(Tests))('A %s', (name, {
+  type, concepts, probes, members, value = Value, key = Key }) => {
 
   let container
   let otherContainer
@@ -411,6 +430,12 @@ describe.each(Object.entries(Tests))('A %s', (name, {
         expect(set.has(concept)).toBe(true)
       }
     })
+    it('satisfies its expected range probes', () => {
+      expect(type.prototype).toBeInstanceOf(RangeShape)
+
+      for (const probe of probes)
+        expect(type.prototype).toBeInstanceOf(probe)
+    })
     it('defines its expected members', () => {
       for (const member of Reflect.ownKeys(members)) {
         expect(member in type.prototype)
@@ -429,7 +454,7 @@ describe.each(Object.entries(Tests))('A %s', (name, {
       const end = container.end()
       container.copy(begin, begin, end)
     })
-    if (members.span) it('has a Uint8Array span', () => { 
+    if (members.span) it('has a Uint8Array span', () => {
       expect(container.span()).toBeInstanceOf(Uint8Array)
     })
     whenEmpty(context)
@@ -447,7 +472,7 @@ describe.each(Object.entries(Tests))('A %s', (name, {
       it('accepts one more capacity', () => {
         expect(container.setCapacity(capacity + 1)).toBe(capacity + 1)
       })
-      it('keeps capacity when ensuring current capacity', () => { 
+      it('keeps capacity when ensuring current capacity', () => {
         expect(container.ensureCapacity(capacity)).toBe(capacity)
       })
       it('doubles capacity when ensuring one more capacity', () => {

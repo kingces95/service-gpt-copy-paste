@@ -1,10 +1,10 @@
 import { PartialProxy } from '@kingjs/partial-proxy'
-import { ForwardRangeConcept } from "@kingjs/cursor"
+import { RangeConcept } from "@kingjs/cursor"
 import { implement } from '@kingjs/partial-implement'
 
 export class View extends PartialProxy {
   static {
-    implement(this, ForwardRangeConcept, { }, {
+    implement(this, RangeConcept, {
       // get cursorType() { return ViewCursor },
       // begin() { },
       // end() { },

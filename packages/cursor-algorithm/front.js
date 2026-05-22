@@ -1,9 +1,9 @@
 import { contract } from '@kingjs/function-contract'
-import { InputCursorConcept } from '@kingjs/cursor'
+import { ReadableRangeProbe } from '@kingjs/cursor-shape'
 
 export const front = contract([ 
-  InputCursorConcept 
-], function front(container) {
-  const cursor = container.begin()
+  ReadableRangeProbe
+], function front(range) {
+  const cursor = range.begin()
   return cursor.value
 })

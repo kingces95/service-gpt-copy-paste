@@ -1,6 +1,17 @@
 import { ClassInfo } from "@kingjs/info"
 import { } from "@kingjs/info-to-pojo"
 import {
+  BidirectionalCursorShape,
+  ContiguousCursorShape,
+  CursorShape,
+  ForwardCursorShape,
+  InputCursorShape,
+  OutputCursorShape,
+  RandomAccessCursorShape,
+  WritableContiguousCursorShape,
+  WritableRandomAccessCursorShape,
+} from "@kingjs/cursor-shape"
+import {
   MyExtensions,
   MyBaseConcept,
   MyLeftConcept,
@@ -12,16 +23,6 @@ import {
   MyEmptyClass,
   MyClass
 } from "./my-classes.js"
-import { 
-  CursorConcept,
-  InputCursorConcept,
-  OutputCursorConcept,
-  ForwardCursorConcept,
-  BidirectionalCursorConcept,
-  RandomAccessCursorConcept,
-  ContiguousCursorConcept
-} from "@kingjs/cursor"
-
 function dump(fn) {
   const fnInfo = ClassInfo.from(fn)
   fnInfo.dump({
@@ -50,10 +51,12 @@ function dump(fn) {
 dump(MyBase)
 // dump(MyClass)
 
-// dump(CursorConcept)
-// dump(InputCursorConcept)
-// dump(OutputCursorConcept)
-// dump(ForwardCursorConcept)
-// dump(BidirectionalCursorConcept)
-// dump(RandomAccessCursorConcept)
-// dump(ContiguousCursorConcept)
+// dump(CursorShape)
+// dump(InputCursorShape)
+// dump(OutputCursorShape)
+// dump(ForwardCursorShape)
+// dump(BidirectionalCursorShape)
+// dump(RandomAccessCursorShape)
+// dump(WritableRandomAccessCursorShape)
+// dump(ContiguousCursorShape)
+// dump(WritableContiguousCursorShape)

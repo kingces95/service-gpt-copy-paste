@@ -121,13 +121,13 @@ export const Includes = Symbol('Includes')
 Example:
 
 ```js
-export class OffsetReadableCursorShape extends Shape {
+export class WritableRandomAccessCursorShape extends Shape {
   static [Includes] = [
-    ReadableCursorShape,
     RandomAccessCursorShape,
+    OutputCursorShape,
   ]
 
-  at(offset) { }
+  setAt(offset, value) { }
 }
 ```
 
@@ -135,46 +135,28 @@ The word `Includes` reads better than `DependsOn` here. A shape is not saying
 that another shape must have already been copied to a host. It is saying that
 its structural requirement includes the structural requirements of other shapes.
 
-## Procedural API
+## Query API
 
-The procedural verb can be different:
-
-```js
-satisfy(IndexableCursor, RandomAccessCursorShape)
-```
-
-or:
+The public query is ordinary `instanceof`:
 
 ```js
-satisfy(type, shape)
+cursor instanceof RandomAccessCursorShape
 ```
 
 That reads as:
 
 ```txt
-Assert that this type satisfies this shape.
+Does this cursor's constructor prototype satisfy this shape?
 ```
 
-`satisfy` follows the house style for loader verbs: one type, one partial-type
-extension. It is the procedural declaration that attaches a Shape to a
-constructor type after proving the descriptor surface matches. `Probe` hits
-live objects. `Shape` hits constructor types. That is what makes the result
-cacheable.
-
-This is analogous to:
-
-```js
-implement(type, concept)
-```
-
-but the semantics are structural rather than nominal.
+`Probe` hits live objects. `Shape` hits constructor prototypes. That is what
+makes the result cacheable.
 
 ## Runtime Matching
 
-`satisfy(type, shape)` should use `PartialReflect` as its reflection policy.
+`Shape[Symbol.hasInstance]` uses `PartialReflect` as its reflection policy.
 That preserves the partial descriptor binding semantics already used by
-`Concept`. `Shape[Symbol.hasInstance]` should be the query surface over that
-published/cache result, not the primary structural matcher.
+`Concept`.
 
 Sketch:
 
@@ -201,18 +183,18 @@ export class Shape extends PartialType {
     if (typeof type != 'function')
       return false
 
-    return isSatisfiedBy(type, this)
+    return isMatch(this, type)
   }
 }
 ```
 
-The satisfaction declaration should be cached:
+The structural match should be cached:
 
 ```txt
 WeakMap<Shape, WeakMap<Type, boolean>>
 ```
 
-Positive and negative results should both be cached. Normal programs declare a
+Positive and negative results should both be cached. Normal programs query a
 small number of shape/type pairs, and weak keys avoid retaining dead types.
 
 The cache should only cache the descriptor satisfaction result. It should not
@@ -220,10 +202,8 @@ publish reflection metadata or mutate the type.
 
 ## Decisions
 
-- `satisfy(type, shape)` accepts constructor types only.
-- `satisfy(type, shape)` is the procedural way to attach a Shape to a type.
 - `Shape[Symbol.hasInstance]` accepts instances, then checks the instance's
-  constructor type against published/cache results.
+  constructor type against cached structural descriptor results.
 - `Probe` owns value-level runtime observation.
 - `Shape` owns type-level descriptor satisfaction.
 - The satisfaction cache stores positive and negative results.
@@ -272,8 +252,8 @@ Shape
 └─ abstract descriptor compilation like Concept
 └─ Symbol.hasInstance queries instance.constructor satisfaction
 
-satisfy(type, shape)
-└─ attaches a Shape to a constructor type after descriptor validation
+structural query
+└─ checks a constructor prototype against a Shape after descriptor validation
 └─ caches positive and negative descriptor results
 ```
 
@@ -290,13 +270,12 @@ implement(type, concept)
 └─ copies Concept descriptors onto a type
 └─ publishes the Concept as nominal composition
 
-satisfy(type, shape)
-└─ lives in @kingjs/partial-satisfy
-└─ copies Shape descriptors onto a type
-└─ does not publish the Shape as nominal composition
+instance instanceof Shape
+└─ asks whether instance.constructor.prototype strictly matches Shape
+└─ caches positive and negative descriptor matches
 ```
 
-That required a finer `Transparent` rule in the loader:
+The copy-verb experiment required a finer `Transparent` rule in the loader:
 
 ```txt
 transparent same family
@@ -307,7 +286,8 @@ transparent different family
 ```
 
 `Shape[Symbol.hasInstance]` is now a structural descriptor query over
-`instance.constructor.prototype`. The cache-only idea is postponed.
+`instance.constructor.prototype`. The separate `partial-satisfy` package was
+later removed; current shape satisfaction is the cached structural query.
 
 The fuller implementation note is
 [Partial Shape and Satisfy](./2026-05-20-004-partial-shape-and-satisfy.notes.md).

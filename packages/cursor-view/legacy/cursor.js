@@ -3,7 +3,7 @@ import { implement } from '@kingjs/partial-implement'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { 
   CursorConcept 
-} from './cursor-concepts.js'
+} from '@kingjs/cursor'
 
 export class Cursor extends PartialProxy { 
   _range
@@ -22,4 +22,3 @@ export class Cursor extends PartialProxy {
     })
   }
 }
-

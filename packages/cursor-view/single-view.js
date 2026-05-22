@@ -1,14 +1,16 @@
 import { implement } from '@kingjs/partial-implement'
+import { PartialProxy } from '@kingjs/partial-proxy'
 import { EquatableConcept } from '@kingjs/partial-concept'
 import {
-  Cursor,
-  Range,
-  ForwardCursorConcept,
-  ForwardRangeConcept,
+  CloneableCursorConcept,
+  RangeConcept,
+  ReadableCursorConcept,
+  SteppableCursorConcept,
 } from '@kingjs/cursor'
 import { Precondition } from '@kingjs/partial-symbols'
+import { ViewCursor } from './cursor/view-cursor.js'
 
-class SingleCursor extends Cursor {
+class SingleCursor extends ViewCursor {
   static [Precondition] = {
     step() { 
       if (this.isEnd) throw new Error(
@@ -22,8 +24,8 @@ class SingleCursor extends Cursor {
 
   _isEnd
 
-  constructor(range, isEnd = false) {
-    super(range)
+  constructor(view, isEnd = false) {
+    super(view)
 
     this._isEnd = isEnd
   }
@@ -38,20 +40,26 @@ class SingleCursor extends Cursor {
       },
     })
 
-    implement(this, ForwardCursorConcept, {
-      get value() { return this.range._value },
+    implement(this, ReadableCursorConcept, {
+      get value() { return this.view._value },
+    })
+
+    implement(this, SteppableCursorConcept, {
       step() {
         this._isEnd = true
         return this
       },
+    })
+
+    implement(this, CloneableCursorConcept, {
       clone() {
-        return new this.constructor(this.range, this.isEnd)
+        return new this.constructor(this.view, this.isEnd)
       },
     })
   }
 }
 
-export class SingleView extends Range {
+export class SingleView extends PartialProxy {
   static cursorType = SingleCursor
 
   _value
@@ -64,7 +72,7 @@ export class SingleView extends Range {
   get value() { return this._value }
 
   static {
-    implement(this, ForwardRangeConcept, {
+    implement(this, RangeConcept, {
       begin() { return new this.cursorType(this) },
       end() { return new this.cursorType(this, true) },
     })

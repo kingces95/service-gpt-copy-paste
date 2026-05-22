@@ -4,7 +4,7 @@ import { extend } from '@kingjs/partial-extend'
 import { define } from '@kingjs/partial-define'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import {
-  InputRangeConcept,
+  RangeConcept,
 } from '@kingjs/cursor'
 import {
   ContainerPart,
@@ -29,7 +29,7 @@ class SetCursor extends IteratorCursor {
 export class UnorderedSet extends PartialProxy {
   static cursorType = SetCursor
   static {
-    implement(this, InputRangeConcept, {
+    implement(this, RangeConcept, {
       begin() { return new this.cursorType(this, this._set) },
       end() { return new this.cursorType(this, EmptySet) }
     })

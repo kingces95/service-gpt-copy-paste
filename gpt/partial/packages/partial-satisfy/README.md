@@ -1,14 +1,14 @@
 # partial-satisfy
 
+## Status
+
+Retired. The live package was deleted after `Shape` settled as a structural
+descriptor query in `@kingjs/partial-shape`.
+
 ## Summary
 
-Defines the structural copy verb for `Shape`.
-
-```js
-satisfy(type, shape, implementation)
-```
-
-`satisfy` mirrors `implement`, but uses `Shape` instead of `Concept`.
+Originally defined a structural copy verb for `Shape`, mirroring `implement`
+but using `Shape` instead of `Concept`.
 
 ## Translation
 
@@ -16,13 +16,13 @@ satisfy(type, shape, implementation)
 implement(type, concept)
 └─ nominal concept composition
 
-satisfy(type, shape)
+retired shape copy verb
 └─ structural shape composition
 ```
 
-`satisfy` copies Shape descriptors and optional implementation descriptors onto
-the target type. Because Shape is transparent outside its own family, the Shape
-does not appear as nominal composition on ordinary types.
+The current model does not use a public `satisfy` verb. Shape satisfaction is
+queried structurally with `instanceof Shape`, backed by strict descriptor
+matching over the candidate constructor prototype.
 
 ## Related
 

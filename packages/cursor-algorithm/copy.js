@@ -1,9 +1,9 @@
 import { assert } from '@kingjs/assert'
-import { ContiguousCursorConcept } from '@kingjs/cursor'
+import { ContiguousCursorShape } from '@kingjs/cursor-shape'
 
 function memcopy(target, begin, end) {
-  assert(target instanceof ContiguousCursorConcept)
-  assert(begin instanceof ContiguousCursorConcept)
+  assert(target instanceof ContiguousCursorShape)
+  assert(begin instanceof ContiguousCursorShape)
   assert(begin.spanType == target.spanType)
   assert(begin.index <= end.index)
 
@@ -18,8 +18,8 @@ export function copy(target, range) {
   const begin = range.begin()
   const end = range.end()
 
-  if (target instanceof ContiguousCursorConcept
-    && begin instanceof ContiguousCursorConcept
+  if (target instanceof ContiguousCursorShape
+    && begin instanceof ContiguousCursorShape
     && begin.spanType == target.spanType) 
     return memcopy(target, begin, end)
 

@@ -1,21 +1,22 @@
 import { implement } from '@kingjs/partial-implement'
 import { define } from '@kingjs/partial-define'
 import { Preconditions } from '@kingjs/partial-symbols'
-import { 
+import {
   CursorConcept,
-  InputCursorConcept,
+  ReadableCursorConcept,
 } from '@kingjs/cursor'
-import { 
-  EquatableConcept 
+import {
+  EquatableConcept
 } from '@kingjs/partial-concept'
 import { ContainerCursor } from './container-cursor.js'
 
 // ____________________________________________________________________________
 // ITERATOR CURSOR
 
-// IteratorCursor is an InputCursorConcept over an iterator. 
-
-// IteratorCursor yields a value which contains a key.
+// IteratorCursor is used by associative containers to enumerate values
+// returned by an underlying Map/Set iterator or iterator-like generator.
+//
+// MapCursor layers a key accessor over that value by reading value[0].
 
 // IteratorCursor's identity is a combination of
 
@@ -23,7 +24,7 @@ import { ContainerCursor } from './container-cursor.js'
 //    2. its container (i.e. Map or Set)
 //    3. its 'position' which is determined by the key it is currently on.
 
-// This last component of identity necessitates that IteratorCursor know what 
+// This last component of identity necessitates that IteratorCursor know what
 // key its currently on which necessitates that on creation, MapCursor must
 // immediately begin iteration over the Map to get the first key. This could
 // be deferred until the first call to equals, but that would be a very odd
@@ -31,7 +32,7 @@ import { ContainerCursor } from './container-cursor.js'
 
 export class IteratorCursor extends ContainerCursor {
   static [Preconditions] = {
-    get key() { 
+    get key() {
       if (this._current.done) throw new Error(
         'Cursor is at end of container')
     },
@@ -47,12 +48,12 @@ export class IteratorCursor extends ContainerCursor {
   get done() { return this._current.done }
 
   static {
-    define(this, { 
+    define(this, {
       get key() { return this.value },
     })
 
-    implement(this, EquatableConcept, { 
-      equals(other) { 
+    implement(this, EquatableConcept, {
+      equals(other) {
         if (!this.equatableTo(other)) return false
         const { done } = this
         const { done: otherDone } = other
@@ -65,14 +66,14 @@ export class IteratorCursor extends ContainerCursor {
       }
     })
 
-    implement(this, CursorConcept, { 
+    implement(this, CursorConcept, {
       step() {
         this._current = this.token.next()
         return this
       },
     })
 
-    implement(this, InputCursorConcept, { 
+    implement(this, ReadableCursorConcept, {
       get value() { return this._current.value },
     })
   }

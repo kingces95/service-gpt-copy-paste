@@ -7,7 +7,15 @@
   "exports": {
     ".": "./index.js"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@kingjs/cursor": "1.0.0",
+    "@kingjs/cursor-shape": "1.0.0",
+    "@kingjs/partial-concept": "1.0.0",
+    "@kingjs/partial-extend": "1.0.0",
+    "@kingjs/partial-implement": "1.0.0",
+    "@kingjs/partial-proxy": "1.0.0",
+    "@kingjs/partial-symbols": "1.0.0"
+  },
   "devDependencies": {},
   "peerDependencies": {},
   "author": "Chris King",

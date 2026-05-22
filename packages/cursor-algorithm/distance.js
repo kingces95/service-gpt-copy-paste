@@ -1,4 +1,4 @@
-import { RandomAccessRangeProbe } from '@kingjs/cursor'
+import { RandomAccessRangeProbe } from '@kingjs/cursor-shape'
 
 export function distance(range) {
   const begin = range.begin()

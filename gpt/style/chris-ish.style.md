@@ -262,7 +262,7 @@ Concept
   grand, certified, opt-in vocabulary
 
 Shape
-  structural type-level requirement attached with satisfy(...)
+  structural type-level requirement queried with instanceof Shape
 
 Probe
   observational runtime duck test over wild JavaScript values

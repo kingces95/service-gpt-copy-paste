@@ -90,7 +90,7 @@ Example:
 ```js
 export function isRandomAccessRange(range) {
   return isRange(range) &&
-    cursorOf(range) instanceof RandomAccessCursorConcept
+    cursorPrototypeOf(range) instanceof RandomAccessCursorShape
 }
 
 export class RandomAccessRangeProbe {
@@ -126,36 +126,29 @@ to compute named probes from the runtime cursor object, optionally using a
 static `cursorType` associated type as a cache or declaration hint when a
 concrete range has one.
 
-The local range vocabulary now has a more precise hook for this:
-`prototypeCursor`. It is the representative cursor used for cursor-concept
-queries:
+The local range vocabulary now has a precise hook for this: `cursorType`.
+Its prototype is the representative cursor used for cursor-shape queries:
 
 ```js
-range.prototypeCursor instanceof RandomAccessCursorConcept
+range.cursorType.prototype instanceof RandomAccessCursorShape
 ```
 
-For concrete containers, `prototypeCursor` can be derived cheaply from
-`static cursorType`:
+For concrete containers, `cursorType` can be exposed directly:
 
 ```js
-get prototypeCursor() {
-  return this.constructor.cursorType?.prototype ?? this.begin()
-}
+get cursorType() { return this.constructor.cursorType }
 ```
 
-For instance-shaped views such as `subrange(first, last)`, the view can
-implement the same concept member by returning the captured cursor:
+For instance-shaped views such as `subrange(first, last)`, the view can choose
+the captured cursor's constructor as its cursor type:
 
 ```js
-get prototypeCursor() {
-  return this._first
-}
+get cursorType() { return this._first.constructor }
 ```
 
-This is the runtime JS analog of `iterator_t<R>`: not necessarily a type, but
-the prototype-style representative that makes `instanceof CursorConcept`
-queries possible without manufacturing a specialized `SubrangeViewOf<TCursor>`
-type.
+This is the runtime JS analog of `iterator_t<R>`: a type-level hook whose
+prototype makes cursor-shape queries possible without manufacturing a
+specialized `SubrangeViewOf<TCursor>` type.
 
 ## Local Translation
 

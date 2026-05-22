@@ -1,8 +1,8 @@
 import { implement } from '@kingjs/partial-implement'
+import { PartialProxy } from '@kingjs/partial-proxy'
 import { 
-  Range,
-  InputRangeConcept,
-  InputCursorConcept, 
+  RangeConcept,
+  ReadableCursorConcept,
 } from "@kingjs/cursor"
 import { InfiniteCursor } from "./cursor/infinite-cursor.js"
 
@@ -12,13 +12,13 @@ class RepeatCursor extends InfiniteCursor {
   }
 
   static {
-    implement(this, InputCursorConcept, {
-      get value() { return this.range._value },
+    implement(this, ReadableCursorConcept, {
+      get value() { return this.view._value },
     })
   }
 }
 
-export class RepeatView extends Range {
+export class RepeatView extends PartialProxy {
   static cursorType = RepeatCursor
 
   _value
@@ -29,7 +29,7 @@ export class RepeatView extends Range {
   }
   
   static {
-    implement(this, InputRangeConcept, {
+    implement(this, RangeConcept, {
       begin() { return new RepeatCursor(this) },
       end() { return new RepeatCursor(this, true) },
     })

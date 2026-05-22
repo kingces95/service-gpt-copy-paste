@@ -1,6 +1,7 @@
 # Shape Satisfaction
 
-Shape satisfaction is the structural sibling of concept composition.
+Shape satisfaction is the structural sibling of concept composition, but it is
+queried structurally rather than published as nominal composition.
 
 ```txt
 Shape declaration
@@ -17,10 +18,10 @@ export class ForwardCursorShape extends Shape {
   clone() { }
 }
 
-satisfy(Cursor, ForwardCursorShape, {
+class Cursor {
   step() { /* ... */ },
   clone() { /* ... */ },
-})
+}
 ```
 
 ## Before
@@ -35,13 +36,13 @@ ForwardCursorShape
 
 ## Transform
 
-`satisfy` copies Shape descriptors onto the target type, like `implement`, but
-Shape is transparent outside its own family. The shape does not become nominal
-composition on ordinary types.
+`Shape[Symbol.hasInstance]` checks the target constructor prototype against the
+Shape descriptor surface. The shape does not become nominal composition on
+ordinary types.
 
 ```txt
 Cursor
-└─ copied shape descriptors
+└─ existing concrete descriptors
 
 ForwardCursorShape
 └─ remains a structural requirement

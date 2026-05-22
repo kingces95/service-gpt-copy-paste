@@ -1,6 +1,8 @@
-import { Cursor } from '../cursor.js'
+import { implement } from '@kingjs/partial-implement'
+import { PartialProxy } from '@kingjs/partial-proxy'
+import { CursorConcept } from '../cursor-concept.js'
 
-export class OutputIteratorAdaptor extends Cursor {
+export class OutputIteratorAdaptor extends PartialProxy {
   #action
 
   constructor(action) {
@@ -9,6 +11,13 @@ export class OutputIteratorAdaptor extends Cursor {
   }
 
   set(value) { this.#action(value) }
-  step() { return this }
-  equatableTo(other) { return false }
+
+  static {
+    implement(this, CursorConcept, {
+      step() { return this },
+      equatableTo(other) { return false },
+    }, {
+      get range() { },
+    })
+  }
 }

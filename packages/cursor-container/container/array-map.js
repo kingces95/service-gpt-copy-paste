@@ -2,8 +2,7 @@ import { implement } from '@kingjs/partial-implement'
 import { extend } from '@kingjs/partial-extend'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import {
-  OutputRangeConcept,
-  RandomAccessRangeConcept,
+  RangeConcept,
 } from '@kingjs/cursor'
 import { iterate } from '@kingjs/cursor-algorithm'
 import { IndexableCursor } from '../cursor/indexable-cursor.js'
@@ -18,11 +17,10 @@ import {
 export class ArrayMap extends PartialProxy {
   static cursorType = IndexableCursor
   static {
-    implement(this, OutputRangeConcept)
-    implement(this, RandomAccessRangeConcept, {
+    implement(this, RangeConcept, {
       begin() { return new this.cursorType(this, 0) },
       end() { return new this.cursorType(this, this.size) },
-    })  
+    })
   }
 
   _array

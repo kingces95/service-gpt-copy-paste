@@ -3,8 +3,8 @@
 ## Summary
 
 This checkin introduces `@kingjs/partial-shape` as the STL-ish structural
-sibling of `Concept`, and `@kingjs/partial-satisfy` as the procedural verb
-that mirrors `implement`.
+sibling of `Concept`. It also introduced an experimental procedural verb that
+mirrored `implement`; that separate package has since been removed.
 
 The design split is now:
 
@@ -17,7 +17,6 @@ Concept
 
 Shape
 └─ structural/type-level requirement
-└─ copied into a type by satisfy
 └─ transparent outside its own family
 └─ queried structurally with instanceof
 └─ cached because descriptor structure is fixed after type construction
@@ -108,21 +107,14 @@ export class Shape extends PartialType {
 }
 ```
 
-### `@kingjs/partial-satisfy`
+### Retired Copy Verb
 
-Adds the structural copy verb:
-
-```js
-satisfy(type, shape, implementation)
-```
-
-It mirrors:
+Retired after this checkin. Shape matching now lives in `@kingjs/partial-shape`
+as a strict structural descriptor query:
 
 ```js
-implement(type, concept, implementation)
+value instanceof SomeShape
 ```
-
-but uses `Shape` instead of `Concept`.
 
 ## Supporting Changes
 
@@ -155,9 +147,7 @@ const matchesOfShape = matches.of(shape)
 
 ## Testing
 
-`partial-shape` was reduced to a branch-coverage harness for `Shape` itself.
-
-`partial-satisfy` owns the verb/copy behavior tests.
+`partial-shape` owns the branch-coverage harness for `Shape` itself.
 
 Focused coverage for `packages/partial-shape/index.js` is 100% for statements,
 branches, functions, and lines.

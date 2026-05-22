@@ -1,11 +1,13 @@
 import { implement } from '@kingjs/partial-implement'
-import { 
-  Cursor,
-  InputCursorConcept, 
-} from "@kingjs/cursor"
+import { EquatableConcept } from '@kingjs/partial-concept'
+import {
+  ReadableCursorConcept,
+  SteppableCursorConcept,
+} from '@kingjs/cursor'
 import { Precondition } from '@kingjs/partial-symbols'
+import { ViewCursor } from './view-cursor.js'
 
-export class InfiniteCursor extends Cursor {
+export class InfiniteCursor extends ViewCursor {
   static [Precondition] = {
     step() {
       if (this.isEnd) throw new Error(
@@ -19,8 +21,8 @@ export class InfiniteCursor extends Cursor {
 
   #isEnd
 
-  constructor(range, isEnd) {
-    super(range)
+  constructor(view, isEnd) {
+    super(view)
 
     this.#isEnd = false
   }
@@ -28,10 +30,15 @@ export class InfiniteCursor extends Cursor {
   get isEnd() { return this.#isEnd }
 
   static {
-    implement(this, InputCursorConcept, {
+    implement(this, SteppableCursorConcept, {
       step() { },
+    })
+
+    implement(this, EquatableConcept, {
       equals(other) { return other == this },
-    }, {
+    })
+
+    implement(this, ReadableCursorConcept, {
       get value() { }
     })
   }

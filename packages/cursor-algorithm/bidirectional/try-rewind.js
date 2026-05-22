@@ -1,8 +1,8 @@
-import { BidirectionalCursorConcept } from "@kingjs/cursor"
+import { BidirectionalCursorShape } from "@kingjs/cursor-shape"
 import { advance } from "../advance.js"
 
 export function tryRewind(current, count) {
-  if (!(current instanceof BidirectionalCursorConcept)) throw new Error(
+  if (!(current instanceof BidirectionalCursorShape)) throw new Error(
     "Cannot try rewind: cursor is not a BidirectionalCursor.")
 
   let steps = 0

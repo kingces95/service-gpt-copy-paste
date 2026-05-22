@@ -1,4 +1,4 @@
-import { Cursor } from '@kingjs/cursor'
+import { Cursor } from './cursor.js'
 
 export class UnitViewCursor extends Cursor {
   #unit

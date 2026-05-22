@@ -87,6 +87,9 @@ class GetSetDescriptor {
 
 export class Descriptor {
   static get(prototype, key) {
+    if (!(key in prototype))
+      return undefined
+
     while (prototype) {
       const descriptor = Object.getOwnPropertyDescriptor(prototype, key)
       if (descriptor) return descriptor
@@ -120,6 +123,25 @@ export class Descriptor {
 
   static hasAccessor(descriptor) {
     return GetSetDescriptor.test(descriptor)
+  }
+
+  static merge(existing, descriptor) {
+    if (!descriptor)
+      return existing
+
+    if (!existing)
+      return descriptor
+
+    if (!Descriptor.hasAccessor(existing) ||
+      !Descriptor.hasAccessor(descriptor))
+      return descriptor
+
+    return {
+      get: descriptor.get ?? existing.get,
+      set: descriptor.set ?? existing.set,
+      enumerable: descriptor.enumerable,
+      configurable: descriptor.configurable,
+    }
   }
 
   static *modifiers(descriptor) {

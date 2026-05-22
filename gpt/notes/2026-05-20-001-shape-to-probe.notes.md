@@ -46,7 +46,7 @@ export class PushProbe extends Probe {
 This freed the word `Shape` for the stronger abstraction we wanted next: a
 transparent, descriptor-bound structural requirement closer to STL named
 concepts. That abstraction was later implemented as
-[`@kingjs/partial-shape` with `@kingjs/partial-satisfy`](./2026-05-20-004-partial-shape-and-satisfy.notes.md).
+[`@kingjs/partial-shape`](./2026-05-20-004-partial-shape-and-satisfy.notes.md).
 
 ## Decoupling
 

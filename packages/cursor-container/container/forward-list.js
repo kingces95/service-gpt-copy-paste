@@ -7,28 +7,28 @@ import {
   EquatableConcept,
 } from '@kingjs/partial-concept'
 import {
+  CloneableCursorConcept,
   CursorConcept,
-  CursorPart,
-  MutableCursorConcept,
-  InputCursorPart,
-  OutputCursorPart,
-  ForwardCursorConcept,
   RangeConcept,
-  OutputRangeConcept,
-  ForwardRangeConcept,
+  ReadableCursorConcept,
+  WritableCursorConcept,
+  CursorPart,
+  ReadableCursorPart,
+  SteppableCursorPart,
+  WritableCursorPart,
 
   throwNull,
   throwUpdateOutOfBounds,
   throwNotEquatableTo,
 } from '@kingjs/cursor'
-import { 
+import {
   ContainerPart,
   BulkAssignableContainerPart,
   AfterBulkEditableContainerPart,
   FrontEditableContainerPart,
 } from '../container-parts.js'
 import { iterate } from '@kingjs/cursor-algorithm'
-import { 
+import {
   ContainerCursor,
 } from '../cursor/container-cursor.js'
 import { ForwardLink } from '../link/forward-link.js'
@@ -44,26 +44,29 @@ class ForwardListCursor extends ContainerCursor {
   set link(link) { this.token = link }
 
   static {
-    implement(this, EquatableConcept, { 
-      equals(other) { 
+    implement(this, EquatableConcept, {
+      equals(other) {
         if (!this.equatableTo(other)) return false
         return this.link == other.link
       }
     })
 
-    implement(this, CursorConcept, { 
-      step() { 
+    implement(this, CursorConcept, {
+      step() {
         this.link = this.link.next
         return this
       },
     })
 
-    implement(this, MutableCursorConcept, { 
+    implement(this, ReadableCursorConcept, {
       get value() { return this.link.value },
+    })
+
+    implement(this, WritableCursorConcept, {
       set value(value) { this.link.value = value },
     })
 
-    implement(this, ForwardCursorConcept, {
+    implement(this, CloneableCursorConcept, {
       clone() {
         const { constructor, container, link } = this
         return new constructor(container, link)
@@ -72,17 +75,19 @@ class ForwardListCursor extends ContainerCursor {
   }
 
   static {
-    extend(this, CursorPart, {
+    extend(this, CursorPart)
+
+    extend(this, SteppableCursorPart, {
       isAtEnd$() { return this.link == this.container._endLink },
       canStep$() { return this.link != this.container._endLink },
     })
 
-    extend(this, InputCursorPart, {
-      isAccessible$() { return this.link != this.container._endLink },
+    extend(this, ReadableCursorPart, {
+      isReadable$() { return this.link != this.container._endLink },
     })
 
-    extend(this, OutputCursorPart, {
-      isAccessible$() { return this.link != this.container._endLink },
+    extend(this, WritableCursorPart, {
+      isWritable$() { return this.link != this.container._endLink },
     })
   }
 }
@@ -90,11 +95,10 @@ class ForwardListCursor extends ContainerCursor {
 export class ForwardList extends PartialProxy {
   static cursorType = ForwardListCursor
   static {
-    implement(this, ForwardRangeConcept, {
+    implement(this, RangeConcept, {
       begin() { return new this.cursorType(this, this._rootLink.next) },
       end() { return new this.cursorType(this, this._endLink) },
     })
-    implement(this, OutputRangeConcept)
   }
 
   static [Preconditions] = {
@@ -129,8 +133,8 @@ export class ForwardList extends PartialProxy {
     define(this, {
       beforeBegin() { return new this.cursorType(this, this._rootLink) },
       insertAfter(value, cursor) { cursor.link.insertAfter(value) },
-      eraseAfter(cursor) { 
-        cursor.link.eraseAfter() 
+      eraseAfter(cursor) {
+        cursor.link.eraseAfter()
         return cursor.clone().step()
       },
     })
@@ -139,14 +143,14 @@ export class ForwardList extends PartialProxy {
   static {
     extend(this, ContainerPart, {
       get isEmpty() { return this._endLink == this._rootLink.next },
-      insert(value, { after = this.beforeBegin() } = { }) { 
-        this.insertAfter(value, after) 
+      insert(value, { after = this.beforeBegin() } = { }) {
+        this.insertAfter(value, after)
       },
       erase({ after = this.beforeBegin() } = { }) { this.eraseAfter(after) },
     })
 
     extend(this, FrontEditableContainerPart, {
-      shift() { 
+      shift() {
         const result = this._rootLink.next.value
         this.eraseAfter(this.beforeBegin())
         return result

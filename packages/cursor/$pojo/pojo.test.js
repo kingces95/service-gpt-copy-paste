@@ -5,17 +5,19 @@ import { } from "@kingjs/info-to-pojo"
 import {
   IntervalConcept,
   CursorConcept,
-  InputCursorConcept,
-  OutputCursorConcept,
-  ForwardCursorConcept,
-  BidirectionalCursorConcept,
-  RandomAccessCursorConcept,
-  ContiguousCursorConcept,
-  ForwardRangeConcept,
-
-  Cursor,
-  Range,
 } from "@kingjs/cursor"
+
+import {
+  BidirectionalCursorShape,
+  ContiguousCursorShape,
+  CursorShape,
+  ForwardCursorShape,
+  InputCursorShape,
+  OutputCursorShape,
+  RandomAccessCursorShape,
+  WritableContiguousCursorShape,
+  WritableRandomAccessCursorShape,
+} from "@kingjs/cursor-shape"
 
 import {
   ContainerPart,
@@ -60,16 +62,16 @@ function dump(fn) {
 }
 
 // dumpToFile(CursorConcept, 'cursor-concept')
-// dumpToFile(InputCursorConcept, 'input-cursor-concept')
-// dumpToFile(OutputCursorConcept, 'output-cursor-concept')
-// dumpToFile(ForwardCursorConcept, 'forward-cursor-concept')
-// dumpToFile(BidirectionalCursorConcept, 'bidirectional-cursor-concept')
-// dumpToFile(RandomAccessCursorConcept, 'random-access-cursor-concept')
-// dumpToFile(ContiguousCursorConcept, 'contiguous-cursor-concept')
+// dumpToFile(CursorShape, 'cursor-shape')
+// dumpToFile(InputCursorShape, 'input-cursor-shape')
+// dumpToFile(OutputCursorShape, 'output-cursor-shape')
+// dumpToFile(ForwardCursorShape, 'forward-cursor-shape')
+// dumpToFile(BidirectionalCursorShape, 'bidirectional-cursor-shape')
+// dumpToFile(RandomAccessCursorShape, 'random-access-cursor-shape')
+// dumpToFile(WritableRandomAccessCursorShape, 'writable-random-access-cursor-shape')
+// dumpToFile(ContiguousCursorShape, 'contiguous-cursor-shape')
+// dumpToFile(WritableContiguousCursorShape, 'writable-contiguous-cursor-shape')
 
-// dumpToFile(Cursor, 'cursor')
-// dumpToFile(ForwardRangeConcept, 'cursor-factory-concept')
-// dumpToFile(Range, 'range')
 // dumpToFile(IntervalConcept, 'interval-concept')
 
 // dumpToFile(ContainerPart, 'container-concept')

@@ -1,31 +1,65 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { 
-  CursorConcept,
-  InputCursorConcept,
-  OutputCursorConcept,
-  MutableCursorConcept,
-  ForwardCursorConcept,
-  BidirectionalCursorConcept,
-  RandomAccessCursorConcept,
-  OffsetReadableCursorConcept,
-  OffsetWritableCursorConcept,
-  ContiguousCursorConcept,
-} from './cursor-concepts.js'
+import { iterate } from '@kingjs/cursor-algorithm'
 
+// Concepts are C#-ish declarations; shapes are STL-ish category probes.
+
+// Capabilities under test.
 import {
+  BacktrackableCursorConcept,
+  CloneableCursorConcept,
+  ComparableToCursorConcept,
+  CursorConcept,
+  MeasurableCursorConcept,
+  MovableCursorConcept,
+  ReadableAtCursorConcept,
+  ReadableCursorConcept,
+  SpannableCursorConcept,
+  SteppableCursorConcept,
+  WritableAtCursorConcept,
+  WritableCursorConcept,
+} from '@kingjs/cursor'
+
+// Structural classifiers under test.
+import {
+  BidirectionalCursorShape,
+  ContiguousCursorShape,
+  CursorShape,
+  ForwardCursorShape,
+  InputCursorShape,
+  OutputCursorShape,
+  RandomAccessCursorShape,
+  WritableRandomAccessCursorShape,
+} from '@kingjs/cursor-shape'
+
+// Fixture ranges.
+import {
+  // Part fixture ranges.
+  TrivialBacktrackableRange,
+  TrivialCloneableRange,
+  TrivialComparableToRange,
+  TrivialMeasurableRange,
+  TrivialMovableRange,
+  TrivialReadableAtRange,
+  TrivialReadableRange,
+  TrivialSpannableRange,
+  TrivialSteppableRange,
+  TrivialWritableAtRange,
+  TrivialWritableRange,
+
+  // Shape/category fixture ranges.
   TrivialInputRange,
   TrivialOutputRange,
-  TrivialMutableRange,
-  TrivialForwardRanged,
+  TrivialForwardRange,
   TrivialBidirectionalRange,
   TrivialRandomAccessRange,
-  TrivialOffsetReadableRange,
-  TrivialOffsetWritableRange,
-  TrivialOffsetRange,
+  TrivialWritableRandomAccessRange,
   TrivialContiguousRange,
+
+  // Other fixture range.
   TrivialOtherRange,
 } from './trivial-cursors.js'
 
+// Real ranges.
 import {
   ForwardList,
   List,
@@ -34,133 +68,354 @@ import {
 } from '@kingjs/cursor-container'
 import { SnapshotView } from '@kingjs/cursor-view'
 
-const input = [
-  InputCursorConcept,
-]
+const ConceptTests = {
+  TrivialSteppableCursor: {
+    type: TrivialSteppableRange,
+    capabilities: [
+      SteppableCursorConcept,
+    ],
+    shapes: [],
+  },
+  TrivialReadableCursor: {
+    type: TrivialReadableRange,
+    capabilities: [
+      SteppableCursorConcept,
+      ReadableCursorConcept,
+    ],
+    shapes: [
+      InputCursorShape,
+    ],
+  },
+  TrivialWritableCursor: {
+    type: TrivialWritableRange,
+    capabilities: [
+      SteppableCursorConcept,
+      WritableCursorConcept,
+    ],
+    shapes: [
+      OutputCursorShape,
+    ],
+  },
+  TrivialCloneableCursor: {
+    type: TrivialCloneableRange,
+    capabilities: [
+      SteppableCursorConcept,
+      CloneableCursorConcept,
+    ],
+    shapes: [],
+  },
+  TrivialBacktrackableCursor: {
+    type: TrivialBacktrackableRange,
+    capabilities: [
+      SteppableCursorConcept,
+      BacktrackableCursorConcept,
+    ],
+    shapes: [],
+  },
+  TrivialMovableCursor: {
+    type: TrivialMovableRange,
+    capabilities: [
+      SteppableCursorConcept,
+      BacktrackableCursorConcept,
+      MovableCursorConcept,
+    ],
+    shapes: [],
+  },
+  TrivialComparableToCursor: {
+    type: TrivialComparableToRange,
+    capabilities: [
+      SteppableCursorConcept,
+      BacktrackableCursorConcept,
+      MovableCursorConcept,
+      ComparableToCursorConcept,
+    ],
+    shapes: [],
+  },
+  TrivialMeasurableCursor: {
+    type: TrivialMeasurableRange,
+    capabilities: [
+      SteppableCursorConcept,
+      BacktrackableCursorConcept,
+      MovableCursorConcept,
+      MeasurableCursorConcept,
+    ],
+    shapes: [],
+  },
+  TrivialReadableAtCursor: {
+    type: TrivialReadableAtRange,
+    capabilities: [
+      SteppableCursorConcept,
+      ReadableCursorConcept,
+      CloneableCursorConcept,
+      BacktrackableCursorConcept,
+      MovableCursorConcept,
+      ReadableAtCursorConcept,
+    ],
+    shapes: [],
+  },
+  TrivialWritableAtCursor: {
+    type: TrivialWritableAtRange,
+    capabilities: [
+      SteppableCursorConcept,
+      WritableCursorConcept,
+      CloneableCursorConcept,
+      BacktrackableCursorConcept,
+      MovableCursorConcept,
+      WritableAtCursorConcept,
+    ],
+    shapes: [],
+  },
+  TrivialSpannableCursor: {
+    type: TrivialSpannableRange,
+    capabilities: [
+      SteppableCursorConcept,
+      CloneableCursorConcept,
+      SpannableCursorConcept,
+    ],
+    shapes: [],
+  },
+}
 
-const output = [
-  OutputCursorConcept,
-]
-
-const mutable = [
-  InputCursorConcept,
-  OutputCursorConcept,
-]
-
-const forward = [
-  ...mutable,
-  ForwardCursorConcept,
-]
-
-const bidirectional = [
-  ...forward,
-  BidirectionalCursorConcept,
-]
-
-const randomAccess = [
-  ...bidirectional,
-  RandomAccessCursorConcept,
-]
-
-const offsetReadable = [
-  ...randomAccess,
-  OffsetReadableCursorConcept,
-]
-
-const offsetWritable = [
-  ...randomAccess,
-  OffsetWritableCursorConcept,
-]
-
-const offset = [
-  ...randomAccess,
-  OffsetReadableCursorConcept,
-  OffsetWritableCursorConcept,
-]
-
-const contiguous = [
-  ...offset,
-  ContiguousCursorConcept,
-]
-
-const Tests = {
+const ShapeTests = {
   TrivialInputCursor: {
     type: TrivialInputRange,
-    concepts: input,
+    capabilities: [
+      SteppableCursorConcept,
+      ReadableCursorConcept,
+    ],
+    shapes: [
+      InputCursorShape,
+    ],
   },
   TrivialOutputCursor: {
     type: TrivialOutputRange,
-    concepts: output,
-  },
-  TrivialMutableCursor: {
-    type: TrivialMutableRange,
-    concepts: mutable,
+    capabilities: [
+      SteppableCursorConcept,
+      WritableCursorConcept,
+    ],
+    shapes: [
+      OutputCursorShape,
+    ],
   },
   TrivialForwardCursor: {
-    type: TrivialForwardRanged,
-    concepts: forward,
+    type: TrivialForwardRange,
+    capabilities: [
+      SteppableCursorConcept,
+      ReadableCursorConcept,
+      WritableCursorConcept,
+      CloneableCursorConcept,
+    ],
+    shapes: [
+      InputCursorShape,
+      OutputCursorShape,
+      ForwardCursorShape,
+    ],
   },
   TrivialBidirectionalCursor: {
     type: TrivialBidirectionalRange,
-    concepts: bidirectional,
+    capabilities: [
+      SteppableCursorConcept,
+      ReadableCursorConcept,
+      WritableCursorConcept,
+      CloneableCursorConcept,
+      BacktrackableCursorConcept,
+    ],
+    shapes: [
+      InputCursorShape,
+      OutputCursorShape,
+      ForwardCursorShape,
+      BidirectionalCursorShape,
+    ],
   },
   TrivialRandomAccessCursor: {
     type: TrivialRandomAccessRange,
-    concepts: randomAccess,
+    capabilities: [
+      SteppableCursorConcept,
+      ReadableCursorConcept,
+      WritableCursorConcept,
+      CloneableCursorConcept,
+      BacktrackableCursorConcept,
+      MovableCursorConcept,
+      ComparableToCursorConcept,
+      MeasurableCursorConcept,
+      ReadableAtCursorConcept,
+    ],
+    shapes: [
+      InputCursorShape,
+      OutputCursorShape,
+      ForwardCursorShape,
+      BidirectionalCursorShape,
+      RandomAccessCursorShape,
+    ],
   },
-  TrivialOffsetReadableCursor: {
-    type: TrivialOffsetReadableRange,
-    concepts: offsetReadable,
-  },
-  TrivialOffsetWritableCursor: {
-    type: TrivialOffsetWritableRange,
-    concepts: offsetWritable,
-  },
-  TrivialOffsetCursor: {
-    type: TrivialOffsetRange,
-    concepts: offset,
+  TrivialWritableRandomAccessCursor: {
+    type: TrivialWritableRandomAccessRange,
+    capabilities: [
+      SteppableCursorConcept,
+      ReadableCursorConcept,
+      WritableCursorConcept,
+      CloneableCursorConcept,
+      BacktrackableCursorConcept,
+      MovableCursorConcept,
+      ComparableToCursorConcept,
+      MeasurableCursorConcept,
+      ReadableAtCursorConcept,
+      WritableAtCursorConcept,
+    ],
+    shapes: [
+      InputCursorShape,
+      OutputCursorShape,
+      ForwardCursorShape,
+      BidirectionalCursorShape,
+      RandomAccessCursorShape,
+      WritableRandomAccessCursorShape,
+    ],
   },
   TrivialContiguousCursor: {
     type: TrivialContiguousRange,
-    concepts: contiguous,
+    capabilities: [
+      SteppableCursorConcept,
+      ReadableCursorConcept,
+      WritableCursorConcept,
+      CloneableCursorConcept,
+      BacktrackableCursorConcept,
+      MovableCursorConcept,
+      ComparableToCursorConcept,
+      MeasurableCursorConcept,
+      ReadableAtCursorConcept,
+      WritableAtCursorConcept,
+      SpannableCursorConcept,
+    ],
+    shapes: [
+      InputCursorShape,
+      OutputCursorShape,
+      ForwardCursorShape,
+      BidirectionalCursorShape,
+      RandomAccessCursorShape,
+      WritableRandomAccessCursorShape,
+      ContiguousCursorShape,
+    ],
   },
+}
+
+const ContainerTests = {
   ForwardList: {
     type: ForwardList,
-    concepts: forward,
+    capabilities: [
+      SteppableCursorConcept,
+      ReadableCursorConcept,
+      WritableCursorConcept,
+      CloneableCursorConcept,
+    ],
+    shapes: [
+      InputCursorShape,
+      OutputCursorShape,
+      ForwardCursorShape,
+    ],
   },
   List: {
     type: List,
-    concepts: bidirectional,
+    capabilities: [
+      SteppableCursorConcept,
+      ReadableCursorConcept,
+      WritableCursorConcept,
+      CloneableCursorConcept,
+      BacktrackableCursorConcept,
+    ],
+    shapes: [
+      InputCursorShape,
+      OutputCursorShape,
+      ForwardCursorShape,
+      BidirectionalCursorShape,
+    ],
   },
   ArrayMap: {
     type: ArrayMap,
-    concepts: offset,
+    capabilities: [
+      SteppableCursorConcept,
+      ReadableCursorConcept,
+      WritableCursorConcept,
+      CloneableCursorConcept,
+      BacktrackableCursorConcept,
+      MovableCursorConcept,
+      ComparableToCursorConcept,
+      MeasurableCursorConcept,
+      ReadableAtCursorConcept,
+      WritableAtCursorConcept,
+    ],
+    shapes: [
+      InputCursorShape,
+      OutputCursorShape,
+      ForwardCursorShape,
+      BidirectionalCursorShape,
+      RandomAccessCursorShape,
+      WritableRandomAccessCursorShape,
+    ],
   },
   Deque: {
     type: Deque,
-    concepts: offset,
+    capabilities: [
+      SteppableCursorConcept,
+      ReadableCursorConcept,
+      WritableCursorConcept,
+      CloneableCursorConcept,
+      BacktrackableCursorConcept,
+      MovableCursorConcept,
+      ComparableToCursorConcept,
+      MeasurableCursorConcept,
+      ReadableAtCursorConcept,
+      WritableAtCursorConcept,
+    ],
+    shapes: [
+      InputCursorShape,
+      OutputCursorShape,
+      ForwardCursorShape,
+      BidirectionalCursorShape,
+      RandomAccessCursorShape,
+      WritableRandomAccessCursorShape,
+    ],
   },
   Snapshot: {
     type: SnapshotView,
     create: () => new SnapshotView([]),
-    concepts: [
-      InputCursorConcept,
-      ForwardCursorConcept,
-      BidirectionalCursorConcept,
-      RandomAccessCursorConcept,
-      OffsetReadableCursorConcept,
+    capabilities: [
+      SteppableCursorConcept,
+      ReadableCursorConcept,
+      CloneableCursorConcept,
+      BacktrackableCursorConcept,
+      MovableCursorConcept,
+      ComparableToCursorConcept,
+      MeasurableCursorConcept,
+      ReadableAtCursorConcept,
+    ],
+    shapes: [
+      InputCursorShape,
+      ForwardCursorShape,
+      BidirectionalCursorShape,
+      RandomAccessCursorShape,
     ],
   },
+}
+
+const Tests = {
+  ...ConceptTests,
+  ...ShapeTests,
+  ...ContainerTests,
 }
 
 function has(concepts, concept) {
   return concepts.includes(concept)
 }
 
-describe.each(Object.entries(Tests))('%s', (_, { 
-  type, 
-  create = () => new type(), 
-  concepts, 
+function shapesOf(shapes) {
+  return [ CursorShape, ...shapes ]
+}
+
+describe.each(Object.entries(Tests))('%s', (_, {
+  type,
+  create = () => new type(),
+  capabilities,
+  shapes,
   bufferType,
 }) => {
   let cursorType, cursorPrototype
@@ -175,14 +430,14 @@ describe.each(Object.entries(Tests))('%s', (_, {
       expect(cursorPrototype).toBeInstanceOf(CursorConcept)
     })
 
-    it('satisfies expected concepts', () => {
-      for (const concept of concepts)
-        expect(cursorPrototype).toBeInstanceOf(concept)
+    it('satisfies expected capabilities', () => {
+      for (const capability of capabilities)
+        expect(cursorPrototype).toBeInstanceOf(capability)
     })
 
     it('creates an empty iterable range', () => {
       const container = create()
-      expect([...container]).toEqual([])
+      expect([...iterate(container)]).toEqual([])
     })
   })
 
@@ -198,6 +453,11 @@ describe.each(Object.entries(Tests))('%s', (_, {
     describe('cursor', () => {
       it('is instanceof cursor type', () => {
         expect(begin).toBeInstanceOf(cursorType)
+      })
+
+      it('satisfies expected cursor shapes', () => {
+        for (const shape of shapesOf(shapes))
+          expect(begin).toBeInstanceOf(shape)
       })
 
       it('rejects step', () => {
@@ -222,50 +482,34 @@ describe.each(Object.entries(Tests))('%s', (_, {
       })
     })
 
-    if (has(concepts, InputCursorConcept)) {
+    if (has(capabilities, ReadableCursorConcept)) {
       describe('as an input cursor', () => {
-        it('is instanceof InputCursorConcept', () => {
-          expect(begin).toBeInstanceOf(InputCursorConcept)
-        })
-
         it('rejects value read', () => {
           expect(() => begin.value).toThrow(
             'Cannot read value out of bounds of cursor.')
         })
       })
     }
-  
-    if (has(concepts, OutputCursorConcept)) {
-      describe('as an output cursor', () => {
-        it('is instanceof OutputCursorConcept', () => {
-          expect(begin).toBeInstanceOf(OutputCursorConcept)
-        })
 
+    if (has(capabilities, WritableCursorConcept)) {
+      describe('as an output cursor', () => {
         it('rejects value write', () => {
           expect(() => begin.value = 42).toThrow(
             'Cannot write value out of bounds of cursor.')
         })
       })
     }
-  
-    if (has(concepts, ForwardCursorConcept)) {
-      describe('as a forward cursor', () => {
-        it('is instanceof ForwardCursorConcept', () => {
-          expect(begin).toBeInstanceOf(ForwardCursorConcept)
-        })
 
+    if (has(capabilities, CloneableCursorConcept)) {
+      describe('as a forward cursor', () => {
         it('equals its clone', () => {
           expect(begin.equals(begin.clone())).toBe(true)
         })
       })
     }
-  
-    if (has(concepts, BidirectionalCursorConcept)) {
-      describe('as a bidirectional cursor', () => {
-        it('is instanceof BidirectionalCursorConcept', () => {
-          expect(begin).toBeInstanceOf(BidirectionalCursorConcept)
-        })
 
+    if (has(capabilities, BacktrackableCursorConcept)) {
+      describe('as a bidirectional cursor', () => {
         it('rejects stepBack', () => {
           expect(() => {
             begin.stepBack()
@@ -274,13 +518,9 @@ describe.each(Object.entries(Tests))('%s', (_, {
         })
       })
     }
-  
-    if (has(concepts, RandomAccessCursorConcept)) {
-      describe('as a random access cursor', () => {
-        it('is instanceof RandomAccessCursorConcept', () => {
-          expect(begin).toBeInstanceOf(RandomAccessCursorConcept)
-        })
 
+    if (has(capabilities, MovableCursorConcept)) {
+      describe('as a random access cursor', () => {
         it('rejects moving forward', () => {
           expect(() => begin.move(1)).toThrow(
             'Cannot move cursor out of bounds.')
@@ -295,58 +535,48 @@ describe.each(Object.entries(Tests))('%s', (_, {
           expect(begin.move(0)).toBe(begin)
         })
 
-        it('reports zero distance to itself', () => {
-          expect(begin.distanceTo(begin)).toBe(0)
-        })
+        if (has(capabilities, MeasurableCursorConcept)) {
+          it('reports zero distance to itself', () => {
+            expect(begin.distanceTo(begin)).toBe(0)
+          })
 
-        it('rejects distance to null', () => {
-          expect(() => begin.distanceTo(null)).toThrow(
-            'Cursor is from another container.')
-        })
+          it('rejects distance to null', () => {
+            expect(() => begin.distanceTo(null)).toThrow(
+              'Cursor is from another container.')
+          })
+        }
 
-        it('compares equal to itself', () => {
-          expect(begin.compareTo(begin)).toBe(0)
-        })
+        if (has(capabilities, ComparableToCursorConcept)) {
+          it('compares equal to itself', () => {
+            expect(begin.compareTo(begin)).toBe(0)
+          })
 
-        it('rejects comparison to null', () => {
-          expect(() => begin.compareTo(null)).toThrow(
-            'Cursor is from another container.')
-        })
+          it('rejects comparison to null', () => {
+            expect(() => begin.compareTo(null)).toThrow(
+              'Cursor is from another container.')
+          })
+        }
+
+        if (has(capabilities, ReadableAtCursorConcept)) {
+          it('rejects at zero', () => {
+            expect(() => begin.at(0)).toThrow(
+              'Cannot read value out of bounds of cursor.')
+          })
+        }
       })
     }
 
-    if (has(concepts, OffsetReadableCursorConcept)) {
-      describe('as an offset readable cursor', () => {
-        it('is instanceof OffsetReadableCursorConcept', () => {
-          expect(begin).toBeInstanceOf(OffsetReadableCursorConcept)
-        })
-
-        it('rejects at zero by precondition', () => {
-          expect(() => begin.at(0)).toThrow(
-            'Cannot read value out of bounds of cursor.')
-        })
-      })
-    }
-
-    if (has(concepts, OffsetWritableCursorConcept)) {
-      describe('as an offset writable cursor', () => {
-        it('is instanceof OffsetWritableCursorConcept', () => {
-          expect(begin).toBeInstanceOf(OffsetWritableCursorConcept)
-        })
-
+    if (has(capabilities, WritableAtCursorConcept)) {
+      describe('as a writable random access cursor', () => {
         it('rejects setAt zero by precondition', () => {
           expect(() => begin.setAt(0, 42)).toThrow(
             'Cannot write value out of bounds of cursor.')
         })
       })
     }
-    
-    if (has(concepts, ContiguousCursorConcept)) {
-      describe('as a contiguous cursor', () => {
-        it('is instanceof ContiguousCursorConcept', () => {
-          expect(begin).toBeInstanceOf(ContiguousCursorConcept)
-        })
 
+    if (has(capabilities, SpannableCursorConcept)) {
+      describe('as a contiguous cursor', () => {
         it('returns an empty span', () => {
           const buffer = begin.span()
           expect(buffer).toBeInstanceOf(Uint8Array)
@@ -380,19 +610,24 @@ describe.each(Object.entries(Tests))('%s', (_, {
         expect(begin.equatableTo(otherBegin)).toBe(true)
       })
 
-      if (has(concepts, RandomAccessCursorConcept)) {
+      if (has(capabilities, ComparableToCursorConcept) ||
+        has(capabilities, MeasurableCursorConcept)) {
         describe('as a random access cursor', () => {
-          it('compares equal', () => {
-            expect(begin.compareTo(otherBegin)).toBe(0)
-          })
+          if (has(capabilities, ComparableToCursorConcept)) {
+            it('compares equal', () => {
+              expect(begin.compareTo(otherBegin)).toBe(0)
+            })
+          }
 
-          it('reports zero distance', () => {
-            expect(begin.distanceTo(otherBegin)).toBe(0)
-          })
+          if (has(capabilities, MeasurableCursorConcept)) {
+            it('reports zero distance', () => {
+              expect(begin.distanceTo(otherBegin)).toBe(0)
+            })
+          }
         })
       }
 
-      if (has(concepts, ContiguousCursorConcept)) {
+      if (has(capabilities, SpannableCursorConcept)) {
         describe('span', () => {
           it('returns an empty span', () => {
             const buffer = begin.span(otherBegin)
@@ -407,7 +642,7 @@ describe.each(Object.entries(Tests))('%s', (_, {
         })
       }
     })
-    
+
     describe('and another cursor from a different container', () => {
       let otherBegin
 
@@ -423,7 +658,7 @@ describe.each(Object.entries(Tests))('%s', (_, {
         expect(begin.equals(otherBegin)).toBe(false)
       })
     })
-  
+
     describe('and another cursor from a different type of container', () => {
       let otherCursor
 
@@ -439,21 +674,26 @@ describe.each(Object.entries(Tests))('%s', (_, {
         expect(begin.equals(otherCursor)).toBe(false)
       })
 
-      if (has(concepts, RandomAccessCursorConcept)) {
+      if (has(capabilities, ComparableToCursorConcept) ||
+        has(capabilities, MeasurableCursorConcept)) {
         describe('as a random access cursor', () => {
-          it('rejects distance to other cursor', () => {
-            expect(() => begin.distanceTo(otherCursor)).toThrow(
-              'Cursor is from another container.')
-          })
+          if (has(capabilities, MeasurableCursorConcept)) {
+            it('rejects distance to other cursor', () => {
+              expect(() => begin.distanceTo(otherCursor)).toThrow(
+                'Cursor is from another container.')
+            })
+          }
 
-          it('rejects comparison to other cursor', () => {
-            expect(() => begin.compareTo(otherCursor)).toThrow(
-              'Cursor is from another container.')
-          })
+          if (has(capabilities, ComparableToCursorConcept)) {
+            it('rejects comparison to other cursor', () => {
+              expect(() => begin.compareTo(otherCursor)).toThrow(
+                'Cursor is from another container.')
+            })
+          }
         })
       }
 
-      if (has(concepts, ContiguousCursorConcept)) {
+      if (has(capabilities, SpannableCursorConcept)) {
         describe('as a contiguous cursor', () => {
           it('rejects span with other cursor', () => {
             expect(() => begin.span(otherCursor)).toThrow(

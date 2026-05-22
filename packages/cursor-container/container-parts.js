@@ -2,6 +2,7 @@ import { Defines, Abstracts, Extends } from '@kingjs/partial-class'
 import { ArgChecks, Preconditions } from '@kingjs/partial-proxy'
 import { PartialClass } from '@kingjs/partial-class'
 import { extend } from '@kingjs/partial-extend'
+import { implement } from '@kingjs/partial-implement'
 import { 
   copy, 
 } from '@kingjs/cursor-algorithm'
@@ -12,19 +13,6 @@ import {
 import { snapshot } from '@kingjs/cursor-view'
 import {
   RangeConcept,
-  InputRangeConcept,
-  OutputRangeConcept,
-  ForwardRangeConcept,
-  BidirectionalRangeConcept,
-  RandomAccessRangeConcept,
-  ContiguousRangeConcept,
-
-  InputCursorConcept,
-  OutputCursorConcept,
-  ForwardCursorConcept,
-  BidirectionalCursorConcept,
-  RandomAccessCursorConcept,
-  ContiguousCursorConcept,
 
   throwNull,
   throwEmpty,
@@ -37,7 +25,10 @@ import { Implements } from '@kingjs/partial-concept'
 import { NormalNumber } from './checks.js'
 
 export class ContainerPart extends PartialClass {
-  static [Implements] = RangeConcept
+  static {
+    implement(this, RangeConcept)
+  }
+
   static [Abstracts] = {
     get isEmpty() { },
     insert(value, { at = this.end(), after }) { },

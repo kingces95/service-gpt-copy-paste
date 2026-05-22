@@ -1,17 +1,17 @@
 import { abstractify } from '@kingjs/abstract'
 import { PartialType } from '@kingjs/partial-type'
 import { PartialReflect } from '@kingjs/partial-reflect'
-import { Attachments } from '@kingjs/partial-attachments'
+import { Concept } from '@kingjs/partial-concept'
 import { WeakMapLookup } from '@kingjs/weak-map-lookup'
 import {
   Adjacent,
-  Defines,
+  Implements,
   Includes,
   Compile,
   Transparent,
 } from '@kingjs/partial-symbols'
 
-export { Defines, Includes } from '@kingjs/partial-symbols'
+export { Includes } from '@kingjs/partial-symbols'
 
 const matches = new WeakMapLookup()
 
@@ -30,7 +30,7 @@ export class Shape extends PartialType {
   static [Transparent] = true
 
   static [Adjacent] = {
-    [Defines]: Attachments,
+    [Implements]: Concept,
     [Includes]: Shape,
   }
 

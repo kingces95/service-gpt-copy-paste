@@ -1,20 +1,20 @@
-import { assert } from '@kingjs/assert'
 import { implement } from '@kingjs/partial-implement'
 import { Lazy } from '@kingjs/lazy'
 import { extend } from '@kingjs/partial-extend'
 import { PartialProxy } from '@kingjs/partial-proxy'
-import { 
+import {
   copy,
   copyBackward,
 } from '@kingjs/cursor-algorithm'
 import { materialize } from '../algorithms/materialize.js'
 import { subrange } from '@kingjs/cursor-view'
-import { 
-  ContiguousRangeConcept, 
-  RandomAccessCursorConcept,
-  OutputRangeConcept,
+import {
+  RangeConcept,
 } from '@kingjs/cursor'
-import { 
+import {
+  RandomAccessCursorShape,
+} from '@kingjs/cursor-shape'
+import {
   ContiguousCursor,
 } from '../cursor/contiguous-cursor.js'
 import {
@@ -29,8 +29,7 @@ import {
 export class Vector extends PartialProxy {
   static cursorType = ContiguousCursor
   static {
-    implement(this, OutputRangeConcept)
-    implement(this, ContiguousRangeConcept, {
+    implement(this, RangeConcept, {
       begin() { return new this.cursorType(this, 0) },
       end() { return new this.cursorType(this, this.size) },
     })
@@ -73,7 +72,7 @@ export class Vector extends PartialProxy {
         let first = range.begin()
         let last = range.end()
 
-        if (first instanceof RandomAccessCursorConcept == false) {
+        if (first instanceof RandomAccessCursorShape == false) {
           const arrayMap = materialize(range)
           first = arrayMap.begin()
           last = arrayMap.end()
@@ -108,7 +107,7 @@ export class Vector extends PartialProxy {
       setCapacity(capacity) {
         const newVector = new this.constructor(capacity)
         copy(newVector.begin(), subrange(this.begin(), this.end()))
-        
+
         const { _bytes, _buffer, _size } = newVector
         this._bytes = _bytes
         this._buffer = _buffer
@@ -119,7 +118,7 @@ export class Vector extends PartialProxy {
     })
 
     extend(this, ByteContainerPart, {
-      span(begin = this.begin(), end = this.end()) { 
+      span(begin = this.begin(), end = this.end()) {
         return this.buffer.subarray(begin.index, end.index)
       },
     })

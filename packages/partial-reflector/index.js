@@ -659,10 +659,6 @@ class AdjacentTypes {
     return AdjacentTypes.#get(type)
   }
 
-  static publish(type, ...types) {
-    AdjacentTypes.#get(type).add(...types)
-  }
-
   static *load(type) {
     const entry = AdjacentTypes.#get(type)
     yield* entry.load()
@@ -690,7 +686,7 @@ class AdjacentTypes {
     yield* this.#adjacentTypes
   }
 
-  add(type) {
+  publish(type) {
     assert(!this.#loaded,
       'Type cannot be modified after it has been loaded.')
     assert(!isTransparent(type),
@@ -708,8 +704,7 @@ class AdjacentTypes {
     if (!baseType)
       return false
 
-    const baseEntry = AdjacentTypes.#directory.get(baseType)
-    return baseEntry?.has(type) == true
+    return AdjacentTypes.#get(baseType).has(type)
   }
 }
 
@@ -813,8 +808,8 @@ export function create({
               throw new TypeError(
                 `${type.name} requires ${requirement.name}.`)
 
-        if (!isTransparent(host))
-          adjacentTypes.add(host)
+        if (!isTransparent(partialType) && !isTransparent(host))
+          adjacentTypes.publish(host)
       }
     })
   }

@@ -8,7 +8,7 @@ Pinned for after the current range migration.
 
 `SnapshotCursor` exposed a design pressure in the current cursor concept ladder.
 It is random access, but read-only. That made it awkward that
-`RandomAccessCursorConcept` currently owns both:
+the old random-access cursor concept owned both:
 
 ```js
 at(offset)
@@ -26,8 +26,8 @@ The immediate trigger was `SnapshotCursor.at(offset)`. Unlike
 `snapshot-view.js`.
 
 That inline throw is the local smell. It shows that the bounds/precondition
-logic belongs higher in the concept hierarchy, but the current concept split is
-not quite right because `RandomAccessCursorConcept` also implies indexed write.
+logic belongs higher in the concept hierarchy, but the old concept split was
+not quite right because random access also implied indexed write.
 
 ## Concrete Win
 
@@ -74,16 +74,16 @@ without allowing assignment.
 
 ## Current Conflation
 
-The local cursor model currently conflates several axes:
+The older cursor model conflated several axes:
 
 ```text
-InputCursorConcept
+ReadableCursorConcept
 └─ get value
 
-OutputCursorConcept
+WritableCursorConcept
 └─ set value
 
-RandomAccessCursorConcept
+Random-access surface
 └─ move
 └─ at
 └─ setAt
@@ -105,50 +105,51 @@ ReadableCursorConcept
 WritableCursorConcept
 └─ set value
 
-ForwardCursorConcept
+SteppableCursorConcept
 └─ step
+
+CloneableCursorConcept
 └─ clone
 
-BidirectionalCursorConcept
+BacktrackableCursorConcept
 └─ stepBack
 
-RandomAccessCursorConcept
+Random-access movement concepts
 └─ move
 └─ compareTo
 └─ distanceTo
 ```
 
-Offset read/write can be modeled as helper operations with optional internal
-optimization hooks:
+Indexed read/write can be modeled as explicit capability concepts:
 
 ```text
-OffsetReadableCursorConcept
-└─ at$
+ReadableAtCursorConcept
+└─ at
 
-OffsetWritableCursorConcept
-└─ setAt$
+WritableAtCursorConcept
+└─ setAt
 ```
 
 The semantic helpers would be:
 
 ```js
 export function readAt(cursor, offset) {
-  if (cursor instanceof OffsetReadableCursorConcept)
-    return cursor.at$(offset)
+  if (cursor instanceof ReadableAtCursorConcept)
+    return cursor.at(offset)
 
   return cursor.clone().move(offset).value
 }
 
 export function writeAt(cursor, offset, value) {
-  if (cursor instanceof OffsetWritableCursorConcept)
-    return cursor.setAt$(offset, value)
+  if (cursor instanceof WritableAtCursorConcept)
+    return cursor.setAt(offset, value)
 
   cursor.clone().move(offset).value = value
 }
 ```
 
-So `.value` remains the faithful STL-style dereference operation, while `$`
-hooks preserve the performance escape hatch.
+So `.value` remains the faithful STL-style dereference operation, while
+`at`/`setAt` preserve the performance escape hatch as named capabilities.
 
 ## Performance Note
 

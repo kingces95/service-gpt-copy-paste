@@ -4,16 +4,16 @@ import { Prototype } from '@kingjs/prototype'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { PartialType } from '@kingjs/partial-type'
 import { contract } from '@kingjs/function-contract'
-import { 
-  Preconditions, 
+import {
+  Preconditions,
   Postconditions,
   TypeChecks,
   ThisChecks,
   ArgChecks,
-  TypePrecondition, 
+  TypePrecondition,
   TypePostcondition,
 
-  // this file intentially does not import 
+  // this file intentially does not import
   //    DependsOn
   //    Extends
   //    Implements
@@ -27,47 +27,45 @@ import {
 // ____________________________________________________________________________
 // METADATA
 
-// PartialMetadata supports metadata which is a prototype chain of the 
+// PartialMetadata supports metadata which is a prototype chain of the
 // static field descriptors of a type found by traversing the type
 // hiearchy of the instance prototype chain. For example, implementing
 
-  //  myContainer instanceof InputRangeConcept
-  
-// where MyContainer declares an an associated cursorType as an
-// InputCursor like,
+  //  myContainer instanceof RangeProbe
 
-    //  class InputCursorConcept extends Concept { 
+// where MyContainer publishes a cursorType whose prototype structurally
+// satisfies InputCursorShape like,
+
+    //  class InputCursorShape extends Shape {
     //    step() { }
-    //    get value() { } 
+    //    get value() { }
     //  }
-    //  class InputRangeConcept extends Concept { 
-    //    static cursorType = InputCursorConcept 
-    //  }  
+    //  class RangeShape extends Shape {
+    //    get prototypeCursor() { ... }
+    //  }
 
-  //  class MyCursor exends Cursor {
-  //    static { extends(this, InputCursorConcept) }
+  //  class MyCursor {
+  //    static { implement(this, ReadableCursorConcept, { ... }) }
   //    step() {...}
-  //    get value() {...} 
+  //    get value() {...}
   //  }
   //  class MyPartialContainer extends PartialClass {
   //    static cursorType = MyCursor
   //    ...
   //  }
-  //  class MyContainer extends Container { 
+  //  class MyContainer extends Container {
   //    static { extends(this, MyPartialContainer) }
   //    // the following members included for illustrative purposes only.
   //    static myStaticField = ...
   //    myMember() {...}
   //  }
 
-// requires testing if MyContainer's cursor is an InputCurosr. Specifically,
-// this requires testing if MyContainer has a static cursorType whose value
-// is a type an instance of which would be instanceof the concept found 
-// in the static cursorType on InputRangeConcept namely 
-// InputCursorConcept. 
+// requires testing if MyContainer's cursorType prototype satisfies
+// InputCursorShape. The cursorType may be provided directly by the concrete
+// type, or by a RangeConcept helper that derives it from a static cursorType.
 
 // A naive implementation would search the static prototype chain created
-// by Es6Reflector for a field named cursorType on MyContainer and find none. 
+// by Es6Reflector for a field named cursorType on MyContainer and find none.
 
   // Es6Reflector Static Prototype Chain:
 
@@ -76,9 +74,9 @@ import {
   //     └── Object
   //         └── null
 
-// The correct implementation would search for a static named cursorType on 
-// all partial extensions as well (i.e. on MyPartialContainer). Metadata 
-// solves this by allowing querying across the partial extensions for static 
+// The correct implementation would search for a static named cursorType on
+// all partial extensions as well (i.e. on MyPartialContainer). Metadata
+// solves this by allowing querying across the partial extensions for static
 // field descriptors using the following transform.
 
 // PartialReflector creates an instance prototype chain for MyContainer
@@ -93,9 +91,9 @@ import {
   //             └── null
 
 // Each prototype in this chain has a copy of the _instance_ descriptors of
-// the type it represents. The metadata chain is a transformation of this 
-// instance prototype chain where each prototype in the chain has a 
-// copy of the _static_ descriptors of the type it represents. 
+// the type it represents. The metadata chain is a transformation of this
+// instance prototype chain where each prototype in the chain has a
+// copy of the _static_ descriptors of the type it represents.
 
   // PartialMetadata Instance Prototype Chain:
 
@@ -105,7 +103,7 @@ import {
   //         └── Object
   //             └── null
 
-// Querying the metadata chain for MyContainer would hence find the static 
+// Querying the metadata chain for MyContainer would hence find the static
 // cursorType on MyPartialContainer.
 
 export const PartialMetadata = PartialReflect.map({
@@ -114,7 +112,7 @@ export const PartialMetadata = PartialReflect.map({
     const hierarchy = [...this.hierarchy(type)]
 
     // reverse because prototype chains are created from the bottome up
-    // by Prototype.create but hierarchy is returned from the top down. 
+    // by Prototype.create but hierarchy is returned from the top down.
     return hierarchy.reverse().reduce((prototype, currentType) => {
       const descriptors = { }
 
@@ -122,14 +120,14 @@ export const PartialMetadata = PartialReflect.map({
       const options = { isStatic: true, descriptorType: 'field' }
       for (const current of this.ownDescriptors(currentType, options)) {
         assert(typeof current == 'object'
-          || typeof current == 'string' 
+          || typeof current == 'string'
           || typeof current == 'symbol',
           `Unexpected type: ${typeof current}`)
 
         switch (typeof current) {
           case 'string':
           case 'symbol':
-            key = current 
+            key = current
             break
           case 'object':
             descriptors[key] = current
@@ -146,16 +144,16 @@ export const PartialMetadata = PartialReflect.map({
 // ASSOCIATED PARTIAL TYPES
 
 // Associated partial types allow for testing if assoicated metadata of
-// an instance satisfies associated metadata of a PartialType. 
+// an instance satisfies associated metadata of a PartialType.
 
 export function satisfiesAssociations(ctor, partialType) {
   for (const { value: associatedPartialType, key } of PartialMetadata.values(
     partialType, { extensionOf: PartialType, includeOverridden: true })) {
 
     const associatedType = ctor[key]
-    if (!(typeof associatedType == 'function')) 
-      return false      
-    
+    if (!(typeof associatedType == 'function'))
+      return false
+
     return PartialReflect.isComposedOf(associatedType, associatedPartialType)
   }
   return true
@@ -164,12 +162,16 @@ export function satisfiesAssociations(ctor, partialType) {
 // ____________________________________________________________________________
 // PRECONDITIONS AND POSTCONDITIONS
 
-// PartialPreconditions supports preconditions which is a prototype chains of 
-// the function descriptors of a type found by traversing the type hierarchy of 
-// the metadata prototype chain. 
+// PartialPreconditions supports preconditions which is a prototype chains of
+// the function descriptors of a type found by traversing the type hierarchy of
+// the metadata prototype chain.
 
-// Continuing the above example, if MyCursor, InputCursorConcept and Cursor 
+// Continuing the above example, if MyCursor, InputCursorPart and Cursor
 // defined preconditions like,
+//
+// Shapes are transparent structural requirements and do not appear in the
+// metadata prototype chain. Preconditions that need thunk discovery live on
+// parts such as InputCursorPart.
 
   //  MyCursor[Preconditions] = {
   //    step() { ...precondition... }
@@ -179,7 +181,7 @@ export function satisfiesAssociations(ctor, partialType) {
   //    value() { ...precondition... }
   //  }
 
-  //  InputCursorConcept[Preconditions] = {
+  //  InputCursorPart[Preconditions] = {
   //    value() { ...precondition... }
   //    step() { ...precondition... }
   //  }
@@ -187,27 +189,27 @@ export function satisfiesAssociations(ctor, partialType) {
 // then the metadata prototype chain of MyCursor would be like,
 
   // MyCursor (Preconditions)
-  // └── InputCursorConcept (Preconditions)
+  // └── InputCursorPart (Preconditions)
   //     └── Cursor (Preconditions)
   //         └── Object
   //             └── null
 
-// which is transformed into a preconditions chain by expanding the 
+// which is transformed into a preconditions chain by expanding the
 // Preconditions POJOs into a chain like,
 
   // MyCursor (step)
-  // └── InputCursorConcept (value, step)
+  // └── InputCursorPart (value, step)
   //     └── Cursor (value)
   //         └── null
 
 // Querying the preconditions chain for MyCursor for precondition by name
-// would yield descriptors for all relevant preconditions. For example, 
-// querying for the step precondition would yield the step preconditions 
-// on MyCursor and InputCursorConcept but not Cursor since Cursor does 
-// not define a step precondition. 
+// would yield descriptors for all relevant preconditions. For example,
+// querying for the step precondition would yield the step preconditions
+// on MyCursor and InputCursorPart but not Cursor since Cursor does
+// not define a step precondition.
 
-// PartialPostconditions, PartialThisChecks and PartialArgChecks are 
-// similarly defined and useful for quering metadata defined use their 
+// PartialPostconditions, PartialThisChecks and PartialArgChecks are
+// similarly defined and useful for quering metadata defined use their
 // respective symbols.
 
 function partialReflectOnMetaObject(symbol) {
@@ -224,10 +226,10 @@ function partialReflectOnMetaObject(symbol) {
   })
 }
 
-export const PartialPreconditions 
+export const PartialPreconditions
   = partialReflectOnMetaObject(Preconditions)
 
-export const PartialPostconditions 
+export const PartialPostconditions
   = partialReflectOnMetaObject(Postconditions)
 
 export const PartialThisChecks
@@ -273,7 +275,7 @@ function getMemberConditions(reflect, type, key) {
         break
       default:
         assert(false, 'Unexpected type: ' + typeof current)
-    }    
+    }
   }
 
   return result
@@ -334,7 +336,7 @@ export function getConditions(type, key) {
     typePrecondition: [
       ...typeCheck.map(createTypeCheck),
       ...typePrecondition,
-    ], 
+    ],
     precondition: [
       ...thisCheck.value.map(createThisCheck),
       ...argCheck.value.map(createArgCheck),
@@ -347,7 +349,7 @@ export function getConditions(type, key) {
     setPrecondition: [
       ...thisCheck.set.map(createThisCheck),
       ...precondition.set,
-    ], 
+    ],
 
     typePostcondition,
     postcondition: postcondition.value,

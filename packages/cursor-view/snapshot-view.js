@@ -2,26 +2,32 @@ import { implement } from '@kingjs/partial-implement'
 import { extend } from '@kingjs/partial-extend'
 import { EquatableConcept } from '@kingjs/partial-concept'
 import {
-  Cursor,
-  Range,
-  InputCursorConcept,
-  CursorPart,
-  InputCursorPart,
-  ForwardCursorConcept,
-  BidirectionalCursorConcept,
-  BidirectionalCursorPart,
-  RandomAccessCursorConcept,
-  RandomAccessCursorPart,
-  OffsetReadableCursorConcept,
-  OffsetReadableCursorPart,
-  RandomAccessRangeConcept,
+  BacktrackableCursorPart,
+  CloneableCursorPart,
+  ComparableToCursorPart,
+  MeasurableCursorPart,
+  MovableCursorPart,
+  ReadableAtCursorPart,
+  ReadableCursorPart,
+  SteppableCursorPart,
+  BacktrackableCursorConcept,
+  CloneableCursorConcept,
+  ComparableToCursorConcept,
+  MeasurableCursorConcept,
+  MovableCursorConcept,
+  RangeConcept,
+  ReadableAtCursorConcept,
+  ReadableCursorConcept,
+  SteppableCursorConcept,
 } from '@kingjs/cursor'
+import { PartialProxy } from '@kingjs/partial-proxy'
+import { ViewCursor } from './cursor/view-cursor.js'
 
-class SnapshotCursor extends Cursor {
+class SnapshotCursor extends ViewCursor {
   _index
 
-  constructor(range, index) {
-    super(range)
+  constructor(view, index) {
+    super(view)
     this._index = index
   }
 
@@ -35,75 +41,89 @@ class SnapshotCursor extends Cursor {
       },
     })
 
-    implement(this, InputCursorConcept, {
-      get value() { return this.range._values[this.index] },
+    implement(this, ReadableCursorConcept, {
+      get value() { return this.view._values[this.index] },
     })
 
-    implement(this, ForwardCursorConcept, {
-      clone() { return new this.constructor(this.range, this.index) },
+    implement(this, CloneableCursorConcept, {
+      clone() { return new this.constructor(this.view, this.index) },
+    })
+
+    implement(this, SteppableCursorConcept, {
       step() { return this.move(1) },
     })
 
-    implement(this, BidirectionalCursorConcept, {
+    implement(this, BacktrackableCursorConcept, {
       stepBack() { return this.move(-1) },
     })
 
-    implement(this, RandomAccessCursorConcept, {
+    implement(this, MovableCursorConcept, {
       move(offset) {
         this._index += offset
         return this
       },
+    })
+
+    implement(this, ComparableToCursorConcept, {
       compareTo(other) {
         if (this.index < other.index) return -1
         if (this.index > other.index) return 1
         return 0
       },
+    })
+
+    implement(this, MeasurableCursorConcept, {
       distanceTo(other) {
         return other.index - this.index
       },
     })
 
-    implement(this, OffsetReadableCursorConcept, {
+    implement(this, ReadableAtCursorConcept, {
       at(offset) {
-        return this.range._values[this.index + offset]
+        return this.view._values[this.index + offset]
       },
     })
   }
 
   static {
-    extend(this, CursorPart, {
-      isAtEnd$() { return this.index == this.range._values.length },
-      canStep$() { return this.index < this.range._values.length },
+    extend(this, SteppableCursorPart, {
+      isAtEnd$() { return this.index == this.view._values.length },
+      canStep$() { return this.index < this.view._values.length },
     })
 
-    extend(this, InputCursorPart, {
-      isAccessible$() {
-        return this.index >= 0 && this.index < this.range._values.length
+    extend(this, ReadableCursorPart, {
+      isReadable$() {
+        return this.index >= 0 && this.index < this.view._values.length
       },
     })
 
-    extend(this, BidirectionalCursorPart, {
+    extend(this, CloneableCursorPart)
+
+    extend(this, BacktrackableCursorPart, {
       isAtBegin$() { return this.index == 0 },
       canStepBack$() { return this.index > 0 },
     })
 
-    extend(this, RandomAccessCursorPart, {
+    extend(this, MovableCursorPart, {
       canMove$(offset) {
         const index = this.index + offset
-        return index >= 0 && index <= this.range._values.length
+        return index >= 0 && index <= this.view._values.length
       },
     })
 
-    extend(this, OffsetReadableCursorPart, {
+    extend(this, ComparableToCursorPart)
+    extend(this, MeasurableCursorPart)
+
+    extend(this, ReadableAtCursorPart, {
       isReadableAt$(offset) {
         const index = this.index + offset
-        return index >= 0 && index < this.range._values.length
+        return index >= 0 && index < this.view._values.length
       },
     })
   }
 }
 
-export class SnapshotView extends Range {
+export class SnapshotView extends PartialProxy {
   static cursorType = SnapshotCursor
 
   _values
@@ -114,7 +134,7 @@ export class SnapshotView extends Range {
   }
 
   static {
-    implement(this, RandomAccessRangeConcept, {
+    implement(this, RangeConcept, {
       begin() { return new this.cursorType(this, 0) },
       end() { return new this.cursorType(this, this._values.length) },
     })

@@ -4,9 +4,7 @@ import { extend } from '@kingjs/partial-extend'
 import { define } from '@kingjs/partial-define'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import {
-  CursorConcept,
   RangeConcept,
-  InputRangeConcept,
 
   throwNull,
   throwUpdateOutOfBounds,
@@ -42,7 +40,7 @@ class MapCursor extends IteratorCursor {
 export class UnorderedMap extends PartialProxy {
   static cursorType = MapCursor
   static {
-    implement(this, InputRangeConcept, {
+    implement(this, RangeConcept, {
       begin() { return new this.cursorType(this, this._map) },
       end() { return new this.cursorType(this, EmptyMap) }
     })

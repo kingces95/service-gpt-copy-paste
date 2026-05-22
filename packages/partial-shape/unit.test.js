@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import { abstract } from '@kingjs/abstract'
-import { Attachments } from '@kingjs/partial-attachments'
 import {
   Adjacent,
   Compile,
-  Defines,
   Includes,
   Transparent,
+  Implements,
 } from '@kingjs/partial-symbols'
+import { Concept } from '@kingjs/partial-concept'
 import { Shape } from '@kingjs/partial-shape'
 
 class MyShape extends Shape {
@@ -21,7 +21,7 @@ describe('Shape', () => {
 
   it('declares its adjacent metadata', () => {
     expect(Shape[Adjacent]).toEqual({
-      [Defines]: Attachments,
+      [Implements]: Concept,
       [Includes]: Shape,
     })
   })

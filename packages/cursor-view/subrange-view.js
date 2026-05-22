@@ -1,10 +1,10 @@
 import { implement } from '@kingjs/partial-implement'
+import { PartialProxy } from '@kingjs/partial-proxy'
 import {
-  Range,
   RangeConcept,
 } from '@kingjs/cursor'
 
-export class SubrangeView extends Range {
+export class SubrangeView extends PartialProxy {
   _first
   _last
 
@@ -16,8 +16,8 @@ export class SubrangeView extends Range {
 
   static {
     implement(this, RangeConcept, {
-      get prototypeCursor() {
-        return this._first
+      get cursorType() {
+        return this._first.constructor
       },
       begin() {
         return this._first.clone?.() ?? this._first

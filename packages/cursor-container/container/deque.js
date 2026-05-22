@@ -1,11 +1,9 @@
 import Denque from "denque"
-import { assert } from '@kingjs/assert'
 import { implement } from '@kingjs/partial-implement'
 import { extend } from '@kingjs/partial-extend'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import {
-  OutputRangeConcept,
-  RandomAccessRangeConcept,
+  RangeConcept,
 } from '@kingjs/cursor'
 import {
   ContainerPart,
@@ -19,17 +17,15 @@ import {
 import { 
   IndexableCursor 
 } from '../cursor/indexable-cursor.js'
-
-const Fixed = { fixed: true }
+import { iterate } from '@kingjs/cursor-algorithm'
 
 export class Deque extends PartialProxy {
   static cursorType = IndexableCursor
   static {
-    implement(this, OutputRangeConcept)
-    implement(this, RandomAccessRangeConcept, {
+    implement(this, RangeConcept, {
       begin() { return new this.cursorType(this, 0) },
       end() { return new this.cursorType(this, this.size) },
-    })  
+    })
   }
 
   _denque
@@ -70,7 +66,7 @@ export class Deque extends PartialProxy {
       },
       
       insertRange(cursor, range) {
-        this._denque.splice(cursor.index, 0, ...range)
+        this._denque.splice(cursor.index, 0, ...iterate(range))
         return this
       },
 

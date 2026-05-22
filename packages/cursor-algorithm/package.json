@@ -8,7 +8,10 @@
     ".": "./index.js"
   },
   "dependencies": {
-    "@kingjs/cursor-container": "1.0.0"
+    "@kingjs/assert": "1.0.0",
+    "@kingjs/cursor-container": "1.0.0",
+    "@kingjs/cursor-shape": "1.0.0",
+    "@kingjs/function-contract": "1.0.0"
   },
   "devDependencies": {},
   "peerDependencies": {},
