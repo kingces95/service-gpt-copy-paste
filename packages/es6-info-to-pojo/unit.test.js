@@ -11,7 +11,7 @@ import { myClassStaticPojo } from "./pojo/my-class-static.pojo.js"
 import { myClassInstancePojo } from "./pojo/my-class-instance.pojo.js"
 import { myClassOwnPojo } from "./pojo/my-class-own.pojo.js"
 
-import { MyClass } from "./dump.test.js"
+import { MyClass } from "./my-class.fixture.js"
 
 describe('Object members', () => {
   let pojo

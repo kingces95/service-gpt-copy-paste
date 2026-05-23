@@ -373,6 +373,10 @@ describe('A bespoke class', () => {
         myExtendedClass.prototype.toString = function() { 
           return 'myExtendedClass' }
       })
+      it.skip('documents stale toString override reporting expectations', () => {
+        // Fossil placeholder: this branch had setup but no assertion, which
+        // makes full Vitest runs report a noisy empty suite.
+      })
     })
   }) 
   describe('with static and explicit constructor members', () => {
@@ -551,4 +555,3 @@ describe('A bespoke class', () => {
     })
   })
 })
-
