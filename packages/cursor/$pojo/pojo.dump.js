@@ -22,8 +22,8 @@ import {
 import {
   ContainerPart,
 
-  FrontEditableContainerPart,
-  BackEditableContainerPart,
+  FrontInsertableContainerPart,
+  BackInsertableContainerPart,
   IndexableContainerPart,
 
   ContainerCursor,
@@ -75,8 +75,8 @@ function dump(fn) {
 // dumpToFile(IntervalConcept, 'interval-concept')
 
 // dumpToFile(ContainerPart, 'container-concept')
-// dumpToFile(FrontEditableContainerPart, 'sequence-container-concept')
-// dumpToFile(BackEditableContainerPart, 'rewind-container-concept')
+// dumpToFile(FrontInsertableContainerPart, 'sequence-container-concept')
+// dumpToFile(BackInsertableContainerPart, 'rewind-container-concept')
 // dumpToFile(IndexableContainerPart, 'indexable-container-concept')
 
 // dumpToFile(ContainerCursor, 'container-cursor')

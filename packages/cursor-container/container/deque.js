@@ -8,16 +8,17 @@ import {
 import {
   ContainerPart,
   ClearableContainerPart,
-  FrontEditableContainerPart,
-  BackEditableContainerPart,
+  FrontInsertableContainerPart,
+  BackInsertableContainerPart,
   SizedContainerPart,
   IndexableContainerPart,
+  BulkAssignableContainerPart,
   BulkEditableContainerPart,
 } from '../container-parts.js'
 import { 
   IndexableCursor 
 } from '../cursor/indexable-cursor.js'
-import { iterate } from '@kingjs/cursor-algorithm'
+import { iterate, next } from '@kingjs/cursor-algorithm'
 
 export class Deque extends PartialProxy {
   static cursorType = IndexableCursor
@@ -45,8 +46,8 @@ export class Deque extends PartialProxy {
       setAt(index, value) { this._denque.splice(index, 1, value) },
     })
 
-    extend(this, BulkEditableContainerPart, {
-      resizeTo(count, value = undefined) {
+    extend(this, BulkAssignableContainerPart, {
+      resize(count, value = undefined) {
         if (count < this.size) {
           this._denque.remove(count, this.size - count)
           return this
@@ -64,13 +65,15 @@ export class Deque extends PartialProxy {
         this.clear()
         return this.insertRange(this.begin(), range)
       },
-      
+    })
+
+    extend(this, BulkEditableContainerPart, {
       insertRange(cursor, range) {
         this._denque.splice(cursor.index, 0, ...iterate(range))
         return this
       },
 
-      eraseRange(first, last) {
+      erase(first, last = next(first)) {
         const result = first.clone()
         this._denque.remove(first.index, last.index - first.index)
         return result
@@ -81,14 +84,14 @@ export class Deque extends PartialProxy {
       clear() { this._denque.clear() },
     })
 
-    extend(this, FrontEditableContainerPart, {
-      shift() { return this._denque.shift() },
-      unshift(value) { this._denque.unshift(value) },
+    extend(this, FrontInsertableContainerPart, {
+      popFront() { return this._denque.shift() },
+      pushFront(value) { this._denque.unshift(value) },
     })
-    
-    extend(this, BackEditableContainerPart, {
-      push(value) { this._denque.push(value) },
-      pop() { return this._denque.pop() },
+
+    extend(this, BackInsertableContainerPart, {
+      pushBack(value) { this._denque.push(value) },
+      popBack() { return this._denque.pop() },
     })
   }
 }

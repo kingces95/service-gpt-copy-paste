@@ -1,6 +1,6 @@
 # Default Constructible Container
 
-Make "new it, then push into it" a promise instead of a hope.
+Make "new it, then pushBack into it" a promise instead of a hope.
 
 Library functions often accept a `Type` parameter because callers should choose
 the result container. The hidden requirement is that the type can be created
@@ -15,13 +15,13 @@ function collect(values, Type = Array) {
   const result = new Type()
 
   for (const value of values)
-    result.push(value)
+    result.pushBack(value)
 
   return result
 }
 ```
 
-If `Type` cannot be constructed or does not have `push`, the error happens
+If `Type` cannot be constructed or does not have `pushBack`, the error happens
 halfway through the implementation.
 
 ## Declarative Translation
@@ -39,7 +39,7 @@ const collect = contract({
   const result = new Type()
 
   for (const value of values)
-    result.push(value)
+    result.pushBack(value)
 
   return result
 })
@@ -51,7 +51,8 @@ The happy path is unchanged:
 const values = collect(range, VectorMap)
 ```
 
-The failure path is now about the public contract, not a surprise `push` error.
+The failure path is now about the public contract, not a surprise `pushBack`
+error.
 
 ## Why This Matters
 

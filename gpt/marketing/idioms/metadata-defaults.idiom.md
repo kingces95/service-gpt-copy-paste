@@ -38,7 +38,7 @@ const materialize = contract({
   const last = range.end()
 
   while (!first.equals(last)) {
-    result.push(first.value)
+    result.pushBack(first.value)
     first.step()
   }
 

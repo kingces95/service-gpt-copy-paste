@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { contract } from '@kingjs/function-contract'
+import {
+  contract,
+  overload,
+} from '@kingjs/function-contract'
 
 class Positive {
   static [Symbol.hasInstance](value) {
@@ -68,5 +71,66 @@ describe('contract', () => {
     expect(() => check(1)).not.toThrow()
     expect(() => check(0)).toThrow(
       'Value must be positive.')
+  })
+
+  it('should apply defaults before checks', () => {
+    function add(left, right = 1) { return left + right }
+    const checkedAdd = contract([
+      Positive,
+      Positive,
+    ], [ undefined, 1 ],
+    add)
+
+    expect(checkedAdd(1)).toBe(2)
+    expect(() => checkedAdd(1, 0)).toThrow(
+      'Value must be positive.')
+  })
+
+  it('should dispatch to the first matching overload', () => {
+    class Even {
+      static [Symbol.hasInstance](value) {
+        return value % 2 == 0
+      }
+    }
+
+    function parity(value) { return 'odd' }
+
+    const checkedParity = overload([
+      Positive,
+    ], [
+      {
+        when: [ Even ],
+        use: function even() { return 'even' },
+      },
+    ],
+    parity)
+
+    expect(checkedParity(1)).toBe('odd')
+    expect(checkedParity(2)).toBe('even')
+  })
+
+  it('should dispatch only when where matches', () => {
+    class NumberLike {
+      static [Symbol.hasInstance](value) {
+        return typeof value == 'number'
+      }
+    }
+
+    function compare(left, right) { return 'different' }
+
+    const checkedCompare = overload([
+      NumberLike,
+      NumberLike,
+    ], [
+      {
+        when: [ NumberLike, NumberLike ],
+        where(left, right) { return left == right },
+        use: function same() { return 'same' },
+      },
+    ],
+    compare)
+
+    expect(checkedCompare(1, 1)).toBe('same')
+    expect(checkedCompare(1, 2)).toBe('different')
   })
 })

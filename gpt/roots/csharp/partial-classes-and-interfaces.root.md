@@ -28,13 +28,13 @@ Example style:
 ```js
 export class EditableContainerPart extends ContainerPart {
   static [Abstracts] = {
-    insertAt(value, cursor) { },
-    eraseAt(cursor) { },
+    insertValue(cursor, value) { },
+    erase(first, last) { },
   }
 
   static {
-    extend(this, BackEditableContainerPart, {
-      push(value) { this.insertAt(value, this.end()) },
+    extend(this, BackInsertableContainerPart, {
+      pushBack(value) { this.insertValue(this.end(), value) },
     })
   }
 }

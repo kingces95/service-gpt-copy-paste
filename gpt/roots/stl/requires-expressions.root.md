@@ -51,7 +51,7 @@ Probe
 ```
 
 This makes `Shape` the close local analog to a small C++ `requires` expression:
-it can name a tiny surface like "has `push(value)`" without requiring the
+it can name a tiny surface like "has `pushBack(value)`" without requiring the
 candidate type to explicitly implement a grand public concept.
 
 `Probe` gets the old observational role: inspect a messy runtime value and ask
@@ -173,11 +173,11 @@ Anonymous expression check wrapped as a type:
 ```js
 class PushBackContainer {
   static [Symbol.hasInstance](type) {
-    if (typeof type?.prototype?.push == 'function')
+    if (typeof type?.prototype?.pushBack == 'function')
       return true
 
     throw new TypeError(
-      `${type?.name ?? 'Type'} must define push(value).`)
+      `${type?.name ?? 'Type'} must define pushBackBack(value).`)
   }
 }
 
@@ -200,11 +200,11 @@ Named check:
 ```js
 export class PushBackContainer {
   static [Symbol.hasInstance](type) {
-    if (typeof type?.prototype?.push == 'function')
+    if (typeof type?.prototype?.pushBack == 'function')
       return true
 
     throw new TypeError(
-      `${type?.name ?? 'Type'} must define push(value).`)
+      `${type?.name ?? 'Type'} must define pushBackBack(value).`)
   }
 }
 
@@ -226,7 +226,7 @@ export const materialize = contract(
   const last = range.end()
 
   while (!first.equals(last)) {
-    result.push(first.value)
+    result.pushBack(first.value)
     first.step()
   }
 

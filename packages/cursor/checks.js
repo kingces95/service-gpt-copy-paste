@@ -21,3 +21,13 @@ export class HasValue extends Metadata {
     throwValueOutOfBounds()
   }
 }
+
+export class NormalNumber extends Metadata {
+  static [Symbol.hasInstance](value) {
+    if (Number.isInteger(value) && value >= 0)
+      return true
+
+    throw new RangeError(
+      'Argument must be a non-negative integer.')
+  }
+}

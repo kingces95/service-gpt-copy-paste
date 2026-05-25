@@ -35,6 +35,9 @@ function myExtendedTypePostcondition() {
 function myPrecondition() {
   this.push('MyType:precondition')
 }
+function myOtherPrecondition() {
+  this.push('MyType:otherPrecondition')
+}
 function myPostcondition() {
   this.push('MyType:postcondition')
 }
@@ -143,6 +146,16 @@ class MyExtendedType extends MyType {
   member(first, second) { super.member(first, second) }
 }
 
+class MyTypeWithPreconditionList extends MyBaseType {
+  static [Preconditions] = {
+    member: [
+      myPrecondition,
+      myOtherPrecondition,
+    ],
+  }
+  member() { this.push('MyTypeWithPreconditionList:member') }
+}
+
 // -- Test Cases --
 
 const TypeWithoutConditions = {
@@ -229,17 +242,33 @@ const ExtendedType = {
   args: actual => [actual, actual],
 }
 
+const TypeWithPreconditionList = {
+  type: MyTypeWithPreconditionList,
+  conditions: {
+    precondition: [
+      myPrecondition,
+      myOtherPrecondition,
+    ],
+  },
+  calls: [
+    'MyType:precondition',
+    'MyType:otherPrecondition',
+    'MyTypeWithPreconditionList:member',
+  ],
+}
+
 const Tests = [
   ['Type without conditions', TypeWithoutConditions],
   ['Abstract type', AbstractType],
   ['Type', Type],
   ['Extended type', ExtendedType],
+  ['Type with precondition list', TypeWithPreconditionList],
 ]
 
 // -- Tests --
 
 describe.each(Tests)('%s', 
-  (_, { type, instanceType = type, conditions, calls, args }) => {
+  (_, { type, conditions, calls, args }) => {
 
   let thunk
   let instance
@@ -251,13 +280,13 @@ describe.each(Tests)('%s',
   })
 
   it('should have the correct type conditions', () => {
-    const actual = getConditions(instanceType, 'member')
+    const actual = getConditions(type, 'member')
     expect(actual).toEqual(conditions)
   })  
   it('should execute the correct conditions in the correct order', () => {
     if (!calls) return
 
-    const actual = new instanceType()
+    const actual = new type()
     const actualArgs = typeof args == 'function' ? args(actual) : args
     thunk.value.call(actual, ...(actualArgs ?? []))
     expect(actual.array).toEqual(calls)

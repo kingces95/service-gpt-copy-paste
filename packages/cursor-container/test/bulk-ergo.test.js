@@ -4,20 +4,9 @@ import {
   ForwardList,
   ArrayMap,
 } from '@kingjs/cursor-container'
-import { iterate } from '@kingjs/cursor-algorithm'
+import { iterate, next } from '@kingjs/cursor-algorithm'
 import { SnapshotView } from '@kingjs/cursor-view'
-
-function createContainer(type, values = []) {
-  const result = new type()
-
-  if (type == ForwardList)
-    values = [...values].reverse()
-
-  for (const value of values)
-    result.insert(value, { })
-
-  return result
-}
+import { createContainer } from './create-container.js'
 
 function createSource(source, target) {
   if (typeof source == 'function') return source(target)
@@ -33,7 +22,7 @@ function supportedCases(cases) {
 }
 
 const Tests = {
-  insertAt: {
+  insertValue: {
     'in the middle of existing values': {
       initial: [1, 3],
       value: 2,
@@ -42,7 +31,7 @@ const Tests = {
     },
   },
 
-  eraseAt: {
+  erase: {
     'in the middle of existing values': {
       initial: [1, -2, 3],
       cursor: target => target.begin().move(1),
@@ -50,23 +39,7 @@ const Tests = {
     },
   },
 
-  appendRange: {
-    'with many values': {
-      initial: [1],
-      source: [2, 3],
-      end: [1, 2, 3],
-    },
-  },
-
-  prependRange: {
-    'with many values': {
-      initial: [3],
-      source: [1, 2],
-      end: [1, 2, 3],
-    },
-  },
-
-  insertCount: {
+  insert: {
     'in the middle of existing values': {
       initial: [1, 5],
       cursor: target => target.begin().move(1),
@@ -76,25 +49,7 @@ const Tests = {
     },
   },
 
-  appendCount: {
-    'with many values': {
-      initial: [1],
-      count: 2,
-      value: 0,
-      end: [1, 0, 0],
-    },
-  },
-
-  prependCount: {
-    'with many values': {
-      initial: [3],
-      count: 2,
-      value: 0,
-      end: [0, 0, 3],
-    },
-  },
-
-  eraseCount: {
+  eraseWithCount: {
     'in the middle of existing values': {
       initial: [1, -2, -3, 4],
       cursor: target => target.begin().move(1),
@@ -103,7 +58,7 @@ const Tests = {
     },
   },
 
-  eraseFrom: {
+  eraseToEnd: {
     'from the middle to the end': {
       initial: [1, -2, -3],
       cursor: target => target.begin().move(1),
@@ -111,7 +66,7 @@ const Tests = {
     },
   },
 
-  eraseUntil: {
+  eraseBeginToCursor: {
     'from the beginning to the middle': {
       initial: [-1, -2, 3],
       cursor: target => target.begin().move(2),
@@ -123,23 +78,6 @@ const Tests = {
     'with many values': {
       initial: [-1, -2, -3],
       end: [],
-    },
-  },
-
-  growTo: {
-    'with many values': {
-      initial: [1],
-      count: 3,
-      value: 0,
-      end: [1, 0, 0],
-    },
-  },
-
-  truncateTo: {
-    'with many values': {
-      initial: [1, -2, -3],
-      count: 1,
-      end: [1],
     },
   },
 
@@ -161,7 +99,7 @@ const Tests = {
     },
   },
 
-  assignCount: {
+  assign: {
     'with many values': {
       initial: [-1, -2],
       count: 3,
@@ -172,7 +110,7 @@ const Tests = {
 }
 
 const AfterTests = {
-  insertCountAfter: {
+  insertAfter: {
     'in the middle of existing values': {
       initial: [1, 5],
       cursor: target => target.begin(),
@@ -205,7 +143,7 @@ const BulkEditableContainers = [
   ArrayMap,
 ]
 
-const AfterBulkEditableContainers = [
+const PhasedBulkContainers = [
   ForwardList,
 ]
 
@@ -217,8 +155,8 @@ const BulkAssignableContainers = [
 
 describe.each(BulkEditableContainers.map(Type => [Type.name, Type]))(
   '%s', (_, type) => {
-  describe('insertAt', () => {
-    it.each(supportedCases(Tests.insertAt))('%s', (_, {
+  describe('insertValue', () => {
+    it.each(supportedCases(Tests.insertValue))('%s', (_, {
       initial,
       value,
       cursor,
@@ -226,56 +164,28 @@ describe.each(BulkEditableContainers.map(Type => [Type.name, Type]))(
     }) => {
       const target = createContainer(type, initial)
 
-      target.insertAt(value, cursor(target))
+      target.insertValue(cursor(target), value)
 
       expect(valuesOf(target)).toEqual(end)
     })
   })
 
-  describe('eraseAt', () => {
-    it.each(supportedCases(Tests.eraseAt))('%s', (_, {
+  describe('erase', () => {
+    it.each(supportedCases(Tests.erase))('%s', (_, {
       initial,
       cursor,
       end,
     }) => {
       const target = createContainer(type, initial)
 
-      target.eraseAt(cursor(target))
+      target.erase(cursor(target))
 
       expect(valuesOf(target)).toEqual(end)
     })
   })
 
-  describe('appendRange', () => {
-    it.each(supportedCases(Tests.appendRange))('%s', (_, {
-      initial,
-      source,
-      end,
-    }) => {
-      const target = createContainer(type, initial)
-
-      target.appendRange(createSource(source, target))
-
-      expect(valuesOf(target)).toEqual(end)
-    })
-  })
-
-  describe('prependRange', () => {
-    it.each(supportedCases(Tests.prependRange))('%s', (_, {
-      initial,
-      source,
-      end,
-    }) => {
-      const target = createContainer(type, initial)
-
-      target.prependRange(createSource(source, target))
-
-      expect(valuesOf(target)).toEqual(end)
-    })
-  })
-
-  describe('insertCount', () => {
-    it.each(supportedCases(Tests.insertCount))('%s', (_, {
+  describe('insert', () => {
+    it.each(supportedCases(Tests.insert))('%s', (_, {
       initial,
       cursor,
       count,
@@ -284,44 +194,14 @@ describe.each(BulkEditableContainers.map(Type => [Type.name, Type]))(
     }) => {
       const target = createContainer(type, initial)
 
-      target.insertCount(cursor(target), count, value)
+      target.insert(cursor(target), count, value)
 
       expect(valuesOf(target)).toEqual(end)
     })
   })
 
-  describe('appendCount', () => {
-    it.each(supportedCases(Tests.appendCount))('%s', (_, {
-      initial,
-      count,
-      value,
-      end,
-    }) => {
-      const target = createContainer(type, initial)
-
-      target.appendCount(count, value)
-
-      expect(valuesOf(target)).toEqual(end)
-    })
-  })
-
-  describe('prependCount', () => {
-    it.each(supportedCases(Tests.prependCount))('%s', (_, {
-      initial,
-      count,
-      value,
-      end,
-    }) => {
-      const target = createContainer(type, initial)
-
-      target.prependCount(count, value)
-
-      expect(valuesOf(target)).toEqual(end)
-    })
-  })
-
-  describe('eraseCount', () => {
-    it.each(supportedCases(Tests.eraseCount))('%s', (_, {
+  describe('erase with count', () => {
+    it.each(supportedCases(Tests.eraseWithCount))('%s', (_, {
       initial,
       cursor,
       count,
@@ -329,35 +209,36 @@ describe.each(BulkEditableContainers.map(Type => [Type.name, Type]))(
     }) => {
       const target = createContainer(type, initial)
 
-      target.eraseCount(cursor(target), count)
+      const first = cursor(target)
+      target.erase(first, next(first, count))
 
       expect(valuesOf(target)).toEqual(end)
     })
   })
 
-  describe('eraseFrom', () => {
-    it.each(supportedCases(Tests.eraseFrom))('%s', (_, {
+  describe('erase to end', () => {
+    it.each(supportedCases(Tests.eraseToEnd))('%s', (_, {
       initial,
       cursor,
       end,
     }) => {
       const target = createContainer(type, initial)
 
-      target.eraseFrom(cursor(target))
+      target.erase(cursor(target), target.end())
 
       expect(valuesOf(target)).toEqual(end)
     })
   })
 
-  describe('eraseUntil', () => {
-    it.each(supportedCases(Tests.eraseUntil))('%s', (_, {
+  describe('erase from begin', () => {
+    it.each(supportedCases(Tests.eraseBeginToCursor))('%s', (_, {
       initial,
       cursor,
       end,
     }) => {
       const target = createContainer(type, initial)
 
-      target.eraseUntil(cursor(target))
+      target.erase(target.begin(), cursor(target))
 
       expect(valuesOf(target)).toEqual(end)
     })
@@ -384,38 +265,10 @@ describe.each(BulkEditableContainers.map(Type => [Type.name, Type]))(
 
 })
 
-describe.each(AfterBulkEditableContainers.map(Type => [Type.name, Type]))(
+describe.each(PhasedBulkContainers.map(Type => [Type.name, Type]))(
   '%s', (_, type) => {
-  describe('appendRange', () => {
-    it.each(supportedCases(Tests.appendRange))('%s', (_, {
-      initial,
-      source,
-      end,
-    }) => {
-      const target = createContainer(type, initial)
-
-      target.appendRange(createSource(source, target))
-
-      expect(valuesOf(target)).toEqual(end)
-    })
-  })
-
-  describe('prependRange', () => {
-    it.each(supportedCases(Tests.prependRange))('%s', (_, {
-      initial,
-      source,
-      end,
-    }) => {
-      const target = createContainer(type, initial)
-
-      target.prependRange(createSource(source, target))
-
-      expect(valuesOf(target)).toEqual(end)
-    })
-  })
-
-  describe('insertCountAfter', () => {
-    it.each(supportedCases(AfterTests.insertCountAfter))('%s', (_, {
+  describe('insertAfter', () => {
+    it.each(supportedCases(AfterTests.insertAfter))('%s', (_, {
       initial,
       cursor,
       count,
@@ -424,7 +277,7 @@ describe.each(AfterBulkEditableContainers.map(Type => [Type.name, Type]))(
     }) => {
       const target = createContainer(type, initial)
 
-      target.insertCountAfter(cursor(target), count, value)
+      target.insertAfter(cursor(target), count, value)
 
       expect(valuesOf(target)).toEqual(end)
     })
@@ -465,8 +318,8 @@ describe.each(BulkAssignableContainers.map(Type => [Type.name, Type]))(
     })
   })
 
-  describe('growTo', () => {
-    it.each(supportedCases(Tests.growTo))('%s', (_, {
+  describe('assign', () => {
+    it.each(supportedCases(Tests.assign))('%s', (_, {
       initial,
       count,
       value,
@@ -474,36 +327,7 @@ describe.each(BulkAssignableContainers.map(Type => [Type.name, Type]))(
     }) => {
       const target = createContainer(type, initial)
 
-      target.growTo(count, value)
-
-      expect(valuesOf(target)).toEqual(end)
-    })
-  })
-
-  describe('truncateTo', () => {
-    it.each(supportedCases(Tests.truncateTo))('%s', (_, {
-      initial,
-      count,
-      end,
-    }) => {
-      const target = createContainer(type, initial)
-
-      target.truncateTo(count)
-
-      expect(valuesOf(target)).toEqual(end)
-    })
-  })
-
-  describe('assignCount', () => {
-    it.each(supportedCases(Tests.assignCount))('%s', (_, {
-      initial,
-      count,
-      value,
-      end,
-    }) => {
-      const target = createContainer(type, initial)
-
-      target.assignCount(count, value)
+      target.assign(count, value)
 
       expect(valuesOf(target)).toEqual(end)
     })

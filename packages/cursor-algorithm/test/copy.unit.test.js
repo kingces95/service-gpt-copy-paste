@@ -11,6 +11,7 @@ import {
 } from '@kingjs/cursor-container'
 import { subrange } from '@kingjs/cursor-view'
 import { copy, iterate } from '@kingjs/cursor-algorithm'
+import { createContainer } from '../../cursor-container/test/create-container.js'
 
 const Values = [1, 2, 3]
 
@@ -25,22 +26,8 @@ const Containers = {
   Float64Vector,
 }
 
-function createContainer(Type, values = Values) {
-  const result = new Type()
-
-  for (const value of values)
-    result.insert(value, { })
-
-  return result
-}
-
 function createTarget(size) {
-  const result = new ArrayMap()
-
-  for (let i = 0; i < size; i++)
-    result.insert(0, { })
-
-  return result
+  return createContainer(ArrayMap, Array(size).fill(0))
 }
 
 const Tests = {
@@ -77,11 +64,33 @@ describe.each(Object.entries(Tests))('%s', (_, {
 })
 
 describe('contiguous copy', () => {
-  it('should copy between cursors with matching span types', () => {
+  it('should use span copy when span types match', () => {
     const source = createContainer(Uint8Vector, Values)
     const target = createContainer(Uint8Vector, [0, 0, 0])
+    const cursor = target.begin()
+    const span = cursor.span
+    let usedSpan = false
 
-    expect(copy(target.begin(), source)).toBe(Values.length)
+    cursor.span = function(...args) {
+      usedSpan = true
+      return span.apply(this, args)
+    }
+
+    expect(copy(cursor, source)).toBe(Values.length)
+    expect(usedSpan).toBe(true)
+    expect([...iterate(target)]).toEqual([...iterate(source)])
+  })
+
+  it('should fall back when span types do not match', () => {
+    const source = createContainer(Uint8Vector, Values)
+    const target = createContainer(Uint16Vector, [0, 0, 0])
+    const cursor = target.begin()
+
+    cursor.span = function() {
+      throw new Error('span should not be called.')
+    }
+
+    expect(copy(cursor, source)).toBe(Values.length)
     expect([...iterate(target)]).toEqual([...iterate(source)])
   })
 })

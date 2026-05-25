@@ -23,7 +23,7 @@ import {
   IndexableContainerPart,
   ReservableContainerPart,
   ByteContainerPart,
-  GapEditableContainerPart,
+  GapAssignableContainerPart,
 } from '../container-parts.js'
 
 export class Vector extends PartialProxy {
@@ -49,10 +49,7 @@ export class Vector extends PartialProxy {
   get buffer() { return this._buffer.value }
 
   static {
-    extend(this, ContainerPart, {
-      insert(value, { at = this.begin() } = { }) { this.insertAt(value, at) },
-      erase({ at = this.begin() } = { }) { this.eraseAt(at) },
-    })
+    extend(this, ContainerPart)
 
     extend(this, SizedContainerPart, {
       get size() { return this._size }
@@ -63,7 +60,7 @@ export class Vector extends PartialProxy {
       setAt(index, value) { this.buffer[index] = value },
     })
 
-    extend(this, GapEditableContainerPart, {
+    extend(this, GapAssignableContainerPart, {
       get defaultValue$() { return 0 },
 
       insertRange(cursor, range) {
@@ -87,7 +84,7 @@ export class Vector extends PartialProxy {
 
       openGap$(cursor, count) {
         const oldEnd = this.end()
-        this.ensureCapacity(this.size + count)
+        this.reserve(this.size + count)
         this._size += count
 
         copyBackward(this.end(), cursor, oldEnd)
@@ -104,7 +101,7 @@ export class Vector extends PartialProxy {
 
     extend(this, ReservableContainerPart, {
       get capacity() { return this._bytes.byteLength },
-      setCapacity(capacity) {
+      setCapacity$(capacity) {
         const newVector = new this.constructor(capacity)
         copy(newVector.begin(), subrange(this.begin(), this.end()))
 

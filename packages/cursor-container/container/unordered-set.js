@@ -11,7 +11,7 @@ import {
   ClearableContainerPart,
   SizedContainerPart,
   AssociativeContainerPart,
-  UnorderedSetContainerPart,
+  SetAssociativeContainerPart,
 } from '../container-parts.js'
 import {
   IteratorCursor
@@ -43,10 +43,7 @@ export class UnorderedSet extends PartialProxy {
   }
 
   static {
-    extend(this, ContainerPart, {
-      insert(value) { this.add(value) },
-      erase({ at = this.begin() } = { }) { this.remove(at.value) },
-    })
+    extend(this, ContainerPart)
 
     extend(this, ClearableContainerPart, {
       clear() { this._set.clear() },
@@ -57,12 +54,12 @@ export class UnorderedSet extends PartialProxy {
     })
 
     extend(this, AssociativeContainerPart, {
-      has(key) { return this._set.has(key) },
-      remove(key) { this._set.delete(key) },
+      contains(key) { return this._set.has(key) },
+      erase(key) { this._set.delete(key) },
     })
     
-    extend(this, UnorderedSetContainerPart, {
-      add(key) { this._set.add(key) },
+    extend(this, SetAssociativeContainerPart, {
+      insert(key) { this._set.add(key) },
     })
   }
 }

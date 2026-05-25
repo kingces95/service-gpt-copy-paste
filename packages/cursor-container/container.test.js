@@ -7,8 +7,8 @@ import {
 import {
   ContainerPart,
   IndexableContainerPart,
-  BackEditableContainerPart,
-  FrontEditableContainerPart,
+  BackInsertableContainerPart,
+  FrontInsertableContainerPart,
   EditableContainerPart,
   SizedContainerPart,
   CapacityContainerPart,
@@ -16,11 +16,11 @@ import {
   ByteContainerPart,
   ClearableContainerPart,
   BulkAssignableContainerPart,
-  AfterBulkEditableContainerPart,
+  PhasedBulkContainerPart,
   BulkEditableContainerPart,
   AssociativeContainerPart,
-  UnorderedSetContainerPart,
-  UnorderedMapContainerPart,
+  SetAssociativeContainerPart,
+  MapAssociativeContainerPart,
 } from '@kingjs/cursor-container'
 import {
   RangeProbe,
@@ -48,7 +48,9 @@ import {
   Uint8Vector, Uint16Vector, Uint32Vector, Float64Vector,
 } from '@kingjs/cursor-container'
 import { value } from '@kingjs/abstract'
+import { next } from '@kingjs/cursor-algorithm'
 import { single } from '@kingjs/cursor-adapter'
+import { populateContainer } from './test/create-container.js'
 
 const universalContainerConcepts = [
   RangeConcept,
@@ -68,8 +70,8 @@ const sequenceRangeProbes = [
 
 const reversibleContainerConcepts = [
   ...sequenceContainerConcepts,
-  FrontEditableContainerPart,
-  BackEditableContainerPart]
+  FrontInsertableContainerPart,
+  BackInsertableContainerPart]
 
 const reversibleRangeProbes = [
   ...sequenceRangeProbes,
@@ -78,7 +80,7 @@ const reversibleRangeProbes = [
 const indexableContainerConcepts = [
   ...reversibleContainerConcepts,
   IndexableContainerPart,
-  BackEditableContainerPart,
+  BackInsertableContainerPart,
   SizedContainerPart]
 
 const indexableRangeProbes = [
@@ -104,58 +106,85 @@ const associativeRangeProbes = universalRangeProbes
 
 const Value = 42
 const Key = 'key'
+const IsEmpty = 'Container is empty.'
+const ReadOutOfBounds = 'Cannot read value out of bounds of cursor.'
+const WriteOutOfBounds = 'Cannot write value out of bounds of cursor.'
+const CursorOutOfBounds = 'Cannot move cursor out of bounds.'
 
+// STL names can collide across sequence and associative containers. The
+// requires/excludes metadata disambiguates shared names like insert/erase.
 const PopulateOne = {
+  Key: {
+    insert: { requires: ['contains'] },
+    insertOrAssign: { requires: ['contains'] },
+  },
   Value: {
-    unshift: {},
-    push: {},
-    insert: {},
+    pushFront: {},
+    pushBack: {},
   },
   CursorValue: {
-    insertAt: { cursor: 'begin' },
-    insertAfter: { cursor: 'beforeBegin' },
+    insertValue: { cursor: 'begin', acceptsEnd: true },
+    insertValueAfter: { cursor: 'beforeBegin' },
   },
   CursorRange: {
     insertRange: { cursor: 'begin' },
   },
   Range: {
-    appendRange: {},
-    prependRange: {},
     assignRange: {},
   },
   CursorCountValue: {
-    insertCount: { cursor: 'begin' },
+    insert: { cursor: 'begin', excludes: ['contains'] },
   },
   CountValue: {
-    appendCount: {},
-    prependCount: {},
+    assign: {},
   },
   SizeValue: {
-    resizeTo: {},
-    growTo: {},
+    resize: {},
   },
 }
 
 const DepopulateOne = {
   NoArgs: {
-    pop: { returns: 'value' },
-    shift: { returns: 'value' },
-    erase: {},
+    popBack: { returns: 'value' },
+    popFront: { returns: 'value' },
     clear: {},
   },
   Cursor: {
     eraseAfter: { cursor: 'beforeBegin', returns: 'end' },
-    eraseAt: { cursor: 'begin', returns: 'end' },
+    erase: { cursor: 'begin', returns: 'end', excludes: ['contains'] },
   },
   CursorRange: {
-    eraseRange: {
-      first: 'begin',
-      last: cursor => cursor.clone().step(),
+    eraseAfter: {
+      first: 'beforeBegin',
+      last: cursor => next(cursor, 2),
       returns: 'end',
     },
+    erase: {
+      first: 'begin',
+      last: cursor => next(cursor),
+      returns: 'end',
+      excludes: ['contains'],
+    },
+  },
+  Key: {
+    erase: { requires: ['contains'] },
   },
   SizeValue: {
-    resizeTo: { size: 0 },
+    resize: { size: 0 },
+  },
+}
+
+const SourceRangeMembers = {
+  Range: {
+    assignRange: {},
+  },
+  CursorRange: {
+    insertRange: { cursor: 'begin' },
+    insertRangeAfter: { cursor: 'beforeBegin' },
+  },
+  CursorRangeRange: {
+    replaceRange: { first: 'begin', last: 'begin' },
+    replaceRangeAfter: { first: 'beforeBegin', last: 'beforeBegin' },
   },
 }
 
@@ -163,19 +192,35 @@ const DepopulateOne = {
 // preserving the group name as `kind` metadata.
 //
 // supportedCases({
-//   Range: { appendRange: {} },
-//   Value: { push: {}, insert: {} },
-// }, { push: true })
+//   Range: { assignRange: {} },
+//   Value: { pushBack: {} },
+// }, { pushBack: true })
 //
-// returns [['push', { kind: 'Value' }]]
+// returns [['pushBack', { kind: 'Value' }]]
 function supportedCases(groups, members) {
   return Object.entries(groups)
     .flatMap(([kind, tests]) => Object.entries(tests)
-      .filter(([member]) => members[member])
+      .filter(([member, metadata]) => {
+        if (!members[member]) return false
+        if (metadata.requires?.some(member => !members[member])) return false
+        if (metadata.excludes?.some(member => members[member])) return false
+        return true
+      })
       .map(([member, metadata]) => [
         member,
         { kind, ...metadata }
       ]))
+}
+
+function sourceRangeArgs(container, range, { kind, cursor, first, last }) {
+  if (kind == 'Range')
+    return [range]
+
+  if (kind == 'CursorRange')
+    return [container[cursor](), range]
+
+  if (kind == 'CursorRangeRange')
+    return [container[first](), container[last](), range]
 }
 
 const Tests = {
@@ -183,14 +228,13 @@ const Tests = {
     type: UnorderedMap,
     concepts: [
       ClearableContainerPart,
-      UnorderedMapContainerPart,
+      MapAssociativeContainerPart,
       ...associativeContainerConcepts],
     probes: associativeRangeProbes,
     members: {
-      insert: true, erase: true,
       size: true,
-      has: true, remove: true,
-      get: true, add: true,
+      contains: true, erase: true,
+      at: true, insertOrAssign: true,
       clear: true,
     },
     value: [Key, Value],
@@ -200,14 +244,13 @@ const Tests = {
     type: UnorderedSet,
     concepts: [
       ClearableContainerPart,
-      UnorderedSetContainerPart,
+      SetAssociativeContainerPart,
       ...associativeContainerConcepts],
     probes: associativeRangeProbes,
     members: {
-      insert: true, erase: true,
       size: true,
-      has: true, remove: true,
-      add: true,
+      contains: true, erase: true,
+      insert: true,
       clear: true,
     },
     key: Value,
@@ -218,27 +261,19 @@ const Tests = {
     concepts: [
       ClearableContainerPart,
       BulkAssignableContainerPart,
-      AfterBulkEditableContainerPart,
+      PhasedBulkContainerPart,
       ...sequenceContainerConcepts,
-      FrontEditableContainerPart],
+      FrontInsertableContainerPart],
     probes: sequenceRangeProbes,
     members: {
-      insert: true, erase: true,
-      shift: true, unshift: true,
-      beforeBegin: true, insertAfter: true, eraseAfter: true,
+      popFront: true, pushFront: true,
+      beforeBegin: true, insertValueAfter: true, eraseAfter: true,
       clear: true,
-      resizeTo: true,
+      resize: true,
       assignRange: true,
+      assign: true,
       insertRangeAfter: true,
-      eraseRangeAfter: true,
-      appendRange: true,
-      prependRange: true,
-      insertCountAfter: true,
-      appendCount: true,
-      prependCount: true,
-      eraseCountAfter: true,
-      eraseFromAfter: true,
-      eraseUntilAfter: true,
+      insertAfter: true,
       replaceRangeAfter: true,
     }
   },
@@ -252,14 +287,20 @@ const Tests = {
       SizedContainerPart],
     probes: reversibleRangeProbes,
     members: {
-      insert: true, erase: true,
-      beforeBegin: true, insertAfter: true, eraseAfter: true,
+      beforeBegin: true, insertValueAfter: true, eraseAfter: true,
       size: true,
       clear: true,
-      shift: true, unshift: true,
-      pop: true, push: true,
-      resizeTo: true,
+      popFront: true, pushFront: true,
+      popBack: true, pushBack: true,
+      stepBack: true,
+      insertValue: true,
+      erase: true,
+      resize: true,
       assignRange: true,
+      assign: true,
+      insertRangeAfter: true,
+      insertAfter: true,
+      replaceRangeAfter: true,
     }
   },
 
@@ -272,20 +313,23 @@ const Tests = {
       ...indexableContainerConcepts],
     probes: indexableRangeProbes,
     members: {
-      insert: true, erase: true,
       size: true,
-      shift: true, unshift: true,
-      pop: true, push: true,
+      popFront: true, pushFront: true,
+      popBack: true, pushBack: true,
+      stepBack: true,
       at: true, setAt: true,
+      insertValue: true, erase: true,
       clear: true,
 
       // BulkAssignableContainerPart members
-      resizeTo: true,
+      resize: true,
       assignRange: true,
+      assign: true,
 
       // BulkEditableContainerPart members
       insertRange: true,
-      eraseRange: true,
+      insert: true,
+      replaceRange: true,
     }
   },
 
@@ -299,20 +343,23 @@ const Tests = {
       ...indexableContainerConcepts],
     probes: indexableRangeProbes,
     members: {
-      insert: true, erase: true,
       size: true,
-      shift: true, unshift: true,
-      pop: true, push: true,
+      popFront: true, pushFront: true,
+      popBack: true, pushBack: true,
+      stepBack: true,
       at: true, setAt: true,
+      insertValue: true, erase: true,
       clear: true,
 
       // BulkAssignableContainerPart members
-      resizeTo: true,
+      resize: true,
       assignRange: true,
+      assign: true,
 
       // BulkEditableContainerPart members
       insertRange: true,
-      eraseRange: true,
+      insert: true,
+      replaceRange: true,
     }
   },
 
@@ -324,71 +371,27 @@ const Tests = {
       ...bufferConainerConcepts],
     probes: bufferRangeProbes,
     members: {
-      insert: true, erase: true,
       size: true,
-      shift: true, unshift: true,
-      pop: true, push: true,
+      popFront: true, pushFront: true,
+      popBack: true, pushBack: true,
+      stepBack: true,
       at: true, setAt: true, // readAt: true,
-      capacity: true, setCapacity: true, ensureCapacity: true,
+      insertValue: true, erase: true,
+      capacity: true, reserve: true,
       span: true,
-      // clear: true,
+      clear: true,
 
       // BulkAssignableContainerPart members
-      resizeTo: true,
+      resize: true,
       assignRange: true,
+      assign: true,
 
       // BulkEditableContainerPart members
       insertRange: true,
-      eraseRange: true,
+      insert: true,
+      replaceRange: true,
     }
   },
-}
-
-function withCount(context, size) {
-  it('has equal begin cursors', () => {
-    const begin1 = context.container.begin()
-    const begin2 = context.container.begin()
-    expect(begin1.equals(begin2)).toBe(true)
-  })
-  it('has equal end cursors', () => {
-    const end1 = context.container.end()
-    const end2 = context.container.end()
-    expect(end1.equals(end2)).toBe(true)
-  })
-  it(size == 0 ? 'has begin equal to end' : 'has begin distinct from end', () => {
-    const begin = context.container.begin()
-    const end = context.container.end()
-    expect(begin.equals(end)).toBe(size == 0)
-  })
-  if (context.members.size) it(`reports size ${size}`, () => {
-    expect(context.container.size).toBe(size)
-  })
-  if (context.members.capacity) it(`has capacity greater than ${size}`, () => {
-    expect(context.container.capacity).toBeGreaterThan(size)
-  })
-  if (context.members.span) it(`has span length ${size}`, () => {
-    expect(context.container.span().length).toBe(size)
-  })
-}
-
-function whenEmpty(context) {
-  it('is empty', () => {
-    expect(context.container.isEmpty).toBe(true)
-  })
-  if (context.members.shift) it('rejects shift', () => {
-    expect(() => { context.container.shift() }).toThrow(context.isEmpty)
-  })
-  if (context.members.at) it('rejects at', () => {
-    expect(() => { context.container.at(0) }).toThrow(context.readOutOfBounds)
-  })
-  if (context.members.setAt) it('rejects setAt', () => {
-    expect(() => { context.container.setAt(0, 42) }).toThrow(context.writeOutOfBounds)
-  })
-  if (context.members.readAt) it('rejects readAt', () => {
-    expect(() => { context.container.readAt(0) }).toThrow(
-      'Cannot read 1 byte(s) at index 1.')
-  })
-  withCount(context, 0)
 }
 
 describe.each(Object.entries(Tests))('A %s', (name, {
@@ -401,15 +404,57 @@ describe.each(Object.entries(Tests))('A %s', (name, {
     otherContainer = new type()
   })
 
-  const isEmpty = 'Container is empty.'
-  const readOutOfBounds = 'Cannot read value out of bounds of cursor.'
-  const writeOutOfBounds = 'Cannot write value out of bounds of cursor.'
-  const context = {
-    get container() { return container },
-    members,
-    isEmpty,
-    readOutOfBounds,
-    writeOutOfBounds,
+  function withCount(size) {
+    it('has equal begin cursors', () => {
+      const begin1 = container.begin()
+      const begin2 = container.begin()
+      expect(begin1.equals(begin2)).toBe(true)
+    })
+    it('has equal end cursors', () => {
+      const end1 = container.end()
+      const end2 = container.end()
+      expect(end1.equals(end2)).toBe(true)
+    })
+    it(size == 0 ? 'has begin equal to end' : 'has begin distinct from end', () => {
+      const begin = container.begin()
+      const end = container.end()
+      expect(begin.equals(end)).toBe(size == 0)
+    })
+    if (members.size) it(`reports size ${size}`, () => {
+      expect(container.size).toBe(size)
+    })
+    if (members.capacity) it(`has capacity greater than ${size}`, () => {
+      expect(container.capacity).toBeGreaterThan(size)
+    })
+    if (members.span) it(`has span length ${size}`, () => {
+      expect(container.span().length).toBe(size)
+    })
+  }
+
+  function whenEmpty() {
+    it('is empty', () => {
+      expect(container.isEmpty).toBe(true)
+    })
+    if (members.stepBack) it('rejects stepping back before begin', () => {
+      const begin = members.beforeBegin
+        ? container.beforeBegin()
+        : container.begin()
+      expect(() => { begin.stepBack() }).toThrow(CursorOutOfBounds)
+    })
+    if (members.popFront) it('rejects popFront', () => {
+      expect(() => { container.popFront() }).toThrow(IsEmpty)
+    })
+    if (members.at && !members.contains) it('rejects at', () => {
+      expect(() => { container.at(0) }).toThrow(ReadOutOfBounds)
+    })
+    if (members.setAt) it('rejects setAt', () => {
+      expect(() => { container.setAt(0, 42) }).toThrow(WriteOutOfBounds)
+    })
+    if (members.readAt) it('rejects readAt', () => {
+      expect(() => { container.readAt(0) }).toThrow(
+        'Cannot read 1 byte(s) at index 1.')
+    })
+    withCount(0)
   }
 
   describe('type', () => {
@@ -457,34 +502,43 @@ describe.each(Object.entries(Tests))('A %s', (name, {
     if (members.span) it('has a Uint8Array span', () => {
       expect(container.span()).toBeInstanceOf(Uint8Array)
     })
-    whenEmpty(context)
+    whenEmpty()
   })
 
-  if (members.setCapacity || members.ensureCapacity) {
+  if (members.reserve) {
     describe('Capacity', () => {
       let capacity
       beforeEach(() => {
         capacity = container.capacity
       })
-      it('accepts the current capacity', () => {
-        expect(container.setCapacity(capacity)).toBe(capacity)
+      it('keeps capacity when reserving current capacity', () => {
+        expect(container.reserve(capacity)).toBe(capacity)
       })
-      it('accepts one more capacity', () => {
-        expect(container.setCapacity(capacity + 1)).toBe(capacity + 1)
-      })
-      it('keeps capacity when ensuring current capacity', () => {
-        expect(container.ensureCapacity(capacity)).toBe(capacity)
-      })
-      it('doubles capacity when ensuring one more capacity', () => {
-        const newCapacity = container.ensureCapacity(capacity + 1)
+      it('doubles capacity when reserving one more capacity', () => {
+        const newCapacity = container.reserve(capacity + 1)
         expect(newCapacity).toBe(capacity * 2)
+      })
+    })
+  }
+
+  const sourceRangeCases = supportedCases(SourceRangeMembers, members)
+  if (sourceRangeCases.length) {
+    describe('range arguments', () => {
+      describe.each(sourceRangeCases)('%s', (fn, metadata) => {
+        it('rejects a non-range source', () => {
+          const badRange = {}
+          const args = sourceRangeArgs(container, badRange, metadata)
+
+          expect(() => { container[fn](...args) }).toThrow(
+            'Argument must be an instance of RangeConcept.')
+        })
       })
     })
   }
 
   describe('when populated with', () => {
     describe.each(supportedCases(PopulateOne, members))(
-      '%s', (fn, { kind, cursor: cursorFn }) => {
+      '%s', (fn, { kind, cursor: cursorFn, acceptsEnd }) => {
 
       beforeEach(() => {
         if (kind == 'Range') {
@@ -502,34 +556,40 @@ describe.each(Object.entries(Tests))('A %s', (name, {
         else if (kind == 'SizeValue') {
           container[fn](1, value)
         }
+        else if (kind == 'Key') {
+          if (members.insertOrAssign)
+            container[fn](value[0], value[1])
+          else
+            container[fn](key)
+        }
         else if (kind == 'CursorValue') {
-          container[fn](value, container[cursorFn]())
+          container[fn](container[cursorFn](), value)
         }
         else if (kind == 'Value') {
           container[fn](value)
         }
       })
-      withCount(context, 1)
+      withCount(1)
 
       if (kind == 'CursorValue') {
         // test argument checking: null, equatable, end, out of bounds, etc.
         it('rejects a null cursor', () => {
-          expect(() => { container[fn](value, null) }).toThrow()
+          expect(() => { container[fn](null, value) }).toThrow()
         })
         it('rejects a cursor from another container', () => {
           const otherCursor = otherContainer.begin()
-          expect(() => { container[fn](value, otherCursor) }).toThrow()
+          expect(() => { container[fn](otherCursor, value) }).toThrow()
         })
-        it('rejects an out-of-bounds cursor', () => {
+        if (!acceptsEnd) it('rejects an out-of-bounds cursor', () => {
           const endCursor = container.end()
-          expect(() => { container[fn](value, endCursor) }).toThrow()
+          expect(() => { container[fn](endCursor, value) }).toThrow()
         })
       }
 
       it('is not empty', () => {
         expect(container.isEmpty).toBe(false)
       })
-      if (members.at) it('has value at index 0', () => {
+      if (members.at && !members.contains) it('has value at index 0', () => {
         expect(container.at(0)).toBe(value)
       })
       if (members.setAt) it('sets value at index 0', () => {
@@ -542,11 +602,11 @@ describe.each(Object.entries(Tests))('A %s', (name, {
       if (members.span) it('has span matching the value', () => {
         expect(container.span()[0]).toBe(value)
       })
-      if (members.has) it('has the value', () => {
-        expect(container.has(key)).toBe(true)
+      if (members.contains) it('contains the key', () => {
+        expect(container.contains(key)).toBe(true)
       })
-      if (members.get) it('gets the value by key', () => {
-        expect(container.get(key)).toBe(value[1])
+      if (members.at && members.contains) it('gets the value by key', () => {
+        expect(container.at(key)).toBe(value[1])
       })
     })
   })
@@ -565,7 +625,7 @@ describe.each(Object.entries(Tests))('A %s', (name, {
       let result
       let cursor
       beforeEach(() => {
-        container.insert(value)
+        populateContainer(container, [members.insert && members.contains ? key : value])
 
         if (kind == 'Cursor') {
           cursor = container[cursorFn]()
@@ -577,6 +637,9 @@ describe.each(Object.entries(Tests))('A %s', (name, {
         }
         else if (kind == 'SizeValue') {
           result = container[fn](size, value)
+        }
+        else if (kind == 'Key') {
+          result = container[fn](key)
         }
         else if (kind == 'NoArgs') {
           result = container[fn]()
@@ -597,8 +660,16 @@ describe.each(Object.entries(Tests))('A %s', (name, {
           expect(result.equals(end)).toBe(true)
         })
       }
+      if (kind == 'CursorRange') {
+        it('rejects a null last cursor', () => {
+          populateContainer(container,
+            [members.insert && members.contains ? key : value])
+          const cursor = container[first]()
+          expect(() => { container[fn](cursor, null) }).toThrow(TypeError)
+        })
+      }
 
-      whenEmpty(context)
+      whenEmpty()
       })
   })
 })

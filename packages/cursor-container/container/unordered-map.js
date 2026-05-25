@@ -16,7 +16,7 @@ import {
   SizedContainerPart,
 
   AssociativeContainerPart,
-  UnorderedMapContainerPart,
+  MapAssociativeContainerPart,
 } from '../container-parts.js'
 import {
   IteratorCursor
@@ -54,10 +54,7 @@ export class UnorderedMap extends PartialProxy {
   }
 
   static {
-    extend(this, ContainerPart, {
-      insert(value) { this.add(value[0], value[1]) },
-      erase({ at = this.begin() } = { }) { this.remove(at.value[0]) },
-    })
+    extend(this, ContainerPart)
 
     extend(this, ClearableContainerPart, {
       clear() { this._map.clear() },
@@ -68,13 +65,13 @@ export class UnorderedMap extends PartialProxy {
     })
 
     extend(this, AssociativeContainerPart, {
-      has(key) { return this._map.has(key) },
-      remove(key) { this._map.delete(key) },
+      contains(key) { return this._map.has(key) },
+      erase(key) { this._map.delete(key) },
     })
     
-    extend(this, UnorderedMapContainerPart, {
-      get(key) { return this._map.get(key) },
-      add(key, value) { this._map.set(key, value) },
+    extend(this, MapAssociativeContainerPart, {
+      at(key) { return this._map.get(key) },
+      insertOrAssign(key, value) { this._map.set(key, value) },
     })
   }
 }

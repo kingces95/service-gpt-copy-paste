@@ -6,7 +6,7 @@ import {
 } from '@kingjs/cursor-checks'
 
 class Bag {
-  push(value) { }
+  pushBack(value) { }
 }
 
 const Overloads = {
@@ -30,13 +30,13 @@ const Overloads = {
 describe.each(Object.entries(Overloads))(
   'Overload: %s', (name, { args, resultType }) => {
 
-  it('should check for default constructible push containers', () => {
+  it('should check for default constructible push-back containers', () => {
     const checkedCreate = contract(...args)
     
     if (resultType) 
         expect(checkedCreate(Bag)).toBeInstanceOf(resultType)
-    expect(() => checkedCreate(class NoPush { })).toThrow(
-      'NoPush must define push(value).')
+    expect(() => checkedCreate(class NoPushBack { })).toThrow(
+      'NoPushBack must define pushBack(value).')
     expect(() => checkedCreate(null)).toThrow(
       'Argument must be a constructor.')    
     })

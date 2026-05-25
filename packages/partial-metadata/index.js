@@ -4,6 +4,7 @@ import { Prototype } from '@kingjs/prototype'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { PartialType } from '@kingjs/partial-type'
 import { contract } from '@kingjs/function-contract'
+import { asIterable } from '@kingjs/as-iterable'
 import {
   Preconditions,
   Postconditions,
@@ -269,9 +270,9 @@ function getMemberConditions(reflect, type, key) {
       case 'function': break
       case 'object':
         const { get, set, value } = current
-        if (get) result.get.push(get)
-        if (set) result.set.push(set)
-        if (value) result.value.push(value)
+        if (get) result.get.push(...asIterable(get))
+        if (set) result.set.push(...asIterable(set))
+        if (value) result.value.push(...asIterable(value))
         break
       default:
         assert(false, 'Unexpected type: ' + typeof current)

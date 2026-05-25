@@ -1,25 +1,14 @@
 import { describe, it, expect } from 'vitest'
 import {
+  ForwardList,
   List,
   Deque,
-  ForwardList,
   Uint8Vector,
   ArrayMap,
 } from '@kingjs/cursor-container'
 import { iterate } from '@kingjs/cursor-algorithm'
 import { SnapshotView } from '@kingjs/cursor-view'
-
-function createContainer(Type, values = []) {
-  const result = new Type()
-
-  if (Type == ForwardList)
-    values = [...values].reverse()
-
-  for (const value of values)
-    result.insert(value, { })
-
-  return result
-}
+import { createContainer } from './create-container.js'
 
 function createSource(source, target) {
   if (typeof source == 'function') return source(target)
@@ -40,7 +29,7 @@ const BulkEditableContainers = [
   Uint8Vector,
 ]
 
-const AfterBulkEditableContainers = [
+const PhasedBulkContainers = [
   ForwardList,
 ]
 
@@ -88,7 +77,7 @@ const Tests = {
     },
   },
 
-  eraseRange: {
+  erase: {
     'with an empty range': {
       initial: [1],
       first: target => target.begin(),
@@ -155,7 +144,7 @@ const Tests = {
     },
   },
 
-  eraseRangeAfter: {
+  eraseAfter: {
     'with an empty range': {
       initial: [1],
       first: target => target.beforeBegin(),
@@ -185,7 +174,7 @@ const Tests = {
     },
   },
 
-  resizeTo: {
+  resize: {
     'with an empty range': {
       initial: [-1, -2],
       count: 0,
@@ -251,8 +240,8 @@ describe.each(BulkEditableContainers.map(Type => [Type.name, Type]))(
     })
   })
 
-  describe('eraseRange', () => {
-    it.each(supportedCases(Tests.eraseRange))('%s', (_, {
+  describe('erase', () => {
+    it.each(supportedCases(Tests.erase))('%s', (_, {
       initial,
       first,
       last,
@@ -260,14 +249,14 @@ describe.each(BulkEditableContainers.map(Type => [Type.name, Type]))(
     }) => {
       const target = createContainer(type, initial)
 
-      target.eraseRange(first(target), last(target))
+      target.erase(first(target), last(target))
 
       expect(valuesOf(target)).toEqual(end)
     })
   })
 })
 
-describe.each(AfterBulkEditableContainers.map(Type => [Type.name, Type]))(
+describe.each(PhasedBulkContainers.map(Type => [Type.name, Type]))(
   '%s', (_, type) => {
   describe('insertRangeAfter', () => {
     it.each(supportedCases(Tests.insertRangeAfter))('%s', (_, {
@@ -284,8 +273,8 @@ describe.each(AfterBulkEditableContainers.map(Type => [Type.name, Type]))(
     })
   })
 
-  describe('eraseRangeAfter', () => {
-    it.each(supportedCases(Tests.eraseRangeAfter))('%s', (_, {
+  describe('eraseAfter', () => {
+    it.each(supportedCases(Tests.eraseAfter))('%s', (_, {
       initial,
       first,
       last,
@@ -293,7 +282,7 @@ describe.each(AfterBulkEditableContainers.map(Type => [Type.name, Type]))(
     }) => {
       const target = createContainer(type, initial)
 
-      target.eraseRangeAfter(first(target), last(target))
+      target.eraseAfter(first(target), last(target))
 
       expect(valuesOf(target)).toEqual(end)
     })
@@ -302,8 +291,8 @@ describe.each(AfterBulkEditableContainers.map(Type => [Type.name, Type]))(
 
 describe.each(BulkAssignableContainers.map(Type => [Type.name, Type]))(
   '%s', (_, type) => {
-  describe('resizeTo', () => {
-    it.each(supportedCases(Tests.resizeTo))('%s', (_, {
+  describe('resize', () => {
+    it.each(supportedCases(Tests.resize))('%s', (_, {
       initial,
       count,
       value,
@@ -311,7 +300,7 @@ describe.each(BulkAssignableContainers.map(Type => [Type.name, Type]))(
     }) => {
       const target = createContainer(type, initial)
 
-      target.resizeTo(count, value)
+      target.resize(count, value)
 
       expect(valuesOf(target)).toEqual(end)
     })

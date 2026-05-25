@@ -7,7 +7,7 @@ function createArrayMap(...values) {
   const result = new ArrayMap()
 
   for (const value of values)
-    result.push(value)
+    result.pushBack(value)
 
   return result
 }

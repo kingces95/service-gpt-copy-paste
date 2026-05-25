@@ -5,3 +5,8 @@ This directory tracks design preferences and habits that make an idea feel
 
 These notes should help future AI sessions make suggestions that fit the local
 taste of the project rather than merely solving the immediate problem.
+
+## Notes
+
+- [partial.style.md](partial.style.md): conventions for smearing partial
+  declarations across narrow Concepts and Parts.

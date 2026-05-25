@@ -15,6 +15,7 @@ import {
 } from '@kingjs/cursor-container'
 import { subrange } from '@kingjs/cursor-view'
 import { distance } from '@kingjs/cursor-algorithm'
+import { createContainer } from '../../cursor-container/test/create-container.js'
 
 const Values = [1, 2, 3]
 
@@ -27,15 +28,6 @@ const Containers = {
   Uint16Vector,
   Uint32Vector,
   Float64Vector,
-}
-
-function createContainer(Type, values = Values) {
-  const result = new Type()
-
-  for (const value of values)
-    result.insert(value, { })
-
-  return result
 }
 
 const Tests = {
@@ -96,11 +88,34 @@ describe.each(Object.entries(Tests))('%s', (_, {
 
 describe('distance', () => {
   it('should not mutate the begin cursor of a subrange', () => {
-    const source = createContainer(ArrayMap)
+    const source = createContainer(ArrayMap, Values)
     const first = source.begin()
     first.step()
 
     expect(distance(subrange(first, source.end()))).toBe(2)
     expect(first.value).toBe(2)
+  })
+
+  it('should use random access distance when available', () => {
+    const source = createContainer(ArrayMap, Values)
+    const begin = source.begin()
+    const end = source.end()
+    let wasMeasured = false
+
+    source.begin = function() {
+      begin.distanceTo = function(other) {
+        wasMeasured = true
+        return 3
+      }
+
+      return begin
+    }
+
+    source.end = function() {
+      return end
+    }
+
+    expect(distance(source)).toBe(3)
+    expect(wasMeasured).toBe(true)
   })
 })

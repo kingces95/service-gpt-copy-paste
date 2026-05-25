@@ -16,8 +16,8 @@ export class DefaultConstructible {
   }
 }
 
-export class PushProbe extends Probe {
-  push(value) { }
+export class PushBackProbe extends Probe {
+  pushBack(value) { }
 }
 
 class HasFunction {
@@ -31,5 +31,5 @@ class HasFunction {
 }
 
 export class PushBackContainer extends HasFunction {
-  static get name() { return 'push' }
+  static get name() { return 'pushBack' }
 }

@@ -1,6 +1,5 @@
 import { assert } from '@kingjs/assert'
 import { implement } from '@kingjs/partial-implement'
-import { define } from '@kingjs/partial-define'
 import { extend } from '@kingjs/partial-extend'
 import { ForwardList } from './forward-list.js'
 import { 
@@ -11,8 +10,10 @@ import {
   SizedContainerPart,
   EditableContainerPart,
   BulkAssignableContainerPart,
+  PhasedContainerPart,
+  PhasedBulkContainerPart,
 } from '../container-parts.js'
-import { iterate } from '@kingjs/cursor-algorithm'
+import { iterate, next } from '@kingjs/cursor-algorithm'
 import {
   RewindLink,
 } from '../link/rewind-link.js'
@@ -52,44 +53,56 @@ export class List extends ForwardList {
   }
 
   static {
-    define(this, {
-      insertAfter(value, cursor) {
-        ForwardList.prototype.insertAfter.call(this, value, cursor)
+    extend(this, PhasedContainerPart, {
+      beforeBegin() {
+        return ForwardList.prototype.beforeBegin.call(this)
+      },
+      insertValueAfter(cursor, value) {
+        ForwardList.prototype.insertValueAfter.call(this, cursor, value)
         this._count++
       },
-      eraseAfter(cursor) {
-        const result = ForwardList.prototype.eraseAfter.call(this, cursor)
-        this._count--
+      eraseAfter(first, last = next(first, 2)) {
+        let count = 0
+        for (let cursor = next(first); !cursor.equals(last); cursor.step())
+          count++
+
+        const result = ForwardList.prototype.eraseAfter.call(this, first, last)
+        this._count -= count
         return result
       },
     })
-  }
 
-  static {
     extend(this, SizedContainerPart, {
       get size() { return this._count },
     })
 
     extend(this, EditableContainerPart, {
-      insertAt(value, cursor) {
+      insertValue(cursor, value) {
         cursor.link.insert(value)
         this._count++
       },
-      eraseAt(cursor) {
-        const result = cursor.clone().step()
-        cursor.link.erase()
-        this._count--
-        return result
+      erase(first, last = next(first)) {
+        let count = 0
+        let cursor = first.clone()
+        while (!cursor.equals(last)) {
+          const nextCursor = next(cursor)
+          cursor.link.erase()
+          cursor = nextCursor
+          count++
+        }
+
+        this._count -= count
+        return last
       }
     })
 
     extend(this, BulkAssignableContainerPart, {
-      resizeTo(count, value = undefined) {
+      resize(count, value = undefined) {
         while (this.size > count)
-          this.pop()
+          this.popBack()
 
         while (this.size < count)
-          this.push(value)
+          this.pushBack(value)
 
         return this
       },
@@ -99,10 +112,25 @@ export class List extends ForwardList {
 
         this.clear()
         for (const value of iterate(range))
-          this.push(value)
+          this.pushBack(value)
 
         return this
       },
+    })
+
+    extend(this, PhasedBulkContainerPart, {
+      insertRangeAfter(cursor, range) {
+        range = this.sourceRange$(range)
+
+        const tail = cursor.clone()
+        for (const value of iterate(range)) {
+          tail.link = tail.link.insertAfter(value)
+          this._count++
+        }
+
+        return this
+      },
+
     })
 
   }

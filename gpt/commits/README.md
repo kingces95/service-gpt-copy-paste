@@ -10,7 +10,7 @@ linking to a Markdown file that renders headings, lists, and highlighted code.
 Prefer filenames of the form:
 
 ```txt
-YYYY-MM-DD-short-topic.md
+YYYY-MM-DD-XXX-short-topic.commit.md
 ```
 
 Avoid using the commit hash in the filename. The note itself may be added by

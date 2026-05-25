@@ -10,8 +10,8 @@ Pinned for after the current range migration stabilizes.
 
 ```text
 insertRange(cursor, sourceRange)
-eraseRange(first, last)
-resizeTo(count, value)
+erase(first, last)
+resize(count, value)
 assignRange(sourceRange)
 replaceRange(first, last, sourceRange)
 ```
@@ -102,7 +102,7 @@ mirroring STL `forward_list`:
 
 ```text
 insertRangeAfter(cursor, sourceRange)
-eraseRangeAfter(first, last)
+eraseAfter(first, last)
 ```
 
 Do not force all sequence helpers to pay the `after` complexity unless the

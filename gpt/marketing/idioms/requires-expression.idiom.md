@@ -14,8 +14,8 @@ A function checks for the operations it plans to use.
 function create(Type) {
   const result = new Type()
 
-  if (typeof result.push != 'function')
-    throw new TypeError('Expected push.')
+  if (typeof result.pushBack != 'function')
+    throw new TypeError('Expected pushBack.')
 
   return result
 }
@@ -31,7 +31,7 @@ Use named checks for common constraints and inline checks for local ones.
 class PushBackContainer extends Check {
   static check(Type) {
     const instance = new Type()
-    if (typeof instance.push == 'function') return
+    if (typeof instance.pushBack == 'function') return
     throw new TypeError('Type must create a push-back container.')
   }
 }
@@ -48,8 +48,8 @@ Or keep a one-off expression anonymous:
 ```js
 const create = contract([[
   Type => {
-    if (typeof new Type().push == 'function') return
-    throw new TypeError('Type must support push.')
+    if (typeof new Type().pushBack == 'function') return
+    throw new TypeError('Type must support pushBack.')
   },
 ]], function create(Type) {
   return new Type()
@@ -80,8 +80,8 @@ runtime metadata:
 
 ```js
 Type => {
-  if (typeof new Type().push == 'function') return
-  throw new TypeError('Type must support push.')
+  if (typeof new Type().pushBack == 'function') return
+  throw new TypeError('Type must support pushBack.')
 }
 ```
 

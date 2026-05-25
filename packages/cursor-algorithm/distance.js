@@ -1,11 +1,22 @@
-import { RandomAccessRangeProbe } from '@kingjs/cursor-shape'
+import { overload } from '@kingjs/function-contract'
+import {
+  ReadableRangeProbe,
+  RandomAccessRangeProbe,
+} from '@kingjs/cursor-shape'
 
-export function distance(range) {
+export const distance = overload([
+  ReadableRangeProbe,
+], [
+  {
+    when: [ RandomAccessRangeProbe ],
+    use: function distanceRandomAccess(range) {
+      return range.begin().distanceTo(range.end())
+    },
+  },
+],
+function distance(range) {
   const begin = range.begin()
   const end = range.end()
-
-  if (range instanceof RandomAccessRangeProbe)
-    return begin.distanceTo(end)
 
   let count = 0
   while (!begin.equals(end)) {
@@ -13,4 +24,4 @@ export function distance(range) {
     count++
   }
   return count
-}
+})

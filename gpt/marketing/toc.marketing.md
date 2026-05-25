@@ -21,7 +21,7 @@
   metadata-driven preconditions.
 - `idioms/requires-expression.idiom.md`: turning inline capability probes into named
   or anonymous runtime checks.
-- `idioms/default-constructible-container.idiom.md`: turning "new Type(); push into
+- `idioms/default-constructible-container.idiom.md`: turning "new Type(); pushBack into
   it" into a named function contract check.
 - `idioms/metadata-defaults.idiom.md`: turning function default parameter behavior
   into explicit metadata wrappers can see.

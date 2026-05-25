@@ -53,12 +53,12 @@ source range
 
 target slice
 └─ positions inside the container being mutated
-└─ still commonly represented by cursor pairs such as `eraseRange(first, last)`
+└─ still commonly represented by cursor pairs such as `erase(first, last)`
 ```
 
 That is why `copy(target, range)`, `materialize(range)`, `insertRange(pos,
 range)`, `assignRange(range)`, and `replaceRange(first, last, range)` are now
-range-shaped on the source side, while `eraseRange(first, last)` remains a
+range-shaped on the source side, while `erase(first, last)` remains a
 cursor-pair operation for the target slice.
 
 ## Why It Matters

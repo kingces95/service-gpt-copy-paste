@@ -1,8 +1,7 @@
 import { assert } from '@kingjs/assert'
-import { define } from '@kingjs/partial-define'
 import { extend } from '@kingjs/partial-extend'
 import { implement } from '@kingjs/partial-implement'
-import { PartialProxy, Preconditions } from '@kingjs/partial-proxy'
+import { PartialProxy, ArgChecks } from '@kingjs/partial-proxy'
 import {
   EquatableConcept,
 } from '@kingjs/partial-concept'
@@ -16,18 +15,15 @@ import {
   ReadableCursorPart,
   SteppableCursorPart,
   WritableCursorPart,
-
-  throwNull,
-  throwUpdateOutOfBounds,
-  throwNotEquatableTo,
 } from '@kingjs/cursor'
 import {
   ContainerPart,
   BulkAssignableContainerPart,
-  AfterBulkEditableContainerPart,
-  FrontEditableContainerPart,
+  PhasedContainerPart,
+  PhasedBulkContainerPart,
+  FrontInsertableContainerPart,
 } from '../container-parts.js'
-import { iterate } from '@kingjs/cursor-algorithm'
+import { iterate, next } from '@kingjs/cursor-algorithm'
 import {
   ContainerCursor,
 } from '../cursor/container-cursor.js'
@@ -101,21 +97,9 @@ export class ForwardList extends PartialProxy {
     })
   }
 
-  static [Preconditions] = {
-    insertAfter(value, cursor) {
-      if (!cursor) throwNull()
-      if (cursor.range != this) throwNotEquatableTo()
-      const end = this.end({ fixed: true })
-      if (cursor.equals(end)) throwUpdateOutOfBounds()
-    },
-    eraseAfter(cursor) {
-      if (!cursor) throwNull()
-      if (cursor.range != this) throwNotEquatableTo()
-      const end = this.end({ fixed: true })
-      if (cursor.equals(end)) throwUpdateOutOfBounds()
-      const next = cursor.clone().step()
-      if (next.equals(end)) throwUpdateOutOfBounds()
-    }
+  static [ArgChecks] = {
+    insertValueAfter: [ForwardListCursor, null],
+    eraseAfter: [ForwardListCursor],
   }
 
   _rootLink
@@ -130,12 +114,14 @@ export class ForwardList extends PartialProxy {
   }
 
   static {
-    define(this, {
+    extend(this, PhasedContainerPart, {
       beforeBegin() { return new this.cursorType(this, this._rootLink) },
-      insertAfter(value, cursor) { cursor.link.insertAfter(value) },
-      eraseAfter(cursor) {
-        cursor.link.eraseAfter()
-        return cursor.clone().step()
+      insertValueAfter(cursor, value) { cursor.link.insertAfter(value) },
+      eraseAfter(first, last = next(first, 2)) {
+        while (!next(first).equals(last))
+          first.link.eraseAfter()
+
+        return last
       },
     })
   }
@@ -143,38 +129,34 @@ export class ForwardList extends PartialProxy {
   static {
     extend(this, ContainerPart, {
       get isEmpty() { return this._endLink == this._rootLink.next },
-      insert(value, { after = this.beforeBegin() } = { }) {
-        this.insertAfter(value, after)
-      },
-      erase({ after = this.beforeBegin() } = { }) { this.eraseAfter(after) },
     })
 
-    extend(this, FrontEditableContainerPart, {
-      shift() {
+    extend(this, FrontInsertableContainerPart, {
+      popFront() {
         const result = this._rootLink.next.value
         this.eraseAfter(this.beforeBegin())
         return result
       },
-      unshift(value) { this.insertAfter(value, this.beforeBegin()) },
+      pushFront(value) { this.insertValueAfter(this.beforeBegin(), value) },
     })
 
     extend(this, BulkAssignableContainerPart, {
-      resizeTo(count, value = undefined) {
+      resize(count, value = undefined) {
         let tail = this.beforeBegin()
 
         while (count > 0) {
-          const next = tail.clone().step()
-          if (next.equals(this.end())) {
+          const nextCursor = next(tail)
+          if (nextCursor.equals(this.end())) {
             tail.link = tail.link.insertAfter(value)
           }
           else {
-            tail = next
+            tail = nextCursor
           }
 
           count--
         }
 
-        while (!tail.clone().step().equals(this.end()))
+        while (!next(tail).equals(this.end()))
           this.eraseAfter(tail)
 
         return this
@@ -193,7 +175,7 @@ export class ForwardList extends PartialProxy {
       },
     })
 
-    extend(this, AfterBulkEditableContainerPart, {
+    extend(this, PhasedBulkContainerPart, {
       insertRangeAfter(cursor, range) {
         range = this.sourceRange$(range)
 
@@ -204,12 +186,6 @@ export class ForwardList extends PartialProxy {
         return this
       },
 
-      eraseRangeAfter(first, last) {
-        while (!first.clone().step().equals(last))
-          this.eraseAfter(first)
-
-        return last
-      },
     })
 
   }

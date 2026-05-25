@@ -3,14 +3,14 @@ import { templatize } from '@kingjs/templatize'
 import { Constructs } from '@kingjs/constructs'
 import {
   DefaultConstructible,
-  PushProbe,
+  PushBackProbe,
 } from '@kingjs/cursor-checks'
 import { ArrayMap } from '../container/array-map.js'
 
 const Materialize = templatize(
   [[ // type
     DefaultConstructible,
-    Constructs.as(PushProbe),
+    Constructs.as(PushBackProbe),
   ]],
   type => contract(function materialize(range) {
     const result = new type()
@@ -18,7 +18,7 @@ const Materialize = templatize(
     const last = range.end()
 
     while (!first.equals(last)) {
-      result.push(first.value)
+      result.pushBack(first.value)
       first.step()
     }
 

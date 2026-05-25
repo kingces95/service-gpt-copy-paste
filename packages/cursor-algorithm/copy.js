@@ -1,8 +1,18 @@
 import { assert } from '@kingjs/assert'
-import { ContiguousCursorShape } from '@kingjs/cursor-shape'
+import { overload } from '@kingjs/function-contract'
+import {
+  ContiguousCursorShape,
+  ContiguousRangeProbe,
+  ForwardCursorShape,
+  OutputCursorShape,
+  ReadableRangeProbe,
+  spanTypeOfRange,
+  spanTypeOfCursor,
+  WritableContiguousCursorShape,
+} from '@kingjs/cursor-shape'
 
 function memcopy(target, begin, end) {
-  assert(target instanceof ContiguousCursorShape)
+  assert(target instanceof WritableContiguousCursorShape)
   assert(begin instanceof ContiguousCursorShape)
   assert(begin.spanType == target.spanType)
   assert(begin.index <= end.index)
@@ -14,14 +24,26 @@ function memcopy(target, begin, end) {
   return end.index - begin.index
 }
 
-export function copy(target, range) {
+export const copy = overload([
+  [ OutputCursorShape, ForwardCursorShape ],
+  ReadableRangeProbe,
+], [
+  {
+    when: [
+      WritableContiguousCursorShape,
+      ContiguousRangeProbe,
+    ],
+    where(target, range) {
+      return spanTypeOfRange(range) == spanTypeOfCursor(target)
+    },
+    use: function copyContiguous(target, range) {
+      return memcopy(target, range.begin(), range.end())
+    },
+  },
+],
+function copy(target, range) {
   const begin = range.begin()
   const end = range.end()
-
-  if (target instanceof ContiguousCursorShape
-    && begin instanceof ContiguousCursorShape
-    && begin.spanType == target.spanType) 
-    return memcopy(target, begin, end)
 
   target = target.clone()
 
@@ -33,4 +55,4 @@ export function copy(target, range) {
     count++
   }
   return count
-}
+})
