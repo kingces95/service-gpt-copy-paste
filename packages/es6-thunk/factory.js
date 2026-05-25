@@ -5,7 +5,7 @@ import { Lazy } from '@kingjs/lazy'
 import { decorate } from './decorate.js'
 import { createThunk } from './thunk.js'
 
-// Conditions are gathered lazily so a type can finish declaring its partial
+// Thunk metadata is gathered lazily so a type can finish declaring its partial
 // relationships before metadata chains are loaded. If a type declares a
 // condition for a member, then it must also declare that member, often as an
 // abstract member, so the declaration creates a thunk frame for the condition.
@@ -15,15 +15,15 @@ function decorateLazy(fn, target) {
 }
 
 export class Es6ThunkFactory {
-  #getConditions
+  #getThunkMetadata
   
-  constructor(getConditions) {
-    this.#getConditions = getConditions
+  constructor(getThunkMetadata) {
+    this.#getThunkMetadata = getThunkMetadata
   }
 
   create(type, key, descriptor) {
     const lazyThunk = new Lazy(() => 
-      createThunk(descriptor, this.#getConditions(type, key)))
+      createThunk(descriptor, this.#getThunkMetadata(type, key)))
 
     const { value, get, set } = descriptor
     const lazy = trimPojo({

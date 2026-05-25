@@ -7,13 +7,15 @@ import {
   TypeChecks,
   ThisChecks,
   ArgChecks,
+  Defaults,
   TypePrecondition,
   TypePostcondition,
   Preconditions,
   Postconditions,
   PartialProxy,
 } from '@kingjs/partial-proxy'
-import { getConditions } from '@kingjs/partial-metadata'
+import { getConditionsMetadata } from '@kingjs/partial-metadata'
+import { defaultTo } from '@kingjs/function-contract'
 
 // -- Type Conditions --
 
@@ -156,6 +158,24 @@ class MyTypeWithPreconditionList extends MyBaseType {
   member() { this.push('MyTypeWithPreconditionList:member') }
 }
 
+class MyTypeWithDefaults extends MyBaseType {
+  static [ArgChecks] = { member: [FirstArg, SecondArg] }
+  static [Defaults] = {
+    member: [
+      undefined,
+      defaultTo(({ args: [first] }) => first),
+    ],
+  }
+  static [Preconditions] = {
+    member(first, second) {
+      this.push(`MyTypeWithDefaults:precondition:${first === second}`)
+    },
+  }
+  member(first, second = first) {
+    this.push(`MyTypeWithDefaults:member:${first === second}`)
+  }
+}
+
 // -- Test Cases --
 
 const TypeWithoutConditions = {
@@ -165,27 +185,31 @@ const TypeWithoutConditions = {
 const AbstractType = {
   type: MyAbstractType,
   conditions: {
-    typePrecondition: [myTypePrecondition],
-    typePostcondition: [myTypePostcondition],
-    precondition: [myPrecondition],
-    postcondition: [myPostcondition],
+    conditions: {
+      typePrecondition: [myTypePrecondition],
+      typePostcondition: [myTypePostcondition],
+      precondition: [myPrecondition],
+      postcondition: [myPostcondition],
+    },
   },
 }
 
 const Type = {
   type: MyType,
   conditions: {
-    typePrecondition: [
-      expect.any(Function),
-      myTypePrecondition,
-    ],
-    typePostcondition: [myTypePostcondition],
-    precondition: [
-      expect.any(Function),
-      expect.any(Function),
-      myPrecondition,
-    ],
-    postcondition: [myPostcondition],
+    conditions: {
+      typePrecondition: [
+        expect.any(Function),
+        myTypePrecondition,
+      ],
+      typePostcondition: [myTypePostcondition],
+      precondition: [
+        expect.any(Function),
+        expect.any(Function),
+        myPrecondition,
+      ],
+      postcondition: [myPostcondition],
+    },
   },
   calls: [
     'MyType:typeCheck',
@@ -204,22 +228,24 @@ const Type = {
 const ExtendedType = {
   type: MyExtendedType,
   conditions: {
-    typePrecondition: [
-      expect.any(Function),
-      expect.any(Function),
-      myTypePrecondition,
-      myExtendedTypePrecondition,
-    ],
-    typePostcondition: [myTypePostcondition, myExtendedTypePostcondition],
-    precondition: [
-      expect.any(Function),
-      expect.any(Function),
-      expect.any(Function),
-      expect.any(Function),
-      myPrecondition,
-      myExtendedPrecondition,
-    ],
-    postcondition: [myPostcondition, myExtendedPostcondition],
+    conditions: {
+      typePrecondition: [
+        expect.any(Function),
+        expect.any(Function),
+        myTypePrecondition,
+        myExtendedTypePrecondition,
+      ],
+      typePostcondition: [myTypePostcondition, myExtendedTypePostcondition],
+      precondition: [
+        expect.any(Function),
+        expect.any(Function),
+        expect.any(Function),
+        expect.any(Function),
+        myPrecondition,
+        myExtendedPrecondition,
+      ],
+      postcondition: [myPostcondition, myExtendedPostcondition],
+    },
   },
   calls: [
     'MyType:typeCheck',
@@ -245,10 +271,12 @@ const ExtendedType = {
 const TypeWithPreconditionList = {
   type: MyTypeWithPreconditionList,
   conditions: {
-    precondition: [
-      myPrecondition,
-      myOtherPrecondition,
-    ],
+    conditions: {
+      precondition: [
+        myPrecondition,
+        myOtherPrecondition,
+      ],
+    },
   },
   calls: [
     'MyType:precondition',
@@ -257,12 +285,36 @@ const TypeWithPreconditionList = {
   ],
 }
 
+const TypeWithDefaults = {
+  type: MyTypeWithDefaults,
+  conditions: {
+    defaults: [
+      undefined,
+      expect.any(Object),
+    ],
+    conditions: {
+      precondition: [
+        expect.any(Function),
+        expect.any(Function),
+      ],
+    },
+  },
+  calls: [
+    'MyType:firstArgCheck',
+    'MyType:secondArgCheck',
+    'MyTypeWithDefaults:precondition:true',
+    'MyTypeWithDefaults:member:true',
+  ],
+  args: actual => [actual],
+}
+
 const Tests = [
   ['Type without conditions', TypeWithoutConditions],
   ['Abstract type', AbstractType],
   ['Type', Type],
   ['Extended type', ExtendedType],
   ['Type with precondition list', TypeWithPreconditionList],
+  ['Type with defaults', TypeWithDefaults],
 ]
 
 // -- Tests --
@@ -280,7 +332,7 @@ describe.each(Tests)('%s',
   })
 
   it('should have the correct type conditions', () => {
-    const actual = getConditions(type, 'member')
+    const actual = getConditionsMetadata(type, 'member')
     expect(actual).toEqual(conditions)
   })  
   it('should execute the correct conditions in the correct order', () => {

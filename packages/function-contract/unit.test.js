@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   contract,
+  defaultTo,
   overload,
 } from '@kingjs/function-contract'
 
@@ -84,6 +85,46 @@ describe('contract', () => {
     expect(checkedAdd(1)).toBe(2)
     expect(() => checkedAdd(1, 0)).toThrow(
       'Value must be positive.')
+  })
+
+  it('should apply procedural defaults left to right', () => {
+    function add(left, right) { return left + right }
+    const checkedAdd = contract([
+      Positive,
+      Positive,
+    ], [
+      defaultTo(() => 1),
+      defaultTo(({ args: [left] }) => left + 1),
+    ],
+    add)
+
+    expect(checkedAdd()).toBe(3)
+  })
+
+  it('should pass this to procedural defaults', () => {
+    function identity(value) { return value }
+    const checkedIdentity = contract([
+      Thing,
+    ], [
+      defaultTo(({ self }) => self.thing),
+    ],
+    identity)
+    const context = { thing: new Thing() }
+
+    expect(checkedIdentity.call(context)).toBe(context.thing)
+  })
+
+  it('should preserve literal function defaults', () => {
+    function identity(value) { return value }
+    const defaultFn = () => 1
+    const checkedIdentity = contract([
+      null,
+    ], [
+      defaultFn,
+    ],
+    identity)
+
+    expect(checkedIdentity()).toBe(defaultFn)
   })
 
   it('should dispatch to the first matching overload', () => {

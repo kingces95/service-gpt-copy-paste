@@ -20,6 +20,7 @@ Contents
 - [Members](#members): members pivoted by Part with container columns.
 - [Overrides](#overrides): inherited members pivoted by implementation host.
 - [Preconditions](#preconditions): members pivoted by reusable assertion member.
+- [Non-Public Members](#non-public-members): `$` members chip-pivoted by assert/abstract role, then pivoted by Part.
 
 **Name Model**
 
@@ -29,6 +30,7 @@ Contents
 **Call Shape**
 
 - [Signature Shape](#signature-shape): members pivoted by exact parameter shape.
+- [Default Arguments](#default-arguments): members with defaults pivoted by declaration Part.
 - [Argument Order](#argument-order): members pivoted by STL argument order basis.
 - [Argument Role](#argument-role): members pivoted by fuzzy argument role.
 
@@ -458,7 +460,48 @@ PhasedBulkContainerPart
 │  └─ ownButNotEndCursor(cursor)
 └─ replaceRangeAfter(first, last, replacementRange)
    ├─ ownButNotEndCursor(first)
-   └─ ownCursorPair(next(first), last)
+      └─ ownCursorPair(next(first), last)
+```
+
+### Non-Public Members
+
+```txt
+Non-Public Members
+├─ set: Part members whose names end in $
+├─ transform: member -> (member, chip, Part)
+├─ chip pivot: Assert, Abstract
+├─ pivot: Part
+└─ display: member leaves under Part roots
+```
+
+```txt
+Non-Public Members
+
+Assert
+├─ ContainerPart
+│  ├─ notNullAssert$(value)
+│  ├─ nonEmptyAssert$()
+│  ├─ ownCursorAssert$(cursor)
+│  ├─ notEndAssert$(cursor)
+│  ├─ firstThenLastAssert$(first, last)
+│  └─ ownCursorPairAssert$(first, last)
+├─ PhasedContainerPart
+│  └─ ownButNotEndCursorAssert$(cursor)
+└─ IndexableContainerPart
+   └─ lessThanSizeAssert$(index, throwOutOfBounds)
+
+Abstract
+├─ ReservableContainerPart
+│  └─ setCapacity$(count)
+└─ GapEditableContainerPart
+   ├─ openGap$(cursor, count)
+   └─ closeGap$(first, last)
+
+Remainder
+├─ ContainerPart
+│  └─ sourceRange$(range)
+└─ BulkAssignableContainerPart
+   └─ defaultValue$
 ```
 
 ## Name Model
@@ -618,6 +661,32 @@ CountValue
 CursorCountValue
 ├─ insert(cursor, count, value)
 └─ insertAfter(cursor, count, value)
+```
+
+### Default Arguments
+
+```txt
+Default Arguments
+├─ set: public container members with defaulted parameters
+├─ transform: member -> (declaration Part, member)
+├─ pivot: declaration Part
+└─ display: member signatures under Part roots
+```
+
+```txt
+Default Arguments
+
+EditableContainerPart
+└─ erase(first, last = next(first))
+
+PhasedContainerPart
+└─ eraseAfter(first, last = next(first, 2))
+
+BulkAssignableContainerPart
+└─ resize(count, value = this.defaultValue$)
+
+BulkEditableContainerPart
+└─ insertValue(cursor = this.begin(), value)
 ```
 
 ### Argument Order

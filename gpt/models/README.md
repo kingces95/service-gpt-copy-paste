@@ -24,6 +24,7 @@ STL-inspired container surface through a set of pivots:
 - [Members](container-part.model.md#members): members pivoted by Part with container columns.
 - [Overrides](container-part.model.md#overrides): inherited members pivoted by implementation host.
 - [Preconditions](container-part.model.md#preconditions): members pivoted by reusable assertion member.
+- [Non-Public Members](container-part.model.md#non-public-members): `$` members chip-pivoted by assert/abstract role, then pivoted by Part.
 
 **Name Model**
 
@@ -33,6 +34,7 @@ STL-inspired container surface through a set of pivots:
 **Call Shape**
 
 - [Signature Shape](container-part.model.md#signature-shape): members pivoted by exact parameter shape.
+- [Default Arguments](container-part.model.md#default-arguments): members with defaults pivoted by declaration Part.
 - [Argument Order](container-part.model.md#argument-order): members pivoted by STL argument order basis.
 - [Argument Role](container-part.model.md#argument-role): members pivoted by fuzzy argument role.
 

@@ -1,7 +1,7 @@
-import { assert } from '@kingjs/assert'
 import { Es6Compiler } from '@kingjs/es6-compiler'
 import { trimPojo } from '@kingjs/pojo-trim'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
+import { applyDefaults } from '@kingjs/function-contract'
 
 import { decorate } from './decorate.js'
 
@@ -9,33 +9,34 @@ function decorateThunk(fn, target) {
   return decorate(fn, target, 'thunk') 
 }
 
-export function createThunk(descriptor, conditions) {
-  if (!conditions || Es6Descriptor.typeof(descriptor) == 'field') 
+export function createThunk(descriptor, metadata) {
+  if (!metadata || Es6Descriptor.typeof(descriptor) == 'field') 
     return Es6Compiler.emit({ ...descriptor })
 
+  const { defaults, conditions = { } } = metadata
   descriptor = Es6Compiler.emit({ ...descriptor })
-  descriptor.value = createMethodThunk(descriptor.value, conditions)
+  descriptor.value = createMethodThunk(descriptor.value, conditions, defaults)
   descriptor.get = createGetterThunk(descriptor.get, conditions)
   descriptor.set = createSetterThunk(descriptor.set, conditions)
   return trimPojo(descriptor)  
 }
 
-function createMethodThunk(target, conditions) {
+function createMethodThunk(target, conditions, defaults) {
   return Es6TypeThunk.create(
-    Es6MethodThunk.create(target, conditions), 
+    Es6MethodThunk.create(target, conditions, defaults), 
   conditions)
 }
 
 function createGetterThunk(target, conditions) {
   return createMethodThunk(
     Es6GetterThunk.create(target, conditions), 
-  conditions)    
+    conditions)    
 }
 
 function createSetterThunk(target, conditions) {
   return createMethodThunk(
     Es6SetterThunk.create(target, conditions), 
-  conditions)    
+    conditions)    
 }
 
 class Es6Thunk {
@@ -48,7 +49,7 @@ class Es6Thunk {
 }
 
 class Es6TypeThunk {
-  static create(target, { typePrecondition, typePostcondition }) {
+  static create(target, { typePrecondition, typePostcondition } = { }) {
     return Es6Thunk.create(target, typePrecondition, typePostcondition,
       function() {
         typePrecondition?.call(this)
@@ -61,7 +62,7 @@ class Es6TypeThunk {
 }
 
 class Es6GetterThunk {
-  static create(target, { getPrecondition, getPostcondition }) {
+  static create(target, { getPrecondition, getPostcondition } = { }) {
     return Es6Thunk.create(target, getPrecondition, getPostcondition,
       function() {
         getPrecondition?.call(this)
@@ -74,7 +75,7 @@ class Es6GetterThunk {
 }
 
 class Es6SetterThunk {
-  static create(target, { setPrecondition, setPostcondition }) {
+  static create(target, { setPrecondition, setPostcondition } = { }) {
     return Es6Thunk.create(target, setPrecondition, setPostcondition,
       function(arg0) {
         setPrecondition?.call(this, arg0)
@@ -86,17 +87,17 @@ class Es6SetterThunk {
 }
 
 class Es6MethodThunk {
-  static create(target, { precondition, postcondition }) {
+  static create(target, { precondition, postcondition } = { }, defaults) {
     return Es6Thunk.create(target, precondition, postcondition,
-      function() {
-        precondition?.apply(this, arguments)
-        const result = target.apply(this, arguments)
+      function(...args) {
+        precondition?.apply(this, applyDefaults(args, defaults, this))
+        const result = target.apply(this, args)
         if (result === undefined)
           postcondition?.call(this)
         else
           postcondition?.call(this, result)
         return result    
-      }
+      },
     )
   }
 }

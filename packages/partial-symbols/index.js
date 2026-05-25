@@ -103,6 +103,7 @@ export const Postconditions = Symbol('PartialProxy.Postconditions')
 export const TypeChecks = Symbol('PartialProxy.TypeChecks')
 export const ThisChecks = Symbol('PartialProxy.ThisChecks')
 export const ArgChecks = Symbol('PartialProxy.ArgChecks')
+export const Defaults = Symbol('PartialProxy.Defaults')
 export const TypePrecondition = Symbol('PartialProxy.TypePrecondition')
 export const TypePostcondition = Symbol('PartialProxy.TypePostcondition')
 

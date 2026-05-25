@@ -1,6 +1,5 @@
-import { assert } from '@kingjs/assert'
 import { isAbstract } from '@kingjs/abstract'
-import { getConditions } from '@kingjs/partial-metadata'
+import { getConditionsMetadata } from '@kingjs/partial-metadata'
 import { CreateThunk } from '@kingjs/partial-symbols'
 import { Es6ThunkFactory } from '@kingjs/es6-thunk'
 import { FunctionBuilder } from '@kingjs/function-builder'
@@ -10,6 +9,7 @@ export {
   TypeChecks,
   ThisChecks,
   ArgChecks,
+  Defaults,
   Preconditions,
   Postconditions,
   TypePrecondition,
@@ -17,10 +17,13 @@ export {
 } from '@kingjs/partial-symbols'
 
 const thunkFactory = new Es6ThunkFactory((type, key) => {
-  const conditions = getConditions(type, key)
+  const metadata = getConditionsMetadata(type, key)
+  const { conditions } = metadata ?? { }
+
   for (const key in conditions)
     conditions[key] = FunctionBuilder.require(conditions[key])
-  return conditions
+
+  return metadata
 })
 
 export class PartialProxy {

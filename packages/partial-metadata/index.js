@@ -11,6 +11,7 @@ import {
   TypeChecks,
   ThisChecks,
   ArgChecks,
+  Defaults,
   TypePrecondition,
   TypePostcondition,
 
@@ -239,6 +240,9 @@ export const PartialThisChecks
 export const PartialArgChecks
   = partialReflectOnMetaObject(ArgChecks)
 
+export const PartialDefaults
+  = partialReflectOnMetaObject(Defaults)
+
 function getTypeConditions(type, symbol) {
   return [...PartialMetadata.getValue(type, symbol, {
     includeOverridden: true,
@@ -320,11 +324,18 @@ function createThisCheck(requirements) {
   return function() { check(this) }
 }
 
-function createArgCheck(requirements) {
-  return contract(requirements)
+function createArgCheck(requirements, defaults) {
+  return contract(requirements, defaults)
 }
 
-export function getConditions(type, key) {
+function getMemberDefaults(type, key) {
+  for (const { value } of PartialDefaults.getValue(type, key, {
+    descriptorType: 'field',
+  }))
+    return value
+}
+
+export function getConditionsMetadata(type, key) {
   const typeCheck = getTypeChecks(type)
   const typePrecondition = getTypeConditions(type, TypePrecondition)
   const typePostcondition = getTypeConditions(type, TypePostcondition)
@@ -332,6 +343,7 @@ export function getConditions(type, key) {
   const postcondition = getMemberConditions(PartialPostconditions, type, key)
   const thisCheck = getMemberChecks(PartialThisChecks, type, key)
   const argCheck = getMemberChecks(PartialArgChecks, type, key)
+  const defaults = getMemberDefaults(type, key)
 
   const conditions = trimPojo({
     typePrecondition: [
@@ -340,7 +352,7 @@ export function getConditions(type, key) {
     ],
     precondition: [
       ...thisCheck.value.map(createThisCheck),
-      ...argCheck.value.map(createArgCheck),
+      ...argCheck.value.map(value => createArgCheck(value, defaults)),
       ...precondition.value,
     ],
     getPrecondition: [
@@ -358,5 +370,9 @@ export function getConditions(type, key) {
     setPostcondition: postcondition.set,
   })
 
-  return conditions
+  const metadata = trimPojo({ conditions })
+  if (defaults)
+    return { ...metadata, defaults }
+
+  return metadata
 }

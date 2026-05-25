@@ -3,6 +3,17 @@ import { asArray } from '@kingjs/as-array'
 
 export { Preconditions } from '@kingjs/partial-symbols'
 
+const DefaultFactory = Symbol('FunctionContract.DefaultFactory')
+
+export function defaultTo(factory) {
+  assert(typeof factory == 'function',
+    'Function contract default factory must be a function.')
+
+  return {
+    [DefaultFactory]: factory,
+  }
+}
+
 export function contract(requirements, defaults, fn) {
   if (typeof requirements == 'function') {
     fn = requirements
@@ -25,7 +36,7 @@ export function contract(requirements, defaults, fn) {
   defaults = normalizeDefaults(defaults)
 
   const thunk = function(...args) {
-    args = applyDefaults(args, defaults)
+    args = applyDefaults(args, defaults, this)
     checkSlots(requirements, args)
     return fn.apply(this, args)
   }
@@ -133,7 +144,7 @@ function matchesSlot(type, value) {
   return value instanceof type
 }
 
-function applyDefaults(args, defaults) {
+export function applyDefaults(args, defaults, self) {
   if (defaults == null)
     return args
 
@@ -146,10 +157,17 @@ function applyDefaults(args, defaults) {
     if (defaults[i] === undefined)
       continue
 
-    args[i] = defaults[i]
+    const current = defaults[i]
+    args[i] = isDefaultFactory(current)
+      ? current[DefaultFactory]({ self, args, index: i })
+      : current
   }
 
   return args
+}
+
+function isDefaultFactory(value) {
+  return value && typeof value == 'object' && DefaultFactory in value
 }
 
 function checkSlots(types, values) {

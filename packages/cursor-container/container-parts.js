@@ -1,5 +1,5 @@
 import { Defines, Abstracts, Extends } from '@kingjs/partial-class'
-import { ArgChecks, Preconditions } from '@kingjs/partial-proxy'
+import { ArgChecks, Defaults, Preconditions } from '@kingjs/partial-proxy'
 import { PartialClass } from '@kingjs/partial-class'
 import { extend } from '@kingjs/partial-extend'
 import { implement } from '@kingjs/partial-implement'
@@ -11,6 +11,7 @@ import {
   repeat,
   single,
 } from '@kingjs/cursor-adapter'
+import { defaultTo } from '@kingjs/function-contract'
 import { snapshot } from '@kingjs/cursor-view'
 import {
   CloneableCursorConcept,
@@ -120,7 +121,14 @@ export class BackInsertableContainerPart extends ContainerPart {
 export class EditableContainerPart extends ContainerPart {
   static [ArgChecks] = {
     insertValue: [CursorConcept, null],
-    erase: [CursorConcept],
+    erase: [CursorConcept, CursorConcept],
+  }
+
+  static [Defaults] = {
+    erase: [
+      undefined,
+      defaultTo(({ args: [first] }) => next(first)),
+    ],
   }
 
   static [Preconditions] = {
@@ -128,14 +136,14 @@ export class EditableContainerPart extends ContainerPart {
       this.ownCursorAssert$(cursor)
     },
 
-    erase(first, last = next(first)) {
+    erase(first, last) {
       this.ownCursorPairAssert$(first, last)
     },
   }
 
   static [Abstracts] = {
     insertValue(cursor, value) { },
-    erase(first, last) { },
+    erase(first, last = next(first)) { },
   }
   
   static {
@@ -165,7 +173,14 @@ export class EditableContainerPart extends ContainerPart {
 export class PhasedContainerPart extends ContainerPart {
   static [ArgChecks] = {
     insertValueAfter: [CursorConcept, null],
-    eraseAfter: [CloneableCursorConcept],
+    eraseAfter: [CloneableCursorConcept, CursorConcept],
+  }
+
+  static [Defaults] = {
+    eraseAfter: [
+      undefined,
+      defaultTo(({ args: [first] }) => next(first, 2)),
+    ],
   }
 
   static [Defines] = {
@@ -180,7 +195,7 @@ export class PhasedContainerPart extends ContainerPart {
       this.ownButNotEndCursorAssert$(cursor)
     },
 
-    eraseAfter(first, last = next(first, 2)) {
+    eraseAfter(first, last) {
       this.ownButNotEndCursorAssert$(first)
       this.ownCursorPairAssert$(next(first), last)
     },
@@ -189,7 +204,7 @@ export class PhasedContainerPart extends ContainerPart {
   static [Abstracts] = {
     beforeBegin() { },
     insertValueAfter(cursor, value) { },
-    eraseAfter(first, last) { },
+    eraseAfter(first, last = next(first, 2)) { },
   }
 }
 
@@ -273,13 +288,22 @@ export class MapAssociativeContainerPart extends AssociativeContainerPart {
 
 export class BulkAssignableContainerPart extends ClearableContainerPart {
   static [ArgChecks] = {
-    resize: [NormalNumber],
+    resize: [NormalNumber, null],
     assignRange: [RangeConcept],
     assign: [NormalNumber],
   }
 
+  static [Defaults] = {
+    resize: [
+      undefined,
+      defaultTo(({ self }) => self.defaultValue$),
+    ],
+  }
+
+  get defaultValue$() { return undefined }
+
   static [Abstracts] = {
-    resize(count, value) { },
+    resize(count, value = this.defaultValue$) { },
     assignRange(range) { },
   }
 
@@ -318,6 +342,12 @@ export class BulkEditableContainerPart extends EditableContainerPart {
 
   static [Abstracts] = {
     insertRange(cursor, range) { },
+  }
+
+  static [Defaults] = {
+    insertValue: [
+      defaultTo(({ self }) => self.begin()),
+    ],
   }
 
   // attachments that depend on abstract operations
@@ -390,8 +420,6 @@ export class GapEditableContainerPart extends BulkEditableContainerPart {
     openGap$(cursor, count) { },
     closeGap$(first, last) { },
   }
-
-  get defaultValue$() { return undefined }
 
   insertRange(cursor, range) {
     range = this.sourceRange$(range)

@@ -38,6 +38,7 @@ The model includes:
 - Members: members pivoted by Part with container columns.
 - Overrides: inherited members pivoted by implementation host.
 - Preconditions: members pivoted by reusable assertion member.
+- Non-Public Members: `$` members chip-pivoted by assert/abstract role, then pivoted by Part.
 
 **Name Model**
 
@@ -47,6 +48,7 @@ The model includes:
 **Call Shape**
 
 - Signature Shape: members pivoted by exact parameter shape.
+- Default Arguments: members with defaults pivoted by declaration Part.
 - Argument Order: members pivoted by STL argument order basis.
 - Argument Role: members pivoted by fuzzy argument role.
 
