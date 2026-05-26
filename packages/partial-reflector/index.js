@@ -811,7 +811,8 @@ export function create({
     const prototype = type.prototype
     PartialReflect.copyTo(partialType, prototype, {
       createThunk: (key, descriptor, host) => {
-        descriptor = transformDescriptor(host, key, descriptor)
+        if (!isPartialType)
+          descriptor = transformDescriptor(host, key, descriptor)
 
         descriptor = CreateThunk in type 
           ? type[CreateThunk](key, descriptor) 
