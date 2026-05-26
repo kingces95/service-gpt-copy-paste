@@ -89,18 +89,10 @@ export class Es6ClassInfo {
   getMember(key, { isStatic = false } = { }) {
     const type = this.ctor
 
-    let owner
-    for (const current of Es6Reflect.getDescriptor(
-      type, key, { isStatic })) {
-      switch (typeof current) {
-        case 'function': owner = current; continue
-        case 'object': 
-          return Es6MemberInfo.create(owner, key, current, { isStatic })
-        default: assert(false, `Unexpected type: ${typeof current}`)
-      }
-    }
-    
-    return null
+    const { host, descriptor } =
+      Es6Reflect.findDescriptor(type, key, { isStatic, context: true }) || { }
+    if (!descriptor) return null
+    return Es6MemberInfo.create(host, key, descriptor, { isStatic })
   }
 
   *ownStaticMembers() { yield* this.ownMembers({ isStatic: true }) }

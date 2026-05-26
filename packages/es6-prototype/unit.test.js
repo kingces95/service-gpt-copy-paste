@@ -40,7 +40,6 @@ describe('Es6Prototype', () => {
     expect(actual).toBe(MyClass.prototype)
   })
 })
-
 class MyType { }
 class MySubType { }
 
@@ -404,8 +403,20 @@ function runTests(
     })
     it('should have expected member value', () => {
       if (!getMemberValue) return
-      const actual = [...reflector.getValue(type, memberKey)]
+      const actual = [...reflector.findValues(type, memberKey)]
       expect(actual).toEqual(getMemberValue)
+    })
+    it('should get expected member value', () => {
+      if (!getMemberValue) return
+      const expected = getMemberValue[0]?.value ?? null
+      const actual = reflector.findValue(type, memberKey)
+      expect(actual).toEqual(expected)
+    })
+    it('should get expected contextual member value', () => {
+      if (!getMemberValue) return
+      const { descriptor, ...expected } = getMemberValue[0] ?? { }
+      const actual = reflector.findValue(type, memberKey, { context: true })
+      expect(actual).toEqual(expected.value === undefined ? null : expected)
     })
   
     // descriptors
@@ -416,8 +427,23 @@ function runTests(
     })
     it('should have expected member descriptor', () => {
       if (!getMemberDescriptor) return
-      const actual = [...reflector.getDescriptor(type, memberKey)]
+      const actual = [...reflector.findDescriptors(type, memberKey)]
       expect(actual).toEqual(getMemberDescriptor)
+    })
+    it('should get expected member descriptor', () => {
+      if (!getMemberDescriptor) return
+      const expected = getMemberDescriptor[1] ?? null
+      const actual = reflector.findDescriptor(type, memberKey)
+      expect(actual).toEqual(expected)
+    })
+    it('should get expected contextual member descriptor', () => {
+      if (!getMemberDescriptor) return
+      const [host, descriptor] = getMemberDescriptor
+      const expected = descriptor ? { host, descriptor } : null
+      const actual = reflector.findDescriptor(type, memberKey, {
+        context: true,
+      })
+      expect(actual).toEqual(expected)
     })
     it('should have expected descriptors', () => {
       if (!descriptors) return
@@ -431,7 +457,7 @@ function runTests(
     })
   
     it('should return nothing for unknown member value', () => {
-      const actual = [...reflector.getValue(type, 'unknownMember')]
+      const actual = [...reflector.findValues(type, 'unknownMember')]
       expect(actual).toEqual([ ])
     })
     it('should return nothing for unknown own descriptor', () => {
@@ -595,11 +621,17 @@ function runTests(
         options = { descriptorType, instanceOf }
       })
   
-      // getValue
+      // findValues
       it('should have expected member value', () => {
-        const actual = [...reflector.getValue(type, key, options)]
+        const actual = [...reflector.findValues(type, key, options)]
         actual.forEach(v => { delete v.type; delete v.descriptor })
         expect(actual).toEqual(gotValue)
+      })
+
+      // findValue
+      it('should have expected first member value', () => {
+        const actual = reflector.findValue(type, key, options)
+        expect(actual).toEqual(gotValue[0]?.value ?? null)
       })
 
       // ownValues

@@ -200,7 +200,7 @@ describe.each(Cases)('%s', (name, md) => {
     it('reports correct descriptor for keys', () => {
       for (const key of expectedKeys) {
         const descriptor = 
-          [...Es6UserReflect.getDescriptor(type, key, { isStatic })]
+          [...Es6UserReflect.findDescriptors(type, key, { isStatic })]
             .filter(o => typeof o == 'object')[0]
         expect(descriptor).toEqual(MethodDescriptor)
       }

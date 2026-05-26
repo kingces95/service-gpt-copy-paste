@@ -257,12 +257,23 @@ export class Es6Reflector {
     yield* this.#reflect(isStatic).ownValues(type, options)
       .filter(this.#extensionOfFilter(extensionOf))
   }
-  *getValue(type, name, { isStatic, includeOverridden, 
+  findValue(type, key, { isStatic,
+    descriptorType, extensionOf, instanceOf, context } = { }) {
+    const instance = isStatic ? type : type.prototype
+    const options = { instance, descriptorType, instanceOf, context }
+    const result = this.#reflect(isStatic).findValue(type, key, options)
+    if (!result) return null
+    if (!extensionOf) return result
+
+    const value = context ? result.value : result
+    return this.isExtensionOf(value, extensionOf) ? result : null
+  }
+  *findValues(type, key, { isStatic, includeOverridden,
     descriptorType, extensionOf, instanceOf, reverseHierarchy } = { }) {
     const instance = isStatic ? type : type.prototype
     const options = { instance, includeOverridden, descriptorType, instanceOf,
       reverseHierarchy }
-    yield* this.#reflect(isStatic).getValue(type, name, options)
+    yield* this.#reflect(isStatic).findValues(type, key, options)
       .filter(this.#extensionOfFilter(extensionOf))
   }
   *values(type, { isStatic, includeOverridden, 
@@ -280,11 +291,11 @@ export class Es6Reflector {
       'getBaseType', 'isComposedOf', 'canDuckCast', 'canStrictDuckCast'
     ]
 
-    for (const name of staticThunks) {
+    for (const key of staticThunks) {
       const member = function(...args) {
-        return this.#instance[name].apply(this.#instance, args)
+        return this.#instance[key].apply(this.#instance, args)
       }
-      Object.defineProperty(this.prototype, name, { 
+      Object.defineProperty(this.prototype, key, {
         value: member,
         enumerable: false,
         configurable: true,
@@ -298,16 +309,16 @@ export class Es6Reflector {
     const thunks = [
       'getPrototype', 'isKnown', 'isKnownKey', 'hasOwnKey', 'hasKey',
       'ownKeys', 'keys', 'getOwnDescriptor', 'ownDescriptors',
-      'getDescriptor', 'descriptors', 'copyTo', 'reduce'
+      'findDescriptor', 'findDescriptors', 'descriptors', 'copyTo', 'reduce'
     ]
 
-    for (const name of thunks) {
+    for (const key of thunks) {
       const member = function(...args) {
         const options = args[args.length - 1]
         const self = this.#reflect(options?.isStatic)
-        return self[name].apply(self, args)
+        return self[key].apply(self, args)
       }
-      Object.defineProperty(this.prototype, name, { 
+      Object.defineProperty(this.prototype, key, {
         value: member,
         enumerable: false,
         configurable: true,
@@ -321,14 +332,14 @@ export class Es6Reflector {
   // isKnown(type, { isStatic } = { }) {
   //   return this.#reflect(isStatic).isKnown(type)
   // }
-  // isKnownKey(type, name, { isStatic } = { }) {
-  //   return this.#reflect(isStatic).isKnownKey(type, name)
+  // isKnownKey(type, key, { isStatic } = { }) {
+  //   return this.#reflect(isStatic).isKnownKey(type, key)
   // }
-  // hasOwnKey(type, name, { isStatic } = { }) {
-  //   return this.#reflect(isStatic).hasOwnKey(type, name)
+  // hasOwnKey(type, key, { isStatic } = { }) {
+  //   return this.#reflect(isStatic).hasOwnKey(type, key)
   // }
-  // hasKey(type, name, { isStatic } = { }) {
-  //   return this.#reflect(isStatic).hasKey(type, name)
+  // hasKey(type, key, { isStatic } = { }) {
+  //   return this.#reflect(isStatic).hasKey(type, key)
   // }
   // *ownKeys(type, { isStatic } = { }) {
   //   yield* this.#reflect(isStatic).ownKeys(type)
@@ -336,17 +347,21 @@ export class Es6Reflector {
   // *keys(type, { isStatic, includeOverridden } = { }) {
   //   yield* this.#reflect(isStatic).keys(type, { includeOverridden })
   // }
-  // getOwnDescriptor(type, name, { isStatic, descriptorType } = { }) {
+  // getOwnDescriptor(type, key, { isStatic, descriptorType } = { }) {
   //   return this.#reflect(isStatic)
-  //     .getOwnDescriptor(type, name, { descriptorType })
+  //     .getOwnDescriptor(type, key, { descriptorType })
   // }
   // *ownDescriptors(type, { isStatic, descriptorType } = { }) {
   //   yield* this.#reflect(isStatic)
   //     .ownDescriptors(type, { descriptorType })
   // }
-  // *getDescriptor(type, name, { isStatic, descriptorType } = { }) {
+  // findDescriptor(type, key, { isStatic, descriptorType } = { }) {
+  //   return this.#reflect(isStatic)
+  //     .findDescriptor(type, key, { descriptorType })
+  // }
+  // *findDescriptors(type, key, { isStatic, descriptorType } = { }) {
   //   yield* this.#reflect(isStatic)
-  //     .getDescriptor(type, name, { descriptorType })
+  //     .findDescriptors(type, key, { descriptorType })
   // }
   // *descriptors(type, { 
   //   isStatic, descriptorType, includeOverridden } = { }) {

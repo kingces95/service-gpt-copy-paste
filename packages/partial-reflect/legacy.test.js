@@ -174,7 +174,7 @@ describe('PartialClass', () => {
     })
     it('should return null for missing member descriptor', () => {
       let descriptor = null
-      for (const current of PartialReflect.getDescriptor(
+      for (const current of PartialReflect.findDescriptors(
         MyExtension, 'missingMember')) {
           switch (typeof current) {
             case 'function': /*owner = current*/ break
@@ -221,7 +221,7 @@ describe('PartialClass', () => {
         })
         it('should have a descriptor for method', () => {
           let descriptor = null
-          for (const current of PartialReflect.getDescriptor(MyExtension, 'method')) {
+          for (const current of PartialReflect.findDescriptors(MyExtension, 'method')) {
             switch (typeof current) {
               case 'function': /*owner = current*/ break
               case 'object': descriptor = current; break

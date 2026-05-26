@@ -186,7 +186,7 @@ export function createPartialMetadata(PartialReflect) {
   //     └── Cursor (value)
   //         └── null
 
-// Querying the preconditions chain for MyCursor for precondition by name
+// Querying the preconditions chain for MyCursor for precondition by key
 // would yield descriptors for all relevant preconditions. For example,
 // querying for the step precondition would yield the step preconditions
 // on MyCursor and InputCursorPart but not Cursor since Cursor does
@@ -200,7 +200,7 @@ export function createPartialMetadata(PartialReflect) {
     return PartialMetadata.map({
       knownKeys: [ 'constructor' ],
       getPrototype: function(type) {
-        const values = [...this.getValue(type, symbol)].reverse()
+        const values = [...this.findValues(type, symbol)].reverse()
 
         return values.reduce((prototype, { host, value }) => {
           const descriptors = Object.getOwnPropertyDescriptors(value)
@@ -229,7 +229,7 @@ export function createPartialMetadata(PartialReflect) {
     = partialReflectOnMetaObject(Transforms)
 
   function getTypeConditions(type, symbol) {
-    return [...PartialMetadata.getValue(type, symbol, {
+    return [...PartialMetadata.findValues(type, symbol, {
       includeOverridden: true,
       reverseHierarchy: true,
       descriptorType: 'field',
@@ -238,7 +238,7 @@ export function createPartialMetadata(PartialReflect) {
   }
 
   function getTypeChecks(type) {
-    return [...PartialMetadata.getValue(type, TypeChecks, {
+    return [...PartialMetadata.findValues(type, TypeChecks, {
       includeOverridden: true,
       reverseHierarchy: true,
       descriptorType: 'field',
@@ -252,7 +252,7 @@ export function createPartialMetadata(PartialReflect) {
       set: [],
     }
 
-    for (const current of reflect.getDescriptor(type, key, {
+    for (const current of reflect.findDescriptors(type, key, {
       reverseHierarchy: true,
     })) {
       switch (typeof current) {
@@ -278,7 +278,7 @@ export function createPartialMetadata(PartialReflect) {
       set: [],
     }
 
-    for (const current of reflect.getDescriptor(type, key, {
+    for (const current of reflect.findDescriptors(type, key, {
       reverseHierarchy: true,
     })) {
       switch (typeof current) {
@@ -314,10 +314,11 @@ export function createPartialMetadata(PartialReflect) {
   }
 
   function getMemberDefaults(type, key) {
-    for (const { value } of PartialDefaults.getValue(type, key, {
-      descriptorType: 'field',
-    }))
-      return value
+    const result = PartialDefaults.findValue(type, key, { context: true })
+    if (!result) return
+
+    assert(result.type == 'field')
+    return result.value
   }
 
   function getOwnMemberTransforms(type, key) {

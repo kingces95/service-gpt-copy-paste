@@ -189,7 +189,7 @@ describe.each(Classes)('%s', (_, classMd) => {
       const members = md?.hierarchy || { }
       for (const key in members) {
         const expected = members[key]
-        const actual = [...Es6Reflect.getDescriptor(
+        const actual = [...Es6Reflect.findDescriptors(
           type, key, { isStatic, excludeKnown: true })].map(value => {
             if (typeof value == 'object') return value.value
             return value
@@ -312,7 +312,7 @@ describe.each(Classes)('%s', (_, classMd) => {
           name)
         let actual
         scan:
-        for (const current of Es6Reflect.getDescriptor(
+        for (const current of Es6Reflect.findDescriptors(
           type, name, { isStatic, excludeKnown: true })) {
           switch (typeof current) {
             case 'function': actual = null; continue

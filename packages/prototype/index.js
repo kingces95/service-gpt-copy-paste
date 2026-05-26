@@ -52,12 +52,12 @@ export class Prototype {
     while (prototype = Object.getPrototypeOf(prototype))
   }
 
-  static hasOwnKey(prototype, name) {
-    return Object.prototype.hasOwnProperty.call(prototype, name)
+  static hasOwnKey(prototype, key) {
+    return Object.prototype.hasOwnProperty.call(prototype, key)
   }
 
-  static hasKey(prototype, name) {
-    return name in prototype
+  static hasKey(prototype, key) {
+    return key in prototype
   }
 
   static *ownKeys(prototype) {
@@ -89,6 +89,13 @@ export class Prototype {
     return Object.getOwnPropertyDescriptor(prototype, key)
   }
 
+  static findDescriptor(prototype, key, { context } = { }) {
+    const result = findFirstDescriptor(prototype, key)
+    if (!result) return null
+    
+    return context ? result : result.descriptor
+  }
+
   static *ownDescriptors(prototype, { 
     map = (host, key, descriptor) => descriptor,
     filter = (host, key, descriptor) => true,
@@ -103,7 +110,7 @@ export class Prototype {
     }
   }  
 
-  static *getDescriptor(prototype, key, { 
+  static *findDescriptors(prototype, key, {
     reverseHierarchy,
     map = (host, key, descriptor) => descriptor,
     filter = (host, key, descriptor) => true,
@@ -196,9 +203,17 @@ export class Prototype {
     yield *values(descriptors, instance)
   }
 
-  static *getValue(prototype, name, { 
+  static findValue(prototype, key, { instance, context } = { }) {
+    const { descriptor, host } = findFirstDescriptor(prototype, key) || { }
+    if (!descriptor) return null
+
+    const { value, type } = Descriptor.getValue(descriptor, instance)
+    return context ? { value, type, host } : value
+  }
+
+  static *findValues(prototype, key, {
     instance, reverseHierarchy, filter } = { }) {
-    const descriptors = Prototype.getDescriptor(prototype, name, { 
+    const descriptors = Prototype.findDescriptors(prototype, key, {
       filter, reverseHierarchy })
     yield* values(descriptors, instance)
   }
@@ -209,6 +224,26 @@ export class Prototype {
       includeOverridden, reverseHierarchy })
     yield *values(descriptors, instance)
   }
+}
+
+function findFirstDescriptor(prototype, key) {
+  let host
+
+  for (const current of Prototype.findDescriptors(prototype, key)) {
+    switch (typeof current) {
+      case 'function':
+        host = current
+        break
+
+      case 'object':
+        return { host, descriptor: current }
+
+      default:
+        assert(false, `Unexpected type: ${typeof current}`)
+    }
+  }
+
+  return null
 }
 
 function *values(descriptors, instance) {

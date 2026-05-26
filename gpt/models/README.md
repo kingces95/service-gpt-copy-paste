@@ -4,6 +4,13 @@ Models are simplified views of code that make one axis inspectable. They are
 durable when the view exposes asymmetry, vocabulary pressure, or a design rule
 worth preserving.
 
+## Model Types
+
+[Model Types](model-types.md) records reusable model shapes:
+
+- [Chipping Model](model-types.md#chipping-model): repeated binary pivots that add width.
+- [Factor Model](model-types.md#factor-model): select-many factor rows pivoted by factor.
+
 ## Container Parts
 
 [Container Part Model](container-part.model.md) records the current
@@ -47,3 +54,13 @@ STL-inspired container surface through a set of pivots:
 [Container Part Indexes Generator](container-part-indexes.generator.md) records
 the data and script used to regenerate the `Members`, `Member Index`, and
 `Lexeme Index` column grids.
+
+## Prototype
+
+[Prototype Protocol Model](prototype.model.md) records Prototype reflection
+surface pivots:
+
+- [Member Role](prototype.model.md#member-role): Prototype members pivoted by fuzzy behavior role.
+- [Option Name](prototype.model.md#option-name): Prototype members pivoted by option name.
+- [Shared Option Type](prototype.model.md#shared-option-type): shared Prototype options chip-pivoted by option type.
+- [Member Lexeme](prototype.model.md#member-lexeme): Prototype members pivoted by shared name lexeme with singleton lexemes retained as Remainder.

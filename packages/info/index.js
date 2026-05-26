@@ -86,16 +86,9 @@ export class TypeInfo {
   getMember(key, { isStatic } = { }) {
     const host = this
     const fn = this.ctor
-    let owner, descriptor
 
-    found:
-    for (const current of PartialReflect.getDescriptor(fn, key, { isStatic })) {
-      switch (typeof current) {
-        case 'function': owner = current; break
-        case 'object': descriptor = current; break found
-        default: assert(false, `Unexpected type: ${typeof current}`)
-      }
-    }
+    const { host: owner, descriptor } =
+      PartialReflect.findDescriptor(fn, key, { isStatic, context: true }) || { }
     if (!descriptor) return null
     return MemberInfo.create$(host, owner, key, descriptor, { isStatic })
   }

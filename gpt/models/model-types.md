@@ -1,6 +1,6 @@
-# Reports
+# Model Types
 
-Reports are generated views expressed as:
+Model types describe how a set is transformed into rows, pivoted, and displayed.
 
 ```txt
 set
@@ -9,12 +9,12 @@ set
       └─ display pivot
 ```
 
-A report is useful when the transform is explicit enough that another assistant
-can regenerate it and compare the output after the code changes.
+A model type is useful when the transform is explicit enough that another
+assistant can regenerate it and compare the output after the code changes.
 
-## Chipping Report
+## Chipping Model
 
-A chipping report partitions a set by repeatedly removing one named subset from
+Chipping partitions a set by repeatedly removing one named subset from
 the current remainder. Each chip is a binary pivot. During design, it is often
 useful to view the process as nested subset/remainder splits. In the published
 report, those splits flatten into one partition. The visual effect on the report
@@ -126,9 +126,9 @@ Models
    └─ Argument Role
 ```
 
-## Factor Report
+## Factor Model
 
-A factor report expands each element into one row per factor, then pivots the
+A factor model expands each element into one row per factor, then pivots the
 rows by factor. The report is exact when the factorization rule is mechanical
 and applied across the whole set.
 
