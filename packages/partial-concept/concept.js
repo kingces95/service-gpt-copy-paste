@@ -2,8 +2,10 @@ import { assert } from '@kingjs/assert'
 import { abstractify } from '@kingjs/abstract'
 import { PartialType } from '@kingjs/partial-type'
 import { Attachments } from '@kingjs/partial-attachments'
-import { satisfiesAssociations } from '@kingjs/partial-metadata'
-import { PartialReflect } from '@kingjs/partial-reflect'
+import {
+  PartialMetadata,
+  PartialReflect,
+} from '@kingjs/partial-reflect'
 import { 
   Adjacent,
   Defines, 
@@ -14,6 +16,21 @@ import {
 } from '@kingjs/partial-symbols'
 
 export { Defines, DependsOn, Implements } from '@kingjs/partial-symbols'
+
+// Associated partial types allow concepts to check concept-valued static
+// metadata without needing an instance of the associated type.
+function satisfiesAssociations(ctor, partialType) {
+  for (const { value: associatedPartialType, key } of PartialMetadata.values(
+    partialType, { extensionOf: PartialType, includeOverridden: true })) {
+
+    const associatedType = ctor[key]
+    if (!(typeof associatedType == 'function'))
+      return false
+
+    return PartialReflect.isComposedOf(associatedType, associatedPartialType)
+  }
+  return true
+}
 
 export class Concept extends PartialType {
   static [Adjacent] = {

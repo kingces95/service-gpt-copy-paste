@@ -31,6 +31,7 @@ Contents
 
 - [Signature Shape](#signature-shape): members pivoted by exact parameter shape.
 - [Default Arguments](#default-arguments): members with defaults pivoted by declaration Part.
+- [Argument Transforms](#argument-transforms): members with runtime argument transforms pivoted by local implementation site.
 - [Argument Order](#argument-order): members pivoted by STL argument order basis.
 - [Argument Role](#argument-role): members pivoted by fuzzy argument role.
 
@@ -498,8 +499,6 @@ Abstract
    └─ closeGap$(first, last)
 
 Remainder
-├─ ContainerPart
-│  └─ sourceRange$(range)
 └─ BulkAssignableContainerPart
    └─ defaultValue$
 ```
@@ -687,6 +686,43 @@ BulkAssignableContainerPart
 
 BulkEditableContainerPart
 └─ insertValue(cursor = this.begin(), value)
+```
+
+### Argument Transforms
+
+```txt
+Argument Transforms
+├─ set: public container members with transformed arguments
+├─ transform: member -> (family, host, member, transformed slot)
+├─ pivot: family, host, member
+└─ display: member signatures with transformed slots marked
+```
+
+```txt
+Argument Transforms
+
+ContainerPart
+├─ BulkEditableContainerPart
+│  └─ replaceRange(first, last, replacementRange*)
+├─ GapAssignableContainerPart
+│  └─ assignRange(range*)
+├─ GapEditableContainerPart
+│  └─ insertRange(cursor, range*)
+└─ PhasedBulkContainerPart
+   └─ replaceRangeAfter(first, last, replacementRange*)
+
+Container
+├─ Deque
+│  ├─ assignRange(range*)
+│  └─ insertRange(cursor, range*)
+├─ ForwardList
+│  ├─ assignRange(range*)
+│  └─ insertRangeAfter(cursor, range*)
+├─ List
+│  ├─ assignRange(range*)
+│  └─ insertRangeAfter(cursor, range*)
+└─ Vector
+   └─ insertRange(cursor, range*)
 ```
 
 ### Argument Order

@@ -14,8 +14,11 @@ import {
   Postconditions,
   PartialProxy,
 } from '@kingjs/partial-proxy'
-import { getConditionsMetadata } from '@kingjs/partial-metadata'
-import { defaultTo } from '@kingjs/function-contract'
+import {
+  getConditions,
+  getMemberDefaults,
+} from '@kingjs/partial-reflect'
+import { defaultTo } from '@kingjs/function-args'
 
 // -- Type Conditions --
 
@@ -185,31 +188,27 @@ const TypeWithoutConditions = {
 const AbstractType = {
   type: MyAbstractType,
   conditions: {
-    conditions: {
-      typePrecondition: [myTypePrecondition],
-      typePostcondition: [myTypePostcondition],
-      precondition: [myPrecondition],
-      postcondition: [myPostcondition],
-    },
+    typePrecondition: [myTypePrecondition],
+    typePostcondition: [myTypePostcondition],
+    precondition: [myPrecondition],
+    postcondition: [myPostcondition],
   },
 }
 
 const Type = {
   type: MyType,
   conditions: {
-    conditions: {
-      typePrecondition: [
-        expect.any(Function),
-        myTypePrecondition,
-      ],
-      typePostcondition: [myTypePostcondition],
-      precondition: [
-        expect.any(Function),
-        expect.any(Function),
-        myPrecondition,
-      ],
-      postcondition: [myPostcondition],
-    },
+    typePrecondition: [
+      expect.any(Function),
+      myTypePrecondition,
+    ],
+    typePostcondition: [myTypePostcondition],
+    precondition: [
+      expect.any(Function),
+      expect.any(Function),
+      myPrecondition,
+    ],
+    postcondition: [myPostcondition],
   },
   calls: [
     'MyType:typeCheck',
@@ -228,24 +227,22 @@ const Type = {
 const ExtendedType = {
   type: MyExtendedType,
   conditions: {
-    conditions: {
-      typePrecondition: [
-        expect.any(Function),
-        expect.any(Function),
-        myTypePrecondition,
-        myExtendedTypePrecondition,
-      ],
-      typePostcondition: [myTypePostcondition, myExtendedTypePostcondition],
-      precondition: [
-        expect.any(Function),
-        expect.any(Function),
-        expect.any(Function),
-        expect.any(Function),
-        myPrecondition,
-        myExtendedPrecondition,
-      ],
-      postcondition: [myPostcondition, myExtendedPostcondition],
-    },
+    typePrecondition: [
+      expect.any(Function),
+      expect.any(Function),
+      myTypePrecondition,
+      myExtendedTypePrecondition,
+    ],
+    typePostcondition: [myTypePostcondition, myExtendedTypePostcondition],
+    precondition: [
+      expect.any(Function),
+      expect.any(Function),
+      expect.any(Function),
+      expect.any(Function),
+      myPrecondition,
+      myExtendedPrecondition,
+    ],
+    postcondition: [myPostcondition, myExtendedPostcondition],
   },
   calls: [
     'MyType:typeCheck',
@@ -271,12 +268,10 @@ const ExtendedType = {
 const TypeWithPreconditionList = {
   type: MyTypeWithPreconditionList,
   conditions: {
-    conditions: {
-      precondition: [
-        myPrecondition,
-        myOtherPrecondition,
-      ],
-    },
+    precondition: [
+      myPrecondition,
+      myOtherPrecondition,
+    ],
   },
   calls: [
     'MyType:precondition',
@@ -287,17 +282,15 @@ const TypeWithPreconditionList = {
 
 const TypeWithDefaults = {
   type: MyTypeWithDefaults,
+  defaults: [
+    undefined,
+    expect.any(Object),
+  ],
   conditions: {
-    defaults: [
-      undefined,
-      expect.any(Object),
+    precondition: [
+      expect.any(Function),
+      expect.any(Function),
     ],
-    conditions: {
-      precondition: [
-        expect.any(Function),
-        expect.any(Function),
-      ],
-    },
   },
   calls: [
     'MyType:firstArgCheck',
@@ -320,7 +313,7 @@ const Tests = [
 // -- Tests --
 
 describe.each(Tests)('%s', 
-  (_, { type, conditions, calls, args }) => {
+  (_, { type, conditions, defaults, calls, args }) => {
 
   let thunk
   let instance
@@ -332,9 +325,13 @@ describe.each(Tests)('%s',
   })
 
   it('should have the correct type conditions', () => {
-    const actual = getConditionsMetadata(type, 'member')
+    const actual = getConditions(type, 'member')
     expect(actual).toEqual(conditions)
   })  
+  it('should have the correct defaults', () => {
+    const actual = getMemberDefaults(type, 'member')
+    expect(actual).toEqual(defaults)
+  })
   it('should execute the correct conditions in the correct order', () => {
     if (!calls) return
 

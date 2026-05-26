@@ -1,4 +1,5 @@
 import { assert } from '@kingjs/assert'
+import { contract } from '@kingjs/function-contract'
 import { implement } from '@kingjs/partial-implement'
 import { extend } from '@kingjs/partial-extend'
 import { ForwardList } from './forward-list.js'
@@ -12,6 +13,7 @@ import {
   BulkAssignableContainerPart,
   PhasedContainerPart,
   PhasedBulkContainerPart,
+  sourceRange,
 } from '../container-parts.js'
 import { iterate, next } from '@kingjs/cursor-algorithm'
 import {
@@ -107,21 +109,23 @@ export class List extends ForwardList {
         return this
       },
 
-      assignRange(range) {
-        range = this.sourceRange$(range)
-
+      assignRange: contract({
+        transforms: [sourceRange],
+      },
+      function assignRange(range) {
         this.clear()
         for (const value of iterate(range))
           this.pushBack(value)
 
         return this
-      },
+      }),
     })
 
     extend(this, PhasedBulkContainerPart, {
-      insertRangeAfter(cursor, range) {
-        range = this.sourceRange$(range)
-
+      insertRangeAfter: contract({
+        transforms: [null, sourceRange],
+      },
+      function insertRangeAfter(cursor, range) {
         const tail = cursor.clone()
         for (const value of iterate(range)) {
           tail.link = tail.link.insertAfter(value)
@@ -129,7 +133,7 @@ export class List extends ForwardList {
         }
 
         return this
-      },
+      }),
 
     })
 

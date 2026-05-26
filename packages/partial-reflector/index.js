@@ -8,6 +8,8 @@ import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { Es6Reflector } from '@kingjs/es6-reflector'
 import { Es6Prototype } from '@kingjs/es6-prototype'
 import { PartialType } from '@kingjs/partial-type'
+import { createPartialMetadata } from '@kingjs/partial-metadata'
+import { thunk as createThunk } from '@kingjs/function-contract'
 import { 
   Compile,
   Adjacent,
@@ -780,6 +782,24 @@ export function create({
     }
   })
 
+  const metadata = createPartialMetadata(PartialReflect)
+
+  function transformDescriptor(type, key, descriptor) {
+    if (isAbstract(descriptor))
+      return descriptor
+
+    const transforms = metadata.getOwnMemberTransforms(type, key)
+    if (!transforms || !descriptor.value)
+      return descriptor
+
+    const defaults = metadata.getMemberDefaults(type, key)
+
+    return {
+      ...descriptor,
+      value: createThunk({ defaults, transforms }, descriptor.value),
+    }
+  }
+
   function copyTo(partialType, type) {
     assert(typeof type === 'function',
       'Argument must be a type.')
@@ -790,9 +810,15 @@ export function create({
     const isPartialType = PartialType.isUserDefined(type)
     const prototype = type.prototype
     PartialReflect.copyTo(partialType, prototype, {
-      createThunk: (key, descriptor) => CreateThunk in type 
-        ? type[CreateThunk](key, descriptor) 
-        : descriptor,
+      createThunk: (key, descriptor, host) => {
+        descriptor = transformDescriptor(host, key, descriptor)
+
+        descriptor = CreateThunk in type 
+          ? type[CreateThunk](key, descriptor) 
+          : descriptor
+
+        return descriptor
+      },
       includeOverridden: true,
       reverseHierarchy: true,
 
@@ -814,5 +840,5 @@ export function create({
     })
   }
   
-  return { PartialReflect, copyTo }
+  return { PartialReflect, copyTo, ...metadata }
 }

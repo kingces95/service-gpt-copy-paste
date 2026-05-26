@@ -1,4 +1,5 @@
 import Denque from "denque"
+import { contract } from '@kingjs/function-contract'
 import { implement } from '@kingjs/partial-implement'
 import { extend } from '@kingjs/partial-extend'
 import { PartialProxy } from '@kingjs/partial-proxy'
@@ -14,6 +15,7 @@ import {
   IndexableContainerPart,
   BulkAssignableContainerPart,
   BulkEditableContainerPart,
+  sourceRange,
 } from '../container-parts.js'
 import { 
   IndexableCursor 
@@ -59,19 +61,23 @@ export class Deque extends PartialProxy {
         return this
       },
 
-      assignRange(range) {
-        range = this.sourceRange$(range)
-
+      assignRange: contract({
+        transforms: [sourceRange],
+      },
+      function assignRange(range) {
         this.clear()
         return this.insertRange(this.begin(), range)
-      },
+      }),
     })
 
     extend(this, BulkEditableContainerPart, {
-      insertRange(cursor, range) {
+      insertRange: contract({
+        transforms: [null, sourceRange],
+      },
+      function insertRange(cursor, range) {
         this._denque.splice(cursor.index, 0, ...iterate(range))
         return this
-      },
+      }),
 
       erase(first, last = next(first)) {
         const result = first.clone()

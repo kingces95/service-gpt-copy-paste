@@ -1,5 +1,10 @@
 import { isAbstract } from '@kingjs/abstract'
-import { getConditionsMetadata } from '@kingjs/partial-metadata'
+import {
+  getConditions,
+  getMemberDefaults,
+} from '@kingjs/partial-reflect'
+import { mapKeys } from '@kingjs/map-keys'
+import { trimPojo } from '@kingjs/pojo-trim'
 import { CreateThunk } from '@kingjs/partial-symbols'
 import { Es6ThunkFactory } from '@kingjs/es6-thunk'
 import { FunctionBuilder } from '@kingjs/function-builder'
@@ -10,6 +15,7 @@ export {
   ThisChecks,
   ArgChecks,
   Defaults,
+  Transforms,
   Preconditions,
   Postconditions,
   TypePrecondition,
@@ -17,13 +23,12 @@ export {
 } from '@kingjs/partial-symbols'
 
 const thunkFactory = new Es6ThunkFactory((type, key) => {
-  const metadata = getConditionsMetadata(type, key)
-  const { conditions } = metadata ?? { }
-
-  for (const key in conditions)
-    conditions[key] = FunctionBuilder.require(conditions[key])
-
-  return metadata
+  return trimPojo({
+    conditions: mapKeys(getConditions(type, key), FunctionBuilder.require),
+    defaults: getMemberDefaults(type, key),
+  }, {
+    sparseArray: true,
+  })
 })
 
 export class PartialProxy {

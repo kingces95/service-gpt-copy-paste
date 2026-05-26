@@ -1,5 +1,10 @@
 import { Defines, Abstracts, Extends } from '@kingjs/partial-class'
-import { ArgChecks, Defaults, Preconditions } from '@kingjs/partial-proxy'
+import {
+  ArgChecks,
+  Defaults,
+  Preconditions,
+  Transforms,
+} from '@kingjs/partial-proxy'
 import { PartialClass } from '@kingjs/partial-class'
 import { extend } from '@kingjs/partial-extend'
 import { implement } from '@kingjs/partial-implement'
@@ -11,7 +16,7 @@ import {
   repeat,
   single,
 } from '@kingjs/cursor-adapter'
-import { defaultTo } from '@kingjs/function-contract'
+import { defaultTo } from '@kingjs/function-args'
 import { snapshot } from '@kingjs/cursor-view'
 import {
   CloneableCursorConcept,
@@ -27,6 +32,17 @@ import {
 } from '@kingjs/cursor'
 import { Implements } from '@kingjs/partial-concept'
 import { NormalNumber } from './checks.js'
+
+export function sourceRange(range) {
+  if (!range?.begin)
+    return range
+
+  const first = range.begin()
+  if (first.range == this)
+    return snapshot(range)
+
+  return range
+}
 
 export class ContainerPart extends PartialClass {
   static {
@@ -65,14 +81,6 @@ export class ContainerPart extends PartialClass {
       this.ownCursorAssert$(last)
       this.firstThenLastAssert$(first, last)
     }
-  }
-
-  sourceRange$(range) {
-    const first = range.begin()
-    if (first.range == this)
-      return snapshot(range)
-
-    return range
   }
 
   get cursorType() { return this.constructor.cursorType }
@@ -320,6 +328,10 @@ export class BulkAssignableContainerPart extends ClearableContainerPart {
 }
 
 export class BulkEditableContainerPart extends EditableContainerPart {
+  static [Transforms] = {
+    replaceRange: [null, null, sourceRange],
+  }
+
   static [ArgChecks] = {
     insertRange: [CursorConcept, RangeConcept],
     insert: [CursorConcept, NormalNumber],
@@ -364,8 +376,6 @@ export class BulkEditableContainerPart extends EditableContainerPart {
     },
 
     replaceRange(first, last, replacementRange) {
-      replacementRange = this.sourceRange$(replacementRange)
-
       const cursor = this.erase(first, last)
       return this.insertRange(cursor, replacementRange)
     },
@@ -374,6 +384,10 @@ export class BulkEditableContainerPart extends EditableContainerPart {
 }
 
 export class PhasedBulkContainerPart extends PhasedContainerPart {
+  static [Transforms] = {
+    replaceRangeAfter: [null, null, sourceRange],
+  }
+
   static [ArgChecks] = {
     insertRangeAfter: [CursorConcept, RangeConcept],
     insertAfter: [CursorConcept, NormalNumber],
@@ -406,8 +420,6 @@ export class PhasedBulkContainerPart extends PhasedContainerPart {
     },
 
     replaceRangeAfter(first, last, replacementRange) {
-      replacementRange = this.sourceRange$(replacementRange)
-
       this.eraseAfter(first, last)
       return this.insertRangeAfter(first, replacementRange)
     },
@@ -416,14 +428,16 @@ export class PhasedBulkContainerPart extends PhasedContainerPart {
 
 export class GapEditableContainerPart extends BulkEditableContainerPart {
   static [Implements] = SizedContainerPart
+  static [Transforms] = {
+    insertRange: [null, sourceRange],
+  }
+
   static [Abstracts] = {
     openGap$(cursor, count) { },
     closeGap$(first, last) { },
   }
 
   insertRange(cursor, range) {
-    range = this.sourceRange$(range)
-
     const first = range.begin()
     const last = range.end()
     const count = first.distanceTo(last)
@@ -446,6 +460,10 @@ export class GapAssignableContainerPart extends GapEditableContainerPart {
     BulkAssignableContainerPart,
   ]
 
+  static [Transforms] = {
+    assignRange: [sourceRange],
+  }
+
   resize(count, value = this.defaultValue$) {
     if (count < this.size) {
       const first = this.begin().move(count)
@@ -461,8 +479,6 @@ export class GapAssignableContainerPart extends GapEditableContainerPart {
   }
 
   assignRange(range) {
-    range = this.sourceRange$(range)
-
     this.clear()
     return this.insertRange(this.begin(), range)
   }

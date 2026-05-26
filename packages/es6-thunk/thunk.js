@@ -1,7 +1,7 @@
 import { Es6Compiler } from '@kingjs/es6-compiler'
 import { trimPojo } from '@kingjs/pojo-trim'
 import { Es6Descriptor } from '@kingjs/es6-descriptor'
-import { applyDefaults } from '@kingjs/function-contract'
+import { applyDefaults } from '@kingjs/function-args'
 
 import { decorate } from './decorate.js'
 

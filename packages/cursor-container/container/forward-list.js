@@ -1,4 +1,5 @@
 import { assert } from '@kingjs/assert'
+import { contract } from '@kingjs/function-contract'
 import { extend } from '@kingjs/partial-extend'
 import { implement } from '@kingjs/partial-implement'
 import { PartialProxy, ArgChecks } from '@kingjs/partial-proxy'
@@ -22,6 +23,7 @@ import {
   PhasedContainerPart,
   PhasedBulkContainerPart,
   FrontInsertableContainerPart,
+  sourceRange,
 } from '../container-parts.js'
 import { iterate, next } from '@kingjs/cursor-algorithm'
 import {
@@ -162,9 +164,10 @@ export class ForwardList extends PartialProxy {
         return this
       },
 
-      assignRange(range) {
-        range = this.sourceRange$(range)
-
+      assignRange: contract({
+        transforms: [sourceRange],
+      },
+      function assignRange(range) {
         this.clear()
         let tail = this.beforeBegin()
         for (const value of iterate(range)) {
@@ -172,19 +175,20 @@ export class ForwardList extends PartialProxy {
         }
 
         return this
-      },
+      }),
     })
 
     extend(this, PhasedBulkContainerPart, {
-      insertRangeAfter(cursor, range) {
-        range = this.sourceRange$(range)
-
+      insertRangeAfter: contract({
+        transforms: [null, sourceRange],
+      },
+      function insertRangeAfter(cursor, range) {
         const tail = cursor.clone()
         for (const value of iterate(range))
           tail.link = tail.link.insertAfter(value)
 
         return this
-      },
+      }),
 
     })
 

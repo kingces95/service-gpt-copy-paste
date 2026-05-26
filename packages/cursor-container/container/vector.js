@@ -2,6 +2,7 @@ import { implement } from '@kingjs/partial-implement'
 import { Lazy } from '@kingjs/lazy'
 import { extend } from '@kingjs/partial-extend'
 import { PartialProxy } from '@kingjs/partial-proxy'
+import { contract } from '@kingjs/function-contract'
 import {
   copy,
   copyBackward,
@@ -24,6 +25,7 @@ import {
   ReservableContainerPart,
   ByteContainerPart,
   GapAssignableContainerPart,
+  sourceRange,
 } from '../container-parts.js'
 
 export class Vector extends PartialProxy {
@@ -63,9 +65,10 @@ export class Vector extends PartialProxy {
     extend(this, GapAssignableContainerPart, {
       get defaultValue$() { return 0 },
 
-      insertRange(cursor, range) {
-        range = this.sourceRange$(range)
-
+      insertRange: contract({
+        transforms: [null, sourceRange],
+      },
+      function insertRange(cursor, range) {
         let first = range.begin()
         let last = range.end()
 
@@ -80,7 +83,7 @@ export class Vector extends PartialProxy {
         this.openGap$(cursor, count)
         copy(cursor, range)
         return this
-      },
+      }),
 
       openGap$(cursor, count) {
         const oldEnd = this.end()

@@ -3,6 +3,7 @@ import {
   contract,
   defaultTo,
   overload,
+  thunk,
 } from '@kingjs/function-contract'
 
 class Positive {
@@ -21,7 +22,29 @@ class LessThanTen {
 
 class Thing { }
 
+class StringValue {
+  static [Symbol.hasInstance](value) {
+    return typeof value == 'string'
+  }
+}
+
 describe('contract', () => {
+  it('should thunk defaults before transforms', () => {
+    function identity(value) { return value }
+    const normalize = thunk({
+      defaults: [
+        'thing',
+      ],
+      transforms: [
+        function(value) { return this[value] },
+      ],
+    },
+    identity)
+    const context = { thing: new Thing() }
+
+    expect(normalize.call(context)).toBe(context.thing)
+  })
+
   it('should run instanceof checks', () => {
     function increment(value) { return value + 1 }
     const checkedIncrement = contract([[Positive]], increment)
@@ -125,6 +148,51 @@ describe('contract', () => {
     identity)
 
     expect(checkedIdentity()).toBe(defaultFn)
+  })
+
+  it('should accept defaults in metadata', () => {
+    function identity(value) { return value }
+    const checkedIdentity = contract([
+      Thing,
+    ], {
+      defaults: [
+        defaultTo(({ self }) => self.thing),
+      ],
+    },
+    identity)
+    const context = { thing: new Thing() }
+
+    expect(checkedIdentity.call(context)).toBe(context.thing)
+  })
+
+  it('should apply checks before function-boundary transforms', () => {
+    function identity(value) { return value }
+    const checkedIdentity = contract([
+      StringValue,
+    ], {
+      defaults: [
+        'thing',
+      ],
+      transforms: [
+        function(value) { return this[value] },
+      ],
+    },
+    identity)
+    const context = { thing: new Thing() }
+
+    expect(checkedIdentity.call(context)).toBe(context.thing)
+  })
+
+  it('should accept metadata without requirements', () => {
+    function identity(value) { return value }
+    const checkedIdentity = contract({
+      transforms: [
+        value => value + 1,
+      ],
+    },
+    identity)
+
+    expect(checkedIdentity(1)).toBe(2)
   })
 
   it('should dispatch to the first matching overload', () => {

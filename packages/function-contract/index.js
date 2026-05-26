@@ -1,17 +1,42 @@
 import { assert } from '@kingjs/assert'
 import { asArray } from '@kingjs/as-array'
+import {
+  applyDefaults,
+  applyTransforms,
+  defaultTo,
+} from '@kingjs/function-args'
 
 export { Preconditions } from '@kingjs/partial-symbols'
+export { applyDefaults, applyTransforms, defaultTo } from '@kingjs/function-args'
 
-const DefaultFactory = Symbol('FunctionContract.DefaultFactory')
-
-export function defaultTo(factory) {
-  assert(typeof factory == 'function',
-    'Function contract default factory must be a function.')
-
-  return {
-    [DefaultFactory]: factory,
+export function thunk(metadata, fn) {
+  if (typeof metadata == 'function') {
+    fn = metadata
+    metadata = null
   }
+
+  if (!fn)
+    fn = () => { }
+
+  assert(typeof fn == 'function',
+    'Argument must be a function.')
+
+  metadata = normalizeMetadata(metadata)
+  const defaults = normalizeDefaults(metadata.defaults)
+  const transforms = normalizeTransforms(metadata.transforms)
+
+  const result = function(...args) {
+    args = applyDefaults(args, defaults, this)
+    args = applyTransforms(args, transforms, this)
+    return fn.apply(this, args)
+  }
+
+  Object.defineProperty(result, 'name', {
+    value: fn.name,
+    configurable: true,
+  })
+
+  return result
 }
 
 export function contract(requirements, defaults, fn) {
@@ -19,6 +44,12 @@ export function contract(requirements, defaults, fn) {
     fn = requirements
     requirements = null
     defaults = null
+  }
+
+  else if (isMetadata(requirements)) {
+    fn = defaults
+    defaults = requirements
+    requirements = null
   }
 
   else if (typeof defaults == 'function') {
@@ -32,21 +63,40 @@ export function contract(requirements, defaults, fn) {
   assert(typeof fn == 'function',
     'Argument must be a function.')
 
+  const metadata = normalizeMetadata(defaults)
   requirements = normalizeRequirements(requirements)
-  defaults = normalizeDefaults(defaults)
+  defaults = normalizeDefaults(metadata.defaults)
+  const target = thunk(metadata, fn)
 
-  const thunk = function(...args) {
+  const result = function(...args) {
     args = applyDefaults(args, defaults, this)
     checkSlots(requirements, args)
-    return fn.apply(this, args)
+    return target.apply(this, args)
   }
 
-  Object.defineProperty(thunk, 'name', {
+  Object.defineProperty(result, 'name', {
     value: fn.name,
     configurable: true,
   })
 
-  return thunk
+  return result
+}
+
+function normalizeMetadata(metadata) {
+  if (metadata == null)
+    return { }
+
+  if (Array.isArray(metadata))
+    return { defaults: metadata }
+
+  assert(typeof metadata == 'object',
+    'Function contract metadata must be an object.')
+
+  return metadata
+}
+
+function isMetadata(value) {
+  return value && typeof value == 'object' && !Array.isArray(value)
 }
 
 export function overload(requirements, defaults, overloads, fn) {
@@ -118,6 +168,16 @@ function normalizeDefaults(defaults) {
   return defaults
 }
 
+function normalizeTransforms(transforms) {
+  if (transforms == null)
+    return null
+
+  assert(Array.isArray(transforms),
+    'Function contract transforms must be an array.')
+
+  return transforms
+}
+
 function matches(types, values) {
   if (types == null)
     return true
@@ -142,32 +202,6 @@ function matchesSlot(type, value) {
   }
 
   return value instanceof type
-}
-
-export function applyDefaults(args, defaults, self) {
-  if (defaults == null)
-    return args
-
-  args = [...args]
-
-  for (let i = 0; i < defaults.length; i++) {
-    if (args[i] !== undefined)
-      continue
-
-    if (defaults[i] === undefined)
-      continue
-
-    const current = defaults[i]
-    args[i] = isDefaultFactory(current)
-      ? current[DefaultFactory]({ self, args, index: i })
-      : current
-  }
-
-  return args
-}
-
-function isDefaultFactory(value) {
-  return value && typeof value == 'object' && DefaultFactory in value
 }
 
 function checkSlots(types, values) {

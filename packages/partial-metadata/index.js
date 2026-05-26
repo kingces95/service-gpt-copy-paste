@@ -1,7 +1,6 @@
 import { assert } from '@kingjs/assert'
 import { trimPojo } from '@kingjs/pojo-trim'
 import { Prototype } from '@kingjs/prototype'
-import { PartialReflect } from '@kingjs/partial-reflect'
 import { PartialType } from '@kingjs/partial-type'
 import { contract } from '@kingjs/function-contract'
 import { asIterable } from '@kingjs/as-iterable'
@@ -12,6 +11,7 @@ import {
   ThisChecks,
   ArgChecks,
   Defaults,
+  Transforms,
   TypePrecondition,
   TypePostcondition,
 
@@ -108,61 +108,43 @@ import {
 // Querying the metadata chain for MyContainer would hence find the static
 // cursorType on MyPartialContainer.
 
-export const PartialMetadata = PartialReflect.map({
-  knownKeys: [ 'constructor' ],
-  getPrototype: function(type) {
-    const hierarchy = [...this.hierarchy(type)]
+export function createPartialMetadata(PartialReflect) {
+  const PartialMetadata = PartialReflect.map({
+    knownKeys: [ 'constructor' ],
+    getPrototype: function(type) {
+      const hierarchy = [...this.hierarchy(type)]
 
-    // reverse because prototype chains are created from the bottome up
-    // by Prototype.create but hierarchy is returned from the top down.
-    return hierarchy.reverse().reduce((prototype, currentType) => {
-      const descriptors = { }
+      // reverse because prototype chains are created from the bottome up
+      // by Prototype.create but hierarchy is returned from the top down.
+      return hierarchy.reverse().reduce((prototype, currentType) => {
+        const descriptors = { }
 
-      let key
-      const options = { isStatic: true, descriptorType: 'field' }
-      for (const current of this.ownDescriptors(currentType, options)) {
-        assert(typeof current == 'object'
-          || typeof current == 'string'
-          || typeof current == 'symbol',
-          `Unexpected type: ${typeof current}`)
+        let key
+        const options = { isStatic: true, descriptorType: 'field' }
+        for (const current of this.ownDescriptors(currentType, options)) {
+          assert(typeof current == 'object'
+            || typeof current == 'string'
+            || typeof current == 'symbol',
+            `Unexpected type: ${typeof current}`)
 
-        switch (typeof current) {
-          case 'string':
-          case 'symbol':
-            key = current
-            break
-          case 'object':
-            descriptors[key] = current
-            break
+          switch (typeof current) {
+            case 'string':
+            case 'symbol':
+              key = current
+              break
+            case 'object':
+              descriptors[key] = current
+              break
+          }
         }
-      }
 
-      return Prototype.create(currentType, prototype, descriptors)
-    }, null)
-  }
-})
+        return Prototype.create(currentType, prototype, descriptors)
+      }, null)
+    }
+  })
 
-// ____________________________________________________________________________
-// ASSOCIATED PARTIAL TYPES
-
-// Associated partial types allow for testing if assoicated metadata of
-// an instance satisfies associated metadata of a PartialType.
-
-export function satisfiesAssociations(ctor, partialType) {
-  for (const { value: associatedPartialType, key } of PartialMetadata.values(
-    partialType, { extensionOf: PartialType, includeOverridden: true })) {
-
-    const associatedType = ctor[key]
-    if (!(typeof associatedType == 'function'))
-      return false
-
-    return PartialReflect.isComposedOf(associatedType, associatedPartialType)
-  }
-  return true
-}
-
-// ____________________________________________________________________________
-// PRECONDITIONS AND POSTCONDITIONS
+  // __________________________________________________________________________
+  // PRECONDITIONS AND POSTCONDITIONS
 
 // PartialPreconditions supports preconditions which is a prototype chains of
 // the function descriptors of a type found by traversing the type hierarchy of
@@ -214,165 +196,182 @@ export function satisfiesAssociations(ctor, partialType) {
 // similarly defined and useful for quering metadata defined use their
 // respective symbols.
 
-function partialReflectOnMetaObject(symbol) {
-  return PartialMetadata.map({
-    knownKeys: [ 'constructor' ],
-    getPrototype: function(type) {
-      const values = [...this.getValue(type, symbol)].reverse()
+  function partialReflectOnMetaObject(symbol) {
+    return PartialMetadata.map({
+      knownKeys: [ 'constructor' ],
+      getPrototype: function(type) {
+        const values = [...this.getValue(type, symbol)].reverse()
 
-      return values.reduce((prototype, { host, value }) => {
-        const descriptors = Object.getOwnPropertyDescriptors(value)
-        return Prototype.create(host, prototype, descriptors)
-      }, null) ?? Prototype.create(type)
+        return values.reduce((prototype, { host, value }) => {
+          const descriptors = Object.getOwnPropertyDescriptors(value)
+          return Prototype.create(host, prototype, descriptors)
+        }, null) ?? Prototype.create(type)
+      }
+    })
+  }
+
+  const PartialPreconditions
+    = partialReflectOnMetaObject(Preconditions)
+
+  const PartialPostconditions
+    = partialReflectOnMetaObject(Postconditions)
+
+  const PartialThisChecks
+    = partialReflectOnMetaObject(ThisChecks)
+
+  const PartialArgChecks
+    = partialReflectOnMetaObject(ArgChecks)
+
+  const PartialDefaults
+    = partialReflectOnMetaObject(Defaults)
+
+  const PartialTransforms
+    = partialReflectOnMetaObject(Transforms)
+
+  function getTypeConditions(type, symbol) {
+    return [...PartialMetadata.getValue(type, symbol, {
+      includeOverridden: true,
+      reverseHierarchy: true,
+      descriptorType: 'field',
+      instanceOf: Function,
+    }).map(({ value }) => value)]
+  }
+
+  function getTypeChecks(type) {
+    return [...PartialMetadata.getValue(type, TypeChecks, {
+      includeOverridden: true,
+      reverseHierarchy: true,
+      descriptorType: 'field',
+    }).map(({ value }) => value)]
+  }
+
+  function getMemberConditions(reflect, type, key) {
+    const result = {
+      value: [],
+      get: [],
+      set: [],
     }
-  })
-}
 
-export const PartialPreconditions
-  = partialReflectOnMetaObject(Preconditions)
-
-export const PartialPostconditions
-  = partialReflectOnMetaObject(Postconditions)
-
-export const PartialThisChecks
-  = partialReflectOnMetaObject(ThisChecks)
-
-export const PartialArgChecks
-  = partialReflectOnMetaObject(ArgChecks)
-
-export const PartialDefaults
-  = partialReflectOnMetaObject(Defaults)
-
-function getTypeConditions(type, symbol) {
-  return [...PartialMetadata.getValue(type, symbol, {
-    includeOverridden: true,
-    reverseHierarchy: true,
-    descriptorType: 'field',
-    instanceOf: Function,
-  }).map(({ value }) => value)]
-}
-
-function getTypeChecks(type) {
-  return [...PartialMetadata.getValue(type, TypeChecks, {
-    includeOverridden: true,
-    reverseHierarchy: true,
-    descriptorType: 'field',
-  }).map(({ value }) => value)]
-}
-
-function getMemberConditions(reflect, type, key) {
-  const result = {
-    value: [],
-    get: [],
-    set: [],
-  }
-
-  for (const current of reflect.getDescriptor(type, key, {
-    reverseHierarchy: true,
-  })) {
-    switch (typeof current) {
-      case 'function': break
-      case 'object':
-        const { get, set, value } = current
-        if (get) result.get.push(...asIterable(get))
-        if (set) result.set.push(...asIterable(set))
-        if (value) result.value.push(...asIterable(value))
-        break
-      default:
-        assert(false, 'Unexpected type: ' + typeof current)
+    for (const current of reflect.getDescriptor(type, key, {
+      reverseHierarchy: true,
+    })) {
+      switch (typeof current) {
+        case 'function': break
+        case 'object':
+          const { get, set, value } = current
+          if (get) result.get.push(...asIterable(get))
+          if (set) result.set.push(...asIterable(set))
+          if (value) result.value.push(...asIterable(value))
+          break
+        default:
+          assert(false, 'Unexpected type: ' + typeof current)
+      }
     }
+
+    return result
   }
 
-  return result
-}
-
-function getMemberChecks(reflect, type, key) {
-  const result = {
-    value: [],
-    get: [],
-    set: [],
-  }
-
-  for (const current of reflect.getDescriptor(type, key, {
-    reverseHierarchy: true,
-  })) {
-    switch (typeof current) {
-      case 'function': break
-      case 'object':
-        if (current.get)
-          result.get.push(current.get())
-        if (current.set)
-          result.set.push(current.set())
-        if ('value' in current)
-          result.value.push(current.value)
-        break
-      default:
-        assert(false, 'Unexpected type: ' + typeof current)
+  function getMemberChecks(reflect, type, key) {
+    const result = {
+      value: [],
+      get: [],
+      set: [],
     }
+
+    for (const current of reflect.getDescriptor(type, key, {
+      reverseHierarchy: true,
+    })) {
+      switch (typeof current) {
+        case 'function': break
+        case 'object':
+          if (current.get)
+            result.get.push(current.get())
+          if (current.set)
+            result.set.push(current.set())
+          if ('value' in current)
+            result.value.push(current.value)
+          break
+        default:
+          assert(false, 'Unexpected type: ' + typeof current)
+      }
+    }
+
+    return result
   }
 
-  return result
-}
+  function createTypeCheck(requirements) {
+    const check = contract([requirements])
+    return function() { check(this) }
+  }
 
-function createTypeCheck(requirements) {
-  const check = contract([requirements])
-  return function() { check(this) }
-}
+  function createThisCheck(requirements) {
+    const check = contract([requirements])
+    return function() { check(this) }
+  }
 
-function createThisCheck(requirements) {
-  const check = contract([requirements])
-  return function() { check(this) }
-}
+  function createArgCheck(requirements, defaults) {
+    return contract(requirements, defaults)
+  }
 
-function createArgCheck(requirements, defaults) {
-  return contract(requirements, defaults)
-}
+  function getMemberDefaults(type, key) {
+    for (const { value } of PartialDefaults.getValue(type, key, {
+      descriptorType: 'field',
+    }))
+      return value
+  }
 
-function getMemberDefaults(type, key) {
-  for (const { value } of PartialDefaults.getValue(type, key, {
-    descriptorType: 'field',
-  }))
-    return value
-}
+  function getOwnMemberTransforms(type, key) {
+    return PartialTransforms.getOwnDescriptor(type, key, {
+      descriptorType: 'field',
+    })?.value
+  }
 
-export function getConditionsMetadata(type, key) {
-  const typeCheck = getTypeChecks(type)
-  const typePrecondition = getTypeConditions(type, TypePrecondition)
-  const typePostcondition = getTypeConditions(type, TypePostcondition)
-  const precondition = getMemberConditions(PartialPreconditions, type, key)
-  const postcondition = getMemberConditions(PartialPostconditions, type, key)
-  const thisCheck = getMemberChecks(PartialThisChecks, type, key)
-  const argCheck = getMemberChecks(PartialArgChecks, type, key)
-  const defaults = getMemberDefaults(type, key)
+  function getConditions(type, key) {
+    const typeCheck = getTypeChecks(type)
+    const typePrecondition = getTypeConditions(type, TypePrecondition)
+    const typePostcondition = getTypeConditions(type, TypePostcondition)
+    const precondition = getMemberConditions(PartialPreconditions, type, key)
+    const postcondition = getMemberConditions(PartialPostconditions, type, key)
+    const thisCheck = getMemberChecks(PartialThisChecks, type, key)
+    const argCheck = getMemberChecks(PartialArgChecks, type, key)
+    const defaults = getMemberDefaults(type, key)
 
-  const conditions = trimPojo({
-    typePrecondition: [
-      ...typeCheck.map(createTypeCheck),
-      ...typePrecondition,
-    ],
-    precondition: [
-      ...thisCheck.value.map(createThisCheck),
-      ...argCheck.value.map(value => createArgCheck(value, defaults)),
-      ...precondition.value,
-    ],
-    getPrecondition: [
-      ...thisCheck.get.map(createThisCheck),
-      ...precondition.get,
-    ],
-    setPrecondition: [
-      ...thisCheck.set.map(createThisCheck),
-      ...precondition.set,
-    ],
+    return trimPojo({
+      typePrecondition: [
+        ...typeCheck.map(createTypeCheck),
+        ...typePrecondition,
+      ],
+      precondition: [
+        ...thisCheck.value.map(createThisCheck),
+        ...argCheck.value.map(value => createArgCheck(value, defaults)),
+        ...precondition.value,
+      ],
+      getPrecondition: [
+        ...thisCheck.get.map(createThisCheck),
+        ...precondition.get,
+      ],
+      setPrecondition: [
+        ...thisCheck.set.map(createThisCheck),
+        ...precondition.set,
+      ],
 
-    typePostcondition,
-    postcondition: postcondition.value,
-    getPostcondition: postcondition.get,
-    setPostcondition: postcondition.set,
-  })
+      typePostcondition,
+      postcondition: postcondition.value,
+      getPostcondition: postcondition.get,
+      setPostcondition: postcondition.set,
+    })
+  }
 
-  const metadata = trimPojo({ conditions })
-  if (defaults)
-    return { ...metadata, defaults }
-
-  return metadata
+  return {
+    PartialMetadata,
+    PartialPreconditions,
+    PartialPostconditions,
+    PartialThisChecks,
+    PartialArgChecks,
+    PartialDefaults,
+    PartialTransforms,
+    getConditions,
+    getMemberDefaults,
+    getOwnMemberTransforms,
+  }
 }

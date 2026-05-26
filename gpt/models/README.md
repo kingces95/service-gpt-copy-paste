@@ -35,6 +35,7 @@ STL-inspired container surface through a set of pivots:
 
 - [Signature Shape](container-part.model.md#signature-shape): members pivoted by exact parameter shape.
 - [Default Arguments](container-part.model.md#default-arguments): members with defaults pivoted by declaration Part.
+- [Argument Transforms](container-part.model.md#argument-transforms): members with runtime argument transforms pivoted by family, host, and member.
 - [Argument Order](container-part.model.md#argument-order): members pivoted by STL argument order basis.
 - [Argument Role](container-part.model.md#argument-role): members pivoted by fuzzy argument role.
 

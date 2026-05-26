@@ -2,12 +2,17 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { define } from '@kingjs/partial-define'
 import { 
+  Defaults,
+  Transforms,
   TypePrecondition,
   TypePostcondition,
   Preconditions,
   Postconditions,
 } from '@kingjs/partial-proxy'
 import { PartialProxy } from '@kingjs/partial-proxy'
+import { extend } from '@kingjs/partial-extend'
+import { PartialClass } from '@kingjs/partial-class'
+import { defaultTo } from '@kingjs/function-args'
 
 class MyType extends PartialProxy {
   static [TypePrecondition] = function myTypePrecondition() {
@@ -124,6 +129,169 @@ describe('Instance of MyType', () => {
         `MyType:${postcondition}`,
         'MyType:typePostcondition',
       ])
+    })
+  })
+})
+
+function upper(value) {
+  return value.toUpperCase()
+}
+
+class BaseTransformPart extends PartialClass {
+  static [Transforms] = {
+    inherited: [upper],
+    suppliedInherited: [upper],
+    override: [upper],
+  }
+
+  override(value) {
+    this.push(`override:base:${value}`)
+  }
+}
+
+class TransformPart extends BaseTransformPart {
+  static [Transforms] = {
+    own: [upper],
+    ownSecond: [null, upper],
+    ownDefault: [null, upper],
+    supplied: [upper],
+  }
+
+  static [Defaults] = {
+    ownDefault: [
+      undefined,
+      defaultTo(({ args: [first] }) => first),
+    ],
+  }
+
+  own(value) {
+    this.push(`own:${value}`)
+  }
+
+  ownSecond(first, second) {
+    this.push(`ownSecond:${first}:${second}`)
+  }
+
+  ownDefault(first, second = first) {
+    this.push(`ownDefault:${first}:${second}`)
+  }
+
+  inherited(value) {
+    this.push(`inherited:${value}`)
+  }
+
+  override(value) {
+    this.push(`override:${value}`)
+  }
+}
+
+class TransformType extends PartialProxy {
+  static [Preconditions] = {
+    own(value) { this.push(`own:precondition:${value}`) },
+    ownSecond(first, second) {
+      this.push(`ownSecond:precondition:${first}:${second}`)
+    },
+    ownDefault(first, second) {
+      this.push(`ownDefault:precondition:${first}:${second}`)
+    },
+    supplied(value) { this.push(`supplied:precondition:${value}`) },
+    inherited(value) { this.push(`inherited:precondition:${value}`) },
+    suppliedInherited(value) {
+      this.push(`suppliedInherited:precondition:${value}`)
+    },
+    override(value) { this.push(`override:precondition:${value}`) },
+  }
+
+  constructor() {
+    super()
+    this._calls = []
+  }
+
+  static {
+    extend(this, TransformPart, {
+      supplied(value) {
+        this.push(`supplied:${value}`)
+      },
+
+      suppliedInherited(value) {
+        this.push(`suppliedInherited:${value}`)
+      },
+    })
+  }
+
+  push(value) { this._calls.push(value) }
+  get calls() { return this._calls }
+}
+
+const TransformTests = [
+  ['declared member', {
+    member: 'own',
+    args: ['a'],
+    calls: [
+      'own:precondition:a',
+      'own:A',
+    ],
+  }],
+  ['declared member second slot', {
+    member: 'ownSecond',
+    args: ['x', 'a'],
+    calls: [
+      'ownSecond:precondition:x:a',
+      'ownSecond:x:A',
+    ],
+  }],
+  ['declared member defaulted transform slot', {
+    member: 'ownDefault',
+    args: ['a'],
+    calls: [
+      'ownDefault:precondition:a:a',
+      'ownDefault:a:A',
+    ],
+  }],
+  ['override ignores inherited transform metadata', {
+    member: 'override',
+    args: ['a'],
+    calls: [
+      'override:precondition:a',
+      'override:a',
+    ],
+  }],
+  ['inherited member ignores inherited transform metadata', {
+    member: 'inherited',
+    args: ['a'],
+    calls: [
+      'inherited:precondition:a',
+      'inherited:a',
+    ],
+  }],
+  ['supplied definition ignores extended part transform metadata', {
+    member: 'supplied',
+    args: ['a'],
+    calls: [
+      'supplied:precondition:a',
+      'supplied:a',
+    ],
+  }],
+  ['supplied definition inherited metadata', {
+    member: 'suppliedInherited',
+    args: ['a'],
+    calls: [
+      'suppliedInherited:precondition:a',
+      'suppliedInherited:a',
+    ],
+  }],
+]
+
+describe('Argument transforms', () => {
+  let instance
+  beforeEach(() => {
+    instance = new TransformType()
+  })
+
+  describe.each(TransformTests)('%s', (_, { member, args, calls }) => {
+    it('applies transforms at the implementation boundary', () => {
+      instance[member](...args)
+      expect(instance.calls).toEqual(calls)
     })
   })
 })

@@ -177,7 +177,8 @@ export class Prototype {
         case 'object':
           const descriptor = current
           const existing = Descriptor.get(target, key)
-          const thunk = Descriptor.merge(existing, createThunk(key, descriptor))
+          const thunk = Descriptor.merge(
+            existing, createThunk(key, descriptor, host))
           if (asDescriptor) target[key] = thunk
             else Object.defineProperty(target, key, thunk)
           onCopy(host, key, descriptor)

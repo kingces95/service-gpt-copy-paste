@@ -9,7 +9,20 @@ import { create } from '@kingjs/partial-reflector'
 
 export { isTransparent } from '@kingjs/partial-symbols'
 
-export const { PartialReflect, copyTo } = create({
+export const {
+  PartialReflect,
+  PartialMetadata,
+  PartialPreconditions,
+  PartialPostconditions,
+  PartialThisChecks,
+  PartialArgChecks,
+  PartialDefaults,
+  PartialTransforms,
+  getConditions,
+  getMemberDefaults,
+  getOwnMemberTransforms,
+  copyTo,
+} = create({
   knownStaticKeys: [
     Defines,      // from Attachments
     Extends,      // from PartialClass

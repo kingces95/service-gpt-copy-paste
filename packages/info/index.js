@@ -10,8 +10,11 @@ import {
   Es6DescriptorInfo,
 } from "@kingjs/es6-info"
 import { isAbstract } from "@kingjs/abstract"
-import { PartialReflect, isTransparent } from '@kingjs/partial-reflect'
-import { PartialMetadata } from '@kingjs/partial-metadata'
+import {
+  PartialReflect,
+  PartialMetadata,
+  isTransparent,
+} from '@kingjs/partial-reflect'
 
 import { getMetadata } from './metadata.js'
 

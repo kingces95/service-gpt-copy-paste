@@ -14,15 +14,17 @@ export function isTrimable(value) {
   return false
 }
 
-export function trimPojo(object) {
+export function trimPojo(object, options = { }) {
+  const { sparseArray = false } = options
+
   if (isTrimable(object)) 
     return
 
   if (Array.isArray(object)) {
     let result = undefined
     for (const value of object) {
-      const trimmed = trimPojo(value)
-      if (trimmed === undefined) 
+      const trimmed = trimPojo(value, options)
+      if (trimmed === undefined && !sparseArray) 
         continue
       if (!result) result = [ ]
       result.push(trimmed)
@@ -34,7 +36,7 @@ export function trimPojo(object) {
     let result = undefined
     for (const key of Reflect.ownKeys(object)) {
       const value = object[key]
-      const trimmed = trimPojo(value)
+      const trimmed = trimPojo(value, options)
       if (trimmed === undefined) 
         continue
       if (!result) result = { }

@@ -1,6 +1,7 @@
 import { implement } from '@kingjs/partial-implement'
 import { extend } from '@kingjs/partial-extend'
 import { PartialProxy } from '@kingjs/partial-proxy'
+import { contract } from '@kingjs/function-contract'
 import {
   RangeConcept,
 } from '@kingjs/cursor'
@@ -12,6 +13,7 @@ import {
   IndexableContainerPart,
   EditableContainerPart,
   GapAssignableContainerPart,
+  sourceRange,
 } from '../container-parts.js'
 
 export class ArrayMap extends PartialProxy {
@@ -56,14 +58,15 @@ export class ArrayMap extends PartialProxy {
         return first
       },
 
-      insertRange(cursor, range) {
-        range = this.sourceRange$(range)
-
+      insertRange: contract({
+        transforms: [null, sourceRange],
+      },
+      function insertRange(cursor, range) {
         const offset = this.begin().distanceTo(cursor)
         this._array.splice(offset, 0, 
           ...Array.from(iterate(range)))
         return this
-      },
+      }),
     })
   }
 }
