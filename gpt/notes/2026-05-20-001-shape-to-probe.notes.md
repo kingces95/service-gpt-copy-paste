@@ -117,4 +117,3 @@ Shape
 - [Reframing STL Concepts as Shapes](./2026-05-20-002-stl-concepts-as-shapes.notes.md)
 - [Partial shape design](./2026-05-20-003-partial-shape-design.notes.md)
 - [Partial Shape and Satisfy](./2026-05-20-004-partial-shape-and-satisfy.notes.md)
-- [STL-shaped requirements quest](../quests/stl-shaped-requirements.quest.md)

@@ -21,7 +21,7 @@ long chat:
 - marketing/explanation patterns
 - spine/system notes such as `meta-prototype-chain/`
 - simplified code views such as `models/`
-- generated view patterns such as `reports/`
+- generated view patterns such as `models/model-types.md`
 - larger deferred design quests
 
 ## How Assistants Should Use This Directory
@@ -52,9 +52,9 @@ Use `models/` for simplified views of code that make one axis inspectable.
 Models are useful when generated trees, grids, pivots, or indices expose
 asymmetry, vocabulary pressure, or a design rule worth preserving.
 
-Use `reports/` for reusable generated-view patterns. Reports describe how a set
-is transformed into rows, how those rows are pivoted, and how the pivot should
-be displayed.
+Use `models/model-types.md` for reusable generated-view patterns. Model types
+describe how a set is transformed into rows, how those rows are pivoted, and how
+the pivot should be displayed.
 
 Use `quests/` for larger deferred design efforts that should be remembered but
 not casually started as side quests.

@@ -30,7 +30,7 @@ Concept
 Shape
 └─ structural
 └─ transparent outside its own family
-└─ copied by satisfy
+└─ queried by strict descriptor matching
 
 Probe
 └─ observational

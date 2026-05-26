@@ -8,5 +8,7 @@ taste of the project rather than merely solving the immediate problem.
 
 ## Notes
 
-- [partial.style.md](partial.style.md): conventions for smearing partial
-  declarations across narrow Concepts and Parts.
+- [Assistant Practices](assistant-practices.style.md): collaboration and editing
+  habits for future assistants.
+- [Chris-ish](chris-ish.style.md): vocabulary and design preferences that make
+  suggestions fit the project.

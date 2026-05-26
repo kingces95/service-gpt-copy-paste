@@ -12,7 +12,8 @@ Testing `instance instanceof Concept` means:
 
 ## Shape
 
-A `Shape` is structural and type-level. A type satisfies it with `satisfy`.
+A `Shape` is structural and type-level. A type satisfies it when its constructor
+prototype matches the shape descriptors.
 
 Testing `instance instanceof Shape` means:
 
