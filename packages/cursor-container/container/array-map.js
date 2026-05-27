@@ -11,7 +11,7 @@ import {
   ContainerPart,
   SizedContainerPart,
   IndexableContainerPart,
-  EditableContainerPart,
+  GapEditableContainerPart,
   GapAssignableContainerPart,
   sourceRange,
 } from '../container-parts.js'
@@ -44,7 +44,9 @@ export class ArrayMap extends PartialProxy {
       setAt(index, value) { this._array[index] = value },
     })
 
-    extend(this, GapAssignableContainerPart, {
+    extend(this, GapAssignableContainerPart)
+
+    extend(this, GapEditableContainerPart, {
       openGap$(cursor, count) {
         const offset = this.begin().distanceTo(cursor)
         this._array.splice(offset, 0, ...Array(count))
@@ -63,7 +65,7 @@ export class ArrayMap extends PartialProxy {
       },
       function insertRange(cursor, range) {
         const offset = this.begin().distanceTo(cursor)
-        this._array.splice(offset, 0, 
+        this._array.splice(offset, 0,
           ...Array.from(iterate(range)))
         return this
       }),

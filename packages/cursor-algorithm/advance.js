@@ -1,5 +1,5 @@
 import { overload } from '@kingjs/function-contract'
-import { NormalNumber } from '@kingjs/cursor'
+import { NormalNumber } from '@kingjs/simple-type'
 import {
   ForwardCursorShape,
   RandomAccessCursorShape,

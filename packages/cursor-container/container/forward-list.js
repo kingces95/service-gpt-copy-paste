@@ -7,11 +7,8 @@ import {
   EquatableConcept,
 } from '@kingjs/partial-concept'
 import {
-  CloneableCursorConcept,
-  CursorConcept,
   RangeConcept,
-  ReadableCursorConcept,
-  WritableCursorConcept,
+  CloneableCursorPart,
   CursorPart,
   ReadableCursorPart,
   SteppableCursorPart,
@@ -49,43 +46,37 @@ class ForwardListCursor extends ContainerCursor {
       }
     })
 
-    implement(this, CursorConcept, {
+  }
+
+  static {
+    extend(this, CursorPart, {
+      get isAtEnd$() { return this.link == this.container._endLink },
+    })
+
+    extend(this, SteppableCursorPart, {
       step() {
         this.link = this.link.next
         return this
       },
-    })
 
-    implement(this, ReadableCursorConcept, {
-      get value() { return this.link.value },
-    })
-
-    implement(this, WritableCursorConcept, {
-      set value(value) { this.link.value = value },
-    })
-
-    implement(this, CloneableCursorConcept, {
-      clone() {
-        const { constructor, container, link } = this
-        return new constructor(container, link)
-      }
-    })
-  }
-
-  static {
-    extend(this, CursorPart)
-
-    extend(this, SteppableCursorPart, {
-      isAtEnd$() { return this.link == this.container._endLink },
       canStep$() { return this.link != this.container._endLink },
     })
 
     extend(this, ReadableCursorPart, {
+      get value() { return this.link.value },
       isReadable$() { return this.link != this.container._endLink },
     })
 
     extend(this, WritableCursorPart, {
+      set value(value) { this.link.value = value },
       isWritable$() { return this.link != this.container._endLink },
+    })
+
+    extend(this, CloneableCursorPart, {
+      clone() {
+        const { constructor, container, link } = this
+        return new constructor(container, link)
+      }
     })
   }
 }

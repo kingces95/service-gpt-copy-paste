@@ -305,7 +305,9 @@ export function createPartialMetadata(PartialReflect) {
   }
 
   function createThisCheck(requirements) {
-    const check = contract([requirements])
+    const check = contract([requirements], {
+      names: ['this'],
+    })
     return function() { check(this) }
   }
 

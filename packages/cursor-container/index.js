@@ -13,5 +13,4 @@ export * from "./container/unordered-set.js"
 export * from "./container/vector.js"
 
 export * from "./container-parts.js"
-export * from "./checks.js"
 export * from "./algorithms/materialize.js"

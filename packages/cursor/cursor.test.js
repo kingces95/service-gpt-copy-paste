@@ -462,7 +462,7 @@ describe.each(Object.entries(Tests))('%s', (_, {
 
       it('rejects step', () => {
         expect(() => begin.step()).toThrow(
-          'Cannot move cursor out of bounds.')
+          'Argument this must be NotAtEnd.')
       })
 
       it('is equatable to itself', () => {
@@ -486,7 +486,7 @@ describe.each(Object.entries(Tests))('%s', (_, {
       describe('as an input cursor', () => {
         it('rejects value read', () => {
           expect(() => begin.value).toThrow(
-            'Cannot read value out of bounds of cursor.')
+            'Argument this must be HasValue.')
         })
       })
     }
@@ -495,7 +495,7 @@ describe.each(Object.entries(Tests))('%s', (_, {
       describe('as an output cursor', () => {
         it('rejects value write', () => {
           expect(() => begin.value = 42).toThrow(
-            'Cannot write value out of bounds of cursor.')
+            'Argument this must be NotAtEnd.')
         })
       })
     }

@@ -1,9 +1,9 @@
 import { implement } from '@kingjs/partial-implement'
-import { define } from '@kingjs/partial-define'
-import { Preconditions } from '@kingjs/partial-symbols'
+import { extend } from '@kingjs/partial-extend'
 import {
-  CursorConcept,
-  ReadableCursorConcept,
+  CursorPart,
+  ReadableCursorPart,
+  SteppableCursorPart,
 } from '@kingjs/cursor'
 import {
   EquatableConcept
@@ -16,7 +16,8 @@ import { ContainerCursor } from './container-cursor.js'
 // IteratorCursor is used by associative containers to enumerate values
 // returned by an underlying Map/Set iterator or iterator-like generator.
 //
-// MapCursor layers a key accessor over that value by reading value[0].
+// MapCursor layers an internal key$ accessor over that value by reading
+// value[0].
 
 // IteratorCursor's identity is a combination of
 
@@ -31,13 +32,6 @@ import { ContainerCursor } from './container-cursor.js'
 // behavior and would make debugging difficult.
 
 export class IteratorCursor extends ContainerCursor {
-  static [Preconditions] = {
-    get key() {
-      if (this._current.done) throw new Error(
-        'Cursor is at end of container')
-    },
-  }
-
   _current
 
   constructor(range, iterable) {
@@ -45,35 +39,39 @@ export class IteratorCursor extends ContainerCursor {
     this._current = this.token.next()
   }
 
-  get done() { return this._current.done }
+  get done$() { return this._current.done }
+  get key$() { return this.value }
 
   static {
-    define(this, {
-      get key() { return this.value },
-    })
-
     implement(this, EquatableConcept, {
       equals(other) {
         if (!this.equatableTo(other)) return false
-        const { done } = this
-        const { done: otherDone } = other
-        if (done && otherDone) return true
-        if (done != otherDone) return false
+        const { done$ } = this
+        const { done$: otherDone } = other
+        if (done$ && otherDone) return true
+        if (done$ != otherDone) return false
 
-        const { key } = this
-        const { key: otherKey } = other
-        return key === otherKey
+        const { key$ } = this
+        const { key$: otherKey } = other
+        return key$ === otherKey
       }
     })
 
-    implement(this, CursorConcept, {
+  }
+
+  static {
+    extend(this, CursorPart, {
+      get isAtEnd$() { return this.done$ },
+    })
+
+    extend(this, SteppableCursorPart, {
       step() {
         this._current = this.token.next()
         return this
       },
     })
 
-    implement(this, ReadableCursorConcept, {
+    extend(this, ReadableCursorPart, {
       get value() { return this._current.value },
     })
   }

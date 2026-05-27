@@ -2,19 +2,14 @@ import { implement } from '@kingjs/partial-implement'
 import { Lazy } from '@kingjs/lazy'
 import { extend } from '@kingjs/partial-extend'
 import { PartialProxy } from '@kingjs/partial-proxy'
-import { contract } from '@kingjs/function-contract'
 import {
   copy,
   copyBackward,
 } from '@kingjs/cursor-algorithm'
-import { materialize } from '../algorithms/materialize.js'
 import { subrange } from '@kingjs/cursor-view'
 import {
   RangeConcept,
 } from '@kingjs/cursor'
-import {
-  RandomAccessCursorShape,
-} from '@kingjs/cursor-shape'
 import {
   ContiguousCursor,
 } from '../cursor/contiguous-cursor.js'
@@ -22,10 +17,12 @@ import {
   ContainerPart,
   SizedContainerPart,
   IndexableContainerPart,
+  CapacityContainerPart,
   ReservableContainerPart,
   ByteContainerPart,
+  BulkAssignableContainerPart,
+  GapEditableContainerPart,
   GapAssignableContainerPart,
-  sourceRange,
 } from '../container-parts.js'
 
 export class Vector extends PartialProxy {
@@ -62,29 +59,13 @@ export class Vector extends PartialProxy {
       setAt(index, value) { this.buffer[index] = value },
     })
 
-    extend(this, GapAssignableContainerPart, {
+    extend(this, GapAssignableContainerPart)
+
+    extend(this, BulkAssignableContainerPart, {
       get defaultValue$() { return 0 },
+    })
 
-      insertRange: contract({
-        transforms: [null, sourceRange],
-      },
-      function insertRange(cursor, range) {
-        let first = range.begin()
-        let last = range.end()
-
-        if (first instanceof RandomAccessCursorShape == false) {
-          const arrayMap = materialize(range)
-          first = arrayMap.begin()
-          last = arrayMap.end()
-          range = arrayMap
-        }
-
-        const count = first.distanceTo(last)
-        this.openGap$(cursor, count)
-        copy(cursor, range)
-        return this
-      }),
-
+    extend(this, GapEditableContainerPart, {
       openGap$(cursor, count) {
         const oldEnd = this.end()
         this.reserve(this.size + count)
@@ -102,8 +83,11 @@ export class Vector extends PartialProxy {
       }
     })
 
-    extend(this, ReservableContainerPart, {
+    extend(this, CapacityContainerPart, {
       get capacity() { return this._bytes.byteLength },
+    })
+
+    extend(this, ReservableContainerPart, {
       setCapacity$(capacity) {
         const newVector = new this.constructor(capacity)
         copy(newVector.begin(), subrange(this.begin(), this.end()))

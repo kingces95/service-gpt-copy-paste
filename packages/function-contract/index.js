@@ -64,13 +64,14 @@ export function contract(requirements, defaults, fn) {
     'Argument must be a function.')
 
   const metadata = normalizeMetadata(defaults)
+  const names = normalizeNames(metadata.names)
   requirements = normalizeRequirements(requirements)
   defaults = normalizeDefaults(metadata.defaults)
   const target = thunk(metadata, fn)
 
   const result = function(...args) {
     args = applyDefaults(args, defaults, this)
-    checkSlots(requirements, args)
+    checkSlots(requirements, args, names)
     return target.apply(this, args)
   }
 
@@ -178,6 +179,16 @@ function normalizeTransforms(transforms) {
   return transforms
 }
 
+function normalizeNames(names) {
+  if (names == null)
+    return null
+
+  assert(Array.isArray(names),
+    'Function contract names must be an array.')
+
+  return names
+}
+
 function matches(types, values) {
   if (types == null)
     return true
@@ -204,21 +215,21 @@ function matchesSlot(type, value) {
   return value instanceof type
 }
 
-function checkSlots(types, values) {
+function checkSlots(types, values, names) {
   if (types == null)
     return
 
   for (let i = 0; i < types.length; i++)
-    checkSlot(types[i], values[i])
+    checkSlot(types[i], values[i], names?.[i] ?? i)
 }
 
-function checkSlot(type, value) {
+function checkSlot(type, value, name) {
   if (type == null)
     return
 
   if (Array.isArray(type)) {
     for (const current of type)
-      checkSlot(current, value)
+      checkSlot(current, value, name)
 
     return
   }
@@ -227,5 +238,5 @@ function checkSlot(type, value) {
     return
 
   throw new TypeError(
-    `Argument must be an instance of ${type.name}.`)
+    `Argument ${name} must be ${type.name}.`)
 }

@@ -2,8 +2,14 @@ import {
   DependsOn,
   Implements,
 } from '@kingjs/partial-concept'
-import { PartialClass } from '@kingjs/partial-class'
-import { Preconditions } from '@kingjs/partial-proxy'
+import {
+  Abstracts,
+  PartialClass,
+} from '@kingjs/partial-class'
+import {
+  Preconditions,
+  ThisChecks,
+} from '@kingjs/partial-proxy'
 import {
   BacktrackableCursorConcept,
   CloneableCursorConcept,
@@ -24,6 +30,10 @@ import {
   throwReadOutOfBounds,
   throwWriteOutOfBounds,
 } from './throw.js'
+import {
+  HasValue,
+  NotAtEnd,
+} from './cursor-checks.js'
 
 // Cursor parts are the checked/debug implementation layer. They mirror the
 // concept forest rather than the STL shape forest:
@@ -43,60 +53,58 @@ import {
 
 export class CursorPart extends PartialClass {
   static [Implements] = CursorConcept
+
+  static [Abstracts] = {
+    get isAtEnd$() { },
+  }
+
+  get isAtEnd$() {
+    return this.equals(this.range.end({ constant: true }))
+  }
 }
 
 export class SteppableCursorPart extends PartialClass {
   static [Implements] = SteppableCursorConcept
+  static [DependsOn] = [
+    CursorPart, // isAtEnd$
+  ]
 
-  static [Preconditions] = {
-    step() {
-      if (!this.canStep$())
-        throwMoveOutOfBounds()
-    },
-  }
-
-  isAtEnd$() {
-    return this.equals(this.range.end({ constant: true }))
+  static [ThisChecks] = {
+    step: NotAtEnd,
   }
 
   canStep$() {
-    return !this.isAtEnd$()
+    return !this.isAtEnd$
   }
 }
 
 export class ReadableCursorPart extends PartialClass {
   static [Implements] = ReadableCursorConcept
   static [DependsOn] = [
-    SteppableCursorPart, // isAtEnd$
+    CursorPart, // isAtEnd$
   ]
 
-  static [Preconditions] = {
-    get value() {
-      if (!this.isReadable$())
-        throwReadOutOfBounds()
-    },
+  static [ThisChecks] = {
+    get value() { return HasValue },
   }
 
   isReadable$() {
-    return !this.isAtEnd$()
+    return !this.isAtEnd$
   }
 }
 
 export class WritableCursorPart extends PartialClass {
   static [Implements] = WritableCursorConcept
   static [DependsOn] = [
-    SteppableCursorPart, // isAtEnd$
+    CursorPart, // isAtEnd$
   ]
 
-  static [Preconditions] = {
-    set value(value) {
-      if (!this.isWritable$())
-        throwWriteOutOfBounds()
-    },
+  static [ThisChecks] = {
+    set value(value) { return NotAtEnd },
   }
 
   isWritable$() {
-    return !this.isAtEnd$()
+    return !this.isAtEnd$
   }
 }
 

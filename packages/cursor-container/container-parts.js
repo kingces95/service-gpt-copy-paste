@@ -3,11 +3,16 @@ import {
   ArgChecks,
   Defaults,
   Preconditions,
+  ThisChecks,
   Transforms,
 } from '@kingjs/partial-proxy'
 import { PartialClass } from '@kingjs/partial-class'
 import { extend } from '@kingjs/partial-extend'
 import { implement } from '@kingjs/partial-implement'
+import { cover } from '@kingjs/cover'
+import {
+  RandomAccessCursorShape,
+} from '@kingjs/cursor-shape'
 import { 
   copy, 
   next,
@@ -17,26 +22,24 @@ import {
   single,
 } from '@kingjs/cursor-adapter'
 import { defaultTo } from '@kingjs/function-args'
+import { NormalNumber } from '@kingjs/simple-type'
 import { snapshot } from '@kingjs/cursor-view'
 import {
   CloneableCursorConcept,
   CursorConcept,
   RangeConcept,
 
-  throwNull,
-  throwEmpty,
   throwNotEquatableTo,
   throwUpdateOutOfBounds,
   throwWriteOutOfBounds,
   throwReadOutOfBounds,
 } from '@kingjs/cursor'
 import { Implements } from '@kingjs/partial-concept'
-import { NormalNumber } from './checks.js'
+import {
+  NotEmpty,
+} from './checks.js'
 
 export function sourceRange(range) {
-  if (!range?.begin)
-    return range
-
   const first = range.begin()
   if (first.range == this)
     return snapshot(range)
@@ -49,18 +52,11 @@ export class ContainerPart extends PartialClass {
     implement(this, RangeConcept)
   }
 
-  static [Abstracts] = {
+  static [Abstracts] = cover({
     get isEmpty() { },
-  }
+  })
   static [Defines] = {
-    notNullAssert$(value) {
-      if (value == null) throwNull()
-    },
-    nonEmptyAssert$() {
-      if (this.isEmpty) throwEmpty()
-    },
     ownCursorAssert$(cursor) {
-      this.notNullAssert$(cursor)
       if (cursor.range != this) throwNotEquatableTo()
     },
     notEndAssert$(cursor) {
@@ -82,48 +78,42 @@ export class ContainerPart extends PartialClass {
       this.firstThenLastAssert$(first, last)
     }
   }
-
-  get cursorType() { return this.constructor.cursorType }
 }
 
 export class SizedContainerPart extends ContainerPart {
-  static [Abstracts] = {
+  static [Abstracts] = cover({
     get size() { }
-  }
+  })
 
   get isEmpty() { return this.size == 0 }
 }
 
 export class ClearableContainerPart extends ContainerPart {
-  static [Abstracts] = {
+  static [Abstracts] = cover({
     clear() { }
-  }
+  })
 }
 
 export class FrontInsertableContainerPart extends ContainerPart {
-  static [Preconditions] = {
-    popFront() {
-      this.nonEmptyAssert$()
-    },
+  static [ThisChecks] = {
+    popFront: NotEmpty,
   }
 
-  static [Abstracts] = {
+  static [Abstracts] = cover({
     pushFront(value) { },
     popFront() { },
-  }
+  })
 }
 
 export class BackInsertableContainerPart extends ContainerPart {
-  static [Preconditions] = {
-    popBack() {
-      this.nonEmptyAssert$()
-    },
+  static [ThisChecks] = {
+    popBack: NotEmpty,
   }
 
-  static [Abstracts] = {
+  static [Abstracts] = cover({
     popBack() { },
     pushBack(value) { },
-  }
+  })
 }
 
 export class EditableContainerPart extends ContainerPart {
@@ -149,10 +139,10 @@ export class EditableContainerPart extends ContainerPart {
     },
   }
 
-  static [Abstracts] = {
+  static [Abstracts] = cover({
     insertValue(cursor, value) { },
-    erase(first, last = next(first)) { },
-  }
+    erase(first, last /* = next(first) */) { },
+  })
   
   static {
     extend(this, FrontInsertableContainerPart, {
@@ -209,11 +199,11 @@ export class PhasedContainerPart extends ContainerPart {
     },
   }
 
-  static [Abstracts] = {
+  static [Abstracts] = cover({
     beforeBegin() { },
     insertValueAfter(cursor, value) { },
-    eraseAfter(first, last = next(first, 2)) { },
-  }
+    eraseAfter(first, last /* = next(first, 2) */) { },
+  })
 }
 
 export class IndexableContainerPart extends SizedContainerPart {
@@ -237,24 +227,24 @@ export class IndexableContainerPart extends SizedContainerPart {
     },
   }
   
-  static [Abstracts] = {
+  static [Abstracts] = cover({
     at(index) { },
     setAt(index, value) { }
-  }
+  })
 }
 
 export class ByteContainerPart extends IndexableContainerPart {
-  static [Abstracts] = {
+  static [Abstracts] = cover({
     span(range) { },
-  }
+  })
 
   get spanType() { return this.constructor.spanType }
 }
 
 export class CapacityContainerPart extends ContainerPart {
-  static [Abstracts] = {
+  static [Abstracts] = cover({
     get capacity() { }
-  }
+  })
 }
 
 export class ReservableContainerPart extends CapacityContainerPart {
@@ -262,9 +252,9 @@ export class ReservableContainerPart extends CapacityContainerPart {
     reserve: [NormalNumber],
   }
 
-  static [Abstracts] = {
+  static [Abstracts] = cover({
     setCapacity$(count) { }
-  }
+  })
 
   reserve(count) {
     if (count <= this.capacity) return this.capacity
@@ -275,23 +265,23 @@ export class ReservableContainerPart extends CapacityContainerPart {
 }
 
 export class AssociativeContainerPart extends ContainerPart {
-  static [Abstracts] = {
+  static [Abstracts] = cover({
     contains(key) { },
     erase(key) { }
-  }
+  })
 }
 
 export class SetAssociativeContainerPart extends AssociativeContainerPart {
-  static [Abstracts] = {
+  static [Abstracts] = cover({
     insert(key) { }
-  }
+  })
 }
 
 export class MapAssociativeContainerPart extends AssociativeContainerPart {
-  static [Abstracts] = {
+  static [Abstracts] = cover({
     at(key) { },
     insertOrAssign(key, value) { },
-  }
+  })
 }
 
 export class BulkAssignableContainerPart extends ClearableContainerPart {
@@ -310,10 +300,10 @@ export class BulkAssignableContainerPart extends ClearableContainerPart {
 
   get defaultValue$() { return undefined }
 
-  static [Abstracts] = {
-    resize(count, value = this.defaultValue$) { },
+  static [Abstracts] = cover({
+    resize(count, value /* = this.defaultValue$ */) { },
     assignRange(range) { },
-  }
+  })
 
   static [Defines] = {
     clear() {
@@ -352,9 +342,9 @@ export class BulkEditableContainerPart extends EditableContainerPart {
     },
   }
 
-  static [Abstracts] = {
+  static [Abstracts] = cover({
     insertRange(cursor, range) { },
-  }
+  })
 
   static [Defaults] = {
     insertValue: [
@@ -409,9 +399,9 @@ export class PhasedBulkContainerPart extends PhasedContainerPart {
     },
   }
 
-  static [Abstracts] = {
+  static [Abstracts] = cover({
     insertRangeAfter(cursor, range) { },
-  }
+  })
 
   static [Defines] = {
     insertAfter(cursor, count, value) {
@@ -432,14 +422,21 @@ export class GapEditableContainerPart extends BulkEditableContainerPart {
     insertRange: [null, sourceRange],
   }
 
-  static [Abstracts] = {
+  static [Abstracts] = cover({
     openGap$(cursor, count) { },
     closeGap$(first, last) { },
-  }
+  })
 
   insertRange(cursor, range) {
-    const first = range.begin()
-    const last = range.end()
+    let first = range.begin()
+    let last = range.end()
+
+    if (first instanceof RandomAccessCursorShape == false) {
+      range = snapshot(range)
+      first = range.begin()
+      last = range.end()
+    }
+
     const count = first.distanceTo(last)
 
     this.openGap$(cursor, count)
@@ -455,9 +452,9 @@ export class GapEditableContainerPart extends BulkEditableContainerPart {
   }
 }
 
-export class GapAssignableContainerPart extends GapEditableContainerPart {
+export class GapAssignableContainerPart extends BulkAssignableContainerPart {
   static [Extends] = [
-    BulkAssignableContainerPart,
+    GapEditableContainerPart,
   ]
 
   static [Transforms] = {

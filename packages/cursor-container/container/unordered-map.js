@@ -1,7 +1,6 @@
 import { assert } from '@kingjs/assert'
 import { implement } from '@kingjs/partial-implement'
 import { extend } from '@kingjs/partial-extend'
-import { define } from '@kingjs/partial-define'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import {
   RangeConcept,
@@ -30,11 +29,7 @@ class MapCursor extends IteratorCursor {
     super(range, map)
   }
 
-  static {
-    define(this, {
-      get key() { return this.value[0] },
-    })
-  }
+  get key$() { return this.value[0] }
 }
 
 export class UnorderedMap extends PartialProxy {

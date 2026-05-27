@@ -13,6 +13,7 @@ import {
   BackInsertableContainerPart,
   SizedContainerPart,
   IndexableContainerPart,
+  EditableContainerPart,
   BulkAssignableContainerPart,
   BulkEditableContainerPart,
   sourceRange,
@@ -78,7 +79,9 @@ export class Deque extends PartialProxy {
         this._denque.splice(cursor.index, 0, ...iterate(range))
         return this
       }),
+    })
 
+    extend(this, EditableContainerPart, {
       erase(first, last = next(first)) {
         const result = first.clone()
         this._denque.remove(first.index, last.index - first.index)

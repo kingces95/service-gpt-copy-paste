@@ -8,15 +8,13 @@ import {
 
 class Positive {
   static [Symbol.hasInstance](value) {
-    if (value > 0) return true
-    throw new RangeError('Value must be positive.')
+    return value > 0
   }
 }
 
 class LessThanTen {
   static [Symbol.hasInstance](value) {
-    if (value < 10) return true
-    throw new RangeError('Value must be less than ten.')
+    return value < 10
   }
 }
 
@@ -51,7 +49,7 @@ describe('contract', () => {
 
     expect(checkedIncrement(1)).toBe(2)
     expect(() => checkedIncrement(0)).toThrow(
-      'Value must be positive.')
+      'Argument 0 must be Positive.')
   })
 
   it('should run arrays of checks', () => {
@@ -63,9 +61,9 @@ describe('contract', () => {
 
     expect(checkedIdentity(1)).toBe(1)
     expect(() => checkedIdentity(0)).toThrow(
-      'Value must be positive.')
+      'Argument 0 must be Positive.')
     expect(() => checkedIdentity(10)).toThrow(
-      'Value must be less than ten.')
+      'Argument 0 must be LessThanTen.')
   })
 
   it('should wrap unwrapped slot checks', () => {
@@ -74,9 +72,9 @@ describe('contract', () => {
 
     expect(checkedAdd(1, 2)).toBe(3)
     expect(() => checkedAdd(0, 2)).toThrow(
-      'Value must be positive.')
+      'Argument 0 must be Positive.')
     expect(() => checkedAdd(1, 10)).toThrow(
-      'Value must be less than ten.')
+      'Argument 1 must be LessThanTen.')
   })
 
   it('should treat ordinary types as instanceof checks', () => {
@@ -86,7 +84,7 @@ describe('contract', () => {
 
     expect(checkedIdentity(thing)).toBe(thing)
     expect(() => checkedIdentity({ })).toThrow(
-      'Argument must be an instance of Thing.')
+      'Argument 0 must be Thing.')
   })
 
   it('should return a checked thunk when no function is provided', () => {
@@ -94,7 +92,7 @@ describe('contract', () => {
 
     expect(() => check(1)).not.toThrow()
     expect(() => check(0)).toThrow(
-      'Value must be positive.')
+      'Argument 0 must be Positive.')
   })
 
   it('should apply defaults before checks', () => {
@@ -107,7 +105,16 @@ describe('contract', () => {
 
     expect(checkedAdd(1)).toBe(2)
     expect(() => checkedAdd(1, 0)).toThrow(
-      'Value must be positive.')
+      'Argument 1 must be Positive.')
+  })
+
+  it('should use metadata names in errors', () => {
+    const check = contract([Positive], {
+      names: ['this'],
+    })
+
+    expect(() => check(0)).toThrow(
+      'Argument this must be Positive.')
   })
 
   it('should apply procedural defaults left to right', () => {

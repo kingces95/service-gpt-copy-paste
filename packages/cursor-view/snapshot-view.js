@@ -5,20 +5,13 @@ import {
   BacktrackableCursorPart,
   CloneableCursorPart,
   ComparableToCursorPart,
+  CursorPart,
   MeasurableCursorPart,
   MovableCursorPart,
   ReadableAtCursorPart,
   ReadableCursorPart,
   SteppableCursorPart,
-  BacktrackableCursorConcept,
-  CloneableCursorConcept,
-  ComparableToCursorConcept,
-  MeasurableCursorConcept,
-  MovableCursorConcept,
   RangeConcept,
-  ReadableAtCursorConcept,
-  ReadableCursorConcept,
-  SteppableCursorConcept,
 } from '@kingjs/cursor'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { ViewCursor } from './cursor/view-cursor.js'
@@ -41,30 +34,46 @@ class SnapshotCursor extends ViewCursor {
       },
     })
 
-    implement(this, ReadableCursorConcept, {
-      get value() { return this.view._values[this.index] },
+    extend(this, CursorPart, {
+      get isAtEnd$() { return this.index == this.view._values.length },
     })
 
-    implement(this, CloneableCursorConcept, {
+    extend(this, SteppableCursorPart, {
+      step() { return this.move(1) },
+      canStep$() { return this.index < this.view._values.length },
+    })
+
+    extend(this, ReadableCursorPart, {
+      get value() { return this.view._values[this.index] },
+
+      isReadable$() {
+        return this.index >= 0 && this.index < this.view._values.length
+      },
+    })
+
+    extend(this, CloneableCursorPart, {
       clone() { return new this.constructor(this.view, this.index) },
     })
 
-    implement(this, SteppableCursorConcept, {
-      step() { return this.move(1) },
-    })
-
-    implement(this, BacktrackableCursorConcept, {
+    extend(this, BacktrackableCursorPart, {
       stepBack() { return this.move(-1) },
+      isAtBegin$() { return this.index == 0 },
+      canStepBack$() { return this.index > 0 },
     })
 
-    implement(this, MovableCursorConcept, {
+    extend(this, MovableCursorPart, {
       move(offset) {
         this._index += offset
         return this
       },
+
+      canMove$(offset) {
+        const index = this.index + offset
+        return index >= 0 && index <= this.view._values.length
+      },
     })
 
-    implement(this, ComparableToCursorConcept, {
+    extend(this, ComparableToCursorPart, {
       compareTo(other) {
         if (this.index < other.index) return -1
         if (this.index > other.index) return 1
@@ -72,49 +81,17 @@ class SnapshotCursor extends ViewCursor {
       },
     })
 
-    implement(this, MeasurableCursorConcept, {
+    extend(this, MeasurableCursorPart, {
       distanceTo(other) {
         return other.index - this.index
       },
     })
 
-    implement(this, ReadableAtCursorConcept, {
+    extend(this, ReadableAtCursorPart, {
       at(offset) {
         return this.view._values[this.index + offset]
       },
-    })
-  }
 
-  static {
-    extend(this, SteppableCursorPart, {
-      isAtEnd$() { return this.index == this.view._values.length },
-      canStep$() { return this.index < this.view._values.length },
-    })
-
-    extend(this, ReadableCursorPart, {
-      isReadable$() {
-        return this.index >= 0 && this.index < this.view._values.length
-      },
-    })
-
-    extend(this, CloneableCursorPart)
-
-    extend(this, BacktrackableCursorPart, {
-      isAtBegin$() { return this.index == 0 },
-      canStepBack$() { return this.index > 0 },
-    })
-
-    extend(this, MovableCursorPart, {
-      canMove$(offset) {
-        const index = this.index + offset
-        return index >= 0 && index <= this.view._values.length
-      },
-    })
-
-    extend(this, ComparableToCursorPart)
-    extend(this, MeasurableCursorPart)
-
-    extend(this, ReadableAtCursorPart, {
       isReadableAt$(offset) {
         const index = this.index + offset
         return index >= 0 && index < this.view._values.length

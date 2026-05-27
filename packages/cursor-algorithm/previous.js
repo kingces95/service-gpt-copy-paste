@@ -1,5 +1,5 @@
 import { contract } from '@kingjs/function-contract'
-import { NormalNumber } from '@kingjs/cursor'
+import { NormalNumber } from '@kingjs/simple-type'
 import { BidirectionalCursorShape } from '@kingjs/cursor-shape'
 
 import { rewind } from './bidirectional/rewind.js'

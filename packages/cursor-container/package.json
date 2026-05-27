@@ -10,6 +10,7 @@
   "dependencies": {
     "@kingjs/assert": "1.0.0",
     "@kingjs/constructs": "1.0.0",
+    "@kingjs/cover": "1.0.0",
     "@kingjs/cursor": "1.0.0",
     "@kingjs/cursor-adapter": "1.0.0",
     "@kingjs/cursor-algorithm": "1.0.0",
@@ -26,6 +27,7 @@
     "@kingjs/partial-implement": "1.0.0",
     "@kingjs/partial-proxy": "1.0.0",
     "@kingjs/partial-symbols": "1.0.0",
+    "@kingjs/simple-type": "1.0.0",
     "@kingjs/templatize": "1.0.0"
   },
   "devDependencies": { },
