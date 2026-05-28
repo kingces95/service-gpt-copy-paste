@@ -49,7 +49,9 @@ export class UnorderedMap extends PartialProxy {
   }
 
   static {
-    extend(this, ContainerPart)
+    extend(this, ContainerPart, { }, {
+      get isEmpty() { },
+    })
 
     extend(this, ClearableContainerPart, {
       clear() { this._map.clear() },

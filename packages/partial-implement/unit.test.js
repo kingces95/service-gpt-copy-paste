@@ -69,7 +69,9 @@ describe('A type', () => {
           enumerable: false,
         })
         cls = class { }
-        implement(cls, extendedConcept)
+        implement(cls, extendedConcept, { }, {
+          method() { },
+        })
       })
       it('should satisfy the extended concept', () => {
         expect(cls.prototype).toBeInstanceOf(extendedConcept)
@@ -127,7 +129,10 @@ describe('A type', () => {
       })
       describe('when implemented', () => {
         beforeEach(() => {
-          implement(type, MyConcept)
+          implement(type, MyConcept, { }, {
+            get accessor() { },
+            set accessor(value) { },
+          })
         })
         it('should satisfy the concept', () => {
           expect(type.prototype instanceof MyConcept).toBe(true)
@@ -192,7 +197,9 @@ describe('A type', () => {
 
       describe('when implemented', () => {
         beforeEach(() => {
-          implement(type, MyConcept)
+          implement(type, MyConcept, { }, {
+            method() { },
+          })
         })
         it('should satisfy the concept', () => {
           expect(type.prototype instanceof MyConcept).toBe(true)
@@ -264,7 +271,9 @@ describe('A type', () => {
             associatedMethod() { }
           }
           implement(type.tagType, associatedConcept)
-          implement(type, MyConcept)
+          implement(type, MyConcept, { }, {
+            method() { },
+          })
         })
         it('should satisfy the concept', () => {
           expect(type.prototype).toBeInstanceOf(MyConcept)

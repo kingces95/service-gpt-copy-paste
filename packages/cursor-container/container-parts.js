@@ -49,7 +49,10 @@ export function sourceRange(range) {
 
 export class ContainerPart extends PartialClass {
   static {
-    implement(this, RangeConcept)
+    implement(this, RangeConcept, { }, {
+      begin() { },
+      end() { },
+    })
   }
 
   static [Abstracts] = cover({

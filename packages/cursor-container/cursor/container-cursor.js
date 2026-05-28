@@ -19,6 +19,8 @@ export class ContainerCursor extends PartialProxy {
   static {
     implement(this, CursorConcept, {
       get range() { return this.container },
+    }, {
+      step() { },
     })
   }
 }

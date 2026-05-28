@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { PartialClass } from '@kingjs/partial-class'
+import { Abstracts, PartialClass } from '@kingjs/partial-class'
 import { Attachments } from '@kingjs/partial-attachments'
 import { ApplyDeclaration } from '@kingjs/partial-declare'
 
@@ -10,6 +10,13 @@ class MethodPart extends PartialClass {
 class PropertyPart extends PartialClass {
   get value() { }
   set value(value) { }
+}
+
+class AbstractPropertyPart extends PartialClass {
+  static [Abstracts] = {
+    get value() { },
+    set value(value) { },
+  }
 }
 
 class ReadOnlyPart extends PartialClass {
@@ -69,5 +76,21 @@ describe('ApplyDeclaration', () => {
     const descriptor = Object.getOwnPropertyDescriptor(Type.prototype, 'value')
     expect(descriptor.get).toBeInstanceOf(Function)
     expect(descriptor.set).toBeInstanceOf(Function)
+  })
+
+  it('accounts for split abstract accessors', () => {
+    class Type { }
+
+    expect(() => {
+      ApplyDeclaration.as(PartialClass, Attachments)(Type, AbstractPropertyPart, {
+        get value() { return this._value },
+      }, {
+        set value(value) { },
+      })
+    }).not.toThrow()
+
+    const descriptor = Object.getOwnPropertyDescriptor(Type.prototype, 'value')
+    expect(descriptor.get.call({ _value: 1 })).toBe(1)
+    expect(() => descriptor.set()).toThrow('Abstract member not implemented')
   })
 })

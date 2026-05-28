@@ -48,7 +48,9 @@ export class Vector extends PartialProxy {
   get buffer() { return this._buffer.value }
 
   static {
-    extend(this, ContainerPart)
+    extend(this, ContainerPart, { }, {
+      get isEmpty() { },
+    })
 
     extend(this, SizedContainerPart, {
       get size() { return this._size }

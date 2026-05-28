@@ -1,4 +1,5 @@
 import { abstractify } from '@kingjs/abstract'
+import { Descriptor } from '@kingjs/descriptor'
 import { PartialType} from '@kingjs/partial-type'
 import { 
   Transparent,
@@ -106,6 +107,7 @@ export class AbstractAttachments extends PartialType {
 
     // pipeline
     descriptor = super[Compile](descriptor)
+    descriptor = Descriptor.cover(descriptor, this.prototype)
     descriptor = abstractify(descriptor)
     return descriptor
   }

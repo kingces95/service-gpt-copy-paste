@@ -33,7 +33,9 @@ export class ArrayMap extends PartialProxy {
   }
 
   static {
-    extend(this, ContainerPart)
+    extend(this, ContainerPart, { }, {
+      get isEmpty() { },
+    })
 
     extend(this, SizedContainerPart, {
       get size() { return this._array.length },

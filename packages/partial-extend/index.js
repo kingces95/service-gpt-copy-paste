@@ -18,6 +18,12 @@ import { ApplyDeclaration } from '@kingjs/partial-declare'
 // a transparent partial type are logically considered to be defined by 
 // the partial type that "extended" it. 
 
-export function extend(type, partialClass, definitions) {
-  ApplyDeclaration.as(PartialClass, Attachments)(type, partialClass, definitions)
+export function extend(
+  type,
+  partialClass,
+  definitions,
+  stillAbstract,
+) {
+  ApplyDeclaration.as(PartialClass, Attachments)(
+    type, partialClass, definitions, stillAbstract)
 }

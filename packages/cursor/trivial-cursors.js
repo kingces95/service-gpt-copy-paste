@@ -263,6 +263,7 @@ export class TrivialWritableAtCursor extends TrivialWritableCursor {
 export class TrivialSpannableCursor extends TrivialCloneableCursor {
   static {
     implement(this, SpannableCursorConcept, {
+      get spanType() { return Buffer },
       span(other) { return Buffer.alloc(0) }
     })
   }
@@ -367,6 +368,7 @@ export class TrivialWritableRandomAccessCursor extends TrivialRandomAccessCursor
 export class TrivialContiguousCursor extends TrivialWritableRandomAccessCursor {
   static {
     implement(this, SpannableCursorConcept, {
+      get spanType() { return Buffer },
       span(other) { return Buffer.alloc(0) }
     })
   }

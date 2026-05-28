@@ -210,7 +210,10 @@ describe('A concept with a member', () => {
       let clsInfo
       beforeEach(() => {
         cls = class MyClass { }
-        extend(cls, type)
+        extend(cls, type, { }, {
+          member() { },
+          [mySymbol]() { },
+        })
         clsInfo = TypeInfo.from(cls)
       })
       it('should have own names excluding the member', () => {
@@ -240,7 +243,10 @@ describe('A concept with a member', () => {
     let clsInfo
     beforeEach(() => {
       cls = class MyClass {
-        static { implement(this, myConcept) }
+        static { implement(this, myConcept, { }, {
+          member() { },
+          [mySymbol]() { },
+        }) }
       }
       clsInfo = TypeInfo.from(cls)
     })
@@ -316,7 +322,7 @@ describe('A bespoke concept', () => {
       let cls
       beforeEach(() => {
         cls = class MyClass {
-          static { implement(this, myConcept) }
+          static { implement(this, myConcept, { }, { [MySymbol]() { } }) }
         }
       })
       it('has a pojo', async () => {

@@ -130,7 +130,9 @@ describe('MyClass', () => {
       describe('merged with MyExtendedConcept', () => {
         let info
         beforeEach(() => {
-          implement(cls, myExtendedConcept)
+          implement(cls, myExtendedConcept, { }, {
+            myMethod() { },
+          })
           info = TypeInfo.from(cls)
         })
         it('should report having the merged member', () => {
@@ -172,7 +174,9 @@ describe('MyClass', () => {
     describe('merged with MyConcept', () => {
       let info
       beforeEach(() => {
-        implement(cls, myConcept)
+        implement(cls, myConcept, { }, {
+          myMethod() { },
+        })
         info = TypeInfo.from(cls)
       })
       it('should report having the merged member', () => {
@@ -246,7 +250,9 @@ describe('MyClass', () => {
         myPartialClass = class MyPartialClass extends PartialClass { }
         myPartialClass.prototype.myMethod = conceptualFn
         myPartialClassInfo = TypeInfo.from(myPartialClass)
-        implement(cls, myConcept)
+        implement(cls, myConcept, { }, {
+          myMethod() { },
+        })
         extend(cls, myPartialClass)
         info = TypeInfo.from(cls)
       })

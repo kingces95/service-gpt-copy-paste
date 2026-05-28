@@ -44,6 +44,11 @@ class ValueDescriptor {
     assert(ValueDescriptor.test(descriptor))
     return descriptor.value
   }
+
+  static cover(descriptor) {
+    descriptor.value?.()
+    return descriptor
+  }
 }
 
 class GetSetDescriptor {
@@ -98,6 +103,12 @@ class GetSetDescriptor {
   static getValue(descriptor, instance) {
     assert(GetSetDescriptor.hasGetter(descriptor))
     return descriptor.get.call(instance)
+  }
+
+  static cover(descriptor, receiver) {
+    descriptor.get?.call(receiver)
+    descriptor.set?.call(receiver)
+    return descriptor
   }
 
   static equalSlots(left, right) {
@@ -186,6 +197,12 @@ export class Descriptor {
 
   static isAccessorHalfOf(half, whole) {
     return GetSetDescriptor.isAccessorHalfOf(half, whole)
+  }
+
+  static cover(descriptor, receiver) {
+    return ValueDescriptor.test(descriptor)
+      ? ValueDescriptor.cover(descriptor)
+      : GetSetDescriptor.cover(descriptor, receiver)
   }
 
   static merge(existing, descriptor) {
