@@ -1,8 +1,6 @@
-import { assert } from '@kingjs/assert'
-import { PartialReflect, copyTo } from '@kingjs/partial-reflect'
-import { Attachments } from '@kingjs/partial-attachments'
-import { From } from '@kingjs/partial-symbols'
 import { PartialClass } from '@kingjs/partial-class'
+import { Attachments } from '@kingjs/partial-attachments'
+import { ApplyDeclaration } from '@kingjs/partial-declare'
 
 // Extend takes copies (merges) descriptors found on a partial type
 // on to a targets type.
@@ -21,14 +19,5 @@ import { PartialClass } from '@kingjs/partial-class'
 // the partial type that "extended" it. 
 
 export function extend(type, partialClass, definitions) {
-  assert(PartialReflect.isExtensionOf(partialClass, PartialClass),
-    'Argument partialClass must extend PartialClass.')
-  copyTo(partialClass, type)
-
-  if (definitions) {
-    const attachments = Attachments[From](definitions)
-    assert(PartialReflect.isExtensionOf(attachments, Attachments),
-      'Argument definition must extend Attachments.')
-    copyTo(attachments, type)
-  }
+  ApplyDeclaration.as(PartialClass, Attachments)(type, partialClass, definitions)
 }

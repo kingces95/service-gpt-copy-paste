@@ -25,6 +25,10 @@ function adjacent(node) {
 }
 
 describe('linearize', () => {
+  it('should linearize an empty forest', () => {
+    const actual = [...linearize([ ], adjacent)]
+    expect(actual).toEqual([ ])
+  })
   it('should linearize a root', () => {
     const actual = [...linearize('A', adjacent)]
     expect(actual).toEqual([ 'Base', 'ALeft', 'ARight', 'A' ])

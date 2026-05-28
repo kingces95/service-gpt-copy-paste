@@ -14,6 +14,7 @@ import {
   Compile,
   Adjacent,
   From,
+  Redeclare,
   Transparent, isTransparent,
   Precondition,
   DependsOn,
@@ -425,9 +426,9 @@ function *adjacentTypes(type) {
   yield* ownPartialTypes(type)
 }
 
-function *mergeOrder(type) {
+function *mergeOrder(...types) {
   const options = { preOrder: true, reverse: true }
-  const precedenceOrder = [...linearize(type, adjacentTypes, options)]
+  const precedenceOrder = [...linearize(types, adjacentTypes, options)]
   yield* precedenceOrder.reverse()
 }
 
@@ -463,6 +464,7 @@ function resolve(descriptor, existing) {
 const MetaSymbols = [
   Adjacent, 
   From,
+  Redeclare,
   Transparent,  
   Compile,
   Precondition,
@@ -595,12 +597,12 @@ function getBaseType(type) {
 //       └─ Base
 
 function *ownDeclaredAdjacentPartialTypes(type) {
-  const symbols = type[Adjacent]
-  if (!symbols) 
+  const adjacent = type[Adjacent]
+  if (!adjacent) 
     return
 
-  for (const symbol of Object.getOwnPropertySymbols(symbols)) {
-    const expectedType = symbols[symbol]
+  for (const symbol of Object.getOwnPropertySymbols(adjacent)) {
+    const expectedType = adjacent[symbol]
     const adjacentTypes = getOwn(type, symbol)
     for (let adjacentType of asMetadata(adjacentTypes))
       yield expectedType[From](adjacentType)
@@ -737,6 +739,16 @@ function *ownTransparentPartialTypes(type) {
       yield partialType
 }
 
+function *ownRedeclaredPartialTypes(type) {
+  const families = new Set(asMetadata(type[Redeclare]))
+
+  for (const partialType of ownDeclaredAdjacentPartialTypes(type)) {
+    const family = PartialType.getFamily(partialType)
+    if (families.has(family))
+      yield partialType
+  }
+}
+
 const KnownTypes = [ Object, Function, PartialType ]
 const KnownTypeFn = type => Object.getPrototypeOf(type) === PartialType
 const KnownKeys = [ 'constructor' ]
@@ -761,8 +773,13 @@ const compiledPrototype = new Es6Prototype({
 const unifiedPrototype = new Es6Prototype({
   knownKeys: KnownKeys,
   getPrototype: function(type) {
+    const redeclaredTypes = [...ownRedeclaredPartialTypes(type)]
     const transparentTypes = [...ownTransparentPartialTypes(type)]
-    const mergeOrderTypes = [...mergeOrder(transparentTypes), type]
+    const mergeOrderTypes = [
+      ...mergeOrder(...redeclaredTypes),
+      ...mergeOrder(...transparentTypes),
+      type,
+    ]
     return compiledPrototype.reduce(mergeOrderTypes, { map: resolve })
   }
 })

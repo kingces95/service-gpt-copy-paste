@@ -14,6 +14,49 @@ partial declaration
 └─ must make base/composed obligations visible
 ```
 
+Current reality:
+
+```txt
+Extend Ownership Scan
+├─ set: extend(Type, Part, impl) callsites
+├─ transform: call -> (Part, impl member)
+├─ ownership: Part own members + members of implemented Concept
+├─ count: 70 impl-bearing extend callsites
+├─ packages
+│  ├─ cursor: 3
+│  ├─ cursor-container: 58
+│  └─ cursor-view: 9
+└─ mismatches: none
+```
+
+Shared declaration core:
+
+```txt
+ApplyDeclaration.as(declarationBase)(type, declaration, implementation)
+├─ validate target policy
+├─ validate declaration base
+├─ normalize implementation to Attachments
+├─ validate implementation descriptors against declaration descriptors
+├─ copy declaration surface
+└─ copy implementation surface
+```
+
+Descriptor ownership:
+
+```txt
+implementation descriptor
+├─ must have a declaration descriptor with the same key
+├─ must satisfy the declaration descriptor shape
+└─ may implement one accessor half when declaration is a property descriptor
+```
+
+Split accessor policy:
+
+```txt
+declared accessor half
+└─ super-inherits the opposite half into the effective own descriptor
+```
+
 `extend(Type, Part, impl)` should only accept members owned by `Part`.
 Members owned by a base or composed Part should be implemented by an explicit
 declaration of that owning Part.

@@ -1,5 +1,5 @@
 import { assert } from '@kingjs/assert'
-import { contract } from '@kingjs/function-contract'
+import { thunk } from '@kingjs/function-contract'
 import { extend } from '@kingjs/partial-extend'
 import { implement } from '@kingjs/partial-implement'
 import { PartialProxy, ArgChecks } from '@kingjs/partial-proxy'
@@ -155,7 +155,7 @@ export class ForwardList extends PartialProxy {
         return this
       },
 
-      assignRange: contract({
+      assignRange: thunk({
         transforms: [sourceRange],
       },
       function assignRange(range) {
@@ -170,7 +170,7 @@ export class ForwardList extends PartialProxy {
     })
 
     extend(this, PhasedBulkContainerPart, {
-      insertRangeAfter: contract({
+      insertRangeAfter: thunk({
         transforms: [null, sourceRange],
       },
       function insertRangeAfter(cursor, range) {

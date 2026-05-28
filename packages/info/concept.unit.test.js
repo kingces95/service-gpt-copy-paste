@@ -191,18 +191,18 @@ describe('A concept with a member', () => {
       type[Implements] = myConcept
       typeInfo = TypeInfo.from(type)
     })
-    it('should have own names excluding the member', () => {
+    it('should have own names including the redeclared member', () => {
       const actual = [...typeInfo.ownMembers()]
         .map(member => member.name)
         .filter(name => typeof name === 'string')
-      const expected = [ ]
+      const expected = ['member']
       expect(actual).toEqual(expected)
     })
-    it('should have own symbols excluding the symbol member', () => {
+    it('should have own symbols including the redeclared symbol member', () => {
       const actual = [...typeInfo.ownMembers()]
         .map(member => member.name)
         .filter(name => typeof name === 'symbol')
-      const expected = [ ]
+      const expected = [mySymbol]
       expect(actual).toEqual(expected)
     })
     describe('used to extend a class', () => {
@@ -454,4 +454,3 @@ describe('A bespoke concept', () => {
     })
   })
 })
-

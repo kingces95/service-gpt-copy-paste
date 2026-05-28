@@ -1,11 +1,12 @@
 import { assert } from '@kingjs/assert'
 import { Es6Compiler } from '@kingjs/es6-compiler'
 import { isPojo } from '@kingjs/pojo-test'
-import { es6DefineType } from '@kingjs/es6-define-type'
+import { declareType } from '@kingjs/es6-define'
 import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { 
   Compile, 
   Adjacent, 
+  Redeclare,
   Transparent,
   From,
 } from '@kingjs/partial-symbols'
@@ -13,6 +14,7 @@ import {
 export {
   Compile,
   Adjacent,
+  Redeclare,
   Transparent,
   From,
 } from '@kingjs/partial-symbols'
@@ -68,6 +70,7 @@ export class PartialType extends null {
 
   static [Transparent] = false
   static [Adjacent] = { }
+  static [Redeclare] = [ ]
   static [From](typeOrPojo) {
     if (typeof typeOrPojo == 'function') {
       assert(Es6UserReflect.isExtensionOf(typeOrPojo, PartialType),
@@ -81,7 +84,7 @@ export class PartialType extends null {
     assert(this[Transparent],
       'Only a transparent PartialType can be defined from a pojo.')
       
-    return es6DefineType(null, this, typeOrPojo)
+    return declareType(null, this, typeOrPojo)
   }
   static [Compile](descriptor) { 
     return Es6Compiler.compile(descriptor) 

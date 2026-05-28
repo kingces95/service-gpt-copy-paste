@@ -149,6 +149,60 @@ describe('Descriptor', () => {
     const actual = Descriptor.get(SomeClass.prototype, 'missing')
     expect(actual).toBe(undefined)
   })
+
+  it('compares descriptor slots without comparing value identity', () => {
+    expect(Descriptor.equalSlots({
+      value: function one() { },
+      enumerable: false,
+      configurable: true,
+      writable: true,
+    }, {
+      value: function two() { },
+      enumerable: false,
+      configurable: true,
+      writable: true,
+    })).toBe(true)
+
+    expect(Descriptor.equalSlots({
+      value: function one() { },
+      enumerable: false,
+      configurable: true,
+      writable: true,
+    }, {
+      value: function two() { },
+      enumerable: false,
+      configurable: true,
+      writable: false,
+    })).toBe(false)
+  })
+
+  it('recognizes an accessor half of a whole accessor', () => {
+    const whole = {
+      get() { },
+      set(value) { },
+      enumerable: false,
+      configurable: true,
+    }
+
+    expect(Descriptor.isAccessorHalfOf({
+      get() { },
+      enumerable: false,
+      configurable: true,
+    }, whole)).toBe(true)
+
+    expect(Descriptor.isAccessorHalfOf({
+      set(value) { },
+      enumerable: false,
+      configurable: true,
+    }, whole)).toBe(true)
+
+    expect(Descriptor.isAccessorHalfOf({
+      get() { },
+      set(value) { },
+      enumerable: false,
+      configurable: true,
+    }, whole)).toBe(false)
+  })
 })
 
 describe.each(Object.entries(Tests))('%s', (_, test) => {

@@ -55,6 +55,12 @@ STL-inspired container surface through a set of pivots:
 the data and script used to regenerate the `Members`, `Member Index`, and
 `Lexeme Index` column grids.
 
+## Partial Types
+
+[Partial Type Model](partial-type.model.md) records partial-type family policy:
+
+- [Family Policy](partial-type.model.md#family-policy): partial-type families pivoted by declared family policy.
+
 ## Prototype
 
 [Prototype Protocol Model](prototype.model.md) records Prototype reflection

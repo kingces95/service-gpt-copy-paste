@@ -7,7 +7,10 @@
   "exports": {
     ".": "./index.js"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@kingjs/partial-attachments": "1.0.0",
+    "@kingjs/partial-declare": "1.0.0"
+  },
   "devDependencies": {},
   "peerDependencies": {},
   "author": "Chris King",

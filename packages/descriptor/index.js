@@ -1,9 +1,25 @@
 import { assert } from '@kingjs/assert'
 import { isPojo } from '@kingjs/pojo-test'
 
+const AccessorMetadataSlots = [
+  'enumerable',
+  'configurable',
+]
+
 class ValueDescriptor {
   static test(descriptor) {
     return descriptor != null && 'value' in descriptor
+  }
+
+  static equalSlots(left, right) {
+    if (!ValueDescriptor.test(left) || !ValueDescriptor.test(right))
+      return false
+
+    for (const slot of [ 'writable', 'enumerable', 'configurable' ])
+      if (left[slot] != right[slot])
+        return false
+
+    return true
   }
 
   static formof(descriptor, shape) {
@@ -83,6 +99,44 @@ class GetSetDescriptor {
     assert(GetSetDescriptor.hasGetter(descriptor))
     return descriptor.get.call(instance)
   }
+
+  static equalSlots(left, right) {
+    if (!GetSetDescriptor.test(left) || !GetSetDescriptor.test(right))
+      return false
+
+    if (GetSetDescriptor.hasGetter(left) != GetSetDescriptor.hasGetter(right))
+      return false
+
+    if (GetSetDescriptor.hasSetter(left) != GetSetDescriptor.hasSetter(right))
+      return false
+
+    return GetSetDescriptor.equalMetadataSlots(left, right)
+  }
+
+  static isAccessorHalfOf(half, whole) {
+    if (!GetSetDescriptor.hasGetter(whole) ||
+      !GetSetDescriptor.hasSetter(whole))
+      return false
+
+    const hasGetter = GetSetDescriptor.hasGetter(half)
+    const hasSetter = GetSetDescriptor.hasSetter(half)
+
+    if (hasGetter == hasSetter)
+      return false
+
+    if (ValueDescriptor.test(half) || 'writable' in half)
+      return false
+
+    return GetSetDescriptor.equalMetadataSlots(half, whole)
+  }
+
+  static equalMetadataSlots(left, right) {
+    for (const slot of AccessorMetadataSlots)
+      if (left[slot] != right[slot])
+        return false
+
+    return true
+  }
 }
 
 export class Descriptor {
@@ -123,6 +177,15 @@ export class Descriptor {
 
   static hasAccessor(descriptor) {
     return GetSetDescriptor.test(descriptor)
+  }
+
+  static equalSlots(left, right) {
+    return ValueDescriptor.equalSlots(left, right)
+      || GetSetDescriptor.equalSlots(left, right)
+  }
+
+  static isAccessorHalfOf(half, whole) {
+    return GetSetDescriptor.isAccessorHalfOf(half, whole)
   }
 
   static merge(existing, descriptor) {

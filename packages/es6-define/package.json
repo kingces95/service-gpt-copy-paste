@@ -1,15 +1,15 @@
 {
-  "name": "@kingjs/es6-define-type",
+  "name": "@kingjs/es6-define",
   "version": "1.0.0",
-  "description": "",
+  "description": ".",
   "main": "index.js",
   "type": "module",
   "exports": {
     ".": "./index.js"
   },
-  "dependencies": {
-    "rxjs": "^7.5.0"
-  },
+  "dependencies": {},
+  "devDependencies": {},
+  "peerDependencies": {},
   "author": "Chris King",
   "license": "MIT"
 }

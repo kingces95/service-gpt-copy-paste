@@ -94,6 +94,7 @@
 export const Adjacent = Symbol('PartialType.declarations')
 export const Compile = Symbol('PartialType.compile')
 export const From = Symbol('PartialType.From')
+export const Redeclare = Symbol('PartialType.Redeclare')
 export const Transparent = Symbol('PartialType.Transparent')
 export const Precondition = Symbol('PartialType.Precondition')
 

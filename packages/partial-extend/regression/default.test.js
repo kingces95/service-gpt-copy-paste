@@ -8,7 +8,7 @@ import {
 import { extend } from '@kingjs/partial-extend'
 import { PartialClass } from '@kingjs/partial-class'
 import { defaultTo } from '@kingjs/function-args'
-import { contract } from '@kingjs/function-contract'
+import { thunk } from '@kingjs/function-contract'
 
 const DefaultsMetadata = [
   undefined,
@@ -108,7 +108,7 @@ class ContractType {
 
   static {
     extend(this, BasePart)
-    this.prototype.member = contract({
+    this.prototype.member = thunk({
       defaults: DefaultsMetadata,
       transforms: [null, transformSecond],
     }, function member(first, second = first) {

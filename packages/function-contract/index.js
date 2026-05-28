@@ -1,5 +1,7 @@
 import { assert } from '@kingjs/assert'
 import { asArray } from '@kingjs/as-array'
+import { declareName } from '@kingjs/es6-define'
+import { Tuple } from '@kingjs/tuple'
 import {
   applyDefaults,
   applyTransforms,
@@ -31,28 +33,26 @@ export function thunk(metadata, fn) {
     return fn.apply(this, args)
   }
 
-  Object.defineProperty(result, 'name', {
-    value: fn.name,
-    configurable: true,
-  })
-
-  return result
+  return declareName(result, fn.name)
 }
 
-export function contract(requirements, defaults, fn) {
-  if (typeof requirements == 'function') {
-    fn = requirements
-    requirements = null
-    defaults = null
+export function contract(requirements, names, defaults, fn) {
+  requirements = normalizeRequirements(requirements)
+
+  if (names instanceof Tuple) {
+    if (typeof defaults == 'function') {
+      fn = defaults
+      defaults = null
+    }
   }
 
-  else if (isMetadata(requirements)) {
+  else {
     fn = defaults
-    defaults = requirements
-    requirements = null
+    defaults = names
+    names = null
   }
 
-  else if (typeof defaults == 'function') {
+  if (typeof defaults == 'function') {
     fn = defaults
     defaults = null
   }
@@ -64,23 +64,16 @@ export function contract(requirements, defaults, fn) {
     'Argument must be a function.')
 
   const metadata = normalizeMetadata(defaults)
-  const names = normalizeNames(metadata.names)
-  requirements = normalizeRequirements(requirements)
+  names = normalizeNames(names ?? metadata.names)
   defaults = normalizeDefaults(metadata.defaults)
-  const target = thunk(metadata, fn)
 
   const result = function(...args) {
     args = applyDefaults(args, defaults, this)
     checkSlots(requirements, args, names)
-    return target.apply(this, args)
+    return fn.apply(this, args)
   }
 
-  Object.defineProperty(result, 'name', {
-    value: fn.name,
-    configurable: true,
-  })
-
-  return result
+  return declareName(result, fn.name)
 }
 
 function normalizeMetadata(metadata) {
@@ -183,8 +176,8 @@ function normalizeNames(names) {
   if (names == null)
     return null
 
-  assert(Array.isArray(names),
-    'Function contract names must be an array.')
+  assert(names instanceof Tuple,
+    'Function contract names must be a Tuple.')
 
   return names
 }

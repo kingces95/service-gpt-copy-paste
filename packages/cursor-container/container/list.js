@@ -1,5 +1,5 @@
 import { assert } from '@kingjs/assert'
-import { contract } from '@kingjs/function-contract'
+import { thunk } from '@kingjs/function-contract'
 import { implement } from '@kingjs/partial-implement'
 import { extend } from '@kingjs/partial-extend'
 import { ForwardList } from './forward-list.js'
@@ -109,7 +109,7 @@ export class List extends ForwardList {
         return this
       },
 
-      assignRange: contract({
+      assignRange: thunk({
         transforms: [sourceRange],
       },
       function assignRange(range) {
@@ -122,7 +122,7 @@ export class List extends ForwardList {
     })
 
     extend(this, PhasedBulkContainerPart, {
-      insertRangeAfter: contract({
+      insertRangeAfter: thunk({
         transforms: [null, sourceRange],
       },
       function insertRangeAfter(cursor, range) {

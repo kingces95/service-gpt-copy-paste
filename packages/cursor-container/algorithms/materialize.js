@@ -1,4 +1,3 @@
-import { contract } from '@kingjs/function-contract'
 import { templatize } from '@kingjs/templatize'
 import { Constructs } from '@kingjs/constructs'
 import {
@@ -12,7 +11,7 @@ const Materialize = templatize(
     DefaultConstructible,
     Constructs.as(PushBackProbe),
   ]],
-  type => contract(function materialize(range) {
+  type => function materialize(range) {
     const result = new type()
     const first = range.begin()
     const last = range.end()
@@ -23,7 +22,7 @@ const Materialize = templatize(
     }
 
     return result
-  })
+  }
 )
 
 export const materialize = Materialize.as(ArrayMap)

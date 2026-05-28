@@ -34,7 +34,7 @@ describe('A type', () => {
     })
     it('should throw implementing itself', () => {
       expect(() => implement(MyConcept, MyConcept)).toThrow([
-        "Expected type to not be a PartialType."
+        "Expected type to not extend Concept."
       ].join(' '))
     })
     describe('already implemented by the type', () => {
@@ -60,6 +60,7 @@ describe('A type', () => {
       let cls
       beforeEach(() => {
         extendedMethodFn = () => { }
+        MyConcept.prototype.baseMethod = function() { }
         extendedConcept = class ExtendedConcept extends MyConcept { }
         Object.defineProperty(extendedConcept.prototype, 'method', {
           value: extendedMethodFn,
@@ -75,6 +76,11 @@ describe('A type', () => {
       })
       it('should satisfy MyConcept', () => {
         expect(cls.prototype).toBeInstanceOf(MyConcept)
+      })
+      it('should reject implementations of inherited concept members', () => {
+        expect(() => implement(class { }, extendedConcept, {
+          baseMethod() { },
+        })).toThrow("ExtendedConcept does not define member 'baseMethod'.")
       })
     })
     describe('implmented by the type', () => {
@@ -229,7 +235,7 @@ describe('A type', () => {
         const emptyMethod = () => { }
         it('should throw', () => {
           expect(() => implement(type, MyConcept, { other: emptyMethod }))
-            .toThrow("Concept 'MyConcept' does not define member 'other'.")
+            .toThrow("MyConcept does not define member 'other'.")
         })
       })
     })
@@ -276,4 +282,3 @@ describe('A type', () => {
     })
   })
 })
-

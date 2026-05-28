@@ -3,6 +3,7 @@ import { trimPojo } from '@kingjs/pojo-trim'
 import { Prototype } from '@kingjs/prototype'
 import { PartialType } from '@kingjs/partial-type'
 import { contract } from '@kingjs/function-contract'
+import { Tuple } from '@kingjs/tuple'
 import { asIterable } from '@kingjs/as-iterable'
 import {
   Preconditions,
@@ -28,6 +29,8 @@ import {
 
 // ____________________________________________________________________________
 // METADATA
+
+const ThisNames = Tuple.of('this')
 
 // PartialMetadata supports metadata which is a prototype chain of the
 // static field descriptors of a type found by traversing the type
@@ -305,9 +308,7 @@ export function createPartialMetadata(PartialReflect) {
   }
 
   function createThisCheck(requirements) {
-    const check = contract([requirements], {
-      names: ['this'],
-    })
+    const check = contract([requirements], ThisNames)
     return function() { check(this) }
   }
 

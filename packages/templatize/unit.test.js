@@ -76,7 +76,7 @@ describe('templatize', () => {
 
     expect(template.as(Type, OtherType)()).toEqual([Type, OtherType])
     expect(() => template.as(OtherType, Type)).toThrow(
-      'Argument must be an instance of Requirement.')
+      'Argument 0 must be Requirement.')
   })
 
   it('should define template surface with strict descriptors', () => {

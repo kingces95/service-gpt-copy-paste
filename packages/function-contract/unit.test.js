@@ -5,6 +5,7 @@ import {
   overload,
   thunk,
 } from '@kingjs/function-contract'
+import { Tuple } from '@kingjs/tuple'
 
 class Positive {
   static [Symbol.hasInstance](value) {
@@ -108,13 +109,27 @@ describe('contract', () => {
       'Argument 1 must be Positive.')
   })
 
-  it('should use metadata names in errors', () => {
-    const check = contract([Positive], {
-      names: ['this'],
-    })
+  it('should use tuple names in errors', () => {
+    const check = contract([Positive], Tuple.of('this'))
 
     expect(() => check(0)).toThrow(
       'Argument this must be Positive.')
+  })
+
+  it('should accept tuple names before metadata', () => {
+    function add(left, right = 1) { return left + right }
+    const checkedAdd = contract([
+      Positive,
+      Positive,
+    ], Tuple.of('left', 'right'), [
+      undefined,
+      1,
+    ],
+    add)
+
+    expect(checkedAdd(1)).toBe(2)
+    expect(() => checkedAdd(1, 0)).toThrow(
+      'Argument right must be Positive.')
   })
 
   it('should apply procedural defaults left to right', () => {
@@ -172,27 +187,31 @@ describe('contract', () => {
     expect(checkedIdentity.call(context)).toBe(context.thing)
   })
 
-  it('should apply checks before function-boundary transforms', () => {
+  it('should compose contract checks before thunk transforms', () => {
     function identity(value) { return value }
+    const Defaults = [
+      'thing',
+    ]
     const checkedIdentity = contract([
       StringValue,
     ], {
-      defaults: [
-        'thing',
-      ],
+      defaults: Defaults,
+    },
+    thunk({
+      defaults: Defaults,
       transforms: [
         function(value) { return this[value] },
       ],
     },
-    identity)
+    identity))
     const context = { thing: new Thing() }
 
     expect(checkedIdentity.call(context)).toBe(context.thing)
   })
 
-  it('should accept metadata without requirements', () => {
+  it('should use thunk for metadata without requirements', () => {
     function identity(value) { return value }
-    const checkedIdentity = contract({
+    const checkedIdentity = thunk({
       transforms: [
         value => value + 1,
       ],

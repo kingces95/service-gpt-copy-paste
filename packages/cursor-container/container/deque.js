@@ -1,5 +1,5 @@
 import Denque from "denque"
-import { contract } from '@kingjs/function-contract'
+import { thunk } from '@kingjs/function-contract'
 import { implement } from '@kingjs/partial-implement'
 import { extend } from '@kingjs/partial-extend'
 import { PartialProxy } from '@kingjs/partial-proxy'
@@ -62,7 +62,7 @@ export class Deque extends PartialProxy {
         return this
       },
 
-      assignRange: contract({
+      assignRange: thunk({
         transforms: [sourceRange],
       },
       function assignRange(range) {
@@ -72,7 +72,7 @@ export class Deque extends PartialProxy {
     })
 
     extend(this, BulkEditableContainerPart, {
-      insertRange: contract({
+      insertRange: thunk({
         transforms: [null, sourceRange],
       },
       function insertRange(cursor, range) {

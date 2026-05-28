@@ -1,4 +1,4 @@
-import { PartialType, Adjacent } from '@kingjs/partial-type'
+import { PartialType, Adjacent, Redeclare } from '@kingjs/partial-type'
 import { Concept } from '@kingjs/partial-concept'
 import { 
   Attachments, AbstractAttachments 
@@ -27,6 +27,7 @@ export class PartialClass extends PartialType {
     [Extends]: PartialClass,
     [Implements]: Concept,
   }
+  static [Redeclare] = [ Concept ]
   static [Symbol.hasInstance] = Concept[Symbol.hasInstance]
   static [Precondition] = Concept[Precondition]
 }

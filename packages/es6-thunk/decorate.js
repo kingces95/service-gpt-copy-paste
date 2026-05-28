@@ -1,11 +1,7 @@
+import { declareName } from '@kingjs/es6-define'
+
 export function decorate(fn, target, tag) {
   fn.__target = target
 
-  Object.defineProperty(fn, 'name', {
-    value: target.name + '_' + tag,
-    configurable: true,
-  })
-
-  return fn
+  return declareName(fn, target.name + '_' + tag)
 }
-

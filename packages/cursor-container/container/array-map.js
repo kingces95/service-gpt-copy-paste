@@ -1,7 +1,7 @@
 import { implement } from '@kingjs/partial-implement'
 import { extend } from '@kingjs/partial-extend'
 import { PartialProxy } from '@kingjs/partial-proxy'
-import { contract } from '@kingjs/function-contract'
+import { thunk } from '@kingjs/function-contract'
 import {
   RangeConcept,
 } from '@kingjs/cursor'
@@ -60,7 +60,7 @@ export class ArrayMap extends PartialProxy {
         return first
       },
 
-      insertRange: contract({
+      insertRange: thunk({
         transforms: [null, sourceRange],
       },
       function insertRange(cursor, range) {

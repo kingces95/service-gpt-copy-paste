@@ -1,0 +1,25 @@
+{
+  "name": "@kingjs/partial-declare",
+  "version": "1.0.0",
+  "description": ".",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {
+    "@kingjs/assert": "1.0.0",
+    "@kingjs/descriptor": "1.0.0",
+    "@kingjs/function-contract": "1.0.0",
+    "@kingjs/partial-reflect": "1.0.0",
+    "@kingjs/partial-symbols": "1.0.0",
+    "@kingjs/partial-type": "1.0.0",
+    "@kingjs/templatize": "1.0.0",
+    "@kingjs/tuple": "1.0.0",
+    "@kingjs/type-traits": "1.0.0"
+  },
+  "devDependencies": {},
+  "peerDependencies": {},
+  "author": "Chris King",
+  "license": "MIT"
+}

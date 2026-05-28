@@ -10,14 +10,13 @@ export class OutputIteratorAdaptor extends PartialProxy {
     this.#action = action
   }
 
+  equatableTo(other) { return false }
   set(value) { this.#action(value) }
 
   static {
     implement(this, CursorConcept, {
-      step() { return this },
-      equatableTo(other) { return false },
-    }, {
       get range() { },
+      step() { return this },
     })
   }
 }

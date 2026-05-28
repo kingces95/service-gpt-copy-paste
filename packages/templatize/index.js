@@ -1,4 +1,5 @@
 import { contract } from '@kingjs/function-contract'
+import { declareName } from '@kingjs/es6-define'
 import { WeakMapLookup } from '@kingjs/weak-map-lookup'
 
 // ____________________________________________________________________________
@@ -39,10 +40,7 @@ function templatizeType(requirements, type) {
 
     class TypeOf extends type { }
 
-    Object.defineProperty(TypeOf, 'name', {
-      value: `${type.name}Of`,
-      configurable: true,
-    })
+    declareName(TypeOf, `${type.name}Of`)
 
     defineTemplateSurface(TypeOf, { targs })
 

@@ -230,6 +230,12 @@ context
 ├─ findDescriptor(prototype, key, { context })
 └─ findValue(prototype, key, { context })
 
+descriptorType
+├─ getOwnDescriptor(prototype, key, { descriptorType })
+├─ *ownDescriptors(prototype, { descriptorType })
+├─ *findDescriptors(prototype, key, { descriptorType })
+└─ *descriptors(prototype, { descriptorType })
+
 asDescriptor
 └─ copyTo(prototype, target, { asDescriptor })
 
@@ -280,6 +286,11 @@ Boolean
    └─ *values(prototype, { reverseHierarchy })
 
 Function
+├─ descriptorType
+│  ├─ getOwnDescriptor(prototype, key, { descriptorType })
+│  ├─ *ownDescriptors(prototype, { descriptorType })
+│  ├─ *findDescriptors(prototype, key, { descriptorType })
+│  └─ *descriptors(prototype, { descriptorType })
 ├─ filter
 │  ├─ *keys(prototype, { filter })
 │  ├─ *ownDescriptors(prototype, { filter })
