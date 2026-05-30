@@ -76,11 +76,11 @@ export class TrivialCursor extends PartialProxy {
   get range() { return this.#range }
 
   static {
-    implement(this, CursorConcept, {
-      step() { throwMoveOutOfBounds() }
-    })
     implement(this, EquatableConcept, {
       equals(other) { return this.equatableTo(other) }
+    })
+    implement(this, CursorConcept, {
+      step() { throwMoveOutOfBounds() }
     })
   }
 
@@ -222,7 +222,14 @@ export class TrivialReadableAtCursor extends TrivialReadableCursor {
     extend(this, MovableCursorPart, {
       canMove$(offset) { return offset === 0 }
     })
-    extend(this, ReadableAtCursorPart)
+    extend(this, ReadableAtCursorPart, {
+      isReadableAt$(offset) {
+        if (!this.canMove$(offset)) return false
+
+        const cursor = this.clone().move(offset)
+        return cursor.isReadable$()
+      },
+    })
   }
 }
 
@@ -256,7 +263,14 @@ export class TrivialWritableAtCursor extends TrivialWritableCursor {
     extend(this, MovableCursorPart, {
       canMove$(offset) { return offset === 0 }
     })
-    extend(this, WritableAtCursorPart)
+    extend(this, WritableAtCursorPart, {
+      isWritableAt$(offset) {
+        if (!this.canMove$(offset)) return false
+
+        const cursor = this.clone().move(offset)
+        return cursor.isWritable$()
+      },
+    })
   }
 }
 
@@ -361,7 +375,14 @@ export class TrivialWritableRandomAccessCursor extends TrivialRandomAccessCursor
 
   static {
     extend(this, CloneableCursorPart)
-    extend(this, WritableAtCursorPart)
+    extend(this, WritableAtCursorPart, {
+      isWritableAt$(offset) {
+        if (!this.canMove$(offset)) return false
+
+        const cursor = this.clone().move(offset)
+        return cursor.isWritable$()
+      },
+    })
   }
 }
 

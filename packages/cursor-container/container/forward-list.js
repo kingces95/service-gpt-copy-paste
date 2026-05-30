@@ -107,19 +107,6 @@ export class ForwardList extends PartialProxy {
   }
 
   static {
-    extend(this, PhasedContainerPart, {
-      beforeBegin() { return new this.cursorType(this, this._rootLink) },
-      insertValueAfter(cursor, value) { cursor.link.insertAfter(value) },
-      eraseAfter(first, last = next(first, 2)) {
-        while (!next(first).equals(last))
-          first.link.eraseAfter()
-
-        return last
-      },
-    })
-  }
-
-  static {
     extend(this, ContainerPart, {
       get isEmpty() { return this._endLink == this._rootLink.next },
     })
@@ -169,6 +156,17 @@ export class ForwardList extends PartialProxy {
       }),
     })
 
+    extend(this, PhasedContainerPart, {
+      beforeBegin() { return new this.cursorType(this, this._rootLink) },
+      insertValueAfter(cursor, value) { cursor.link.insertAfter(value) },
+      eraseAfter(first, last = next(first, 2)) {
+        while (!next(first).equals(last))
+          first.link.eraseAfter()
+
+        return last
+      },
+    })
+
     extend(this, PhasedBulkContainerPart, {
       insertRangeAfter: thunk({
         transforms: [null, sourceRange],
@@ -182,6 +180,5 @@ export class ForwardList extends PartialProxy {
       }),
 
     })
-
   }
 }

@@ -237,6 +237,12 @@ export class Es6Reflector {
     const types = this.#instance.baseTypes(type)
     yield* this.#areExtensionsOf(types, filter)
   }
+  isPrototypeExtensionOf(type, targetType) {
+    if (type == targetType)
+      return false
+
+    return [...this.hierarchy(type)].includes(targetType)
+  }
   
   // shared methods
   typeof(type, key, descriptor, { isStatic } = { }) {

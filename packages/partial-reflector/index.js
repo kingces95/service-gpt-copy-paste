@@ -18,7 +18,6 @@ import {
   Redeclare,
   Transparent, isTransparent,
   Precondition,
-  DependsOn,
   CreateThunk,
 } from '@kingjs/partial-symbols'
 
@@ -704,6 +703,10 @@ class AdjacentTypes {
     yield* this.#adjacentTypes
   }
 
+  *[Symbol.iterator]() {
+    yield* this.#adjacentTypes
+  }
+
   publish(type) {
     assert(!this.#loaded,
       'Type cannot be modified after it has been loaded.')
@@ -804,6 +807,13 @@ export function create({
   knownTypes = [],
   knownStaticKeys = [],
 }) {
+  function assertTopologicalNext(order, next) {
+    for (const previous of order)
+      if (PartialReflect.isPrototypeExtensionOf(previous, next))
+        throw new TypeError(
+          `${next.name} must be attached before ${previous.name}.`)
+  }
+
   const PartialReflect = Es6Reflector.create({
     knownTypes: [ ...knownTypes, ...KnownTypes ], 
     knownTypeFn: KnownTypeFn,
@@ -812,6 +822,12 @@ export function create({
     splitAccessors: true,
     cacheHint: type => !isTransparent(type),
     getPrototype: function(type) {
+      const previousTypes = []
+      for (const partialType of ownPartialTypes(type)) {
+        assertTopologicalNext(previousTypes, partialType)
+        previousTypes.push(partialType)
+      }
+
       return unifiedPrototype.reduce(mergeOrder(type), { map: resolve })
     }
   })
@@ -848,6 +864,11 @@ export function create({
       return
     }
 
+    if (!isPartialType && !isTransparent(partialType)) {
+      assertTopologicalNext([...adjacentTypes], partialType)
+      adjacentTypes.publish(partialType)
+    }
+
     const prototype = type.prototype
     PartialReflect.copyTo(partialType, prototype, {
       createThunk: (key, descriptor, host) => {
@@ -871,15 +892,6 @@ export function create({
 
       onHost: (host) => {
         host[Precondition]?.call(host, type)
-
-        if (!isPartialType)
-          for (const requirement of asMetadata(getOwn(host, DependsOn)))
-            if (!adjacentTypes.has(requirement))
-              throw new TypeError(
-                `${type.name} requires ${requirement.name}.`)
-
-        if (!isTransparent(partialType) && !isTransparent(host))
-          adjacentTypes.publish(host)
       }
     })
   }

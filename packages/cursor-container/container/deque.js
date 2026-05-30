@@ -49,6 +49,10 @@ export class Deque extends PartialProxy {
       setAt(index, value) { this._denque.splice(index, 1, value) },
     })
 
+    extend(this, ClearableContainerPart, {
+      clear() { this._denque.clear() },
+    })
+
     extend(this, BulkAssignableContainerPart, {
       resize(count, value = undefined) {
         if (count < this.size) {
@@ -71,28 +75,6 @@ export class Deque extends PartialProxy {
       }),
     })
 
-    extend(this, BulkEditableContainerPart, {
-      insertRange: thunk({
-        transforms: [null, sourceRange],
-      },
-      function insertRange(cursor, range) {
-        this._denque.splice(cursor.index, 0, ...iterate(range))
-        return this
-      }),
-    })
-
-    extend(this, EditableContainerPart, {
-      erase(first, last = next(first)) {
-        const result = first.clone()
-        this._denque.remove(first.index, last.index - first.index)
-        return result
-      },
-    })
-
-    extend(this, ClearableContainerPart, {
-      clear() { this._denque.clear() },
-    })
-
     extend(this, FrontInsertableContainerPart, {
       popFront() { return this._denque.shift() },
       pushFront(value) { this._denque.unshift(value) },
@@ -101,6 +83,26 @@ export class Deque extends PartialProxy {
     extend(this, BackInsertableContainerPart, {
       pushBack(value) { this._denque.push(value) },
       popBack() { return this._denque.pop() },
+    })
+
+    extend(this, EditableContainerPart, {
+      erase(first, last = next(first)) {
+        const result = first.clone()
+        this._denque.remove(first.index, last.index - first.index)
+        return result
+      },
+    }, {
+      insertValue(cursor, value) { },
+    })
+
+    extend(this, BulkEditableContainerPart, {
+      insertRange: thunk({
+        transforms: [null, sourceRange],
+      },
+      function insertRange(cursor, range) {
+        this._denque.splice(cursor.index, 0, ...iterate(range))
+        return this
+      }),
     })
   }
 }

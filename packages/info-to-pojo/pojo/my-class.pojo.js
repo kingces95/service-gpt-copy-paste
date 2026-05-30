@@ -28,7 +28,7 @@ export const myClassPojo = {
     methods: {
       myMethod: { host: '.' },
       myAbstractMethod: { host: '.', isAbstract: true },
-      myBaseMethod: { host: '.' },
+      myBaseMethod: { host: 'MyBasePartialClass' },
       myNewMethod: { host: '.' },
       [MySymbol]: { host: '.' }
     },

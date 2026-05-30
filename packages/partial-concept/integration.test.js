@@ -19,7 +19,13 @@ describe('A kitchen sink definition', () => {
       set accessor(value) { }
       method() { }
     }
-    implement(cls, MyConcept)
+    implement(cls, MyConcept, { }, {
+      get getter() { },
+      set setter(value) { },
+      get accessor() { },
+      set accessor(value) { },
+      method() { },
+    })
     clsInfo = TypeInfo.from(cls)
   })
   it('should have an info pojo', async () => {

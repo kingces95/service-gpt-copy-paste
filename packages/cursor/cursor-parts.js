@@ -1,5 +1,4 @@
 import {
-  DependsOn,
   Implements,
 } from '@kingjs/partial-concept'
 import {
@@ -63,11 +62,8 @@ export class CursorPart extends PartialClass {
   }
 }
 
-export class SteppableCursorPart extends PartialClass {
+export class SteppableCursorPart extends CursorPart {
   static [Implements] = SteppableCursorConcept
-  static [DependsOn] = [
-    CursorPart, // isAtEnd$
-  ]
 
   static [ThisChecks] = {
     step: NotAtEnd,
@@ -78,11 +74,8 @@ export class SteppableCursorPart extends PartialClass {
   }
 }
 
-export class ReadableCursorPart extends PartialClass {
+export class ReadableCursorPart extends CursorPart {
   static [Implements] = ReadableCursorConcept
-  static [DependsOn] = [
-    CursorPart, // isAtEnd$
-  ]
 
   static [ThisChecks] = {
     get value() { return HasValue },
@@ -93,11 +86,8 @@ export class ReadableCursorPart extends PartialClass {
   }
 }
 
-export class WritableCursorPart extends PartialClass {
+export class WritableCursorPart extends CursorPart {
   static [Implements] = WritableCursorConcept
-  static [DependsOn] = [
-    CursorPart, // isAtEnd$
-  ]
 
   static [ThisChecks] = {
     set value(value) { return NotAtEnd },
@@ -112,7 +102,7 @@ export class CloneableCursorPart extends PartialClass {
   static [Implements] = CloneableCursorConcept
 }
 
-export class BacktrackableCursorPart extends PartialClass {
+export class BacktrackableCursorPart extends SteppableCursorPart {
   static [Implements] = BacktrackableCursorConcept
 
   static [Preconditions] = {
@@ -135,11 +125,8 @@ export class BacktrackableCursorPart extends PartialClass {
   }
 }
 
-export class MovableCursorPart extends PartialClass {
+export class MovableCursorPart extends BacktrackableCursorPart {
   static [Implements] = MovableCursorConcept
-  static [DependsOn] = [
-    BacktrackableCursorPart, // isAtBegin$
-  ]
 
   static [Preconditions] = {
     move(offset) {
@@ -159,7 +146,7 @@ export class MovableCursorPart extends PartialClass {
   }
 }
 
-export class ComparableToCursorPart extends PartialClass {
+export class ComparableToCursorPart extends MovableCursorPart {
   static [Implements] = ComparableToCursorConcept
 
   static [Preconditions] = {
@@ -169,7 +156,7 @@ export class ComparableToCursorPart extends PartialClass {
   }
 }
 
-export class MeasurableCursorPart extends PartialClass {
+export class MeasurableCursorPart extends MovableCursorPart {
   static [Implements] = MeasurableCursorConcept
 
   static [Preconditions] = {
@@ -179,13 +166,11 @@ export class MeasurableCursorPart extends PartialClass {
   }
 }
 
-export class ReadableAtCursorPart extends PartialClass {
+export class ReadableAtCursorPart extends ReadableCursorPart {
   static [Implements] = ReadableAtCursorConcept
-  static [DependsOn] = [
-    CloneableCursorPart, // clone()
-    MovableCursorPart, // canMove$
-    ReadableCursorPart, // cursor.isReadable$
-  ]
+  static [Abstracts] = {
+    isReadableAt$(offset) { },
+  }
 
   static [Preconditions] = {
     at(offset) {
@@ -193,37 +178,19 @@ export class ReadableAtCursorPart extends PartialClass {
         throwReadOutOfBounds()
     },
   }
-
-  isReadableAt$(offset) {
-    if (!this.canMove$(offset))
-      return false
-
-    const cursor = this.clone().move(offset)
-    return cursor.isReadable$()
-  }
 }
 
-export class WritableAtCursorPart extends PartialClass {
+export class WritableAtCursorPart extends WritableCursorPart {
   static [Implements] = WritableAtCursorConcept
-  static [DependsOn] = [
-    CloneableCursorPart, // clone()
-    MovableCursorPart, // canMove$
-    WritableCursorPart, // cursor.isWritable$
-  ]
+  static [Abstracts] = {
+    isWritableAt$(offset) { },
+  }
 
   static [Preconditions] = {
     setAt(offset, value) {
       if (!this.isWritableAt$(offset))
         throwWriteOutOfBounds()
     },
-  }
-
-  isWritableAt$(offset) {
-    if (!this.canMove$(offset))
-      return false
-
-    const cursor = this.clone().move(offset)
-    return cursor.isWritable$()
   }
 }
 

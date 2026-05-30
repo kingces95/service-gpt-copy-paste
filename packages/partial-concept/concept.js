@@ -9,13 +9,12 @@ import {
 import { 
   Adjacent,
   Defines, 
-  DependsOn,
   Implements, 
   Compile,
   Precondition,
 } from '@kingjs/partial-symbols'
 
-export { Defines, DependsOn, Implements } from '@kingjs/partial-symbols'
+export { Defines, Implements } from '@kingjs/partial-symbols'
 
 // Associated partial types allow concepts to check concept-valued static
 // metadata without needing an instance of the associated type.

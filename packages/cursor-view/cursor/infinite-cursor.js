@@ -30,12 +30,12 @@ export class InfiniteCursor extends ViewCursor {
   get isEnd() { return this.#isEnd }
 
   static {
-    implement(this, SteppableCursorConcept, {
-      step() { },
-    })
-
     implement(this, EquatableConcept, {
       equals(other) { return other == this },
+    })
+
+    implement(this, SteppableCursorConcept, {
+      step() { },
     })
 
     implement(this, ReadableCursorConcept, {

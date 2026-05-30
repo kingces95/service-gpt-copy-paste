@@ -69,9 +69,22 @@ export class MyPartialClass extends PartialClass {
 
 export class MyBase {
   static { 
+    implement(this, MyBaseConcept, { 
+      myBaseConceptMethod() { },
+    })
+
+    implement(this, MyLeftConcept, { }, {
+      myLeftConceptMethod() { },
+      myAmbidextrousMethod() { },
+    })
+
+    implement(this, MyRightConcept, { }, {
+      myRightConceptMethod() { },
+      myAmbidextrousMethod() { },
+    })
+
     implement(this, MyConcept, { 
       myConceptMethod() { },
-      myBaseConceptMethod() { }
     }) 
   }
   static myStaticBaseMethod() { }

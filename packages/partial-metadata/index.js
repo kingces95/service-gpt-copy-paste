@@ -17,7 +17,6 @@ import {
   TypePostcondition,
 
   // this file intentially does not import
-  //    DependsOn
   //    Extends
   //    Implements
   //    Defines

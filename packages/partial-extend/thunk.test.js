@@ -11,7 +11,7 @@ import {
 } from '@kingjs/partial-proxy'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { extend } from '@kingjs/partial-extend'
-import { PartialClass } from '@kingjs/partial-class'
+import { Abstracts, PartialClass } from '@kingjs/partial-class'
 import { defaultTo } from '@kingjs/function-args'
 
 class MyType extends PartialProxy {
@@ -144,6 +144,10 @@ class BaseTransformPart extends PartialClass {
     override: [upper],
   }
 
+  static [Abstracts] = {
+    suppliedInherited(value) { },
+  }
+
   override(value) {
     this.push(`override:base:${value}`)
   }
@@ -162,6 +166,10 @@ class TransformPart extends BaseTransformPart {
       undefined,
       defaultTo(({ args: [first] }) => first),
     ],
+  }
+
+  static [Abstracts] = {
+    supplied(value) { },
   }
 
   own(value) {
@@ -208,13 +216,15 @@ class TransformType extends PartialProxy {
   }
 
   static {
+    extend(this, BaseTransformPart, {
+      suppliedInherited(value) {
+        this.push(`suppliedInherited:${value}`)
+      },
+    })
+
     extend(this, TransformPart, {
       supplied(value) {
         this.push(`supplied:${value}`)
-      },
-
-      suppliedInherited(value) {
-        this.push(`suppliedInherited:${value}`)
       },
     })
   }

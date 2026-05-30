@@ -143,6 +143,7 @@ Extend invariant:
 ```txt
 extend(Type, Part)
 ├─ base/composed abstract Parts were already declared on Type
+├─ explicitly attached Parts are topologically ordered
 ├─ impl names belong to Part
 ├─ own descriptors can define or propagate
 └─ inherited descriptors only fill holes
@@ -171,9 +172,15 @@ still owed at the declaration site. Restricting implementations to owned members
 keeps the code shaped like the model and gives future refactors a sharper
 invariant to test.
 
-Likely machinery:
+Loader machinery:
 
-`partial-extend` may need side-car state recording which Parts were explicitly
-declared on a Type. Final `instanceof` is not enough, because propagation can
-make a Type satisfy a Part without showing whether the concrete declaration site
-made that Part's obligations visible.
+```txt
+explicit attachment roots
+├─ tracked separately from inherited hosts discovered while copying
+├─ reject attaching a base Part after an already-attached extension
+└─ publish only the roots the caller named
+```
+
+Final `instanceof` is not enough. Propagation can make a Type satisfy a Part
+without showing whether the concrete declaration site made that Part's
+obligations visible.

@@ -144,6 +144,12 @@ describe('Hierarchy', () => {
       const result = [...Es6Reflect.hierarchy(type)]
       expect(result).toEqual(hierarchy || [])
     })
+    it('should report prototype extension by reflected hierarchy', () => {
+      for (const current of hierarchy.slice(1))
+        expect(Es6Reflect.isPrototypeExtensionOf(type, current)).toBe(true)
+
+      expect(Es6Reflect.isPrototypeExtensionOf(type, type)).toBe(false)
+    })
     if (extendedType) {
       it('should be extension of extended type with minDepth of one', () => {
         const result = Es6Reflect.isExtensionOf(
