@@ -105,6 +105,25 @@ class GetSetDescriptor {
     return descriptor.get.call(instance)
   }
 
+  static subtractSlots(descriptor, covered) {
+    assert(GetSetDescriptor.test(descriptor))
+
+    if (!GetSetDescriptor.test(covered))
+      return null
+
+    const get = covered.get === undefined ? descriptor.get : undefined
+    const set = covered.set === undefined ? descriptor.set : undefined
+    if (get === undefined && set === undefined)
+      return null
+
+    return {
+      get,
+      set,
+      enumerable: descriptor.enumerable,
+      configurable: descriptor.configurable,
+    }
+  }
+
   static cover(descriptor, receiver) {
     descriptor.get?.call(receiver)
     descriptor.set?.call(receiver)
@@ -205,7 +224,7 @@ export class Descriptor {
       : GetSetDescriptor.cover(descriptor, receiver)
   }
 
-  static merge(existing, descriptor) {
+  static mergeAccessors(existing, descriptor) {
     if (!descriptor)
       return existing
 
@@ -222,6 +241,19 @@ export class Descriptor {
       enumerable: descriptor.enumerable,
       configurable: descriptor.configurable,
     }
+  }
+
+  static subtractSlots(descriptor, covered) {
+    if (!descriptor)
+      return null
+
+    if (!covered)
+      return descriptor
+
+    if (Descriptor.hasAccessor(descriptor))
+      return GetSetDescriptor.subtractSlots(descriptor, covered)
+
+    return null
   }
 
   static *modifiers(descriptor) {

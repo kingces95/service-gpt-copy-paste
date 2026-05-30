@@ -84,7 +84,7 @@ This chain describes runtime composition with provenance. Reflection can ask:
 
 ```js
 PartialReflect.keys(MyType)
-PartialReflect.findDescriptor(MyType, 'foo')
+PartialReflect.getDescriptor(MyType, 'foo')
 PartialReflect.baseTypes(MyType)
 ```
 

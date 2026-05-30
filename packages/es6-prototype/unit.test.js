@@ -409,13 +409,13 @@ function runTests(
     it('should get expected member value', () => {
       if (!getMemberValue) return
       const expected = getMemberValue[0]?.value ?? null
-      const actual = reflector.findValue(type, memberKey)
+      const actual = reflector.getValue(type, memberKey)
       expect(actual).toEqual(expected)
     })
     it('should get expected contextual member value', () => {
       if (!getMemberValue) return
       const { descriptor, ...expected } = getMemberValue[0] ?? { }
-      const actual = reflector.findValue(type, memberKey, { context: true })
+      const actual = reflector.getValue(type, memberKey, { context: true })
       expect(actual).toEqual(expected.value === undefined ? null : expected)
     })
   
@@ -433,14 +433,28 @@ function runTests(
     it('should get expected member descriptor', () => {
       if (!getMemberDescriptor) return
       const expected = getMemberDescriptor[1] ?? null
-      const actual = reflector.findDescriptor(type, memberKey)
+      const actual = reflector.getDescriptor(type, memberKey)
       expect(actual).toEqual(expected)
+    })
+    it('should have expected member getter presence', () => {
+      if (!getMemberDescriptor) return
+      const descriptor = getMemberDescriptor[1]
+      const expected = descriptor?.get !== undefined
+      const actual = reflector.hasGetter(type, memberKey)
+      expect(actual).toBe(expected)
+    })
+    it('should have expected member setter presence', () => {
+      if (!getMemberDescriptor) return
+      const descriptor = getMemberDescriptor[1]
+      const expected = descriptor?.set !== undefined
+      const actual = reflector.hasSetter(type, memberKey)
+      expect(actual).toBe(expected)
     })
     it('should get expected contextual member descriptor', () => {
       if (!getMemberDescriptor) return
       const [host, descriptor] = getMemberDescriptor
       const expected = descriptor ? { host, descriptor } : null
-      const actual = reflector.findDescriptor(type, memberKey, {
+      const actual = reflector.getDescriptor(type, memberKey, {
         context: true,
       })
       expect(actual).toEqual(expected)
@@ -628,9 +642,9 @@ function runTests(
         expect(actual).toEqual(gotValue)
       })
 
-      // findValue
+      // getValue
       it('should have expected first member value', () => {
-        const actual = reflector.findValue(type, key, options)
+        const actual = reflector.getValue(type, key, options)
         expect(actual).toEqual(gotValue[0]?.value ?? null)
       })
 

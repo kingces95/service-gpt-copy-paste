@@ -90,7 +90,7 @@ export class Es6ClassInfo {
     const type = this.ctor
 
     const { host, descriptor } =
-      Es6Reflect.findDescriptor(type, key, { isStatic, context: true }) || { }
+      Es6Reflect.getDescriptor(type, key, { isStatic, context: true }) || { }
     if (!descriptor) return null
     return Es6MemberInfo.create(host, key, descriptor, { isStatic })
   }

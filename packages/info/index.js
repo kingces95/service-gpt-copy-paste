@@ -88,7 +88,7 @@ export class TypeInfo {
     const fn = this.ctor
 
     const { host: owner, descriptor } =
-      PartialReflect.findDescriptor(fn, key, { isStatic, context: true }) || { }
+      PartialReflect.getDescriptor(fn, key, { isStatic, context: true }) || { }
     if (!descriptor) return null
     return MemberInfo.create$(host, owner, key, descriptor, { isStatic })
   }

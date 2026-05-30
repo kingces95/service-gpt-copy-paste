@@ -61,10 +61,11 @@ export class Vector extends PartialProxy {
       setAt(index, value) { this.buffer[index] = value },
     })
 
-    extend(this, GapAssignableContainerPart)
-
     extend(this, BulkAssignableContainerPart, {
       get defaultValue$() { return 0 },
+    }, {
+      resize(count, value) { },
+      assignRange(range) { },
     })
 
     extend(this, GapEditableContainerPart, {
@@ -84,6 +85,8 @@ export class Vector extends PartialProxy {
         return first
       }
     })
+
+    extend(this, GapAssignableContainerPart)
 
     extend(this, CapacityContainerPart, {
       get capacity() { return this._bytes.byteLength },

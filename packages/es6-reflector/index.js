@@ -110,6 +110,7 @@ export class Es6Reflector {
       knownKeys = [], knownKeyFn,
       knownStaticKeys = [], knownStaticKeyFn,
       getPrototype = type => type.prototype,
+      splitAccessors = false,
     } = { }) {
 
     knownStaticKeys.push('constructor')
@@ -119,12 +120,14 @@ export class Es6Reflector {
         knownTypes, knownTypeFn,
         knownKeys, knownKeyFn,
         getPrototype,
+        splitAccessors,
       }),
 
       static$: new Es6Prototype({
         knownTypes, knownTypeFn,
         knownKeys: knownStaticKeys,
         knownKeyFn: knownStaticKeyFn,
+        splitAccessors,
         getPrototype: function(type) {
           // base case 1: class A { }
           if (type == Function.prototype) 
@@ -188,12 +191,14 @@ export class Es6Reflector {
     knownTypes, knownTypeFn,
     knownKeys, knownKeyFn,
     getPrototype,
+    splitAccessors = this.#instance.splitAccessors,
   }) {
     return new Es6Reflector({
       static$: this.#static,
       instance$: new Es6Prototype({
         knownTypes, knownTypeFn,
         knownKeys, knownKeyFn,
+        splitAccessors,
         getPrototype: (type) => getPrototype.call(this, type),
       })
     })
@@ -257,11 +262,11 @@ export class Es6Reflector {
     yield* this.#reflect(isStatic).ownValues(type, options)
       .filter(this.#extensionOfFilter(extensionOf))
   }
-  findValue(type, key, { isStatic,
+  getValue(type, key, { isStatic,
     descriptorType, extensionOf, instanceOf, context } = { }) {
     const instance = isStatic ? type : type.prototype
     const options = { instance, descriptorType, instanceOf, context }
-    const result = this.#reflect(isStatic).findValue(type, key, options)
+    const result = this.#reflect(isStatic).getValue(type, key, options)
     if (!result) return null
     if (!extensionOf) return result
 
@@ -307,9 +312,10 @@ export class Es6Reflector {
   // shared thunks
   static {
     const thunks = [
-      'getPrototype', 'isKnown', 'isKnownKey', 'hasOwnKey', 'hasKey',
+      'getPrototype', 'isKnown', 'isKnownKey',
+      'hasOwnKey', 'hasKey', 'hasGetter', 'hasSetter',
       'ownKeys', 'keys', 'getOwnDescriptor', 'ownDescriptors',
-      'findDescriptor', 'findDescriptors', 'descriptors', 'copyTo', 'reduce'
+      'getDescriptor', 'findDescriptors', 'descriptors', 'copyTo', 'reduce'
     ]
 
     for (const key of thunks) {
@@ -355,9 +361,9 @@ export class Es6Reflector {
   //   yield* this.#reflect(isStatic)
   //     .ownDescriptors(type, { descriptorType })
   // }
-  // findDescriptor(type, key, { isStatic, descriptorType } = { }) {
+  // getDescriptor(type, key, { isStatic, descriptorType } = { }) {
   //   return this.#reflect(isStatic)
-  //     .findDescriptor(type, key, { descriptorType })
+  //     .getDescriptor(type, key, { descriptorType })
   // }
   // *findDescriptors(type, key, { isStatic, descriptorType } = { }) {
   //   yield* this.#reflect(isStatic)

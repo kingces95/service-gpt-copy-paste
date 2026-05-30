@@ -63,10 +63,15 @@ the data and script used to regenerate the `Members`, `Member Index`, and
 
 ## Prototype
 
-[Prototype Protocol Model](prototype.model.md) records Prototype reflection
+[Prototype Protocol Model](../../packages/prototype/model.md) records Prototype reflection
 surface pivots:
 
-- [Member Role](prototype.model.md#member-role): Prototype members pivoted by fuzzy behavior role.
-- [Option Name](prototype.model.md#option-name): Prototype members pivoted by option name.
-- [Shared Option Type](prototype.model.md#shared-option-type): shared Prototype options chip-pivoted by option type.
-- [Member Lexeme](prototype.model.md#member-lexeme): Prototype members pivoted by shared name lexeme with singleton lexemes retained as Remainder.
+- [Member Role](../../packages/prototype/model.md#member-role): Prototype members chip-pivoted by access role.
+- [Return Type](../../packages/prototype/model.md#return-type): Prototype members chip-pivoted by return type.
+- [Generators](../../packages/prototype/model.md#generators): Prototype generators chip-pivoted by member family.
+- [Resolution](../../packages/prototype/model.md#resolution): access members pivoted by resolution stage.
+- [Split Accessors](../../packages/prototype/model.md#split-accessors): access members pivoted by split-accessor awareness.
+- [Access Shape](../../packages/prototype/model.md#access-shape): access members chip-pivoted by singular/plural shape.
+- [Option Name](../../packages/prototype/model.md#option-name): Prototype members pivoted by option name.
+- [Shared Option Type](../../packages/prototype/model.md#shared-option-type): shared Prototype options chip-pivoted by option type.
+- [Member Lexeme](../../packages/prototype/model.md#member-lexeme): Prototype members pivoted by shared name lexeme with singleton lexemes retained as Remainder.

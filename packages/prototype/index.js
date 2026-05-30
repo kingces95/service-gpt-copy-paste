@@ -34,8 +34,8 @@ export class Prototype {
 
     // define descriptors on prototype
     Object.defineProperties(prototype, descriptors)
-    
-    return prototype    
+
+    return prototype
   }
 
   static *chain(prototype, { reverseHierarchy } = { }) {
@@ -48,7 +48,7 @@ export class Prototype {
       return
     }
 
-    do { yield prototype } 
+    do { yield prototype }
     while (prototype = Object.getPrototypeOf(prototype))
   }
 
@@ -60,43 +60,48 @@ export class Prototype {
     return key in prototype
   }
 
+  static hasGetter(prototype, key, options) {
+    const descriptor = Prototype.getDescriptor(prototype, key, options)
+    return Descriptor.hasGetter(descriptor)
+  }
+
+  static hasSetter(prototype, key, options) {
+    const descriptor = Prototype.getDescriptor(prototype, key, options)
+    return Descriptor.hasSetter(descriptor)
+  }
+
   static *ownKeys(prototype) {
     yield* Reflect.ownKeys(prototype)
   }
 
-  static *keys(prototype, { 
+  static *keys(prototype, {
     includeOverridden = false,
     reverseHierarchy,
+    splitAccessors = false,
     filter = (host, key) => true,
   } = { }) {
-    assert(!reverseHierarchy || includeOverridden,
-      'reverseHierarchy requires includeOverridden.')
-
-    const visited = new Set()
-    for (const current of Prototype.chain(prototype, { reverseHierarchy })) {
-      const host = current.constructor
-      yield host
-      for (const key of Prototype.ownKeys(current)) {
-        if (!includeOverridden && visited.has(key)) continue
-        if (!filter(host, key)) continue
-        visited.add(key)
-        yield key
-      }
-    }
+    yield* Prototype.descriptors(prototype, {
+      includeOverridden,
+      reverseHierarchy,
+      splitAccessors,
+      filter: (host, key, descriptor) => filter(host, key),
+    }).filter(current => typeof current != 'object')
   }
 
   static getOwnDescriptor(prototype, key) {
     return Object.getOwnPropertyDescriptor(prototype, key)
   }
 
-  static findDescriptor(prototype, key, { context } = { }) {
-    const result = findFirstDescriptor(prototype, key)
+  static getDescriptor(prototype, key, {
+    splitAccessors, context, filter } = { }) {
+    const result = getResolvedDescriptor(prototype, key, {
+      splitAccessors, filter })
     if (!result) return null
-    
+
     return context ? result : result.descriptor
   }
 
-  static *ownDescriptors(prototype, { 
+  static *ownDescriptors(prototype, {
     map = (host, key, descriptor) => descriptor,
     filter = (host, key, descriptor) => true,
   } = { }) {
@@ -108,7 +113,7 @@ export class Prototype {
       yield key
       yield descriptor
     }
-  }  
+  }
 
   static *findDescriptors(prototype, key, {
     reverseHierarchy,
@@ -125,25 +130,44 @@ export class Prototype {
     }
   }
 
-  static *descriptors(prototype, { 
+  static *descriptors(prototype, {
     includeOverridden = false,
     reverseHierarchy,
+    splitAccessors = false,
     map = (host, key, descriptor) => descriptor,
-    filter = (host, key, descriptor) => true, 
+    filter = (host, key, descriptor) => true,
   } = { }) {
     assert(!reverseHierarchy || includeOverridden,
       'reverseHierarchy requires includeOverridden.')
 
-    const visited = new Set()
+    // splitAccessors only affects override suppression.
+    if (includeOverridden)
+      splitAccessors = false
+
+    const visited = splitAccessors ? new Map() : new Set()
     for (const current of Prototype.chain(prototype, { reverseHierarchy })) {
       const host = current.constructor
       yield host
       for (const key of Prototype.ownKeys(current)) {
-        if (!includeOverridden && visited.has(key)) continue
-        const descriptor = getOwnDescriptor(current, key, { map, filter, host })
+        if (!includeOverridden && !splitAccessors && visited.has(key))
+          continue
+
+        let descriptor = getOwnDescriptor(current, key, { map, filter, host })
         if (!descriptor) continue
 
-        visited.add(key)
+        if (splitAccessors) {
+          assert(!includeOverridden)
+          const covered = visited.get(key)
+          descriptor = Descriptor.subtractSlots(descriptor, covered)
+          if (!descriptor) continue
+
+          visited.set(key, Descriptor.mergeAccessors(
+            covered, descriptor))
+        }
+        else {
+          visited.add(key)
+        }
+
         yield key
         yield descriptor
       }
@@ -158,6 +182,7 @@ export class Prototype {
     filterOwn = false,
     includeOverridden = false,
     reverseHierarchy,
+    splitAccessors = false,
     createThunk = (key, descriptor) => descriptor,
     asDescriptor = false,
   }) {
@@ -166,11 +191,12 @@ export class Prototype {
     const fn = filterOwn ? this.ownDescriptors : this.descriptors
     for (const current of fn.call(this, prototype, {
       includeOverridden,
+      splitAccessors,
       map,
       filter,
       reverseHierarchy,
     })) {
-      assert (typeof current == 'string' 
+      assert (typeof current == 'string'
         || typeof current == 'symbol'
         || typeof current == 'object'
         || typeof current == 'function',
@@ -183,11 +209,13 @@ export class Prototype {
           break
         case 'object':
           const descriptor = current
+          const thunk = createThunk(key, descriptor, host)
           const existing = Descriptor.get(target, key)
-          const thunk = Descriptor.merge(
-            existing, createThunk(key, descriptor, host))
-          if (asDescriptor) target[key] = thunk
-            else Object.defineProperty(target, key, thunk)
+          const merged = splitAccessors
+            ? Descriptor.mergeAccessors(existing, thunk)
+            : thunk
+          if (asDescriptor) target[key] = merged
+            else Object.defineProperty(target, key, merged)
           onCopy(host, key, descriptor)
           break
         case 'function':
@@ -203,9 +231,13 @@ export class Prototype {
     yield *values(descriptors, instance)
   }
 
-  static findValue(prototype, key, { instance, context } = { }) {
-    const { descriptor, host } = findFirstDescriptor(prototype, key) || { }
-    if (!descriptor) return null
+  static getValue(prototype, key, {
+    instance, splitAccessors, context, filter } = { }) {
+    const { descriptor, host } = Prototype.getDescriptor(prototype, key, {
+      splitAccessors, filter, context: true,
+    }) || { }
+    if (!descriptor || !isReadableDescriptor(descriptor))
+      return null
 
     const { value, type } = Descriptor.getValue(descriptor, instance)
     return context ? { value, type, host } : value
@@ -218,30 +250,53 @@ export class Prototype {
     yield* values(descriptors, instance)
   }
 
-  static *values(prototype, { 
-    instance, includeOverridden, reverseHierarchy, filter } = { }) {
+  static *values(prototype, {
+    instance, includeOverridden, reverseHierarchy, splitAccessors, filter } = { }) {
     const descriptors = Prototype.descriptors(prototype, { filter,
-      includeOverridden, reverseHierarchy })
+      includeOverridden, reverseHierarchy, splitAccessors })
     yield *values(descriptors, instance)
   }
 }
 
-function findFirstDescriptor(prototype, key) {
+function getResolvedDescriptor(prototype, key, {
+  splitAccessors, filter = (host, key, descriptor) => true } = { }) {
   let host
+  let descriptor
+  let descriptorHost
 
-  for (const current of Prototype.findDescriptors(prototype, key)) {
+  for (const current of Prototype.descriptors(prototype, {
+    splitAccessors,
+    filter: (host, currentKey, descriptor) => currentKey === key
+      && filter(host, currentKey, descriptor),
+  })) {
     switch (typeof current) {
       case 'function':
         host = current
         break
 
-      case 'object':
-        return { host, descriptor: current }
+      case 'string':
+      case 'symbol':
+        break
+
+      case 'object': {
+        descriptor = splitAccessors
+          ? Descriptor.mergeAccessors(descriptor, current)
+          : current
+        descriptorHost ??= host
+
+        if (!splitAccessors)
+          return { host: descriptorHost, descriptor }
+
+        break
+      }
 
       default:
         assert(false, `Unexpected type: ${typeof current}`)
     }
   }
+
+  if (descriptor)
+    return { host: descriptorHost, descriptor }
 
   return null
 }
@@ -257,7 +312,7 @@ function *values(descriptors, instance) {
 
     switch (typeof current) {
       case 'function':
-        host = current 
+        host = current
         break
 
       case 'string':
@@ -267,6 +322,9 @@ function *values(descriptors, instance) {
 
       case 'object': {
         const descriptor = current
+        if (!isReadableDescriptor(descriptor))
+          break
+
         const result = Descriptor.getValue(descriptor, instance)
         if (key) result.key = key
         if (host) result.host = host
@@ -277,17 +335,21 @@ function *values(descriptors, instance) {
   }
 }
 
+function isReadableDescriptor(descriptor) {
+  return Descriptor.hasValue(descriptor) || Descriptor.hasGetter(descriptor)
+}
+
 // TODO: change lambda order to key, descriptor, host for better currying
 function getOwnDescriptor(prototype, key, { map, filter, host }) {
   let descriptor = Prototype.getOwnDescriptor(prototype, key)
-  if (!descriptor) 
+  if (!descriptor)
     return null
 
-  if (!filter(host, key, descriptor)) 
+  if (!filter(host, key, descriptor))
     return null
 
   descriptor = map(host, key, descriptor)
-  if (!descriptor) 
+  if (!descriptor)
     return null
 
   return descriptor

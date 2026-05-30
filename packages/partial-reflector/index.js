@@ -3,6 +3,7 @@ import { isPojo } from '@kingjs/pojo-test'
 import { getOwn } from '@kingjs/get-own'
 import { asMetadata } from '@kingjs/as-metadata'
 import { isAbstract } from '@kingjs/abstract'
+import { Descriptor } from '@kingjs/descriptor'
 import { linearize } from '@kingjs/linearize'
 import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { Es6Reflector } from '@kingjs/es6-reflector'
@@ -443,12 +444,25 @@ function *mergeOrder(...types) {
 // not overwrite concrete members. Instead, the inherited concrete member
 // is substituted. 
 
-function isFirstOrOverride(descriptor, hasExisting) {
-  return !isAbstract(descriptor) || !hasExisting
+function shouldCopyDescriptor(
+  descriptor,
+  existing,
+  { inherited = false } = { },
+) {
+  if (!existing)
+    return true
+
+  if (isAbstract(existing))
+    return true
+
+  if (inherited)
+    return false
+
+  return !isAbstract(descriptor)
 }
 
 function resolve(descriptor, existing) {
-  return isFirstOrOverride(descriptor, existing) 
+  return shouldCopyDescriptor(descriptor, existing)
     ? descriptor : existing
 }
 
@@ -761,6 +775,7 @@ const KnownStaticKeys = [
 const compiledPrototype = new Es6Prototype({
   knownKeys: KnownKeys,
   cacheHint: () => false,
+  splitAccessors: true,
   getPrototype: function(type) {
     const compile = type[Compile] || (o => o)
     return Es6UserReflect.reduce([type], {
@@ -772,6 +787,7 @@ const compiledPrototype = new Es6Prototype({
 
 const unifiedPrototype = new Es6Prototype({
   knownKeys: KnownKeys,
+  splitAccessors: true,
   getPrototype: function(type) {
     const redeclaredTypes = [...ownRedeclaredPartialTypes(type)]
     const transparentTypes = [...ownTransparentPartialTypes(type)]
@@ -793,6 +809,7 @@ export function create({
     knownTypeFn: KnownTypeFn,
     knownKeys: KnownKeys,
     knownStaticKeys: [ ...KnownStaticKeys, ...knownStaticKeys ],
+    splitAccessors: true,
     cacheHint: type => !isTransparent(type),
     getPrototype: function(type) {
       return unifiedPrototype.reduce(mergeOrder(type), { map: resolve })
@@ -825,6 +842,12 @@ export function create({
     
     const adjacentTypes = AdjacentTypes.get(type)
     const isPartialType = PartialType.isUserDefined(type)
+
+    if (isPartialType && !isTransparent(partialType)) {
+      adjacentTypes.publish(partialType)
+      return
+    }
+
     const prototype = type.prototype
     PartialReflect.copyTo(partialType, prototype, {
       createThunk: (key, descriptor, host) => {
@@ -837,11 +860,14 @@ export function create({
 
         return descriptor
       },
-      includeOverridden: true,
-      reverseHierarchy: true,
+      filter: (host, key, descriptor) => {
+        const isInherited = host != partialType
+        const existing = Descriptor.get(prototype, key)
 
-      filter: (host, key, descriptor) =>
-        isFirstOrOverride(descriptor, key in prototype),
+        return shouldCopyDescriptor(descriptor, existing, {
+          inherited: isInherited,
+        })
+      },
 
       onHost: (host) => {
         host[Precondition]?.call(host, type)

@@ -41,7 +41,7 @@ class Es6PrototypeCache {
 export class Es6Prototype {
 
   #cache
-  #knownTypes 
+  #knownTypes
   #knownTypeFn
   #knownKeys
   #knownKeyFn
@@ -51,11 +51,13 @@ export class Es6Prototype {
     knownKeys = [], knownKeyFn,
     getPrototype = null,
     cacheHint = type => true,
+    splitAccessors = false,
   } = { }) {
     this.#knownTypes = new Set(knownTypes)
     this.#knownTypeFn = knownTypeFn
     this.#knownKeys = new Set(knownKeys)
     this.#knownKeyFn = knownKeyFn
+    this.splitAccessors = splitAccessors
     this.#cache = new Es6PrototypeCache(this, getPrototype, cacheHint)
   }
 
@@ -65,7 +67,7 @@ export class Es6Prototype {
 
   isKnown(type) {
     if (!type) return false
-    return this.#knownTypes.has(type) 
+    return this.#knownTypes.has(type)
       || this.#knownTypeFn?.(type) == true
   }
   isKnownKey(type, key) {
@@ -79,7 +81,7 @@ export class Es6Prototype {
     yield* Prototype.chain(prototype, { reverseHierarchy })
       .map(link => link.constructor)
   }
-  
+
   getBaseType(type) {
     const baseTypes = this.baseTypes(type)
     const { value } = baseTypes.next()
@@ -111,21 +113,33 @@ export class Es6Prototype {
     return Prototype.hasKey(prototype, key)
   }
 
+  hasGetter(type, key, { descriptorType } = { }) {
+    const descriptor = this.getDescriptor(type, key, { descriptorType })
+    return Descriptor.hasGetter(descriptor)
+  }
+
+  hasSetter(type, key, { descriptorType } = { }) {
+    const descriptor = this.getDescriptor(type, key, { descriptorType })
+    return Descriptor.hasSetter(descriptor)
+  }
+
   *ownKeys(type) {
     const prototype = this.getPrototype(type)
     yield *Prototype.ownKeys(prototype)
       .filter(key => !this.isKnownKey(type, key))
   }
 
-  *keys(type, { 
+  *keys(type, {
     includeOverridden = false,
     reverseHierarchy,
   } = { }) {
     const prototype = this.getPrototype(type)
-    yield* Prototype.keys(prototype, { 
-      includeOverridden, 
+    const { splitAccessors } = this
+    yield* Prototype.keys(prototype, {
+      includeOverridden,
       reverseHierarchy,
-      filter: (type, key) => !this.isKnownKey(type, key) 
+      splitAccessors,
+      filter: (type, key) => !this.isKnownKey(type, key)
     })
   }
 
@@ -143,7 +157,7 @@ export class Es6Prototype {
       filter: (host, key, descriptor) => !this.isKnownKey(host, key)
         && isTypeof(descriptor, descriptorType)
     })
-  }  
+  }
 
   *findDescriptors(type, key, {
     descriptorType,
@@ -157,39 +171,30 @@ export class Es6Prototype {
     })
   }
 
-  findDescriptor(type, key, { descriptorType, context } = { }) {
+  getDescriptor(type, key, { descriptorType, context } = { }) {
     if (this.isKnownKey(type, key)) return null
 
-    let host
-    for (const current of this.findDescriptors(type, key, {
-      descriptorType,
-    })) {
-      switch (typeof current) {
-        case 'function':
-          host = current
-          break
-
-        case 'object':
-          const descriptor = current
-          return context ? { host, descriptor } : descriptor
-
-        default:
-          assert(false, `Unexpected type: ${typeof current}`)
-      }
-    }
-
-    return null
+    const prototype = this.getPrototype(type)
+    const { splitAccessors } = this
+    return Prototype.getDescriptor(prototype, key, {
+      splitAccessors,
+      context,
+      filter: (host, key, descriptor) => !this.isKnownKey(host, key)
+        && isTypeof(descriptor, descriptorType)
+    })
   }
 
-  *descriptors(type, { 
-    descriptorType, 
+  *descriptors(type, {
+    descriptorType,
     includeOverridden,
     reverseHierarchy,
   } = { }) {
     const prototype = this.getPrototype(type)
+    const { splitAccessors } = this
     yield* Prototype.descriptors(prototype, {
       includeOverridden,
       reverseHierarchy,
+      splitAccessors,
       filter: (host, key, descriptor) => !this.isKnownKey(host, key)
         && isTypeof(descriptor, descriptorType)
     })
@@ -207,27 +212,28 @@ export class Es6Prototype {
     asDescriptor = false,
   }) {
     const prototype = this.getPrototype(type)
-    Prototype.copyTo(prototype, target, { 
+    const { splitAccessors } = this
+    Prototype.copyTo(prototype, target, {
       createThunk, includeOverridden, onCopy, onHost, map, asDescriptor,
-      filterOwn, reverseHierarchy,
-      filter: (host, key, descriptor) => !this.isKnownKey(host, key) 
+      filterOwn, reverseHierarchy, splitAccessors,
+      filter: (host, key, descriptor) => !this.isKnownKey(host, key)
         && filter(host, key, descriptor),
     })
   }
 
-  reduce(mergeOrder, { 
+  reduce(mergeOrder, {
     filterOwn = false,
     filter = (host, key, descriptor) => true,
     map = (descriptor, existing) => descriptor
   } = { }) {
     const memberTable = new Map()
     return mergeOrder.reduce((prototype, currentType) => {
-      const descriptors = { } 
+      const descriptors = { }
 
       this.copyTo(currentType, descriptors, {
         filterOwn, filter,
         asDescriptor: true,
-        map: (host, key, descriptor) => 
+        map: (host, key, descriptor) =>
           map(descriptor, memberTable.get(key)),
         onCopy: (host, key, descriptor) =>
           memberTable.set(key, descriptor)
@@ -248,16 +254,16 @@ export class Es6Prototype {
         || typeofCurrent == 'function')
 
       switch (typeofCurrent) {
-        case 'string': 
-        case 'symbol': 
+        case 'string':
+        case 'symbol':
           key = current
           instanceDescriptor = Descriptor.get(instance, key)
           if (!instanceDescriptor) return false
           break
-          
+
           case 'object': {
           const shapeDescriptor = current
-          if (!Descriptor.formof(instanceDescriptor, instance, 
+          if (!Descriptor.formof(instanceDescriptor, instance,
             Es6Descriptor.shapeof(shapeDescriptor)))
             return false
         }
@@ -278,16 +284,16 @@ export class Es6Prototype {
         || typeofCurrent == 'function')
 
       switch (typeofCurrent) {
-        case 'string': 
-        case 'symbol': 
+        case 'string':
+        case 'symbol':
           key = current
           instanceDescriptor = Descriptor.get(instance, key)
           if (!instanceDescriptor) return false
           break
-          
+
           case 'object': {
           const shapeDescriptor = current
-          if (!Es6Descriptor.formof(instanceDescriptor, 
+          if (!Es6Descriptor.formof(instanceDescriptor,
             Es6Descriptor.shapeof(shapeDescriptor)))
             return false
         }
@@ -319,29 +325,38 @@ export class Es6Prototype {
         .filter(instanceOfFilter(instanceOf))
   }
 
-  findValue(type, key, {
-    instance, descriptorType, instanceOf, context
-  } = { }) {
-    const result = this.findValues(type, key, {
-      instance,
-      descriptorType,
-      instanceOf,
-    }).next().value
-    if (!result) return null
+  getValue(type, key, {
+    instance, descriptorType, instanceOf, context } = { }) {
+    if (this.isKnownKey(type, key)) return null
 
-    const { value, type: valueType, host } = result
-    return context ? { value, type: valueType, host } : value
+    const { descriptor, host } = this.getDescriptor(type, key, {
+      descriptorType,
+      context: true,
+    })
+      || { }
+    if (!descriptor)
+      return null
+
+    const result = Descriptor.getValue(descriptor, instance)
+    result.host = host
+    Es6Descriptor.promoteValue(result, instance)
+    if (!instanceOfFilter(instanceOf)(result))
+      return null
+
+    const { value, type: valueType, host: resultHost } = result
+    return context ? { value, type: valueType, host: resultHost } : value
   }
 
-  *values(type, { 
-    instance, includeOverridden, descriptorType, instanceOf, 
+  *values(type, {
+    instance, includeOverridden, descriptorType, instanceOf,
     reverseHierarchy,
   } = { }) {
     const prototype = this.getPrototype(type)
+    const { splitAccessors } = this
     yield* Prototype.values(prototype, { instance, includeOverridden,
-      reverseHierarchy,
+      reverseHierarchy, splitAccessors,
       filter: (host, key, descriptor) => !this.isKnownKey(host, key)
-        && isTypeof(descriptor, descriptorType) 
+        && isTypeof(descriptor, descriptorType)
     }).map(result => Es6Descriptor.promoteValue(result, instance))
         .filter(instanceOfFilter(instanceOf))
   }
@@ -352,7 +367,7 @@ function isTypeof(descriptor, descriptorType) {
 
   if (descriptorType) {
     descriptorType = asSet(descriptorType)
-    if (!descriptorType.has(Es6Descriptor.typeof(descriptor))) 
+    if (!descriptorType.has(Es6Descriptor.typeof(descriptor)))
       return false
   }
 
@@ -360,7 +375,7 @@ function isTypeof(descriptor, descriptorType) {
 }
 
 function instanceOfFilter(type) {
-  return type 
+  return type
     ? ({ value }) => instanceOf(value, type)
     : () => true
 }

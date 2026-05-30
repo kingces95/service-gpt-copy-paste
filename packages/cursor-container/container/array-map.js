@@ -46,8 +46,6 @@ export class ArrayMap extends PartialProxy {
       setAt(index, value) { this._array[index] = value },
     })
 
-    extend(this, GapAssignableContainerPart)
-
     extend(this, GapEditableContainerPart, {
       openGap$(cursor, count) {
         const offset = this.begin().distanceTo(cursor)
@@ -72,5 +70,7 @@ export class ArrayMap extends PartialProxy {
         return this
       }),
     })
+
+    extend(this, GapAssignableContainerPart)
   }
 }

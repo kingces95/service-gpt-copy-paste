@@ -64,7 +64,7 @@ InputCursorConcept
 The reflection query sees the compiled meaning:
 
 ```js
-PartialReflect.findDescriptor(InputCursorConcept, 'step')
+PartialReflect.getDescriptor(InputCursorConcept, 'step')
 ```
 
 ## What It Describes

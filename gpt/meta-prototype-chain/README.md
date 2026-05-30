@@ -37,7 +37,7 @@ exists, the same familiar operations become useful again:
 
 ```js
 PartialReflect.keys(type)
-PartialMetadata.findValue(type, cursorType)
+PartialMetadata.getValue(type, cursorType)
 TypeInfo.from(type).members()
 ```
 
@@ -196,7 +196,7 @@ MyType (foo)
 The transformed chain can then answer questions raw JavaScript cannot:
 
 ```js
-PartialReflect.findDescriptor(MyType, 'foo')
+PartialReflect.getDescriptor(MyType, 'foo')
 PartialReflect.baseTypes(MyType)
 ```
 

@@ -317,7 +317,7 @@ export function createPartialMetadata(PartialReflect) {
   }
 
   function getMemberDefaults(type, key) {
-    const result = PartialDefaults.findValue(type, key, { context: true })
+    const result = PartialDefaults.getValue(type, key, { context: true })
     if (!result) return
 
     assert(result.type == 'field')
