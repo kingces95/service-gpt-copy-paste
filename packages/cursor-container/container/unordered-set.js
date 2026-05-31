@@ -7,7 +7,6 @@ import {
   RangeConcept,
 } from '@kingjs/cursor'
 import {
-  ContainerPart,
   ClearableContainerPart,
   SizedContainerPart,
   AssociativeContainerPart,
@@ -28,12 +27,6 @@ class SetCursor extends IteratorCursor {
 
 export class UnorderedSet extends PartialProxy {
   static cursorType = SetCursor
-  static {
-    implement(this, RangeConcept, {
-      begin() { return new this.cursorType(this, this._set) },
-      end() { return new this.cursorType(this, EmptySet) }
-    })
-  }
 
   _set
 
@@ -43,10 +36,13 @@ export class UnorderedSet extends PartialProxy {
   }
 
   static {
-    compose(this, ContainerPart, { }, {
-      get isEmpty() { },
+    implement(this, RangeConcept, {
+      begin() { return new this.cursorType(this, this._set) },
+      end() { return new this.cursorType(this, EmptySet) }
     })
+  }
 
+  static {
     compose(this, ClearableContainerPart, {
       clear() { this._set.clear() },
     })

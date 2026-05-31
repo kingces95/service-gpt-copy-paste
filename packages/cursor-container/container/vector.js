@@ -14,7 +14,6 @@ import {
   ContiguousCursor,
 } from '../cursor/contiguous-cursor.js'
 import {
-  ContainerPart,
   SizedContainerPart,
   IndexableContainerPart,
   CapacityContainerPart,
@@ -27,12 +26,6 @@ import {
 
 export class Vector extends PartialProxy {
   static cursorType = ContiguousCursor
-  static {
-    implement(this, RangeConcept, {
-      begin() { return new this.cursorType(this, 0) },
-      end() { return new this.cursorType(this, this.size) },
-    })
-  }
 
   _size
   _bytes
@@ -48,10 +41,13 @@ export class Vector extends PartialProxy {
   get buffer() { return this._buffer.value }
 
   static {
-    compose(this, ContainerPart, { }, {
-      get isEmpty() { },
+    implement(this, RangeConcept, {
+      begin() { return new this.cursorType(this, 0) },
+      end() { return new this.cursorType(this, this.size) },
     })
+  }
 
+  static {
     compose(this, SizedContainerPart, {
       get size() { return this._size }
     })

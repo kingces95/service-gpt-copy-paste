@@ -10,7 +10,6 @@ import {
   throwNotEquatableTo,
 } from '@kingjs/cursor'
 import {
-  ContainerPart,
   ClearableContainerPart,
   SizedContainerPart,
 
@@ -34,12 +33,6 @@ class MapCursor extends IteratorCursor {
 
 export class UnorderedMap extends PartialProxy {
   static cursorType = MapCursor
-  static {
-    implement(this, RangeConcept, {
-      begin() { return new this.cursorType(this, this._map) },
-      end() { return new this.cursorType(this, EmptyMap) }
-    })
-  }
 
   _map
 
@@ -49,10 +42,13 @@ export class UnorderedMap extends PartialProxy {
   }
 
   static {
-    compose(this, ContainerPart, { }, {
-      get isEmpty() { },
+    implement(this, RangeConcept, {
+      begin() { return new this.cursorType(this, this._map) },
+      end() { return new this.cursorType(this, EmptyMap) }
     })
+  }
 
+  static {
     compose(this, ClearableContainerPart, {
       clear() { this._map.clear() },
     })

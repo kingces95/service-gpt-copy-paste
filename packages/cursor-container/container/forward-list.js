@@ -83,12 +83,6 @@ class ForwardListCursor extends ContainerCursor {
 
 export class ForwardList extends PartialProxy {
   static cursorType = ForwardListCursor
-  static {
-    implement(this, RangeConcept, {
-      begin() { return new this.cursorType(this, this._rootLink.next) },
-      end() { return new this.cursorType(this, this._endLink) },
-    })
-  }
 
   static [ArgChecks] = {
     insertValueAfter: [ForwardListCursor, null],
@@ -104,6 +98,13 @@ export class ForwardList extends PartialProxy {
     assert(root instanceof ForwardLink, 'linkType must be a ForwardLink')
     this._rootLink = root
     this._endLink = root.insertAfter()
+  }
+
+  static {
+    implement(this, RangeConcept, {
+      begin() { return new this.cursorType(this, this._rootLink.next) },
+      end() { return new this.cursorType(this, this._endLink) },
+    })
   }
 
   static {

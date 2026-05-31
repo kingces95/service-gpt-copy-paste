@@ -25,18 +25,19 @@ import { iterate, next } from '@kingjs/cursor-algorithm'
 
 export class Deque extends PartialProxy {
   static cursorType = IndexableCursor
-  static {
-    implement(this, RangeConcept, {
-      begin() { return new this.cursorType(this, 0) },
-      end() { return new this.cursorType(this, this.size) },
-    })
-  }
 
   _denque
   
   constructor() { 
     super()
     this._denque = new Denque()
+  }
+
+  static {
+    implement(this, RangeConcept, {
+      begin() { return new this.cursorType(this, 0) },
+      end() { return new this.cursorType(this, this.size) },
+    })
   }
   
   static {

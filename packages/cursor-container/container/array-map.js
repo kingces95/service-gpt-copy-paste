@@ -8,7 +8,6 @@ import {
 import { iterate } from '@kingjs/cursor-algorithm'
 import { IndexableCursor } from '../cursor/indexable-cursor.js'
 import {
-  ContainerPart,
   SizedContainerPart,
   IndexableContainerPart,
   GapEditableContainerPart,
@@ -18,12 +17,6 @@ import {
 
 export class ArrayMap extends PartialProxy {
   static cursorType = IndexableCursor
-  static {
-    implement(this, RangeConcept, {
-      begin() { return new this.cursorType(this, 0) },
-      end() { return new this.cursorType(this, this.size) },
-    })
-  }
 
   _array
 
@@ -33,10 +26,13 @@ export class ArrayMap extends PartialProxy {
   }
 
   static {
-    compose(this, ContainerPart, { }, {
-      get isEmpty() { },
+    implement(this, RangeConcept, {
+      begin() { return new this.cursorType(this, 0) },
+      end() { return new this.cursorType(this, this.size) },
     })
+  }
 
+  static {
     compose(this, SizedContainerPart, {
       get size() { return this._array.length },
     })
