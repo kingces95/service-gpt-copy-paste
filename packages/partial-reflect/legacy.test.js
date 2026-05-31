@@ -1,18 +1,18 @@
-import { describe, it, expect } from 'vitest'
-import { beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { abstract } from '@kingjs/abstract'
 import { Attachments } from '../partial-attachments'
-import { PartialReflect } from '@kingjs/partial-reflect'
+import { PartialReflect, copyTo } from '@kingjs/partial-reflect'
 import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { Es6Reflect } from '@kingjs/es6-reflect'
-import { PartialType, isPartialType } from '@kingjs/partial-type'
+import { PartialType } from '@kingjs/partial-type'
 import { define } from '@kingjs/partial-define'
 import { extend } from '@kingjs/partial-extend'
-import { Attachments } from '../partial-attachments'
 import { 
-  From,
   Compile, 
-  Adjacent 
+  Adjacent,
+  Declarative,
+  Defines,
+  Extends,
 } from '@kingjs/partial-symbols'
 
 function *partialTypes(type) {
@@ -33,6 +33,14 @@ function getFamily(type) {
 
 function isKey(key) {
   return typeof key === 'string' || typeof key === 'symbol'
+}
+
+function findDescriptor(type, key) {
+  for (const current of PartialReflect.findDescriptors(type, key))
+    if (typeof current == 'object')
+      return current
+
+  return null
 }
 
 describe('PartialType', () => {
@@ -71,7 +79,7 @@ describe('A type', () => {
     let method
     beforeEach(() => {
       method = function method() { }
-      define(type, Attachments[From]({ method }))
+      define(type, { method })
     })
 
     it('should have the method', () => {
@@ -80,24 +88,24 @@ describe('A type', () => {
   })
 })
 
-describe('MyPojoType', () => {
-  let MyPojoType
+describe('A definition pojo', () => {
+  let definition
   beforeEach(() => {
-    MyPojoType = Attachments[From]({ })
+    definition = { }
   })
 
   describe('with method', () => {
     let method
     beforeEach(() => {
       method = function() { }
-      MyPojoType.prototype.method = method
+      definition.method = method
     })
 
-    describe('meged with myType', () => {
+    describe('merged with myType', () => {
       let myType
       beforeEach(() => {
         myType = class { }
-        define(myType, MyPojoType)
+        define(myType, definition)
       })
 
       it('should have the method on type', () => {
@@ -116,16 +124,12 @@ describe('MyPojoType', () => {
 })
 
 describe('PartialClass', () => {
-  let ExtensionSymbol = Symbol('ExtensionSymbol')
-  let DefinesSymbol = Symbol('DefinesSymbol')
   let PartialClass
-  
+
   beforeEach(() => {
-    PartialClass = class PartialClass extends PartialType { 
-      static [Adjacent] = { 
-        [ExtensionSymbol]: Attachments,
-        [DefinesSymbol]: PartialClass,
-      }
+    PartialClass = class PartialClass extends PartialType {
+      static [Declarative] = Extends
+      static [Adjacent] = [ Attachments, PartialClass ]
     }
   })
 
@@ -139,7 +143,7 @@ describe('PartialClass', () => {
   describe('MyNamelessExtension', () => {
     let MyNamelessExtension
     beforeEach(() => {
-      [MyNamelessExtension] = [class extends PartialClass { }]
+      MyNamelessExtension = class extends PartialClass { }
     })
     it('should not throw when verified as a PartialType', () => {
       expect(() => { getFamily(MyNamelessExtension)
@@ -154,10 +158,10 @@ describe('PartialClass', () => {
       MyPart = class extends PartialClass { }
     })
 
-    it('should be recognized as partial classes', () => {
+    it('should be recognized as a partial class', () => {
       expect(PartialType.isUserDefined(MyPart)).toBe(true)
     })
-    it('should return PartialClass as their partial class', () => {
+    it('should return PartialClass as its family', () => {
       expect(getFamily(MyPart)).toBe(PartialClass)
     })
     it('should have no declarations', () => {
@@ -173,15 +177,7 @@ describe('PartialClass', () => {
       expect(keys).toHaveLength(0)
     })
     it('should return null for missing member descriptor', () => {
-      let descriptor = null
-      for (const current of PartialReflect.findDescriptors(
-        MyPart, 'missingMember')) {
-          switch (typeof current) {
-            case 'function': /*owner = current*/ break
-            case 'object': descriptor = current; break
-            default: assert(false, `Unexpected type: ${typeof current}`)
-          }
-      }
+      const descriptor = findDescriptor(MyPart, 'missingMember')
       expect(descriptor).toBe(null)
     })
 
@@ -197,37 +193,28 @@ describe('PartialClass', () => {
           type = class { }
           method = function() { }
           type.prototype.method = method
-          define(type, MyPart)
+          copyTo(MyPart, type)
         })
 
-        it('should have have the concrete method on type', () => {
+        it('should have the concrete method on type', () => {
           expect(type.prototype.method).toBe(method)
         })
       })
     })
 
-    describe('with MyAnonymousSubExtension', () => {
-      let MyAnonymousSubExtension
+    describe('with inline definitions', () => {
       beforeEach(() => {
-        MyAnonymousSubExtension = Attachments[From]({ })
-        MyPart[ExtensionSymbol] = [ MyAnonymousSubExtension ]
+        MyPart[Defines] = { }
       })
 
       describe('with method', () => {
         let method
         beforeEach(() => {
           method = function() { }
-          MyAnonymousSubExtension.prototype.method = method
+          MyPart[Defines].method = method
         })
         it('should have a descriptor for method', () => {
-          let descriptor = null
-          for (const current of PartialReflect.findDescriptors(MyPart, 'method')) {
-            switch (typeof current) {
-              case 'function': /*owner = current*/ break
-              case 'object': descriptor = current; break
-              default: assert(false, `Unexpected type: ${typeof current}`)
-            }
-          }
+          const descriptor = findDescriptor(MyPart, 'method')
           expect(descriptor.value).toBe(method)
         })
         
@@ -235,18 +222,16 @@ describe('PartialClass', () => {
           let myType
           beforeEach(() => {
             myType = class { }
-            define(myType, MyPart)
+            copyTo(MyPart, myType)
           })
   
           it('should have method as own member name or symbol', () => {
-            const keys = 
-              [...PartialReflect.ownKeys(MyPart)]
+            const keys = [...PartialReflect.ownKeys(MyPart)]
             expect(keys).toContain('method')
           })
 
           it('should not have anonymous declarations', () => {
-            const declarations = 
-              [...partialTypes(myType)]
+            const declarations = [...partialTypes(myType)]
             expect(declarations).toEqual([MyPart])
           })
         })
@@ -258,10 +243,10 @@ describe('PartialClass', () => {
     
       beforeEach(() => {
         MySubExtension = class extends PartialClass { }
-        MyPart[DefinesSymbol] = [ MySubExtension ]
+        MyPart[Extends] = [ MySubExtension ]
       })
 
-      it('should have MySubExtension a declaration', () => {
+      it('should have MySubExtension as a declaration', () => {
         const declarations = [...partialTypes(MyPart)]
         expect(declarations).toEqual([ MySubExtension ])
       })
@@ -284,43 +269,37 @@ describe('PartialClass', () => {
             MyPart.prototype.method = myExtensionMethod
           })
 
-          describe('myExtension', () => {
-            it('should have method as ownMemberKey', () => {
-              const keys = [
-                ...PartialReflect.ownKeys(MyPart)]
+            describe('MyPart', () => {
+            it('should have method as an own member key', () => {
+              const keys = [...PartialReflect.ownKeys(MyPart)]
               expect(keys).toContain('method')
             })
-            it('should have mySubExtension a declaration', () => {
-              const declarations = 
-                [...partialTypes(MyPart)]
+            it('should have MySubExtension as a declaration', () => {
+              const declarations = [...partialTypes(MyPart)]
               expect(declarations).toEqual([ MySubExtension ])
             })
-            it('should have method as memberKey', () => {
-              const keys = 
-                [...PartialReflect.keys(MyPart).filter(isKey)]
+            it('should have method as a member key', () => {
+              const keys = [...PartialReflect.keys(MyPart).filter(isKey)]
               expect(keys).toContain('method')
             })
-            it('should have mySubExtension as declaration', () => {
-              const declarations = 
-                [...partialTypes(MyPart)]
+            it('should have MySubExtension as a declaration', () => {
+              const declarations = [...partialTypes(MyPart)]
               expect(declarations).toEqual([ MySubExtension ])
             })
 
-            describe('when subMethod added to mySubExtension', () => {
+            describe('when subMethod is added to MySubExtension', () => {
               let subMethod
               beforeEach(() => {
                 subMethod = function() { }
                 MySubExtension.prototype.subMethod = subMethod
               })
-              it('should have method as own memberKeys', () => {
-                const keys = 
-                  [...PartialReflect.ownKeys(MyPart)]
+              it('should have method as an own member key', () => {
+                const keys = [...PartialReflect.ownKeys(MyPart)]
                 expect(keys).toContain('method')
                 expect(keys).toHaveLength(1)
               })
-              it('should have method and subMethod as memberKeys', () => {
-                const keys = 
-                  [...PartialReflect.keys(MyPart).filter(isKey)]
+              it('should have method and subMethod as member keys', () => {
+                const keys = [...PartialReflect.keys(MyPart).filter(isKey)]
                 expect(keys).toContain('method')
                 expect(keys).toContain('subMethod')
                 expect(keys).toHaveLength(2)
@@ -331,7 +310,7 @@ describe('PartialClass', () => {
 
                 beforeEach(() => {
                   MySubSubExtension = class extends PartialClass { }
-                  MySubExtension[DefinesSymbol] = [ MySubSubExtension ]
+                  MySubExtension[Extends] = [ MySubSubExtension ]
                 })
 
                 it('should have MySubExtension and MySubSubExtension as declarations', () => {
@@ -339,22 +318,21 @@ describe('PartialClass', () => {
                   const expected = new Set([ MySubExtension, MySubSubExtension ])
                   expect(actual).toEqual(expected)
                 })
-                it('should have MySubSubExtension and MySubExtension a declaration', () => {
-                  const declarations = 
-                    [...partialTypes(MyPart)]
+                it('should have MySubSubExtension after MySubExtension', () => {
+                  const declarations = [...partialTypes(MyPart)]
                   expect(declarations).toEqual([ 
                     MySubExtension,
                     MySubSubExtension
                   ])
                 })
 
-                describe('when subSubMethod added to MySubSubExtension', () => {
+                describe('when subSubMethod is added to MySubSubExtension', () => {
                   let subSubMethod
                   beforeEach(() => {
                     subSubMethod = function() { }
                     MySubSubExtension.prototype.subSubMethod = subSubMethod
                   })
-                  it('should have method, subMethod, and subSubMethod as memberKeys', () => {
+                  it('should have method, subMethod, and subSubMethod as member keys', () => {
                     const keys = [...PartialReflect.keys(MyPart).filter(isKey)]
                     expect(keys).toContain('method')
                     expect(keys).toContain('subMethod')
@@ -368,7 +346,7 @@ describe('PartialClass', () => {
       
           describe('after defining on myType', () => {
             beforeEach(() => {
-              define(myType, MyPart)
+              copyTo(MyPart, myType)
             })
 
             describe('method', () => {
@@ -383,21 +361,19 @@ describe('PartialClass', () => {
               beforeEach(() => {
                 mySubType = class extends myType { }
               })
-              it('should have no declarations', () => {
-                const declarations = 
-                  [...partialTypes(mySubType)]
+              it('should inherit the partial declarations', () => {
+                const declarations = [...partialTypes(mySubType)]
                 expect(declarations).toHaveLength(2)
                 expect(declarations).toContain(MyPart)
                 expect(declarations).toContain(MySubExtension)
               })
-              it('should have MyExtension and MySubExtension as declarations', () => {
+              it('should have MyPart and MySubExtension as declarations', () => {
                 const actual = new Set(partialTypes(mySubType))
                 const expected = new Set([ MyPart, MySubExtension ])
                 expect(actual).toEqual(expected)
               })
-              it('should have no ownMemberKeys', () => {
-                const keys = 
-                  [...Es6UserReflect.ownKeys(mySubType)]
+              it('should have no own member keys', () => {
+                const keys = [...Es6UserReflect.ownKeys(mySubType)]
                 expect(keys).toHaveLength(0)
               })
               it('should have method as member name or symbol', () => {
@@ -406,7 +382,7 @@ describe('PartialClass', () => {
               })
             })
             describe('myType', () => {
-              it('should have MyExtension and MySubExtension as declarations', () => {
+              it('should have MyPart and MySubExtension as declarations', () => {
                 const actual = new Set(partialTypes(myType))
                 const expected = new Set([ MyPart, MySubExtension ])
                 expect(actual).toEqual(expected)
@@ -442,7 +418,7 @@ describe('PartialClass', () => {
               return descriptor 
             }
         
-            define(myType, MyPart)
+            copyTo(MyPart, myType)
           })
           it('should have the method', () => {
             expect(myType.prototype.method).toBe(mySubExtensionMethod)
@@ -465,10 +441,10 @@ describe('PartialClass', () => {
             type = class { }
             method = function() { }
             type.prototype.method = method
-            define(type, MyPart)
+            copyTo(MyPart, type)
           })
           
-          it('should have have the concrete method on type', () => {
+          it('should have the concrete method on type', () => {
             expect(type.prototype.method).toBe(method)
           })
         })

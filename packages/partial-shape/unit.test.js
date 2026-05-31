@@ -3,6 +3,8 @@ import { abstract } from '@kingjs/abstract'
 import {
   Adjacent,
   Compile,
+  Declarative,
+  Normalize,
   Includes,
   Transparent,
   Implements,
@@ -19,11 +21,28 @@ describe('Shape', () => {
     expect(Shape[Transparent]).toBe(true)
   })
 
+  it('is declared with Includes', () => {
+    expect(Shape[Declarative]).toBe(Includes)
+  })
+
   it('declares its adjacent metadata', () => {
-    expect(Shape[Adjacent]).toEqual({
-      [Implements]: Concept,
-      [Includes]: Shape,
+    expect(Shape[Adjacent]).toEqual([
+      Concept,
+      Shape,
+    ])
+  })
+
+  it('can be defined from a pojo', () => {
+    const shape = Shape[Normalize]({
+      method() { },
     })
+
+    class MyType {
+      method() { }
+    }
+
+    expect(shape).toBeInstanceOf(Function)
+    expect(new MyType()).toBeInstanceOf(shape)
   })
 
   it('compiles descriptors to abstract descriptors', () => {

@@ -7,15 +7,11 @@
 //    export const Adjacent = Symbol('PartialType.adjacent')
 
 // For example, Adjacent is used by PartialClass to designate
-// the Extends symbol as containing an adjacency list to other PartialType
-// types of type PartialClass and Attachments. 
+// which PartialType families can be adjacent. Each family supplies its own
+// declaration symbol through its Declarative metadata.
 
 //    class PartialClass extends PartialType {
-//      static [Adjacent] = {
-//        [Extends]: { 
-//          expectedType: [ PartialClass, Attachments ],
-//        }
-//      }
+//      static [Adjacent] = [ PartialClass, Attachments ]
 //    }
 
 // The simplest use of the Extends symbol is to apply an Attachments 
@@ -93,7 +89,9 @@
 
 export const Adjacent = Symbol('PartialType.declarations')
 export const Compile = Symbol('PartialType.compile')
-export const From = Symbol('PartialType.From')
+export const Normalize = Symbol('PartialType.Normalize')
+export const Declarative = Symbol('PartialType.Declarative')
+export const Procedural = Symbol('PartialType.Procedural')
 export const Redeclare = Symbol('PartialType.Redeclare')
 export const Transparent = Symbol('PartialType.Transparent')
 export const Precondition = Symbol('PartialType.Precondition')

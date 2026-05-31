@@ -8,13 +8,17 @@ import { linearize } from '@kingjs/linearize'
 import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { Es6Reflector } from '@kingjs/es6-reflector'
 import { Es6Prototype } from '@kingjs/es6-prototype'
-import { PartialType } from '@kingjs/partial-type'
+import {
+  PartialType,
+} from '@kingjs/partial-type'
 import { createPartialMetadata } from '@kingjs/partial-metadata'
 import { thunk as createThunk } from '@kingjs/function-contract'
 import { 
   Compile,
   Adjacent,
-  From,
+  Normalize,
+  Declarative,
+  Procedural,
   Redeclare,
   Transparent, isTransparent,
   Precondition,
@@ -476,7 +480,9 @@ function resolve(descriptor, existing) {
 
 const MetaSymbols = [
   Adjacent, 
-  From,
+  Normalize,
+  Declarative,
+  Procedural,
   Redeclare,
   Transparent,  
   Compile,
@@ -566,28 +572,18 @@ function getComponent(type) {
 // (component being interpreted as a singleton list). For example,
 
 //    class Attachments extends PartialType {
-//      static [Adjacent] = { 
-//        [Defines]: Attachments 
-//      }
+//      static [Adjacent] = [ Attachments ]
 //    }
 //    class Concept extends PartialType {
-//      static [Adjacent] = { 
-//        [Defines]: Attachments 
-//        [Implements]: Concept 
-//      }
+//      static [Adjacent] = [ Attachments, Concept ]
 //    }
 //    class PartialClass extends PartialType {
-//      static [Adjacent] = { 
-//        [Defines]: Attachments 
-//        [Implements]: Concept
-//        [Extends]: PartialClass 
-//      }
+//      static [Adjacent] = [ Attachments, Concept, PartialClass ]
 //    }
 
-// are examples of types of PartialType declaring what symbols host what
-// types of adjacent partial type. The symbols declared as keys of the
-// Adjacent object are not well known to PartialReflect. They are well 
-// known to a type of PartialType like Concept or PartialClass.
+// are examples of types of PartialType declaring what families can be
+// adjacent. Each family declares the symbol that hosts those edges via
+// its Declarative metadata.
 
 // For example, from the above example, B could be defined like this:
 
@@ -614,11 +610,14 @@ function *ownDeclaredAdjacentPartialTypes(type) {
   if (!adjacent) 
     return
 
-  for (const symbol of Object.getOwnPropertySymbols(adjacent)) {
-    const expectedType = adjacent[symbol]
+  for (const expectedType of asMetadata(adjacent)) {
+    const symbol = expectedType[Declarative]
+    assert(symbol,
+      `${expectedType.name} must declare a declarative symbol.`)
+
     const adjacentTypes = getOwn(type, symbol)
     for (let adjacentType of asMetadata(adjacentTypes))
-      yield expectedType[From](adjacentType)
+      yield expectedType[Normalize](adjacentType)
   }
 }
 

@@ -420,7 +420,7 @@ export class PhasedBulkContainerPart extends PhasedContainerPart {
 }
 
 export class GapEditableContainerPart extends BulkEditableContainerPart {
-  static [Implements] = SizedContainerPart
+  static [Extends] = SizedContainerPart
   static [Transforms] = {
     insertRange: [null, sourceRange],
   }

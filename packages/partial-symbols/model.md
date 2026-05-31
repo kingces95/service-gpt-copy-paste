@@ -5,6 +5,7 @@ Partial symbols are grouped by the role they play in the Partial system.
 Contents
 
 - [Symbol Roles](#symbol-roles): exported symbols pivoted by role.
+- [Declaration Edge](#declaration-edge): declaration families mapped to symbols, verbs, and adjacent families.
 
 ## Symbol Roles
 
@@ -22,7 +23,9 @@ Symbol Roles
 Family Protocol
 ├─ Adjacent
 ├─ Compile
-├─ From
+├─ Normalize
+├─ Declarative
+├─ Procedural
 ├─ Redeclare
 ├─ Transparent
 └─ Precondition
@@ -49,4 +52,25 @@ Runtime Pipeline
    ├─ Postconditions
    ├─ TypePrecondition
    └─ TypePostcondition
+```
+
+## Declaration Edge
+
+```txt
+Declaration Edge
+├─ set: declaration family types
+├─ transform: family type -> (family type, symbol, verb, adjacent families)
+├─ pivot: family type
+└─ display: family type rows with symbol, verb, and adjacent-family columns
+```
+
+```txt
+Declaration Edge
+
+Family Type          Symbol      Verb            Adjacent Families
+Attachments          Defines     define          -
+AbstractAttachments  Abstracts   defineAbstract  -
+PartialClass         Extends     extend          Attachments, AbstractAttachments, PartialClass, Concept
+Concept              Implements  implement       Attachments, Concept
+Shape                Includes    -               Concept, Shape
 ```

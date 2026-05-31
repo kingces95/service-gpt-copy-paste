@@ -17,7 +17,7 @@ This package provides JavaScript symbol channels for similar metadata.
 
 - `Adjacent`: which static metadata keys introduce adjacent partial types.
 - `Compile`: descriptor transform hook.
-- `From`: loader hook from type or POJO.
+- `Normalize`: family-local declaration input gate.
 - `Transparent`: whether a partial type is associated with the host.
 - `Precondition`: type-level precondition hook.
 - `CreateThunk`: member wrapper hook.

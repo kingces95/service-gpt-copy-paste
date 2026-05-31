@@ -11,6 +11,8 @@ import {
   Defines, 
   Implements, 
   Compile,
+  Declarative,
+  Procedural,
   Precondition,
 } from '@kingjs/partial-symbols'
 
@@ -33,10 +35,12 @@ function satisfiesAssociations(ctor, partialType) {
 }
 
 export class Concept extends PartialType {
-  static [Adjacent] = {
-    [Defines]: Attachments,
-    [Implements]: Concept,
-  }
+  static [Declarative] = Implements
+  static [Procedural] = 'implement'
+  static [Adjacent] = [
+    Attachments,
+    Concept,
+  ]
 
   static [Compile](descriptor) {
     

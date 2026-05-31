@@ -15,6 +15,12 @@ describe('A PartialType family', () => {
   class MyExtension extends MyPartialType { }
   class MyDerivedExtension extends MyExtension { }
 
+  it('should consider the direct PartialType extension a family', () => {
+    expect(PartialType.isFamily(MyPartialType)).toBe(true)
+  })
+  it('should not consider extensions family roots', () => {
+    expect(PartialType.isFamily(MyExtension)).toBe(false)
+  })
   it('should not consider the family root user defined', () => {
     expect(PartialType.isUserDefined(MyPartialType)).toBe(false)
   })

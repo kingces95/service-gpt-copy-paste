@@ -3,7 +3,11 @@ import { Descriptor } from '@kingjs/descriptor'
 import { PartialType} from '@kingjs/partial-type'
 import { 
   Transparent,
-  Compile 
+  Compile,
+  Declarative,
+  Procedural,
+  Defines,
+  Abstracts,
 } from '@kingjs/partial-symbols'
 
 // Attachments hosts descriptors that can be copied onto a type.
@@ -97,10 +101,14 @@ import {
 
 export class Attachments extends PartialType { 
   static [Transparent] = true
+  static [Declarative] = Defines
+  static [Procedural] = 'define'
 }
 
 export class AbstractAttachments extends PartialType {
   static [Transparent] = true
+  static [Declarative] = Abstracts
+  static [Procedural] = 'defineAbstract'
   
   // static [Compile] = Concept[Compile]
   static [Compile](descriptor) {

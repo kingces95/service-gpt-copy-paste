@@ -18,8 +18,7 @@ defineAbstract(type, ...definitions)
 
 ## Important Ideas
 
-`define` converts definitions to `Attachments` using `[From]` and copies them
-with `copyTo`.
+`define` normalizes definitions to `Attachments` and copies them with `copyTo`.
 
 `defineAbstract` uses `AbstractAttachments` to copy abstract descriptors.
 

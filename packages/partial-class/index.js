@@ -9,6 +9,8 @@ import {
   Implements, 
   Abstracts, 
   Precondition,
+  Declarative,
+  Procedural,
 } from '@kingjs/partial-symbols'
 
 export { 
@@ -19,12 +21,14 @@ export {
 } from '@kingjs/partial-symbols'
 
 export class PartialClass extends PartialType {
-  static [Adjacent] = {
-    [Defines]: Attachments,
-    [Abstracts]: AbstractAttachments,
-    [Extends]: PartialClass,
-    [Implements]: Concept,
-  }
+  static [Declarative] = Extends
+  static [Procedural] = 'extend'
+  static [Adjacent] = [
+    Attachments,
+    AbstractAttachments,
+    PartialClass,
+    Concept,
+  ]
   static [Redeclare] = [ Concept ]
   static [Symbol.hasInstance] = Concept[Symbol.hasInstance]
   static [Precondition] = Concept[Precondition]

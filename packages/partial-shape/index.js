@@ -8,6 +8,7 @@ import {
   Implements,
   Includes,
   Compile,
+  Declarative,
   Transparent,
 } from '@kingjs/partial-symbols'
 
@@ -28,11 +29,12 @@ function isMatch(shape, type) {
 
 export class Shape extends PartialType {
   static [Transparent] = true
+  static [Declarative] = Includes
 
-  static [Adjacent] = {
-    [Implements]: Concept,
-    [Includes]: Shape,
-  }
+  static [Adjacent] = [
+    Concept,
+    Shape,
+  ]
 
   static [Compile](descriptor) {
     descriptor = super[Compile](descriptor)

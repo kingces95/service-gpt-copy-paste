@@ -19,7 +19,7 @@ prototype descriptors, static metadata, and descriptor compilation rules.
 export class PartialType extends null {
   static [Transparent] = false
   static [Adjacent] = { }
-  static [From](typeOrPojo) { ... }
+  static [Normalize](typeOrPojo) { ... }
   static [Compile](descriptor) { ... }
 }
 ```
@@ -29,8 +29,8 @@ export class PartialType extends null {
 `isUserDefined(type)` distinguishes user partial types from `PartialType`
 itself and direct framework subclasses.
 
-`[From]` accepts a real partial type or, for transparent partial types, a POJO
-that can be turned into an ES class.
+`[Normalize]` accepts declaration input, coerces POJOs where allowed, and
+asserts the result belongs to the family.
 
 `[Compile]` is the descriptor pipeline hook. Concept and abstract attachment
 types use this to turn regular method syntax into abstract descriptors.

@@ -1,7 +1,6 @@
 import { assert } from '@kingjs/assert'
 import { PartialReflect, copyTo } from '@kingjs/partial-reflect'
-import { PartialType } from '@kingjs/partial-type'
-import { From } from '@kingjs/partial-symbols'
+import { PartialType, Normalize } from '@kingjs/partial-type'
 import { templatize } from '@kingjs/templatize'
 import { extensionOf } from '@kingjs/type-traits'
 import { contract } from '@kingjs/function-contract'
@@ -85,8 +84,8 @@ function applyDeclaration(
   implementation = { },
   stillAbstract = { },
 ) {
-  implementation = TImplementation[From](implementation)
-  stillAbstract = AbstractAttachments[From](stillAbstract)
+  implementation = TImplementation[Normalize](implementation)
+  stillAbstract = AbstractAttachments[Normalize](stillAbstract)
 
   assert(PartialReflect.isExtensionOf(implementation, TImplementation),
     `Argument implementation must extend ${TImplementation.name}.`)

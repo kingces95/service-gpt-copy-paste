@@ -7,16 +7,20 @@ import {
   Compile, 
   Adjacent, 
   Redeclare,
+  Declarative,
+  Procedural,
   Transparent,
-  From,
+  Normalize,
 } from '@kingjs/partial-symbols'
 
 export {
   Compile,
   Adjacent,
   Redeclare,
+  Declarative,
+  Procedural,
   Transparent,
-  From,
+  Normalize,
 } from '@kingjs/partial-symbols'
 
 const families = new WeakMap()
@@ -27,6 +31,11 @@ export class PartialType extends null {
     if (!type || type == PartialType) return false
     if (Object.getPrototypeOf(type) == PartialType) return false
     return Es6UserReflect.isExtensionOf(type, PartialType)
+  }
+
+  static isFamily(type) {
+    if (!type || type == PartialType) return false
+    return Object.getPrototypeOf(type) == PartialType
   }
 
   static getFamily(type) {
@@ -69,22 +78,33 @@ export class PartialType extends null {
   }
 
   static [Transparent] = false
-  static [Adjacent] = { }
+  static [Adjacent] = [ ]
   static [Redeclare] = [ ]
-  static [From](typeOrPojo) {
+  static [Declarative] = null
+  static [Procedural] = null
+  static [Normalize](typeOrPojo) {
+    assert(PartialType.isFamily(this),
+      '[Normalize] must be invoked on a PartialType family.')
+
+    let result
+
     if (typeof typeOrPojo == 'function') {
-      assert(Es6UserReflect.isExtensionOf(typeOrPojo, PartialType),
-        `Type "${typeOrPojo.name}" is not an extension of ` + 
-        `expected type "${this.name}".`)
-      
-      return typeOrPojo
+      result = typeOrPojo
+    } else {
+      assert(isPojo(typeOrPojo),
+        'Argument must be a type or pojo.')
+      assert(this[Transparent],
+        'Only a transparent PartialType can be defined from a pojo.')
+
+      result = declareType(null, this, typeOrPojo)
     }
-    assert(isPojo(typeOrPojo),
-      'Argument must be a type or pojo.')
-    assert(this[Transparent],
-      'Only a transparent PartialType can be defined from a pojo.')
-      
-    return declareType(null, this, typeOrPojo)
+
+    const resultName = result?.name ?? typeof result
+
+    assert(result == this || Es6UserReflect.isExtensionOf(result, this),
+      `${this.name}[Normalize] expected a ${this.name}; got ${resultName}.`)
+
+    return result
   }
   static [Compile](descriptor) { 
     return Es6Compiler.compile(descriptor) 

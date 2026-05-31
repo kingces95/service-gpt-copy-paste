@@ -2,10 +2,12 @@ import { beforeEach } from 'vitest'
 import { describe, it, expect } from 'vitest'
 import { TypeInfo } from "@kingjs/info"
 import { define } from '@kingjs/partial-define'
+import { extend } from '@kingjs/partial-extend'
+import { PartialReflect, copyTo } from '@kingjs/partial-reflect'
 import { } from "@kingjs/info-to-pojo"
 import { PartialClass } from '@kingjs/partial-class'
 import { Attachments } from '@kingjs/partial-attachments'
-import { From } from '@kingjs/partial-symbols'
+import { Normalize } from '@kingjs/partial-symbols'
 
 const filter = {
   isNonPublic: false, isKnown: false,
@@ -77,7 +79,7 @@ describe('Kitchen sink', () => {
       member1() { return 42 }
       member2() { return 42 }
     }],
-    ['lambda', Attachments[From]({
+    ['lambda', Attachments[Normalize]({
       getter0: { get: () => { } },
       get getter1() { },
 
@@ -118,7 +120,10 @@ describe('Kitchen sink', () => {
       let cls
       beforeEach(() => {
         [cls] = [class { }]
-        define(cls, partialClass)
+        if (PartialReflect.isExtensionOf(partialClass, PartialClass))
+          extend(cls, partialClass)
+        else
+          copyTo(partialClass, cls)
       })
       
       it('should have expected info pojo', async () => {
