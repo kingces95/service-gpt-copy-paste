@@ -1,5 +1,5 @@
 import { implement } from '@kingjs/partial-implement'
-import { extend } from '@kingjs/partial-extend'
+import { compose } from '@kingjs/partial-compose'
 import { EquatableConcept } from '@kingjs/partial-concept'
 import {
   BacktrackableCursorPart,
@@ -32,23 +32,23 @@ export class IndexableCursor extends ContainerCursor {
       }
     })
 
-    extend(this, CursorPart, {
+    compose(this, CursorPart, {
       get isAtEnd$() { return this.index == this.container.size },
     })
 
-    extend(this, CloneableCursorPart, {
+    compose(this, CloneableCursorPart, {
       clone() {
         const { constructor, container, _index: index } = this
         return new constructor(container, index)
       }
     })
 
-    extend(this, SteppableCursorPart, {
+    compose(this, SteppableCursorPart, {
       step() { return this.move(1) },
       canStep$() { return this.index < this.container.size },
     })
 
-    extend(this, ReadableCursorPart, {
+    compose(this, ReadableCursorPart, {
       get value() { return this.at(0) },
 
       isReadable$() {
@@ -56,7 +56,7 @@ export class IndexableCursor extends ContainerCursor {
       },
     })
 
-    extend(this, WritableCursorPart, {
+    compose(this, WritableCursorPart, {
       set value(value) { this.setAt(0, value) },
 
       isWritable$() {
@@ -64,13 +64,13 @@ export class IndexableCursor extends ContainerCursor {
       },
     })
 
-    extend(this, BacktrackableCursorPart, {
+    compose(this, BacktrackableCursorPart, {
       stepBack() { return this.move(-1) },
       isAtBegin$() { return this.index == 0 },
       canStepBack$() { return this.index > 0 },
     })
 
-    extend(this, MovableCursorPart, {
+    compose(this, MovableCursorPart, {
       move(offset) {
         this._index += offset
         return this
@@ -82,7 +82,7 @@ export class IndexableCursor extends ContainerCursor {
       },
     })
 
-    extend(this, ComparableToCursorPart, {
+    compose(this, ComparableToCursorPart, {
       compareTo(otherCursor) {
         if (this.index < otherCursor.index) return -1
         if (this.index > otherCursor.index) return 1
@@ -90,13 +90,13 @@ export class IndexableCursor extends ContainerCursor {
       },
     })
 
-    extend(this, MeasurableCursorPart, {
+    compose(this, MeasurableCursorPart, {
       distanceTo(otherCursor) {
         return otherCursor.index - this.index
       },
     })
 
-    extend(this, ReadableAtCursorPart, {
+    compose(this, ReadableAtCursorPart, {
       at(offset) {
         return this.container.at(this.index + offset)
       },
@@ -107,7 +107,7 @@ export class IndexableCursor extends ContainerCursor {
       },
     })
 
-    extend(this, WritableAtCursorPart, {
+    compose(this, WritableAtCursorPart, {
       setAt(offset, value) {
         this.container.setAt(this.index + offset, value)
       },

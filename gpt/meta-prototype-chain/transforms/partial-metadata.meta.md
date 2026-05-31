@@ -22,7 +22,7 @@ class InputRangePart extends PartialClass {
 }
 
 class MyRange {
-  static { extend(this, InputRangePart) }
+  static { compose(this, InputRangePart) }
 }
 ```
 
@@ -42,7 +42,7 @@ class InputRangePart extends PartialClass {
 }
 
 class MyRange {
-  static { extend(this, InputRangePart) }
+  static { compose(this, InputRangePart) }
 }
 
 PartialReflect instance chain:

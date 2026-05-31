@@ -10,8 +10,8 @@ import {
   Postconditions,
 } from '@kingjs/partial-proxy'
 import { PartialProxy } from '@kingjs/partial-proxy'
-import { extend } from '@kingjs/partial-extend'
-import { Abstracts, PartialClass } from '@kingjs/partial-class'
+import { compose } from '@kingjs/partial-compose'
+import { DefinesAbstract, PartialClass } from '@kingjs/partial-class'
 import { defaultTo } from '@kingjs/function-args'
 
 class MyType extends PartialProxy {
@@ -144,7 +144,7 @@ class BaseTransformPart extends PartialClass {
     override: [upper],
   }
 
-  static [Abstracts] = {
+  static [DefinesAbstract] = {
     suppliedInherited(value) { },
   }
 
@@ -168,7 +168,7 @@ class TransformPart extends BaseTransformPart {
     ],
   }
 
-  static [Abstracts] = {
+  static [DefinesAbstract] = {
     supplied(value) { },
   }
 
@@ -216,13 +216,13 @@ class TransformType extends PartialProxy {
   }
 
   static {
-    extend(this, BaseTransformPart, {
+    compose(this, BaseTransformPart, {
       suppliedInherited(value) {
         this.push(`suppliedInherited:${value}`)
       },
     })
 
-    extend(this, TransformPart, {
+    compose(this, TransformPart, {
       supplied(value) {
         this.push(`supplied:${value}`)
       },

@@ -30,7 +30,7 @@ export class AbstractAttachments extends PartialType {
 
 `Attachments` are used for `Defines` and inline implementation objects.
 
-`AbstractAttachments` are used for `Abstracts` and turn members into abstract
+`AbstractAttachments` are used for `DefinesAbstract` and turn members into abstract
 requirements.
 
 Transparency means the descriptor source is not recorded as a partial type of

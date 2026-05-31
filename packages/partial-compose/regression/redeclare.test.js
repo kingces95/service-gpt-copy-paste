@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { PartialReflect } from '@kingjs/partial-reflect'
-import { extend } from '@kingjs/partial-extend'
+import { compose } from '@kingjs/partial-compose'
 import { PartialClass, Implements } from '@kingjs/partial-class'
 import { Concept } from '@kingjs/partial-concept'
 
@@ -22,7 +22,7 @@ describe('redeclared concept descriptors', () => {
   it('allow parts to implement concept members', () => {
     class Type {
       static {
-        extend(this, SteppablePart, {
+        compose(this, SteppablePart, {
           step() { return this },
         })
       }
@@ -35,7 +35,7 @@ describe('redeclared concept descriptors', () => {
   it('rejects members not declared by the part or redeclared concepts', () => {
     expect(() => class Type {
       static {
-        extend(this, SteppablePart, {
+        compose(this, SteppablePart, {
           unknown() { },
         })
       }

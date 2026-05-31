@@ -1,5 +1,5 @@
 // import { assert } from '@kingjs/assert'
-// import { extend } from '@kingjs/partial-extend'
+// import { compose } from '@kingjs/partial-compose'
 // import { attachments } from '@kingjs/partial-class'
 // import { concepts } from '@kingjs/partial-concept'
 
@@ -11,5 +11,5 @@
 //     ...partialTypes(type)
 //   ]
 
-//   extend(type, ...partialTypes)
+//   compose(type, ...partialTypes)
 // }

@@ -30,22 +30,22 @@ This works, but it is only behavior. Reflection cannot easily distinguish
 The partial system can mark members as abstract requirements.
 
 ```js
-import { Abstracts } from '@kingjs/partial-class'
+import { DefinesAbstract } from '@kingjs/partial-class'
 
 class RangePart extends PartialClass {
-  static [Abstracts] = {
+  static [DefinesAbstract] = {
     begin() { },
     end() { },
   }
 }
 ```
 
-A concrete class can then extend the part and fill the requirements:
+A concrete class can then compose the part and fill the requirements:
 
 ```js
 class VectorRange extends PartialProxy {
   static {
-    extend(this, RangePart, {
+    compose(this, RangePart, {
       begin() { return new this.cursorType(this, 0) },
       end() { return new this.cursorType(this, this.size) },
     })

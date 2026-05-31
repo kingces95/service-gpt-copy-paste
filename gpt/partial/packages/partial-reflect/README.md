@@ -17,7 +17,7 @@ partial composition rather than only the normal runtime class hierarchy.
 export const { PartialReflect, copyTo } = create({
   knownStaticKeys: [
     Defines,
-    Extends,
+    Composes,
     Implements,
   ]
 })

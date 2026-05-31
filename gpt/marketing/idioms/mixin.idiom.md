@@ -32,7 +32,7 @@ Use a `PartialClass` as a named implementation part.
 
 ```js
 class FrontInsertableContainerPart extends PartialClass {
-  static [Abstracts] = {
+  static [DefinesAbstract] = {
     get front() { },
     pushFront(value) { },
     popFront() { },
@@ -40,12 +40,12 @@ class FrontInsertableContainerPart extends PartialClass {
 }
 ```
 
-Then extend it into another part or concrete type:
+Then compose it into another part or concrete type:
 
 ```js
 class EditableContainerPart extends PartialClass {
   static {
-    extend(this, FrontInsertableContainerPart, {
+    compose(this, FrontInsertableContainerPart, {
       pushFront(value) { this.insertValue(this.begin(), value) },
       popFront() {
         const cursor = this.begin()
@@ -63,7 +63,7 @@ A concrete container supplies the primitive edit operations:
 ```js
 class VectorMap extends PartialProxy {
   static {
-    extend(this, EditableContainerPart, {
+    compose(this, EditableContainerPart, {
       get front() { return this.at(0) },
       insertValue(cursor, value) { this.array.splice(cursor.index, 0, value) },
       erase(cursor) { this.array.splice(cursor.index, 1) },

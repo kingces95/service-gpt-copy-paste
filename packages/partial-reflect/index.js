@@ -1,6 +1,6 @@
 import { 
   Implements, 
-  Extends,
+  Composes,
   Defines,
   Includes,
 } from '@kingjs/partial-symbols'
@@ -24,7 +24,7 @@ export const {
 } = create({
   knownStaticKeys: [
     Defines,      // from Attachments
-    Extends,      // from PartialClass
+    Composes,      // from PartialClass
     Implements,   // from Concept
     Includes,     // from Shape
   ]

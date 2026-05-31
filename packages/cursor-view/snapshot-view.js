@@ -1,5 +1,5 @@
 import { implement } from '@kingjs/partial-implement'
-import { extend } from '@kingjs/partial-extend'
+import { compose } from '@kingjs/partial-compose'
 import { EquatableConcept } from '@kingjs/partial-concept'
 import {
   BacktrackableCursorPart,
@@ -34,16 +34,16 @@ class SnapshotCursor extends ViewCursor {
       },
     })
 
-    extend(this, CursorPart, {
+    compose(this, CursorPart, {
       get isAtEnd$() { return this.index == this.view._values.length },
     })
 
-    extend(this, SteppableCursorPart, {
+    compose(this, SteppableCursorPart, {
       step() { return this.move(1) },
       canStep$() { return this.index < this.view._values.length },
     })
 
-    extend(this, ReadableCursorPart, {
+    compose(this, ReadableCursorPart, {
       get value() { return this.view._values[this.index] },
 
       isReadable$() {
@@ -51,17 +51,17 @@ class SnapshotCursor extends ViewCursor {
       },
     })
 
-    extend(this, CloneableCursorPart, {
+    compose(this, CloneableCursorPart, {
       clone() { return new this.constructor(this.view, this.index) },
     })
 
-    extend(this, BacktrackableCursorPart, {
+    compose(this, BacktrackableCursorPart, {
       stepBack() { return this.move(-1) },
       isAtBegin$() { return this.index == 0 },
       canStepBack$() { return this.index > 0 },
     })
 
-    extend(this, MovableCursorPart, {
+    compose(this, MovableCursorPart, {
       move(offset) {
         this._index += offset
         return this
@@ -73,7 +73,7 @@ class SnapshotCursor extends ViewCursor {
       },
     })
 
-    extend(this, ComparableToCursorPart, {
+    compose(this, ComparableToCursorPart, {
       compareTo(other) {
         if (this.index < other.index) return -1
         if (this.index > other.index) return 1
@@ -81,13 +81,13 @@ class SnapshotCursor extends ViewCursor {
       },
     })
 
-    extend(this, MeasurableCursorPart, {
+    compose(this, MeasurableCursorPart, {
       distanceTo(other) {
         return other.index - this.index
       },
     })
 
-    extend(this, ReadableAtCursorPart, {
+    compose(this, ReadableAtCursorPart, {
       at(offset) {
         return this.view._values[this.index + offset]
       },

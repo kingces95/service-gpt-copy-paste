@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { TypeInfo } from "@kingjs/info"
 import { PartialClass } from '@kingjs/partial-class'
-import { extend } from '@kingjs/partial-extend'
+import { compose } from '@kingjs/partial-compose'
 import { implement } from '@kingjs/partial-implement'
 import { Concept, Implements } from '@kingjs/partial-concept'
 import { } from "@kingjs/info-to-pojo"
@@ -205,12 +205,12 @@ describe('A concept with a member', () => {
       const expected = [mySymbol]
       expect(actual).toEqual(expected)
     })
-    describe('used to extend a class', () => {
+    describe('used to compose into a class', () => {
       let cls
       let clsInfo
       beforeEach(() => {
         cls = class MyClass { }
-        extend(cls, type, { }, {
+        compose(cls, type, { }, {
           member() { },
           [mySymbol]() { },
         })

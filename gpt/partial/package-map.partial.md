@@ -31,7 +31,7 @@ Loose observational duck checks moved to `probe`; see
 
 `partial-define` copies transparent attachments.
 
-`partial-extend` composes partial classes.
+`partial-compose` composes partial classes.
 
 `partial-implement` composes concepts and their implementations.
 

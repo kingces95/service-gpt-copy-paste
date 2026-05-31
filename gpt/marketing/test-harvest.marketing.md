@@ -34,7 +34,7 @@ Good candidates usually have one of these shapes:
   documentation data.
 - `packages/partial-class/unit.test.js`: market as "composition with a paper
   trail", where extension declarations survive inheritance and remain visible.
-- `packages/partial-extend/thunk.test.js`: market as "conditions around copied
+- `packages/partial-compose/thunk.test.js`: market as "conditions around copied
   members", where lifecycle hooks or preconditions can wrap partial
   application.
 

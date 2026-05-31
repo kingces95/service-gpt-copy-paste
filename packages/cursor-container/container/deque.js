@@ -1,7 +1,7 @@
 import Denque from "denque"
 import { thunk } from '@kingjs/function-contract'
 import { implement } from '@kingjs/partial-implement'
-import { extend } from '@kingjs/partial-extend'
+import { compose } from '@kingjs/partial-compose'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import {
   RangeConcept,
@@ -40,20 +40,20 @@ export class Deque extends PartialProxy {
   }
   
   static {
-    extend(this, SizedContainerPart, {
+    compose(this, SizedContainerPart, {
       get size() { return this._denque.length },
     })
 
-    extend(this, IndexableContainerPart, {
+    compose(this, IndexableContainerPart, {
       at(index) { return this._denque.get(index) },
       setAt(index, value) { this._denque.splice(index, 1, value) },
     })
 
-    extend(this, ClearableContainerPart, {
+    compose(this, ClearableContainerPart, {
       clear() { this._denque.clear() },
     })
 
-    extend(this, BulkAssignableContainerPart, {
+    compose(this, BulkAssignableContainerPart, {
       resize(count, value = undefined) {
         if (count < this.size) {
           this._denque.remove(count, this.size - count)
@@ -75,17 +75,17 @@ export class Deque extends PartialProxy {
       }),
     })
 
-    extend(this, FrontInsertableContainerPart, {
+    compose(this, FrontInsertableContainerPart, {
       popFront() { return this._denque.shift() },
       pushFront(value) { this._denque.unshift(value) },
     })
 
-    extend(this, BackInsertableContainerPart, {
+    compose(this, BackInsertableContainerPart, {
       pushBack(value) { this._denque.push(value) },
       popBack() { return this._denque.pop() },
     })
 
-    extend(this, EditableContainerPart, {
+    compose(this, EditableContainerPart, {
       erase(first, last = next(first)) {
         const result = first.clone()
         this._denque.remove(first.index, last.index - first.index)
@@ -95,7 +95,7 @@ export class Deque extends PartialProxy {
       insertValue(cursor, value) { },
     })
 
-    extend(this, BulkEditableContainerPart, {
+    compose(this, BulkEditableContainerPart, {
       insertRange: thunk({
         transforms: [null, sourceRange],
       },

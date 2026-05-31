@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { abstract } from '@kingjs/abstract'
-import { extend } from '@kingjs/partial-extend'
+import { compose } from '@kingjs/partial-compose'
 import { define } from '@kingjs/partial-define'
-import { PartialClass, Extends } from '@kingjs/partial-class'
+import { PartialClass, Composes } from '@kingjs/partial-class'
 import { PartialType, Compile } from '@kingjs/partial-type'
 
 describe('A type', () => {
@@ -11,7 +11,7 @@ describe('A type', () => {
   beforeEach(() => {
     type = class { }
   })
-  it('can extend null', () => {
+  it('can compose null', () => {
     expect(() => define(type, null)).toThrow()
   })
   it('throws extending a non-partial type', () => {
@@ -22,7 +22,7 @@ describe('A type', () => {
     beforeEach(() => {
       pojo = { member: { value: () => 'member' } }
     })
-    it('can extend the member', () => {
+    it('can compose the member', () => {
       define(type, pojo)
       const object = new type()
       object.member()
@@ -34,7 +34,7 @@ describe('A type', () => {
     beforeEach(() => {
       pojo = { method: { value: abstract } }
     })
-    it('can extend the method', () => {
+    it('can compose the method', () => {
       // integration test
       define(type, pojo)
       expect(type.prototype.method).toBe(abstract)
@@ -45,7 +45,7 @@ describe('A type', () => {
     beforeEach(() => {
       pojo = { method: abstract }
     })
-    it('can extend the method', () => {
+    it('can compose the method', () => {
       // integration test
       define(type, pojo)
       expect(type.prototype.method).toBe(abstract)
@@ -61,7 +61,7 @@ describe('A type', () => {
         },
       }
     })
-    it('can extend the accessor', () => {
+    it('can compose the accessor', () => {
       define(type, pojo)
       const descriptor = Object.getOwnPropertyDescriptor(
         type.prototype, 'accessor')
@@ -76,8 +76,8 @@ describe('A type', () => {
       partialType = class extends PartialClass { 
         member() { return 'member' } }
     })
-    it('can extend the member', () => {
-      extend(type, partialType)
+    it('can compose the member', () => {
+      compose(type, partialType)
       expect(type.prototype.member).toBe(partialType.prototype.member)
     })
     describe('and another partial type with a member function', () => {
@@ -86,9 +86,9 @@ describe('A type', () => {
         anotherPartialType = class extends PartialClass { 
           member() { return 'override' } }
       })
-      it('can extend both partial types', () => {
-        extend(type, partialType)
-        extend(type, anotherPartialType)
+      it('can compose both partial types', () => {
+        compose(type, partialType)
+        compose(type, anotherPartialType)
         expect(type.prototype.member).toBe(anotherPartialType.prototype.member)
       })
     })
@@ -96,18 +96,18 @@ describe('A type', () => {
       let extendedPartialType
       beforeEach(() => {
         extendedPartialType = class extends PartialClass {
-          static [Extends] = partialType }
+          static [Composes] = partialType }
       })
-      it('can extend the member', () => {
-        extend(type, extendedPartialType)
+      it('can compose the member', () => {
+        compose(type, extendedPartialType)
         expect(type.prototype.member).toBe(partialType.prototype.member)
       })
       describe('that is an array of extensions', () => {
         beforeEach(() => {
-          extendedPartialType[Extends] = [partialType]
+          extendedPartialType[Composes] = [partialType]
         })
-        it('can extend the member', () => {
-          extend(type, extendedPartialType)
+        it('can compose the member', () => {
+          compose(type, extendedPartialType)
           expect(type.prototype.member).toBe(partialType.prototype.member)
         })
       })
@@ -115,10 +115,10 @@ describe('A type', () => {
         let extendedExtendedPartialType
         beforeEach(() => {
           extendedExtendedPartialType = class extends PartialClass {
-            static [Extends] = extendedPartialType }
+            static [Composes] = extendedPartialType }
         })
-        it('can extend the member', () => {
-          extend(type, extendedExtendedPartialType)
+        it('can compose the member', () => {
+          compose(type, extendedExtendedPartialType)
           expect(type.prototype.member).toBe(partialType.prototype.member)
         })
       })
@@ -144,7 +144,7 @@ describe('A type', () => {
       describe('when extended', () => {
         let compiledDescriptor
         beforeEach(() => {
-          extend(type, partialType)
+          compose(type, partialType)
           compiledDescriptor = Object.getOwnPropertyDescriptor(
             type.prototype, 'member')
         })

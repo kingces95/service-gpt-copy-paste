@@ -4,7 +4,7 @@
 
 Defines `PartialClass`, the implementation/capability part type.
 
-Partial classes are non-transparent descriptor contributors. When extended into
+Partial classes are non-transparent descriptor contributors. When composed into
 a target, they become part of the target's meta-prototype chain.
 
 ## Root Analogy
@@ -17,12 +17,14 @@ classes.
 
 ```js
 export class PartialClass extends PartialType {
-  static [Adjacent] = {
-    [Defines]: Attachments,
-    [Abstracts]: AbstractAttachments,
-    [Extends]: PartialClass,
-    [Implements]: Concept,
-  }
+  static [Declarative] = Composes
+  static [Procedural] = 'compose'
+  static [Adjacent] = [
+    Attachments,
+    AbstractAttachments,
+    PartialClass,
+    Concept,
+  ]
 }
 ```
 
@@ -31,8 +33,8 @@ export class PartialClass extends PartialType {
 `PartialClass` can declare:
 
 - `[Defines]`: concrete transparent members
-- `[Abstracts]`: abstract required members
-- `[Extends]`: other partial classes
+- `[DefinesAbstract]`: abstract required members
+- `[Composes]`: other partial classes
 - `[Implements]`: concepts
 
 It borrows `Concept` instance/precondition behavior so partial classes can
@@ -47,7 +49,7 @@ adjacency grammar for partial-class metadata.
 
 ### `unit.test.js`
 
-Tests partial-class extension, declared extensions, procedural extension, and
+Tests partial-class composition, declared composition, procedural composition, and
 reflection of contributed members.
 
 ### `package.json`

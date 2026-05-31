@@ -5,7 +5,7 @@
 Defines the shared symbol vocabulary used by the whole partial system.
 
 This is the local equivalent of a small reflection metadata schema: all higher
-layers agree on symbols like `Defines`, `Extends`, `Implements`,
+layers agree on symbols like `Defines`, `Composes`, `Implements`,
 `Preconditions`, and `Compile`.
 
 ## Root Analogy
@@ -23,9 +23,9 @@ This package provides JavaScript symbol channels for similar metadata.
 - `CreateThunk`: member wrapper hook.
 - `Preconditions` / `Postconditions`: member condition metadata.
 - `Implements`: concept adjacency.
-- `Extends`: partial-class adjacency.
+- `Composes`: partial-class adjacency.
 - `Defines`: transparent concrete attachments.
-- `Abstracts`: transparent abstract attachments.
+- `DefinesAbstract`: transparent abstract attachments.
 
 ## File Notes
 

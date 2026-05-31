@@ -1,4 +1,4 @@
-import { Defines, Abstracts, Extends } from '@kingjs/partial-class'
+import { Defines, DefinesAbstract, Composes } from '@kingjs/partial-class'
 import {
   ArgChecks,
   Defaults,
@@ -7,7 +7,7 @@ import {
   Transforms,
 } from '@kingjs/partial-proxy'
 import { PartialClass } from '@kingjs/partial-class'
-import { extend } from '@kingjs/partial-extend'
+import { compose } from '@kingjs/partial-compose'
 import { implement } from '@kingjs/partial-implement'
 import { cover } from '@kingjs/cover'
 import {
@@ -55,7 +55,7 @@ export class ContainerPart extends PartialClass {
     })
   }
 
-  static [Abstracts] = cover({
+  static [DefinesAbstract] = cover({
     get isEmpty() { },
   })
   static [Defines] = {
@@ -84,7 +84,7 @@ export class ContainerPart extends PartialClass {
 }
 
 export class SizedContainerPart extends ContainerPart {
-  static [Abstracts] = cover({
+  static [DefinesAbstract] = cover({
     get size() { }
   })
 
@@ -92,7 +92,7 @@ export class SizedContainerPart extends ContainerPart {
 }
 
 export class ClearableContainerPart extends ContainerPart {
-  static [Abstracts] = cover({
+  static [DefinesAbstract] = cover({
     clear() { }
   })
 }
@@ -102,7 +102,7 @@ export class FrontInsertableContainerPart extends ContainerPart {
     popFront: NotEmpty,
   }
 
-  static [Abstracts] = cover({
+  static [DefinesAbstract] = cover({
     pushFront(value) { },
     popFront() { },
   })
@@ -113,7 +113,7 @@ export class BackInsertableContainerPart extends ContainerPart {
     popBack: NotEmpty,
   }
 
-  static [Abstracts] = cover({
+  static [DefinesAbstract] = cover({
     popBack() { },
     pushBack(value) { },
   })
@@ -142,13 +142,13 @@ export class EditableContainerPart extends ContainerPart {
     },
   }
 
-  static [Abstracts] = cover({
+  static [DefinesAbstract] = cover({
     insertValue(cursor, value) { },
     erase(first, last /* = next(first) */) { },
   })
   
   static {
-    extend(this, FrontInsertableContainerPart, {
+    compose(this, FrontInsertableContainerPart, {
       pushFront(value) { this.insertValue(this.begin(), value) },
       popFront() {
         const begin = this.begin()
@@ -158,7 +158,7 @@ export class EditableContainerPart extends ContainerPart {
       },
     })
 
-    extend(this, BackInsertableContainerPart, {
+    compose(this, BackInsertableContainerPart, {
       pushBack(value) { this.insertValue(this.end(), value) },
       popBack() {
         const end = this.end()
@@ -202,7 +202,7 @@ export class PhasedContainerPart extends ContainerPart {
     },
   }
 
-  static [Abstracts] = cover({
+  static [DefinesAbstract] = cover({
     beforeBegin() { },
     insertValueAfter(cursor, value) { },
     eraseAfter(first, last /* = next(first, 2) */) { },
@@ -230,14 +230,14 @@ export class IndexableContainerPart extends SizedContainerPart {
     },
   }
   
-  static [Abstracts] = cover({
+  static [DefinesAbstract] = cover({
     at(index) { },
     setAt(index, value) { }
   })
 }
 
 export class ByteContainerPart extends IndexableContainerPart {
-  static [Abstracts] = cover({
+  static [DefinesAbstract] = cover({
     span(range) { },
   })
 
@@ -245,7 +245,7 @@ export class ByteContainerPart extends IndexableContainerPart {
 }
 
 export class CapacityContainerPart extends ContainerPart {
-  static [Abstracts] = cover({
+  static [DefinesAbstract] = cover({
     get capacity() { }
   })
 }
@@ -255,7 +255,7 @@ export class ReservableContainerPart extends CapacityContainerPart {
     reserve: [NormalNumber],
   }
 
-  static [Abstracts] = cover({
+  static [DefinesAbstract] = cover({
     setCapacity$(count) { }
   })
 
@@ -268,20 +268,20 @@ export class ReservableContainerPart extends CapacityContainerPart {
 }
 
 export class AssociativeContainerPart extends ContainerPart {
-  static [Abstracts] = cover({
+  static [DefinesAbstract] = cover({
     contains(key) { },
     erase(key) { }
   })
 }
 
 export class SetAssociativeContainerPart extends AssociativeContainerPart {
-  static [Abstracts] = cover({
+  static [DefinesAbstract] = cover({
     insert(key) { }
   })
 }
 
 export class MapAssociativeContainerPart extends AssociativeContainerPart {
-  static [Abstracts] = cover({
+  static [DefinesAbstract] = cover({
     at(key) { },
     insertOrAssign(key, value) { },
   })
@@ -303,7 +303,7 @@ export class BulkAssignableContainerPart extends ClearableContainerPart {
 
   get defaultValue$() { return undefined }
 
-  static [Abstracts] = cover({
+  static [DefinesAbstract] = cover({
     resize(count, value /* = this.defaultValue$ */) { },
     assignRange(range) { },
   })
@@ -345,7 +345,7 @@ export class BulkEditableContainerPart extends EditableContainerPart {
     },
   }
 
-  static [Abstracts] = cover({
+  static [DefinesAbstract] = cover({
     insertRange(cursor, range) { },
   })
 
@@ -402,7 +402,7 @@ export class PhasedBulkContainerPart extends PhasedContainerPart {
     },
   }
 
-  static [Abstracts] = cover({
+  static [DefinesAbstract] = cover({
     insertRangeAfter(cursor, range) { },
   })
 
@@ -420,12 +420,12 @@ export class PhasedBulkContainerPart extends PhasedContainerPart {
 }
 
 export class GapEditableContainerPart extends BulkEditableContainerPart {
-  static [Extends] = SizedContainerPart
+  static [Composes] = SizedContainerPart
   static [Transforms] = {
     insertRange: [null, sourceRange],
   }
 
-  static [Abstracts] = cover({
+  static [DefinesAbstract] = cover({
     openGap$(cursor, count) { },
     closeGap$(first, last) { },
   })
@@ -456,7 +456,7 @@ export class GapEditableContainerPart extends BulkEditableContainerPart {
 }
 
 export class GapAssignableContainerPart extends BulkAssignableContainerPart {
-  static [Extends] = [
+  static [Composes] = [
     GapEditableContainerPart,
   ]
 

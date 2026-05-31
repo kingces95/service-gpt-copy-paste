@@ -27,13 +27,13 @@ Example style:
 
 ```js
 export class EditableContainerPart extends ContainerPart {
-  static [Abstracts] = {
+  static [DefinesAbstract] = {
     insertValue(cursor, value) { },
     erase(first, last) { },
   }
 
   static {
-    extend(this, BackInsertableContainerPart, {
+    compose(this, BackInsertableContainerPart, {
       pushBack(value) { this.insertValue(this.end(), value) },
     })
   }
@@ -48,7 +48,7 @@ export class ForwardCursorConcept extends InputCursorConcept {
 }
 ```
 
-Concrete types then `implement(...)` or `extend(...)` these partial types.
+Concrete types then `implement(...)` or `compose(...)` these partial types.
 
 ## Why It Matters
 

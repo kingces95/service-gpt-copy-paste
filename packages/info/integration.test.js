@@ -6,7 +6,7 @@ import { PartialClass } from '@kingjs/partial-class'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { } from "@kingjs/info-to-pojo"
 import { toEqualAsSet } from '@kingjs/vitest'
-import { extend } from '@kingjs/partial-extend'
+import { compose } from '@kingjs/partial-compose'
 
 expect.extend({ toEqualAsSet })
 
@@ -34,7 +34,7 @@ describe('MyClass', () => {
         myPartialClass = class MyPartialClass extends PartialClass { }
         myPartialClass.prototype.myMethod = methodFn
         myPartialClassInfo = TypeInfo.from(myPartialClass)
-        extend(cls, myPartialClass)
+        compose(cls, myPartialClass)
         info = TypeInfo.from(cls)
       })
       describe('has a member', () => {
@@ -57,7 +57,7 @@ describe('MyClass', () => {
     beforeEach(() => {
       myPartialClass = class MyPartialClass extends PartialClass { }
       myPartialClass.prototype.myMethod = partialClassFn
-      extend(cls, myPartialClass)
+      compose(cls, myPartialClass)
       info = TypeInfo.from(cls)
       myPartialClassInfo = TypeInfo.from(myPartialClass)
     })
@@ -227,7 +227,7 @@ describe('MyClass', () => {
         myPartialClass = class MyPartialClass extends PartialClass { }
         myPartialClass.prototype.myMethod = conceptualFn
         myPartialClassInfo = TypeInfo.from(myPartialClass)
-        extend(cls, myPartialClass)
+        compose(cls, myPartialClass)
         implement(cls, myConcept)
         info = TypeInfo.from(cls)
       })
@@ -253,7 +253,7 @@ describe('MyClass', () => {
         implement(cls, myConcept, { }, {
           myMethod() { },
         })
-        extend(cls, myPartialClass)
+        compose(cls, myPartialClass)
         info = TypeInfo.from(cls)
       })
       it('should report being merged with MyPartialClass', () => {

@@ -1,28 +1,28 @@
 import { PartialType, Adjacent, Redeclare } from '@kingjs/partial-type'
 import { Concept } from '@kingjs/partial-concept'
-import { 
-  Attachments, AbstractAttachments 
+import {
+  Attachments, AbstractAttachments
 } from '@kingjs/partial-attachments'
-import { 
-  Defines, 
-  Extends, 
-  Implements, 
-  Abstracts, 
+import {
+  Defines,
+  Composes,
+  Implements,
+  DefinesAbstract,
   Precondition,
   Declarative,
   Procedural,
 } from '@kingjs/partial-symbols'
 
-export { 
-  Extends, 
-  Defines, 
-  Implements, 
-  Abstracts,
+export {
+  Composes,
+  Defines,
+  Implements,
+  DefinesAbstract,
 } from '@kingjs/partial-symbols'
 
 export class PartialClass extends PartialType {
-  static [Declarative] = Extends
-  static [Procedural] = 'extend'
+  static [Declarative] = Composes
+  static [Procedural] = 'compose'
   static [Adjacent] = [
     Attachments,
     AbstractAttachments,

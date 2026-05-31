@@ -35,7 +35,7 @@ class RangePart extends PartialClass {
 
 class VectorRange extends PartialProxy {
   static {
-    extend(this, RangePart, {
+    compose(this, RangePart, {
       begin() { return new this.cursorType(this, 0) },
       end() { return new this.cursorType(this, this.size) },
     })

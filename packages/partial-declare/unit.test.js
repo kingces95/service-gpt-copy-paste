@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { Abstracts, PartialClass } from '@kingjs/partial-class'
+import { DefinesAbstract, PartialClass } from '@kingjs/partial-class'
 import { Attachments } from '@kingjs/partial-attachments'
 import { ApplyDeclaration } from '@kingjs/partial-declare'
 
@@ -13,7 +13,7 @@ class PropertyPart extends PartialClass {
 }
 
 class AbstractPropertyPart extends PartialClass {
-  static [Abstracts] = {
+  static [DefinesAbstract] = {
     get value() { },
     set value(value) { },
   }

@@ -1,4 +1,4 @@
-# partial-extend
+# partial-compose
 
 ## Summary
 
@@ -12,12 +12,12 @@ merged into a class and recorded as part of the class's composition ancestry.
 ## Public Shape
 
 ```js
-extend(type, partialClass, definitions?)
+compose(type, partialClass, definitions?)
 ```
 
 ## Important Ideas
 
-`extend` requires `partialClass` to be a `PartialClass`.
+`compose` requires `partialClass` to be a `PartialClass`.
 
 It copies the partial class into the target, then optionally copies transparent
 override definitions.
@@ -29,11 +29,11 @@ of the target.
 
 ### `index.js`
 
-Implements `extend`.
+Implements `compose`.
 
 ### `integration.test.js`
 
-Tests extension behavior across composed types.
+Tests composition behavior across composed types.
 
 ### `legacy.test.js`
 
@@ -41,8 +41,8 @@ Preserves behavior from earlier designs.
 
 ### `thunk.test.js`
 
-Tests interaction between extension and thunk/precondition behavior.
+Tests interaction between composition and thunk/precondition behavior.
 
 ### `package.json`
 
-Declares the package as `@kingjs/partial-extend`.
+Declares the package as `@kingjs/partial-compose`.

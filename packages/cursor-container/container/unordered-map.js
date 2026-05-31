@@ -1,6 +1,6 @@
 import { assert } from '@kingjs/assert'
 import { implement } from '@kingjs/partial-implement'
-import { extend } from '@kingjs/partial-extend'
+import { compose } from '@kingjs/partial-compose'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import {
   RangeConcept,
@@ -49,24 +49,24 @@ export class UnorderedMap extends PartialProxy {
   }
 
   static {
-    extend(this, ContainerPart, { }, {
+    compose(this, ContainerPart, { }, {
       get isEmpty() { },
     })
 
-    extend(this, ClearableContainerPart, {
+    compose(this, ClearableContainerPart, {
       clear() { this._map.clear() },
     })
 
-    extend(this, SizedContainerPart, {
+    compose(this, SizedContainerPart, {
       get size() { return this._map.size },
     })
 
-    extend(this, AssociativeContainerPart, {
+    compose(this, AssociativeContainerPart, {
       contains(key) { return this._map.has(key) },
       erase(key) { this._map.delete(key) },
     })
     
-    extend(this, MapAssociativeContainerPart, {
+    compose(this, MapAssociativeContainerPart, {
       at(key) { return this._map.get(key) },
       insertOrAssign(key, value) { this._map.set(key, value) },
     })

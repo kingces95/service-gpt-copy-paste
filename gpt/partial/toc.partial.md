@@ -24,7 +24,7 @@
 ## User-Facing Verbs
 
 - `packages/partial-define/README.md`
-- `packages/partial-extend/README.md`
+- `packages/partial-compose/README.md`
 - `packages/partial-implement/README.md`
 
 ## Runtime Wrapping

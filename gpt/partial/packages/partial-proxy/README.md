@@ -4,7 +4,7 @@
 
 Provides runtime thunking for methods and accessors.
 
-Concrete classes can extend `PartialProxy` to have copied members wrapped with
+Concrete classes can compose `PartialProxy` to have copied members wrapped with
 preconditions and postconditions.
 
 ## Root Analogy

@@ -1,6 +1,6 @@
 import { assert } from '@kingjs/assert'
 import { thunk } from '@kingjs/function-contract'
-import { extend } from '@kingjs/partial-extend'
+import { compose } from '@kingjs/partial-compose'
 import { implement } from '@kingjs/partial-implement'
 import { PartialProxy, ArgChecks } from '@kingjs/partial-proxy'
 import {
@@ -49,11 +49,11 @@ class ForwardListCursor extends ContainerCursor {
   }
 
   static {
-    extend(this, CursorPart, {
+    compose(this, CursorPart, {
       get isAtEnd$() { return this.link == this.container._endLink },
     })
 
-    extend(this, SteppableCursorPart, {
+    compose(this, SteppableCursorPart, {
       step() {
         this.link = this.link.next
         return this
@@ -62,17 +62,17 @@ class ForwardListCursor extends ContainerCursor {
       canStep$() { return this.link != this.container._endLink },
     })
 
-    extend(this, ReadableCursorPart, {
+    compose(this, ReadableCursorPart, {
       get value() { return this.link.value },
       isReadable$() { return this.link != this.container._endLink },
     })
 
-    extend(this, WritableCursorPart, {
+    compose(this, WritableCursorPart, {
       set value(value) { this.link.value = value },
       isWritable$() { return this.link != this.container._endLink },
     })
 
-    extend(this, CloneableCursorPart, {
+    compose(this, CloneableCursorPart, {
       clone() {
         const { constructor, container, link } = this
         return new constructor(container, link)
@@ -107,11 +107,11 @@ export class ForwardList extends PartialProxy {
   }
 
   static {
-    extend(this, ContainerPart, {
+    compose(this, ContainerPart, {
       get isEmpty() { return this._endLink == this._rootLink.next },
     })
 
-    extend(this, FrontInsertableContainerPart, {
+    compose(this, FrontInsertableContainerPart, {
       popFront() {
         const result = this._rootLink.next.value
         this.eraseAfter(this.beforeBegin())
@@ -120,7 +120,7 @@ export class ForwardList extends PartialProxy {
       pushFront(value) { this.insertValueAfter(this.beforeBegin(), value) },
     })
 
-    extend(this, BulkAssignableContainerPart, {
+    compose(this, BulkAssignableContainerPart, {
       resize(count, value = undefined) {
         let tail = this.beforeBegin()
 
@@ -156,7 +156,7 @@ export class ForwardList extends PartialProxy {
       }),
     })
 
-    extend(this, PhasedContainerPart, {
+    compose(this, PhasedContainerPart, {
       beforeBegin() { return new this.cursorType(this, this._rootLink) },
       insertValueAfter(cursor, value) { cursor.link.insertAfter(value) },
       eraseAfter(first, last = next(first, 2)) {
@@ -167,7 +167,7 @@ export class ForwardList extends PartialProxy {
       },
     })
 
-    extend(this, PhasedBulkContainerPart, {
+    compose(this, PhasedBulkContainerPart, {
       insertRangeAfter: thunk({
         transforms: [null, sourceRange],
       },

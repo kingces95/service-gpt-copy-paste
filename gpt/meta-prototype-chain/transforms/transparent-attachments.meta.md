@@ -10,7 +10,7 @@ credit for the contribution.
 
 - `packages/partial-attachments/index.js`
 - `packages/partial-reflector/index.js`
-- `packages/partial-extend/index.js`
+- `packages/partial-compose/index.js`
 - `packages/partial-implement/index.js`
 
 ## The Pain

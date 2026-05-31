@@ -17,11 +17,11 @@ partial declaration
 Current reality:
 
 ```txt
-Extend Ownership Scan
-├─ set: extend(Type, Part, impl) callsites
+compose Ownership Scan
+├─ set: compose(Type, Part, impl) callsites
 ├─ transform: call -> (Part, impl member)
 ├─ ownership: Part own members + members of implemented Concept
-├─ count: 70 impl-bearing extend callsites
+├─ count: 70 impl-bearing compose callsites
 ├─ packages
 │  ├─ cursor: 3
 │  ├─ cursor-container: 58
@@ -57,7 +57,7 @@ declared accessor half
 └─ super-inherits the opposite half into the effective own descriptor
 ```
 
-`extend(Type, Part, impl)` should only accept members owned by `Part`.
+`compose(Type, Part, impl)` should only accept members owned by `Part`.
 Members owned by a base or composed Part should be implemented by an explicit
 declaration of that owning Part.
 
@@ -68,17 +68,17 @@ members are implemented locally and which are propagated by the dependent Part.
 Example shape:
 
 ```js
-extend(Type, BulkAssignableContainerPart, {
+compose(Type, BulkAssignableContainerPart, {
   get defaultValue$() { return 0 },
 })
 
-extend(Type, GapEditableContainerPart, {
+compose(Type, GapEditableContainerPart, {
   insertRange(cursor, range) { },
   openGap$(cursor, count) { },
   closeGap$(first, last) { },
 })
 
-extend(Type, GapAssignableContainerPart)
+compose(Type, GapAssignableContainerPart)
 ```
 
 Part declaration order:
@@ -102,17 +102,17 @@ inherited descriptors fill only
 ```
 
 A descriptor is inherited when its declaration host is not the Part named in the
-current `extend` call. Inherited descriptors behave like defaults: they fill
+current `compose` call. Inherited descriptors behave like defaults: they fill
 holes but must not overwrite a concrete descriptor already declared on `Type`.
 
 This makes the nicer ordering safe:
 
 ```js
-extend(Type, GapEditableContainerPart, {
+compose(Type, GapEditableContainerPart, {
   insertRange(cursor, range) { },
 })
 
-extend(Type, GapAssignableContainerPart)
+compose(Type, GapAssignableContainerPart)
 ```
 
 `implement(Type, Concept, impl, stillAbstract)` should likewise account for every
@@ -138,10 +138,10 @@ declared member
 └─ explicitly still abstract
 ```
 
-Extend invariant:
+compose invariant:
 
 ```txt
-extend(Type, Part)
+compose(Type, Part)
 ├─ base/composed abstract Parts were already declared on Type
 ├─ explicitly attached Parts are topologically ordered
 ├─ impl names belong to Part

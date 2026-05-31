@@ -77,14 +77,12 @@ class MyType { }      MyType.prototype      MyType
                          └─ null               └─ Object.prototype
                                                   └─ null
 
-class MyType          MyType.prototype      MyType
-  extends Object { }  └─ Object.prototype   └─ Object
+class MyType          MyType.prototype      MyType extends Object { }  └─ Object.prototype   └─ Object
                          └─ null               └─ Function.prototype
                                                   └─ Object.prototype
                                                      └─ null
 
-class MyType          MyType.prototype      MyType
-  extends null        └─ null               └─ Function.prototype
+class MyType          MyType.prototype      MyType extends null        └─ null               └─ Function.prototype
                                                └─ Object.prototype
                                                   └─ null
 ```
@@ -173,7 +171,7 @@ them.
 
 ```js
 class MyType {
-  static { extend(this, SitRep) }
+  static { compose(this, SitRep) }
   foo() { }
 }
 ```
@@ -211,7 +209,7 @@ class InputRangePart extends PartialClass {
 }
 
 class MyRange {
-  static { extend(this, InputRangePart) }
+  static { compose(this, InputRangePart) }
 }
 ```
 

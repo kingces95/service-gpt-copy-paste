@@ -10,7 +10,7 @@ methods, getters, and setters.
 
 - `packages/partial-metadata/index.js`
 - `packages/partial-proxy/index.js`
-- `packages/partial-extend/thunk.test.js`
+- `packages/partial-compose/thunk.test.js`
 
 ## The Pain
 
@@ -69,7 +69,7 @@ getConditions(MyCursor, 'step')
 This transform says: "method contracts are inherited metadata, not repeated
 boilerplate."
 
-The test in `partial-extend/thunk.test.js` demonstrates the call order:
+The test in `partial-compose/thunk.test.js` demonstrates the call order:
 
 ```txt
 type precondition

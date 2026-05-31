@@ -1,5 +1,5 @@
 import { implement } from '@kingjs/partial-implement'
-import { extend } from '@kingjs/partial-extend'
+import { compose } from '@kingjs/partial-compose'
 import {
   CursorPart,
   ReadableCursorPart,
@@ -60,18 +60,18 @@ export class IteratorCursor extends ContainerCursor {
   }
 
   static {
-    extend(this, CursorPart, {
+    compose(this, CursorPart, {
       get isAtEnd$() { return this.done$ },
     })
 
-    extend(this, SteppableCursorPart, {
+    compose(this, SteppableCursorPart, {
       step() {
         this._current = this.token.next()
         return this
       },
     })
 
-    extend(this, ReadableCursorPart, {
+    compose(this, ReadableCursorPart, {
       get value() { return this._current.value },
     })
   }

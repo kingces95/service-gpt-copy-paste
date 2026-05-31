@@ -1,6 +1,6 @@
 import { assert } from '@kingjs/assert'
 import { implement } from '@kingjs/partial-implement'
-import { extend } from '@kingjs/partial-extend'
+import { compose } from '@kingjs/partial-compose'
 import { define } from '@kingjs/partial-define'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import {
@@ -43,24 +43,24 @@ export class UnorderedSet extends PartialProxy {
   }
 
   static {
-    extend(this, ContainerPart, { }, {
+    compose(this, ContainerPart, { }, {
       get isEmpty() { },
     })
 
-    extend(this, ClearableContainerPart, {
+    compose(this, ClearableContainerPart, {
       clear() { this._set.clear() },
     })
 
-    extend(this, SizedContainerPart, {
+    compose(this, SizedContainerPart, {
       get size() { return this._set.size },
     })
 
-    extend(this, AssociativeContainerPart, {
+    compose(this, AssociativeContainerPart, {
       contains(key) { return this._set.has(key) },
       erase(key) { this._set.delete(key) },
     })
     
-    extend(this, SetAssociativeContainerPart, {
+    compose(this, SetAssociativeContainerPart, {
       insert(key) { this._set.add(key) },
     })
   }

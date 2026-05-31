@@ -3,7 +3,7 @@ import { beforeEach } from 'vitest'
 import { TypeInfo } from "@kingjs/info"
 import { Concept, Implements } from '@kingjs/partial-concept'
 import { PartialType } from '@kingjs/partial-type'
-import { PartialClass, Extends } from '@kingjs/partial-class'
+import { PartialClass, Composes } from '@kingjs/partial-class'
 import { Attachments } from '@kingjs/partial-attachments'
 import { } from "@kingjs/info-to-pojo"
 import { toEqualAsSet } from '@kingjs/vitest'
@@ -418,7 +418,7 @@ const MyPartialClassMemberMd = {
 const MyPartialClassExtensionMemberMd = {
   name: 'member',
   cls: class MyPartialClassExtension extends PartialClass {
-    static [Extends] = MyPartialClassMemberMd.cls
+    static [Composes] = MyPartialClassMemberMd.cls
   },
   // partialClass: MyPartialClassMemberMd.cls,
   toString: 'member, method, [partialClassInfo MyPartialClass]',

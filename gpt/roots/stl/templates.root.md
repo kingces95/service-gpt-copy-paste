@@ -76,7 +76,7 @@ Constructs.as(PushBackContainerConcept)
 ```
 
 The `.as(...)` call applies an inert generic metadata family, producing a cached
-type such as `ConstructsOf`. The generated type extends `Constructs` and stores
+type such as `ConstructsOf`. The generated type composes `Constructs` and stores
 frozen `.targs`; reflection can infer the canonical declaration from the family
 type.
 

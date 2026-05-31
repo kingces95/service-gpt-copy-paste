@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { Preconditions, PartialProxy } from '@kingjs/partial-proxy'
-import { extend } from '@kingjs/partial-extend'
+import { compose } from '@kingjs/partial-compose'
 import { PartialClass } from '@kingjs/partial-class'
 
 class MyPartial extends PartialClass {
@@ -13,7 +13,7 @@ class MyPartial extends PartialClass {
 
 class MyExtendedPartial extends PartialClass {
   static {
-    extend(this, MyPartial)
+    compose(this, MyPartial)
   }
 }
 
@@ -24,7 +24,7 @@ class MyType extends PartialProxy {
   }
 
   static {
-    extend(this, MyExtendedPartial)
+    compose(this, MyExtendedPartial)
   }
 
   push(value) { this._calls.push(value) }

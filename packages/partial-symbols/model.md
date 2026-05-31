@@ -32,8 +32,8 @@ Family Protocol
 
 Declaration Edge
 ├─ Defines
-├─ Abstracts
-├─ Extends
+├─ DefinesAbstract
+├─ Composes
 ├─ Implements
 └─ Includes
 
@@ -67,10 +67,16 @@ Declaration Edge
 ```txt
 Declaration Edge
 
-Family Type          Symbol      Verb            Adjacent Families
-Attachments          Defines     define          -
-AbstractAttachments  Abstracts   defineAbstract  -
-PartialClass         Extends     extend          Attachments, AbstractAttachments, PartialClass, Concept
-Concept              Implements  implement       Attachments, Concept
-Shape                Includes    -               Concept, Shape
+Family Type           Symbol           Verb            Adjacent Families
+-----------           ------           ----            -----------------
+Attachments           Defines          define          -
+AbstractAttachments   DefinesAbstract  defineAbstract  -
+PartialClass          Composes         compose         Attachments,
+                                                       AbstractAttachments,
+                                                       PartialClass,
+                                                       Concept
+Concept               Implements       implement       Attachments,
+                                                       Concept
+Shape                 Includes         -               Concept,
+                                                       Shape
 ```

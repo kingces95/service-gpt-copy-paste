@@ -6,13 +6,13 @@ import { Es6UserReflect } from '@kingjs/es6-user-reflect'
 import { Es6Reflect } from '@kingjs/es6-reflect'
 import { PartialType } from '@kingjs/partial-type'
 import { define } from '@kingjs/partial-define'
-import { extend } from '@kingjs/partial-extend'
+import { compose } from '@kingjs/partial-compose'
 import { 
   Compile, 
   Adjacent,
   Declarative,
   Defines,
-  Extends,
+  Composes,
 } from '@kingjs/partial-symbols'
 
 function *partialTypes(type) {
@@ -48,7 +48,7 @@ describe('PartialType', () => {
     expect(() => new PartialType()).toThrow()
   })
   it('cannot be the target of mergeMembers', () => {
-    expect(() => extend(PartialType)).toThrow()
+    expect(() => compose(PartialType)).toThrow()
   })
 })
 
@@ -128,7 +128,7 @@ describe('PartialClass', () => {
 
   beforeEach(() => {
     PartialClass = class PartialClass extends PartialType {
-      static [Declarative] = Extends
+      static [Declarative] = Composes
       static [Adjacent] = [ Attachments, PartialClass ]
     }
   })
@@ -243,7 +243,7 @@ describe('PartialClass', () => {
     
       beforeEach(() => {
         MySubExtension = class extends PartialClass { }
-        MyPart[Extends] = [ MySubExtension ]
+        MyPart[Composes] = [ MySubExtension ]
       })
 
       it('should have MySubExtension as a declaration', () => {
@@ -310,7 +310,7 @@ describe('PartialClass', () => {
 
                 beforeEach(() => {
                   MySubSubExtension = class extends PartialClass { }
-                  MySubExtension[Extends] = [ MySubSubExtension ]
+                  MySubExtension[Composes] = [ MySubSubExtension ]
                 })
 
                 it('should have MySubExtension and MySubSubExtension as declarations', () => {

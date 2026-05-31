@@ -1,19 +1,19 @@
 import { describe, it, expect } from 'vitest'
-import { extend } from '@kingjs/partial-extend'
-import { Extends, PartialClass } from '@kingjs/partial-class'
+import { compose } from '@kingjs/partial-compose'
+import { Composes, PartialClass } from '@kingjs/partial-class'
 
 class BasePart extends PartialClass {
   member() { return 'base' }
 }
 
 const Cases = [
-  ['copied with extend()', class DerivedPart extends PartialClass {
+  ['copied with compose()', class DerivedPart extends PartialClass {
     static {
-      extend(this, BasePart)
+      compose(this, BasePart)
     }
   }],
-  ['declared with [Extends]', class DerivedPart extends PartialClass {
-    static [Extends] = [
+  ['declared with [Composes]', class DerivedPart extends PartialClass {
+    static [Composes] = [
       BasePart,
     ]
   }],
@@ -29,11 +29,11 @@ describe('inherited descriptor fill', () => {
     it('does not overwrite an existing concrete implementation', () => {
       class Type {
         static {
-          extend(this, BasePart, {
+          compose(this, BasePart, {
             member() { return 'type' },
           })
 
-          extend(this, DerivedPart)
+          compose(this, DerivedPart)
         }
       }
 
@@ -43,7 +43,7 @@ describe('inherited descriptor fill', () => {
     it('fills holes when no concrete implementation exists', () => {
       class Type {
         static {
-          extend(this, DerivedPart)
+          compose(this, DerivedPart)
         }
       }
 

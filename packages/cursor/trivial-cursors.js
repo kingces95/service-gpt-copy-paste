@@ -1,5 +1,5 @@
 import { implement } from '@kingjs/partial-implement'
-import { extend } from '@kingjs/partial-extend'
+import { compose } from '@kingjs/partial-compose'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { EquatableConcept } from '@kingjs/partial-concept'
 
@@ -85,7 +85,7 @@ export class TrivialCursor extends PartialProxy {
   }
 
   static {
-    extend(this, CursorPart)
+    compose(this, CursorPart)
   }
 }
 
@@ -97,7 +97,7 @@ export class TrivialSteppableCursor extends TrivialCursor {
   }
 
   static {
-    extend(this, SteppableCursorPart)
+    compose(this, SteppableCursorPart)
   }
 }
 
@@ -109,7 +109,7 @@ export class TrivialReadableCursor extends TrivialSteppableCursor {
   }
 
   static {
-    extend(this, ReadableCursorPart)
+    compose(this, ReadableCursorPart)
   }
 }
 
@@ -121,7 +121,7 @@ export class TrivialWritableCursor extends TrivialSteppableCursor {
   }
 
   static {
-    extend(this, WritableCursorPart)
+    compose(this, WritableCursorPart)
   }
 }
 
@@ -133,7 +133,7 @@ export class TrivialCloneableCursor extends TrivialSteppableCursor {
   }
 
   static {
-    extend(this, CloneableCursorPart)
+    compose(this, CloneableCursorPart)
   }
 }
 
@@ -145,7 +145,7 @@ export class TrivialBacktrackableCursor extends TrivialSteppableCursor {
   }
 
   static {
-    extend(this, BacktrackableCursorPart)
+    compose(this, BacktrackableCursorPart)
   }
 }
 
@@ -162,7 +162,7 @@ export class TrivialMovableCursor extends TrivialBacktrackableCursor {
   }
 
   static {
-    extend(this, MovableCursorPart, {
+    compose(this, MovableCursorPart, {
       canMove$(offset) { return offset === 0 }
     })
   }
@@ -176,7 +176,7 @@ export class TrivialComparableToCursor extends TrivialMovableCursor {
   }
 
   static {
-    extend(this, ComparableToCursorPart)
+    compose(this, ComparableToCursorPart)
   }
 }
 
@@ -188,7 +188,7 @@ export class TrivialMeasurableCursor extends TrivialMovableCursor {
   }
 
   static {
-    extend(this, MeasurableCursorPart)
+    compose(this, MeasurableCursorPart)
   }
 }
 
@@ -217,12 +217,12 @@ export class TrivialReadableAtCursor extends TrivialReadableCursor {
   }
 
   static {
-    extend(this, CloneableCursorPart)
-    extend(this, BacktrackableCursorPart)
-    extend(this, MovableCursorPart, {
+    compose(this, CloneableCursorPart)
+    compose(this, BacktrackableCursorPart)
+    compose(this, MovableCursorPart, {
       canMove$(offset) { return offset === 0 }
     })
-    extend(this, ReadableAtCursorPart, {
+    compose(this, ReadableAtCursorPart, {
       isReadableAt$(offset) {
         if (!this.canMove$(offset)) return false
 
@@ -258,12 +258,12 @@ export class TrivialWritableAtCursor extends TrivialWritableCursor {
   }
 
   static {
-    extend(this, CloneableCursorPart)
-    extend(this, BacktrackableCursorPart)
-    extend(this, MovableCursorPart, {
+    compose(this, CloneableCursorPart)
+    compose(this, BacktrackableCursorPart)
+    compose(this, MovableCursorPart, {
       canMove$(offset) { return offset === 0 }
     })
-    extend(this, WritableAtCursorPart, {
+    compose(this, WritableAtCursorPart, {
       isWritableAt$(offset) {
         if (!this.canMove$(offset)) return false
 
@@ -283,7 +283,7 @@ export class TrivialSpannableCursor extends TrivialCloneableCursor {
   }
 
   static {
-    extend(this, SpannableCursorPart)
+    compose(this, SpannableCursorPart)
   }
 }
 
@@ -317,9 +317,9 @@ export class TrivialForwardCursor extends TrivialReadableCursor {
   }
 
   static {
-    extend(this, ReadableCursorPart)
-    extend(this, WritableCursorPart)
-    extend(this, CloneableCursorPart)
+    compose(this, ReadableCursorPart)
+    compose(this, WritableCursorPart)
+    compose(this, CloneableCursorPart)
   }
 }
 
@@ -331,7 +331,7 @@ export class TrivialBidirectionalCursor extends TrivialForwardCursor {
   }
 
   static {
-    extend(this, BacktrackableCursorPart)
+    compose(this, BacktrackableCursorPart)
   }
 }
 
@@ -360,9 +360,9 @@ export class TrivialRandomAccessCursor extends TrivialBidirectionalCursor {
   }
 
   static {
-    extend(this, MovableCursorPart)
-    extend(this, ComparableToCursorPart)
-    extend(this, MeasurableCursorPart)
+    compose(this, MovableCursorPart)
+    compose(this, ComparableToCursorPart)
+    compose(this, MeasurableCursorPart)
   }
 }
 
@@ -374,8 +374,8 @@ export class TrivialWritableRandomAccessCursor extends TrivialRandomAccessCursor
   }
 
   static {
-    extend(this, CloneableCursorPart)
-    extend(this, WritableAtCursorPart, {
+    compose(this, CloneableCursorPart)
+    compose(this, WritableAtCursorPart, {
       isWritableAt$(offset) {
         if (!this.canMove$(offset)) return false
 
@@ -395,7 +395,7 @@ export class TrivialContiguousCursor extends TrivialWritableRandomAccessCursor {
   }
 
   static {
-    extend(this, SpannableCursorPart)
+    compose(this, SpannableCursorPart)
   }
 }
 

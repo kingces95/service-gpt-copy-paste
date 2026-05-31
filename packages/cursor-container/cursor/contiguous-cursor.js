@@ -1,5 +1,5 @@
 import { implement } from '@kingjs/partial-implement'
-import { extend } from '@kingjs/partial-extend'
+import { compose } from '@kingjs/partial-compose'
 import { 
   SpannableCursorConcept,
   SpannableCursorPart,
@@ -20,6 +20,6 @@ export class ContiguousCursor extends IndexableCursor {
   }
 
   static {
-    extend(this, SpannableCursorPart)
+    compose(this, SpannableCursorPart)
   }
 }

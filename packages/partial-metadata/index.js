@@ -17,10 +17,10 @@ import {
   TypePostcondition,
 
   // this file intentially does not import
-  //    Extends
+  //    Composes
   //    Implements
   //    Defines
-  //    Abstracts
+  //    DefinesAbstract
   // since these relate to extensions of PartialTypes and this file concerns
   // itself with querying metadata across all extensions of PartialTypes in
   // the abstract.
@@ -58,7 +58,7 @@ const ThisNames = Tuple.of('this')
   //    ...
   //  }
   //  class MyContainer extends Container {
-  //    static { extends(this, MyPartialContainer) }
+  //    static { compose(this, MyPartialContainer) }
   //    // the following members included for illustrative purposes only.
   //    static myStaticField = ...
   //    myMember() {...}

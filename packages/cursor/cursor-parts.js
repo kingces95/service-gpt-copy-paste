@@ -2,7 +2,7 @@ import {
   Implements,
 } from '@kingjs/partial-concept'
 import {
-  Abstracts,
+  DefinesAbstract,
   PartialClass,
 } from '@kingjs/partial-class'
 import {
@@ -53,7 +53,7 @@ import {
 export class CursorPart extends PartialClass {
   static [Implements] = CursorConcept
 
-  static [Abstracts] = {
+  static [DefinesAbstract] = {
     get isAtEnd$() { },
   }
 
@@ -168,7 +168,7 @@ export class MeasurableCursorPart extends MovableCursorPart {
 
 export class ReadableAtCursorPart extends ReadableCursorPart {
   static [Implements] = ReadableAtCursorConcept
-  static [Abstracts] = {
+  static [DefinesAbstract] = {
     isReadableAt$(offset) { },
   }
 
@@ -182,7 +182,7 @@ export class ReadableAtCursorPart extends ReadableCursorPart {
 
 export class WritableAtCursorPart extends WritableCursorPart {
   static [Implements] = WritableAtCursorConcept
-  static [Abstracts] = {
+  static [DefinesAbstract] = {
     isWritableAt$(offset) { },
   }
 

@@ -1,6 +1,6 @@
 import { implement } from '@kingjs/partial-implement'
 import { Lazy } from '@kingjs/lazy'
-import { extend } from '@kingjs/partial-extend'
+import { compose } from '@kingjs/partial-compose'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import {
   copy,
@@ -48,27 +48,27 @@ export class Vector extends PartialProxy {
   get buffer() { return this._buffer.value }
 
   static {
-    extend(this, ContainerPart, { }, {
+    compose(this, ContainerPart, { }, {
       get isEmpty() { },
     })
 
-    extend(this, SizedContainerPart, {
+    compose(this, SizedContainerPart, {
       get size() { return this._size }
     })
 
-    extend(this, IndexableContainerPart, {
+    compose(this, IndexableContainerPart, {
       at(index) { return this.buffer[index] },
       setAt(index, value) { this.buffer[index] = value },
     })
 
-    extend(this, BulkAssignableContainerPart, {
+    compose(this, BulkAssignableContainerPart, {
       get defaultValue$() { return 0 },
     }, {
       resize(count, value) { },
       assignRange(range) { },
     })
 
-    extend(this, GapEditableContainerPart, {
+    compose(this, GapEditableContainerPart, {
       openGap$(cursor, count) {
         const oldEnd = this.end()
         this.reserve(this.size + count)
@@ -86,13 +86,13 @@ export class Vector extends PartialProxy {
       }
     })
 
-    extend(this, GapAssignableContainerPart)
+    compose(this, GapAssignableContainerPart)
 
-    extend(this, CapacityContainerPart, {
+    compose(this, CapacityContainerPart, {
       get capacity() { return this._bytes.byteLength },
     })
 
-    extend(this, ReservableContainerPart, {
+    compose(this, ReservableContainerPart, {
       setCapacity$(capacity) {
         const newVector = new this.constructor(capacity)
         copy(newVector.begin(), subrange(this.begin(), this.end()))
@@ -106,7 +106,7 @@ export class Vector extends PartialProxy {
       },
     })
 
-    extend(this, ByteContainerPart, {
+    compose(this, ByteContainerPart, {
       span(begin = this.begin(), end = this.end()) {
         return this.buffer.subarray(begin.index, end.index)
       },

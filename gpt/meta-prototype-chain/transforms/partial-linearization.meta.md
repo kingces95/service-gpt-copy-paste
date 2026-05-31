@@ -29,8 +29,8 @@ came from `Fubar`, `Snafu`, the host type, or a later override.
 `PartialReflect` discovers adjacent partial types from:
 
 - ES6 inheritance between user partial types
-- declarative metadata like `[Extends]`, `[Implements]`, and `[Defines]`
-- procedural calls such as `extend()` and `implement()`
+- declarative metadata like `[Composes]`, `[Implements]`, and `[Defines]`
+- procedural calls such as `compose()` and `implement()`
 
 Then it linearizes the graph:
 
@@ -46,12 +46,12 @@ class Fubar extends PartialClass {
 }
 
 class SitRep extends Snafu {
-  static [Extends] = Fubar
+  static [Composes] = Fubar
   get bar() { }
 }
 
 class MyType {
-  static { extend(this, SitRep) }
+  static { compose(this, SitRep) }
 }
 ```
 

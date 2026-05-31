@@ -4,8 +4,8 @@ import { abstract } from '@kingjs/abstract'
 import { PartialReflect } from '@kingjs/partial-reflect'
 import { 
   PartialClass, 
-  Extends } from '@kingjs/partial-class'
-import { extend } from '@kingjs/partial-extend'
+  Composes } from '@kingjs/partial-class'
+import { compose } from '@kingjs/partial-compose'
 import { PartialReflect } from '@kingjs/partial-reflect'
 
 function *partialClasses(type) {
@@ -33,9 +33,9 @@ describe('A type', () => {
     beforeEach(() => {
       subExtension = class SubExtension extends PartialClass { }
       extension = class MyExtension extends PartialClass { 
-        static [Extends] = [ subExtension, subExtension ]
+        static [Composes] = [ subExtension, subExtension ]
       }
-      extend(type, extension)
+      compose(type, extension)
     })
     it('should yield the extensions', () => {
       const declarations = [...partialClasses(type)]
@@ -50,7 +50,7 @@ describe('A type', () => {
       member = function member() { }
       extension = class MyExtension extends PartialClass { }
       extension.prototype.member = member
-      extend(type, extension)
+      compose(type, extension)
     })
     it('should have the member', () => {
       expect(type.prototype.member).toBe(member)
@@ -65,11 +65,11 @@ describe('A type', () => {
       BaseExtension.prototype.member = baseMember
 
       class Extension extends PartialClass {
-        static [Extends] = BaseExtension
+        static [Composes] = BaseExtension
       }
       Extension.prototype.member = abstract
 
-      extend(type, Extension)
+      compose(type, Extension)
     })
     it('should preserve the concrete base member', () => {
       expect(type.prototype.member).toBe(baseMember)
@@ -79,7 +79,7 @@ describe('A type', () => {
     let extension
     beforeEach(() => {
       extension = class MyExtension extends PartialClass { }
-      extend(type, extension)
+      compose(type, extension)
     })
     it('should yield the extension', () => {
       const declarations = [...partialClasses(type)]
@@ -98,7 +98,7 @@ describe('A type', () => {
       })
       describe('which is also extended by an PartialClass', () => {
         beforeEach(() => {
-          extend(derived, extension)
+          compose(derived, extension)
         })
         it('should yield the extension', () => {
           const declarations = [...partialClasses(derived)]
@@ -132,7 +132,7 @@ describe('A PartialClass', () => {
       let basePartialClass
       beforeEach(() => {
         basePartialClass = class BasePartialClass extends PartialClass { }
-        myPartialClass[Extends] = [ basePartialClass ]
+        myPartialClass[Composes] = [ basePartialClass ]
       })
       it('should have BasePartialType as a partialClass', () => {
         const partialTypes = [...partialClasses(myPartialClass)]
@@ -161,7 +161,7 @@ describe('A PartialClass', () => {
         beforeEach(() => {
           rootMember = function rootMember() { }
           rootExtension = class extends PartialClass { }
-          basePartialClass[Extends] = [ rootExtension ]
+          basePartialClass[Composes] = [ rootExtension ]
           rootExtension.prototype.member = rootMember
         })
         it('should have the root PartialClass as a partial type', () => {
@@ -180,11 +180,11 @@ describe('A PartialClass', () => {
         })
       })
     })
-    describe('using extend()', () => {
+    describe('using compose()', () => {
       let basePartialClass
       beforeEach(() => {
         basePartialClass = class BasePartialClass extends PartialClass { }
-        extend(myPartialClass, basePartialClass)
+        compose(myPartialClass, basePartialClass)
       })
       it('should have BasePartialType', () => {
         const partialTypes = [

@@ -1,5 +1,5 @@
 import { implement } from '@kingjs/partial-implement'
-import { extend } from '@kingjs/partial-extend'
+import { compose } from '@kingjs/partial-compose'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { thunk } from '@kingjs/function-contract'
 import {
@@ -33,20 +33,20 @@ export class ArrayMap extends PartialProxy {
   }
 
   static {
-    extend(this, ContainerPart, { }, {
+    compose(this, ContainerPart, { }, {
       get isEmpty() { },
     })
 
-    extend(this, SizedContainerPart, {
+    compose(this, SizedContainerPart, {
       get size() { return this._array.length },
     })
 
-    extend(this, IndexableContainerPart, {
+    compose(this, IndexableContainerPart, {
       at(index) { return this._array[index] },
       setAt(index, value) { this._array[index] = value },
     })
 
-    extend(this, GapEditableContainerPart, {
+    compose(this, GapEditableContainerPart, {
       openGap$(cursor, count) {
         const offset = this.begin().distanceTo(cursor)
         this._array.splice(offset, 0, ...Array(count))
@@ -71,6 +71,6 @@ export class ArrayMap extends PartialProxy {
       }),
     })
 
-    extend(this, GapAssignableContainerPart)
+    compose(this, GapAssignableContainerPart)
   }
 }

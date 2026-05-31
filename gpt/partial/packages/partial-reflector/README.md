@@ -24,8 +24,8 @@ that chain.
 Partial types can be related by:
 
 - ES class inheritance
-- static metadata declarations such as `[Extends]`
-- procedural calls such as `extend(type, partial)`
+- static metadata declarations such as `[Composes]`
+- procedural calls such as `compose(type, partial)`
 
 The graph is linearized into a merge order. Duplicate partials are deduped with
 last declaration winning.
@@ -37,7 +37,7 @@ last declaration winning.
 `ownDeclaredAdjacentPartialTypes(type)` reads static symbol metadata declared by
 the partial type's `[Adjacent]` grammar.
 
-`AdjacentTypes` records procedural composition, such as calls to `extend` or
+`AdjacentTypes` records procedural composition, such as calls to `compose` or
 `implement`.
 
 `compiledPrototype` applies each type's `[Compile]` hook to descriptors.

@@ -24,42 +24,61 @@ PartialType
    └─ false
 
 Attachments
+├─ Declarative
+│  └─ Defines
+├─ Procedural
+│  └─ define
 ├─ Adjacent
 └─ Transparent
    └─ true
 
 AbstractAttachments
+├─ Declarative
+│  └─ DefinesAbstract
+├─ Procedural
+│  └─ defineAbstract
 ├─ Adjacent
 └─ Transparent
    └─ true
 
 Concept
+├─ Declarative
+│  └─ Implements
+├─ Procedural
+│  └─ implement
 ├─ Adjacent
-│  ├─ Defines -> Attachments
-│  └─ Implements -> Concept
+│  ├─ Attachments
+│  └─ Concept
 └─ Transparent
    └─ false
 
 PartialClass
+├─ Declarative
+│  └─ Composes
+├─ Procedural
+│  └─ compose
 ├─ Adjacent
-│  ├─ Defines -> Attachments
-│  ├─ Abstracts -> AbstractAttachments
-│  ├─ Extends -> PartialClass
-│  └─ Implements -> Concept
+│  ├─ Attachments
+│  ├─ AbstractAttachments
+│  ├─ PartialClass
+│  └─ Concept
 ├─ Redeclare
 │  └─ Concept
 └─ Transparent
    └─ false
 
 Shape
+├─ Declarative
+│  └─ Includes
 ├─ Adjacent
-│  ├─ Implements -> Concept
-│  └─ Includes -> Shape
+│  ├─ Concept
+│  └─ Shape
 └─ Transparent
    └─ true
 ```
 
-`Adjacent` maps declaration verbs to accepted partial-type families.
+`Adjacent` lists accepted partial-type families. Each adjacent family supplies
+its declaration symbol through `Declarative`.
 `Redeclare` lists adjacent families whose descriptors are reprojected onto the
 current family during unified prototype construction. Types are projected to
 families by `PartialType.getFamily()`.

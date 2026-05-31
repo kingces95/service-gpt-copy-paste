@@ -1,7 +1,7 @@
 import { assert } from '@kingjs/assert'
 import { thunk } from '@kingjs/function-contract'
 import { implement } from '@kingjs/partial-implement'
-import { extend } from '@kingjs/partial-extend'
+import { compose } from '@kingjs/partial-compose'
 import { ForwardList } from './forward-list.js'
 import { 
   BacktrackableCursorConcept,
@@ -38,7 +38,7 @@ class ListCursor extends ForwardList.cursorType {
   }
 
   static {
-    extend(this, BacktrackableCursorPart, {
+    compose(this, BacktrackableCursorPart, {
       isAtBegin$() { return this.link == this.container._rootLink },
       canStepBack$() { return this.link != this.container._rootLink },
     })
@@ -55,7 +55,7 @@ export class List extends ForwardList {
   }
 
   static {
-    extend(this, PhasedContainerPart, {
+    compose(this, PhasedContainerPart, {
       beforeBegin() {
         return ForwardList.prototype.beforeBegin.call(this)
       },
@@ -74,11 +74,11 @@ export class List extends ForwardList {
       },
     })
 
-    extend(this, SizedContainerPart, {
+    compose(this, SizedContainerPart, {
       get size() { return this._count },
     })
 
-    extend(this, EditableContainerPart, {
+    compose(this, EditableContainerPart, {
       insertValue(cursor, value) {
         cursor.link.insert(value)
         this._count++
@@ -98,7 +98,7 @@ export class List extends ForwardList {
       }
     })
 
-    extend(this, BulkAssignableContainerPart, {
+    compose(this, BulkAssignableContainerPart, {
       resize(count, value = undefined) {
         while (this.size > count)
           this.popBack()
@@ -121,7 +121,7 @@ export class List extends ForwardList {
       }),
     })
 
-    extend(this, PhasedBulkContainerPart, {
+    compose(this, PhasedBulkContainerPart, {
       insertRangeAfter: thunk({
         transforms: [null, sourceRange],
       },

@@ -1,8 +1,8 @@
 import { abstract, value } from "@kingjs/abstract"
-import { PartialClass, Extends } from "@kingjs/partial-class"
+import { PartialClass, Composes } from "@kingjs/partial-class"
 import { implement } from "@kingjs/partial-implement"
 import { Concept, Implements } from "@kingjs/partial-concept"
-import { extend } from "@kingjs/partial-extend"
+import { compose } from "@kingjs/partial-compose"
 import { Attachments } from "@kingjs/partial-attachments"
 import { Normalize } from "@kingjs/partial-symbols"
 
@@ -38,17 +38,17 @@ export const MyExtensions = Attachments[Normalize]({
   },
 })
 
-export class MyBaseConcept extends Concept { 
-  myBaseConceptMethod() { } 
+export class MyBaseConcept extends Concept {
+  myBaseConceptMethod() { }
 }
-export class MyLeftConcept extends Concept { 
+export class MyLeftConcept extends Concept {
   static [Implements] = MyBaseConcept
-  myLeftConceptMethod() { } 
+  myLeftConceptMethod() { }
   myAmbidextrousMethod() { }
 }
 export class MyRightConcept extends Concept {
   static [Implements] = MyBaseConcept
-  myRightConceptMethod() { } 
+  myRightConceptMethod() { }
   myAmbidextrousMethod() { }
 }
 export class MyConcept extends Concept {
@@ -62,14 +62,14 @@ export class MyBasePartialClass extends PartialClass {
 }
 
 export class MyPartialClass extends PartialClass {
-  static [Extends] = MyBasePartialClass
+  static [Composes] = MyBasePartialClass
   myNewMethod() { }
   myMethod() { }
 }
 
 export class MyBase {
-  static { 
-    implement(this, MyBaseConcept, { 
+  static {
+    implement(this, MyBaseConcept, {
       myBaseConceptMethod() { },
     })
 
@@ -83,9 +83,9 @@ export class MyBase {
       myAmbidextrousMethod() { },
     })
 
-    implement(this, MyConcept, { 
+    implement(this, MyConcept, {
       myConceptMethod() { },
-    }) 
+    })
   }
   static myStaticBaseMethod() { }
   myBaseMethod() { }
@@ -94,15 +94,15 @@ export class MyBase {
 export class MyEmptyClass { }
 
 export class MyClass extends MyBase {
-  static { 
-    extend(this, MyPartialClass) 
+  static {
+    compose(this, MyPartialClass)
   }
 
   static get myStaticAccessor() { }
   static set myStaticAccessor(value) { }
   static myStaticMethod() { }
   static _myStaticMethod() { }
-  
+
   get myAccessor() { }
   set myAccessor(value) { }
   myMethod() { }

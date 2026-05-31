@@ -13,7 +13,7 @@ import {
 } from '@kingjs/partial-type'
 import { createPartialMetadata } from '@kingjs/partial-metadata'
 import { thunk as createThunk } from '@kingjs/function-contract'
-import { 
+import {
   Compile,
   Adjacent,
   Normalize,
@@ -29,17 +29,17 @@ import {
 // MOTIVATION
 
 // JavaScript before Es6 required the developer to construct prototypes
-// manually. For example, to create a type MyExtendedType that extends MyType, 
+// manually. For example, to create a type MyExtendedType that extends MyType,
 // the developer would do something like this:
 
 //    function MyType() { ... }
-//    function MyExtendedType() { 
+//    function MyExtendedType() {
 //      constructor() { MyType.call(this); ... }
 //    }
 //    MyExtendedType.prototype = Object.create(MyType.prototype)
 //    MyExtendedType.prototype.constructor = MyExtendedType
 
-// Any member of MyType would be manually added to MyType.prototype. For 
+// Any member of MyType would be manually added to MyType.prototype. For
 // example, to add a 'foo' getter, the developer would do this:
 
 //    Object.defineProperty(MyType.prototype, 'foo', {
@@ -48,8 +48,8 @@ import {
 //      enumerable: false,
 //      writable: false,
 //    })
- 
-// To ease manual construction of prototypes, a developer could use helper 
+
+// To ease manual construction of prototypes, a developer could use helper
 // functions. For example, 'foo' could be added like this:
 
 //    function defineGetter(type, name, getter) {
@@ -69,8 +69,8 @@ import {
 //    class MyType { get foo() { ... } }
 //    class MyExtendedType extends MyType { ... }
 
-// Going further, a developer could create a function to add groups of 
-// members, a "partial type", to a prototype. For example, to add 'foo' 
+// Going further, a developer could create a function to add groups of
+// members, a "partial type", to a prototype. For example, to add 'foo'
 // and 'bar' to MyType in one go, the developer could do this:
 
 //    function abstract() { throw new Error('Abstract method') }
@@ -78,16 +78,16 @@ import {
 //      addGetter(prototype, 'foo', foo || abstract)
 //      addGetter(prototype, 'bar', bar || abstract)
 //    }
-//  
+//
 //    defineFubar(MyType.prototype)
 
 // This would result in Fubar.foo overwriting MyType.foo and adding Foobar.bar.
 
-// Es6 does not provide syntacic sugar for this type of composition. 
+// Es6 does not provide syntacic sugar for this type of composition.
 // For example, there is no Es6 syntax to define a partial type 'Fubar' and
 // use that to add 'foo' and 'bar' to MyType. The Partial* family of packages
 // fills this gap. While Partial* cannot introduce new syntax, it can introduce
-// functions that interpret well known symbols to achieve the same effect. 
+// functions that interpret well known symbols to achieve the same effect.
 // For example, Fubar could be defined and applied to MyType like this:
 
 //    // PartialType and PartialClass are provided out-of-the-box
@@ -103,10 +103,10 @@ import {
 //      static { define(this, Fubar) }
 //    }
 
-// This would also result in Foobar.foo overwriting MyType.foo and adding 
-// Foobar.bar. 
+// This would also result in Foobar.foo overwriting MyType.foo and adding
+// Foobar.bar.
 
-// Partial* also allows for composition of a PartialType via extension, 
+// Partial* also allows for composition of a PartialType via extension,
 // declaration, or procedural means. For example, SitRep could be defined:
 
 // (1) via extension like this:
@@ -125,73 +125,73 @@ import {
 // (3) via declaration like this:
 
 //    class SitRep extends PartialClass {
-//      static [Extends] = Fubar
+//      static [Composes] = Fubar
 //      get bar() { ... }
 //    }
 
-// In all cases, SitRep.bar would overwrite Fubar.bar and SitRep would 
+// In all cases, SitRep.bar would overwrite Fubar.bar and SitRep would
 // inherit Fubar.foo.
- 
-// Partial* also allows for "multiple inheritance" of partial types. For 
-// example, SitRep could extend partial classes Fubar and Snafu like this:
+
+// Partial* also allows for "multiple inheritance" of partial types. For
+// example, SitRep could compose partial classes Fubar and Snafu like this:
 
 //    class Snafu extends PartialClass {
 //      get foo() { ... }
 //      get baz() { ... }
 //    }
 //    class SitRep extends PartialClass {
-//      static [Extends] = [ Snafu, Fubar ]
+//      static [Composes] = [ Snafu, Fubar ]
 //      get bar() { ... }
 //    }
 
 // or via extension and declaration like this:
 
 //    class SitRep extends Snafu {
-//      static [Extends] = Fubar
+//      static [Composes] = Fubar
 //      get bar() { ... }
 //    }
 
 // or via declaration and procedure like this:
 
 //    class SitRep extends PartialClass {
-//      static [Extends] = Snafu
+//      static [Composes] = Snafu
 //      static { define(this, Fubar) }
 //      get bar() { ... }
 //    }
 
-// PartialReflect imposes a total order on the POSET of partial types and 
-// exposes the result as a meta-prototype chain. In general, PartialReflect 
-// uses a last-declaration-wins ordering when constructing meta-prototype 
-// chains where the precedence of the various means of composition are as 
-// follows: 
+// PartialReflect imposes a total order on the POSET of partial types and
+// exposes the result as a meta-prototype chain. In general, PartialReflect
+// uses a last-declaration-wins ordering when constructing meta-prototype
+// chains where the precedence of the various means of composition are as
+// follows:
 
 //    extension < declaration < procedure = host type
 
-// For example, given that precident chain, all of the above would have a 
+// For example, given that precident chain, all of the above would have a
 // meta-prototype chain like this:
 
 //    SitRep (bar)
 //    └─ Fubar (foo, bar)
 //       └─ Snafu (foo, baz)
 
-// which indicates: 
+// which indicates:
 
-//    SitRep.bar takes precidence over Fubar.bar 
-//    Fubar.foo takes precidence over Snafu.foo 
+//    SitRep.bar takes precidence over Fubar.bar
+//    Fubar.foo takes precidence over Snafu.foo
 
-// Note that SitRep.bar takes precidence over Fubar.bar because it was 
-// declared after the call to define. If the order were reversed then the 
+// Note that SitRep.bar takes precidence over Fubar.bar because it was
+// declared after the call to define. If the order were reversed then the
 // precidence would be reversed and the meta-prototype chain would be:
 
 //    SitRep (Fubar.bar)
 //    └─ Fubar (foo, bar)
 //       └─ Snafu (foo, baz)
 
-// Hopefully, all of this is expected and in general the precidents 
-// illustrated above feel natural. 
+// Hopefully, all of this is expected and in general the precidents
+// illustrated above feel natural.
 
-// As an aside, PartialReflect is able to add Fubar to the prototype chain 
-// even when SitRep adds Fubar via define (i.e. procedurally) because define 
+// As an aside, PartialReflect is able to add Fubar to the prototype chain
+// even when SitRep adds Fubar via define (i.e. procedurally) because define
 // stores the association in a global registry which PartialReflect can query.
 
 // PartialReflect will also construct meta-prototype chains for non-partial
@@ -220,16 +220,16 @@ import {
 //    baz         -> Snafu.baz
 
 // Note the utility of the meta-prototype chain in this example. Reflection
-// on the meta-prototype chain using the same algorithms used on a normal 
-// prototype chain would reveal the total set of members, which members 
-// overrode which, which partial types contributed which members, and so 
-// on. The is is the main motivation for PartialReflect. 
+// on the meta-prototype chain using the same algorithms used on a normal
+// prototype chain would reveal the total set of members, which members
+// overrode which, which partial types contributed which members, and so
+// on. The is is the main motivation for PartialReflect.
 
 // _________________________________________________________________________
 // PRECEDENTS
 
 // Es6 provides a precedent for including more types in the prototype chain
-// than were declared in source code. Indeed, simply declaring 
+// than were declared in source code. Indeed, simply declaring
 
 //    class MyType { }
 
@@ -245,7 +245,7 @@ import {
 //                       └─ Object.prototype   └─ Function.prototype
 //                          └─ null               └─ Object.prototype
 //                                                   └─ null
-//                                                                   
+//
 // class MyType          MyType.prototype      MyType
 //   extends Object { }  └─ Object.prototype   └─ Object
 //                          └─ null               └─ Function.prototype
@@ -258,33 +258,33 @@ import {
 //                                                   └─ null
 
 // The point is that Es6 established a precedent that the static-prototype
-// chain reflects the source code declaration of a type and the prototype 
-// chain reflects runtime composition of a type. PartialReflect expands upon 
-// these Es6 precedents and uses them as justification for the inclusion of 
-// partial types in the prototype chain and separation of the static-prototype 
+// chain reflects the source code declaration of a type and the prototype
+// chain reflects runtime composition of a type. PartialReflect expands upon
+// these Es6 precedents and uses them as justification for the inclusion of
+// partial types in the prototype chain and separation of the static-prototype
 // chain from the prototype chain.
 
-// Where Es6 includes Object implicitly when it makes sense to do so, 
-// PartialReflect includes partial types implicitly when it makes sense 
-// to do so. 
+// Where Es6 includes Object implicitly when it makes sense to do so,
+// PartialReflect includes partial types implicitly when it makes sense
+// to do so.
 
-// Where Es6 maintains two separate chains, a static-prototype chain and 
-// a prototype PartialReflect extends Es6Reflector which includes 
-// transformations of both chains. Es6Reflector supplies the transform for 
-// the static-prototype (basically drops Function.prototype and 
-// Object.prototype) thus is agnostic to the presence of partial types. 
-// PartialReflect supplies the transform for the prototype chain. 
+// Where Es6 maintains two separate chains, a static-prototype chain and
+// a prototype PartialReflect extends Es6Reflector which includes
+// transformations of both chains. Es6Reflector supplies the transform for
+// the static-prototype (basically drops Function.prototype and
+// Object.prototype) thus is agnostic to the presence of partial types.
+// PartialReflect supplies the transform for the prototype chain.
 
 // _________________________________________________________________________
 // META PROTOTYPE
 
-// PartialReflect transforms a type's runtime-prototype to include the 
-// partial types of which the type is composed and provides reflection 
+// PartialReflect transforms a type's runtime-prototype to include the
+// partial types of which the type is composed and provides reflection
 // over the resulting meta-prototype chain.
 
-// PartialReflect expands each link in the type's runtime-prototype chain 
-// to include the partial types declared on that type. PartialType 
-// declarations on a type are ordered. Later declarations take precidence 
+// PartialReflect expands each link in the type's runtime-prototype chain
+// to include the partial types declared on that type. PartialType
+// declarations on a type are ordered. Later declarations take precidence
 // over earlier ones. For example, given MyType and MyExtendedType:
 
 //   class MyType { ... }
@@ -300,7 +300,7 @@ import {
 //   └─ MyType
 
 // and if MyExtendedType declares PartialTypse A then B, and MyType declares
-// PartialType A, then PartialReflect would expand the prototype chain like 
+// PartialType A, then PartialReflect would expand the prototype chain like
 // this:
 
 //   MyExtendedType
@@ -309,8 +309,8 @@ import {
 //         └─ MyType
 //            └─ A
 
-// Since the A on MyExtendedType reapplies the same members as the A on 
-// MyType, the A on MyType is effectively ignored and can be removed. 
+// Since the A on MyExtendedType reapplies the same members as the A on
+// MyType, the A on MyType is effectively ignored and can be removed.
 // So the final prototype chain would look like this:
 
 //   MyExtendedType
@@ -328,7 +328,7 @@ import {
 //   │  └─ Base
 //   └─ Left
 //      └─ Base
- 
+
 // and the prototype chain would look like this:
 
 //   B
@@ -383,7 +383,7 @@ import {
 // _________________________________________________________________________
 // RECURSIVE DEFINITION OF META PROTOTYPE CHAIN
 
-// In general, a type T with component B and partial types P0, P1, ... is 
+// In general, a type T with component B and partial types P0, P1, ... is
 // defined recursively as:
 
 //    T
@@ -398,10 +398,10 @@ import {
 
 // where M returns a list of types in merge order. DedupLast removes
 // duplicates from a list keeping the last one. The ++ operator is list
-// concatenation. The [T] is the singleton list containing T. 
+// concatenation. The [T] is the singleton list containing T.
 
-// The list returned by M(T) is then reduced into a prototype chain. 
-// Assuming the list is simply [ B, P0, P1, T ], then using mixin idiom, 
+// The list returned by M(T) is then reduced into a prototype chain.
+// Assuming the list is simply [ B, P0, P1, T ], then using mixin idiom,
 // the reduction is logically this:
 
 //    const B$ = base => class extends base { ...B... }
@@ -415,10 +415,10 @@ import {
 // _________________________________________________________________________
 // IMPLEMENTATION OF META PROTOTYPE CHAIN
 
-// The naive implementation of the meta-prototype chain construction  
-// proceeds by doing a post order walk of the type composition tree 
-// followed by deduplication of the resulting list. Deduping can be 
-// avoided by doing a reverse pre order walk of the tree, pruning 
+// The naive implementation of the meta-prototype chain construction
+// proceeds by doing a post order walk of the type composition tree
+// followed by deduplication of the resulting list. Deduping can be
+// avoided by doing a reverse pre order walk of the tree, pruning
 // branches that have been seen, and then reverse the result to
 // produce a "merge order". That is what PartialReflect does:
 
@@ -441,11 +441,11 @@ function *mergeOrder(...types) {
 
 // After the merge order is discovered, each link's constructor property
 // can be assigned its type. Next, the own descriptors of that type's
-// prototype are copied to the link. This is a straightforward copy 
-// except for abstract descriptors. A descriptor is abstract if its 
-// value/get/set is the well known abstract method. Abstract members do 
+// prototype are copied to the link. This is a straightforward copy
+// except for abstract descriptors. A descriptor is abstract if its
+// value/get/set is the well known abstract method. Abstract members do
 // not overwrite concrete members. Instead, the inherited concrete member
-// is substituted. 
+// is substituted.
 
 function shouldCopyDescriptor(
   descriptor,
@@ -473,18 +473,18 @@ function resolve(descriptor, existing) {
 // _________________________________________________________________________
 // TYPE OF PARTIAL TYPE DEFINITIONS & THE META TYPE SYSTEM
 
-// There are many types of PartialType (i.e. PartialClass and Concept). 
+// There are many types of PartialType (i.e. PartialClass and Concept).
 // PartialReflect treats them all in the abstract using a meta type
-// system to reflect on them to discover A set of well known meta 
+// system to reflect on them to discover A set of well known meta
 // symbols.
 
 const MetaSymbols = [
-  Adjacent, 
+  Adjacent,
   Normalize,
   Declarative,
   Procedural,
   Redeclare,
-  Transparent,  
+  Transparent,
   Compile,
   Precondition,
 ]
@@ -503,21 +503,21 @@ const MetaSymbols = [
 // _________________________________________________________________________
 // ADJACENT PARTIAL TYPE BY EXTENSION
 
-// An extension of a type of PartialType is user defined partial type. 
+// An extension of a type of PartialType is user defined partial type.
 // For example, A and B are user defined partial types:
 
 //    class A extends PartialClass { ... }
 //    class B extends Concept { ... }
 
-// Testing for user defined partial types is done using 
+// Testing for user defined partial types is done using
 
 //    PartialType.isUserDefined(type) // found in @kingjs/partial-type
 
-// Note PartialType.isUserDefined returns false for PartialType and its 
-// direct extensions (e.g. PartialClass and Concept) but returns true for 
-// user defined partial types (e.g. A, B). 
+// Note PartialType.isUserDefined returns false for PartialType and its
+// direct extensions (e.g. PartialClass and Concept) but returns true for
+// user defined partial types (e.g. A, B).
 
-// User defined partial type can extend other user defined partial
+// User defined partial type can compose other user defined partial
 // types. For example, Base, Left and Right could be defined like,
 
 //    class Base extends Concept { ... }
@@ -560,14 +560,14 @@ function getComponent(type) {
 // PartialType and its direct extensions have no members so their inclusion
 // would only affect tests for their presence and those checks could be done
 // using the static prototype chain. Additionally, their inclusion may not
-// always appear at the end of the meta prototype chain given the current 
-// implementation which seems odd. 
+// always appear at the end of the meta prototype chain given the current
+// implementation which seems odd.
 
 // _________________________________________________________________________
 // ADJACENT PARTIAL TYPE BY DECLARATION
 
-// Adjacent is a symbol declared by the meta type system which allows 
-// types of PartialType to declare how user defined partial types can append 
+// Adjacent is a symbol declared by the meta type system which allows
+// types of PartialType to declare how user defined partial types can append
 // an additonal adjaceny list of partial type extensions to the component
 // (component being interpreted as a singleton list). For example,
 
@@ -592,22 +592,22 @@ function getComponent(type) {
 //    class Right extends Base { ... }
 //    class B extends Concept {
 //      static [Implements] = [ Left, Right ]
-//    } 
+//    }
 
-// This declares a tree of partial types, possibly with duplicates 
-// (e.g. POSET), from which a merge order (e.g. linearization) and 
-// meta-prototype chain can be derived: 
+// This declares a tree of partial types, possibly with duplicates
+// (e.g. POSET), from which a merge order (e.g. linearization) and
+// meta-prototype chain can be derived:
 
-//    POSET:            Merge Order:        Meta-Prototype chain:                  
-//    B                 Right               B                     
-//    ├─ Left           └─ Base             └─ Left                  
-//    │  └─ Base           └─ Left             └─ Base                    
-//    └─ Right                └─ B                └─ Right                  
+//    POSET:            Merge Order:        Meta-Prototype chain:
+//    B                 Right               B
+//    ├─ Left           └─ Base             └─ Left
+//    │  └─ Base           └─ Left             └─ Base
+//    └─ Right                └─ B                └─ Right
 //       └─ Base
 
 function *ownDeclaredAdjacentPartialTypes(type) {
   const adjacent = type[Adjacent]
-  if (!adjacent) 
+  if (!adjacent)
     return
 
   for (const expectedType of asMetadata(adjacent)) {
@@ -624,50 +624,50 @@ function *ownDeclaredAdjacentPartialTypes(type) {
 // _________________________________________________________________________
 // ADJACENT PARTIAL TYPE BY PROCEDURE
 
-// Adjacent partial types can also be declared procedurally. For example, 
+// Adjacent partial types can also be declared procedurally. For example,
 // given MyType, the following would declare MyExtenedPartialClass as an
 // adjacent partial type of MyType:
 
 //    class MyPartialClass extends PartialClass { ... }
 //    class MyExtenedPartialClass extends PartialClass {
-//      static { extend(this, MyPartialClass) }
+//      static { compose(this, MyPartialClass) }
 //    }
 
-// This is the only way to declare adjacent partial types on non-partial 
-// types. For example, given MyType, the following would declare 
+// This is the only way to declare adjacent partial types on non-partial
+// types. For example, given MyType, the following would declare
 // MyPartialClass as an adjacent partial type of MyType:
 
-//    class MyType { static { extend(this, MyPartialType) } ... }
+//    class MyType { static { compose(this, MyPartialType) } ... }
 
 // The placement of the static block is important. Members declared before the
 // static block could be overridden by members of MyPartialType while members
 // declared after the static block would override members of MyPartialType.
 
-// The extends function is provided by PartialReflect and it stores the 
-// adjacent partial type in a global registry which PartialReflect can query 
+// The compose function is provided by PartialReflect and it stores the
+// adjacent partial type in a global registry which PartialReflect can query
 // when constructing the meta-prototype chain.
 
 // The AdjacentTypes class is the implementation of the global registry for
-// adjacent partial types declared procedurally. The AdjacentTypes registry is 
-// keyed by the host type and the value is a set of adjacent partial types. For 
-// example, if MyType declares MyPartialType as an adjacent partial type, then 
+// adjacent partial types declared procedurally. The AdjacentTypes registry is
+// keyed by the host type and the value is a set of adjacent partial types. For
+// example, if MyType declares MyPartialType as an adjacent partial type, then
 // the registry would have an entry like this:
 
 //    MyType -> Set { MyPartialType }
 
-// The adjacent type list is ordered. If a type is added multiple times, the 
-// prior occurrence is removed and the type is added to the end of the list. 
+// The adjacent type list is ordered. If a type is added multiple times, the
+// prior occurrence is removed and the type is added to the end of the list.
 
-// The adjacent type list is mutable until it is loaded. Once it is loaded, 
-// it cannot be modified. Loading happens when the adjacent types are queried 
-// for the first time. This is to prevent procedural declaration of adjacent 
+// The adjacent type list is mutable until it is loaded. Once it is loaded,
+// it cannot be modified. Loading happens when the adjacent types are queried
+// for the first time. This is to prevent procedural declaration of adjacent
 // types after the meta-prototype chain has been constructed which typically
 // happens at the first the type is extened by another type. For example,
-// after MyType is extended by MyExtendedType, the meta-prototype chain of 
-// MyPartialType would be constructed so any subsequent calls to extend 
+// after MyType is extended by MyExtendedType, the meta-prototype chain of
+// MyPartialType would be constructed so any subsequent calls to compose
 // MyPartialType would generate an error:
 
-//    extend(MyPartialType, MyExtendedPartialType) // error
+//    compose(MyPartialType, MyExtendedPartialType) // error
 
 class AdjacentTypes {
 
@@ -685,7 +685,7 @@ class AdjacentTypes {
     if (!entry) this.#directory.set(type, entry = new AdjacentTypes(type))
     return entry
   }
-  
+
   static #directory = new Map()
 
   #type
@@ -697,8 +697,8 @@ class AdjacentTypes {
     this.#adjacentTypes = new Set()
   }
 
-  *load() { 
-    this.#loaded = true 
+  *load() {
+    this.#loaded = true
     yield* this.#adjacentTypes
   }
 
@@ -740,12 +740,12 @@ function canAdjoin(type, partialType) {
 
 function *ownPartialTypes(type) {
 
-  // via declaration (e.g. static [Extends] = PartialType)
+  // via declaration (e.g. static [Composes] = PartialType)
   for (const partialType of ownDeclaredAdjacentPartialTypes(type))
     if (canAdjoin(type, partialType))
       yield partialType
 
-  // via procedure (e.g extend())
+  // via procedure (e.g compose())
   yield* AdjacentTypes.load(type)
 }
 
@@ -768,7 +768,7 @@ function *ownRedeclaredPartialTypes(type) {
 const KnownTypes = [ Object, Function, PartialType ]
 const KnownTypeFn = type => Object.getPrototypeOf(type) === PartialType
 const KnownKeys = [ 'constructor' ]
-const KnownStaticKeys = [ 
+const KnownStaticKeys = [
   'length', 'name', 'prototype',
   Symbol.hasInstance,
   ...MetaSymbols,
@@ -814,7 +814,7 @@ export function create({
   }
 
   const PartialReflect = Es6Reflector.create({
-    knownTypes: [ ...knownTypes, ...KnownTypes ], 
+    knownTypes: [ ...knownTypes, ...KnownTypes ],
     knownTypeFn: KnownTypeFn,
     knownKeys: KnownKeys,
     knownStaticKeys: [ ...KnownStaticKeys, ...knownStaticKeys ],
@@ -854,7 +854,7 @@ export function create({
       'Argument must be a type.')
     assert(PartialType.isUserDefined(partialType),
       'Argument must be a user defined PartialType.')
-    
+
     const adjacentTypes = AdjacentTypes.get(type)
     const isPartialType = PartialType.isUserDefined(type)
 
@@ -874,8 +874,8 @@ export function create({
         if (!isPartialType)
           descriptor = transformDescriptor(host, key, descriptor)
 
-        descriptor = CreateThunk in type 
-          ? type[CreateThunk](key, descriptor) 
+        descriptor = CreateThunk in type
+          ? type[CreateThunk](key, descriptor)
           : descriptor
 
         return descriptor
@@ -894,6 +894,6 @@ export function create({
       }
     })
   }
-  
+
   return { PartialReflect, copyTo, ...metadata }
 }

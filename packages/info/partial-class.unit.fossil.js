@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { beforeEach } from 'vitest'
 import { TypeInfo, TypeInfo } from "@kingjs/info"
 import { PartialClass, Defines } from '@kingjs/partial-class'
-import { extend } from '@kingjs/partial-extend'
+import { compose } from '@kingjs/partial-compose'
 import { abstract } from '@kingjs/abstract'
 import { } from "@kingjs/info-to-pojo"
 import { Normalize } from '@kingjs/partial-symbols'
@@ -93,7 +93,7 @@ describe('A class with a member', () => {
       myPartialClass.prototype.member = myPartialMemberFn
     })
     it('should overwrite member when merged', async () => {
-      extend(cls, myPartialClass)
+      compose(cls, myPartialClass)
       const fn = getMemberValue(cls)
       expect(fn).toBe(myPartialMemberFn)
     })

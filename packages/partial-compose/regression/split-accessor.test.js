@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { PartialReflect } from '@kingjs/partial-reflect'
-import { extend } from '@kingjs/partial-extend'
+import { compose } from '@kingjs/partial-compose'
 import { PartialClass } from '@kingjs/partial-class'
 
 class ReadablePart extends PartialClass {
@@ -13,18 +13,18 @@ class WritablePart extends PartialClass {
 
 class ReadWritePart extends PartialClass {
   static {
-    extend(this, ReadablePart)
-    extend(this, WritablePart)
+    compose(this, ReadablePart)
+    compose(this, WritablePart)
   }
 }
 
 class Type {
   static {
-    extend(this, ReadablePart, {
+    compose(this, ReadablePart, {
       get value() { return this._value },
     })
 
-    extend(this, WritablePart, {
+    compose(this, WritablePart, {
       set value(value) { this._value = value },
     })
   }
@@ -50,7 +50,7 @@ describe('split accessor ownership', () => {
   })
 
   it('rejects implementing an inherited accessor half', () => {
-    expect(() => extend(class { }, ReadWritePart, {
+    expect(() => compose(class { }, ReadWritePart, {
       get value() { return this._value },
     })).toThrow("ReadWritePart does not define member 'value'.")
   })

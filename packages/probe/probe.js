@@ -88,7 +88,7 @@ export class Probe extends Metadata {
     if (this == Probe)
       return false
 
-    // assert directly extends probe
+    // assert directly extends Probe
     assert(Object.getPrototypeOf(this) === Probe,
       `Probe "${this.name}" must directly extend Probe.`)
 

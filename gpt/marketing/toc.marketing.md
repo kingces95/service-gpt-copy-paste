@@ -14,7 +14,7 @@
 ### Contract Idioms
 
 - `idioms/abstract-method.idiom.md`: turning hand-written throwing stubs into
-  declarative `Abstracts`.
+  declarative `DefinesAbstract`.
 - `idioms/interface-contract.idiom.md`: turning informal method expectations into
   certified `Concept` implementation.
 - `idioms/method-precondition.idiom.md`: turning hand-written guard clauses into

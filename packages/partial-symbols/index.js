@@ -1,7 +1,7 @@
-// PartialType + extend is Object.defineProperties with richer descriptors. 
+// PartialType + compose is Object.defineProperties with richer descriptors.
 
-// Adjacent is a static symbol applied to extensions of 
-// PartialType which describes how those extensions form a poset of 
+// Adjacent is a static symbol applied to extensions of
+// PartialType which describes how those extensions form a poset of
 // PartialType types.
 
 //    export const Adjacent = Symbol('PartialType.adjacent')
@@ -14,36 +14,36 @@
 //      static [Adjacent] = [ PartialClass, Attachments ]
 //    }
 
-// The simplest use of the Extends symbol is to apply an Attachments 
-// type expressed as a POJO. A single extension can exist as a single 
+// The simplest use of the Composes symbol is to apply an Attachments
+// type expressed as a POJO. A single extension can exist as a single
 // element of an array or unwrapped like this:
 
 //    class MyExtension extends PartialClass {
-//      static [Defines] = { 
-//        myMethod() { ... } 
+//      static [Defines] = {
+//        myMethod() { ... }
 //        myOtherMethod() { ... }
 //      }
 //    }
 
-// The Extends symbol can contain an array of member collections like this:
+// The Composes symbol can contain an array of member collections like this:
 
 //    class MyMethodGroup extends PartialClass {
 //      myMethod() { ... }
 //    }
 //    class MyExtension extends PartialClass {
-//      static [Extends] = [ 
+//      static [Composes] = [
 //        MyMethodGroup,
 //        { myOtherMethod() { ... } },
 //      ]
 //    }
 
-// The Extends can then be merged into a type using extend
+// The Composes declaration can then be merged into a type using compose
 // like so:
 
 //    class MyType { }
-//    extend(MyType, MyExtension)
+//    compose(MyType, MyExtension)
 
-// Now MyType.prototype has myMethod and myOtherMethod defined on it. 
+// Now MyType.prototype has myMethod and myOtherMethod defined on it.
 
 // Compile is a static symbol applied to extensions of PartialType which
 // designates a function that can be used to "compile" member descriptors.
@@ -51,7 +51,7 @@
 
 // For example, Concept PartialType uses Compile to transform its
 // descriptors so thay are "abstract" by setting all get/set/value to abstract
-// for non-data members. Compile is called with the descriptor and returns 
+// for non-data members. Compile is called with the descriptor and returns
 // a descriptor:
 
 //    import { abstract } from '@kingjs/abstract'
@@ -71,7 +71,7 @@
 // The EqualityConcept could then be merged into a type like this:
 
 //    class MyType { }
-//    extend(MyType, EqualityConcept)
+//    compose(MyType, EqualityConcept)
 
 // Now MyType.prototype has an abstract equals method defined on it.
 
@@ -109,9 +109,9 @@ export const TypePostcondition = Symbol('PartialProxy.TypePostcondition')
 
 export const Implements = Symbol('Concept.Implements')
 export const Includes = Symbol('Shape.Includes')
-export const Extends = Symbol('PartialClass.Extends')
+export const Composes = Symbol('PartialClass.Composes')
 export const Defines = Symbol('Attachments.Defines')
-export const Abstracts = Symbol('Attachments.Abstracts')
+export const DefinesAbstract = Symbol('Attachments.DefinesAbstract')
 
 export function isTransparent(type) {
   return !!type[Transparent]

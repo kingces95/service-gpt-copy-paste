@@ -59,7 +59,7 @@ Then a concrete type can compose it:
 ```js
 class Range extends PartialProxy {
   static {
-    extend(this, RangePart)
+    compose(this, RangePart)
   }
 }
 ```

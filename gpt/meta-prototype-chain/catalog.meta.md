@@ -9,7 +9,7 @@ source.
 | --- | --- | --- | --- |
 | ES6 static prototype | ES6 constructor/static chain | Prototype chain of static descriptors | Class statics without `Function.prototype` noise |
 | Partial linearization | Runtime prototype chain plus partial adjacency | Meta-prototype chain | Runtime composition including partial classes and concepts |
-| Compiled descriptors | Partial type descriptors | Compiled prototype link | Concepts, abstracts, and descriptor transforms |
+| Compiled descriptors | Partial type descriptors | Compiled prototype link | Concepts, DefinesAbstract, and descriptor transforms |
 | Transparent attachments | Attachment POJOs and descriptor groups | Host-owned member contribution | Helper members without permanent architectural identity |
 | Partial metadata | Partial meta-prototype chain | Static-field metadata chain | Associated types and symbol-attached metadata |
 | Condition chains | Metadata chain containing condition POJOs | Member-keyed pre/postcondition chain | Thunkable method/getter/setter guards |

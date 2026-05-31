@@ -5,7 +5,7 @@ import {
   Preconditions,
   Transforms,
 } from '@kingjs/partial-proxy'
-import { extend } from '@kingjs/partial-extend'
+import { compose } from '@kingjs/partial-compose'
 import { PartialClass } from '@kingjs/partial-class'
 import { defaultTo } from '@kingjs/function-args'
 import { thunk } from '@kingjs/function-contract'
@@ -59,7 +59,7 @@ class PreconditionType extends PartialProxy {
   }
 
   static {
-    extend(this, PreconditionPart)
+    compose(this, PreconditionPart)
   }
 }
 
@@ -73,13 +73,13 @@ class TransformType {
   }
 
   static {
-    extend(this, TransformPart)
+    compose(this, TransformPart)
   }
 }
 
 class ExtendedTransformPart extends PartialClass {
   static {
-    extend(this, TransformPart)
+    compose(this, TransformPart)
   }
 }
 
@@ -93,7 +93,7 @@ class ExtendedTransformType {
   }
 
   static {
-    extend(this, ExtendedTransformPart)
+    compose(this, ExtendedTransformPart)
   }
 }
 
@@ -107,7 +107,7 @@ class ContractType {
   }
 
   static {
-    extend(this, BasePart)
+    compose(this, BasePart)
     this.prototype.member = thunk({
       defaults: DefaultsMetadata,
       transforms: [null, transformSecond],

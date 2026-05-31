@@ -2,7 +2,7 @@ import { beforeEach } from 'vitest'
 import { describe, it, expect } from 'vitest'
 import { TypeInfo } from "@kingjs/info"
 import { define } from '@kingjs/partial-define'
-import { extend } from '@kingjs/partial-extend'
+import { compose } from '@kingjs/partial-compose'
 import { PartialReflect, copyTo } from '@kingjs/partial-reflect'
 import { } from "@kingjs/info-to-pojo"
 import { PartialClass } from '@kingjs/partial-class'
@@ -121,7 +121,7 @@ describe('Kitchen sink', () => {
       beforeEach(() => {
         [cls] = [class { }]
         if (PartialReflect.isExtensionOf(partialClass, PartialClass))
-          extend(cls, partialClass)
+          compose(cls, partialClass)
         else
           copyTo(partialClass, cls)
       })
