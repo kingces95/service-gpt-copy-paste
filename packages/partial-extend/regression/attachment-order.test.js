@@ -31,7 +31,7 @@ describe('attachment order', () => {
         }
       }
 
-      const chain = [...PartialReflect.baseTypes(Type)]
+      const chain = [...PartialReflect.components(Type)]
       expect(chain).toContain(DerivedPart)
       expect(chain).toContain(BasePart)
     })

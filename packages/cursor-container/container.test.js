@@ -509,9 +509,9 @@ describe.each(Object.entries(Tests))('A %s', (name, {
     })
     it('implement only its expected concepts', () => {
       const set = new Set(concepts)
-      const baseConcepts = [...PartialReflect.baseTypes(type)]
+      const componentConcepts = [...PartialReflect.components(type)]
         .filter(current => PartialReflect.isExtensionOf(current, Concept))
-      for (const concept of baseConcepts) {
+      for (const concept of componentConcepts) {
         if (set.has(concept) == false) throw new Error(
           `${type.name} implements unexpected concept ${concept.name}.`)
         expect(set.has(concept)).toBe(true)

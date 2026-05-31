@@ -136,13 +136,13 @@ export class TypeInfo {
 
   // partial classes
   *partialClasses() {
-    yield* PartialReflect.baseTypes(this.ctor, { filter: PartialClass })
+    yield* PartialReflect.components(this.ctor, { filter: PartialClass })
       .map(type => TypeInfo.from(type))
   }
 
   // concepts
   *concepts() {
-    yield* PartialReflect.baseTypes(this.ctor, { filter: Concept })
+    yield* PartialReflect.components(this.ctor, { filter: Concept })
       .map(type => TypeInfo.from(type))
   }
   *ownAssociatedConcepts() {
@@ -299,7 +299,7 @@ export class MemberInfo {
 
     const { name, host: { ctor: type } } = this
     const filter = { filter: Concept }
-    for (const current of PartialReflect.baseTypes(type, filter)) {
+    for (const current of PartialReflect.components(type, filter)) {
       if (!PartialReflect.hasOwnKey(current, name)) continue
       yield TypeInfo.from(current)
     }

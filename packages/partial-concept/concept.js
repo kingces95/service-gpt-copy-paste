@@ -26,7 +26,8 @@ function satisfiesAssociations(ctor, partialType) {
     if (!(typeof associatedType == 'function'))
       return false
 
-    return PartialReflect.isComposedOf(associatedType, associatedPartialType)
+    return associatedType == associatedPartialType
+      || PartialReflect.isComposedOf(associatedType, associatedPartialType)
   }
   return true
 }

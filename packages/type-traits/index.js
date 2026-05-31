@@ -13,24 +13,18 @@ export function sameAs(type) {
 
 export function extensionOf(
   type,
-  { strict = false, reflector = Es6UserReflect } = { }
+  { reflector = Es6UserReflect } = { }
 ) {
   class ExtensionOf {
     static [Symbol.hasInstance](value) {
-      return reflector.isExtensionOf(value, type, {
-        minDepth: strict ? 1 : 0,
-      })
+      return reflector.isExtensionOf(value, type)
     }
   }
 
   return declareName(
     ExtensionOf,
-    `${strict ? 'Strict' : ''}ExtensionOf${type.name}`
+    `ExtensionOf${type.name}`
   )
 }
 
 export const derivedFrom = extensionOf
-
-export function baseOf(type, options) {
-  return extensionOf(type, { strict: false, ...options })
-}

@@ -76,30 +76,30 @@ export class Es6Prototype {
       || this.#knownKeyFn?.(type, key) == true
   }
 
-  *hierarchy(type, { reverseHierarchy } = { }) {
+  *composition(type, { reverseHierarchy } = { }) {
     const prototype = this.getPrototype(type)
     yield* Prototype.chain(prototype, { reverseHierarchy })
       .map(link => link.constructor)
   }
 
-  getBaseType(type) {
-    const baseTypes = this.baseTypes(type)
-    const { value } = baseTypes.next()
+  getComponent(type) {
+    const components = this.components(type)
+    const { value } = components.next()
     return value || null
   }
 
-  *baseTypes(type) {
-    const hierarchy = this.hierarchy(type)
-    hierarchy.next() // skip self
-    yield* hierarchy
+  *components(type) {
+    const composition = this.composition(type)
+    composition.next() // skip self
+    yield* composition
   }
 
   isComposedOf(type, targetType) {
-    return this.hierarchy(type)
+    return this.components(type)
       .some(type => type === targetType)
   }
 
-  hasBaseType() {}
+  hasComponent() {}
 
   hasOwnKey(type, key) {
     if (this.isKnownKey(type, key)) return false

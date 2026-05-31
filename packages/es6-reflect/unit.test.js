@@ -18,15 +18,15 @@ describe('Es6Reflect', () => {
   })
 })
 
-describe('Hierarchy', () => {
+describe('Composition', () => {
   
   const ObjectTest = {
     name: 'Object',
     type: Object,
-    baseType: null,
-    baseTypes: [],
+    componentType: null,
+    components: [],
     extendedType: null,
-    hierarchy: [Object],
+    composition: [Object],
     extensions: [ 
       Object 
     ],
@@ -35,10 +35,10 @@ describe('Hierarchy', () => {
   const FunctionTest = {
     name: 'Function',
     type: Function,
-    baseType: Object,
-    baseTypes: [Object],
+    componentType: Object,
+    components: [Object],
     extendedType: Object,
-    hierarchy: [Function, Object],
+    composition: [Function, Object],
     extensions: [ 
       Function, 
       Object 
@@ -53,10 +53,10 @@ describe('Hierarchy', () => {
   const MyClassTest = {
     name: 'MyClass',
     type: MyClass,
-    baseType: Object,
-    baseTypes: [Object],
+    componentType: Object,
+    components: [Object],
     extendedType: Object,
-    hierarchy: [MyClass, Object],
+    composition: [MyClass, Object],
     extensions: [ 
       MyClass, 
       Object 
@@ -66,11 +66,11 @@ describe('Hierarchy', () => {
   const MyClassExtendsNullTest = {
     name: 'MyClassExtendsNull',
     type: MyClassExtendsNull,
-    baseType: null,
+    componentType: null,
     isAbstract: true,
-    baseTypes: [],
+    components: [],
     extendedType: null,
-    hierarchy: [MyClassExtendsNull],
+    composition: [MyClassExtendsNull],
     extensions: [ 
       MyClassExtendsNull
     ]
@@ -79,10 +79,10 @@ describe('Hierarchy', () => {
   const MyClassEntendsObjectTest = {
     name: 'MyClassEntendsObject',
     type: MyClassEntendsObject,
-    baseType: Object,
-    baseTypes: [Object],
+    componentType: Object,
+    components: [Object],
     extendedType: Object,
-    hierarchy: [MyClassEntendsObject, Object],
+    composition: [MyClassEntendsObject, Object],
     extensions: [ 
       MyClassEntendsObject, 
       Object
@@ -93,11 +93,11 @@ describe('Hierarchy', () => {
   const MyExtendedClassTest = {
     name: 'MyExtendedClass',
     type: MyExtendedClass,
-    baseType: MyClass,
-    baseTypes: [MyClass, Object],
+    componentType: MyClass,
+    components: [MyClass, Object],
     extendedType: MyClass,
     extendedX2Type: Object,
-    hierarchy: [MyExtendedClass, MyClass, Object],
+    composition: [MyExtendedClass, MyClass, Object],
     extensions: [ 
       MyExtendedClass, 
       MyClass, 
@@ -116,16 +116,16 @@ describe('Hierarchy', () => {
   ]
   
   describe.each(tests)('%s', (_, {
-    type, baseType, baseTypes, isAbstract, extendedType, extendedX2Type,
-    hierarchy, extensions, explicitlyExtendsObject
+    type, componentType, components, isAbstract, extendedType, extendedX2Type,
+    composition, extensions, explicitlyExtendsObject
   }) => {
-    it(`should have correct base type`, () => {
-      const result = Es6Reflect.getBaseType(type)
-      expect(result).toBe(baseType)
+    it(`should have correct component`, () => {
+      const result = Es6Reflect.getComponent(type)
+      expect(result).toBe(componentType)
     })
-    it(`should have correct base types`, () => {
-      const result = [...Es6Reflect.baseTypes(type)]
-      expect(result).toEqual(baseTypes || [])
+    it(`should have correct components`, () => {
+      const result = [...Es6Reflect.components(type)]
+      expect(result).toEqual(components || [])
     })
     it('should have correct isAbstract result', () => {
       const expected = !!isAbstract
@@ -136,60 +136,53 @@ describe('Hierarchy', () => {
       const result = Es6Reflect.getExtendedType(type)
       expect(result).toBe(extendedType)
     })
-    it('should be extension of itself with minDepth of zero', () => {
-      const result = Es6Reflect.isExtensionOf(type, type, { minDepth: 0 })
-      expect(result).toBe(true)
+    it('should not be extension of itself', () => {
+      const result = Es6Reflect.isExtensionOf(type, type)
+      expect(result).toBe(false)
     })
-    it('should have the correct hierarchy', () => {
-      const result = [...Es6Reflect.hierarchy(type)]
-      expect(result).toEqual(hierarchy || [])
+    it('should have the correct composition', () => {
+      const result = [...Es6Reflect.composition(type)]
+      expect(result).toEqual(composition || [])
     })
-    it('should report prototype extension by reflected hierarchy', () => {
-      for (const current of hierarchy.slice(1))
-        expect(Es6Reflect.isPrototypeExtensionOf(type, current)).toBe(true)
+    it('should report prototype extension by reflected composition', () => {
+      for (const current of composition.slice(1))
+        expect(Es6Reflect.isComposedOf(type, current)).toBe(true)
 
-      expect(Es6Reflect.isPrototypeExtensionOf(type, type)).toBe(false)
+      expect(Es6Reflect.isComposedOf(type, type)).toBe(false)
     })
     if (extendedType) {
-      it('should be extension of extended type with minDepth of one', () => {
-        const result = Es6Reflect.isExtensionOf(
-          type, extendedType, { minDepth: 1 })
+      it('should be extension of extended type', () => {
+        const result = Es6Reflect.isExtensionOf(type, extendedType)
         expect(result).toBe(true)
       })    
-      it('should not be extension of extended type with minDepth of two', () => {
-        const result = Es6Reflect.isExtensionOf(
-          type, extendedType, { minDepth: 2 })
-        expect(result).toBe(false)
-      })
     }
     if (extendedX2Type) {
-      it('should not be extension of extended2x with minDepth of two', () => {
+      it('should be extension of extended2x type', () => {
         if (!extendedX2Type) return
-        const result = Es6Reflect.isExtensionOf(
-          type, extendedX2Type, { minDepth: 2 })
+        const result = Es6Reflect.isExtensionOf(type, extendedX2Type)
         expect(result).toBe(true)
       })
     }
-    if (baseType) {
-      it('should be able to duck cast to base type', () => {
+    if (componentType) {
+      it('should be able to duck cast to component', () => {
         const instance = new type()
-        const canDuckCast = Es6Reflect.canDuckCast(baseType, instance)
+        const canDuckCast = Es6Reflect.canDuckCast(componentType, instance)
         expect(canDuckCast).toBe(true)
       })
-      it('should return self when hierarchy is filtered by baseType', () => {
-        const result = [...Es6Reflect.hierarchy(type, { filter: baseType })]
+      it('should return self when composition is filtered by componentType', () => {
+        const result = [...Es6Reflect.composition(type, { filter: componentType })]
         expect(result).toEqual([type])
       })
     }
     if (isAbstract) {
-      it('should return no hierarchy if filtered by Object', () => {
+      it('should return no composition if filtered by Object', () => {
         if (!isAbstract) return
-        const result = [...Es6Reflect.hierarchy(type, { filter: Object })]
+        const result = [...Es6Reflect.composition(type, { filter: Object })]
         expect(result).toEqual([])
       })
-      it('should return no base type if filtered by Object', () => {
+      it('should return no component if filtered by Object', () => {
         if (!isAbstract) return
-        const result = Es6Reflect.getBaseType(type, { filter: Object })
+        const result = Es6Reflect.getComponent(type, { filter: Object })
         expect(result).toBe(null)
       })
     }

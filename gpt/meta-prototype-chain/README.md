@@ -197,7 +197,7 @@ The transformed chain can then answer questions raw JavaScript cannot:
 
 ```js
 PartialReflect.getDescriptor(MyType, 'foo')
-PartialReflect.baseTypes(MyType)
+PartialReflect.components(MyType)
 ```
 
 ## Metadata Derivation

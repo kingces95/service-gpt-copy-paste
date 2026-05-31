@@ -16,7 +16,7 @@ import {
 } from '@kingjs/partial-symbols'
 
 function *partialTypes(type) {
-  for (const current of PartialReflect.baseTypes(type)) {
+  for (const current of PartialReflect.components(type)) {
     if (!PartialType.isUserDefined(current)) continue
     yield current
   }

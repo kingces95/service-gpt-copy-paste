@@ -47,7 +47,7 @@ const MyClassMd = {
       [ 'staticMember', MyClass ],
       [ 'staticBaseMember', MyClass ],
     ],
-    hierarchy: {
+    composition: {
       staticMember: [ 
         MyClass, MyClass.staticMember ],
       staticBaseMember: [ 
@@ -65,7 +65,7 @@ const MyClassMd = {
       [ 'member', MyClass ],
       [ 'baseMember', MyClass ],
     ],
-    hierarchy: {
+    composition: {
       member: [ 
         MyClass, MyClass.prototype.member ],
       baseMember: [ 
@@ -83,7 +83,7 @@ const MyExtendedClass = class extends MyClass {
 const MyExtendedClassMd = {
   name: 'MyExtendedClass',
   type: MyExtendedClass,
-  baseType: MyClass,
+  componentType: MyClass,
   chain: [ MyExtendedClass, MyClass, Object ],
   static: {
     ownKeys: [ 'staticMember', 'extendedStaticMember' ],
@@ -97,7 +97,7 @@ const MyExtendedClassMd = {
       [ 'extendedStaticMember', MyExtendedClass ],
       [ 'staticBaseMember', MyClass ],
     ],
-    hierarchy: {
+    composition: {
       staticMember: [ 
         MyExtendedClass, MyExtendedClass.staticMember, 
         MyClass, MyClass.staticMember ],
@@ -119,7 +119,7 @@ const MyExtendedClassMd = {
       [ 'extendedMember', MyExtendedClass ],
       [ 'baseMember', MyClass ],
     ],
-    hierarchy: {
+    composition: {
       member: [ 
         MyExtendedClass, MyExtendedClass.prototype.member, 
         MyClass, MyClass.prototype.member ],
@@ -153,24 +153,24 @@ describe.each(Classes)('%s', (_, classMd) => {
     expect(actual).toBe(expected)
   })
 
-  it('is an extension of its base type', () => {
-    const { baseType } = classMd
-    if (!baseType)
+  it('is an extension of its component', () => {
+    const { componentType } = classMd
+    if (!componentType)
       return
 
-    expect(Es6Reflect.isExtensionOf(type, baseType)).toBe(true)
-    expect(Es6Reflect.isExtensionOf(baseType, type)).toBe(false)
+    expect(Es6Reflect.isExtensionOf(type, componentType)).toBe(true)
+    expect(Es6Reflect.isExtensionOf(componentType, type)).toBe(false)
   })
 
-  it('has correct hierarchy', () => {
+  it('has correct composition', () => {
     const expected = classMd.chain
-    const actual = [...Es6Reflect.hierarchy(type)]
+    const actual = [...Es6Reflect.composition(type)]
     expect(actual).toEqual(expected)
   })
 
-  it('has correct base types', () => {
+  it('has correct components', () => {
     const expected = classMd.chain.slice(1)
-    const actual = [...Es6Reflect.baseTypes(type)]
+    const actual = [...Es6Reflect.components(type)]
     expect(actual).toEqual(expected)
   })
 
@@ -185,8 +185,8 @@ describe.each(Classes)('%s', (_, classMd) => {
       md = classMd?.[label]
     })
 
-    it('has correct member hierarchy', () => {
-      const members = md?.hierarchy || { }
+    it('has correct member composition', () => {
+      const members = md?.composition || { }
       for (const key in members) {
         const expected = members[key]
         const actual = [...Es6Reflect.findDescriptors(

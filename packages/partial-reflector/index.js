@@ -316,7 +316,7 @@ import {
 
 // PartialType can themselves declare PartialType, and so on. For example,
 // if B declares PartialType Left then Right which each declare PartialType
-// Base, then B's type hierarchy would look like this (mentally, rotate the
+// Base, then B's type composition would look like this (mentally, rotate the
 // ASCII tree 90 degrees clockwise):
 
 //   B
@@ -340,7 +340,7 @@ import {
 //      └─ Base
 //         └─ Left
 
-// then inserting that back into MyExtendedType's hierarchy gives:
+// then inserting that back into MyExtendedType's composition gives:
 
 //   MyExtendedType
 //   └─ B
@@ -351,9 +351,9 @@ import {
 //                  └─ A
 
 // In general, the order of the prototype chain can be derived by doing
-// a depth first post order walk of the type hierarchy tree where duplicate
+// a depth first post order walk of the type composition tree where duplicate
 // types are removed leaving the last one. For example, MyExtendedType has
-// a hierarchy tree like this:
+// a composition tree like this:
 
 //   MyExtendedType
 //   ├─ B
@@ -379,7 +379,7 @@ import {
 // _________________________________________________________________________
 // RECURSIVE DEFINITION OF META PROTOTYPE CHAIN
 
-// In general, a type T with base type B and partial types P0, P1, ... is 
+// In general, a type T with component B and partial types P0, P1, ... is 
 // defined recursively as:
 
 //    T
@@ -412,16 +412,16 @@ import {
 // IMPLEMENTATION OF META PROTOTYPE CHAIN
 
 // The naive implementation of the meta-prototype chain construction  
-// proceeds by doing a post order walk of the type hierarchy tree 
+// proceeds by doing a post order walk of the type composition tree 
 // followed by deduplication of the resulting list. Deduping can be 
 // avoided by doing a reverse pre order walk of the tree, pruning 
 // branches that have been seen, and then reverse the result to
 // produce a "merge order". That is what PartialReflect does:
 
 function *adjacentTypes(type) {
-  const baseType = getBaseType(type)
-  if (baseType)
-    yield baseType
+  const componentType = getComponent(type)
+  if (componentType)
+    yield componentType
 
   yield* ownPartialTypes(type)
 }
@@ -518,20 +518,20 @@ const MetaSymbols = [
 //    class Left extends Base { ... }
 //    class Right extends Base { ... }
 
-function getBaseType(type) {
+function getComponent(type) {
   if (!type) return null
 
   if (!PartialType.isUserDefined(type))
-    return Es6UserReflect.getBaseType(type)
+    return Es6UserReflect.getComponent(type)
 
-  const result = Es6UserReflect.getBaseType(type)
+  const result = Es6UserReflect.getComponent(type)
   if (!PartialType.isUserDefined(result))
     return null
 
   return result
 }
 
-// Here are the base type chains for the above example:
+// Here are the component chains for the above example:
 
 //    PartialType -> null
 //    PartialClass -> PartialType -> null
@@ -541,7 +541,7 @@ function getBaseType(type) {
 
 // The above chains should come as no surprise. The following chains of
 // partial types may be more surprising since they do not report either
-// PartialClass, Concept, or PartialType as base types:
+// PartialClass, Concept, or PartialType as components:
 
 //    A -> null
 //    B -> null
@@ -550,7 +550,7 @@ function getBaseType(type) {
 //    Base -> null
 
 // A resonable argument could be made to include PartialType and its direct
-// extensions in the base type chain of user defined partial types however
+// extensions in the component chain of user defined partial types however
 // PartialType and its direct extensions have no members so their inclusion
 // would only affect tests for their presence and those checks could be done
 // using the static prototype chain. Additionally, their inclusion may not
@@ -562,8 +562,8 @@ function getBaseType(type) {
 
 // Adjacent is a symbol declared by the meta type system which allows 
 // types of PartialType to declare how user defined partial types can append 
-// an additonal adjaceny list of partial type extensions to the base type
-// (base type being interpreted as a singleton list). For example,
+// an additonal adjaceny list of partial type extensions to the component
+// (component being interpreted as a singleton list). For example,
 
 //    class Attachments extends PartialType {
 //      static [Adjacent] = { 
@@ -721,11 +721,11 @@ class AdjacentTypes {
     if (this.#adjacentTypes.has(type))
       return true
 
-    const baseType = getBaseType(this.#type)
-    if (!baseType)
+    const componentType = getComponent(this.#type)
+    if (!componentType)
       return false
 
-    return AdjacentTypes.#get(baseType).has(type)
+    return AdjacentTypes.#get(componentType).has(type)
   }
 }
 
@@ -809,7 +809,7 @@ export function create({
 }) {
   function assertTopologicalNext(order, next) {
     for (const previous of order)
-      if (PartialReflect.isPrototypeExtensionOf(previous, next))
+      if (PartialReflect.isComposedOf(previous, next))
         throw new TypeError(
           `${next.name} must be attached before ${previous.name}.`)
   }

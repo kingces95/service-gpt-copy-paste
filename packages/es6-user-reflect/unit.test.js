@@ -32,35 +32,35 @@ const Tests = {
   Object: {
     type: Object,
     isKnown: true,
-    base: null,
-    hierarchy: [ Object ],
+    component: null,
+    composition: [ Object ],
   },
   Function: {
     type: Function,
     isKnown: true,
-    base: Object,
-    hierarchy: [ Function, Object ],
+    component: Object,
+    composition: [ Function, Object ],
   },
   Empty: {
     type: Empty,
-    base: Object,
-    hierarchy: [ Empty, Object ],
+    component: Object,
+    composition: [ Empty, Object ],
   },
   EmptyExtendsObject: {
     type: EmptyExtendsObject,
-    base: Object,
-    hierarchy: [ EmptyExtendsObject, Object ],
+    component: Object,
+    composition: [ EmptyExtendsObject, Object ],
   },
   EmptyExtendsNull: {
     type: EmptyExtendsNull,
     isAbstract: true,
-    base: null,
-    hierarchy: [ EmptyExtendsNull ],
+    component: null,
+    composition: [ EmptyExtendsNull ],
   },
   ClassWithMembers: {
     type: ClassWithMembers,
-    base: Object,
-    hierarchy: [ ClassWithMembers, Object ],
+    component: Object,
+    composition: [ ClassWithMembers, Object ],
     static: {
       ownKeys: [ 'staticMember' ],
       keys: [ 'staticMember' ],
@@ -74,8 +74,8 @@ const Tests = {
   },
   ClassWithSymbolMembers: {
     type: ClassWithSymbolMembers,
-    base: Object,
-    hierarchy: [ ClassWithSymbolMembers, Object ],
+    component: Object,
+    composition: [ ClassWithSymbolMembers, Object ],
     static: {
       ownKeys: [ Member ],
       keys: [ Member ],
@@ -89,8 +89,8 @@ const Tests = {
   },
   ExtensionOfClassWithMembers: {
     type: ExtensionOfClassWithMembers,
-    base: ClassWithMembers,
-    hierarchy: [ ExtensionOfClassWithMembers, ClassWithMembers, Object ],
+    component: ClassWithMembers,
+    composition: [ ExtensionOfClassWithMembers, ClassWithMembers, Object ],
     static: {
       ownKeys: [ ],
       keys: [ 'staticMember' ],
@@ -104,8 +104,8 @@ const Tests = {
   },
   OverrideOfClassWithMembers: {
     type: OverrideOfClassWithMembers,
-    base: ClassWithMembers,
-    hierarchy: [ OverrideOfClassWithMembers, ClassWithMembers, Object ],
+    component: ClassWithMembers,
+    composition: [ OverrideOfClassWithMembers, ClassWithMembers, Object ],
     static: {
       ownKeys: [ 'staticMember' ],
       keys: [ 'staticMember' ],
@@ -131,23 +131,23 @@ describe.each(Cases)('%s', (name, md) => {
   beforeEach(() => {
     type = md.type
   })
-  it('has correct base', () => {
-    const baseType = Es6UserReflect.getBaseType(type)
-    expect(baseType).toBe(md.base)
+  it('has correct component', () => {
+    const componentType = Es6UserReflect.getComponent(type)
+    expect(componentType).toBe(md.component)
   })
-  it('has correct hierarchy', () => {
-    const hierarchy = Es6UserReflect.hierarchy(type)
-    const actual = [ ...hierarchy ]
-    expect(actual).toEqual(md.hierarchy)
+  it('has correct composition', () => {
+    const composition = Es6UserReflect.composition(type)
+    const actual = [ ...composition ]
+    expect(actual).toEqual(md.composition)
   })
-  it('has correct base types', () => {
-    const baseTypes = Es6UserReflect.baseTypes(type)
-    const actual = [ ...baseTypes ]
-    expect(actual).toEqual(md.hierarchy.slice(1))
+  it('has correct components', () => {
+    const components = Es6UserReflect.components(type)
+    const actual = [ ...components ]
+    expect(actual).toEqual(md.composition.slice(1))
   })
-  it('is extension of each base type', () => {
-    for (const baseType of md.hierarchy.slice(1)) {
-      const isExtensionOf = Es6UserReflect.isExtensionOf(type, baseType)
+  it('is extension of each component', () => {
+    for (const componentType of md.composition.slice(1)) {
+      const isExtensionOf = Es6UserReflect.isExtensionOf(type, componentType)
       expect(isExtensionOf).toBe(true)
     }
   })

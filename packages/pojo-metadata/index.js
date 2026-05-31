@@ -38,8 +38,8 @@ export class PojoMetadata {
     if (this.#map.has(type)) throw new Error(
       `Pojo metadata for type ${type.name} already exists.`)
 
-    const baseType = Es6Reflect.getBaseType(type)
-    const prototype = baseType ? this.get(baseType) : { }
+    const componentType = Es6Reflect.getComponent(type)
+    const prototype = componentType ? this.get(componentType) : { }
     const metadata = { ...prototype }
     Object.assign(metadata, pojo)
     this.#map.set(type, metadata)

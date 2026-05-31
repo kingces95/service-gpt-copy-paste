@@ -205,43 +205,35 @@ export class Es6Reflector {
   }
 
   // static exclusive methods
-  // TODO: drop minDepth
-  isExtensionOf(type, targetType, { minDepth = 1 } = { }) {
+  isExtensionOf(type, targetType) {
     if (!type) return false
     if (typeof type != 'function') return false
     
-    let depth = 0
-    for (const base of this.#static.hierarchy(type)) {
-      if (base == targetType) return depth >= minDepth
-      depth++
+    for (const base of this.#static.composition(type)) {
+      if (base == type) continue
+      if (base == targetType) return true
     }
 
     return false
   }
   *extensions(type) {
-    yield* this.#static.hierarchy(type)
+    yield* this.#static.composition(type)
   }
   getExtendedType(type) {
-    return this.#static.getBaseType(type)
+    return this.#static.getComponent(type)
   }
   isAbstract(type) {
     return type != Object && !this.isExtensionOf(type, Object)
   }
 
   // instance exclusive methods
-  *hierarchy(type, { filter, reverseHierarchy } = { }) { 
-    const types = this.#instance.hierarchy(type, { reverseHierarchy })
+  *composition(type, { filter, reverseHierarchy } = { }) { 
+    const types = this.#instance.composition(type, { reverseHierarchy })
     yield* this.#areExtensionsOf(types, filter)
   }
-  *baseTypes(type, { filter } = { }) { 
-    const types = this.#instance.baseTypes(type)
+  *components(type, { filter } = { }) { 
+    const types = this.#instance.components(type)
     yield* this.#areExtensionsOf(types, filter)
-  }
-  isPrototypeExtensionOf(type, targetType) {
-    if (type == targetType)
-      return false
-
-    return [...this.hierarchy(type)].includes(targetType)
   }
   
   // shared methods
@@ -299,7 +291,7 @@ export class Es6Reflector {
   // instance thunks
   static {
     const staticThunks = [
-      'getBaseType', 'isComposedOf', 'canDuckCast', 'canStrictDuckCast'
+      'getComponent', 'isComposedOf', 'canDuckCast', 'canStrictDuckCast'
     ]
 
     for (const key of staticThunks) {

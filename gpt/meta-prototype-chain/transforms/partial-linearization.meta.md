@@ -85,7 +85,7 @@ This chain describes runtime composition with provenance. Reflection can ask:
 ```js
 PartialReflect.keys(MyType)
 PartialReflect.getDescriptor(MyType, 'foo')
-PartialReflect.baseTypes(MyType)
+PartialReflect.components(MyType)
 ```
 
 and recover not just the final member set, but the contributing partial types

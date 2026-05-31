@@ -9,7 +9,7 @@ import { extend } from '@kingjs/partial-extend'
 import { PartialReflect } from '@kingjs/partial-reflect'
 
 function *partialClasses(type) {
-  for (const current of PartialReflect.baseTypes(type)) {
+  for (const current of PartialReflect.components(type)) {
     if (!PartialReflect.isExtensionOf(current, PartialClass)) continue
     yield current
   }

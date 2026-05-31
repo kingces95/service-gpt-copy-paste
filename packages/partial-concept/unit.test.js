@@ -41,7 +41,7 @@ describe('MyConcept', () => {
     expect(PartialReflect.isExtensionOf(MyConcept, Concept)).toBe(true)
   })
   it('should have not inherited concepts', () => {
-    const actual = [...PartialReflect.baseTypes(MyConcept)]
+    const actual = [...PartialReflect.components(MyConcept)]
     const expected = [ ]
     expect(actual).toEqual(expected)
   })
@@ -103,7 +103,7 @@ describe('MyConcept', () => {
       MyConcept[Implements] = [ MySubConcept ]
     })
     it('should have concepts', () => {
-      const actual = [...PartialReflect.baseTypes(MyConcept, {
+      const actual = [...PartialReflect.components(MyConcept, {
         filter: Concept
       })]
       const expected = [ MySubConcept ]

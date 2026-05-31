@@ -58,7 +58,7 @@ MyRange (own static fields)
    └─ Object
 ```
 
-The implementation walks `PartialReflect.hierarchy(type)` and copies static
+The implementation walks `PartialReflect.composition(type)` and copies static
 field descriptors from each type into a new prototype link.
 
 ## What It Describes

@@ -47,7 +47,7 @@ export class Es6ClassInfo {
   get isAnonymous() { return this.id.isAnonymous }
   get isKnown() { return Es6UserReflect.isKnown(this.ctor) }
 
-  get base() { return Es6ClassInfo.from(Es6Reflect.getBaseType(this.ctor)) }
+  get base() { return Es6ClassInfo.from(Es6Reflect.getExtendedType(this.ctor)) }
 
   *ownMembers({ isStatic = false } = { }) {
     const type = this.ctor

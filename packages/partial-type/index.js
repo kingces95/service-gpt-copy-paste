@@ -52,15 +52,15 @@ export class PartialType extends null {
     let result = type
 
     while (true) {
-      const baseType = Es6UserReflect.getBaseType(result)
+      const extendedType = Es6UserReflect.getExtendedType(result)
 
-      if (!baseType || baseType == PartialType)
+      if (!extendedType || extendedType == PartialType)
         return result
 
-      if (!Es6UserReflect.isExtensionOf(baseType, PartialType))
+      if (!Es6UserReflect.isExtensionOf(extendedType, PartialType))
         return result
 
-      result = baseType
+      result = extendedType
     }
   }
 

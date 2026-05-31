@@ -73,11 +73,11 @@ function supportsDescriptor(declaration, implementation) {
 }
 
 export const ApplyDeclaration = templatize([
-  extensionOf(PartialType, { strict: true }),
-  extensionOf(PartialType, { strict: true }),
+  extensionOf(PartialType),
+  extensionOf(PartialType),
 ], (TDeclaration, TImplementation) => contract([
   Function,
-  extensionOf(TDeclaration, { strict: true }),
+  extensionOf(TDeclaration),
 ], ApplyDeclarationNames,
 function applyDeclaration(
   type,

@@ -102,8 +102,8 @@ function runTests(
   
   const SingleChain = {
     type: MyType,
-    hierarchy: [ MyType ],
-    baseType: null,
+    composition: [ MyType ],
+    componentType: null,
     ownKeys: [ ctor, 'myTypeMember', memberKey],
     keys: [ MyType, ctor, 'myTypeMember', memberKey ],
     ownValues: [
@@ -146,7 +146,7 @@ function runTests(
   const SingleChainKnownTypes = {
     type: MyType,
     knownTypes: [ MyType ],
-    hierarchy: [ MyType ],
+    composition: [ MyType ],
     keys: [ MyType ],
     ownValues: [ ],
     values: [ ],
@@ -166,7 +166,7 @@ function runTests(
   const SingleChainKnownKeys = {
     type: MyType,
     knownKeys: [ memberKey ],
-    hierarchy: [ MyType ],
+    composition: [ MyType ],
     ownKeys: [ ctor, 'myTypeMember' ],
     keys: [ MyType, ctor, 'myTypeMember' ],
     ownValues: [
@@ -204,9 +204,9 @@ function runTests(
   
   const MultiChain = {
     type: MySubType,
-    hierarchy: [ MySubType, MyType ],
-    baseType: MyType,
-    baseTypes: [ MyType ],
+    composition: [ MySubType, MyType ],
+    componentType: MyType,
+    components: [ MyType ],
     ownKeys: [ ctor, 'mySubTypeMember', memberKey ],
     keys: [ 
       MySubType, ctor, 'mySubTypeMember', memberKey, 
@@ -258,9 +258,9 @@ function runTests(
   
   const MultiChainIncludeOverridden = {
     type: MySubType,
-    hierarchy: [ MySubType, MyType ],
-    baseType: MyType,
-    baseTypes: [ MyType ],
+    composition: [ MySubType, MyType ],
+    componentType: MyType,
+    components: [ MyType ],
     includeOverridden: true,
     ownKeys: [ ctor, 'mySubTypeMember', memberKey ],
     keys: [ 
@@ -321,7 +321,7 @@ function runTests(
   
   describe.each(TestCases)('%s', (_, { 
     type, 
-    hierarchy, baseType = null, baseTypes = [],
+    composition, componentType = null, components = [],
     knownTypes = [], knownKeys = [], 
     knownTypeFn = null, knownKeyFn = null,
     ownKeys = [], keys = [], includeOverridden = false,
@@ -356,18 +356,18 @@ function runTests(
        })
     })
   
-    // hierarchy
-    it('should have expected hierarchy', () => {
-      const actual = [...reflector.hierarchy(type)]
-      expect(actual).toEqual(hierarchy)
+    // composition
+    it('should have expected composition', () => {
+      const actual = [...reflector.composition(type)]
+      expect(actual).toEqual(composition)
     })
-    it('should have expected base type', () => {
-      const actual = reflector.getBaseType(type)
-      expect(actual).toBe(baseType)
+    it('should have expected component', () => {
+      const actual = reflector.getComponent(type)
+      expect(actual).toBe(componentType)
     })
-    it('should have expected base types', () => {
-      const actual = [...reflector.baseTypes(type)]
-      expect(actual).toEqual(baseTypes)
+    it('should have expected components', () => {
+      const actual = [...reflector.components(type)]
+      expect(actual).toEqual(components)
     })
   
     // keys

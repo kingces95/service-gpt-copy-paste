@@ -114,11 +114,11 @@ export function createPartialMetadata(PartialReflect) {
   const PartialMetadata = PartialReflect.map({
     knownKeys: [ 'constructor' ],
     getPrototype: function(type) {
-      const hierarchy = [...this.hierarchy(type)]
+      const composition = [...this.composition(type)]
 
-      // reverse because prototype chains are created from the bottome up
-      // by Prototype.create but hierarchy is returned from the top down.
-      return hierarchy.reverse().reduce((prototype, currentType) => {
+      // reverse because prototype chains are created from the bottom up
+      // by Prototype.create but composition is returned from the top down.
+      return composition.reverse().reduce((prototype, currentType) => {
         const descriptors = { }
 
         let key
