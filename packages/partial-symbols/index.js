@@ -95,6 +95,7 @@ export const Procedural = Symbol('PartialType.Procedural')
 export const Redeclare = Symbol('PartialType.Redeclare')
 export const Transparent = Symbol('PartialType.Transparent')
 export const Precondition = Symbol('PartialType.Precondition')
+export const Signature = Symbol('PartialType.Signature')
 
 export const CreateThunk = Symbol('PartialProxy.CreateThunk')
 export const Preconditions = Symbol('PartialProxy.Preconditions')

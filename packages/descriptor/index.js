@@ -1,5 +1,6 @@
 import { assert } from '@kingjs/assert'
 import { isPojo } from '@kingjs/pojo-test'
+import { declareName } from '@kingjs/es6-define'
 
 const AccessorMetadataSlots = [
   'enumerable',
@@ -47,6 +48,10 @@ class ValueDescriptor {
 
   static cover(descriptor) {
     descriptor.value?.()
+  }
+
+  static rename(descriptor, toName, fromName) {
+    rename(descriptor.value, toName, fromName)
     return descriptor
   }
 }
@@ -127,6 +132,11 @@ class GetSetDescriptor {
   static cover(descriptor, receiver) {
     descriptor.get?.call(receiver)
     descriptor.set?.call(receiver)
+  }
+
+  static rename(descriptor, toName, fromName) {
+    rename(descriptor.get, toName, fromName)
+    rename(descriptor.set, toName, fromName)
     return descriptor
   }
 
@@ -219,9 +229,16 @@ export class Descriptor {
   }
 
   static cover(descriptor, receiver) {
+    if (ValueDescriptor.test(descriptor))
+      ValueDescriptor.cover(descriptor)
+    else
+      GetSetDescriptor.cover(descriptor, receiver)
+  }
+
+  static rename(descriptor, toName, fromName) {
     return ValueDescriptor.test(descriptor)
-      ? ValueDescriptor.cover(descriptor)
-      : GetSetDescriptor.cover(descriptor, receiver)
+      ? ValueDescriptor.rename(descriptor, toName, fromName)
+      : GetSetDescriptor.rename(descriptor, toName, fromName)
   }
 
   static mergeAccessors(existing, descriptor) {
@@ -269,6 +286,16 @@ export class Descriptor {
       : GetSetDescriptor.getValue(descriptor, instance)
     return { type, descriptor, value }
   }
+}
+
+function rename(fn, toName, fromName) {
+  if (typeof fn != 'function')
+    return
+
+  if (fromName !== undefined && fn.name !== fromName)
+    return
+
+  declareName(fn, toName)
 }
 
 export class PropertyDescriptor {

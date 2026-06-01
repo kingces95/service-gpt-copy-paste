@@ -234,7 +234,7 @@ export class Es6Prototype {
         filterOwn, filter,
         asDescriptor: true,
         map: (host, key, descriptor) =>
-          map(descriptor, memberTable.get(key)),
+          map(descriptor, memberTable.get(key), key, host),
         onCopy: (host, key, descriptor) =>
           memberTable.set(key, descriptor)
       })

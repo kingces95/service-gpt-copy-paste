@@ -15,6 +15,7 @@ import { createPartialMetadata } from '@kingjs/partial-metadata'
 import { thunk as createThunk } from '@kingjs/function-contract'
 import {
   Compile,
+  Signature,
   Adjacent,
   Normalize,
   Declarative,
@@ -469,7 +470,6 @@ function resolve(descriptor, existing) {
     ? descriptor : existing
 }
 
-
 // _________________________________________________________________________
 // TYPE OF PARTIAL TYPE DEFINITIONS & THE META TYPE SYSTEM
 
@@ -782,7 +782,10 @@ const compiledPrototype = new Es6Prototype({
     const compile = type[Compile] || (o => o)
     return Es6UserReflect.reduce([type], {
       filterOwn: true,
-      map: (descriptor) => compile.call(type, descriptor)
+      map: (descriptor, existing, key) => {
+        descriptor = compile.call(type, descriptor)
+        return Descriptor.rename(descriptor, key, Signature)
+      }
     })
   }
 })

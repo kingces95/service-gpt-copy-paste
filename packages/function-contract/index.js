@@ -1,6 +1,7 @@
 import { assert } from '@kingjs/assert'
 import { asArray } from '@kingjs/as-array'
 import { declareName } from '@kingjs/es6-define'
+import { Signature } from '@kingjs/partial-symbols'
 import { Tuple } from '@kingjs/tuple'
 import {
   applyDefaults,
@@ -12,6 +13,11 @@ export { Preconditions } from '@kingjs/partial-symbols'
 export { applyDefaults, applyTransforms, defaultTo } from '@kingjs/function-args'
 
 export function thunk(metadata, fn) {
+  if (metadata && typeof metadata == 'object' && 'method' in metadata) {
+    const { method, ...rest } = metadata
+    return declareName(thunk(rest, method), Signature)
+  }
+
   if (typeof metadata == 'function') {
     fn = metadata
     metadata = null

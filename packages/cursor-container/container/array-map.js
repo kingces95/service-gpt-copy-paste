@@ -58,12 +58,12 @@ export class ArrayMap extends PartialProxy {
 
       insertRange: thunk({
         transforms: [null, sourceRange],
-      },
-      function insertRange(cursor, range) {
-        const offset = this.begin().distanceTo(cursor)
-        this._array.splice(offset, 0,
-          ...Array.from(iterate(range)))
-        return this
+        method(cursor, range) {
+          const offset = this.begin().distanceTo(cursor)
+          this._array.splice(offset, 0,
+            ...Array.from(iterate(range)))
+          return this
+        },
       }),
     })
 

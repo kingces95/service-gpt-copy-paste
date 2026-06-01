@@ -69,10 +69,10 @@ export class Deque extends PartialProxy {
 
       assignRange: thunk({
         transforms: [sourceRange],
-      },
-      function assignRange(range) {
-        this.clear()
-        return this.insertRange(this.begin(), range)
+        method(range) {
+          this.clear()
+          return this.insertRange(this.begin(), range)
+        },
       }),
     })
 
@@ -99,10 +99,10 @@ export class Deque extends PartialProxy {
     compose(this, BulkEditableContainerPart, {
       insertRange: thunk({
         transforms: [null, sourceRange],
-      },
-      function insertRange(cursor, range) {
-        this._denque.splice(cursor.index, 0, ...iterate(range))
-        return this
+        method(cursor, range) {
+          this._denque.splice(cursor.index, 0, ...iterate(range))
+          return this
+        },
       }),
     })
   }

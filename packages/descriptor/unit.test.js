@@ -203,6 +203,28 @@ describe('Descriptor', () => {
       configurable: true,
     }, whole)).toBe(false)
   })
+
+  it('renames function value descriptors', () => {
+    function oldName() { }
+    const descriptor = { value: oldName }
+
+    expect(Descriptor.rename(descriptor, 'newName')).toBe(descriptor)
+    expect(descriptor.value.name).toBe('newName')
+  })
+
+  it('renames matching accessor slots', () => {
+    function oldName() { }
+    function otherName() { }
+    const descriptor = {
+      get: oldName,
+      set: otherName,
+    }
+
+    Descriptor.rename(descriptor, 'newName', 'oldName')
+
+    expect(descriptor.get.name).toBe('newName')
+    expect(descriptor.set.name).toBe('otherName')
+  })
 })
 
 describe.each(Object.entries(Tests))('%s', (_, test) => {

@@ -5,6 +5,7 @@ import {
   overload,
   thunk,
 } from '@kingjs/function-contract'
+import { Signature } from '@kingjs/partial-symbols'
 import { Tuple } from '@kingjs/tuple'
 
 class Positive {
@@ -41,6 +42,22 @@ describe('contract', () => {
     identity)
     const context = { thing: new Thing() }
 
+    expect(normalize.call(context)).toBe(context.thing)
+  })
+
+  it('should thunk method records', () => {
+    const normalize = thunk({
+      defaults: [
+        'thing',
+      ],
+      transforms: [
+        function(value) { return this[value] },
+      ],
+      method(value) { return value },
+    })
+    const context = { thing: new Thing() }
+
+    expect(normalize.name).toBe(Signature)
     expect(normalize.call(context)).toBe(context.thing)
   })
 

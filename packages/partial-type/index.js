@@ -106,7 +106,7 @@ export class PartialType extends null {
 
     return result
   }
-  static [Compile](descriptor) { 
-    return Es6Compiler.compile(descriptor) 
+  static [Compile](descriptor) {
+    return Es6Compiler.compile(descriptor)
   }
 }

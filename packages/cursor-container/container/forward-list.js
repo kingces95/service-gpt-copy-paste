@@ -2,7 +2,7 @@ import { assert } from '@kingjs/assert'
 import { thunk } from '@kingjs/function-contract'
 import { compose } from '@kingjs/partial-compose'
 import { implement } from '@kingjs/partial-implement'
-import { PartialProxy, ArgChecks } from '@kingjs/partial-proxy'
+import { PartialProxy } from '@kingjs/partial-proxy'
 import {
   EquatableConcept,
 } from '@kingjs/partial-concept'
@@ -84,11 +84,6 @@ class ForwardListCursor extends ContainerCursor {
 export class ForwardList extends PartialProxy {
   static cursorType = ForwardListCursor
 
-  static [ArgChecks] = {
-    insertValueAfter: [ForwardListCursor, null],
-    eraseAfter: [ForwardListCursor],
-  }
-
   _rootLink
   _endLink
 
@@ -145,21 +140,25 @@ export class ForwardList extends PartialProxy {
 
       assignRange: thunk({
         transforms: [sourceRange],
-      },
-      function assignRange(range) {
-        this.clear()
-        let tail = this.beforeBegin()
-        for (const value of iterate(range)) {
-          tail.link = tail.link.insertAfter(value)
-        }
+        method(range) {
+          this.clear()
+          let tail = this.beforeBegin()
+          for (const value of iterate(range)) {
+            tail.link = tail.link.insertAfter(value)
+          }
 
-        return this
+          return this
+        },
       }),
     })
 
     compose(this, PhasedContainerPart, {
       beforeBegin() { return new this.cursorType(this, this._rootLink) },
-      insertValueAfter(cursor, value) { cursor.link.insertAfter(value) },
+
+      insertValueAfter(cursor, value) {
+        cursor.link.insertAfter(value)
+      },
+
       eraseAfter(first, last = next(first, 2)) {
         while (!next(first).equals(last))
           first.link.eraseAfter()
@@ -171,15 +170,14 @@ export class ForwardList extends PartialProxy {
     compose(this, PhasedBulkContainerPart, {
       insertRangeAfter: thunk({
         transforms: [null, sourceRange],
-      },
-      function insertRangeAfter(cursor, range) {
-        const tail = cursor.clone()
-        for (const value of iterate(range))
-          tail.link = tail.link.insertAfter(value)
+        method(cursor, range) {
+          const tail = cursor.clone()
+          for (const value of iterate(range))
+            tail.link = tail.link.insertAfter(value)
 
-        return this
+          return this
+        },
       }),
-
     })
   }
 }

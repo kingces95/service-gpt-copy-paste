@@ -63,6 +63,7 @@ export class List extends ForwardList {
         ForwardList.prototype.insertValueAfter.call(this, cursor, value)
         this._count++
       },
+
       eraseAfter(first, last = next(first, 2)) {
         let count = 0
         for (let cursor = next(first); !cursor.equals(last); cursor.step())
@@ -83,6 +84,7 @@ export class List extends ForwardList {
         cursor.link.insert(value)
         this._count++
       },
+
       erase(first, last = next(first)) {
         let count = 0
         let cursor = first.clone()
@@ -111,31 +113,29 @@ export class List extends ForwardList {
 
       assignRange: thunk({
         transforms: [sourceRange],
-      },
-      function assignRange(range) {
-        this.clear()
-        for (const value of iterate(range))
-          this.pushBack(value)
+        method(range) {
+          this.clear()
+          for (const value of iterate(range))
+            this.pushBack(value)
 
-        return this
+          return this
+        },
       }),
     })
 
     compose(this, PhasedBulkContainerPart, {
       insertRangeAfter: thunk({
         transforms: [null, sourceRange],
-      },
-      function insertRangeAfter(cursor, range) {
-        const tail = cursor.clone()
-        for (const value of iterate(range)) {
-          tail.link = tail.link.insertAfter(value)
-          this._count++
-        }
+        method(cursor, range) {
+          const tail = cursor.clone()
+          for (const value of iterate(range)) {
+            tail.link = tail.link.insertAfter(value)
+            this._count++
+          }
 
-        return this
+          return this
+        },
       }),
-
     })
-
   }
 }
