@@ -175,7 +175,7 @@ export class Prototype {
   }
 
   static copyTo(prototype, target, {
-    onCopy = (host, key, descriptor) => { },
+    onCopy = (host, key, descriptor, target) => { },
     onHost = (host) => { },
     map = (host, key, descriptor) => descriptor,
     filter = (host, key, descriptor) => true,
@@ -184,7 +184,6 @@ export class Prototype {
     reverseHierarchy,
     splitAccessors = false,
     createThunk = (key, descriptor) => descriptor,
-    asDescriptor = false,
   }) {
     let key
     let host
@@ -214,9 +213,8 @@ export class Prototype {
           const merged = splitAccessors
             ? Descriptor.mergeAccessors(existing, thunk)
             : thunk
-          if (asDescriptor) target[key] = merged
-            else Object.defineProperty(target, key, merged)
-          onCopy(host, key, descriptor)
+          Object.defineProperty(target, key, merged)
+          onCopy(host, key, descriptor, target)
           break
         case 'function':
           host = current

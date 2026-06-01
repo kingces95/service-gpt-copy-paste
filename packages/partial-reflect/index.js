@@ -3,6 +3,8 @@ import {
   Composes,
   Defines,
   Includes,
+  Procedurals,
+  Implementations,
 } from '@kingjs/partial-symbols'
 import { create } from '@kingjs/partial-reflector'
 
@@ -24,8 +26,10 @@ export const {
 } = create({
   knownStaticKeys: [
     Defines,      // from Attachments
-    Composes,      // from PartialClass
+    Composes,     // from PartialClass
     Implements,   // from Concept
     Includes,     // from Shape
+    Procedurals,
+    Implementations,
   ]
 })

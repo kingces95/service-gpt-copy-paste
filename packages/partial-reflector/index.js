@@ -19,12 +19,19 @@ import {
   Adjacent,
   Normalize,
   Declarative,
-  Procedural,
+  Procedural, Procedurals,
   Redeclare,
   Transparent, isTransparent,
+  Implementation, Implementations, isImplementation,
   Precondition,
   CreateThunk,
 } from '@kingjs/partial-symbols'
+
+function formatKey(key) {
+  return typeof key == 'symbol'
+    ? key.toString()
+    : key
+}
 
 // _________________________________________________________________________
 // MOTIVATION
@@ -483,8 +490,11 @@ const MetaSymbols = [
   Normalize,
   Declarative,
   Procedural,
+  Procedurals,
   Redeclare,
   Transparent,
+  Implementation,
+  Implementations,
   Compile,
   Precondition,
 ]
@@ -621,6 +631,12 @@ function *ownDeclaredAdjacentPartialTypes(type) {
   }
 }
 
+function *loadProcedurals(type) {
+  const procedurals = [...asMetadata(getOwn(type, Procedurals))]
+  type[Procedurals] = Object.freeze(procedurals)
+  yield* procedurals
+}
+
 // _________________________________________________________________________
 // ADJACENT PARTIAL TYPE BY PROCEDURE
 
@@ -647,86 +663,20 @@ function *ownDeclaredAdjacentPartialTypes(type) {
 // adjacent partial type in a global registry which PartialReflect can query
 // when constructing the meta-prototype chain.
 
-// The AdjacentTypes class is the implementation of the global registry for
-// adjacent partial types declared procedurally. The AdjacentTypes registry is
-// keyed by the host type and the value is a set of adjacent partial types. For
-// example, if MyType declares MyPartialType as an adjacent partial type, then
-// the registry would have an entry like this:
+// Procedural adjacent types are stored on the host type. The list is ordered.
+// If a type is added multiple times, the prior occurrence is removed and the
+// type is added to the end of the list.
 
-//    MyType -> Set { MyPartialType }
-
-// The adjacent type list is ordered. If a type is added multiple times, the
-// prior occurrence is removed and the type is added to the end of the list.
-
-// The adjacent type list is mutable until it is loaded. Once it is loaded,
-// it cannot be modified. Loading happens when the adjacent types are queried
-// for the first time. This is to prevent procedural declaration of adjacent
-// types after the meta-prototype chain has been constructed which typically
-// happens at the first the type is extened by another type. For example,
-// after MyType is extended by MyExtendedType, the meta-prototype chain of
-// MyPartialType would be constructed so any subsequent calls to compose
-// MyPartialType would generate an error:
+// The procedural list is mutable until it is loaded. Once loaded, it is frozen.
+// Loading happens when the adjacent types are queried for the first time. This
+// prevents procedural declaration of adjacent types after the meta-prototype
+// chain has been constructed which typically happens at the first the type is
+// extened by another type. For example, after MyType is extended by
+// MyExtendedType, the meta-prototype chain of MyPartialType would be
+// constructed so any subsequent calls to compose MyPartialType would generate
+// an error:
 
 //    compose(MyPartialType, MyExtendedPartialType) // error
-
-class AdjacentTypes {
-
-  static get(type) {
-    return AdjacentTypes.#get(type)
-  }
-
-  static *load(type) {
-    const entry = AdjacentTypes.#get(type)
-    yield* entry.load()
-  }
-
-  static #get(type) {
-    let entry = this.#directory.get(type)
-    if (!entry) this.#directory.set(type, entry = new AdjacentTypes(type))
-    return entry
-  }
-
-  static #directory = new Map()
-
-  #type
-  #adjacentTypes
-  #loaded = false
-
-  constructor(type) {
-    this.#type = type
-    this.#adjacentTypes = new Set()
-  }
-
-  *load() {
-    this.#loaded = true
-    yield* this.#adjacentTypes
-  }
-
-  *[Symbol.iterator]() {
-    yield* this.#adjacentTypes
-  }
-
-  publish(type) {
-    assert(!this.#loaded,
-      'Type cannot be modified after it has been loaded.')
-    assert(!isTransparent(type),
-      'Transparent types cannot be adjacent types.')
-
-    this.#adjacentTypes.delete(type) // maintain order
-    this.#adjacentTypes.add(type)
-  }
-
-  has(type) {
-    if (this.#adjacentTypes.has(type))
-      return true
-
-    const componentType = getComponent(this.#type)
-    if (!componentType)
-      return false
-
-    return AdjacentTypes.#get(componentType).has(type)
-  }
-}
 
 function canAdjoin(type, partialType) {
   if (!PartialType.isUserDefined(partialType))
@@ -746,7 +696,10 @@ function *ownPartialTypes(type) {
       yield partialType
 
   // via procedure (e.g compose())
-  yield* AdjacentTypes.load(type)
+  yield* loadProcedurals(type)
+
+  // via implementation body (e.g. compose(type, part, impl))
+  yield* asMetadata(getOwn(type, Implementations))
 }
 
 function *ownTransparentPartialTypes(type) {
@@ -830,7 +783,28 @@ export function create({
         previousTypes.push(partialType)
       }
 
-      return unifiedPrototype.reduce(mergeOrder(type), { map: resolve })
+      const mergeOrderTypes = [...mergeOrder(type)]
+      if (isImplementation(type))
+        return unifiedPrototype.reduce(mergeOrderTypes, { map: resolve })
+
+      const slotHosts = new Map()
+      return unifiedPrototype.reduce(mergeOrderTypes, {
+        map: resolve,
+        skip: isImplementation,
+        onCopy: (host, key, descriptor, target) => {
+          const type = target.constructor
+          if (!isImplementation(type)) {
+            slotHosts.set(key, target)
+            return
+          }
+
+          const slotHost = slotHosts.get(key)
+          assert(slotHost,
+            `Implementation member '${formatKey(key)}' has no slot host.`)
+
+          Object.defineProperty(slotHost, key, descriptor)
+        },
+      })
     }
   })
 
@@ -857,19 +831,10 @@ export function create({
       'Argument must be a type.')
     assert(PartialType.isUserDefined(partialType),
       'Argument must be a user defined PartialType.')
+    assert(!PartialType.isUserDefined(type) || isTransparent(type),
+      'PartialType composition must be declared, not copied.')
 
-    const adjacentTypes = AdjacentTypes.get(type)
     const isPartialType = PartialType.isUserDefined(type)
-
-    if (isPartialType && !isTransparent(partialType)) {
-      adjacentTypes.publish(partialType)
-      return
-    }
-
-    if (!isPartialType && !isTransparent(partialType)) {
-      assertTopologicalNext([...adjacentTypes], partialType)
-      adjacentTypes.publish(partialType)
-    }
 
     const prototype = type.prototype
     PartialReflect.copyTo(partialType, prototype, {

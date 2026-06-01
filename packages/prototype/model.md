@@ -218,9 +218,6 @@ context
 ├─ getDescriptor(prototype, key, { context })
 └─ getValue(prototype, key, { context })
 
-asDescriptor
-└─ copyTo(prototype, target, { asDescriptor })
-
 createThunk
 └─ copyTo(prototype, target, { createThunk })
 

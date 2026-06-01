@@ -1,0 +1,21 @@
+{
+  "name": "@kingjs/partial-implementation",
+  "version": "1.0.0",
+  "description": ".",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {
+    "@kingjs/assert": "1.0.0",
+    "@kingjs/es6-define": "1.0.0",
+    "@kingjs/partial-attachments": "1.0.0",
+    "@kingjs/partial-symbols": "1.0.0",
+    "@kingjs/partial-type": "1.0.0"
+  },
+  "devDependencies": {},
+  "peerDependencies": {},
+  "author": "Chris King",
+  "license": "MIT"
+}

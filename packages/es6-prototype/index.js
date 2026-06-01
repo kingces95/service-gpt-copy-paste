@@ -207,14 +207,13 @@ export class Es6Prototype {
     filter = (host, key, descriptor) => true,
     map = (host, key, descriptor) => descriptor,
     createThunk = (key, descriptor) => descriptor,
-    onCopy = (host, key, descriptor) => { },
+    onCopy = (host, key, descriptor, target) => { },
     onHost = (host) => { },
-    asDescriptor = false,
   }) {
     const prototype = this.getPrototype(type)
     const { splitAccessors } = this
     Prototype.copyTo(prototype, target, {
-      createThunk, includeOverridden, onCopy, onHost, map, asDescriptor,
+      createThunk, includeOverridden, onCopy, onHost, map,
       filterOwn, reverseHierarchy, splitAccessors,
       filter: (host, key, descriptor) => !this.isKnownKey(host, key)
         && filter(host, key, descriptor),
@@ -224,22 +223,29 @@ export class Es6Prototype {
   reduce(mergeOrder, {
     filterOwn = false,
     filter = (host, key, descriptor) => true,
-    map = (descriptor, existing) => descriptor
+    map = (descriptor, existing) => descriptor,
+    onCopy = (host, key, descriptor, target) => { },
+    skip = (type) => false,
   } = { }) {
     const memberTable = new Map()
     return mergeOrder.reduce((prototype, currentType) => {
-      const descriptors = { }
+      const currentPrototype = Prototype.create(currentType)
 
-      this.copyTo(currentType, descriptors, {
+      this.copyTo(currentType, currentPrototype, {
         filterOwn, filter,
-        asDescriptor: true,
         map: (host, key, descriptor) =>
           map(descriptor, memberTable.get(key), key, host),
-        onCopy: (host, key, descriptor) =>
+        onCopy: (host, key, descriptor, target) => {
           memberTable.set(key, descriptor)
+          onCopy(host, key, descriptor, target)
+        },
       })
 
-      return Prototype.create(currentType, prototype, descriptors)
+      if (skip(currentType))
+        return prototype
+
+      Object.setPrototypeOf(currentPrototype, prototype)
+      return currentPrototype
     }, null)
   }
 

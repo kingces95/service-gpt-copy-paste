@@ -94,6 +94,7 @@ export const Declarative = Symbol('PartialType.Declarative')
 export const Procedural = Symbol('PartialType.Procedural')
 export const Redeclare = Symbol('PartialType.Redeclare')
 export const Transparent = Symbol('PartialType.Transparent')
+export const Implementation = Symbol('PartialType.Implementation')
 export const Precondition = Symbol('PartialType.Precondition')
 export const Signature = Symbol('PartialType.Signature')
 
@@ -113,7 +114,13 @@ export const Includes = Symbol('Shape.Includes')
 export const Composes = Symbol('PartialClass.Composes')
 export const Defines = Symbol('Attachments.Defines')
 export const DefinesAbstract = Symbol('Attachments.DefinesAbstract')
+export const Procedurals = Symbol('PartialType.Procedurals')
+export const Implementations = Symbol('PartialType.Implementations')
 
 export function isTransparent(type) {
   return !!type[Transparent]
+}
+
+export function isImplementation(type) {
+  return !!type[Implementation]
 }

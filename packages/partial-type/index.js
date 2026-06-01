@@ -10,6 +10,7 @@ import {
   Declarative,
   Procedural,
   Transparent,
+  Implementation,
   Normalize,
 } from '@kingjs/partial-symbols'
 
@@ -20,6 +21,7 @@ export {
   Declarative,
   Procedural,
   Transparent,
+  Implementation,
   Normalize,
 } from '@kingjs/partial-symbols'
 
@@ -78,6 +80,7 @@ export class PartialType extends null {
   }
 
   static [Transparent] = false
+  static [Implementation] = false
   static [Adjacent] = [ ]
   static [Redeclare] = [ ]
   static [Declarative] = null

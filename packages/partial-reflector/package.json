@@ -8,7 +8,18 @@
     ".": "./index.js"
   },
   "dependencies": {
-    "@kingjs/descriptor": "1.0.0"
+    "@kingjs/abstract": "1.0.0",
+    "@kingjs/as-metadata": "1.0.0",
+    "@kingjs/descriptor": "1.0.0",
+    "@kingjs/es6-reflector": "1.0.0",
+    "@kingjs/es6-user-reflect": "1.0.0",
+    "@kingjs/function-contract": "1.0.0",
+    "@kingjs/get-own": "1.0.0",
+    "@kingjs/linearize": "1.0.0",
+    "@kingjs/partial-metadata": "1.0.0",
+    "@kingjs/partial-symbols": "1.0.0",
+    "@kingjs/partial-type": "1.0.0",
+    "@kingjs/pojo-test": "1.0.0"
   },
   "devDependencies": {},
   "peerDependencies": {},

@@ -230,9 +230,9 @@ describe('PartialClass', () => {
             expect(keys).toContain('method')
           })
 
-          it('should not have anonymous declarations', () => {
+          it('should not publish declarations', () => {
             const declarations = [...partialTypes(myType)]
-            expect(declarations).toEqual([MyPart])
+            expect(declarations).toEqual([])
           })
         })
       })
@@ -363,14 +363,11 @@ describe('PartialClass', () => {
               })
               it('should inherit the partial declarations', () => {
                 const declarations = [...partialTypes(mySubType)]
-                expect(declarations).toHaveLength(2)
-                expect(declarations).toContain(MyPart)
-                expect(declarations).toContain(MySubExtension)
+                expect(declarations).toEqual([])
               })
-              it('should have MyPart and MySubExtension as declarations', () => {
+              it('should have no declarations', () => {
                 const actual = new Set(partialTypes(mySubType))
-                const expected = new Set([ MyPart, MySubExtension ])
-                expect(actual).toEqual(expected)
+                expect(actual).toEqual(new Set())
               })
               it('should have no own member keys', () => {
                 const keys = [...Es6UserReflect.ownKeys(mySubType)]
@@ -382,10 +379,9 @@ describe('PartialClass', () => {
               })
             })
             describe('myType', () => {
-              it('should have MyPart and MySubExtension as declarations', () => {
+              it('should have no declarations', () => {
                 const actual = new Set(partialTypes(myType))
-                const expected = new Set([ MyPart, MySubExtension ])
-                expect(actual).toEqual(expected)
+                expect(actual).toEqual(new Set())
               })
               it('should have method as own member name or symbol', () => {
                 const keys = [...Es6UserReflect.ownKeys(myType)]

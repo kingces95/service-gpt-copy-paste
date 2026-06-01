@@ -38,7 +38,7 @@ class DefaultType {
 }
 
 describe('Partial composition default specializations', () => {
-  it.fails('preserves a concrete implementation attached with a base part', () => {
+  it('preserves a concrete implementation attached with a base part', () => {
     expect(new SpecializedType().member()).toBe('specialized')
   })
 
