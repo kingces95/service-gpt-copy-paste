@@ -84,30 +84,45 @@ export class Probe extends Metadata {
   //       such as typeof, tag, prototype, or constructability
   //   (2) the instance can be duck cast to the probe.
 
-  static [Symbol.hasInstance](instance) {
+  static [Symbol.hasInstance](value) {
     if (this == Probe)
       return false
 
-    // assert directly extends Probe
-    assert(Object.getPrototypeOf(this) === Probe,
-      `Probe "${this.name}" must directly extend Probe.`)
+    assert(extendsProbe(this),
+      `Probe "${this.name}" must extend Probe.`)
 
+    if (!Probe.#hasInstance(this, value))
+      return false
+
+    try {
+      return this.hasInstance(value)
+    }
+    catch {
+      return false
+    }
+  }
+
+  static hasInstance(value) {
+    return true
+  }
+
+  static #hasInstance(instanceOf, instance) {
     if (instance == null)
       return false
 
-    if (!Probe.#testTypeof(this, instance))
+    if (!Probe.#testTypeof(instanceOf, instance))
       return false
 
-    if (!Probe.#testTag(this, instance))
+    if (!Probe.#testTag(instanceOf, instance))
       return false
 
-    if (!Probe.#testPrototype(this, instance))
+    if (!Probe.#testPrototype(instanceOf, instance))
       return false
 
-    if (!Probe.#testProtoPrototype(this, instance))
+    if (!Probe.#testProtoPrototype(instanceOf, instance))
       return false
 
-    return ProbeReflect.canDuckCast(this, Object(instance))
+    return ProbeReflect.canDuckCast(instanceOf, Object(instance))
   }
 
   static #testTypeof(probe, instance) {
@@ -164,4 +179,13 @@ export class Probe extends Metadata {
 
     return Object.getPrototypeOf(instance) === probe.proto
   }
+}
+
+function extendsProbe(type) {
+  for (let current = Object.getPrototypeOf(type); current;
+    current = Object.getPrototypeOf(current))
+    if (current == Probe)
+      return true
+
+  return false
 }

@@ -32,7 +32,7 @@ compose Ownership Scan
 Shared declaration core:
 
 ```txt
-ApplyDeclaration.as(declarationBase)(type, declaration, implementation)
+applyDeclaration.of(declarationBase)(type, declaration, implementation)
 ├─ validate target policy
 ├─ validate declaration base
 ├─ normalize implementation to Attachments

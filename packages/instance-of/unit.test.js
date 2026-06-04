@@ -7,7 +7,7 @@ const NullTest = {
   isInstanceOf: [ ],
   isNotInstanceOf: Object
 }
-const UndefinedTest = { 
+const UndefinedTest = {
   value: undefined,
   isInstanceOf: [ ],
   isNotInstanceOf: Object
@@ -60,7 +60,7 @@ const ArrayTest = {
 class MyClass { }
 class MyExtendedClass extends MyClass { }
 class MyClassExtendsConcept { }
-class MyConcept { 
+class MyConcept {
   static [Symbol.hasInstance](instance) {
     return instance.constructor == MyClassExtendsConcept
   }
@@ -101,7 +101,7 @@ const TestCases = [
   ['MyClassExtendsConcept', MyClassExtendsConceptTest],
 ]
 
-describe.each(TestCases)('A %s', (_, { 
+describe.each(TestCases)('A %s', (_, {
   value, isInstanceOf, isNotInstanceOf }) => {
   for (const type of isInstanceOf) {
     it(`is instanceOf ${type.name}`, () => {

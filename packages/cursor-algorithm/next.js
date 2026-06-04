@@ -7,7 +7,9 @@ import { advance } from './advance.js'
 export const next = contract([
   ForwardCursorShape,
   NormalNumber,
-], [ undefined, 1 ],
+], {
+  defaults: [ undefined, 1 ],
+},
 function next(cursor, count = 1) {
   return advance(cursor.clone(), count)
 })

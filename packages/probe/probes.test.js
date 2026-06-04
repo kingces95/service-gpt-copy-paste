@@ -4,12 +4,10 @@ import { Probe } from './probe.js'
 import { 
   PojoProbe,
   NojoProbe,
-  ThenableProbe,
   IterableProbe,
   AsyncIterableProbe,
   IteratorProbe,
   ErrorProbe,
-  PromiseProbe,
   DisposableProbe,
   AsyncDisposableProbe,
   AbortSignalProbe,
@@ -24,6 +22,7 @@ import {
   CallableProbe,
   ClassConstructorProbe,
   ConstructorProbe,
+  DefaultConstructibleProbe,
   FunctionConstructorProbe,
 } from './probes.js'
 
@@ -226,6 +225,21 @@ const ConstructorProbeTest = {
     { name: 'array', value: [] },
   ]
 }
+const DefaultConstructibleProbeTest = {
+  probe: DefaultConstructibleProbe,
+  positive: [
+    { name: 'class with default constructor', value: class { } },
+    { name: 'function declaration', value: function() { } },
+  ],
+  negative: [
+    { name: 'throwing constructor', 
+      value: class { constructor() { throw new Error('boom') } } },
+    { name: 'member function', value: { method() { } }.method },
+    { name: 'function expression', value: () => { } },
+    { name: 'object literal', value: { } },
+    { name: 'array', value: [] },
+  ]
+}
 const ClassConstructorProbeTest = {
   probe: ClassConstructorProbe,
   positive: [
@@ -258,36 +272,6 @@ const FunctionConstructorProbeTest = {
 }
 
 // async probes
-const PromiseProbeTest = {
-  probe: PromiseProbe,
-  positive: [
-    { name: 'Promise', value: Promise.resolve() },
-    { name: 'custom thenable with catch and finally', 
-      value: new (class { 
-        then() { }
-        catch() { }
-        finally() { } 
-      })() },
-  ],
-  negative: [
-    { name: 'custom thenable without catch and finally', 
-      value: { then() { } } },
-    { name: 'object literal', value: { } },
-    { name: 'array', value: [] },
-  ]
-}
-const ThenableProbeTest = {
-  probe: ThenableProbe,
-  positive: [
-    { name: 'Promise', value: Promise.resolve() },
-    { name: 'custom', 
-      value: new (class { then() { } })() },
-  ],
-  negative: [
-    { name: 'object without then method', value: { } },
-    { name: 'array', value: [] },
-  ]
-}
 const AsyncIterableProbeTest = {
   probe: AsyncIterableProbe,
   positive: [
@@ -358,10 +342,9 @@ const Tests = [
   CallableProbeTest,
   ClassConstructorProbeTest,
   ConstructorProbeTest,
+  DefaultConstructibleProbeTest,
   FunctionConstructorProbeTest,
   
-  PromiseProbeTest,
-  ThenableProbeTest,
   AsyncIterableProbeTest,
   AsyncDisposableProbeTest,
   AsyncFunctionProbeTest,

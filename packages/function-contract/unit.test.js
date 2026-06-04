@@ -6,7 +6,6 @@ import {
   thunk,
 } from '@kingjs/function-contract'
 import { Signature } from '@kingjs/partial-symbols'
-import { Tuple } from '@kingjs/tuple'
 
 class Positive {
   static [Symbol.hasInstance](value) {
@@ -29,6 +28,12 @@ class StringValue {
 }
 
 describe('contract', () => {
+  it('should return a bare function unchanged', () => {
+    function identity(value) { return value }
+
+    expect(contract(identity)('value')).toBe('value')
+  })
+
   it('should thunk defaults before transforms', () => {
     function identity(value) { return value }
     const normalize = thunk({
@@ -105,6 +110,20 @@ describe('contract', () => {
       'Argument 0 must be Thing.')
   })
 
+  it('should treat boxed primitive types as primitive checks', () => {
+    function identity(value) { return value }
+
+    expect(contract([String], identity)('')).toBe('')
+    expect(contract([Number], identity)(0)).toBe(0)
+    expect(contract([Boolean], identity)(false)).toBe(false)
+    expect(contract([Symbol], identity)(Symbol.for('value')))
+      .toBe(Symbol.for('value'))
+    expect(contract([BigInt], identity)(0n)).toBe(0n)
+
+    expect(() => contract([String], identity)(0)).toThrow(
+      'Argument 0 must be String.')
+  })
+
   it('should return a checked thunk when no function is provided', () => {
     const check = contract([[Positive]])
 
@@ -118,7 +137,9 @@ describe('contract', () => {
     const checkedAdd = contract([
       Positive,
       Positive,
-    ], [ undefined, 1 ],
+    ], {
+      defaults: [ undefined, 1 ],
+    },
     add)
 
     expect(checkedAdd(1)).toBe(2)
@@ -126,22 +147,27 @@ describe('contract', () => {
       'Argument 1 must be Positive.')
   })
 
-  it('should use tuple names in errors', () => {
-    const check = contract([Positive], Tuple.of('this'))
+  it('should use metadata names in errors', () => {
+    const check = contract([Positive], {
+      names: [ 'this' ],
+    })
 
     expect(() => check(0)).toThrow(
       'Argument this must be Positive.')
   })
 
-  it('should accept tuple names before metadata', () => {
+  it('should accept names in metadata', () => {
     function add(left, right = 1) { return left + right }
     const checkedAdd = contract([
       Positive,
       Positive,
-    ], Tuple.of('left', 'right'), [
-      undefined,
-      1,
-    ],
+    ], {
+      names: [ 'left', 'right' ],
+      defaults: [
+        undefined,
+        1,
+      ],
+    },
     add)
 
     expect(checkedAdd(1)).toBe(2)
@@ -154,10 +180,12 @@ describe('contract', () => {
     const checkedAdd = contract([
       Positive,
       Positive,
-    ], [
-      defaultTo(() => 1),
-      defaultTo(({ args: [left] }) => left + 1),
-    ],
+    ], {
+      defaults: [
+        defaultTo(() => 1),
+        defaultTo(({ args: [left] }) => left + 1),
+      ],
+    },
     add)
 
     expect(checkedAdd()).toBe(3)
@@ -167,9 +195,11 @@ describe('contract', () => {
     function identity(value) { return value }
     const checkedIdentity = contract([
       Thing,
-    ], [
-      defaultTo(({ self }) => self.thing),
-    ],
+    ], {
+      defaults: [
+        defaultTo(({ self }) => self.thing),
+      ],
+    },
     identity)
     const context = { thing: new Thing() }
 
@@ -181,9 +211,11 @@ describe('contract', () => {
     const defaultFn = () => 1
     const checkedIdentity = contract([
       null,
-    ], [
-      defaultFn,
-    ],
+    ], {
+      defaults: [
+        defaultFn,
+      ],
+    },
     identity)
 
     expect(checkedIdentity()).toBe(defaultFn)
@@ -202,6 +234,26 @@ describe('contract', () => {
     const context = { thing: new Thing() }
 
     expect(checkedIdentity.call(context)).toBe(context.thing)
+  })
+
+  it('should run preconditions after checks', () => {
+    function add(left, right) { return left + right }
+    const checkedAdd = contract([
+      Positive,
+      Positive,
+    ], {
+      precondition(left, right) {
+        if (left >= right)
+          throw new Error('left must be less than right')
+      },
+    },
+    add)
+
+    expect(checkedAdd(1, 2)).toBe(3)
+    expect(() => checkedAdd(0, 2)).toThrow(
+      'Argument 0 must be Positive.')
+    expect(() => checkedAdd(2, 1)).toThrow(
+      'left must be less than right')
   })
 
   it('should compose contract checks before thunk transforms', () => {

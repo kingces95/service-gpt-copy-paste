@@ -65,49 +65,43 @@ export function isContiguousRange(range) {
     cursorPrototypeOf(range) instanceof ContiguousCursorShape
 }
 
-export class RangeProbe {
-  static [Symbol.hasInstance](range) {
-    return isRange(range)
-  }
-}
-
-export class ReadableRangeProbe extends RangeProbe {
+export class ReadableRangeShape extends RangeShape {
   static [Symbol.hasInstance](range) {
     return isReadableRange(range)
   }
 }
 
-export class WritableRangeProbe extends RangeProbe {
+export class WritableRangeShape extends RangeShape {
   static [Symbol.hasInstance](range) {
     return isWritableRange(range)
   }
 }
 
-export class ForwardRangeProbe extends ReadableRangeProbe {
+export class ForwardRangeShape extends ReadableRangeShape {
   static [Symbol.hasInstance](range) {
     return isForwardRange(range)
   }
 }
 
-export class BidirectionalRangeProbe extends ForwardRangeProbe {
+export class BidirectionalRangeShape extends ForwardRangeShape {
   static [Symbol.hasInstance](range) {
     return isBidirectionalRange(range)
   }
 }
 
-export class RandomAccessRangeProbe extends BidirectionalRangeProbe {
+export class RandomAccessRangeShape extends BidirectionalRangeShape {
   static [Symbol.hasInstance](range) {
     return isRandomAccessRange(range)
   }
 }
 
-export class WritableRandomAccessRangeProbe extends RandomAccessRangeProbe {
+export class WritableRandomAccessRangeShape extends RandomAccessRangeShape {
   static [Symbol.hasInstance](range) {
     return isWritableRandomAccessRange(range)
   }
 }
 
-export class ContiguousRangeProbe extends RandomAccessRangeProbe {
+export class ContiguousRangeShape extends RandomAccessRangeShape {
   static [Symbol.hasInstance](range) {
     return isContiguousRange(range)
   }

@@ -1,0 +1,19 @@
+{
+  "name": "@kingjs/generic",
+  "version": "1.0.0",
+  "description": ".",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {
+    "@kingjs/assert": "1.0.0",
+    "@kingjs/function-contract": "1.0.0",
+    "@kingjs/type-tuple-cache": "1.0.0"
+  },
+  "devDependencies": {},
+  "peerDependencies": {},
+  "author": "Chris King",
+  "license": "MIT"
+}

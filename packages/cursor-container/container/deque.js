@@ -1,109 +1,218 @@
-import Denque from "denque"
 import { thunk } from '@kingjs/function-contract'
 import { implement } from '@kingjs/partial-implement'
 import { compose } from '@kingjs/partial-compose'
 import { PartialProxy } from '@kingjs/partial-proxy'
+import { genericType } from '@kingjs/generic'
 import {
   RangeConcept,
 } from '@kingjs/cursor'
 import {
-  ContainerPart,
   ClearableContainerPart,
-  FrontInsertableContainerPart,
-  BackInsertableContainerPart,
+  FrontInsertableContainerPartOf,
+  BackInsertableContainerPartOf,
   SizedContainerPart,
-  IndexableContainerPart,
-  EditableContainerPart,
-  BulkAssignableContainerPart,
-  BulkEditableContainerPart,
+  IndexableContainerPartOf,
+  EditableContainerPartOf,
+  BulkAssignableContainerPartOf,
+  BulkEditableContainerPartOf,
   sourceRange,
 } from '../container-parts.js'
-import { 
-  IndexableCursor 
+import {
+  IndexableCursor
 } from '../cursor/indexable-cursor.js'
 import { iterate, next } from '@kingjs/cursor-algorithm'
 
-export class Deque extends PartialProxy {
-  static cursorType = IndexableCursor
+const BlockCapacity = 32
 
-  _denque
-  
-  constructor() { 
-    super()
-    this._denque = new Denque()
-  }
+export const DequeOf = genericType([Function],
+(
+  TValue = Object,
+) => {
+  return class Deque extends PartialProxy {
+    static cursorType = IndexableCursor
+    static valueType = TValue
+    static defaultValue = undefined
 
-  static {
-    implement(this, RangeConcept, {
-      begin() { return new this.cursorType(this, 0) },
-      end() { return new this.cursorType(this, this.size) },
-    })
-  }
-  
-  static {
-    compose(this, SizedContainerPart, {
-      get size() { return this._denque.length },
-    })
+    _blocks
+    _start
+    _size
 
-    compose(this, IndexableContainerPart, {
-      at(index) { return this._denque.get(index) },
-      setAt(index, value) { this._denque.splice(index, 1, value) },
-    })
+    constructor() {
+      super()
+      this._blocks = new Map()
+      this._start = 0
+      this._size = 0
+    }
 
-    compose(this, ClearableContainerPart, {
-      clear() { this._denque.clear() },
-    })
+    _offsetOf(index) {
+      return this._start + index
+    }
 
-    compose(this, BulkAssignableContainerPart, {
-      resize(count, value = undefined) {
-        if (count < this.size) {
-          this._denque.remove(count, this.size - count)
-          return this
-        }
+    _blockIndexOf(offset) {
+      return Math.floor(offset / BlockCapacity)
+    }
 
-        while (this.size < count)
-          this._denque.push(value)
+    _slotIndexOf(offset) {
+      return ((offset % BlockCapacity) + BlockCapacity) % BlockCapacity
+    }
 
-        return this
-      },
+    _blockAtOffset(offset, create = false) {
+      const blockIndex = this._blockIndexOf(offset)
+      let block = this._blocks.get(blockIndex)
 
-      assignRange: thunk({
-        transforms: [sourceRange],
-        method(range) {
-          this.clear()
-          return this.insertRange(this.begin(), range)
+      if (!block && create) {
+        block = new Array(BlockCapacity)
+        this._blocks.set(blockIndex, block)
+      }
+
+      return block
+    }
+
+    _getAtOffset(offset) {
+      const block = this._blockAtOffset(offset)
+      return block[this._slotIndexOf(offset)]
+    }
+
+    _setAtOffset(offset, value) {
+      const block = this._blockAtOffset(offset, true)
+      block[this._slotIndexOf(offset)] = value
+    }
+
+    _deleteUnusedBlocks() {
+      if (this._size == 0) {
+        this._blocks = new Map()
+        this._start = 0
+        return
+      }
+
+      const first = this._blockIndexOf(this._start)
+      const last = this._blockIndexOf(this._start + this._size - 1)
+
+      for (const blockIndex of this._blocks.keys())
+        if (blockIndex < first || blockIndex > last)
+          this._blocks.delete(blockIndex)
+    }
+
+    static {
+      implement(this, RangeConcept, {
+        begin() { return new this.cursorType(this, 0) },
+        end() { return new this.cursorType(this, this.size) },
+      })
+    }
+
+    static {
+      compose(this, SizedContainerPart, {
+        get size() { return this._size },
+      })
+
+      compose(this, IndexableContainerPartOf(TValue), {
+        at(index) { return this._getAtOffset(this._offsetOf(index)) },
+        setAt(index, value) { this._setAtOffset(this._offsetOf(index), value) },
+      })
+
+      compose(this, ClearableContainerPart, {
+        clear() {
+          this._blocks = new Map()
+          this._start = 0
+          this._size = 0
         },
-      }),
-    })
+      })
 
-    compose(this, FrontInsertableContainerPart, {
-      popFront() { return this._denque.shift() },
-      pushFront(value) { this._denque.unshift(value) },
-    })
+      compose(this, BulkAssignableContainerPartOf(TValue), {
+        get defaultValue$() { return this.constructor.defaultValue },
 
-    compose(this, BackInsertableContainerPart, {
-      pushBack(value) { this._denque.push(value) },
-      popBack() { return this._denque.pop() },
-    })
+        resize(count, value = this.constructor.defaultValue) {
+          if (count < this.size) {
+            this._size = count
+            this._deleteUnusedBlocks()
+            return this
+          }
 
-    compose(this, EditableContainerPart, {
-      erase(first, last = next(first)) {
-        const result = first.clone()
-        this._denque.remove(first.index, last.index - first.index)
-        return result
-      },
-    }, {
-      insertValue(cursor, value) { },
-    })
+          while (this.size < count)
+            this.pushBack(value)
 
-    compose(this, BulkEditableContainerPart, {
-      insertRange: thunk({
-        transforms: [null, sourceRange],
-        method(cursor, range) {
-          this._denque.splice(cursor.index, 0, ...iterate(range))
           return this
         },
-      }),
-    })
+
+        assignRange: thunk({
+          transforms: [sourceRange],
+          method(range) {
+            this.clear()
+            return this.insertRange(this.begin(), range)
+          },
+        }),
+      })
+
+      compose(this, FrontInsertableContainerPartOf(TValue), {
+        popFront() {
+          const value = this.at(0)
+          this._start++
+          this._size--
+          this._deleteUnusedBlocks()
+          return value
+        },
+
+        pushFront(value) {
+          this._start--
+          this._size++
+          this.setAt(0, value)
+        },
+      })
+
+      compose(this, BackInsertableContainerPartOf(TValue), {
+        pushBack(value) {
+          this._setAtOffset(this._start + this._size, value)
+          this._size++
+        },
+
+        popBack() {
+          const value = this.at(this.size - 1)
+          this._size--
+          this._deleteUnusedBlocks()
+          return value
+        },
+      })
+
+      compose(this, EditableContainerPartOf(TValue), {
+        erase(first, last = next(first)) {
+          const index = first.index
+          const count = last.index - first.index
+
+          for (let i = index; i < this.size - count; i++)
+            this.setAt(i, this.at(i + count))
+
+          this._size -= count
+          this._deleteUnusedBlocks()
+          return first.clone()
+        },
+      }, {
+        insertValue(cursor, value) { },
+      })
+
+      compose(this, BulkEditableContainerPartOf(TValue), {
+        insertRange: thunk({
+          transforms: [null, sourceRange],
+          method(cursor, range) {
+            const values = [...iterate(range)]
+            const index = cursor.index
+            const count = values.length
+
+            if (count == 0)
+              return this
+
+            const oldSize = this.size
+            this._size += count
+
+            for (let i = oldSize - 1; i >= index; i--)
+              this.setAt(i + count, this.at(i))
+
+            for (let i = 0; i < count; i++)
+              this.setAt(index + i, values[i])
+
+            return this
+          },
+        }),
+      })
+    }
   }
-}
+})

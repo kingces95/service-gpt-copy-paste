@@ -44,7 +44,7 @@ JavaScript has no template parameter list, so the type parameter can be bound
 through a closure while keeping it out of runtime argument checks.
 
 ```js
-const Materialize = templatize(
+const of = genericMethod(
   [PushBackContainerShape],
   T => contract(
     [InputRange],
@@ -56,44 +56,56 @@ const Materialize = templatize(
   )
 )
 
-export const materialize = Materialize.as(VectorMap)
+export function materialize(...args) {
+  return of(VectorMap)(...args)
+}
+
+materialize.of = of
 ```
 
 Public usage:
 
 ```js
 materialize(range)
-materialize.as(VectorMap)(range)
+materialize.of(VectorMap)(range)
 ```
 
-The `.as(Type)` form is the explicit instantiation. It avoids overload
+The `.of(Type)` form is the explicit instantiation. It avoids overload
 ambiguity while still making the template binding visible.
 
 Applied generic metadata can use the same shape:
 
 ```js
-Constructs.as(PushBackContainerConcept)
+Constructs.of(PushBackContainerConcept)
 ```
 
-The `.as(...)` call applies an inert generic metadata family, producing a cached
-type such as `ConstructsOf`. The generated type composes `Constructs` and stores
-frozen `.targs`; reflection can infer the canonical declaration from the family
-type.
+The `.of(...)` call applies an inert generic definition object, producing a
+cached type such as `Constructs`. The generated type extends `Metadata` and
+stores the frozen requirements tuple; reflection can infer the canonical
+declaration from the definition object.
 
 Local shape:
 
 ```js
-export class Constructs extends Metadata {
-  static [Symbol.hasInstance](type) {
-    for (const requirement of this.targs)
-      if (!(type.prototype instanceof requirement))
-        return false
+const of = genericType(null,
+  (...requirements) => {
+    return class Constructs extends Metadata {
+      static requirements = Tuple.of(...requirements)
 
-    return true
-  }
-}
+      static [Symbol.hasInstance](type) {
+        if (typeof type != 'function')
+          return false
 
-templatize(Constructs)
+        for (const requirement of this.requirements)
+          if (!(type.prototype instanceof requirement))
+            return false
+
+        return true
+      }
+    }
+  })
+
+export const Constructs = { of }
 ```
 
 Supporting primitives:
@@ -105,8 +117,11 @@ WeakMapLookup
 Metadata
   inert base for metadata-only types
 
-templatize
-  template definition + type arguments -> cached specialization with .targs
+genericMethod
+  template definition + type arguments -> function specialization
+
+genericType
+  template definition + type arguments -> cached type specialization
 ```
 
 ## Metadata Dimensions
@@ -175,7 +190,7 @@ Arguments:
   0: InputRange
 ```
 
-A later doc compiler can parse the `templatize(..., T => contract(...))` syntax
+A later doc compiler can parse the `genericMethod(..., T => contract(...))` syntax
 to pretty-print:
 
 ```txt

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { ArrayMap } from '@kingjs/cursor-container'
+import { ArrayMap } from '@kingjs/cursor-container-standard'
 import { subrange } from '@kingjs/cursor-view'
 import { find } from '@kingjs/cursor-algorithm'
 

@@ -11,7 +11,7 @@ A [Container]
 ├─ should
 │  ├─ when empty
 │  │  ├─ have cursors distinct from another container
-│  │  ├─ have a Uint8Array span
+│  │  ├─ have its expected span type
 │  │  ├─ be empty
 │  │  ├─ have equal begin cursors
 │  │  ├─ have equal end cursors

@@ -12,7 +12,9 @@
     "@kingjs/partial-concept": "1.0.0",
     "@kingjs/partial-shape": "1.0.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@kingjs/cursor-container-standard": "1.0.0"
+  },
   "peerDependencies": {},
   "author": "Chris King",
   "license": "MIT"

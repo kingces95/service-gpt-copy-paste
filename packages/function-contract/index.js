@@ -1,8 +1,9 @@
 import { assert } from '@kingjs/assert'
 import { asArray } from '@kingjs/as-array'
+import { asMetadata } from '@kingjs/as-metadata'
 import { declareName } from '@kingjs/es6-define'
+import { instanceOf } from '@kingjs/instance-of'
 import { Signature } from '@kingjs/partial-symbols'
-import { Tuple } from '@kingjs/tuple'
 import {
   applyDefaults,
   applyTransforms,
@@ -42,25 +43,22 @@ export function thunk(metadata, fn) {
   return declareName(result, fn.name)
 }
 
-export function contract(requirements, names, defaults, fn) {
-  requirements = normalizeRequirements(requirements)
-
-  if (names instanceof Tuple) {
-    if (typeof defaults == 'function') {
-      fn = defaults
-      defaults = null
-    }
+export function contract(requirements, metadata, fn) {
+  if (typeof requirements == 'function') {
+    fn = requirements
+    requirements = null
+    metadata = null
   }
 
-  else {
-    fn = defaults
-    defaults = names
-    names = null
+  else if (isMetadata(requirements) && typeof metadata == 'function') {
+    fn = metadata
+    metadata = requirements
+    requirements = null
   }
 
-  if (typeof defaults == 'function') {
-    fn = defaults
-    defaults = null
+  else if (typeof metadata == 'function') {
+    fn = metadata
+    metadata = null
   }
 
   if (!fn)
@@ -69,13 +67,16 @@ export function contract(requirements, names, defaults, fn) {
   assert(typeof fn == 'function',
     'Argument must be a function.')
 
-  const metadata = normalizeMetadata(defaults)
-  names = normalizeNames(names ?? metadata.names)
-  defaults = normalizeDefaults(metadata.defaults)
+  requirements = normalizeRequirements(requirements)
+  metadata = normalizeMetadata(metadata)
+  const names = normalizeNames(metadata.names)
+  const defaults = normalizeDefaults(metadata.defaults)
+  const preconditions = normalizePreconditions(metadata.precondition)
 
   const result = function(...args) {
     args = applyDefaults(args, defaults, this)
     checkSlots(requirements, args, names)
+    runPreconditions(preconditions, this, args)
     return fn.apply(this, args)
   }
 
@@ -85,9 +86,6 @@ export function contract(requirements, names, defaults, fn) {
 function normalizeMetadata(metadata) {
   if (metadata == null)
     return { }
-
-  if (Array.isArray(metadata))
-    return { defaults: metadata }
 
   assert(typeof metadata == 'object',
     'Function contract metadata must be an object.')
@@ -114,7 +112,9 @@ export function overload(requirements, defaults, overloads, fn) {
 
   overloads = normalizeOverloads(overloads)
 
-  return contract(requirements, defaults,
+  return contract(requirements, {
+    defaults,
+  },
     function dispatch(...args) {
       for (const overload of overloads)
         if (matches(overload.when, args) && overload.where.apply(this, args))
@@ -178,12 +178,24 @@ function normalizeTransforms(transforms) {
   return transforms
 }
 
+function normalizePreconditions(precondition) {
+  if (precondition == null)
+    return null
+
+  const preconditions = asMetadata(precondition)
+  for (const current of preconditions)
+    assert(typeof current == 'function',
+      'Function contract precondition must be a function.')
+
+  return preconditions
+}
+
 function normalizeNames(names) {
   if (names == null)
     return null
 
-  assert(names instanceof Tuple,
-    'Function contract names must be a Tuple.')
+  assert(Array.isArray(names),
+    'Function contract names must be an array.')
 
   return names
 }
@@ -211,7 +223,7 @@ function matchesSlot(type, value) {
     return true
   }
 
-  return value instanceof type
+  return instanceOf(value, type)
 }
 
 function checkSlots(types, values, names) {
@@ -233,9 +245,17 @@ function checkSlot(type, value, name) {
     return
   }
 
-  if (value instanceof type)
+  if (instanceOf(value, type))
     return
 
   throw new TypeError(
     `Argument ${name} must be ${type.name}.`)
+}
+
+function runPreconditions(preconditions, self, args) {
+  if (preconditions == null)
+    return
+
+  for (const precondition of preconditions)
+    precondition.apply(self, args)
 }

@@ -6,31 +6,30 @@ import {
 } from '@kingjs/partial-concept'
 import {
   ContainerPart,
-  IndexableContainerPart,
-  BackInsertableContainerPart,
-  FrontInsertableContainerPart,
-  EditableContainerPart,
+  IndexableContainerPartOf,
+  BackInsertableContainerPartOf,
+  FrontInsertableContainerPartOf,
+  EditableContainerPartOf,
   SizedContainerPart,
   CapacityContainerPart,
   ReservableContainerPart,
-  ByteContainerPart,
+  ByteContainerPartOf,
   ClearableContainerPart,
-  BulkAssignableContainerPart,
-  PhasedBulkContainerPart,
-  BulkEditableContainerPart,
-  AssociativeContainerPart,
-  SetAssociativeContainerPart,
-  MapAssociativeContainerPart,
+  BulkAssignableContainerPartOf,
+  PhasedBulkContainerPartOf,
+  BulkEditableContainerPartOf,
+  AssociativeContainerPartOf,
+  SetAssociativeContainerPartOf,
+  MapAssociativeContainerPartOf,
 } from '@kingjs/cursor-container'
 import {
-  RangeProbe,
-  ReadableRangeProbe,
-  WritableRangeProbe,
-  ForwardRangeProbe,
-  BidirectionalRangeProbe,
-  RandomAccessRangeProbe,
-  ContiguousRangeProbe,
   RangeShape,
+  ReadableRangeShape,
+  WritableRangeShape,
+  ForwardRangeShape,
+  BidirectionalRangeShape,
+  RandomAccessRangeShape,
+  ContiguousRangeShape,
 } from '@kingjs/cursor-shape'
 import {
   BacktrackableCursorPart,
@@ -47,45 +46,79 @@ import {
 } from '@kingjs/cursor'
 
 import {
-  ForwardList,
-  List,
   ArrayMap,
   Deque,
-  // NodeBuffer,
-  // EcmaBuffer,
+  Float64Vector,
+  ForwardList,
+  List,
+  Uint8Vector,
+  Uint16Vector,
+  Uint32Vector,
   UnorderedMap,
   UnorderedSet,
-  Uint8Vector, Uint16Vector, Uint32Vector, Float64Vector,
-} from '@kingjs/cursor-container'
+  Vector,
+} from '@kingjs/cursor-container-standard'
 import { value } from '@kingjs/abstract'
 import { next } from '@kingjs/cursor-algorithm'
 import { single } from '@kingjs/cursor-adapter'
 import { populateContainer } from './test/create-container.js'
 
+function genericPart(specialize) {
+  specialize.genericPart = true
+  return specialize
+}
+
+function resolvePart(type, part) {
+  return part.genericPart ? part(type) : part
+}
+
+const IndexableContainerPart = genericPart(type =>
+  IndexableContainerPartOf(type.valueType))
+const BackInsertableContainerPart = genericPart(type =>
+  BackInsertableContainerPartOf(type.valueType))
+const FrontInsertableContainerPart = genericPart(type =>
+  FrontInsertableContainerPartOf(type.valueType))
+const EditableContainerPart = genericPart(type =>
+  EditableContainerPartOf(type.valueType))
+const ByteContainerPart = genericPart(type =>
+  ByteContainerPartOf(type.valueType))
+const BulkAssignableContainerPart = genericPart(type =>
+  BulkAssignableContainerPartOf(type.valueType))
+const PhasedBulkContainerPart = genericPart(type =>
+  PhasedBulkContainerPartOf(type.valueType))
+const BulkEditableContainerPart = genericPart(type =>
+  BulkEditableContainerPartOf(type.valueType))
+const AssociativeContainerPart = genericPart(type =>
+  AssociativeContainerPartOf(type.keyType))
+const SetAssociativeContainerPart = genericPart(type =>
+  SetAssociativeContainerPartOf(type.keyType))
+const MapAssociativeContainerPart = genericPart(type =>
+  MapAssociativeContainerPartOf(type.keyType, type.mappedType))
+
 const universalContainerConcepts = [
   RangeConcept,
   ContainerPart]
 
-const universalRangeProbes = [
-  RangeProbe,
-  ReadableRangeProbe]
+const universalRangeShapes = [
+  RangeShape,
+  ReadableRangeShape]
 
 const sequenceContainerConcepts = [
   ...universalContainerConcepts]
 
-const sequenceRangeProbes = [
-  ...universalRangeProbes,
-  ForwardRangeProbe,
-  WritableRangeProbe]
+const sequenceRangeShapes = [
+  ...universalRangeShapes,
+  ForwardRangeShape,
+  WritableRangeShape]
 
 const reversibleContainerConcepts = [
   ...sequenceContainerConcepts,
   FrontInsertableContainerPart,
   BackInsertableContainerPart]
 
-const reversibleRangeProbes = [
-  ...sequenceRangeProbes,
-  BidirectionalRangeProbe]
+const reversibleRangeShapes = [
+  ...sequenceRangeShapes,
+  BidirectionalRangeShape]
 
 const indexableContainerConcepts = [
   ...reversibleContainerConcepts,
@@ -93,9 +126,9 @@ const indexableContainerConcepts = [
   BackInsertableContainerPart,
   SizedContainerPart]
 
-const indexableRangeProbes = [
-  ...reversibleRangeProbes,
-  RandomAccessRangeProbe]
+const indexableRangeShapes = [
+  ...reversibleRangeShapes,
+  RandomAccessRangeShape]
 
 const bufferConainerConcepts = [
   ...indexableContainerConcepts,
@@ -104,20 +137,28 @@ const bufferConainerConcepts = [
   ReservableContainerPart,
   ByteContainerPart]
 
-const bufferRangeProbes = [
-  ...indexableRangeProbes,
-  ContiguousRangeProbe]
+const bufferRangeShapes = [
+  ...indexableRangeShapes,
+  ContiguousRangeShape]
 
 const associativeContainerConcepts = [
   ...universalContainerConcepts,
   AssociativeContainerPart]
 
-const associativeRangeProbes = universalRangeProbes
+const associativeRangeShapes = universalRangeShapes
 
 const Value = 42
 const Key = 'key'
 const IsEmpty = 'Argument this must be NotEmpty.'
 const NotAtEnd = 'Argument this must be NotAtEnd.'
+
+const VectorTypes = [
+  [Vector, Float64Array],
+  [Uint8Vector, Uint8Array],
+  [Uint16Vector, Uint16Array],
+  [Uint32Vector, Uint32Array],
+  [Float64Vector, Float64Array],
+]
 const ReadOutOfBounds = 'Cannot read value out of bounds of cursor.'
 const WriteOutOfBounds = 'Cannot write value out of bounds of cursor.'
 const CursorOutOfBounds = 'Cannot move cursor out of bounds.'
@@ -256,7 +297,7 @@ const Tests = {
       ClearableContainerPart,
       MapAssociativeContainerPart,
       ...associativeContainerConcepts],
-    probes: associativeRangeProbes,
+    probes: associativeRangeShapes,
     members: {
       size: true,
       contains: true, erase: true,
@@ -276,7 +317,7 @@ const Tests = {
       ClearableContainerPart,
       SetAssociativeContainerPart,
       ...associativeContainerConcepts],
-    probes: associativeRangeProbes,
+    probes: associativeRangeShapes,
     members: {
       size: true,
       contains: true, erase: true,
@@ -294,7 +335,7 @@ const Tests = {
       PhasedBulkContainerPart,
       ...sequenceContainerConcepts,
       FrontInsertableContainerPart],
-    probes: sequenceRangeProbes,
+    probes: sequenceRangeShapes,
     members: {
       popFront: true, pushFront: true,
       beforeBegin: true, insertValueAfter: true, eraseAfter: true,
@@ -316,7 +357,7 @@ const Tests = {
       ClearableContainerPart,
       BulkAssignableContainerPart,
       SizedContainerPart],
-    probes: reversibleRangeProbes,
+    probes: reversibleRangeShapes,
     members: {
       beforeBegin: true, insertValueAfter: true, eraseAfter: true,
       size: true,
@@ -343,7 +384,7 @@ const Tests = {
       BulkAssignableContainerPart,
       BulkEditableContainerPart,
       ...indexableContainerConcepts],
-    probes: indexableRangeProbes,
+    probes: indexableRangeShapes,
     members: {
       size: true,
       popFront: true, pushFront: true,
@@ -374,7 +415,7 @@ const Tests = {
       BulkAssignableContainerPart,
       BulkEditableContainerPart,
       ...indexableContainerConcepts],
-    probes: indexableRangeProbes,
+    probes: indexableRangeShapes,
     members: {
       size: true,
       popFront: true, pushFront: true,
@@ -399,11 +440,12 @@ const Tests = {
   Uint8Vector: {
     type: Uint8Vector,
     cursorType: Uint8Vector.cursorType,
+    spanType: Uint8Array,
     concepts: [
       BulkAssignableContainerPart,
       BulkEditableContainerPart,
       ...bufferConainerConcepts],
-    probes: bufferRangeProbes,
+    probes: bufferRangeShapes,
     members: {
       size: true,
       popFront: true, pushFront: true,
@@ -431,6 +473,7 @@ const Tests = {
 describe.each(Object.entries(Tests))('A %s', (name, {
   type,
   cursorType,
+  spanType,
   concepts,
   probes,
   members,
@@ -448,10 +491,15 @@ describe.each(Object.entries(Tests))('A %s', (name, {
     otherContainer = new type()
   })
 
+  const expectedConcepts = concepts.map(concept => resolvePart(type, concept))
+
   // Some STL names are shared across container categories. Derive those
   // semantics from the public part surface rather than neighboring members.
-  const hasIndexedAt = type.prototype instanceof IndexableContainerPart
-  const hasKeyedAt = type.prototype instanceof MapAssociativeContainerPart
+  const hasIndexedAt = type.valueType &&
+    type.prototype instanceof IndexableContainerPartOf(type.valueType)
+  const hasKeyedAt = type.keyType && type.mappedType &&
+    type.prototype instanceof
+      MapAssociativeContainerPartOf(type.keyType, type.mappedType)
   const cursorPart = type.cursorType.prototype
   const isCursorPart = cursorPart instanceof CursorPart
   const isSteppableCursorPart = cursorPart instanceof SteppableCursorPart
@@ -501,14 +549,14 @@ describe.each(Object.entries(Tests))('A %s', (name, {
 
   describe('type should', () => {
     it('implement its expected concepts', () => {
-      for (const concept of concepts) {
+      for (const concept of expectedConcepts) {
         if (type.prototype instanceof concept == false) throw new Error(
           `${type.name} does not implement ${concept.name}.`)
         expect(type.prototype instanceof concept).toBe(true)
       }
     })
     it('implement only its expected concepts', () => {
-      const set = new Set(concepts)
+      const set = new Set(expectedConcepts)
       const componentConcepts = [...PartialReflect.components(type)]
         .filter(current => PartialReflect.isExtensionOf(current, Concept))
       for (const concept of componentConcepts) {
@@ -532,6 +580,10 @@ describe.each(Object.entries(Tests))('A %s', (name, {
       expect(type.cursorType).toBe(cursorType)
       expect(container.cursorType).toBe(cursorType)
     })
+    if (spanType) it('expose its expected span type', () => {
+      expect(type.spanType).toBe(spanType)
+      expect(container.spanType).toBe(spanType)
+    })
   })
 
   describe('should', () => {
@@ -546,8 +598,8 @@ describe.each(Object.entries(Tests))('A %s', (name, {
         const end = container.end()
         container.copy(begin, begin, end)
       })
-      if (members.span) it('have a Uint8Array span', () => {
-        expect(container.span()).toBeInstanceOf(Uint8Array)
+      if (members.span) it('have its expected span type', () => {
+        expect(container.span()).toBeInstanceOf(spanType)
       })
       emptyState()
     })
@@ -963,5 +1015,30 @@ describe.each(Object.entries(Tests))('A %s', (name, {
         })
       })
     }
+  })
+})
+
+describe.each(VectorTypes)('A %s', (Type, SpanType) => {
+  it('uses its span type as its storage specialization', () => {
+    const vector = new Type(3)
+
+    expect(Type.spanType).toBe(SpanType)
+    expect(Type.bytesPerValue).toBe(SpanType.BYTES_PER_ELEMENT)
+    expect(vector.spanType).toBe(SpanType)
+    expect(vector.capacity).toBe(3)
+    expect(vector.span()).toBeInstanceOf(SpanType)
+  })
+})
+
+describe('A Deque', () => {
+  it('preserves values when shrinking from multiple blocks', () => {
+    const deque = new Deque()
+
+    deque.resize(65, Value)
+    deque.setAt(0, Value + 1)
+    deque.resize(1, Value)
+
+    expect(deque.size).toBe(1)
+    expect(deque.at(0)).toBe(Value + 1)
   })
 })

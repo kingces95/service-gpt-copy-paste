@@ -14,7 +14,9 @@
     "@kingjs/function-contract": "1.0.0",
     "@kingjs/simple-type": "1.0.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@kingjs/cursor-container-standard": "1.0.0"
+  },
   "peerDependencies": {},
   "author": "Chris King",
   "license": "MIT"

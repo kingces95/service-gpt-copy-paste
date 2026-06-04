@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   ArrayMap,
   ForwardList,
-} from '@kingjs/cursor-container'
+} from '@kingjs/cursor-container-standard'
 import { advance } from '@kingjs/cursor-algorithm'
 import { withMethod } from '../../partial-concept/test/with-method.js'
 import { createContainer } from '../../cursor-container/test/create-container.js'

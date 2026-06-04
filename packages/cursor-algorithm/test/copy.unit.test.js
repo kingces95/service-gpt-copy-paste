@@ -8,7 +8,7 @@ import {
   Uint16Vector,
   Uint32Vector,
   ArrayMap,
-} from '@kingjs/cursor-container'
+} from '@kingjs/cursor-container-standard'
 import { subrange } from '@kingjs/cursor-view'
 import { copy, iterate } from '@kingjs/cursor-algorithm'
 import { createContainer } from '../../cursor-container/test/create-container.js'

@@ -19,3 +19,7 @@ their own tail.
 
 Current policy favors a terse plain-text commit message with a link to a
 rendered note. See [Note Policy](../notes/2026-05-20-005-note-policy.notes.md).
+
+## Notes
+
+- [Generic Cursor Containers](2026-06-03-000-generic-cursor-containers.commit.md)

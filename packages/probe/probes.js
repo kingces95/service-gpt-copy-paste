@@ -99,18 +99,18 @@ export class ConstructorProbe extends Probe {
   }
 }
 
+export class DefaultConstructibleProbe extends Probe {
+  static hasInstance(type) {
+    if (typeof type != 'function')
+      return false
+
+    new type()
+    return true
+  }
+}
+
 // ____________________________________________________________________________
 // Async probes
-
-export class PromiseProbe extends Probe {
-  then() { }
-  catch() { }
-  finally() { }
-}
-
-export class ThenableProbe extends Probe {
-  then() { }
-}
 
 export class AsyncIterableProbe extends Probe {
   [Symbol.asyncIterator]() { }

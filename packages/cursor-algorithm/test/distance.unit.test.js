@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
-  ReadableRangeProbe,
-  RandomAccessRangeProbe,
+  ReadableRangeShape,
+  RandomAccessRangeShape,
 } from '@kingjs/cursor-shape'
 import {
   ForwardList,
@@ -12,7 +12,7 @@ import {
   Uint16Vector,
   Uint32Vector,
   Float64Vector,
-} from '@kingjs/cursor-container'
+} from '@kingjs/cursor-container-standard'
 import { subrange } from '@kingjs/cursor-view'
 import { distance } from '@kingjs/cursor-algorithm'
 import { createContainer } from '../../cursor-container/test/create-container.js'
@@ -59,7 +59,7 @@ const Tests = {
       return subrange(source.end(), source.begin())
     },
     expected: -3,
-    requires: RandomAccessRangeProbe,
+    requires: RandomAccessRangeShape,
   },
 }
 
@@ -67,7 +67,7 @@ describe.each(Object.entries(Tests))('%s', (_, {
   values,
   createRange,
   expected,
-  requires = ReadableRangeProbe,
+  requires = ReadableRangeShape,
 }) => {
   const containers = Object.entries(Containers).flatMap(([name, Type]) => {
     const source = createContainer(Type, values)

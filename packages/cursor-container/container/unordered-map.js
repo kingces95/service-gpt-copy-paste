@@ -2,25 +2,20 @@ import { assert } from '@kingjs/assert'
 import { implement } from '@kingjs/partial-implement'
 import { compose } from '@kingjs/partial-compose'
 import { PartialProxy } from '@kingjs/partial-proxy'
+import { genericType } from '@kingjs/generic'
 import {
   RangeConcept,
-
-  throwNull,
-  throwUpdateOutOfBounds,
-  throwNotEquatableTo,
 } from '@kingjs/cursor'
 import {
   ClearableContainerPart,
   SizedContainerPart,
 
-  AssociativeContainerPart,
-  MapAssociativeContainerPart,
+  AssociativeContainerPartOf,
+  MapAssociativeContainerPartOf,
 } from '../container-parts.js'
 import {
   IteratorCursor
 } from '../cursor/iterator-cursor.js'
-
-const EmptyMap = new Map()
 
 class MapCursor extends IteratorCursor {
   constructor(range, map) {
@@ -31,40 +26,53 @@ class MapCursor extends IteratorCursor {
   get key$() { return this.value[0] }
 }
 
-export class UnorderedMap extends PartialProxy {
-  static cursorType = MapCursor
+export const UnorderedMapOf = genericType([Function, Function],
+(
+  TKey = Object,
+  TMapped = Object,
+) => {
+  const EmptyMap = new Map()
 
-  _map
+  return class UnorderedMap extends PartialProxy {
+    static cursorType = MapCursor
+    static keyType = TKey
+    static mappedType = TMapped
+    static valueType = Array
 
-  constructor() { 
-    super()
-    this._map = new Map()
+    _map
+
+    constructor() {
+      super()
+      this._map = new Map()
+    }
+
+    static {
+      implement(this, RangeConcept, {
+        begin() { return new this.cursorType(this, this._map) },
+        end() { return new this.cursorType(this, EmptyMap) }
+      })
+    }
+
+    static {
+      compose(this, ClearableContainerPart, {
+        clear() { this._map.clear() },
+      })
+
+      compose(this, SizedContainerPart, {
+        get size() { return this._map.size },
+      })
+
+      compose(this, AssociativeContainerPartOf(TKey), {
+        contains(key) { return this._map.has(key) },
+        erase(key) { return this._map.delete(key) },
+      })
+
+      compose(this, MapAssociativeContainerPartOf(TKey, TMapped), {
+        at(key) { return this._map.get(key) },
+        insertOrAssign(key, value) {
+          return this._map.set(key, value)
+        },
+      })
+    }
   }
-
-  static {
-    implement(this, RangeConcept, {
-      begin() { return new this.cursorType(this, this._map) },
-      end() { return new this.cursorType(this, EmptyMap) }
-    })
-  }
-
-  static {
-    compose(this, ClearableContainerPart, {
-      clear() { this._map.clear() },
-    })
-
-    compose(this, SizedContainerPart, {
-      get size() { return this._map.size },
-    })
-
-    compose(this, AssociativeContainerPart, {
-      contains(key) { return this._map.has(key) },
-      erase(key) { this._map.delete(key) },
-    })
-    
-    compose(this, MapAssociativeContainerPart, {
-      at(key) { return this._map.get(key) },
-      insertOrAssign(key, value) { this._map.set(key, value) },
-    })
-  }
-}
+})

@@ -1,6 +1,6 @@
 import { PartialClass } from '@kingjs/partial-class'
 import { Attachments } from '@kingjs/partial-attachments'
-import { ApplyDeclaration } from '@kingjs/partial-declare'
+import { applyDeclaration } from '@kingjs/partial-declare'
 
 // compose copies descriptors found on a partial type onto a target type.
 
@@ -23,6 +23,6 @@ export function compose(
   definitions,
   stillAbstract,
 ) {
-  ApplyDeclaration.as(PartialClass, Attachments)(
+  applyDeclaration.of(PartialClass, Attachments)(
     type, partialClass, definitions, stillAbstract)
 }

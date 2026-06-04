@@ -1,5 +1,5 @@
 {
-  "name": "@kingjs/constructs",
+  "name": "@kingjs/cursor-container-standard",
   "version": "1.0.0",
   "description": ".",
   "main": "index.js",
@@ -8,8 +8,7 @@
     ".": "./index.js"
   },
   "dependencies": {
-    "@kingjs/metadata": "1.0.0",
-    "@kingjs/templatize": "1.0.0"
+    "@kingjs/cursor-container": "1.0.0"
   },
   "devDependencies": {},
   "peerDependencies": {},

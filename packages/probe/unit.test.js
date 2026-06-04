@@ -15,6 +15,12 @@ class MyKitchenSinkProbe extends Probe {
 class MyOtherGetterProbe extends Probe { get otherValue() { } }
 class MyOtherSetterProbe extends Probe { set otherValue(value) { } }
 class MyOtherMethodProbe extends Probe { otherMethod() { } }
+class MyInheritedProbe extends MyGetterProbe { method() { } }
+class MyThrowingProbe extends Probe {
+  static hasInstance(value) {
+    throw new Error('boom')
+  }
+}
 
 class MyType {
    constructor() {
@@ -54,6 +60,9 @@ describe('An instance of a type', () => {
   it('should satisfy MyKitchenSinkProbe', () => {
     expect(instance).toBeInstanceOf(MyKitchenSinkProbe)
   })
+  it('should satisfy MyInheritedProbe', () => {
+    expect(instance).toBeInstanceOf(MyInheritedProbe)
+  })
 
   it('should not satisfy MyOtherGetterProbe', () => {
     expect(instance).not.toBeInstanceOf(MyOtherGetterProbe)
@@ -63,5 +72,8 @@ describe('An instance of a type', () => {
   })
   it('should not satisfy MyOtherMethodProbe', () => {
     expect(instance).not.toBeInstanceOf(MyOtherMethodProbe)
+  })
+  it('should fail if a probe throws while observing', () => {
+    expect(instance).not.toBeInstanceOf(MyThrowingProbe)
   })
 })

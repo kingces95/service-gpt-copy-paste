@@ -2,10 +2,10 @@ import { assert } from '@kingjs/assert'
 import { overload } from '@kingjs/function-contract'
 import {
   ContiguousCursorShape,
-  ContiguousRangeProbe,
+  ContiguousRangeShape,
   ForwardCursorShape,
   OutputCursorShape,
-  ReadableRangeProbe,
+  ReadableRangeShape,
   spanTypeOfRange,
   spanTypeOfCursor,
   WritableContiguousCursorShape,
@@ -26,12 +26,12 @@ function memcopy(target, begin, end) {
 
 export const copy = overload([
   [ OutputCursorShape, ForwardCursorShape ],
-  ReadableRangeProbe,
+  ReadableRangeShape,
 ], [
   {
     when: [
       WritableContiguousCursorShape,
-      ContiguousRangeProbe,
+      ContiguousRangeShape,
     ],
     where(target, range) {
       return spanTypeOfRange(range) == spanTypeOfCursor(target)

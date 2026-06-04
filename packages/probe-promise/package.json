@@ -1,5 +1,5 @@
 {
-  "name": "@kingjs/templatize",
+  "name": "@kingjs/probe-promise",
   "version": "1.0.0",
   "description": ".",
   "main": "index.js",
@@ -8,12 +8,10 @@
     ".": "./index.js"
   },
   "dependencies": {
-    "@kingjs/es6-define": "1.0.0",
-    "@kingjs/function-contract": "1.0.0",
-    "@kingjs/weak-map-lookup": "1.0.0"
+    "@kingjs/probe": "1.0.0"
   },
-  "devDependencies": {},
-  "peerDependencies": {},
+  "devDependencies": { },
+  "peerDependencies": { },
   "author": "Chris King",
   "license": "MIT"
 }

@@ -8,8 +8,9 @@
     ".": "./index.js"
   },
   "dependencies": {
+    "@kingjs/as-metadata": "1.0.0",
     "@kingjs/es6-define": "1.0.0",
-    "@kingjs/tuple": "1.0.0"
+    "@kingjs/instance-of": "1.0.0"
   },
   "devDependencies": {},
   "peerDependencies": {},

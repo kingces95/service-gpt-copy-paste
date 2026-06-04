@@ -1,0 +1,17 @@
+{
+  "name": "@kingjs/probe-typed-array",
+  "version": "1.0.0",
+  "description": ".",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {
+    "@kingjs/probe": "1.0.0"
+  },
+  "devDependencies": { },
+  "peerDependencies": { },
+  "author": "Chris King",
+  "license": "MIT"
+}

@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { Constructs } from '@kingjs/constructs'
+import { Metadata } from '@kingjs/metadata'
+import {
+  AllOf,
+  AnyObject,
+  ConstructsOf,
+} from '@kingjs/simple-type'
 
 class Pushable {
   static [Symbol.hasInstance](instance) {
@@ -23,22 +28,29 @@ class ReadOnlyQueue {
 }
 
 describe('Constructs', () => {
-  it('should create a ConstructsOf metadata type', () => {
-    const ConstructsOf = Constructs.as(Pushable)
-
-    expect(ConstructsOf.name).toBe('ConstructsOf')
-    expect(ConstructsOf.targs).toEqual([Pushable])
-    expect(Constructs.prototype.isPrototypeOf(ConstructsOf.prototype))
-      .toBe(true)
+  it('should expose a generic type specializer', () => {
+    expect(typeof ConstructsOf).toBe('function')
   })
 
-  it('should not be instantiated', () => {
-    expect(() => new Constructs()).toThrow(
+  it('should create a ConstructsOf metadata type', () => {
+    const PushContainer = ConstructsOf(Pushable)
+
+    expect(PushContainer.name).toBe('Constructs')
+    expect(PushContainer.Type).toBe(Pushable)
+    expect(PushContainer.prototype).toBeInstanceOf(Metadata)
+  })
+
+  it('should create an unconstrained metadata type', () => {
+    const Unconstrained = ConstructsOf(AnyObject)
+
+    expect(Queue instanceof Unconstrained).toBe(true)
+    expect({ } instanceof Unconstrained).toBe(false)
+    expect(() => new Unconstrained()).toThrow(
       'Metadata cannot be instantiated.')
   })
 
   it('should test the prototype of a constructor', () => {
-    const PushContainer = Constructs.as(Pushable)
+    const PushContainer = ConstructsOf(Pushable)
 
     expect(Queue instanceof PushContainer).toBe(true)
     expect(ReadOnlyQueue instanceof PushContainer).toBe(false)
@@ -46,13 +58,13 @@ describe('Constructs', () => {
   })
 
   it('should require every requirement', () => {
-    const PushPopContainer = Constructs.as(Pushable, Poppable)
+    const PushPopContainer = ConstructsOf(AllOf(Pushable, Poppable))
 
     expect(Queue instanceof PushPopContainer).toBe(true)
     expect(ReadOnlyQueue instanceof PushPopContainer).toBe(false)
   })
 
   it('should cache applied metadata types', () => {
-    expect(Constructs.as(Pushable)).toBe(Constructs.as(Pushable))
+    expect(ConstructsOf(Pushable)).toBe(ConstructsOf(Pushable))
   })
 })

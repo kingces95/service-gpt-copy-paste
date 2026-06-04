@@ -176,19 +176,18 @@ Recent example:
 - `@kingjs/cursor-checks`
 - `@kingjs/weak-map-lookup`
 - `@kingjs/metadata`
-- `@kingjs/templatize`
-- `@kingjs/constructs`
+- `@kingjs/generic`
 
 When a helper is really just a primitive operation, keep it honest. For
 example, `WeakMapLookup` does not pretend to be a cache; it maps an object tuple
 to a leaf `WeakMap`. The cache policy lives in the caller.
 
-Prefer explicit `.as(...)` for template application when that honesty helps
+Prefer explicit `.of(...)` for template application when that honesty helps
 prevent the system from becoming too magical:
 
 ```js
-Constructs.as(PushBackContainer)
-Materialize.as(VectorMap)
+Constructs.of(PushBackContainer)
+Materialize.of(VectorMap)
 ```
 
 Use the generated type name to carry the generic flavor:
@@ -198,8 +197,8 @@ ConstructsOf extends Constructs
 ```
 
 Template specializations should expose frozen `.targs` for reflection. Function
-specializations may keep `.as` for ergonomic re-instantiation; type
-specializations should not expose `.as` unless that is explicitly part of their
+and type specializations use `.of(...)` for explicit re-instantiation. Avoid
+adding another specialization verb unless that verb is explicitly part of the
 public surface.
 
 Hoist inert metadata behavior into a tiny common base:

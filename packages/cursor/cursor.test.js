@@ -65,7 +65,7 @@ import {
   List,
   ArrayMap,
   Deque,
-} from '@kingjs/cursor-container'
+} from '@kingjs/cursor-container-standard'
 import { SnapshotView } from '@kingjs/cursor-view'
 
 const ConceptTests = {

@@ -4,8 +4,8 @@ import { CursorConcept } from '@kingjs/cursor'
 import {
   ArrayMap,
   UnorderedMap,
-  Vector,
-} from '@kingjs/cursor-container'
+  Uint8Vector as Vector,
+} from '@kingjs/cursor-container-standard'
 import {
   BacktrackableCursorConcept,
   CloneableCursorConcept,
@@ -25,6 +25,7 @@ import {
   ForwardCursorShape,
   InputCursorShape,
   OutputCursorShape,
+  PushBackContainerShape,
   RandomAccessCursorShape,
   RangeShape,
   WritableContiguousCursorShape,
@@ -124,5 +125,13 @@ describe('cursor shapes', () => {
     const range = new ArrayMap()
 
     expect(range).toBeInstanceOf(RangeShape)
+  })
+
+  it('matches push-back containers structurally', () => {
+    const container = new ArrayMap()
+
+    expect(container).toBeInstanceOf(PushBackContainerShape)
+    expect(container).toBeInstanceOf(PushBackContainerShape)
+    expect({ }).not.toBeInstanceOf(PushBackContainerShape)
   })
 })

@@ -1,8 +1,8 @@
 import { contract } from '@kingjs/function-contract'
-import { BidirectionalRangeProbe } from '@kingjs/cursor-shape'
+import { BidirectionalRangeShape } from '@kingjs/cursor-shape'
 
 export const back = contract([
-  BidirectionalRangeProbe
+  BidirectionalRangeShape
 ], function back(range) {
   const cursor = range.end()
   cursor.stepBack()

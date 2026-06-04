@@ -3,7 +3,7 @@ import { PartialReflect } from '@kingjs/partial-reflect'
 import { Concept } from '@kingjs/partial-concept'
 import { Attachments } from '@kingjs/partial-attachments'
 import {
-  ApplyDeclaration,
+  applyDeclaration,
 } from '@kingjs/partial-declare'
 
 export function implement(
@@ -16,6 +16,6 @@ export function implement(
     assert(!PartialReflect.isExtensionOf(type, Concept),
       'Expected type to not extend Concept.')
 
-  ApplyDeclaration.as(Concept, Attachments)(
+  applyDeclaration.of(Concept, Attachments)(
     type, concept, implementation, stillAbstract)
 }

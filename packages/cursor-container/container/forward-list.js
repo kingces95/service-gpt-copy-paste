@@ -1,8 +1,8 @@
-import { assert } from '@kingjs/assert'
 import { thunk } from '@kingjs/function-contract'
 import { compose } from '@kingjs/partial-compose'
 import { implement } from '@kingjs/partial-implement'
 import { PartialProxy } from '@kingjs/partial-proxy'
+import { genericType } from '@kingjs/generic'
 import {
   EquatableConcept,
 } from '@kingjs/partial-concept'
@@ -16,21 +16,19 @@ import {
 } from '@kingjs/cursor'
 import {
   ContainerPart,
-  BulkAssignableContainerPart,
-  PhasedContainerPart,
-  PhasedBulkContainerPart,
-  FrontInsertableContainerPart,
+  BulkAssignableContainerPartOf,
+  PhasedContainerPartOf,
+  PhasedBulkContainerPartOf,
+  FrontInsertableContainerPartOf,
   sourceRange,
 } from '../container-parts.js'
 import { iterate, next } from '@kingjs/cursor-algorithm'
+import { ForwardLink } from '../link/forward-link.js'
 import {
   ContainerCursor,
 } from '../cursor/container-cursor.js'
-import { ForwardLink } from '../link/forward-link.js'
 
 class ForwardListCursor extends ContainerCursor {
-  static linkType$ = ForwardLink
-
   constructor(container, link) {
     super(container, link)
   }
@@ -81,103 +79,120 @@ class ForwardListCursor extends ContainerCursor {
   }
 }
 
-export class ForwardList extends PartialProxy {
-  static cursorType = ForwardListCursor
+export const ForwardListOf = genericType([Function],
+(
+  TValue = Object,
+) => {
+  return class ForwardList extends PartialProxy {
+    static cursorType = ForwardListCursor
+    static valueType = TValue
+    static defaultValue = undefined
+    static linkType = ForwardLink
 
-  _rootLink
-  _endLink
+    _rootLink
+    _endLink
 
-  constructor() {
-    super()
-    const root = new this.constructor.cursorType.linkType$()
-    assert(root instanceof ForwardLink, 'linkType must be a ForwardLink')
-    this._rootLink = root
-    this._endLink = root.insertAfter()
-  }
+    constructor() {
+      super()
+      const root = new this.constructor.linkType()
+      this._rootLink = root
+      this._endLink = root.insertAfter()
+    }
 
-  static {
-    implement(this, RangeConcept, {
-      begin() { return new this.cursorType(this, this._rootLink.next) },
-      end() { return new this.cursorType(this, this._endLink) },
-    })
-  }
+    static {
+      implement(this, RangeConcept, {
+        begin() {
+          return new this.cursorType(
+            this,
+            this._rootLink.next
+          )
+        },
+        end() { return new this.cursorType(this, this._endLink) },
+      })
+    }
 
-  static {
-    compose(this, ContainerPart, {
-      get isEmpty() { return this._endLink == this._rootLink.next },
-    })
+    static {
+      compose(this, ContainerPart, {
+        get isEmpty() {
+          return this._endLink
+            == this._rootLink.next
+        },
+      })
 
-    compose(this, FrontInsertableContainerPart, {
-      popFront() {
-        const result = this._rootLink.next.value
-        this.eraseAfter(this.beforeBegin())
-        return result
-      },
-      pushFront(value) { this.insertValueAfter(this.beforeBegin(), value) },
-    })
+      compose(this, FrontInsertableContainerPartOf(TValue), {
+        popFront() {
+          const result = this._rootLink.next.value
+          this.eraseAfter(this.beforeBegin())
+          return result
+        },
+        pushFront(value) { this.insertValueAfter(this.beforeBegin(), value) },
+      })
 
-    compose(this, BulkAssignableContainerPart, {
-      resize(count, value = undefined) {
-        let tail = this.beforeBegin()
+      compose(this, BulkAssignableContainerPartOf(TValue), {
+        get defaultValue$() { return this.constructor.defaultValue },
 
-        while (count > 0) {
-          const nextCursor = next(tail)
-          if (nextCursor.equals(this.end())) {
-            tail.link = tail.link.insertAfter(value)
-          }
-          else {
-            tail = nextCursor
-          }
-
-          count--
-        }
-
-        while (!next(tail).equals(this.end()))
-          this.eraseAfter(tail)
-
-        return this
-      },
-
-      assignRange: thunk({
-        transforms: [sourceRange],
-        method(range) {
-          this.clear()
+        resize(count, value = this.constructor.defaultValue) {
           let tail = this.beforeBegin()
-          for (const value of iterate(range)) {
-            tail.link = tail.link.insertAfter(value)
+
+          while (count > 0) {
+            const nextCursor = next(tail)
+            if (nextCursor.equals(this.end())) {
+              tail.link = tail.link.insertAfter(value)
+            }
+            else {
+              tail = nextCursor
+            }
+
+            count--
           }
 
-          return this
-        },
-      }),
-    })
-
-    compose(this, PhasedContainerPart, {
-      beforeBegin() { return new this.cursorType(this, this._rootLink) },
-
-      insertValueAfter(cursor, value) {
-        cursor.link.insertAfter(value)
-      },
-
-      eraseAfter(first, last = next(first, 2)) {
-        while (!next(first).equals(last))
-          first.link.eraseAfter()
-
-        return last
-      },
-    })
-
-    compose(this, PhasedBulkContainerPart, {
-      insertRangeAfter: thunk({
-        transforms: [null, sourceRange],
-        method(cursor, range) {
-          const tail = cursor.clone()
-          for (const value of iterate(range))
-            tail.link = tail.link.insertAfter(value)
+          while (!next(tail).equals(this.end()))
+            this.eraseAfter(tail)
 
           return this
         },
-      }),
-    })
+
+        assignRange: thunk({
+          transforms: [sourceRange],
+          method(range) {
+            this.clear()
+            let tail = this.beforeBegin()
+            for (const value of iterate(range)) {
+              tail.link = tail.link.insertAfter(value)
+            }
+
+            return this
+          },
+        }),
+      })
+
+      compose(this, PhasedContainerPartOf(TValue), {
+        beforeBegin() { return new this.cursorType(this, this._rootLink) },
+
+        insertValueAfter(cursor, value) {
+          cursor.link.insertAfter(value)
+        },
+
+        eraseAfter(first, last = next(first, 2)) {
+          while (!next(first).equals(last))
+            first.link.eraseAfter()
+
+          return last
+        },
+      })
+
+      compose(this, PhasedBulkContainerPartOf(TValue), {
+        insertRangeAfter: thunk({
+          transforms: [null, sourceRange],
+          method(cursor, range) {
+            const tail = cursor.clone()
+            for (const value of iterate(range))
+              tail.link = tail.link.insertAfter(value)
+
+            return this
+          },
+        }),
+      })
+    }
   }
-}
+})

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { DefinesAbstract, PartialClass } from '@kingjs/partial-class'
 import { Attachments } from '@kingjs/partial-attachments'
-import { ApplyDeclaration } from '@kingjs/partial-declare'
+import { applyDeclaration } from '@kingjs/partial-declare'
 
 class MethodPart extends PartialClass {
   method() { }
@@ -23,12 +23,12 @@ class ReadOnlyPart extends PartialClass {
   get value() { }
 }
 
-describe('ApplyDeclaration', () => {
+describe('applyDeclaration', () => {
   it('accepts owned members', () => {
     class Type { }
 
     expect(() => {
-      ApplyDeclaration.as(PartialClass, Attachments)(Type, MethodPart, {
+      applyDeclaration.of(PartialClass, Attachments)(Type, MethodPart, {
         method() { }
       })
     }).not.toThrow()
@@ -38,7 +38,7 @@ describe('ApplyDeclaration', () => {
     class Type { }
 
     expect(() => {
-      ApplyDeclaration.as(PartialClass, Attachments)(Type, MethodPart, {
+      applyDeclaration.of(PartialClass, Attachments)(Type, MethodPart, {
         other() { }
       })
     }).toThrow("MethodPart does not define member 'other'.")
@@ -48,7 +48,7 @@ describe('ApplyDeclaration', () => {
     class Type { }
 
     expect(() => {
-      ApplyDeclaration.as(PartialClass, Attachments)(Type, MethodPart, {
+      applyDeclaration.of(PartialClass, Attachments)(Type, MethodPart, {
         get method() { return () => { } }
       })
     }).toThrow("MethodPart does not support member 'method'.")
@@ -58,7 +58,7 @@ describe('ApplyDeclaration', () => {
     class Type { }
 
     expect(() => {
-      ApplyDeclaration.as(PartialClass, Attachments)(Type, ReadOnlyPart, {
+      applyDeclaration.of(PartialClass, Attachments)(Type, ReadOnlyPart, {
         value: 1,
       })
     }).toThrow("ReadOnlyPart does not support member 'value'.")
@@ -68,7 +68,7 @@ describe('ApplyDeclaration', () => {
     class Type { }
 
     expect(() => {
-      ApplyDeclaration.as(PartialClass, Attachments)(Type, PropertyPart, {
+      applyDeclaration.of(PartialClass, Attachments)(Type, PropertyPart, {
         get value() { return this._value }
       })
     }).not.toThrow()
@@ -82,7 +82,7 @@ describe('ApplyDeclaration', () => {
     class Type { }
 
     expect(() => {
-      ApplyDeclaration.as(PartialClass, Attachments)(Type, AbstractPropertyPart, {
+      applyDeclaration.of(PartialClass, Attachments)(Type, AbstractPropertyPart, {
         get value() { return this._value },
       }, {
         set value(value) { },

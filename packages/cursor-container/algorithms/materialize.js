@@ -1,15 +1,15 @@
-import { templatize } from '@kingjs/templatize'
-import { Constructs } from '@kingjs/constructs'
-import {
-  DefaultConstructible,
-  PushBackProbe,
-} from '@kingjs/cursor-checks'
-import { ArrayMap } from '../container/array-map.js'
+import { genericMethod } from '@kingjs/generic'
+import { ConstructsOf } from '@kingjs/simple-type'
+import { DefaultConstructibleProbe } from '@kingjs/probe'
+import { PushBackContainerShape } from '@kingjs/cursor-shape'
+import { ArrayMapOf } from '../container/array-map.js'
 
-const Materialize = templatize(
+const ArrayMap = ArrayMapOf(Object)
+
+const of = genericMethod(
   [[ // type
-    DefaultConstructible,
-    Constructs.as(PushBackProbe),
+    DefaultConstructibleProbe,
+    ConstructsOf(PushBackContainerShape),
   ]],
   type => function materialize(range) {
     const result = new type()
@@ -25,4 +25,8 @@ const Materialize = templatize(
   }
 )
 
-export const materialize = Materialize.as(ArrayMap)
+export function materialize(...args) {
+  return of(ArrayMap)(...args)
+}
+
+materialize.of = of

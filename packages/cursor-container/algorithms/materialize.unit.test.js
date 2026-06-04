@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { materialize, ArrayMap } from '@kingjs/cursor-container'
+import {
+  materialize,
+} from '@kingjs/cursor-container'
+import { ArrayMap } from '@kingjs/cursor-container-standard'
 import { subrange } from '@kingjs/cursor-view'
 
 function createArrayMap(...values) {

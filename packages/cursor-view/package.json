@@ -16,7 +16,9 @@
     "@kingjs/partial-proxy": "1.0.0",
     "@kingjs/partial-symbols": "1.0.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@kingjs/cursor-container-standard": "1.0.0"
+  },
   "peerDependencies": {},
   "author": "Chris King",
   "license": "MIT"

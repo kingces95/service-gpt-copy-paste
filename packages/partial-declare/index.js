@@ -4,10 +4,9 @@ import {
   copyTo,
 } from '@kingjs/partial-reflect'
 import { PartialType, Normalize } from '@kingjs/partial-type'
-import { templatize } from '@kingjs/templatize'
+import { genericMethod } from '@kingjs/generic'
 import { extensionOf } from '@kingjs/type-traits'
 import { contract } from '@kingjs/function-contract'
-import { Tuple } from '@kingjs/tuple'
 import { Descriptor } from '@kingjs/descriptor'
 import { isAbstract } from '@kingjs/abstract'
 import { getOwn } from '@kingjs/get-own'
@@ -26,8 +25,12 @@ function formatKey(key) {
     : key
 }
 
-const ApplyDeclarationNames = Tuple.of(
-  'type', 'declaration', 'implementation', 'stillAbstract')
+const applyDeclarationArgumentNames = [
+  'type',
+  'declaration',
+  'implementation',
+  'stillAbstract',
+]
 
 export function assertDescriptors(declaration, implementation) {
   for (const key of PartialReflect.ownKeys(implementation)) {
@@ -108,13 +111,15 @@ function assertTopologicalNext(type, declaration) {
         `${declaration.name} must be attached before ${procedural.name}.`)
 }
 
-export const ApplyDeclaration = templatize([
+const of = genericMethod([
   extensionOf(PartialType),
   extensionOf(PartialType),
 ], (TDeclaration, TImplementation) => contract([
   Function,
   extensionOf(TDeclaration),
-], ApplyDeclarationNames,
+], {
+  names: applyDeclarationArgumentNames,
+},
 function applyDeclaration(
   type,
   declaration,
@@ -150,3 +155,10 @@ function applyDeclaration(
     copyTo(implementation, type)
   }
 }))
+
+function applyDeclaration() {
+  throw new Error('applyDeclaration must be specialized with .of.')
+}
+
+applyDeclaration.of = of
+export { applyDeclaration }

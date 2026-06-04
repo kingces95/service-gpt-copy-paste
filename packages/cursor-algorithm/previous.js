@@ -7,7 +7,9 @@ import { rewind } from './bidirectional/rewind.js'
 export const previous = contract([
   BidirectionalCursorShape,
   NormalNumber,
-], [ undefined, 1 ],
+], {
+  defaults: [ undefined, 1 ],
+},
 function previous(cursor, count = 1) {
   return rewind(cursor.clone(), count)
 })

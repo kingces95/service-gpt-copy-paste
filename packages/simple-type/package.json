@@ -8,6 +8,8 @@
     ".": "./index.js"
   },
   "dependencies": {
+    "@kingjs/generic": "1.0.0",
+    "@kingjs/instance-of": "1.0.0",
     "@kingjs/metadata": "1.0.0"
   },
   "devDependencies": {},

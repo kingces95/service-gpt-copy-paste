@@ -1,14 +1,14 @@
 import { overload } from '@kingjs/function-contract'
 import {
-  ReadableRangeProbe,
-  RandomAccessRangeProbe,
+  ReadableRangeShape,
+  RandomAccessRangeShape,
 } from '@kingjs/cursor-shape'
 
 export const distance = overload([
-  ReadableRangeProbe,
+  ReadableRangeShape,
 ], [
   {
-    when: [ RandomAccessRangeProbe ],
+    when: [ RandomAccessRangeShape ],
     use: function distanceRandomAccess(range) {
       return range.begin().distanceTo(range.end())
     },

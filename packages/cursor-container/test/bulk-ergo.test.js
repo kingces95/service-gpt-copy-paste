@@ -3,7 +3,7 @@ import {
   List,
   ForwardList,
   ArrayMap,
-} from '@kingjs/cursor-container'
+} from '@kingjs/cursor-container-standard'
 import { iterate, next } from '@kingjs/cursor-algorithm'
 import { SnapshotView } from '@kingjs/cursor-view'
 import { createContainer } from './create-container.js'
