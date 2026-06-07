@@ -1,6 +1,10 @@
-import { VariableProjectedRangeContainer } from '@kingjs/cursor-container-ranges'
+import {
+  ProjectedRangeContainer,
+  VariableProjectedRangeContainer,
+} from '@kingjs/cursor-container-ranges'
 import { define } from '@kingjs/partial-define'
 import {
+  assertByteOrder,
   assertScalarValue,
   decodeSurrogatePair,
   isHighSurrogate,
@@ -23,16 +27,29 @@ function readUnit(cursor) {
   return value
 }
 
+const projectedSplit = ProjectedRangeContainer.prototype.split
+
 export class Utf16CodePointContainer extends VariableProjectedRangeContainer {
-  constructor() {
-    super(new Utf16CodeUnitContainer(), {
+  _byteOrder
+
+  constructor({ byteOrder }) {
+    assertByteOrder(byteOrder)
+    super(new Utf16CodeUnitContainer({ byteOrder }), {
       isContinuation: isLowSurrogate,
       continuationCountOf: unit => isHighSurrogate(unit) ? 1 : 0,
     })
+    this._byteOrder = byteOrder
   }
+
+  get byteOrder() { return this._byteOrder }
 
   static {
     define(this, {
+      split(cursor = this.end(), result = null) {
+        result ??= new this.constructor({ byteOrder: this.byteOrder })
+        return projectedSplit.call(this, cursor, result)
+      },
+
       decodeToken$(sourceCursor, stride) {
         const first = readUnit(sourceCursor)
 

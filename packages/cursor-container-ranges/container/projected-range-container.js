@@ -2,8 +2,10 @@ import { assert } from '@kingjs/assert'
 import { define, defineAbstract } from '@kingjs/partial-define'
 import { compose } from '@kingjs/partial-compose'
 import { PartialProxy } from '@kingjs/partial-proxy'
+import { RangePart } from '@kingjs/cursor'
 import { iterate } from '@kingjs/cursor-algorithm'
 import { RangeBufferPart } from '../part/range-buffer-part.js'
+import { TrimmedRangePart } from '../part/trimmed-range-part.js'
 import { RangeBufferShape } from '../shape/range-buffer-shape.js'
 
 // ProjectedRangeContainer scans a source range as projected values while
@@ -20,16 +22,6 @@ export class ProjectedRangeContainer extends PartialProxy {
     this._source = source
   }
 
-  decodeValue$(sourceCursor) {
-    const cursor = sourceCursor.clone()
-    const stride = this.decodeStride$(cursor)
-
-    if (stride == null)
-      return null
-
-    return this.decodeToken$(cursor, stride)
-  }
-
   static {
     defineAbstract(this, {
       decodeToken$(sourceCursor, stride) { },
@@ -37,6 +29,15 @@ export class ProjectedRangeContainer extends PartialProxy {
   }
 
   static {
+    compose(this, RangePart, { }, {
+      begin() { },
+      end() { },
+    })
+
+    compose(this, TrimmedRangePart, { }, {
+      get sourceEnd$() { },
+    })
+
     compose(this, RangeBufferPart, {
       pushRange(range) {
         this.source.pushRange(range)
@@ -44,7 +45,7 @@ export class ProjectedRangeContainer extends PartialProxy {
       },
 
       popRange(cursor = this.end()) {
-        return this.source.popRange(cursor.sourceCursor)
+        return this.source.popRange(cursor.sourceCursor$)
       },
     })
 
@@ -52,9 +53,9 @@ export class ProjectedRangeContainer extends PartialProxy {
       get source() { return this._source },
       get isEmpty() { return this.begin().equals(this.end()) },
 
-      split(cursor = this.end()) {
+      split(cursor = this.end(), result = null) {
         const source = this.popRange(cursor)
-        const result = new this.constructor()
+        result ??= new this.constructor()
 
         for (const range of iterate(source.ranges()))
           result.pushRange(range)

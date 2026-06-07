@@ -1,32 +1,15 @@
-import { compose } from '@kingjs/partial-compose'
-import {
-  CursorPart,
-  ReadableCursorPart,
-  SteppableCursorPart,
-} from '@kingjs/cursor'
-import { advance } from '@kingjs/cursor-algorithm'
+import { define } from '@kingjs/partial-define'
 import { ProjectedRangeCursor } from './projected-range-cursor.js'
 
 export class VariableProjectedRangeCursor extends ProjectedRangeCursor {
   static {
-    compose(this, CursorPart, {
-      get isAtEnd$() {
-        return this.sourceCursor.equals(this.container.sourceEnd$)
-      },
-    })
+    define(this, {
+      get stride$() {
+        if (this.sourceCursor$.equals(this.container.source.end()))
+          return null
 
-    compose(this, SteppableCursorPart, {
-      step() {
-        advance(this.sourceCursor, this.container.decodeStride$(
-          this.sourceCursor
-        ))
-        this.current = undefined
-        return this
+        return this.container.tokenStrideOf$(this.sourceCursor$.value)
       },
-    })
-
-    compose(this, ReadableCursorPart, {
-      get value() { return this.current },
     })
   }
 }

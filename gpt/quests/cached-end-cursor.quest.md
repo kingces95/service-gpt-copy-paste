@@ -147,19 +147,17 @@ hand-rolled cache policy.
 
 Invalidation is likely the real feature. Caching the sentinel is straightforward;
 remembering to clear it after every mutation is where boilerplate and mistakes
-creep in. A future loader hook could attach post-call behavior to members, much
-like transforms attach pre-call runtime behavior today, except the hook would run
-after the implementation and receive `this`. Then cache invalidation could be
-declared next to the member metadata instead of mixed into the method body:
+creep in. Assume `partial-receiver-effects.quest.md` lands first: cached
+boundary state should be declared as Part-owned fields, and mutation members
+should invalidate caches via receiver epilogs.
 
 ```js
-pushRange: signature(this, {
-  types: [RangeShape],
-  after() { this.invalidateBoundaries$() },
-}, function pushRange(range) {
-  this.source.pushRange(range)
-  return this
-})
+export class CachedBoundaryRangePart extends PartialClass {
+  static [Epilog] = {
+    pushRange: this.invalidateBoundaries$,
+    popRange: this.invalidateBoundaries$,
+  }
+}
 ```
 
 That would let mutation logic stay focused on mutation while boundary-cache

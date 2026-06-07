@@ -85,8 +85,9 @@ Good candidates usually have one of these shapes:
 
 - `packages/byte-sliding-window/unit.test.js`: market as "cursor traversal over
   bytes", with forward/backward stepping, slices, and read limits.
-- `packages/unicode-sliding-window/unit.test.js`: market as "codepoint windows
-  with byte-position accountability", including BOM and endian handling.
+- `packages/cursor-container-unicode/test/integration.test.js`: market as
+  "codepoint containers with byte-position accountability", including exact
+  committed source ranges.
 - `packages/char-decoder/unit.test.js`: market as "incremental decoding with
   sharp error boundaries", useful for Bash-like `read` behavior over byte
   streams.

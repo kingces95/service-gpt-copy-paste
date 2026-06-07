@@ -1,9 +1,7 @@
 import { assert } from '@kingjs/assert'
 import { define } from '@kingjs/partial-define'
-import { compose } from '@kingjs/partial-compose'
 import { ProjectedRangeContainer } from './projected-range-container.js'
 import { synchronize } from '../algorithms/synchronize.js'
-import { TrimmedRangePart } from '../part/trimmed-range-part.js'
 import {
   VariableProjectedRangeCursor,
 } from '../cursor/variable-projected-range-cursor.js'
@@ -24,7 +22,7 @@ export class VariableProjectedRangeContainer extends ProjectedRangeContainer {
   }
 
   static {
-    compose(this, TrimmedRangePart, {
+    define(this, {
       get sourceEnd$() {
         return synchronize(
           this.source,
@@ -35,17 +33,12 @@ export class VariableProjectedRangeContainer extends ProjectedRangeContainer {
           }
         )
       },
-    })
 
-    define(this, {
-      decodeStride$(sourceCursor) {
-        if (sourceCursor.equals(this.source.end()))
-          return null
-
-        assert(!this._isContinuation(sourceCursor.value),
+      tokenStrideOf$(value) {
+        assert(!this._isContinuation(value),
           'Invalid continuation value.')
 
-        return 1 + this._continuationCountOf(sourceCursor.value)
+        return 1 + this._continuationCountOf(value)
       },
     })
   }

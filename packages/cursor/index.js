@@ -1,6 +1,7 @@
 export * from "./cursor-concept.js"
 export * from "./cursor-parts.js"
 export * from "./range-concepts.js"
+export * from "./range-parts.js"
 export * from "./throw.js"
 export * from "./adapters/back-inserter.js"
 export * from "./adapters/front-inserter.js"

@@ -3,11 +3,11 @@ import { Buffer } from 'node:buffer'
 import { iterate } from '@kingjs/cursor-algorithm'
 import { SnapshotView } from '@kingjs/cursor-view'
 import {
+  encodeUtf16Bytes,
   encodeUtf16Sequence,
+  encodeUtf32Bytes,
 } from '@kingjs/unicode'
 import {
-  Uint16Vector,
-  Uint32Vector,
   Uint8Vector,
 } from '@kingjs/cursor-container-standard'
 import {
@@ -38,8 +38,12 @@ function utf16Of(text) {
   return encodeUtf16Sequence([...text].map(codePointOf))
 }
 
-function utf32Of(text) {
-  return [...text].map(codePointOf)
+function utf16BytesOf(text, byteOrder = 'big') {
+  return encodeUtf16Bytes([...text].map(codePointOf), byteOrder)
+}
+
+function utf32BytesOf(text, byteOrder = 'big') {
+  return encodeUtf32Bytes([...text].map(codePointOf), byteOrder)
 }
 
 describe('Utf8CodePointContainer', () => {
@@ -105,7 +109,7 @@ describe('Utf8CodePointContainer', () => {
       input.pushRange(bytesOf([byte]))
 
     expect([...iterate(input)]).toEqual([GrinningFace])
-    expect(input.end().sourceCursor.equals(input.source.end())).toBe(true)
+    expect(input.end().sourceCursor$.equals(input.source.end())).toBe(true)
   })
 
   it('excludes a dangling suffix across one-byte ranges', () => {
@@ -115,7 +119,7 @@ describe('Utf8CodePointContainer', () => {
       input.pushRange(bytesOf([byte]))
 
     expect([...iterate(input)]).toEqual([A])
-    expect(input.end().sourceCursor.value).toBe(GrinningFaceBytes[0])
+    expect(input.end().sourceCursor$.value).toBe(GrinningFaceBytes[0])
   })
 
   it('rejects trailing continuation bytes without a matching lead', () => {
@@ -135,25 +139,25 @@ describe('Utf16CodePointContainer', () => {
   const GrinningFaceUnits = utf16Of('😀')
 
   it('excludes a dangling high surrogate', () => {
-    const input = new Utf16CodePointContainer()
+    const input = new Utf16CodePointContainer({ byteOrder: 'big' })
 
     input
-      .pushRange(rangeOf(Uint16Vector, utf16Of('a')))
-      .pushRange(rangeOf(Uint16Vector, GrinningFaceUnits.slice(0, 1)))
+      .pushRange(bytesOf(utf16BytesOf('a')))
+      .pushRange(bytesOf(utf16BytesOf('😀').slice(0, 2)))
 
     expect([...iterate(input)]).toEqual([A])
-    expect(input.end().sourceCursor.value).toBe(GrinningFaceUnits[0])
+    expect(input.end().sourceCursor$.value).toBe(GrinningFaceUnits[0])
   })
 
   it('finds the complete end across one-unit surrogate ranges', () => {
-    const input = new Utf16CodePointContainer()
+    const input = new Utf16CodePointContainer({ byteOrder: 'little' })
 
     input
-      .pushRange(rangeOf(Uint16Vector, GrinningFaceUnits.slice(0, 1)))
-      .pushRange(rangeOf(Uint16Vector, GrinningFaceUnits.slice(1)))
+      .pushRange(bytesOf(utf16BytesOf('😀', 'little').slice(0, 2)))
+      .pushRange(bytesOf(utf16BytesOf('😀', 'little').slice(2)))
 
     expect([...iterate(input)]).toEqual([GrinningFace])
-    expect(input.end().sourceCursor.equals(input.source.end())).toBe(true)
+    expect(input.end().sourceCursor$.equals(input.source.end())).toBe(true)
   })
 })
 
@@ -162,11 +166,11 @@ describe('Utf32CodePointContainer', () => {
   const GrinningFace = codePointOf('😀')
 
   it('uses the source end as its complete end', () => {
-    const input = new Utf32CodePointContainer()
+    const input = new Utf32CodePointContainer({ byteOrder: 'little' })
 
-    input.pushRange(rangeOf(Uint32Vector, utf32Of('a😀')))
+    input.pushRange(bytesOf(utf32BytesOf('a😀', 'little')))
 
     expect([...iterate(input)]).toEqual([A, GrinningFace])
-    expect(input.end().sourceCursor.equals(input.source.end())).toBe(true)
+    expect(input.end().sourceCursor$.equals(input.source.end())).toBe(true)
   })
 })

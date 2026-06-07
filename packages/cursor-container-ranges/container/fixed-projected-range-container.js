@@ -1,12 +1,10 @@
 import { define } from '@kingjs/partial-define'
 import { assert } from '@kingjs/assert'
-import { compose } from '@kingjs/partial-compose'
 import {
   BidirectionalRangeShape,
   SizedContainerShape,
 } from '@kingjs/cursor-shape'
 import { ProjectedRangeContainer } from './projected-range-container.js'
-import { TrimmedRangePart } from '../part/trimmed-range-part.js'
 import { RangeBufferShape } from '../shape/range-buffer-shape.js'
 import { previous } from '@kingjs/cursor-algorithm'
 import {
@@ -28,22 +26,13 @@ export class FixedProjectedRangeContainer extends ProjectedRangeContainer {
   }
 
   static {
-    compose(this, TrimmedRangePart, {
+    define(this, {
       get sourceEnd$() {
         const sourceSize = this.source.size
         return previous(
           this.source.end(),
           sourceSize % this._fixedStride
         )
-      },
-    })
-
-    define(this, {
-      decodeStride$(sourceCursor) {
-        if (sourceCursor.equals(this.source.end()))
-          return null
-
-        return this._fixedStride
       },
 
       get size() {

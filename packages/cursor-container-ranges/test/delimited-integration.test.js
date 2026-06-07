@@ -5,15 +5,6 @@ import { SnapshotView } from '@kingjs/cursor-view'
 import { Uint8 } from '@kingjs/simple-type'
 import { Uint8Vector } from '@kingjs/cursor-container-standard'
 import { define } from '@kingjs/partial-define'
-import { implement } from '@kingjs/partial-implement'
-import { compose } from '@kingjs/partial-compose'
-import { RangeConcept } from '@kingjs/cursor'
-import {
-  CursorPart,
-  ReadableCursorPart,
-  SteppableCursorPart,
-} from '@kingjs/cursor'
-import { RangeBufferPart } from '../part/range-buffer-part.js'
 import {
   FixedProjectedRangeContainer,
   ProjectedRangeCursor,
@@ -63,24 +54,10 @@ class AsciiCodePointContainer extends FixedProjectedRangeContainer {
 
 class DelimitedRecordCursor extends ProjectedRangeCursor {
   static {
-    compose(this, CursorPart, {
-      get isAtEnd$() {
-        return this.sourceCursor.equals(this.container.sourceEnd$)
+    define(this, {
+      get stride$() {
+        return this.container.decodeStride$(this.sourceCursor$)
       },
-    })
-
-    compose(this, SteppableCursorPart, {
-      step() {
-        advance(this.sourceCursor, this.container.decodeStride$(
-          this.sourceCursor
-        ))
-        this.current = undefined
-        return this
-      },
-    })
-
-    compose(this, ReadableCursorPart, {
-      get value() { return this.current },
     })
   }
 }
@@ -100,43 +77,27 @@ class DelimitedRecordContainer extends ProjectedRangeContainer {
     super(new AsciiCodePointContainer())
   }
 
-  get sourceEnd$() {
-    const cursor = this.source.begin()
-    const end = this.source.end()
-
-    while (true) {
-      const stride = delimitedTokenStrideOf(
-        this.source,
-        cursor,
-        this.isDelimiter$,
-        this.isEscape$,
-        end
-      )
-      if (stride == null)
-        return cursor.clone()
-
-      advance(cursor, stride)
-    }
-  }
-
   static {
-    implement(this, RangeConcept, {
-      begin() { return new this.cursorType(this, this.source.begin()) },
-      end() { return new this.cursorType(this, this.sourceEnd$, null) },
-    })
-
-    compose(this, RangeBufferPart, {
-      pushRange(range) {
-        this.source.pushRange(range)
-        return this
-      },
-
-      popRange(cursor = this.end()) {
-        return this.source.popRange(cursor.sourceCursor)
-      },
-    })
-
     define(this, {
+      get sourceEnd$() {
+        const cursor = this.source.begin()
+        const end = this.source.end()
+
+        while (true) {
+          const stride = delimitedTokenStrideOf(
+            this.source,
+            cursor,
+            this.isDelimiter$,
+            this.isEscape$,
+            end
+          )
+          if (stride == null)
+            return cursor.clone()
+
+          advance(cursor, stride)
+        }
+      },
+
       decodeStride$(sourceCursor) {
         if (sourceCursor.equals(this.source.end()))
           return null
@@ -147,10 +108,6 @@ class DelimitedRecordContainer extends ProjectedRangeContainer {
           this.isDelimiter$,
           this.isEscape$
         )
-      },
-
-      decodeValue$(sourceCursor) {
-        return this.decodeToken$(sourceCursor.clone())
       },
     })
   }

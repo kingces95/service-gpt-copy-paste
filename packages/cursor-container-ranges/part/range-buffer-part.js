@@ -5,11 +5,7 @@ import { defaultTo } from '@kingjs/function-contract'
 import { DefinesAbstract } from '@kingjs/partial-class'
 import { PartialClass } from '@kingjs/partial-class'
 import { implement } from '@kingjs/partial-implement'
-import {
-  ArgChecks,
-  Defaults,
-  Preconditions,
-} from '@kingjs/partial-proxy'
+import { members } from '@kingjs/partial-signature'
 
 function cursorBelongsToThisRange(cursor) {
   assert(cursor.range == this,
@@ -17,25 +13,19 @@ function cursorBelongsToThisRange(cursor) {
 }
 
 export class RangeBufferPart extends PartialClass {
-  static [ArgChecks] = {
-    pushRange: [BidirectionalRangeShape],
-    popRange: [CursorConcept],
-  }
+  static [DefinesAbstract] = members(this, {
+    pushRange: {
+      types: [BidirectionalRangeShape],
+      method(range) { },
+    },
 
-  static [Defaults] = {
-    popRange: [
-      defaultTo(({ self }) => self.end()),
-    ],
-  }
-
-  static [Preconditions] = {
-    popRange: cursorBelongsToThisRange,
-  }
-
-  static [DefinesAbstract] = {
-    pushRange(range) { },
-    popRange(cursor /* = this.end() */) { },
-  }
+    popRange: {
+      types: [CursorConcept],
+      defaults: [defaultTo(({ self }) => self.end())],
+      precondition: cursorBelongsToThisRange,
+      method(cursor /* = this.end() */) { },
+    },
+  })
 
   static {
     implement(this, RangeConcept, { }, {

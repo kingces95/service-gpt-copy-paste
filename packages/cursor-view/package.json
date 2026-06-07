@@ -8,6 +8,7 @@
     ".": "./index.js"
   },
   "dependencies": {
+    "@kingjs/assert": "1.0.0",
     "@kingjs/cursor": "1.0.0",
     "@kingjs/cursor-shape": "1.0.0",
     "@kingjs/partial-concept": "1.0.0",

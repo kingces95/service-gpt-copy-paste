@@ -1,12 +1,17 @@
 import { describe, it, expect } from 'vitest'
 import { 
+  ContiguousRangeShape,
   RandomAccessRangeShape,
   WritableRandomAccessRangeShape,
   RangeShape,
 } from '@kingjs/cursor-shape'
 import { ArrayMap } from '@kingjs/cursor-container-standard'
 import { iterate } from '@kingjs/cursor-algorithm'
-import { snapshot, subrange } from '@kingjs/cursor-view'
+import {
+  snapshot,
+  subrange,
+  TypedArrayView,
+} from '@kingjs/cursor-view'
 
 function createArrayMap(...values) {
   const result = new ArrayMap()
@@ -65,5 +70,28 @@ describe('snapshot', () => {
     expect(range).toBeInstanceOf(RandomAccessRangeShape)
     expect(range).not.toBeInstanceOf(WritableRandomAccessRangeShape)
     expect([...iterate(range)]).toEqual([1, 2, 3])
+  })
+})
+
+describe('TypedArrayView', () => {
+  it('should borrow typed-array storage without copying', () => {
+    const bytes = Uint8Array.from([1, 2, 3, 4])
+    const view = new TypedArrayView(bytes)
+
+    expect(view).toBeInstanceOf(RangeShape)
+    expect(view).toBeInstanceOf(RandomAccessRangeShape)
+    expect(view).toBeInstanceOf(ContiguousRangeShape)
+    expect([...iterate(view)]).toEqual([1, 2, 3, 4])
+
+    const first = view.begin()
+    first.step()
+
+    const span = view.span(first, view.end())
+    expect(span).toBeInstanceOf(Uint8Array)
+    expect([...span]).toEqual([2, 3, 4])
+
+    bytes[1] = 9
+    expect(first.value).toBe(9)
+    expect(span[0]).toBe(9)
   })
 })

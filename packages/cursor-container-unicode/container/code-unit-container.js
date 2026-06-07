@@ -1,20 +1,37 @@
-import {
-  define,
-} from '@kingjs/partial-define'
+import { define } from '@kingjs/partial-define'
 import {
   FixedProjectedRangeContainer,
-  RangeContainer,
+  ProjectedRangeContainer,
 } from '@kingjs/cursor-container-ranges'
+import { ByteOrderUnitContainer } from './byte-order-unit-container.js'
+
+const projectedSplit = ProjectedRangeContainer.prototype.split
 
 export class CodeUnitContainer extends FixedProjectedRangeContainer {
-  constructor() {
-    super(new RangeContainer(), { fixedStride: 1 })
+  constructor({ byteOrder, byteWidth }) {
+    super(new ByteOrderUnitContainer({ byteOrder, byteWidth }), {
+      fixedStride: 1,
+    })
   }
+
+  get byteOrder() { return this.source.byteOrder }
+  get byteWidth() { return this.source.byteWidth }
 
   static {
     define(this, {
-      decodeToken$(sourceCursor) {
-        return sourceCursor.value
+      split(cursor = this.end(), result = null) {
+        result ??= new this.constructor({
+          byteOrder: this.byteOrder,
+          byteWidth: this.byteWidth,
+        })
+
+        return projectedSplit.call(this, cursor, result)
+      },
+
+      decodeToken$(sourceCursor, stride) {
+        const value = sourceCursor.value
+        sourceCursor.step()
+        return value
       },
     })
   }

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   assertScalarValue,
   decodeSurrogatePair,
+  decodeUint16,
+  decodeUint32,
   decodeUtf8Sequence,
   encodeUtf16Bytes,
   encodeUtf16Sequence,
@@ -60,6 +62,14 @@ describe('UTF-16 surrogates', () => {
       .toEqual([0x00, 0x61, 0xd8, 0x3d, 0xde, 0x00])
     expect(encodeUtf32Bytes([0x61, 0x1f600]))
       .toEqual([0x00, 0x00, 0x00, 0x61, 0x00, 0x01, 0xf6, 0x00])
+  })
+
+  it('decodes unsigned integers from ordered bytes', () => {
+    expect(decodeUint16([0xd8, 0x3d], 'big')).toBe(0xd83d)
+    expect(decodeUint16([0x3d, 0xd8], 'little')).toBe(0xd83d)
+
+    expect(decodeUint32([0x00, 0x01, 0xf6, 0x00], 'big')).toBe(0x1f600)
+    expect(decodeUint32([0x00, 0xf6, 0x01, 0x00], 'little')).toBe(0x1f600)
   })
 })
 
