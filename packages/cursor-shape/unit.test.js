@@ -28,6 +28,7 @@ import {
   PushBackContainerShape,
   RandomAccessCursorShape,
   RangeShape,
+  SizedContainerShape,
   WritableContiguousCursorShape,
   WritableRandomAccessCursorShape,
 } from '@kingjs/cursor-shape'
@@ -133,5 +134,12 @@ describe('cursor shapes', () => {
     expect(container).toBeInstanceOf(PushBackContainerShape)
     expect(container).toBeInstanceOf(PushBackContainerShape)
     expect({ }).not.toBeInstanceOf(PushBackContainerShape)
+  })
+
+  it('matches sized containers structurally', () => {
+    const container = new ArrayMap()
+
+    expect(container).toBeInstanceOf(SizedContainerShape)
+    expect({ }).not.toBeInstanceOf(SizedContainerShape)
   })
 })

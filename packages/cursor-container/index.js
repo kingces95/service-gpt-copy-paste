@@ -1,6 +1,4 @@
 // export * from "./adapter/index.js"
-// export * from "./multi-pass/index.js"
-// export * from "./segment/index.js"
 
 export * from "./container/forward-list.js"
 export * from "./container/list.js"
@@ -12,5 +10,6 @@ export * from "./container/unordered-map.js"
 export * from "./container/unordered-set.js"
 export * from "./container/vector.js"
 
+export * from "./cursor/container-cursor.js"
 export * from "./container-parts.js"
 export * from "./algorithms/materialize.js"

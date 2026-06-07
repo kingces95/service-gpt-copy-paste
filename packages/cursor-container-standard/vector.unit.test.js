@@ -55,7 +55,7 @@ describe('Vector', () => {
   it.each(TypedArrayTypes)(
     'accepts %s as an array type',
     (ArrayType, ValueType, defaultValue) => {
-      const VectorType = VectorOf(ValueType, ArrayType)
+      const VectorType = VectorOf(ArrayType)
       const vector = new VectorType(3)
 
       vector.resize(3)
@@ -72,8 +72,8 @@ describe('Vector', () => {
       ])
     })
 
-  it('caches named specializations by value and array type', () => {
-    expect(VectorOf(Number, Uint16Array)).toBe(Uint16Vector)
+  it('caches named specializations by array type', () => {
+    expect(VectorOf(Uint16Array)).toBe(Uint16Vector)
     expect(Uint16Vector.valueType).toBe(Number)
     expect(Uint16Vector.spanType).toBe(Uint16Array)
   })
@@ -81,19 +81,14 @@ describe('Vector', () => {
   it.each(VectorTypes)(
     'exposes %s for %s',
     (VectorType, ValueType, ArrayType) => {
-      expect(VectorOf(ValueType, ArrayType)).toBe(VectorType)
+      expect(VectorOf(ArrayType)).toBe(VectorType)
       expect(VectorType.valueType).toBe(ValueType)
       expect(VectorType.spanType).toBe(ArrayType)
     })
 
-  it('rejects mismatched value and array types', () => {
-    expect(() => VectorOf(Number, BigInt64Array)).toThrow(
-      'Vector array value type must match TValue.')
-  })
-
   it('rejects non-typed-array constructors', () => {
-    expect(() => VectorOf(Object, Array)).toThrow(
-      'Argument 1 must be TypedArrayConstructorProbe.')
+    expect(() => VectorOf(Array)).toThrow(
+      'Argument 0 must be TypedArrayConstructorProbe.')
   })
 
   it('uses typed arrays for capacity, indexing, and spans', () => {

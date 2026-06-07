@@ -32,11 +32,13 @@ import { ContainerCursor } from './container-cursor.js'
 // behavior and would make debugging difficult.
 
 export class IteratorCursor extends ContainerCursor {
+  _iterator
   _current
 
   constructor(range, iterable) {
-    super(range, iterable[Symbol.iterator]())
-    this._current = this.token.next()
+    super(range)
+    this._iterator = iterable[Symbol.iterator]()
+    this._current = this._iterator.next()
   }
 
   get done$() { return this._current.done }
@@ -66,7 +68,7 @@ export class IteratorCursor extends ContainerCursor {
 
     compose(this, SteppableCursorPart, {
       step() {
-        this._current = this.token.next()
+        this._current = this._iterator.next()
         return this
       },
     })

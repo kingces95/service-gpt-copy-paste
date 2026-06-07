@@ -1,0 +1,24 @@
+{
+  "name": "@kingjs/cursor-container-unicode",
+  "version": "1.0.0",
+  "description": ".",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {
+    "@kingjs/cursor-algorithm": "1.0.0",
+    "@kingjs/cursor-container": "1.0.0",
+    "@kingjs/cursor-container-ranges": "1.0.0",
+    "@kingjs/cursor-container-standard": "1.0.0",
+    "@kingjs/cursor-view": "1.0.0",
+    "@kingjs/partial-define": "1.0.0",
+    "@kingjs/simple-type": "1.0.0",
+    "@kingjs/unicode": "1.0.0"
+  },
+  "devDependencies": { },
+  "peerDependencies": { },
+  "author": "Chris King",
+  "license": "MIT"
+}

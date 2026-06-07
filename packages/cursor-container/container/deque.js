@@ -2,19 +2,18 @@ import { thunk } from '@kingjs/function-contract'
 import { implement } from '@kingjs/partial-implement'
 import { compose } from '@kingjs/partial-compose'
 import { PartialProxy } from '@kingjs/partial-proxy'
-import { genericType } from '@kingjs/generic'
 import {
   RangeConcept,
 } from '@kingjs/cursor'
 import {
   ClearableContainerPart,
-  FrontInsertableContainerPartOf,
-  BackInsertableContainerPartOf,
+  FrontInsertableContainerPart,
+  BackInsertableContainerPart,
   SizedContainerPart,
-  IndexableContainerPartOf,
-  EditableContainerPartOf,
-  BulkAssignableContainerPartOf,
-  BulkEditableContainerPartOf,
+  IndexableContainerPart,
+  EditableContainerPart,
+  BulkAssignableContainerPart,
+  BulkEditableContainerPart,
   sourceRange,
 } from '../container-parts.js'
 import {
@@ -24,13 +23,8 @@ import { iterate, next } from '@kingjs/cursor-algorithm'
 
 const BlockCapacity = 32
 
-export const DequeOf = genericType([Function],
-(
-  TValue = Object,
-) => {
-  return class Deque extends PartialProxy {
+export class Deque extends PartialProxy {
     static cursorType = IndexableCursor
-    static valueType = TValue
     static defaultValue = undefined
 
     _blocks
@@ -105,7 +99,7 @@ export const DequeOf = genericType([Function],
         get size() { return this._size },
       })
 
-      compose(this, IndexableContainerPartOf(TValue), {
+      compose(this, IndexableContainerPart, {
         at(index) { return this._getAtOffset(this._offsetOf(index)) },
         setAt(index, value) { this._setAtOffset(this._offsetOf(index), value) },
       })
@@ -118,7 +112,7 @@ export const DequeOf = genericType([Function],
         },
       })
 
-      compose(this, BulkAssignableContainerPartOf(TValue), {
+      compose(this, BulkAssignableContainerPart, {
         get defaultValue$() { return this.constructor.defaultValue },
 
         resize(count, value = this.constructor.defaultValue) {
@@ -143,7 +137,7 @@ export const DequeOf = genericType([Function],
         }),
       })
 
-      compose(this, FrontInsertableContainerPartOf(TValue), {
+      compose(this, FrontInsertableContainerPart, {
         popFront() {
           const value = this.at(0)
           this._start++
@@ -159,7 +153,7 @@ export const DequeOf = genericType([Function],
         },
       })
 
-      compose(this, BackInsertableContainerPartOf(TValue), {
+      compose(this, BackInsertableContainerPart, {
         pushBack(value) {
           this._setAtOffset(this._start + this._size, value)
           this._size++
@@ -173,7 +167,7 @@ export const DequeOf = genericType([Function],
         },
       })
 
-      compose(this, EditableContainerPartOf(TValue), {
+      compose(this, EditableContainerPart, {
         erase(first, last = next(first)) {
           const index = first.index
           const count = last.index - first.index
@@ -189,7 +183,7 @@ export const DequeOf = genericType([Function],
         insertValue(cursor, value) { },
       })
 
-      compose(this, BulkEditableContainerPartOf(TValue), {
+      compose(this, BulkEditableContainerPart, {
         insertRange: thunk({
           transforms: [null, sourceRange],
           method(cursor, range) {
@@ -213,6 +207,5 @@ export const DequeOf = genericType([Function],
           },
         }),
       })
-    }
   }
-})
+}

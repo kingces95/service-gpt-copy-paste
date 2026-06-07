@@ -71,6 +71,24 @@ export class NormalNumber extends Metadata {
   }
 }
 
+export class Uint8 extends Metadata {
+  static [Symbol.hasInstance](value) {
+    return Number.isInteger(value) && value >= 0 && value <= 0xff
+  }
+}
+
+export class Uint16 extends Metadata {
+  static [Symbol.hasInstance](value) {
+    return Number.isInteger(value) && value >= 0 && value <= 0xffff
+  }
+}
+
+export class Uint32 extends Metadata {
+  static [Symbol.hasInstance](value) {
+    return Number.isInteger(value) && value >= 0 && value <= 0xffffffff
+  }
+}
+
 export const OptionalOf = genericType(Type => {
   return class Optional extends Metadata {
     static Type = AnyOf(AnyUndefined, Type)

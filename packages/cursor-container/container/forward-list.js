@@ -2,7 +2,6 @@ import { thunk } from '@kingjs/function-contract'
 import { compose } from '@kingjs/partial-compose'
 import { implement } from '@kingjs/partial-implement'
 import { PartialProxy } from '@kingjs/partial-proxy'
-import { genericType } from '@kingjs/generic'
 import {
   EquatableConcept,
 } from '@kingjs/partial-concept'
@@ -16,10 +15,10 @@ import {
 } from '@kingjs/cursor'
 import {
   ContainerPart,
-  BulkAssignableContainerPartOf,
-  PhasedContainerPartOf,
-  PhasedBulkContainerPartOf,
-  FrontInsertableContainerPartOf,
+  BulkAssignableContainerPart,
+  PhasedContainerPart,
+  PhasedBulkContainerPart,
+  FrontInsertableContainerPart,
   sourceRange,
 } from '../container-parts.js'
 import { iterate, next } from '@kingjs/cursor-algorithm'
@@ -29,12 +28,15 @@ import {
 } from '../cursor/container-cursor.js'
 
 class ForwardListCursor extends ContainerCursor {
+  _link
+
   constructor(container, link) {
-    super(container, link)
+    super(container)
+    this._link = link
   }
 
-  get link() { return this.token }
-  set link(link) { this.token = link }
+  get link() { return this._link }
+  set link(link) { this._link = link }
 
   static {
     implement(this, EquatableConcept, {
@@ -79,13 +81,8 @@ class ForwardListCursor extends ContainerCursor {
   }
 }
 
-export const ForwardListOf = genericType([Function],
-(
-  TValue = Object,
-) => {
-  return class ForwardList extends PartialProxy {
+export class ForwardList extends PartialProxy {
     static cursorType = ForwardListCursor
-    static valueType = TValue
     static defaultValue = undefined
     static linkType = ForwardLink
 
@@ -119,7 +116,7 @@ export const ForwardListOf = genericType([Function],
         },
       })
 
-      compose(this, FrontInsertableContainerPartOf(TValue), {
+      compose(this, FrontInsertableContainerPart, {
         popFront() {
           const result = this._rootLink.next.value
           this.eraseAfter(this.beforeBegin())
@@ -128,7 +125,7 @@ export const ForwardListOf = genericType([Function],
         pushFront(value) { this.insertValueAfter(this.beforeBegin(), value) },
       })
 
-      compose(this, BulkAssignableContainerPartOf(TValue), {
+      compose(this, BulkAssignableContainerPart, {
         get defaultValue$() { return this.constructor.defaultValue },
 
         resize(count, value = this.constructor.defaultValue) {
@@ -166,7 +163,7 @@ export const ForwardListOf = genericType([Function],
         }),
       })
 
-      compose(this, PhasedContainerPartOf(TValue), {
+      compose(this, PhasedContainerPart, {
         beforeBegin() { return new this.cursorType(this, this._rootLink) },
 
         insertValueAfter(cursor, value) {
@@ -181,7 +178,7 @@ export const ForwardListOf = genericType([Function],
         },
       })
 
-      compose(this, PhasedBulkContainerPartOf(TValue), {
+      compose(this, PhasedBulkContainerPart, {
         insertRangeAfter: thunk({
           transforms: [null, sourceRange],
           method(cursor, range) {
@@ -193,6 +190,5 @@ export const ForwardListOf = genericType([Function],
           },
         }),
       })
-    }
   }
-})
+}

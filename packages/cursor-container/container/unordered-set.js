@@ -2,15 +2,14 @@ import { assert } from '@kingjs/assert'
 import { implement } from '@kingjs/partial-implement'
 import { compose } from '@kingjs/partial-compose'
 import { PartialProxy } from '@kingjs/partial-proxy'
-import { genericType } from '@kingjs/generic'
 import {
   RangeConcept,
 } from '@kingjs/cursor'
 import {
   ClearableContainerPart,
   SizedContainerPart,
-  AssociativeContainerPartOf,
-  SetAssociativeContainerPartOf,
+  AssociativeContainerPart,
+  SetAssociativeContainerPart,
 } from '../container-parts.js'
 import {
   IteratorCursor
@@ -23,16 +22,10 @@ class SetCursor extends IteratorCursor {
   }
 }
 
-export const UnorderedSetOf = genericType([Function],
-(
-  TKey = Object,
-) => {
-  const EmptySet = new Set()
+const EmptySet = new Set()
 
-  return class UnorderedSet extends PartialProxy {
+export class UnorderedSet extends PartialProxy {
     static cursorType = SetCursor
-    static keyType = TKey
-    static valueType = TKey
 
     _set
 
@@ -57,14 +50,13 @@ export const UnorderedSetOf = genericType([Function],
         get size() { return this._set.size },
       })
 
-      compose(this, AssociativeContainerPartOf(TKey), {
+      compose(this, AssociativeContainerPart, {
         contains(key) { return this._set.has(key) },
         erase(key) { this._set.delete(key) },
       })
 
-      compose(this, SetAssociativeContainerPartOf(TKey), {
+      compose(this, SetAssociativeContainerPart, {
         insert(key) { this._set.add(key) },
       })
-    }
   }
-})
+}

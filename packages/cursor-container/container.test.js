@@ -6,21 +6,21 @@ import {
 } from '@kingjs/partial-concept'
 import {
   ContainerPart,
-  IndexableContainerPartOf,
-  BackInsertableContainerPartOf,
-  FrontInsertableContainerPartOf,
-  EditableContainerPartOf,
+  IndexableContainerPart,
+  BackInsertableContainerPart,
+  FrontInsertableContainerPart,
+  EditableContainerPart,
   SizedContainerPart,
   CapacityContainerPart,
   ReservableContainerPart,
-  ByteContainerPartOf,
+  ByteContainerPart,
   ClearableContainerPart,
-  BulkAssignableContainerPartOf,
-  PhasedBulkContainerPartOf,
-  BulkEditableContainerPartOf,
-  AssociativeContainerPartOf,
-  SetAssociativeContainerPartOf,
-  MapAssociativeContainerPartOf,
+  BulkAssignableContainerPart,
+  PhasedBulkContainerPart,
+  BulkEditableContainerPart,
+  AssociativeContainerPart,
+  SetAssociativeContainerPart,
+  MapAssociativeContainerPart,
 } from '@kingjs/cursor-container'
 import {
   RangeShape,
@@ -62,38 +62,6 @@ import { value } from '@kingjs/abstract'
 import { next } from '@kingjs/cursor-algorithm'
 import { single } from '@kingjs/cursor-adapter'
 import { populateContainer } from './test/create-container.js'
-
-function genericPart(specialize) {
-  specialize.genericPart = true
-  return specialize
-}
-
-function resolvePart(type, part) {
-  return part.genericPart ? part(type) : part
-}
-
-const IndexableContainerPart = genericPart(type =>
-  IndexableContainerPartOf(type.valueType))
-const BackInsertableContainerPart = genericPart(type =>
-  BackInsertableContainerPartOf(type.valueType))
-const FrontInsertableContainerPart = genericPart(type =>
-  FrontInsertableContainerPartOf(type.valueType))
-const EditableContainerPart = genericPart(type =>
-  EditableContainerPartOf(type.valueType))
-const ByteContainerPart = genericPart(type =>
-  ByteContainerPartOf(type.valueType))
-const BulkAssignableContainerPart = genericPart(type =>
-  BulkAssignableContainerPartOf(type.valueType))
-const PhasedBulkContainerPart = genericPart(type =>
-  PhasedBulkContainerPartOf(type.valueType))
-const BulkEditableContainerPart = genericPart(type =>
-  BulkEditableContainerPartOf(type.valueType))
-const AssociativeContainerPart = genericPart(type =>
-  AssociativeContainerPartOf(type.keyType))
-const SetAssociativeContainerPart = genericPart(type =>
-  SetAssociativeContainerPartOf(type.keyType))
-const MapAssociativeContainerPart = genericPart(type =>
-  MapAssociativeContainerPartOf(type.keyType, type.mappedType))
 
 const universalContainerConcepts = [
   RangeConcept,
@@ -491,15 +459,12 @@ describe.each(Object.entries(Tests))('A %s', (name, {
     otherContainer = new type()
   })
 
-  const expectedConcepts = concepts.map(concept => resolvePart(type, concept))
+  const expectedConcepts = concepts
 
   // Some STL names are shared across container categories. Derive those
   // semantics from the public part surface rather than neighboring members.
-  const hasIndexedAt = type.valueType &&
-    type.prototype instanceof IndexableContainerPartOf(type.valueType)
-  const hasKeyedAt = type.keyType && type.mappedType &&
-    type.prototype instanceof
-      MapAssociativeContainerPartOf(type.keyType, type.mappedType)
+  const hasIndexedAt = type.prototype instanceof IndexableContainerPart
+  const hasKeyedAt = type.prototype instanceof MapAssociativeContainerPart
   const cursorPart = type.cursorType.prototype
   const isCursorPart = cursorPart instanceof CursorPart
   const isSteppableCursorPart = cursorPart instanceof SteppableCursorPart

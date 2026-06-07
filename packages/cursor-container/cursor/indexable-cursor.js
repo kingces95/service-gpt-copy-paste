@@ -20,7 +20,7 @@ export class IndexableCursor extends ContainerCursor {
   _index
 
   constructor(indexable, index) {
-    super(indexable, index)
+    super(indexable)
     this._index = index
   }
 

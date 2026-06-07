@@ -15,16 +15,15 @@ import {
 } from '../cursor/contiguous-cursor.js'
 import {
   SizedContainerPart,
-  IndexableContainerPartOf,
+  IndexableContainerPart,
   CapacityContainerPart,
   ReservableContainerPart,
-  ByteContainerPartOf,
-  BulkAssignableContainerPartOf,
-  GapEditableContainerPartOf,
-  GapAssignableContainerPartOf,
+  ByteContainerPart,
+  BulkAssignableContainerPart,
+  GapEditableContainerPart,
+  GapAssignableContainerPart,
 } from '../container-parts.js'
 import { genericType } from '@kingjs/generic'
-import { assert } from '@kingjs/assert'
 import { ConstructsOf } from '@kingjs/simple-type'
 import {
   TypedArrayConstructorProbe,
@@ -34,22 +33,17 @@ import {
 } from '@kingjs/probe-typed-array'
 
 export const VectorOf = genericType([
-  Function,
   [
     TypedArrayConstructorProbe,
     ConstructsOf(TypedArrayProbe),
   ],
 ],
 (
-  TValue = Number,
   TArray = Float64Array,
 ) => {
-  assert(typedArrayValueTypeOf(TArray) == TValue,
-    'Vector array value type must match TValue.')
-
   return class Vector extends PartialProxy {
     static cursorType = ContiguousCursor
-    static valueType = TValue
+    static valueType = typedArrayValueTypeOf(TArray)
     static spanType = TArray
     static defaultValue = typedArrayDefaultValueOf(TArray)
     static bytesPerValue = TArray.BYTES_PER_ELEMENT
@@ -77,12 +71,12 @@ export const VectorOf = genericType([
         get size() { return this._size }
       })
 
-      compose(this, IndexableContainerPartOf(TValue), {
+      compose(this, IndexableContainerPart, {
         at(index) { return this.storage[index] },
         setAt(index, value) { this.storage[index] = value },
       })
 
-      compose(this, BulkAssignableContainerPartOf(TValue), {
+      compose(this, BulkAssignableContainerPart, {
         get defaultValue$() { return this.constructor.defaultValue },
       }, {
         // Implemented later by GapAssignableContainerPart.
@@ -90,7 +84,7 @@ export const VectorOf = genericType([
         assignRange(range) { },
       })
 
-      compose(this, GapEditableContainerPartOf(TValue), {
+      compose(this, GapEditableContainerPart, {
         openGap$(cursor, count) {
           const oldEnd = this.end()
           this.reserve(this.size + count)
@@ -108,7 +102,7 @@ export const VectorOf = genericType([
         }
       })
 
-      compose(this, GapAssignableContainerPartOf(TValue))
+      compose(this, GapAssignableContainerPart)
 
       compose(this, CapacityContainerPart, {
         get capacity() { return this.storage.length },
@@ -127,7 +121,7 @@ export const VectorOf = genericType([
         },
       })
 
-      compose(this, ByteContainerPartOf(TValue), {
+      compose(this, ByteContainerPart, {
         span(begin = this.begin(), end = this.end()) {
           return this.storage.subarray(begin.index, end.index)
         },

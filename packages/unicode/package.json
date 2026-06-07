@@ -1,0 +1,15 @@
+{
+  "name": "@kingjs/unicode",
+  "version": "1.0.0",
+  "description": "Unicode scalar and encoding helpers.",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "peerDependencies": {},
+  "author": "Chris King",
+  "license": "MIT"
+}

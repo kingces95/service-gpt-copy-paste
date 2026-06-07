@@ -1,9 +1,9 @@
 # Vector Array Model
 
-Vector is generic in a logical value type and a typed-array constructor. The
-typed-array constructor is the lowest allocation primitive JavaScript exposes
-for local contiguous numeric storage, so Vector owns the storage algorithms and
-uses the array constructor directly.
+Vector is generic in a typed-array constructor. The typed-array constructor is
+the lowest allocation primitive JavaScript exposes for local contiguous numeric
+storage, so Vector owns the storage algorithms and uses the array constructor
+directly. Logical value type is derived from the typed-array family.
 
 Contents
 
@@ -26,8 +26,6 @@ Vector Generic Parameters
 
 ```txt
 Vector Generic Parameters
-├─ Logical Value
-│  └─ TValue
 └─ Local Contiguous Storage
    └─ TArray
 ```

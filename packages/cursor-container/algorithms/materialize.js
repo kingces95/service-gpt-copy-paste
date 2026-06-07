@@ -2,9 +2,7 @@ import { genericMethod } from '@kingjs/generic'
 import { ConstructsOf } from '@kingjs/simple-type'
 import { DefaultConstructibleProbe } from '@kingjs/probe'
 import { PushBackContainerShape } from '@kingjs/cursor-shape'
-import { ArrayMapOf } from '../container/array-map.js'
-
-const ArrayMap = ArrayMapOf(Object)
+import { ArrayMap } from '../container/array-map.js'
 
 const of = genericMethod(
   [[ // type

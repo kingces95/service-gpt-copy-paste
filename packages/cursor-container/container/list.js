@@ -3,31 +3,24 @@ import { thunk } from '@kingjs/function-contract'
 import { implement } from '@kingjs/partial-implement'
 import { compose } from '@kingjs/partial-compose'
 import {
-  ForwardListOf,
+  ForwardList,
 } from './forward-list.js'
-import { genericType } from '@kingjs/generic'
 import { 
   BacktrackableCursorConcept,
   BacktrackableCursorPart,
 } from '@kingjs/cursor'
 import {
   SizedContainerPart,
-  EditableContainerPartOf,
-  BulkAssignableContainerPartOf,
-  PhasedContainerPartOf,
-  PhasedBulkContainerPartOf,
+  EditableContainerPart,
+  BulkAssignableContainerPart,
+  PhasedContainerPart,
+  PhasedBulkContainerPart,
   sourceRange,
 } from '../container-parts.js'
 import { iterate, next } from '@kingjs/cursor-algorithm'
 import { RewindLink } from '../link/rewind-link.js'
 
-export const ListOf = genericType([Function],
-(
-  TValue = Object,
-) => {
-  const ForwardList = ForwardListOf(TValue)
-
-  class ListCursor extends ForwardList.cursorType {
+class ListCursor extends ForwardList.cursorType {
     constructor(container, link) {
       super(container, link)
     }
@@ -48,11 +41,10 @@ export const ListOf = genericType([Function],
         canStepBack$() { return this.link != this.container._rootLink },
       })
     }
-  }
+}
 
-  return class List extends ForwardList {
+export class List extends ForwardList {
     static cursorType = ListCursor
-    static valueType = TValue
     static linkType = RewindLink
 
     _count
@@ -63,7 +55,7 @@ export const ListOf = genericType([Function],
     }
 
     static {
-      compose(this, PhasedContainerPartOf(TValue), {
+      compose(this, PhasedContainerPart, {
         beforeBegin() {
           return ForwardList.prototype.beforeBegin.call(this)
         },
@@ -87,7 +79,7 @@ export const ListOf = genericType([Function],
         get size() { return this._count },
       })
 
-      compose(this, EditableContainerPartOf(TValue), {
+      compose(this, EditableContainerPart, {
         insertValue(cursor, value) {
           cursor.link.insert(value)
           this._count++
@@ -108,7 +100,7 @@ export const ListOf = genericType([Function],
         }
       })
 
-      compose(this, BulkAssignableContainerPartOf(TValue), {
+      compose(this, BulkAssignableContainerPart, {
         get defaultValue$() { return this.constructor.defaultValue },
 
         resize(count, value = this.constructor.defaultValue) {
@@ -133,7 +125,7 @@ export const ListOf = genericType([Function],
         }),
       })
 
-      compose(this, PhasedBulkContainerPartOf(TValue), {
+      compose(this, PhasedBulkContainerPart, {
         insertRangeAfter: thunk({
           transforms: [null, sourceRange],
           method(cursor, range) {
@@ -147,6 +139,5 @@ export const ListOf = genericType([Function],
           },
         }),
       })
-    }
   }
-})
+}

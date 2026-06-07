@@ -16,6 +16,8 @@ import {
   ConstructsOf,
   NormalNumber,
   OptionalOf,
+  Uint16,
+  Uint8,
 } from '@kingjs/simple-type'
 
 const AnyTests = [
@@ -68,6 +70,26 @@ describe('NormalNumber', () => {
     expect(1).toBeInstanceOf(NormalNumber)
     expect(-1).not.toBeInstanceOf(NormalNumber)
     expect(1.5).not.toBeInstanceOf(NormalNumber)
+  })
+})
+
+describe('Uint8', () => {
+  it('matches integers in an unsigned 8-bit range', () => {
+    expect(0).toBeInstanceOf(Uint8)
+    expect(0xff).toBeInstanceOf(Uint8)
+    expect(-1).not.toBeInstanceOf(Uint8)
+    expect(1.5).not.toBeInstanceOf(Uint8)
+    expect(0x100).not.toBeInstanceOf(Uint8)
+  })
+})
+
+describe('Uint16', () => {
+  it('matches integers in an unsigned 16-bit range', () => {
+    expect(0).toBeInstanceOf(Uint16)
+    expect(0xffff).toBeInstanceOf(Uint16)
+    expect(-1).not.toBeInstanceOf(Uint16)
+    expect(1.5).not.toBeInstanceOf(Uint16)
+    expect(0x10000).not.toBeInstanceOf(Uint16)
   })
 })
 

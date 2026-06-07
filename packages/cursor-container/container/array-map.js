@@ -2,7 +2,6 @@ import { implement } from '@kingjs/partial-implement'
 import { compose } from '@kingjs/partial-compose'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { thunk } from '@kingjs/function-contract'
-import { genericType } from '@kingjs/generic'
 import {
   RangeConcept,
 } from '@kingjs/cursor'
@@ -10,19 +9,14 @@ import { iterate } from '@kingjs/cursor-algorithm'
 import { IndexableCursor } from '../cursor/indexable-cursor.js'
 import {
   SizedContainerPart,
-  IndexableContainerPartOf,
-  GapEditableContainerPartOf,
-  GapAssignableContainerPartOf,
+  IndexableContainerPart,
+  GapEditableContainerPart,
+  GapAssignableContainerPart,
   sourceRange,
 } from '../container-parts.js'
 
-export const ArrayMapOf = genericType([Function],
-(
-  TValue = Object,
-) => {
-  return class ArrayMap extends PartialProxy {
+export class ArrayMap extends PartialProxy {
     static cursorType = IndexableCursor
-    static valueType = TValue
     static defaultValue = undefined
 
     _array
@@ -44,7 +38,7 @@ export const ArrayMapOf = genericType([Function],
         get size() { return this._array.length },
       })
 
-      compose(this, IndexableContainerPartOf(TValue), {
+      compose(this, IndexableContainerPart, {
         at(index) {
           return this._array[index]
         },
@@ -53,7 +47,7 @@ export const ArrayMapOf = genericType([Function],
         },
       })
 
-      compose(this, GapEditableContainerPartOf(TValue), {
+      compose(this, GapEditableContainerPart, {
         openGap$(cursor, count) {
           const offset = this.begin().distanceTo(cursor)
           this._array.splice(offset, 0, ...Array(count))
@@ -77,7 +71,6 @@ export const ArrayMapOf = genericType([Function],
         }),
       })
 
-      compose(this, GapAssignableContainerPartOf(TValue))
-    }
+      compose(this, GapAssignableContainerPart)
   }
-})
+}

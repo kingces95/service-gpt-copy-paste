@@ -3,18 +3,14 @@ import { PartialProxy } from '@kingjs/partial-proxy'
 import { CursorConcept } from '@kingjs/cursor'
 
 export class ContainerCursor extends PartialProxy {
-  #container
-  #token
+  _container
 
-  constructor(container, token) {
+  constructor(container) {
     super()
-    this.#container = container
-    this.#token = token
+    this._container = container
   }
 
-  get container() { return this.#container }
-  get token() { return this.#token }
-  set token(token) { this.#token = token }
+  get container() { return this._container }
 
   static {
     implement(this, CursorConcept, {
