@@ -1,4 +1,6 @@
-import { CodeUnitContainer } from './code-unit-container.js'
+import {
+  CodeUnitContainer,
+} from './code-unit-container.js'
 
 export class Utf32CodeUnitContainer extends CodeUnitContainer {
   constructor({ byteOrder }) {

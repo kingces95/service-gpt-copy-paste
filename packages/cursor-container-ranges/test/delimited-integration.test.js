@@ -6,7 +6,7 @@ import { Uint8 } from '@kingjs/simple-type'
 import { Uint8Vector } from '@kingjs/cursor-container-standard'
 import { define } from '@kingjs/partial-define'
 import {
-  FixedProjectedRangeContainer,
+  FixedStrideRangeContainer,
   ProjectedRangeCursor,
   ProjectedRangeContainer,
   RangeContainer,
@@ -34,7 +34,7 @@ function materializeRanges(ranges) {
   return [...iterate(ranges)].map(range => textOf([...iterate(range)]))
 }
 
-class AsciiCodePointContainer extends FixedProjectedRangeContainer {
+class AsciiCodePointContainer extends FixedStrideRangeContainer {
   constructor() {
     super(new RangeContainer(), { fixedStride: 1 })
   }
@@ -80,12 +80,12 @@ class DelimitedRecordContainer extends ProjectedRangeContainer {
   static {
     define(this, {
       get sourceEnd$() {
-        const cursor = this.source.begin()
-        const end = this.source.end()
+        const cursor = this.source$.begin()
+        const end = this.source$.end()
 
         while (true) {
           const stride = delimitedTokenStrideOf(
-            this.source,
+            this.source$,
             cursor,
             this.isDelimiter$,
             this.isEscape$,
@@ -99,11 +99,11 @@ class DelimitedRecordContainer extends ProjectedRangeContainer {
       },
 
       decodeStride$(sourceCursor) {
-        if (sourceCursor.equals(this.source.end()))
+        if (sourceCursor.equals(this.source$.end()))
           return null
 
         return delimitedTokenStrideOf(
-          this.source,
+          this.source$,
           sourceCursor,
           this.isDelimiter$,
           this.isEscape$
@@ -120,7 +120,7 @@ class CsvRecordContainer extends DelimitedRecordContainer {
     define(this, {
       decodeToken$(sourceCursor) {
         const cursor = sourceCursor
-        const end = this.source.end()
+        const end = this.source$.end()
         const fields = [[]]
 
         while (!cursor.equals(end)) {
@@ -197,7 +197,7 @@ describe('Delimited record regression', () => {
     const committed = input.popRange(record)
 
     expect(materializeRanges(committed.ranges())).toEqual(['a,b', ',c\n'])
-    expect([...iterate(input.source)]).toEqual(['n'.codePointAt()])
+    expect([...iterate(input.source$)]).toEqual(['n'.codePointAt()])
     expect([...iterate(input)]).toEqual([])
   })
 
@@ -218,7 +218,7 @@ describe('Delimited record regression', () => {
     const committed = input.popRange(record)
 
     expect(materializeRanges(committed.ranges())).toEqual(['a\\', '\nb\n'])
-    expect([...iterate(input.source)]).toEqual(['x'.codePointAt()])
+    expect([...iterate(input.source$)]).toEqual(['x'.codePointAt()])
     expect([...iterate(input)]).toEqual([])
   })
 })

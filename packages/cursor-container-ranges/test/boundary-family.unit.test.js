@@ -4,10 +4,10 @@ import { SnapshotView } from '@kingjs/cursor-view'
 import { Uint8Vector } from '@kingjs/cursor-container-standard'
 import { define } from '@kingjs/partial-define'
 import {
-  FixedProjectedRangeContainer,
+  FixedStrideRangeContainer,
   ProjectedRangeContainer,
   RangeContainer,
-  VariableProjectedRangeContainer,
+  VariableStrideRangeContainer,
 } from '../index.js'
 
 function rangeOf(values) {
@@ -26,7 +26,7 @@ function cursorAt(range, offset) {
 
 const projectedSplit = ProjectedRangeContainer.prototype.split
 
-class FixedValueRange extends FixedProjectedRangeContainer {
+class FixedValueRange extends FixedStrideRangeContainer {
   constructor() {
     super(new RangeContainer(), { fixedStride: 2 })
   }
@@ -42,7 +42,7 @@ class FixedValueRange extends FixedProjectedRangeContainer {
   }
 }
 
-class VariableValueRange extends VariableProjectedRangeContainer {
+class VariableValueRange extends VariableStrideRangeContainer {
   constructor() {
     super(new RangeContainer(), {
       isContinuation: value => value == 2,
@@ -82,13 +82,13 @@ class ConfiguredFixedValueRange extends FixedValueRange {
   }
 }
 
-describe('FixedProjectedRangeContainer', () => {
+describe('FixedStrideRangeContainer', () => {
   it('trims fixed-width suffixes to token boundaries', () => {
     const range = new FixedValueRange()
 
     range.pushRange(rangeOf([0, 1, 2, 3, 4]))
 
-    expect(range.end().sourceCursor$.equals(cursorAt(range.source, 4)))
+    expect(range.end().sourceCursor$.equals(cursorAt(range.source$, 4)))
       .toBe(true)
     expect([...iterate(range)]).toEqual([[0, 1], [2, 3]])
   })
@@ -108,15 +108,26 @@ describe('FixedProjectedRangeContainer', () => {
     expect([...iterate(committed)]).toEqual([[0, 1]])
     expect([...iterate(range)]).toEqual([[2, 3]])
   })
+
+  it('rejects split cursors from another projected range', () => {
+    const range = new FixedValueRange()
+    const other = new FixedValueRange()
+
+    range.pushRange(rangeOf([0, 1]))
+    other.pushRange(rangeOf([2, 3]))
+
+    expect(() => range.split(other.begin())).toThrow(
+      'Cursor is from another container.')
+  })
 })
 
-describe('VariableProjectedRangeContainer', () => {
+describe('VariableStrideRangeContainer', () => {
   it('trims incomplete continuation suffixes to token boundaries', () => {
     const range = new VariableValueRange()
 
     range.pushRange(rangeOf([0, 1]))
 
-    expect(range.end().sourceCursor$.equals(cursorAt(range.source, 1)))
+    expect(range.end().sourceCursor$.equals(cursorAt(range.source$, 1)))
       .toBe(true)
     expect([...iterate(range)]).toEqual([[0]])
   })

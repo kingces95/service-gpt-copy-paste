@@ -1,10 +1,11 @@
 import {
+  ProjectedRangePart,
   ProjectedRangeContainer,
-  VariableProjectedRangeContainer,
+  SplitContainerPart,
+  VariableStrideRangeContainer,
 } from '@kingjs/cursor-container-ranges'
-import { define } from '@kingjs/partial-define'
+import { compose } from '@kingjs/partial-compose'
 import {
-  assertByteOrder,
   assertScalarValue,
   decodeSurrogatePair,
   isHighSurrogate,
@@ -12,6 +13,7 @@ import {
 } from '@kingjs/unicode'
 import { Uint16 } from '@kingjs/simple-type'
 import { Utf16CodeUnitContainer } from './utf16-code-unit-container.js'
+import { ByteOrderAwarePart } from '../part/byte-ordered-part.js'
 
 function unitAt(cursor) {
   const value = cursor.value
@@ -29,27 +31,16 @@ function readUnit(cursor) {
 
 const projectedSplit = ProjectedRangeContainer.prototype.split
 
-export class Utf16CodePointContainer extends VariableProjectedRangeContainer {
-  _byteOrder
-
+export class Utf16CodePointContainer extends VariableStrideRangeContainer {
   constructor({ byteOrder }) {
-    assertByteOrder(byteOrder)
     super(new Utf16CodeUnitContainer({ byteOrder }), {
       isContinuation: isLowSurrogate,
       continuationCountOf: unit => isHighSurrogate(unit) ? 1 : 0,
     })
-    this._byteOrder = byteOrder
   }
 
-  get byteOrder() { return this._byteOrder }
-
   static {
-    define(this, {
-      split(cursor = this.end(), result = null) {
-        result ??= new this.constructor({ byteOrder: this.byteOrder })
-        return projectedSplit.call(this, cursor, result)
-      },
-
+    compose(this, ProjectedRangePart, {
       decodeToken$(sourceCursor, stride) {
         const first = readUnit(sourceCursor)
 
@@ -66,6 +57,15 @@ export class Utf16CodePointContainer extends VariableProjectedRangeContainer {
           throw new Error('Expected UTF-16 low surrogate.')
 
         return decodeSurrogatePair(first, second)
+      },
+    })
+
+    compose(this, ByteOrderAwarePart)
+
+    compose(this, SplitContainerPart, {
+      split(cursor = this.end(), result = null) {
+        result ??= new this.constructor({ byteOrder: this.lazyByteOrder })
+        return projectedSplit.call(this, cursor, result)
       },
     })
   }

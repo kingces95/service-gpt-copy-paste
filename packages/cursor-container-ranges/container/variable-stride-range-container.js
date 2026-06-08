@@ -3,11 +3,11 @@ import { define } from '@kingjs/partial-define'
 import { ProjectedRangeContainer } from './projected-range-container.js'
 import { synchronize } from '../algorithms/synchronize.js'
 import {
-  VariableProjectedRangeCursor,
-} from '../cursor/variable-projected-range-cursor.js'
+  VariableStrideRangeCursor,
+} from '../cursor/variable-stride-range-cursor.js'
 
-export class VariableProjectedRangeContainer extends ProjectedRangeContainer {
-  static cursorType = VariableProjectedRangeCursor
+export class VariableStrideRangeContainer extends ProjectedRangeContainer {
+  static cursorType = VariableStrideRangeCursor
 
   _isContinuation
   _continuationCountOf
@@ -25,8 +25,8 @@ export class VariableProjectedRangeContainer extends ProjectedRangeContainer {
     define(this, {
       get sourceEnd$() {
         return synchronize(
-          this.source,
-          this.source.end(),
+          this.source$,
+          this.source$.end(),
           {
             isContinuation: this._isContinuation,
             continuationCountOf: this._continuationCountOf,

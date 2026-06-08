@@ -11,7 +11,11 @@ import {
   distance,
   next,
 } from '@kingjs/cursor-algorithm'
-import { List } from '@kingjs/cursor-container'
+import {
+  ContainerPart,
+  List,
+  SizedContainerPart,
+} from '@kingjs/cursor-container'
 import {
   RangeContainerCursor,
 } from '../cursor/range-container-cursor.js'
@@ -35,7 +39,6 @@ function toStoredRange(range) {
 // RangeContainer containing the detached stored ranges.
 export class RangeContainer extends PartialProxy {
   static cursorType = RangeContainerCursor
-  static rangeListType = List
 
   _ranges
   _tail
@@ -43,7 +46,7 @@ export class RangeContainer extends PartialProxy {
 
   constructor() {
     super()
-    this._ranges = new this.constructor.rangeListType()
+    this._ranges = new List()
     this._tail = this._ranges.beforeBegin()
     this._size = 0
   }
@@ -52,6 +55,14 @@ export class RangeContainer extends PartialProxy {
     implement(this, RangeConcept, {
       begin() { return new this.cursorType(this, this._ranges.begin()) },
       end() { return new this.cursorType(this, this._ranges.end()) },
+    })
+
+    compose(this, ContainerPart, {
+      get isEmpty() { return this._ranges.isEmpty },
+    })
+
+    compose(this, SizedContainerPart, {
+      get size() { return this._size },
     })
 
     compose(this, RangeBufferPart, {
@@ -90,9 +101,6 @@ export class RangeContainer extends PartialProxy {
     })
 
     define(this, {
-      get isEmpty() { return this._ranges.isEmpty },
-      get size() { return this._size },
-
       ranges() {
         return this._ranges
       },

@@ -142,7 +142,7 @@ describe('Code point container integration', () => {
     const committed = input.split(lineEnd)
 
     expect(valuesOf(committed)).toEqual(committedCodePoints)
-    expect(valuesOf(committed.source)).toEqual(committedSourceUnits)
+    expect(valuesOf(committed.source$)).toEqual(committedSourceUnits)
     expect(valuesOf(deepestSourceOf(committed)))
       .toEqual(committedSourceBytes)
 
@@ -160,8 +160,8 @@ function valuesOf(range) {
 }
 
 function deepestSourceOf(range) {
-  while (range.source)
-    range = range.source
+  while (range.source$)
+    range = range.source$
 
   return range
 }

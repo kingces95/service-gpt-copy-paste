@@ -1,15 +1,29 @@
 import { assert } from '@kingjs/assert'
-import { define } from '@kingjs/partial-define'
+import { Lazy } from '@kingjs/lazy'
+import { compose } from '@kingjs/partial-compose'
 import { Uint8 } from '@kingjs/simple-type'
 import {
-  FixedProjectedRangeContainer,
+  FixedStrideRangeContainer,
+  ProjectedRangePart,
   ProjectedRangeContainer,
   RangeContainer,
+  SplitContainerPart,
 } from '@kingjs/cursor-container-ranges'
 import {
   assertByteOrder,
   decodeBytes,
 } from '@kingjs/unicode'
+import { ByteOrderedPart } from '../part/byte-ordered-part.js'
+
+export function lazyByteOrderOf(byteOrder) {
+  if (byteOrder instanceof Lazy)
+    return byteOrder
+
+  return new Lazy(() => {
+    assertByteOrder(byteOrder)
+    return byteOrder
+  })
+}
 
 function byteAt(cursor) {
   const value = cursor.value
@@ -21,34 +35,38 @@ function byteAt(cursor) {
 
 const projectedSplit = ProjectedRangeContainer.prototype.split
 
-export class ByteOrderUnitContainer extends FixedProjectedRangeContainer {
-  _byteOrder
+export class ByteOrderedContainer extends FixedStrideRangeContainer {
+  _lazyByteOrder
   _byteWidth
 
   constructor({ byteOrder, byteWidth }) {
-    assertByteOrder(byteOrder)
     assert(byteWidth > 1,
       'Byte width must be greater than one.')
 
     super(new RangeContainer(), { fixedStride: byteWidth })
-    this._byteOrder = byteOrder
+    this._lazyByteOrder = lazyByteOrderOf(byteOrder)
     this._byteWidth = byteWidth
   }
 
-  get byteOrder() { return this._byteOrder }
-  get byteWidth() { return this._byteWidth }
-
   static {
-    define(this, {
+    compose(this, ByteOrderedPart, {
+      get lazyByteOrder() { return this._lazyByteOrder },
+      get byteWidth() { return this._byteWidth },
+      get byteOrder() { return this.lazyByteOrder.value },
+    })
+
+    compose(this, SplitContainerPart, {
       split(cursor = this.end(), result = null) {
         result ??= new this.constructor({
-          byteOrder: this.byteOrder,
+          byteOrder: this.lazyByteOrder,
           byteWidth: this.byteWidth,
         })
 
         return projectedSplit.call(this, cursor, result)
       },
+    })
 
+    compose(this, ProjectedRangePart, {
       decodeToken$(sourceCursor, stride) {
         const bytes = []
 

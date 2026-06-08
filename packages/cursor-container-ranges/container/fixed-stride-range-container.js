@@ -8,11 +8,11 @@ import { ProjectedRangeContainer } from './projected-range-container.js'
 import { RangeBufferShape } from '../shape/range-buffer-shape.js'
 import { previous } from '@kingjs/cursor-algorithm'
 import {
-  FixedProjectedRangeCursor,
-} from '../cursor/fixed-projected-range-cursor.js'
+  FixedStrideRangeCursor,
+} from '../cursor/fixed-stride-range-cursor.js'
 
-export class FixedProjectedRangeContainer extends ProjectedRangeContainer {
-  static cursorType = FixedProjectedRangeCursor
+export class FixedStrideRangeContainer extends ProjectedRangeContainer {
+  static cursorType = FixedStrideRangeCursor
 
   _fixedStride
 
@@ -28,15 +28,15 @@ export class FixedProjectedRangeContainer extends ProjectedRangeContainer {
   static {
     define(this, {
       get sourceEnd$() {
-        const sourceSize = this.source.size
+        const sourceSize = this.source$.size
         return previous(
-          this.source.end(),
+          this.source$.end(),
           sourceSize % this._fixedStride
         )
       },
 
       get size() {
-        const sourceSize = this.source.size
+        const sourceSize = this.source$.size
         const completeSize = sourceSize - sourceSize % this._fixedStride
         return completeSize / this._fixedStride
       },

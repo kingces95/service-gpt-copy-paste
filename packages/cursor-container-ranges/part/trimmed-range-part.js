@@ -10,7 +10,7 @@ export class TrimmedRangePart extends PartialClass {
 
   static {
     implement(this, RangeConcept, {
-      begin() { return new this.cursorType(this, this.source.begin()) },
+      begin() { return new this.cursorType(this, this.source$.begin()) },
       end() { return new this.cursorType(this, this.sourceEnd$, null) },
     })
   }

@@ -1,7 +1,9 @@
 import {
-  VariableProjectedRangeContainer,
+  ProjectedRangePart,
+  VariableStrideRangeContainer,
   RangeContainer,
 } from '@kingjs/cursor-container-ranges'
+import { compose } from '@kingjs/partial-compose'
 import { define } from '@kingjs/partial-define'
 import {
   decodeUtf8Sequence,
@@ -33,7 +35,7 @@ function readContinuation(cursor) {
   return utf8ContinuationPayload(readByte(cursor))
 }
 
-export class Utf8CodePointContainer extends VariableProjectedRangeContainer {
+export class Utf8CodePointContainer extends VariableStrideRangeContainer {
   constructor() {
     super(new RangeContainer(), {
       isContinuation: isUtf8ContinuationByte,
@@ -44,13 +46,15 @@ export class Utf8CodePointContainer extends VariableProjectedRangeContainer {
   static {
     define(this, {
       toStrings() {
-        return utf8RangesToStrings(this.source.ranges())
+        return utf8RangesToStrings(this.source$.ranges())
       },
 
       toString() {
-        return utf8RangesToString(this.source.ranges())
+        return utf8RangesToString(this.source$.ranges())
       },
+    })
 
+    compose(this, ProjectedRangePart, {
       decodeToken$(sourceCursor, stride) {
         const first = readByte(sourceCursor)
         const parts = []

@@ -109,7 +109,7 @@ describe('Utf8CodePointContainer', () => {
       input.pushRange(bytesOf([byte]))
 
     expect([...iterate(input)]).toEqual([GrinningFace])
-    expect(input.end().sourceCursor$.equals(input.source.end())).toBe(true)
+    expect(input.end().sourceCursor$.equals(input.source$.end())).toBe(true)
   })
 
   it('excludes a dangling suffix across one-byte ranges', () => {
@@ -157,7 +157,7 @@ describe('Utf16CodePointContainer', () => {
       .pushRange(bytesOf(utf16BytesOf('😀', 'little').slice(2)))
 
     expect([...iterate(input)]).toEqual([GrinningFace])
-    expect(input.end().sourceCursor$.equals(input.source.end())).toBe(true)
+    expect(input.end().sourceCursor$.equals(input.source$.end())).toBe(true)
   })
 })
 
@@ -171,6 +171,6 @@ describe('Utf32CodePointContainer', () => {
     input.pushRange(bytesOf(utf32BytesOf('a😀', 'little')))
 
     expect([...iterate(input)]).toEqual([A, GrinningFace])
-    expect(input.end().sourceCursor$.equals(input.source.end())).toBe(true)
+    expect(input.end().sourceCursor$.equals(input.source$.end())).toBe(true)
   })
 })

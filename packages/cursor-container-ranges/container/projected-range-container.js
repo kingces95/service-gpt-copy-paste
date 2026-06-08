@@ -1,10 +1,13 @@
 import { assert } from '@kingjs/assert'
-import { define, defineAbstract } from '@kingjs/partial-define'
+import { define } from '@kingjs/partial-define'
 import { compose } from '@kingjs/partial-compose'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { RangePart } from '@kingjs/cursor'
+import { ContainerPart } from '@kingjs/cursor-container'
 import { iterate } from '@kingjs/cursor-algorithm'
+import { ProjectedRangePart } from '../part/projected-range-part.js'
 import { RangeBufferPart } from '../part/range-buffer-part.js'
+import { SplitContainerPart } from '../part/split-container-part.js'
 import { TrimmedRangePart } from '../part/trimmed-range-part.js'
 import { RangeBufferShape } from '../shape/range-buffer-shape.js'
 
@@ -23,15 +26,13 @@ export class ProjectedRangeContainer extends PartialProxy {
   }
 
   static {
-    defineAbstract(this, {
-      decodeToken$(sourceCursor, stride) { },
-    })
-  }
-
-  static {
     compose(this, RangePart, { }, {
       begin() { },
       end() { },
+    })
+
+    compose(this, ContainerPart, {
+      get isEmpty() { return this.begin().equals(this.end()) },
     })
 
     compose(this, TrimmedRangePart, { }, {
@@ -40,19 +41,22 @@ export class ProjectedRangeContainer extends PartialProxy {
 
     compose(this, RangeBufferPart, {
       pushRange(range) {
-        this.source.pushRange(range)
+        this.source$.pushRange(range)
         return this
       },
 
       popRange(cursor = this.end()) {
-        return this.source.popRange(cursor.sourceCursor$)
+        return this.source$.popRange(cursor.sourceCursor$)
       },
     })
 
-    define(this, {
-      get source() { return this._source },
-      get isEmpty() { return this.begin().equals(this.end()) },
+    compose(this, ProjectedRangePart, {
+      get source$() { return this._source },
+    }, {
+      decodeToken$(sourceCursor, stride) { },
+    })
 
+    compose(this, SplitContainerPart, {
       split(cursor = this.end(), result = null) {
         const source = this.popRange(cursor)
         result ??= new this.constructor()

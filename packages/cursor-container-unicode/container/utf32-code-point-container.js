@@ -1,38 +1,38 @@
 import {
-  FixedProjectedRangeContainer,
+  FixedStrideRangeContainer,
+  ProjectedRangePart,
   ProjectedRangeContainer,
+  SplitContainerPart,
 } from '@kingjs/cursor-container-ranges'
-import { define } from '@kingjs/partial-define'
+import { compose } from '@kingjs/partial-compose'
 import {
-  assertByteOrder,
   assertScalarValue,
 } from '@kingjs/unicode'
 import { Utf32CodeUnitContainer } from './utf32-code-unit-container.js'
+import { ByteOrderAwarePart } from '../part/byte-ordered-part.js'
 
 const projectedSplit = ProjectedRangeContainer.prototype.split
 
-export class Utf32CodePointContainer extends FixedProjectedRangeContainer {
-  _byteOrder
-
+export class Utf32CodePointContainer extends FixedStrideRangeContainer {
   constructor({ byteOrder }) {
-    assertByteOrder(byteOrder)
     super(new Utf32CodeUnitContainer({ byteOrder }), { fixedStride: 1 })
-    this._byteOrder = byteOrder
   }
 
-  get byteOrder() { return this._byteOrder }
-
   static {
-    define(this, {
-      split(cursor = this.end(), result = null) {
-        result ??= new this.constructor({ byteOrder: this.byteOrder })
-        return projectedSplit.call(this, cursor, result)
-      },
-
+    compose(this, ProjectedRangePart, {
       decodeToken$(sourceCursor) {
         const value = sourceCursor.value
         assertScalarValue(value)
         return value
+      },
+    })
+
+    compose(this, ByteOrderAwarePart)
+
+    compose(this, SplitContainerPart, {
+      split(cursor = this.end(), result = null) {
+        result ??= new this.constructor({ byteOrder: this.lazyByteOrder })
+        return projectedSplit.call(this, cursor, result)
       },
     })
   }

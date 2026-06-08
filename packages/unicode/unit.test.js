@@ -71,6 +71,7 @@ describe('UTF-16 surrogates', () => {
     expect(decodeUint32([0x00, 0x01, 0xf6, 0x00], 'big')).toBe(0x1f600)
     expect(decodeUint32([0x00, 0xf6, 0x01, 0x00], 'little')).toBe(0x1f600)
   })
+
 })
 
 describe('UTF-8 sequences', () => {

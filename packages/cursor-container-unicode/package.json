@@ -14,6 +14,9 @@
     "@kingjs/cursor-container-ranges": "1.0.0",
     "@kingjs/cursor-container-standard": "1.0.0",
     "@kingjs/cursor-view": "1.0.0",
+    "@kingjs/lazy": "1.0.0",
+    "@kingjs/partial-class": "1.0.0",
+    "@kingjs/partial-compose": "1.0.0",
     "@kingjs/partial-define": "1.0.0",
     "@kingjs/simple-type": "1.0.0",
     "@kingjs/unicode": "1.0.0"

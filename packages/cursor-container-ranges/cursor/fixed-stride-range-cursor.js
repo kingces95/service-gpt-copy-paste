@@ -4,7 +4,7 @@ import { BacktrackableCursorPart } from '@kingjs/cursor'
 import { previous } from '@kingjs/cursor-algorithm'
 import { ProjectedRangeCursor } from './projected-range-cursor.js'
 
-export class FixedProjectedRangeCursor extends ProjectedRangeCursor {
+export class FixedStrideRangeCursor extends ProjectedRangeCursor {
   static {
     define(this, {
       get stride$() { return this.container._fixedStride },
@@ -12,7 +12,7 @@ export class FixedProjectedRangeCursor extends ProjectedRangeCursor {
 
     compose(this, BacktrackableCursorPart, {
       isAtBegin$() {
-        return this.sourceCursor$.equals(this.container.source.begin())
+        return this.sourceCursor$.equals(this.container.source$.begin())
       },
 
       stepBack() {
