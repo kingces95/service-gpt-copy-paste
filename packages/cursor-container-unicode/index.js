@@ -1,3 +1,4 @@
+export * from './byte-order-mark-policy.js'
 export * from './part/byte-ordered-part.js'
 export * from './container/byte-ordered-container.js'
 export * from './container/code-unit-container.js'

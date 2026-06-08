@@ -1,4 +1,5 @@
 export * from './byte-order.js'
+export * from './byte-order-marks.js'
 export * from './scalar.js'
 export * from './utf8/index.js'
 export * from './utf16/index.js'

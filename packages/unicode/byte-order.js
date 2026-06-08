@@ -67,7 +67,7 @@ export function encodeUnitsAsBytes(values, width, byteOrder) {
   return result
 }
 
-const NativeByteOrder = (() => {
+export const NativeByteOrder = (() => {
   const bytes = new Uint8Array(new Uint16Array([1]).buffer)
   return bytes[0] == 1 ? 'little' : 'big'
 })()
