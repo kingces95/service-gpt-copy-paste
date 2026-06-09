@@ -34,7 +34,6 @@ describe('Utf16CodeUnitContainer', () => {
       [0xff, 0xfe, ...encodeUtf16Bytes([codePointOf('😀')], 'little')]
     ))
 
-    expect(input.byteOrder).toBe('little')
     expect([...iterate(input)]).toEqual(units)
   })
 
@@ -76,7 +75,6 @@ describe('Utf32CodeUnitContainer', () => {
       [0x00, 0x00, 0xfe, 0xff, ...encodeUtf32Bytes([value], 'big')]
     ))
 
-    expect(input.byteOrder).toBe('big')
     expect([...iterate(input)]).toEqual([value])
   })
 

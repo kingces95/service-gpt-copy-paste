@@ -8,8 +8,6 @@ Contents
   Unicode types pivoted by projected stream role and extension root.
 - [Projected Source Type](#projected-source-type): Unicode projected
   containers pivoted by stream role and projected source type.
-- [Byte Order Part Composition](#byte-order-part-composition):
-  Unicode types pivoted by byte-order part composition.
 
 ## Byte Unit And Point Extensions
 
@@ -75,29 +73,4 @@ Point
 │  └─ Utf16CodePointContainer
 └─ Utf32CodeUnitContainer
    └─ Utf32CodePointContainer
-```
-
-## Byte Order Part Composition
-
-```txt
-Unicode Byte Order Part Composition
-├─ set: cursor-container-unicode types
-├─ map: composed directly or indirectly with byte-order part
-├─ pivot: byte ordered/remainder
-└─ display: chip roots with type leaves
-```
-
-```txt
-Unicode Byte Order Part Composition
-
-ByteOrderedPart
-├─ CodeUnitContainer
-├─ Utf16CodeUnitContainer
-├─ Utf32CodeUnitContainer
-├─ Utf16CodePointContainer
-├─ Utf32CodePointContainer
-└─ ByteOrderedContainer
-
-Remainder
-└─ Utf8CodePointContainer
 ```

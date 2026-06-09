@@ -110,7 +110,6 @@ describe('ByteOrderedContainer', () => {
     input.pushRange(rangeOf([0xfe]))
     input.pushRange(rangeOf([0xff, 0x00, 0x61]))
 
-    expect(input.byteOrder).toBe('big')
     expect([...iterate(input)]).toEqual([0x0061])
   })
 
@@ -122,7 +121,6 @@ describe('ByteOrderedContainer', () => {
 
     input.pushRange(rangeOf([0xff, 0xfe]))
 
-    expect(input.byteOrder).toBe('big')
     expect([...iterate(input)]).toEqual([0xfffe])
   })
 
@@ -139,7 +137,6 @@ describe('ByteOrderedContainer', () => {
 
     const committed = input.split(cursor)
 
-    expect(committed.byteOrder).toBe('little')
     expect([...iterate(committed)]).toEqual([0x0061])
     expect([...iterate(input)]).toEqual([0x0062])
   })

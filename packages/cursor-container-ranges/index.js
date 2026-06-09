@@ -1,4 +1,5 @@
 export * from './part/range-buffer-part.js'
+export * from './part/clone-empty-part.js'
 export * from './part/projected-range-part.js'
 export * from './part/split-container-part.js'
 export * from './part/trimmed-range-part.js'

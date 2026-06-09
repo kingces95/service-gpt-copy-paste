@@ -28,7 +28,7 @@ const projectedSplit = ProjectedRangeContainer.prototype.split
 
 class FixedValueRange extends FixedStrideRangeContainer {
   constructor() {
-    super(new RangeContainer(), { fixedStride: 2 })
+    super(new RangeContainer(), { strideLength: 2 })
   }
 
   static {

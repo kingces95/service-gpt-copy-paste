@@ -7,7 +7,7 @@ import { ProjectedRangeCursor } from './projected-range-cursor.js'
 export class FixedStrideRangeCursor extends ProjectedRangeCursor {
   static {
     define(this, {
-      get stride$() { return this.container._fixedStride },
+      get stride$() { return this.container._strideLength },
     })
 
     compose(this, BacktrackableCursorPart, {
@@ -18,7 +18,7 @@ export class FixedStrideRangeCursor extends ProjectedRangeCursor {
       stepBack() {
         this._sourceCursor = previous(
           this.sourceCursor$,
-          this.container._fixedStride
+          this.container._strideLength
         )
         return this
       },

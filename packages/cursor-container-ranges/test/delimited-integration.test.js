@@ -36,7 +36,7 @@ function materializeRanges(ranges) {
 
 class AsciiCodePointContainer extends FixedStrideRangeContainer {
   constructor() {
-    super(new RangeContainer(), { fixedStride: 1 })
+    super(new RangeContainer())
   }
 
   static {

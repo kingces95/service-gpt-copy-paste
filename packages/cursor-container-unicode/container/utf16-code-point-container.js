@@ -1,7 +1,5 @@
 import {
   ProjectedRangePart,
-  ProjectedRangeContainer,
-  SplitContainerPart,
   VariableStrideRangeContainer,
 } from '@kingjs/cursor-container-ranges'
 import { assert } from '@kingjs/assert'
@@ -14,7 +12,6 @@ import {
 } from '@kingjs/unicode'
 import { Uint16 } from '@kingjs/simple-type'
 import { Utf16CodeUnitContainer } from './utf16-code-unit-container.js'
-import { ByteOrderedPart } from '../part/byte-ordered-part.js'
 
 function unitAt(cursor) {
   const value = cursor.value
@@ -30,11 +27,13 @@ function readUnit(cursor) {
   return value
 }
 
-const projectedSplit = ProjectedRangeContainer.prototype.split
-
 export class Utf16CodePointContainer extends VariableStrideRangeContainer {
-  constructor({ byteOrder }) {
-    super(new Utf16CodeUnitContainer({ byteOrder }), {
+  constructor({ source = null, byteOrder = null } = { }) {
+    source ??= new Utf16CodeUnitContainer({ byteOrder })
+    assert(source instanceof Utf16CodeUnitContainer,
+      'UTF-16 code point source must be a UTF-16 code unit container.')
+
+    super(source, {
       isContinuation: isLowSurrogate,
       continuationCountOf: unit => isHighSurrogate(unit) ? 1 : 0,
     })
@@ -64,15 +63,5 @@ export class Utf16CodePointContainer extends VariableStrideRangeContainer {
       },
     })
 
-    compose(this, ByteOrderedPart, {
-      get byteOrder() { return this.source$.byteOrder },
-    })
-
-    compose(this, SplitContainerPart, {
-      split(cursor = this.end(), result = null) {
-        result ??= new this.constructor({ byteOrder: this.byteOrder })
-        return projectedSplit.call(this, cursor, result)
-      },
-    })
   }
 }

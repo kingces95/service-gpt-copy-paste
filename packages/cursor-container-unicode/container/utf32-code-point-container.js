@@ -1,21 +1,21 @@
 import {
   FixedStrideRangeContainer,
   ProjectedRangePart,
-  ProjectedRangeContainer,
-  SplitContainerPart,
 } from '@kingjs/cursor-container-ranges'
+import { assert } from '@kingjs/assert'
 import { compose } from '@kingjs/partial-compose'
 import {
   assertScalarValue,
 } from '@kingjs/unicode'
 import { Utf32CodeUnitContainer } from './utf32-code-unit-container.js'
-import { ByteOrderedPart } from '../part/byte-ordered-part.js'
-
-const projectedSplit = ProjectedRangeContainer.prototype.split
 
 export class Utf32CodePointContainer extends FixedStrideRangeContainer {
-  constructor({ byteOrder }) {
-    super(new Utf32CodeUnitContainer({ byteOrder }), { fixedStride: 1 })
+  constructor({ source = null, byteOrder = null } = { }) {
+    source ??= new Utf32CodeUnitContainer({ byteOrder })
+    assert(source instanceof Utf32CodeUnitContainer,
+      'UTF-32 code point source must be a UTF-32 code unit container.')
+
+    super(source)
   }
 
   static {
@@ -27,15 +27,5 @@ export class Utf32CodePointContainer extends FixedStrideRangeContainer {
       },
     })
 
-    compose(this, ByteOrderedPart, {
-      get byteOrder() { return this.source$.byteOrder },
-    })
-
-    compose(this, SplitContainerPart, {
-      split(cursor = this.end(), result = null) {
-        result ??= new this.constructor({ byteOrder: this.byteOrder })
-        return projectedSplit.call(this, cursor, result)
-      },
-    })
   }
 }

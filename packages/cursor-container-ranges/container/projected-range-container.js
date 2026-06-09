@@ -7,6 +7,7 @@ import { ContainerPart } from '@kingjs/cursor-container'
 import { iterate } from '@kingjs/cursor-algorithm'
 import { ProjectedRangePart } from '../part/projected-range-part.js'
 import { RangeBufferPart } from '../part/range-buffer-part.js'
+import { CloneEmptyPart } from '../part/clone-empty-part.js'
 import { SplitContainerPart } from '../part/split-container-part.js'
 import { TrimmedRangePart } from '../part/trimmed-range-part.js'
 import { RangeBufferShape } from '../shape/range-buffer-shape.js'
@@ -56,10 +57,18 @@ export class ProjectedRangeContainer extends PartialProxy {
       decodeToken$(sourceCursor, stride) { },
     })
 
+    compose(this, CloneEmptyPart, {
+      cloneEmpty() {
+        return new this.constructor({
+          source: this.source$.cloneEmpty(),
+        })
+      },
+    })
+
     compose(this, SplitContainerPart, {
       split(cursor = this.end(), result = null) {
         const source = this.popRange(cursor)
-        result ??= new this.constructor()
+        result ??= this.cloneEmpty()
 
         for (const range of iterate(source.ranges()))
           result.pushRange(range)

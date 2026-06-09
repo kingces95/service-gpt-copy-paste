@@ -4,6 +4,7 @@ import { define } from '@kingjs/partial-define'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { RangeConcept } from '@kingjs/cursor'
 import { RangeBufferPart } from '../part/range-buffer-part.js'
+import { CloneEmptyPart } from '../part/clone-empty-part.js'
 import {
   subrange,
 } from '@kingjs/cursor-view'
@@ -63,6 +64,12 @@ export class RangeContainer extends PartialProxy {
 
     compose(this, SizedContainerPart, {
       get size() { return this._size },
+    })
+
+    compose(this, CloneEmptyPart, {
+      cloneEmpty() {
+        return new this.constructor()
+      },
     })
 
     compose(this, RangeBufferPart, {

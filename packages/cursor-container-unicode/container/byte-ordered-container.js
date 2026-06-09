@@ -4,18 +4,16 @@ import { iterate } from '@kingjs/cursor-algorithm'
 import { Uint8 } from '@kingjs/simple-type'
 import {
   FixedStrideRangeContainer,
+  CloneEmptyPart,
   ProjectedRangePart,
-  ProjectedRangeContainer,
   RangeBufferPart,
   RangeContainer,
-  SplitContainerPart,
 } from '@kingjs/cursor-container-ranges'
 import {
   assertByteOrder,
   decodeBytes,
   NativeByteOrder,
 } from '@kingjs/unicode'
-import { ByteOrderedPart } from '../part/byte-ordered-part.js'
 import { PreambleScanner } from '../preamble-scanner.js'
 
 function byteAt(cursor) {
@@ -30,22 +28,23 @@ function isByteOrder(value) {
   return value == 'big' || value == 'little'
 }
 
-const projectedSplit = ProjectedRangeContainer.prototype.split
-
 export class ByteOrderedContainer extends FixedStrideRangeContainer {
   _byteOrder
   _byteWidth
   _preamble
 
-  constructor({ byteOrder = null, byteWidth }) {
+  constructor({ source = null, byteOrder = null, byteWidth }) {
     assert(byteWidth > 1,
       'Byte width must be greater than one.')
     assert(byteOrder == null || isByteOrder(byteOrder) ||
       typeof byteOrder == 'object',
       'Byte order must be null, big, little, or preambles.')
 
-    const source = new RangeContainer()
-    super(source, { fixedStride: byteWidth })
+    source ??= new RangeContainer()
+    assert(source instanceof RangeContainer,
+      'Byte ordered source must be a range container.')
+
+    super(source, { strideLength: byteWidth })
     this._preamble = null
     this._byteWidth = byteWidth
     this._byteOrder = isByteOrder(byteOrder)
@@ -72,10 +71,6 @@ export class ByteOrderedContainer extends FixedStrideRangeContainer {
   }
 
   static {
-    compose(this, ByteOrderedPart, {
-      get byteOrder() { return this._byteOrder },
-    })
-
     compose(this, RangeBufferPart, {
       pushRange(range) {
         if (this._preamble)
@@ -87,20 +82,19 @@ export class ByteOrderedContainer extends FixedStrideRangeContainer {
       },
     })
 
-    compose(this, SplitContainerPart, {
-      split(cursor = this.end(), result = null) {
-        result ??= new this.constructor({
-          byteOrder: this.byteOrder,
+    compose(this, CloneEmptyPart, {
+      cloneEmpty() {
+        return new this.constructor({
+          source: this.source$.cloneEmpty(),
+          byteOrder: this._byteOrder,
           byteWidth: this._byteWidth,
         })
-
-        return projectedSplit.call(this, cursor, result)
       },
     })
 
     compose(this, ProjectedRangePart, {
       decodeToken$(sourceCursor, stride) {
-        assert(this.byteOrder != null,
+        assert(this._byteOrder != null,
           'Byte order has not been resolved.')
 
         const bytes = []
@@ -110,7 +104,7 @@ export class ByteOrderedContainer extends FixedStrideRangeContainer {
           sourceCursor.step()
         }
 
-        return decodeBytes(bytes, this.byteOrder)
+        return decodeBytes(bytes, this._byteOrder)
       },
     })
   }
