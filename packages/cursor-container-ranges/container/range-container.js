@@ -3,19 +3,17 @@ import { implement } from '@kingjs/partial-implement'
 import { define } from '@kingjs/partial-define'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { RangeConcept } from '@kingjs/cursor'
-import { RangeBufferPart } from '../part/range-buffer-part.js'
+import { RangeOfRangesPart } from '../part/range-of-ranges-part.js'
 import { CloneEmptyPart } from '../part/clone-empty-part.js'
 import {
   subrange,
 } from '@kingjs/cursor-view'
 import {
-  distance,
   next,
 } from '@kingjs/cursor-algorithm'
 import {
   ContainerPart,
   List,
-  SizedContainerPart,
 } from '@kingjs/cursor-container'
 import {
   RangeContainerCursor,
@@ -43,13 +41,11 @@ export class RangeContainer extends PartialProxy {
 
   _ranges
   _tail
-  _size
 
   constructor() {
     super()
     this._ranges = new List()
     this._tail = this._ranges.beforeBegin()
-    this._size = 0
   }
 
   static {
@@ -62,17 +58,13 @@ export class RangeContainer extends PartialProxy {
       get isEmpty() { return this._ranges.isEmpty },
     })
 
-    compose(this, SizedContainerPart, {
-      get size() { return this._size },
-    })
-
     compose(this, CloneEmptyPart, {
       cloneEmpty() {
         return new this.constructor()
       },
     })
 
-    compose(this, RangeBufferPart, {
+    compose(this, RangeOfRangesPart, {
       pushRange(range) {
         const storedRange = toStoredRange(range)
         if (storedRange.begin().equals(storedRange.end()))
@@ -80,7 +72,6 @@ export class RangeContainer extends PartialProxy {
 
         this._ranges.insertValueAfter(this._tail, storedRange)
         this._tail.step()
-        this._size += distance(storedRange)
         return this
       },
 
@@ -102,12 +93,9 @@ export class RangeContainer extends PartialProxy {
         if (this._ranges.isEmpty)
           this._tail = this._ranges.beforeBegin()
 
-        this._size -= result.size
         return result
       },
-    })
 
-    define(this, {
       ranges() {
         return this._ranges
       },

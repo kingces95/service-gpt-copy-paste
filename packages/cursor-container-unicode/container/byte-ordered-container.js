@@ -6,7 +6,7 @@ import {
   FixedStrideRangeContainer,
   CloneEmptyPart,
   ProjectedRangePart,
-  RangeBufferPart,
+  RangeOfRangesPart,
   RangeContainer,
 } from '@kingjs/cursor-container-ranges'
 import {
@@ -27,6 +27,8 @@ function byteAt(cursor) {
 function isByteOrder(value) {
   return value == 'big' || value == 'little'
 }
+
+const pushRange = FixedStrideRangeContainer.prototype.pushRange
 
 export class ByteOrderedContainer extends FixedStrideRangeContainer {
   _byteOrder
@@ -64,19 +66,19 @@ export class ByteOrderedContainer extends FixedStrideRangeContainer {
           this._preamble = null
 
           for (const range of iterate(remainder.ranges()))
-            source.pushRange(range)
+            pushRange.call(this, range)
         },
       })
     }
   }
 
   static {
-    compose(this, RangeBufferPart, {
+    compose(this, RangeOfRangesPart, {
       pushRange(range) {
         if (this._preamble)
           this._preamble.pushRange(range)
         else
-          this.source$.pushRange(range)
+          pushRange.call(this, range)
 
         return this
       },

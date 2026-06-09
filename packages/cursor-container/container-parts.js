@@ -50,11 +50,8 @@ export class ContainerPart extends PartialClass {
     })
   }
 
-  static [DefinesAbstract] = {
-    get isEmpty() { },
-  }
-
   static [Defines] = {
+    get isEmpty() { return this.begin().equals(this.end()) },
     ownCursorAssert$(cursor) {
       if (cursor.range != this) throwNotEquatableTo()
     },

@@ -3,14 +3,13 @@ import { define } from '@kingjs/partial-define'
 import { compose } from '@kingjs/partial-compose'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { RangePart } from '@kingjs/cursor'
-import { ContainerPart } from '@kingjs/cursor-container'
 import { iterate } from '@kingjs/cursor-algorithm'
 import { ProjectedRangePart } from '../part/projected-range-part.js'
-import { RangeBufferPart } from '../part/range-buffer-part.js'
+import { RangeOfRangesPart } from '../part/range-of-ranges-part.js'
 import { CloneEmptyPart } from '../part/clone-empty-part.js'
 import { SplitContainerPart } from '../part/split-container-part.js'
 import { TrimmedRangePart } from '../part/trimmed-range-part.js'
-import { RangeBufferShape } from '../shape/range-buffer-shape.js'
+import { RangeOfRangesShape } from '../shape/range-of-ranges-shape.js'
 
 // ProjectedRangeContainer scans a source range as projected values while
 // preserving source ownership. Cursors move in projected space, but popRange()
@@ -21,8 +20,8 @@ export class ProjectedRangeContainer extends PartialProxy {
 
   constructor(source) {
     super()
-    assert(source instanceof RangeBufferShape,
-      'Projected range source must be a range buffer.')
+    assert(source instanceof RangeOfRangesShape,
+      'Projected range source must be a range of ranges.')
     this._source = source
   }
 
@@ -32,15 +31,11 @@ export class ProjectedRangeContainer extends PartialProxy {
       end() { },
     })
 
-    compose(this, ContainerPart, {
-      get isEmpty() { return this.begin().equals(this.end()) },
-    })
-
     compose(this, TrimmedRangePart, { }, {
       get sourceEnd$() { },
     })
 
-    compose(this, RangeBufferPart, {
+    compose(this, RangeOfRangesPart, {
       pushRange(range) {
         this.source$.pushRange(range)
         return this
@@ -49,6 +44,8 @@ export class ProjectedRangeContainer extends PartialProxy {
       popRange(cursor = this.end()) {
         return this.source$.popRange(cursor.sourceCursor$)
       },
+
+      ranges() { return this.source$.ranges() },
     })
 
     compose(this, ProjectedRangePart, {

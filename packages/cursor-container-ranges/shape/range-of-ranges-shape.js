@@ -1,6 +1,8 @@
 import { RangeShape } from '@kingjs/cursor-shape'
 
-export class RangeBufferShape extends RangeShape {
+export class RangeOfRangesShape extends RangeShape {
   pushRange(range) { }
   popRange(cursor) { }
+  ranges() { }
+  spans() { }
 }

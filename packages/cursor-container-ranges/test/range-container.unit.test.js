@@ -6,13 +6,12 @@ import {
 import { SnapshotView } from '@kingjs/cursor-view'
 import {
   BidirectionalRangeShape,
-  SizedContainerShape,
 } from '@kingjs/cursor-shape'
 import {
   TrivialForwardRange,
 } from '../../cursor/trivial-cursors.js'
 import {
-  RangeBufferShape,
+  RangeOfRangesShape,
   RangeContainer,
 } from '../index.js'
 
@@ -33,7 +32,6 @@ describe('RangeContainer', () => {
       .pushRange(new SnapshotView(['c']))
 
     expect([...iterate(ranges)]).toEqual(['a', 'b', 'c'])
-    expect(ranges.size).toBe(3)
     expect([...iterate(ranges)]).toEqual(['a', 'b', 'c'])
 
     const commit = ranges.begin()
@@ -42,7 +40,6 @@ describe('RangeContainer', () => {
 
     expect([...iterate(ranges.popRange(commit))]).toEqual(['a', 'b'])
     expect([...iterate(ranges)]).toEqual(['c'])
-    expect(ranges.size).toBe(1)
   })
 
   it('iterates pushed ranges as one joined range', () => {
@@ -54,10 +51,8 @@ describe('RangeContainer', () => {
       .pushRange(new SnapshotView([4, 5]))
 
     expect([...iterate(ranges)]).toEqual([1, 2, 3, 4, 5])
-    expect(ranges.size).toBe(5)
     expect(ranges).toBeInstanceOf(BidirectionalRangeShape)
-    expect(ranges).toBeInstanceOf(RangeBufferShape)
-    expect(ranges).toBeInstanceOf(SizedContainerShape)
+    expect(ranges).toBeInstanceOf(RangeOfRangesShape)
     expect(ranges.isEmpty).toBe(false)
   })
 
@@ -171,7 +166,7 @@ describe('RangeContainer', () => {
     expect(() => ranges.pushRange(new TrivialForwardRange())).toThrow(
       'Argument 0 must be BidirectionalRangeShape.')
     expect(() => ranges.popRange(other.begin())).toThrow(
-      'Range buffer cursor must belong to this container.')
+      'Cursor is from another container.')
   })
 
   it('asserts when stepping back before begin', () => {
