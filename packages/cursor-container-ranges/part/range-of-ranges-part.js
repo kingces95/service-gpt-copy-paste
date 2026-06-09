@@ -3,6 +3,7 @@ import { CursorConcept } from '@kingjs/cursor'
 import { BidirectionalRangeShape } from '@kingjs/cursor-shape'
 import { ContainerPart } from '@kingjs/cursor-container'
 import { defaultTo } from '@kingjs/function-contract'
+import { genericType } from '@kingjs/generic'
 import { iterate } from '@kingjs/cursor-algorithm'
 import {
   Defines,
@@ -10,37 +11,47 @@ import {
 } from '@kingjs/partial-class'
 import { members } from '@kingjs/partial-signature'
 
-export class RangeOfRangesPart extends ContainerPart {
-  static [DefinesAbstract] = members(this, {
-    pushRange: {
-      types: [BidirectionalRangeShape],
-      method(range) { },
-    },
+export const RangeOfRangesPartOf = genericType(TSpan => {
+  return class RangeOfRangesPart extends ContainerPart {
+    static spanType = TSpan
 
-    popRange: {
-      types: [CursorConcept],
-      defaults: [defaultTo(({ self }) => self.end())],
-      precondition(cursor) {
-        this.ownCursorAssert$(cursor)
+    static [DefinesAbstract] = members(this, {
+      pushRange: {
+        types: [BidirectionalRangeShape],
+        method(range) { },
       },
-      method(cursor /* = this.end() */) { },
-    },
 
-    ranges() { },
-  })
+      popRange: {
+        types: [CursorConcept],
+        defaults: [defaultTo(({ self }) => self.end())],
+        precondition(cursor) {
+          this.ownCursorAssert$(cursor)
+        },
+        method(cursor /* = this.end() */) { },
+      },
 
-  static [Defines] = {
-    *spans() {
-      for (const range of iterate(this.ranges())) {
-        if (typeof range.spans == 'function') {
-          yield* range.spans()
-          continue
+      ranges() { },
+    })
+
+    static [Defines] = {
+      *spans() {
+        for (const range of iterate(this.ranges())) {
+          if (typeof range.spans == 'function') {
+            yield* range.spans()
+            continue
+          }
+
+          assert(typeof range.span == 'function',
+            'Range must expose span().')
+          const span = range.span()
+
+          assert(span instanceof this.constructor.spanType,
+            'Range span type must match spanType.')
+          yield span
         }
-
-        assert(typeof range.span == 'function',
-          'Range must expose span().')
-        yield range.span()
-      }
-    },
+      },
+    }
   }
-}
+})
+
+export const RangeOfRangesPart = RangeOfRangesPartOf(Object)

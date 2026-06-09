@@ -2,8 +2,9 @@ import { compose } from '@kingjs/partial-compose'
 import { implement } from '@kingjs/partial-implement'
 import { define } from '@kingjs/partial-define'
 import { PartialProxy } from '@kingjs/partial-proxy'
+import { genericType } from '@kingjs/generic'
 import { RangeConcept } from '@kingjs/cursor'
-import { RangeOfRangesPart } from '../part/range-of-ranges-part.js'
+import { RangeOfRangesPartOf } from '../part/range-of-ranges-part.js'
 import { CloneEmptyPart } from '../part/clone-empty-part.js'
 import {
   subrange,
@@ -36,69 +37,76 @@ function toStoredRange(range) {
 //
 // popRange(cursor) removes everything before the cursor and returns another
 // RangeContainer containing the detached stored ranges.
-export class RangeContainer extends PartialProxy {
-  static cursorType = RangeContainerCursor
+export const RangeContainerOf = genericType(TSpan => {
+  const RangeOfRangesPart = RangeOfRangesPartOf(TSpan)
 
-  _ranges
-  _tail
+  return class RangeContainer extends PartialProxy {
+    static cursorType = RangeContainerCursor
+    static spanType = TSpan
 
-  constructor() {
-    super()
-    this._ranges = new List()
-    this._tail = this._ranges.beforeBegin()
-  }
+    _ranges
+    _tail
 
-  static {
-    implement(this, RangeConcept, {
-      begin() { return new this.cursorType(this, this._ranges.begin()) },
-      end() { return new this.cursorType(this, this._ranges.end()) },
-    })
+    constructor() {
+      super()
+      this._ranges = new List()
+      this._tail = this._ranges.beforeBegin()
+    }
 
-    compose(this, ContainerPart, {
-      get isEmpty() { return this._ranges.isEmpty },
-    })
+    static {
+      implement(this, RangeConcept, {
+        begin() { return new this.cursorType(this, this._ranges.begin()) },
+        end() { return new this.cursorType(this, this._ranges.end()) },
+      })
 
-    compose(this, CloneEmptyPart, {
-      cloneEmpty() {
-        return new this.constructor()
-      },
-    })
+      compose(this, ContainerPart, {
+        get isEmpty() { return this._ranges.isEmpty },
+      })
 
-    compose(this, RangeOfRangesPart, {
-      pushRange(range) {
-        const storedRange = toStoredRange(range)
-        if (storedRange.begin().equals(storedRange.end()))
+      compose(this, CloneEmptyPart, {
+        cloneEmpty() {
+          return new this.constructor()
+        },
+      })
+
+      compose(this, RangeOfRangesPart, {
+        pushRange(range) {
+          const storedRange = toStoredRange(range)
+          if (storedRange.begin().equals(storedRange.end()))
+            return this
+
+          this._ranges.insertValueAfter(this._tail, storedRange)
+          this._tail.step()
           return this
+        },
 
-        this._ranges.insertValueAfter(this._tail, storedRange)
-        this._tail.step()
-        return this
-      },
+        popRange(cursor = this.end()) {
+          const result = new this.constructor()
+          const before = this._ranges.beforeBegin()
 
-      popRange(cursor = this.end()) {
-        const result = new this.constructor()
-        const before = this._ranges.beforeBegin()
+          while (!next(before).equals(cursor.outerCursor)) {
+            result.pushRange(next(before).value)
+            this._ranges.eraseAfter(before)
+          }
 
-        while (!next(before).equals(cursor.outerCursor)) {
-          result.pushRange(next(before).value)
-          this._ranges.eraseAfter(before)
-        }
+          if (!cursor.outerCursor.equals(this._ranges.end())) {
+            const range = cursor.popRangePrefix()
+            if (range)
+              result.pushRange(range)
+          }
 
-        if (!cursor.outerCursor.equals(this._ranges.end())) {
-          const range = cursor.popRangePrefix()
-          if (range)
-            result.pushRange(range)
-        }
+          if (this._ranges.isEmpty)
+            this._tail = this._ranges.beforeBegin()
 
-        if (this._ranges.isEmpty)
-          this._tail = this._ranges.beforeBegin()
+          return result
+        },
 
-        return result
-      },
-
-      ranges() {
-        return this._ranges
-      },
-    })
+        ranges() {
+          return this._ranges
+        },
+      })
+    }
   }
-}
+})
+
+export const RangeContainer = RangeContainerOf(Object)

@@ -12,6 +12,7 @@ import {
 } from '../../cursor/trivial-cursors.js'
 import {
   RangeOfRangesShape,
+  RangeContainerOf,
   RangeContainer,
 } from '../index.js'
 
@@ -54,6 +55,15 @@ describe('RangeContainer', () => {
     expect(ranges).toBeInstanceOf(BidirectionalRangeShape)
     expect(ranges).toBeInstanceOf(RangeOfRangesShape)
     expect(ranges.isEmpty).toBe(false)
+  })
+
+  it('carries span type on generic specializations', () => {
+    const Uint8RangeContainer = RangeContainerOf(Uint8Array)
+    const ranges = new Uint8RangeContainer()
+
+    expect(Uint8RangeContainer.spanType).toBe(Uint8Array)
+    expect(ranges.constructor.spanType).toBe(Uint8Array)
+    expect(ranges).toBeInstanceOf(RangeOfRangesShape)
   })
 
   it('steps backward within a stored range', () => {

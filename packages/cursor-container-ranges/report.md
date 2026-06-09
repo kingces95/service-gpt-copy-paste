@@ -9,6 +9,8 @@ Contents
   applied to cursor receivers, ordered by dependency.
 - [Container Partial Type Members](#container-partial-type-members): Partial
   types applied to container receivers, ordered by dependency.
+- [Generic Span Type](#generic-span-type): Range types whose generic
+  specialization carries the homogeneous span type used by `spans()`.
 
 ## Cursor Partial Type Members
 
@@ -125,4 +127,34 @@ Private
 └─ VariableStrideRangeContainer
    ├─ _isContinuation
    └─ _continuationCountOf
+```
+
+## Generic Span Type
+
+```txt
+Range Generic Span Type
+├─ set: cursor-container-ranges generic types
+├─ map: generic specializer, standard alias, spanType role
+├─ pivot: declaration, container
+└─ display: generic roots with standard aliases as leaves
+```
+
+```txt
+Range Generic Span Type
+
+Declaration
+├─ RangeOfRangesPartOf(TSpan)
+│  └─ RangeOfRangesPart = RangeOfRangesPartOf(Object)
+└─ RangeOfRangesShapeOf(TSpan)
+   └─ RangeOfRangesShape = RangeOfRangesShapeOf(Object)
+
+Container
+├─ RangeContainerOf(TSpan)
+│  └─ RangeContainer = RangeContainerOf(Object)
+├─ ProjectedRangeContainerOf(TSpan)
+│  └─ ProjectedRangeContainer = ProjectedRangeContainerOf(Object)
+├─ FixedStrideRangeContainerOf(TSpan)
+│  └─ FixedStrideRangeContainer = FixedStrideRangeContainerOf(Object)
+└─ VariableStrideRangeContainerOf(TSpan)
+   └─ VariableStrideRangeContainer = VariableStrideRangeContainerOf(Object)
 ```

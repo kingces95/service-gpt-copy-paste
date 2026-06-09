@@ -8,6 +8,8 @@ Contents
   Unicode types pivoted by projected stream role and extension root.
 - [Projected Source Type](#projected-source-type): Unicode projected
   containers pivoted by stream role and projected source type.
+- [Source Span Type](#source-span-type): Unicode generic containers whose
+  `TSpan` describes the committed source spans, not the projected values.
 
 ## Byte Unit And Point Extensions
 
@@ -73,4 +75,38 @@ Point
 │  └─ Utf16CodePointContainer
 └─ Utf32CodeUnitContainer
    └─ Utf32CodePointContainer
+```
+
+## Source Span Type
+
+```txt
+Unicode Source Span Type
+├─ set: cursor-container-unicode generic containers
+├─ map: generic specializer, byte/unit/point
+├─ pivot: byte/unit/point, then generic root
+└─ display: generic roots with standard aliases as leaves
+```
+
+```txt
+Unicode Source Span Type
+
+Byte
+└─ ByteOrderedContainerOf(TSpan)
+   └─ ByteOrderedContainer = ByteOrderedContainerOf(Object)
+
+Unit
+├─ CodeUnitContainerOf(TSpan)
+│  └─ CodeUnitContainer = CodeUnitContainerOf(Object)
+├─ Utf16CodeUnitContainerOf(TSpan)
+│  └─ Utf16CodeUnitContainer = Utf16CodeUnitContainerOf(Object)
+└─ Utf32CodeUnitContainerOf(TSpan)
+   └─ Utf32CodeUnitContainer = Utf32CodeUnitContainerOf(Object)
+
+Point
+├─ Utf8CodePointContainerOf(TSpan)
+│  └─ Utf8CodePointContainer = Utf8CodePointContainerOf(Object)
+├─ Utf16CodePointContainerOf(TSpan)
+│  └─ Utf16CodePointContainer = Utf16CodePointContainerOf(Object)
+└─ Utf32CodePointContainerOf(TSpan)
+   └─ Utf32CodePointContainer = Utf32CodePointContainerOf(Object)
 ```

@@ -4,6 +4,7 @@ import { iterate } from '@kingjs/cursor-algorithm'
 import { TypedArrayView } from '@kingjs/cursor-view'
 import {
   Utf16CodePointContainer,
+  Utf16CodePointContainerOf,
   Utf32CodePointContainer,
   Utf8CodePointContainer,
 } from '../index.js'
@@ -152,6 +153,17 @@ describe('Code point container integration', () => {
     }
 
     expect(valuesOf(input)).toEqual(remainingCodePoints)
+  })
+
+  it('carries span type through unicode generic specializations', () => {
+    const Utf16CodePoints = Utf16CodePointContainerOf(Uint8Array)
+    const input = new Utf16CodePoints({ byteOrder: 'little' })
+    const split = input.split()
+
+    expect(Utf16CodePoints.spanType).toBe(Uint8Array)
+    expect(input.constructor.spanType).toBe(Uint8Array)
+    expect(input.source$.constructor.spanType).toBe(Uint8Array)
+    expect(split.constructor.spanType).toBe(Uint8Array)
   })
 })
 
