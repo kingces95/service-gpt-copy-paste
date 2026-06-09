@@ -1,5 +1,7 @@
 import { implement } from '@kingjs/partial-implement'
 import { PartialProxy } from '@kingjs/partial-proxy'
+import { assert } from '@kingjs/assert'
+import { spanTypeOfRange } from '@kingjs/cursor-shape'
 import {
   RangeConcept,
 } from '@kingjs/cursor'
@@ -26,6 +28,19 @@ export class SubrangeView extends PartialProxy {
         return this._last.clone?.() ?? this._last
       },
     })
+  }
+
+  get spanType() { return this._first.spanType }
+
+  span(begin = this.begin(), end = this.end()) {
+    assert(typeof begin.span == 'function',
+      'Subrange cursor must expose span().')
+    const span = begin.span(end)
+    const TSpan = spanTypeOfRange(this)
+
+    assert(TSpan == null || TSpan == Object || span instanceof TSpan,
+      'Subrange span type must match spanType.')
+    return span
   }
 }
 

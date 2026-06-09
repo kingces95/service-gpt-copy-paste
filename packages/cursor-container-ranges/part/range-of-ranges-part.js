@@ -11,6 +11,11 @@ import {
 } from '@kingjs/partial-class'
 import { members } from '@kingjs/partial-signature'
 
+function assertSpanType(range, span) {
+  assert(span instanceof range.constructor.spanType,
+    'Range span type must match spanType.')
+}
+
 export const RangeOfRangesPartOf = genericType(TSpan => {
   return class RangeOfRangesPart extends ContainerPart {
     static spanType = TSpan
@@ -37,7 +42,10 @@ export const RangeOfRangesPartOf = genericType(TSpan => {
       *spans() {
         for (const range of iterate(this.ranges())) {
           if (typeof range.spans == 'function') {
-            yield* range.spans()
+            for (const span of range.spans()) {
+              assertSpanType(this, span)
+              yield span
+            }
             continue
           }
 
@@ -45,8 +53,7 @@ export const RangeOfRangesPartOf = genericType(TSpan => {
             'Range must expose span().')
           const span = range.span()
 
-          assert(span instanceof this.constructor.spanType,
-            'Range span type must match spanType.')
+          assertSpanType(this, span)
           yield span
         }
       },

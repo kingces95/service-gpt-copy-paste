@@ -11,6 +11,8 @@ Contents
   types applied to container receivers, ordered by dependency.
 - [Generic Span Type](#generic-span-type): Range types whose generic
   specialization carries the homogeneous span type used by `spans()`.
+- [Span Projection Algorithms](#span-projection-algorithms): Algorithms that
+  consume the span projection before any storage-specific optimization.
 
 ## Cursor Partial Type Members
 
@@ -157,4 +159,27 @@ Container
 │  └─ FixedStrideRangeContainer = FixedStrideRangeContainerOf(Object)
 └─ VariableStrideRangeContainerOf(TSpan)
    └─ VariableStrideRangeContainer = VariableStrideRangeContainerOf(Object)
+```
+
+## Span Projection Algorithms
+
+```txt
+Range Span Projection Algorithms
+├─ set: cursor-shape projections and cursor-container-ranges algorithms
+├─ map: algorithm, role, expected surface
+├─ pivot: projection, assertion
+└─ display: algorithm roots with role leaves
+```
+
+```txt
+Range Span Projection Algorithms
+
+Projection
+└─ spansOfRange(range)
+   ├─ uses range.spans()
+   └─ falls back to range.span()
+
+Assertion
+└─ RangeOfRangesPart.spans()
+   └─ asserts each yielded span is an instance of spanType
 ```

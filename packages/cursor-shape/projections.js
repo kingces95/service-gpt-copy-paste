@@ -1,3 +1,5 @@
+import { assert } from '@kingjs/assert'
+
 // ____________________________________________________________________________
 // RANGE PROJECTIONS
 
@@ -22,6 +24,20 @@ export function spanTypeOfRangeType(type) {
 export function spanTypeOfRange(range) {
   return spanTypeOfRangeType(range.constructor) ??
     spanTypeOfCursor(range.begin?.())
+}
+
+// span_range_t<R>
+export function* spansOfRange(range) {
+  assert(range != null, 'Range is required.')
+
+  if (typeof range.spans == 'function') {
+    yield* range.spans()
+    return
+  }
+
+  assert(typeof range.span == 'function',
+    'Range must expose span() or spans().')
+  yield range.span()
 }
 
 // ____________________________________________________________________________

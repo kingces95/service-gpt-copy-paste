@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { iterate } from '@kingjs/cursor-algorithm'
-import { SnapshotView } from '@kingjs/cursor-view'
+import { SnapshotView, TypedArrayView } from '@kingjs/cursor-view'
+import { spanTypeOfRange, spansOfRange } from '@kingjs/cursor-shape'
 import {
   findSequence,
   matchPrefix,
   RangeContainer,
+  RangeContainerOf,
 } from '../index.js'
 
 function rangeOf(...chunks) {
@@ -74,5 +76,35 @@ describe('matchPrefix', () => {
     })
 
     expect(match.state).toBe('missed')
+  })
+})
+
+describe('span projections', () => {
+  it('projects spans through a range of ranges', () => {
+    const Uint8RangeContainer = RangeContainerOf(Uint8Array)
+    const range = new Uint8RangeContainer()
+
+    range
+      .pushRange(new TypedArrayView(Uint8Array.from([1, 2])))
+      .pushRange(new TypedArrayView(Uint8Array.from([3])))
+
+    expect([...spansOfRange(range)].map(span => [...span]))
+      .toEqual([[1, 2], [3]])
+  })
+
+  it('reports the declared span type', () => {
+    const Uint8RangeContainer = RangeContainerOf(Uint8Array)
+
+    expect(spanTypeOfRange(new Uint8RangeContainer())).toBe(Uint8Array)
+  })
+
+  it('asserts homogeneous spans', () => {
+    const Uint8RangeContainer = RangeContainerOf(Uint8Array)
+    const range = new Uint8RangeContainer()
+
+    range.pushRange(new TypedArrayView(Int8Array.from([1])))
+
+    expect(() => [...spansOfRange(range)]).toThrow(
+      'Range span type must match spanType.')
   })
 })
