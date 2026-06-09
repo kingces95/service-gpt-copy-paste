@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { iterate } from '@kingjs/cursor-algorithm'
 import { TypedArrayView } from '@kingjs/cursor-view'
-import { Lazy } from '@kingjs/lazy'
+import { Utf16ByteOrderMarks } from '@kingjs/unicode'
 import { ByteOrderedContainer } from '../index.js'
 
 function rangeOf(values) {
@@ -38,29 +38,9 @@ describe('ByteOrderedContainer', () => {
     expect([...iterate(input)]).toEqual([0x12345678])
   })
 
-  it('does not resolve byte order to trim dangling source bytes', () => {
-    let calls = 0
+  it('preserves unspecified byte order when splitting empty content', () => {
     const input = new ByteOrderedContainer({
-      byteOrder: new Lazy(() => {
-        calls++
-        return 'big'
-      }),
-      byteWidth: 2,
-    })
-
-    input.pushRange(rangeOf([0x00]))
-
-    expect([...iterate(input)]).toEqual([])
-    expect(calls).toBe(0)
-  })
-
-  it('preserves lazy byte order when splitting empty content', () => {
-    let calls = 0
-    const input = new ByteOrderedContainer({
-      byteOrder: new Lazy(() => {
-        calls++
-        return 'big'
-      }),
+      byteOrder: Utf16ByteOrderMarks,
       byteWidth: 2,
     })
 
@@ -68,24 +48,18 @@ describe('ByteOrderedContainer', () => {
 
     const committed = input.split()
 
-    expect(committed.lazyByteOrder).toBe(input.lazyByteOrder)
-    expect(calls).toBe(0)
+    expect([...iterate(committed)]).toEqual([])
   })
 
   it('resolves byte order when decoding a complete unit', () => {
-    let calls = 0
     const input = new ByteOrderedContainer({
-      byteOrder: new Lazy(() => {
-        calls++
-        return 'big'
-      }),
+      byteOrder: 'big',
       byteWidth: 2,
     })
 
     input.pushRange(rangeOf([0x12, 0x34]))
 
     expect([...iterate(input)]).toEqual([0x1234])
-    expect(calls).toBe(1)
   })
 
   it('returns committed source bytes', () => {
@@ -114,5 +88,59 @@ describe('ByteOrderedContainer', () => {
     input.pushRange(rangeOf([0x00, 0x01, 0x00]))
 
     expect([...iterate(input)]).toEqual([0x0001])
+  })
+
+  it('waits for enough bytes before resolving a byte order mark', () => {
+    const input = new ByteOrderedContainer({
+      byteOrder: Utf16ByteOrderMarks,
+      byteWidth: 2,
+    })
+
+    input.pushRange(rangeOf([0xfe]))
+
+    expect([...iterate(input)]).toEqual([])
+  })
+
+  it('consumes a detected byte order mark', () => {
+    const input = new ByteOrderedContainer({
+      byteOrder: Utf16ByteOrderMarks,
+      byteWidth: 2,
+    })
+
+    input.pushRange(rangeOf([0xfe]))
+    input.pushRange(rangeOf([0xff, 0x00, 0x61]))
+
+    expect(input.byteOrder).toBe('big')
+    expect([...iterate(input)]).toEqual([0x0061])
+  })
+
+  it('treats explicit byte order as already resolved', () => {
+    const input = new ByteOrderedContainer({
+      byteOrder: 'big',
+      byteWidth: 2,
+    })
+
+    input.pushRange(rangeOf([0xff, 0xfe]))
+
+    expect(input.byteOrder).toBe('big')
+    expect([...iterate(input)]).toEqual([0xfffe])
+  })
+
+  it('preserves resolved byte order across split', () => {
+    const input = new ByteOrderedContainer({
+      byteOrder: Utf16ByteOrderMarks,
+      byteWidth: 2,
+    })
+
+    input.pushRange(rangeOf([0xff, 0xfe, 0x61, 0x00, 0x62, 0x00]))
+
+    const cursor = input.begin()
+    cursor.step()
+
+    const committed = input.split(cursor)
+
+    expect(committed.byteOrder).toBe('little')
+    expect([...iterate(committed)]).toEqual([0x0061])
+    expect([...iterate(input)]).toEqual([0x0062])
   })
 })

@@ -25,6 +25,19 @@ function codePointOf(text) {
 }
 
 describe('Utf16CodeUnitContainer', () => {
+  it('detects and consumes a UTF-16 byte order mark', () => {
+    const input = new Utf16CodeUnitContainer()
+    const units = encodeUtf16Sequence([codePointOf('😀')])
+
+    input.pushRange(rangeOf(
+      Uint8Vector,
+      [0xff, 0xfe, ...encodeUtf16Bytes([codePointOf('😀')], 'little')]
+    ))
+
+    expect(input.byteOrder).toBe('little')
+    expect([...iterate(input)]).toEqual(units)
+  })
+
   it('decodes ordered source bytes to UTF-16 code units', () => {
     const input = new Utf16CodeUnitContainer({ byteOrder: 'big' })
     const units = encodeUtf16Sequence([codePointOf('😀')])
@@ -54,6 +67,19 @@ describe('Utf16CodeUnitContainer', () => {
 })
 
 describe('Utf32CodeUnitContainer', () => {
+  it('detects and consumes a UTF-32 byte order mark', () => {
+    const input = new Utf32CodeUnitContainer()
+    const value = codePointOf('😀')
+
+    input.pushRange(rangeOf(
+      Uint8Vector,
+      [0x00, 0x00, 0xfe, 0xff, ...encodeUtf32Bytes([value], 'big')]
+    ))
+
+    expect(input.byteOrder).toBe('big')
+    expect([...iterate(input)]).toEqual([value])
+  })
+
   it('decodes ordered source bytes to UTF-32 code units', () => {
     const input = new Utf32CodeUnitContainer({ byteOrder: 'little' })
     const value = codePointOf('😀')

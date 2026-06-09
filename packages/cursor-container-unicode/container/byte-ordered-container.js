@@ -1,29 +1,22 @@
 import { assert } from '@kingjs/assert'
-import { Lazy } from '@kingjs/lazy'
 import { compose } from '@kingjs/partial-compose'
+import { iterate } from '@kingjs/cursor-algorithm'
 import { Uint8 } from '@kingjs/simple-type'
 import {
   FixedStrideRangeContainer,
   ProjectedRangePart,
   ProjectedRangeContainer,
+  RangeBufferPart,
   RangeContainer,
   SplitContainerPart,
 } from '@kingjs/cursor-container-ranges'
 import {
   assertByteOrder,
   decodeBytes,
+  NativeByteOrder,
 } from '@kingjs/unicode'
 import { ByteOrderedPart } from '../part/byte-ordered-part.js'
-
-export function lazyByteOrderOf(byteOrder) {
-  if (byteOrder instanceof Lazy)
-    return byteOrder
-
-  return new Lazy(() => {
-    assertByteOrder(byteOrder)
-    return byteOrder
-  })
-}
+import { PreambleScanner } from '../preamble-scanner.js'
 
 function byteAt(cursor) {
   const value = cursor.value
@@ -33,33 +26,72 @@ function byteAt(cursor) {
   return value
 }
 
+function isByteOrder(value) {
+  return value == 'big' || value == 'little'
+}
+
 const projectedSplit = ProjectedRangeContainer.prototype.split
 
 export class ByteOrderedContainer extends FixedStrideRangeContainer {
-  _lazyByteOrder
+  _byteOrder
   _byteWidth
+  _preamble
 
-  constructor({ byteOrder, byteWidth }) {
+  constructor({ byteOrder = null, byteWidth }) {
     assert(byteWidth > 1,
       'Byte width must be greater than one.')
+    assert(byteOrder == null || isByteOrder(byteOrder) ||
+      typeof byteOrder == 'object',
+      'Byte order must be null, big, little, or preambles.')
 
-    super(new RangeContainer(), { fixedStride: byteWidth })
-    this._lazyByteOrder = lazyByteOrderOf(byteOrder)
+    const source = new RangeContainer()
+    super(source, { fixedStride: byteWidth })
+    this._preamble = null
     this._byteWidth = byteWidth
+    this._byteOrder = isByteOrder(byteOrder)
+      ? byteOrder
+      : byteOrder == null
+        ? NativeByteOrder
+        : null
+
+    if (this._byteOrder == null) {
+      assert(byteOrder.big.length == byteWidth &&
+        byteOrder.little.length == byteWidth,
+        'Byte order mark length must match byte width.')
+      this._preamble = new PreambleScanner({
+        sequences: byteOrder,
+        onPreamble: ({ match, remainder }) => {
+          this._byteOrder = match ?? NativeByteOrder
+          this._preamble = null
+
+          for (const range of iterate(remainder.ranges()))
+            source.pushRange(range)
+        },
+      })
+    }
   }
 
   static {
     compose(this, ByteOrderedPart, {
-      get lazyByteOrder() { return this._lazyByteOrder },
-      get byteWidth() { return this._byteWidth },
-      get byteOrder() { return this.lazyByteOrder.value },
+      get byteOrder() { return this._byteOrder },
+    })
+
+    compose(this, RangeBufferPart, {
+      pushRange(range) {
+        if (this._preamble)
+          this._preamble.pushRange(range)
+        else
+          this.source$.pushRange(range)
+
+        return this
+      },
     })
 
     compose(this, SplitContainerPart, {
       split(cursor = this.end(), result = null) {
         result ??= new this.constructor({
-          byteOrder: this.lazyByteOrder,
-          byteWidth: this.byteWidth,
+          byteOrder: this.byteOrder,
+          byteWidth: this._byteWidth,
         })
 
         return projectedSplit.call(this, cursor, result)
@@ -68,6 +100,9 @@ export class ByteOrderedContainer extends FixedStrideRangeContainer {
 
     compose(this, ProjectedRangePart, {
       decodeToken$(sourceCursor, stride) {
+        assert(this.byteOrder != null,
+          'Byte order has not been resolved.')
+
         const bytes = []
 
         for (let i = 0; i < stride; i++) {

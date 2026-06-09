@@ -4,6 +4,7 @@ import {
   SplitContainerPart,
   VariableStrideRangeContainer,
 } from '@kingjs/cursor-container-ranges'
+import { assert } from '@kingjs/assert'
 import { compose } from '@kingjs/partial-compose'
 import {
   assertScalarValue,
@@ -13,7 +14,7 @@ import {
 } from '@kingjs/unicode'
 import { Uint16 } from '@kingjs/simple-type'
 import { Utf16CodeUnitContainer } from './utf16-code-unit-container.js'
-import { ByteOrderAwarePart } from '../part/byte-ordered-part.js'
+import { ByteOrderedPart } from '../part/byte-ordered-part.js'
 
 function unitAt(cursor) {
   const value = cursor.value
@@ -52,6 +53,9 @@ export class Utf16CodePointContainer extends VariableStrideRangeContainer {
           return first
         }
 
+        assert(stride == 2,
+          'UTF-16 code point stride must be one or two.')
+
         const second = readUnit(sourceCursor)
         if (!isLowSurrogate(second))
           throw new Error('Expected UTF-16 low surrogate.')
@@ -60,11 +64,13 @@ export class Utf16CodePointContainer extends VariableStrideRangeContainer {
       },
     })
 
-    compose(this, ByteOrderAwarePart)
+    compose(this, ByteOrderedPart, {
+      get byteOrder() { return this.source$.byteOrder },
+    })
 
     compose(this, SplitContainerPart, {
       split(cursor = this.end(), result = null) {
-        result ??= new this.constructor({ byteOrder: this.lazyByteOrder })
+        result ??= new this.constructor({ byteOrder: this.byteOrder })
         return projectedSplit.call(this, cursor, result)
       },
     })

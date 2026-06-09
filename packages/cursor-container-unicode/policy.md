@@ -2,41 +2,26 @@
 
 ## Byte Order Mark
 
-UTF code unit containers normalize an optional stream prefix before code units
-are exposed. A byte order mark is treated as stream metadata, not as a
-projected value. Once enough source bytes have been pushed to decide the
-policy, a present BOM is consumed from the underlying byte range and the
-resolved byte order is recorded on the container.
+UTF code unit containers may normalize an optional stream prefix before code
+units are exposed. A byte order mark is treated as stream metadata, not as a
+projected value. The byte stream stays hidden until enough source bytes have
+been pushed to match a known preamble or rule all known preambles out.
 
-The policy is driven by three options:
+The byte ordered layer accepts either a resolved byte order or a preamble map:
 
 ```txt
-byteOrder        auto | big | little
-bom              optional | required | forbidden | resolved
-defaultByteOrder big | little
+byteOrder
+├─ big | little
+│  └─ already resolved; do not inspect or consume leading bytes
+├─ null
+│  └─ use native byte order immediately
+└─ { big, little }
+   └─ scan for an optional preamble before exposing bytes
 ```
 
 ```txt
-auto + optional
-├─ BOM present: consume BOM, use BOM order
-├─ no BOM once decidable: use defaultByteOrder
+optional preamble map
+├─ matching big/little preamble: consume preamble and use matched order
+├─ no preamble once decidable: use native byte order
 └─ insufficient bytes: expose no units yet
-
-auto + required
-├─ BOM present: consume BOM, use BOM order
-├─ no BOM once decidable: reject
-└─ insufficient bytes: expose no units yet
-
-explicit + optional
-├─ BOM present and matches: consume BOM
-├─ BOM present and conflicts: reject
-└─ no BOM once decidable: use explicit byteOrder
-
-explicit + forbidden
-├─ BOM present: reject
-└─ no BOM once decidable: use explicit byteOrder
-
-explicit + resolved
-├─ do not inspect or consume leading bytes
-└─ use explicit byteOrder
 ```

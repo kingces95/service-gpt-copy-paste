@@ -9,7 +9,7 @@ import {
   assertScalarValue,
 } from '@kingjs/unicode'
 import { Utf32CodeUnitContainer } from './utf32-code-unit-container.js'
-import { ByteOrderAwarePart } from '../part/byte-ordered-part.js'
+import { ByteOrderedPart } from '../part/byte-ordered-part.js'
 
 const projectedSplit = ProjectedRangeContainer.prototype.split
 
@@ -27,11 +27,13 @@ export class Utf32CodePointContainer extends FixedStrideRangeContainer {
       },
     })
 
-    compose(this, ByteOrderAwarePart)
+    compose(this, ByteOrderedPart, {
+      get byteOrder() { return this.source$.byteOrder },
+    })
 
     compose(this, SplitContainerPart, {
       split(cursor = this.end(), result = null) {
-        result ??= new this.constructor({ byteOrder: this.lazyByteOrder })
+        result ??= new this.constructor({ byteOrder: this.byteOrder })
         return projectedSplit.call(this, cursor, result)
       },
     })

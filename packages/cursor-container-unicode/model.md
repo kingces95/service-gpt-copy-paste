@@ -9,7 +9,7 @@ Contents
 - [Projected Source Type](#projected-source-type): Unicode projected
   containers pivoted by stream role and projected source type.
 - [Byte Order Part Composition](#byte-order-part-composition):
-  Unicode types chip-pivoted by byte-order part composition.
+  Unicode types pivoted by byte-order part composition.
 
 ## Byte Unit And Point Extensions
 
@@ -83,7 +83,7 @@ Point
 Unicode Byte Order Part Composition
 ├─ set: cursor-container-unicode types
 ├─ map: composed directly or indirectly with byte-order part
-├─ chip pivot: ByteOrderedPart, ByteOrderAwarePart, Remainder
+├─ pivot: byte ordered/remainder
 └─ display: chip roots with type leaves
 ```
 
@@ -91,14 +91,12 @@ Unicode Byte Order Part Composition
 Unicode Byte Order Part Composition
 
 ByteOrderedPart
-└─ ByteOrderedContainer
-
-ByteOrderAwarePart
 ├─ CodeUnitContainer
 ├─ Utf16CodeUnitContainer
 ├─ Utf32CodeUnitContainer
 ├─ Utf16CodePointContainer
-└─ Utf32CodePointContainer
+├─ Utf32CodePointContainer
+└─ ByteOrderedContainer
 
 Remainder
 └─ Utf8CodePointContainer
