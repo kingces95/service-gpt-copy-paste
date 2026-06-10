@@ -89,6 +89,22 @@ describe('Utf8CodePointContainer', () => {
     expect([...committed.toStrings()]).toEqual(['😀'])
   })
 
+  it('consumes a leading UTF-8 signature across source ranges', () => {
+    const input = new Utf8CodePointContainer()
+
+    input.pushRange(bytesOf([0xef]))
+    expect([...iterate(input)]).toEqual([])
+
+    input.pushRange(bytesOf([0xbb, 0xbf, ...utf8Of('a')]))
+    expect([...iterate(input)]).toEqual([A])
+
+    const commit = input.begin()
+    commit.step()
+
+    const committed = input.split(commit)
+    expect(committed.toString()).toBe('a')
+  })
+
   it('retains an incomplete trailing sequence', () => {
     const input = new Utf8CodePointContainer()
 

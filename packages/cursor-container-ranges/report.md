@@ -176,10 +176,10 @@ Range Span Projection Algorithms
 
 Projection
 └─ spansOfRange(range)
-   ├─ uses range.spans()
-   └─ falls back to range.span()
+   ├─ uses range.spans() descriptors
+   └─ falls back to range.span() as one descriptor
 
 Assertion
 └─ RangeOfRangesPart.spans()
-   └─ asserts each yielded span is an instance of spanType
+   └─ asserts each descriptor span is an instance of spanType
 ```

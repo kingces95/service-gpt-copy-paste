@@ -29,6 +29,7 @@ import {
   RandomAccessCursorShape,
   RangeShape,
   SizedContainerShape,
+  SpanProjectedRangeShape,
   WritableContiguousCursorShape,
   WritableRandomAccessCursorShape,
 } from '@kingjs/cursor-shape'
@@ -72,6 +73,14 @@ implement(MyWritableRandomAccessCursor, WritableCursorConcept, {
 implement(MyWritableRandomAccessCursor, WritableAtCursorConcept, {
   setAt() { },
 })
+
+class MySpanProjectedRange {
+  static spanType = Uint8Array
+
+  begin() { }
+  end() { }
+  *spans() { }
+}
 
 describe('cursor shapes', () => {
   it('structurally matches concept-composed cursor types', () => {
@@ -126,6 +135,13 @@ describe('cursor shapes', () => {
     const range = new ArrayMap()
 
     expect(range).toBeInstanceOf(RangeShape)
+  })
+
+  it('matches span-projected ranges structurally', () => {
+    expect(new MySpanProjectedRange())
+      .toBeInstanceOf(RangeShape)
+    expect(new MySpanProjectedRange())
+      .toBeInstanceOf(SpanProjectedRangeShape)
   })
 
   it('matches push-back containers structurally', () => {

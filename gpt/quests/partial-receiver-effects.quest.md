@@ -117,7 +117,22 @@ CachedBoundaryRangePart
 ├─ owns cached boundary cursor fields
 ├─ computes end/reverse boundary sentinels lazily
 └─ invalidates caches after mutating members
+
+PreambleConsumerPart
+├─ owns a scanner field
+├─ initializes the scanner during construction
+├─ transforms pushRange(range) to feed the scanner while unresolved
+└─ clears the scanner, then replays remainder ranges through pushRange
 ```
+
+Preamble consumption is a proof-of-completion win. UTF-8 signatures and
+UTF-16/32 byte-order marks currently repeat the same manual receiver state:
+store `_preamble`, intercept `pushRange`, and replay the scanner remainder once
+resolved. After this quest, that policy should be bolt-able as a Part. The
+existing argument transform pipeline may be enough for the interception: while
+the scanner is active, the transform feeds it and returns an empty range; the
+scanner callback clears the field before replaying ranges through `pushRange`,
+so the replayed calls fall through normally.
 
 Open questions:
 

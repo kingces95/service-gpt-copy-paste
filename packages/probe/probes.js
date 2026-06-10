@@ -17,6 +17,11 @@ export class IterableProbe extends Probe {
   [Symbol.iterator]() { }
 }
 
+export class SizedIterableProbe extends Probe {
+  get length() { }
+  [Symbol.iterator]() { }
+}
+
 export class IteratorProbe extends Probe {
   next() { }
 }

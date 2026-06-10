@@ -1,18 +1,22 @@
 import {
   ProjectedRangePart,
+  RangeOfRangesPartOf,
   VariableStrideRangeContainerOf,
   RangeContainerOf,
 } from '@kingjs/cursor-container-ranges'
 import { compose } from '@kingjs/partial-compose'
 import { define } from '@kingjs/partial-define'
 import { genericType } from '@kingjs/generic'
+import { iterate } from '@kingjs/cursor-algorithm'
 import {
   decodeUtf8Sequence,
   utf8ContinuationCount,
   utf8ContinuationPayload,
   isUtf8ContinuationByte,
+  Utf8Signature,
 } from '@kingjs/unicode'
 import { Uint8 } from '@kingjs/simple-type'
+import { PreambleScanner } from '../preamble-scanner.js'
 import {
   utf8RangesToString,
   utf8RangesToStrings,
@@ -39,16 +43,41 @@ function readContinuation(cursor) {
 export const Utf8CodePointContainerOf = genericType(TSpan => {
   const VariableStrideRangeContainer = VariableStrideRangeContainerOf(TSpan)
   const RangeContainer = RangeContainerOf(TSpan)
+  const RangeOfRangesPart = RangeOfRangesPartOf(TSpan)
+  const pushRange = VariableStrideRangeContainer.prototype.pushRange
 
   return class Utf8CodePointContainer extends VariableStrideRangeContainer {
+    _preamble
+
     constructor() {
       super(new RangeContainer(), {
         isContinuation: isUtf8ContinuationByte,
         continuationCountOf: utf8ContinuationCount,
       })
+
+      this._preamble = new PreambleScanner({
+        sequences: Utf8Signature,
+        onPreamble: ({ remainder }) => {
+          this._preamble = null
+
+          for (const range of iterate(remainder.ranges()))
+            pushRange.call(this, range)
+        },
+      })
     }
 
     static {
+      compose(this, RangeOfRangesPart, {
+        pushRange(range) {
+          if (this._preamble)
+            this._preamble.pushRange(range)
+          else
+            pushRange.call(this, range)
+
+          return this
+        },
+      })
+
       define(this, {
         toStrings() {
           return utf8RangesToStrings(this.source$.ranges())

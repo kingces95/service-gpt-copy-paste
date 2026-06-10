@@ -1,15 +1,46 @@
 import { assert } from '@kingjs/assert'
+import { Buffer } from 'node:buffer'
+import {
+  ReadableRangeShape,
+  SpanProjectedRangeShape,
+  spanTypeOfRange,
+  spansOfRange,
+} from '@kingjs/cursor-shape'
+import { overload } from '@kingjs/function-contract'
+import {
+  AnyObject,
+  AnyOf,
+  OptionalOf,
+} from '@kingjs/simple-type'
+import { SizedIterableProbe } from '@kingjs/probe'
 
-export function findSequence(range, sequence, { from = range.begin() } = { }) {
+export const findSequence = overload([
+  AnyOf(ReadableRangeShape, SpanProjectedRangeShape),
+  SizedIterableProbe,
+  OptionalOf(AnyObject),
+], [
+  {
+    where: canFindByteSequence,
+    use: findByteSequence,
+  },
+],
+function findSequence(range, sequence, { from = range.begin() } = { }) {
   assert(sequence != null, 'Sequence is required.')
 
   if (sequence.length == 0)
     return { begin: from.clone(), end: from.clone() }
 
-  const end = range.end()
+  return findSequenceByCursor(range, sequence, { from })
+})
+
+function findSequenceByCursor(
+  range,
+  sequence,
+  { from = range.begin(), until = range.end() } = { }
+) {
   const candidate = from.clone()
 
-  while (!candidate.equals(end)) {
+  while (!candidate.equals(until)) {
     const matchEnd = matchAt(range, candidate, sequence)
     if (matchEnd)
       return { begin: candidate.clone(), end: matchEnd }
@@ -18,6 +49,54 @@ export function findSequence(range, sequence, { from = range.begin() } = { }) {
   }
 
   return null
+}
+
+function canFindByteSequence(range, sequence, { from = range.begin() } = { }) {
+  if (spanTypeOfRange(range) != Uint8Array)
+    return false
+
+  if (!isByteSequence(sequence))
+    return false
+
+  if (!from.equals(range.begin()))
+    return false
+
+  return true
+}
+
+function findByteSequence(range, sequence, { from = range.begin() } = { }) {
+  const needle = Buffer.from(sequence)
+
+  for (const { span, cursorAt } of spansOfRange(range)) {
+    const index = Buffer
+      .from(span.buffer, span.byteOffset, span.byteLength)
+      .indexOf(needle)
+
+    if (index >= 0)
+      return {
+        begin: cursorAt(index),
+        end: cursorAt(index + sequence.length),
+      }
+
+    const tailStart = Math.max(0, span.length - sequence.length + 1)
+    const match = findSequenceByCursor(range, sequence, {
+      from: cursorAt(tailStart),
+      until: cursorAt(span.length),
+    })
+
+    if (match)
+      return match
+  }
+
+  return null
+}
+
+function isByteSequence(sequence) {
+  for (const value of sequence)
+    if (!Number.isInteger(value) || value < 0 || value > 0xff)
+      return false
+
+  return true
 }
 
 function matchAt(range, cursor, sequence) {

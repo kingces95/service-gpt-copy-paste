@@ -37,7 +37,23 @@ export function* spansOfRange(range) {
 
   assert(typeof range.span == 'function',
     'Range must expose span() or spans().')
-  yield range.span()
+  const span = range.span()
+
+  yield {
+    span,
+    cursorAt(offset) {
+      return cursorAtOffset(range, offset)
+    },
+  }
+}
+
+function cursorAtOffset(range, offset) {
+  const cursor = range.begin()
+
+  for (let i = 0; i < offset; i++)
+    cursor.step()
+
+  return cursor
 }
 
 // ____________________________________________________________________________

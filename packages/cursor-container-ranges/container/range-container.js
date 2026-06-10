@@ -1,4 +1,5 @@
 import { compose } from '@kingjs/partial-compose'
+import { assert } from '@kingjs/assert'
 import { implement } from '@kingjs/partial-implement'
 import { define } from '@kingjs/partial-define'
 import { PartialProxy } from '@kingjs/partial-proxy'
@@ -12,6 +13,7 @@ import {
 import {
   next,
 } from '@kingjs/cursor-algorithm'
+import { spansOfRange } from '@kingjs/cursor-shape'
 import {
   ContainerPart,
   List,
@@ -29,6 +31,11 @@ function toStoredRange(range) {
     clone(range.begin()),
     clone(range.end())
   )
+}
+
+function assertSpanType(range, span) {
+  assert(span instanceof range.constructor.spanType,
+    'Range span type must match spanType.')
 }
 
 // RangeContainer stores pushed ranges and presents their values as one logical
@@ -103,6 +110,34 @@ export const RangeContainerOf = genericType(TSpan => {
 
         ranges() {
           return this._ranges
+        },
+
+        *spans() {
+          const end = this._ranges.end()
+
+          for (
+            const outerCursor = this._ranges.begin();
+            !outerCursor.equals(end);
+            outerCursor.step()
+          ) {
+            const storedRange = outerCursor.value
+            const outerCursorForSpan = outerCursor.clone()
+
+            for (const descriptor of spansOfRange(storedRange)) {
+              const { span } = descriptor
+              assertSpanType(this, span)
+
+              yield {
+                span,
+                cursorAt: offset => new this.cursorType(
+                  this,
+                  outerCursorForSpan.clone(),
+                  descriptor.cursorAt(offset),
+                  descriptor.cursorAt(span.length)
+                ),
+              }
+            }
+          }
         },
       })
     }

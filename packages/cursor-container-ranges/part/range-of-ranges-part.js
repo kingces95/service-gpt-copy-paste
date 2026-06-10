@@ -5,6 +5,7 @@ import { ContainerPart } from '@kingjs/cursor-container'
 import { defaultTo } from '@kingjs/function-contract'
 import { genericType } from '@kingjs/generic'
 import { iterate } from '@kingjs/cursor-algorithm'
+import { spansOfRange } from '@kingjs/cursor-shape'
 import {
   Defines,
   DefinesAbstract,
@@ -14,6 +15,15 @@ import { members } from '@kingjs/partial-signature'
 function assertSpanType(range, span) {
   assert(span instanceof range.constructor.spanType,
     'Range span type must match spanType.')
+}
+
+function cursorAtOffset(range, offset) {
+  const cursor = range.begin()
+
+  for (let i = 0; i < offset; i++)
+    cursor.step()
+
+  return cursor
 }
 
 export const RangeOfRangesPartOf = genericType(TSpan => {
@@ -40,21 +50,24 @@ export const RangeOfRangesPartOf = genericType(TSpan => {
 
     static [Defines] = {
       *spans() {
-        for (const range of iterate(this.ranges())) {
-          if (typeof range.spans == 'function') {
-            for (const span of range.spans()) {
-              assertSpanType(this, span)
-              yield span
+        let baseOffset = 0
+        const range = this
+
+        for (const childRange of iterate(this.ranges())) {
+          for (const descriptor of spansOfRange(childRange)) {
+            const { span } = descriptor
+            const currentOffset = baseOffset
+
+            assertSpanType(this, span)
+            yield {
+              span,
+              cursorAt(offset) {
+                return cursorAtOffset(range, currentOffset + offset)
+              },
             }
-            continue
+
+            baseOffset += span.length
           }
-
-          assert(typeof range.span == 'function',
-            'Range must expose span().')
-          const span = range.span()
-
-          assertSpanType(this, span)
-          yield span
         }
       },
     }

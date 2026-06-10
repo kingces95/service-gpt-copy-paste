@@ -5,6 +5,7 @@ import {
   PojoProbe,
   NojoProbe,
   IterableProbe,
+  SizedIterableProbe,
   AsyncIterableProbe,
   IteratorProbe,
   ErrorProbe,
@@ -60,6 +61,25 @@ const IterableProbeTest = {
   negative: [
     { name: 'object literal', value: { } },
     { name: 'object extends null', value: Object.create(null) },
+  ]
+}
+const SizedIterableProbeTest = {
+  probe: SizedIterableProbe,
+  positive: [
+    { name: 'array', value: [] },
+    { name: 'string', value: '' },
+    { name: 'typed array', value: Uint8Array.from([]) },
+    { name: 'custom', value: new (class {
+      get length() { return 0 }
+      [Symbol.iterator]() { }
+    })() },
+  ],
+  negative: [
+    { name: 'Set', value: new Set() },
+    { name: 'object literal', value: { } },
+    { name: 'iterable without length', value: new (class {
+      [Symbol.iterator]() { }
+    })() },
   ]
 }
 const IteratorProbeTest = {
@@ -329,6 +349,7 @@ const Tests = [
   PojoProbeTest,
   NojoProbeTest,
   IterableProbeTest,
+  SizedIterableProbeTest,
   IteratorProbeTest,
   ErrorProbeTest,
   DisposableProbeTest,

@@ -43,6 +43,49 @@ describe('findSequence', () => {
 
     expect(valuesOf(range.popRange(match.begin))).toEqual([1, 2])
   })
+
+  it('uses byte spans before reading cursor values', () => {
+    const range = new ThrowingByteRange(Uint8Array.from([1, 2, 3, 4]))
+    const match = findSequence(range, [2, 3])
+
+    expect(match.begin.index).toBe(1)
+    expect(match.end.index).toBe(3)
+  })
+
+  it('falls back when a byte match crosses spans', () => {
+    const Uint8RangeContainer = RangeContainerOf(Uint8Array)
+    const range = new Uint8RangeContainer()
+
+    range
+      .pushRange(new TypedArrayView(Uint8Array.from([1, 2])))
+      .pushRange(new TypedArrayView(Uint8Array.from([3, 4])))
+
+    const match = findSequence(range, [2, 3])
+
+    expect(valuesOf(range.popRange(match.end))).toEqual([1, 2, 3])
+  })
+
+  it('scopes byte fallback to candidate starts in the span tail', () => {
+    const range = new TailReadableByteRange([
+      Uint8Array.from([0, 0, 1]),
+      Uint8Array.from([2]),
+    ])
+    const match = findSequence(range, [1, 2])
+
+    expect(match.begin.index).toBe(2)
+    expect(match.end.index).toBe(4)
+  })
+
+  it('returns range container cursors from a byte span match', () => {
+    const Uint8RangeContainer = RangeContainerOf(Uint8Array)
+    const range = new Uint8RangeContainer()
+
+    range.pushRange(new TypedArrayView(Uint8Array.from([1, 2, 3, 4])))
+
+    const match = findSequence(range, [2, 3])
+
+    expect(valuesOf(range.popRange(match.end))).toEqual([1, 2, 3])
+  })
 })
 
 describe('matchPrefix', () => {
@@ -79,6 +122,97 @@ describe('matchPrefix', () => {
   })
 })
 
+class ThrowingByteRange {
+  static spanType = Uint8Array
+
+  constructor(bytes) {
+    this.bytes = bytes
+  }
+
+  begin() { return new ThrowingByteCursor(this, 0) }
+  end() { return new ThrowingByteCursor(this, this.bytes.length) }
+  *spans() {
+    yield {
+      span: this.bytes,
+      cursorAt: offset => new ThrowingByteCursor(this, offset),
+    }
+  }
+}
+
+class ThrowingByteCursor {
+  constructor(range, index) {
+    this.range = range
+    this.index = index
+  }
+
+  clone() { return new this.constructor(this.range, this.index) }
+  equals(other) {
+    return other instanceof ThrowingByteCursor &&
+      this.range == other.range &&
+      this.index == other.index
+  }
+  step() {
+    this.index++
+    return this
+  }
+
+  get value() {
+    throw new Error('Cursor value should not be read.')
+  }
+}
+
+class TailReadableByteRange {
+  static spanType = Uint8Array
+
+  constructor(spans) {
+    this.spansValue = spans
+    this.bytes = spans.flatMap(span => [...span])
+  }
+
+  begin() { return new TailReadableByteCursor(this, 0) }
+  end() { return new TailReadableByteCursor(this, this.bytes.length) }
+  *spans() {
+    let base = 0
+
+    for (const span of this.spansValue) {
+      const spanBase = base
+
+      yield {
+        span,
+        cursorAt: offset =>
+          new TailReadableByteCursor(this, spanBase + offset),
+      }
+
+      base += span.length
+    }
+  }
+}
+
+class TailReadableByteCursor {
+  constructor(range, index) {
+    this.range = range
+    this.index = index
+  }
+
+  clone() { return new this.constructor(this.range, this.index) }
+  equals(other) {
+    return other instanceof TailReadableByteCursor &&
+      this.range == other.range &&
+      this.index == other.index
+  }
+  step() {
+    this.index++
+    return this
+  }
+
+  get value() {
+    if (this.index < 2)
+      throw new Error('Byte fallback should start at the span tail.')
+
+    return this.range.bytes[this.index]
+  }
+}
+
 describe('span projections', () => {
   it('projects spans through a range of ranges', () => {
     const Uint8RangeContainer = RangeContainerOf(Uint8Array)
@@ -88,7 +222,7 @@ describe('span projections', () => {
       .pushRange(new TypedArrayView(Uint8Array.from([1, 2])))
       .pushRange(new TypedArrayView(Uint8Array.from([3])))
 
-    expect([...spansOfRange(range)].map(span => [...span]))
+    expect([...spansOfRange(range)].map(({ span }) => [...span]))
       .toEqual([[1, 2], [3]])
   })
 

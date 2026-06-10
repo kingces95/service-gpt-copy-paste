@@ -10,10 +10,10 @@ import {
 } from './cursor-shapes.js'
 import {
   cursorPrototypeOf,
+  spanTypeOfRange,
 } from './projections.js'
 
 export class RangeShape extends Shape {
-  get cursorType() { }
   begin() { }
   end() { }
 }
@@ -65,6 +65,13 @@ export function isContiguousRange(range) {
     cursorPrototypeOf(range) instanceof ContiguousCursorShape
 }
 
+// span_projected_range<R>
+export function isSpanProjectedRange(range) {
+  return isRange(range) &&
+    typeof range.spans == 'function' &&
+    spanTypeOfRange(range) != null
+}
+
 export class ReadableRangeShape extends RangeShape {
   static [Symbol.hasInstance](range) {
     return isReadableRange(range)
@@ -104,5 +111,11 @@ export class WritableRandomAccessRangeShape extends RandomAccessRangeShape {
 export class ContiguousRangeShape extends RandomAccessRangeShape {
   static [Symbol.hasInstance](range) {
     return isContiguousRange(range)
+  }
+}
+
+export class SpanProjectedRangeShape extends RangeShape {
+  static [Symbol.hasInstance](range) {
+    return isSpanProjectedRange(range)
   }
 }
