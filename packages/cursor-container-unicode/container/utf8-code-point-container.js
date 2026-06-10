@@ -5,7 +5,6 @@ import {
   RangeContainerOf,
 } from '@kingjs/cursor-container-ranges'
 import { compose } from '@kingjs/partial-compose'
-import { define } from '@kingjs/partial-define'
 import { genericType } from '@kingjs/generic'
 import { iterate } from '@kingjs/cursor-algorithm'
 import {
@@ -18,9 +17,11 @@ import {
 import { Uint8 } from '@kingjs/simple-type'
 import { PreambleScanner } from '../preamble-scanner.js'
 import {
-  utf8RangesToString,
-  utf8RangesToStrings,
-} from '../utf8-ranges-to-string.js'
+  byteRangesToStrings,
+} from '../source-ranges-to-string.js'
+import {
+  StringMaterializationPart,
+} from '../part/string-materialization-part.js'
 
 function byteAt(cursor) {
   const value = cursor.value
@@ -78,13 +79,9 @@ export const Utf8CodePointContainerOf = genericType(TSpan => {
         },
       })
 
-      define(this, {
+      compose(this, StringMaterializationPart, {
         toStrings() {
-          return utf8RangesToStrings(this.source$.ranges())
-        },
-
-        toString() {
-          return utf8RangesToString(this.source$.ranges())
+          return byteRangesToStrings(this.source$.ranges(), 'utf-8')
         },
       })
 

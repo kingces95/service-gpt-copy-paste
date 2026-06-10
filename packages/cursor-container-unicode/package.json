@@ -17,6 +17,7 @@
     "@kingjs/partial-class": "1.0.0",
     "@kingjs/partial-compose": "1.0.0",
     "@kingjs/partial-define": "1.0.0",
+    "@kingjs/partial-signature": "1.0.0",
     "@kingjs/simple-type": "1.0.0",
     "@kingjs/unicode": "1.0.0"
   },

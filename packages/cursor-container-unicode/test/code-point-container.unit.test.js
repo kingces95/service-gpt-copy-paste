@@ -189,4 +189,14 @@ describe('Utf32CodePointContainer', () => {
     expect([...iterate(input)]).toEqual([A, GrinningFace])
     expect(input.end().sourceCursor$.equals(input.source$.end())).toBe(true)
   })
+
+  it('does not support string materialization', () => {
+    const input = new Utf32CodePointContainer({ byteOrder: 'little' })
+    const message = 'UTF-32 string materialization is not supported.'
+
+    input.pushRange(bytesOf(utf32BytesOf('a', 'little')))
+
+    expect(() => [...input.toStrings()]).toThrow(message)
+    expect(() => input.toString()).toThrow(message)
+  })
 })

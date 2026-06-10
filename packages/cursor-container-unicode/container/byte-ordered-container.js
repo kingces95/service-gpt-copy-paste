@@ -16,6 +16,13 @@ import {
   NativeByteOrder,
 } from '@kingjs/unicode'
 import { PreambleScanner } from '../preamble-scanner.js'
+import {
+  byteOrderedEncodingOf,
+  byteRangesToStrings,
+} from '../source-ranges-to-string.js'
+import {
+  StringMaterializationPart,
+} from '../part/string-materialization-part.js'
 
 function byteAt(cursor) {
   const value = cursor.value
@@ -78,6 +85,17 @@ export const ByteOrderedContainerOf = genericType(TSpan => {
     }
 
     static {
+      compose(this, StringMaterializationPart, {
+        toStrings(encoding) {
+          if (this._byteOrder == null)
+            return []
+
+          const encodingOf = () =>
+            byteOrderedEncodingOf(encoding, this._byteOrder)
+          return byteRangesToStrings(this.ranges(), encodingOf)
+        },
+      })
+
       compose(this, RangeOfRangesPart, {
         pushRange(range) {
           if (this._preamble)

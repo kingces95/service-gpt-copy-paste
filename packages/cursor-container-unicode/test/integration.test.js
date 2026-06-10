@@ -26,6 +26,8 @@ const RemainingCodePoints = CodePoints.slice(BeforeLineEnd)
 const BigEndian = { options: { byteOrder: 'big' } }
 const LittleEndian = { options: { byteOrder: 'little' } }
 const Utf8Strings = { hasStrings: true }
+const BigEndianStrings = { ...BigEndian, hasStrings: true }
+const LittleEndianStrings = { ...LittleEndian, hasStrings: true }
 
 function rangeOf(values) {
   return new TypedArrayView(values)
@@ -105,9 +107,11 @@ const Encodings = [
   encoding('UTF-8',
     Utf8CodePointContainer, encodeUtf8, encodeUtf8, Utf8Strings),
   encoding('UTF-16BE',
-    Utf16CodePointContainer, encodeUtf16BE, encodeUtf16Units, BigEndian),
+    Utf16CodePointContainer, encodeUtf16BE, encodeUtf16Units,
+    BigEndianStrings),
   encoding('UTF-16LE',
-    Utf16CodePointContainer, encodeUtf16LE, encodeUtf16Units, LittleEndian),
+    Utf16CodePointContainer, encodeUtf16LE, encodeUtf16Units,
+    LittleEndianStrings),
   encoding('UTF-32BE',
     Utf32CodePointContainer, encodeUtf32BE, same, BigEndian),
   encoding('UTF-32LE',

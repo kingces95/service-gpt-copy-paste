@@ -11,6 +11,9 @@ import {
 import {
   Utf32CodeUnitContainerOf,
 } from './utf32-code-unit-container.js'
+import {
+  StringMaterializationPart,
+} from '../part/string-materialization-part.js'
 
 export const Utf32CodePointContainerOf = genericType(TSpan => {
   const FixedStrideRangeContainer = FixedStrideRangeContainerOf(TSpan)
@@ -26,6 +29,10 @@ export const Utf32CodePointContainerOf = genericType(TSpan => {
     }
 
     static {
+      compose(this, StringMaterializationPart, {
+        toStrings() { return this.source$.toStrings('utf-32') },
+      })
+
       compose(this, ProjectedRangePart, {
         decodeToken$(sourceCursor) {
           const value = sourceCursor.value
