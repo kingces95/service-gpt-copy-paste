@@ -1,7 +1,8 @@
-# Cursor Container Ranges Report
+# Cursor Virtual Report
 
-Reports for settling the range-container API surface before adding optimized
-sequence scans that pierce through ranges-of-ranges to byte storage.
+Reports for settling the virtual range API surface used by byte-positioned
+scans. Virtual ranges expose logical cursors while still allowing algorithms to
+factor the range into lower-space pages and, at the leaves, contiguous spans.
 
 Contents
 
@@ -9,7 +10,7 @@ Contents
   applied to cursor receivers, ordered by dependency.
 - [Container Partial Type Members](#container-partial-type-members): Partial
   types applied to container receivers, ordered by dependency.
-- [Generic Span Type](#generic-span-type): Range types whose generic
+- [Generic Span Type](#generic-span-type): Cursor types whose generic
   specialization carries the homogeneous span type used by `spans()`.
 - [Span Projection Algorithms](#span-projection-algorithms): Algorithms that
   consume the span projection before any storage-specific optimization.
@@ -17,7 +18,7 @@ Contents
 ## Cursor Partial Type Members
 
 ```txt
-Range Cursor Partial Type Members
+Virtual Cursor Partial Type Members
 ├─ set: partial types applied to cursor receivers
 ├─ map: surface owner, partial type, members
 ├─ chip pivot: concept, part, shape, naked, private
@@ -26,7 +27,7 @@ Range Cursor Partial Type Members
 ```
 
 ```txt
-Range Cursor Partial Type Members
+Virtual Cursor Partial Type Members
 
 Concept
 ├─ EquatableConcept
@@ -44,8 +45,11 @@ Part
 │  └─ stepBack()
 ├─ ReadableCursorPart
 │  └─ value
-└─ CloneableCursorPart
-   └─ clone()
+├─ CloneableCursorPart
+│  └─ clone()
+└─ VirtualCursorPart
+   ├─ pages(other)
+   └─ materialize(other)
 
 Shape
 └─ -
@@ -70,7 +74,7 @@ Private
 ## Container Partial Type Members
 
 ```txt
-Range Container Partial Type Members
+Virtual Container Partial Type Members
 ├─ set: partial types applied to container receivers
 ├─ map: surface owner, partial type, members
 ├─ chip pivot: concept, part, shape, naked, private
@@ -79,7 +83,7 @@ Range Container Partial Type Members
 ```
 
 ```txt
-Range Container Partial Type Members
+Virtual Container Partial Type Members
 
 Concept
 ├─ RangeConcept
@@ -95,6 +99,7 @@ Part
 │  ├─ pushRange(range)
 │  ├─ popRange(cursor)
 │  ├─ ranges()
+│  ├─ pages()
 │  └─ spans()
 ├─ ProjectedRangePart
 │  ├─ source$
@@ -134,15 +139,27 @@ Private
 ## Generic Span Type
 
 ```txt
-Range Generic Span Type
-├─ set: cursor-virtual generic types
-├─ map: generic specializer, standard alias, spanType role
-├─ pivot: declaration, container
+Virtual Generic Span Type
+├─ set: cursor-virtual and cursor-container generic types
+├─ map: generic specializer, standard alias, spanType owner
+├─ pivot: cursor, declaration, container
 └─ display: generic roots with standard aliases as leaves
 ```
 
 ```txt
-Range Generic Span Type
+Virtual Generic Span Type
+
+Cursor
+├─ ContiguousCursorOf(TSpan)
+│  └─ ContiguousCursor = ContiguousCursorOf(Object)
+├─ ProjectedRangeCursorOf(TSpan)
+│  └─ ProjectedRangeCursor = ProjectedRangeCursorOf(Object)
+├─ FixedStrideRangeCursorOf(TSpan)
+│  └─ FixedStrideRangeCursor = FixedStrideRangeCursorOf(Object)
+├─ VariableStrideRangeCursorOf(TSpan)
+│  └─ VariableStrideRangeCursor = VariableStrideRangeCursorOf(Object)
+└─ RangeContainerCursorOf(TSpan)
+   └─ RangeContainerCursor = RangeContainerCursorOf(Object)
 
 Declaration
 ├─ RangeOfRangesPartOf(TSpan)
@@ -164,7 +181,7 @@ Container
 ## Span Projection Algorithms
 
 ```txt
-Range Span Projection Algorithms
+Virtual Span Projection Algorithms
 ├─ set: cursor-shape projections and cursor-virtual algorithms
 ├─ map: algorithm, role, expected surface
 ├─ pivot: projection, assertion
@@ -172,7 +189,7 @@ Range Span Projection Algorithms
 ```
 
 ```txt
-Range Span Projection Algorithms
+Virtual Span Projection Algorithms
 
 Projection
 └─ spansOfRange(range)
