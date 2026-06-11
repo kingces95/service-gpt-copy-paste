@@ -177,16 +177,31 @@ export const RangeContainerCursorOf = genericType(TSpan => {
               ? other.getInnerCursor()
               : current.getInnerCursorEnd()
             const outerCursor = current.outerCursor.clone()
+            const virtualEnd = current.outerCursor.equals(other.outerCursor)
+              ? other.clone()
+              : current.clone()
+
+            if (!current.outerCursor.equals(other.outerCursor)) {
+              virtualEnd.outerCursor.step()
+              virtualEnd.resetInnerCursor()
+            }
 
             yield {
               begin,
               end,
-              cursorAt: offset => new this.constructor(
-                this.container,
-                outerCursor.clone(),
-                cursorAtOffset(begin, offset),
-                end.clone()
-              ),
+              cursorAt: offset => {
+                const inner = cursorAtOffset(begin, offset)
+
+                if (inner.equals(end))
+                  return virtualEnd.clone()
+
+                return new this.constructor(
+                  this.container,
+                  outerCursor.clone(),
+                  inner,
+                  end.clone()
+                )
+              },
             }
 
             if (current.outerCursor.equals(other.outerCursor))

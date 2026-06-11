@@ -204,5 +204,17 @@ Virtual Search
 └─ findSequence(range, sequence)
    ├─ factors virtual ranges into pages before span scans
    ├─ materializes virtual needles into the page value space
-   └─ falls back to cursor walking for cross-page matches
+   ├─ maps page-local matches back into virtual cursors
+   └─ bounds cross-page cursor walking to starts inside the current page
+```
+
+```txt
+Page Descriptor
+├─ begin
+│  └─ lower cursor at searchable page begin
+├─ end
+│  └─ lower cursor at searchable page end
+└─ cursorAt(offset)
+   ├─ offset is relative to begin
+   └─ page-length offset maps to the canonical virtual page end
 ```

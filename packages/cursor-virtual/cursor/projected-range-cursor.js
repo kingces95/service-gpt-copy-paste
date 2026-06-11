@@ -93,6 +93,11 @@ export const ProjectedRangeCursorOf = genericType(TSpan => {
               // consuming that prefix, this mapping must account for it.
               assert(offset == 0 || !pageBegin.equals(pageEnd),
                 'Projected page offsets are relative to page begin.')
+              const pageCursor = pageBegin.clone()
+              advance(pageCursor, offset)
+              if (pageCursor.equals(pageEnd))
+                return other.clone()
+
               const cursor = begin.clone()
               advance(cursor, offset)
               return new this.constructor(this.container, cursor)

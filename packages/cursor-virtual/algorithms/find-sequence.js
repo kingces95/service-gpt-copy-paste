@@ -2,6 +2,7 @@ import { assert } from '@kingjs/assert'
 import { Buffer } from 'node:buffer'
 import { subrange } from '@kingjs/cursor-view'
 import {
+  distance,
   iterate,
 } from '@kingjs/cursor-algorithm'
 import {
@@ -54,19 +55,30 @@ function findVirtualSequence(range, sequence, { from = range.begin() } = { }) {
   for (const { begin: pageBegin, end: pageEnd, cursorAt } of
     from.pages(range.end())) {
     const page = subrange(pageBegin, pageEnd)
-    const match = findSequence(page, lowerSequence)
-    if (!match)
+    const pageMatch = findSequence(page, lowerSequence)
+    const match = pageMatch &&
+      mapPageMatch(page, pageMatch, cursorAt, range, sequence)
+
+    if (match)
+      return match
+
+    const pageLength = distance(page)
+    const virtualBegin = cursorAt(0)
+    const virtualEnd = cursorAt(pageLength)
+
+    if (!virtualBegin || !virtualEnd)
       continue
 
-    const begin = offsetOf(page, match.begin)
-    const end = offsetOf(page, match.end)
-    return {
-      begin: cursorAt(begin),
-      end: cursorAt(end),
-    }
+    const virtualMatch = findSequenceByCursor(range, sequence, {
+      from: virtualBegin,
+      until: virtualEnd,
+    })
+
+    if (virtualMatch)
+      return virtualMatch
   }
 
-  return findSequenceByCursor(range, sequence, { from })
+  return null
 }
 
 function findSequenceByCursor(
@@ -97,6 +109,20 @@ function offsetOf(range, cursor) {
   }
 
   return offset
+}
+
+function mapPageMatch(page, match, cursorAt, range, sequence) {
+  const begin = cursorAt(offsetOf(page, match.begin))
+  const end = cursorAt(offsetOf(page, match.end))
+
+  if (!begin || !end)
+    return null
+
+  const verifiedEnd = matchAt(range, begin, sequence)
+  if (!verifiedEnd || !verifiedEnd.equals(end))
+    return null
+
+  return { begin, end }
 }
 
 function canFindByteSequence(range, sequence, { from = range.begin() } = { }) {

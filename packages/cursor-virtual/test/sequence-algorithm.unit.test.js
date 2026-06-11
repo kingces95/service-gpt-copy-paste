@@ -71,6 +71,14 @@ describe('findSequence', () => {
     expect(valuesOf(range.popRange(match.end))).toEqual([1, 2])
   })
 
+  it('finds projected values across virtual pages', () => {
+    const range = projectedRangeOf([1, 2], [3, 4])
+    const match = findSequence(range, [102, 103])
+
+    expect(match.begin.value).toBe(102)
+    expect(valuesOf(range.popRange(match.end))).toEqual([1, 2, 3])
+  })
+
   it('uses byte spans before reading cursor values', () => {
     const range = new ThrowingByteRange(Uint8Array.from([1, 2, 3, 4]))
     const match = findSequence(range, [2, 3])
@@ -134,9 +142,12 @@ const ProjectedByteRange = (() => {
   }
 })()
 
-function projectedRangeOf(bytes) {
+function projectedRangeOf(...chunks) {
   const result = new ProjectedByteRange()
-  result.pushRange(new TypedArrayView(Uint8Array.from(bytes)))
+
+  for (const chunk of chunks)
+    result.pushRange(new TypedArrayView(Uint8Array.from(chunk)))
+
   return result
 }
 
