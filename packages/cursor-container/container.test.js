@@ -546,7 +546,7 @@ describe.each(Object.entries(Tests))('A %s', (name, {
       expect(container.cursorType).toBe(cursorType)
     })
     if (spanType) it('expose its expected span type', () => {
-      expect(type.spanType).toBe(spanType)
+      expect(type.cursorType.spanType).toBe(spanType)
       expect(container.spanType).toBe(spanType)
     })
   })
@@ -987,7 +987,7 @@ describe.each(VectorTypes)('A %s', (Type, SpanType) => {
   it('uses its span type as its storage specialization', () => {
     const vector = new Type(3)
 
-    expect(Type.spanType).toBe(SpanType)
+    expect(Type.cursorType.spanType).toBe(SpanType)
     expect(Type.bytesPerValue).toBe(SpanType.BYTES_PER_ELEMENT)
     expect(vector.spanType).toBe(SpanType)
     expect(vector.capacity).toBe(3)

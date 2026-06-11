@@ -46,7 +46,6 @@ export const VectorOf = genericType([
   return class Vector extends PartialProxy {
     static cursorType = ContiguousCursor
     static valueType = typedArrayValueTypeOf(TArray)
-    static spanType = TArray
     static defaultValue = typedArrayDefaultValueOf(TArray)
     static bytesPerValue = TArray.BYTES_PER_ELEMENT
 

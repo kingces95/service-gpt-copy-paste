@@ -29,10 +29,10 @@ describe('standard cursor containers', () => {
 
   it('uses Float64Vector as the default Vector alias', () => {
     expect(Vector).toBe(Float64Vector)
-    expect(Vector.spanType).toBe(Float64Array)
+    expect(Vector.cursorType.spanType).toBe(Float64Array)
   })
 
   it('exports Uint8Vector as a named byte vector alias', () => {
-    expect(Uint8Vector.spanType).toBe(Uint8Array)
+    expect(Uint8Vector.cursorType.spanType).toBe(Uint8Array)
   })
 })

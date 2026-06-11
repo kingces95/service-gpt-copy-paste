@@ -231,7 +231,7 @@ export class ByteContainerPart extends IndexableContainerPart {
     },
   })
 
-  get spanType() { return this.constructor.spanType }
+  get spanType() { return this.constructor.cursorType.spanType }
 }
 
 export class CapacityContainerPart extends ContainerPart {

@@ -61,7 +61,7 @@ describe('Vector', () => {
       vector.resize(3)
 
       expect(VectorType.valueType).toBe(ValueType)
-      expect(VectorType.spanType).toBe(ArrayType)
+      expect(VectorType.cursorType.spanType).toBe(ArrayType)
       expect(VectorType.defaultValue).toBe(defaultValue)
       expect(vector.capacity).toBe(3)
       expect(vector.span()).toBeInstanceOf(ArrayType)
@@ -75,7 +75,7 @@ describe('Vector', () => {
   it('caches named specializations by array type', () => {
     expect(VectorOf(Uint16Array)).toBe(Uint16Vector)
     expect(Uint16Vector.valueType).toBe(Number)
-    expect(Uint16Vector.spanType).toBe(Uint16Array)
+    expect(Uint16Vector.cursorType.spanType).toBe(Uint16Array)
   })
 
   it.each(VectorTypes)(
@@ -83,7 +83,7 @@ describe('Vector', () => {
     (VectorType, ValueType, ArrayType) => {
       expect(VectorOf(ArrayType)).toBe(VectorType)
       expect(VectorType.valueType).toBe(ValueType)
-      expect(VectorType.spanType).toBe(ArrayType)
+      expect(VectorType.cursorType.spanType).toBe(ArrayType)
     })
 
   it('rejects non-typed-array constructors', () => {
