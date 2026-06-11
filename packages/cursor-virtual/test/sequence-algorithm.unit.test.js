@@ -44,6 +44,13 @@ describe('findSequence', () => {
     expect(valuesOf(range.popRange(match.begin))).toEqual([1, 2])
   })
 
+  it('finds through virtual pages', () => {
+    const range = rangeOf([1, 2], [3, 4])
+    const match = findSequence(range, [3])
+
+    expect(valuesOf(range.popRange(match.end))).toEqual([1, 2, 3])
+  })
+
   it('uses byte spans before reading cursor values', () => {
     const range = new ThrowingByteRange(Uint8Array.from([1, 2, 3, 4]))
     const match = findSequence(range, [2, 3])

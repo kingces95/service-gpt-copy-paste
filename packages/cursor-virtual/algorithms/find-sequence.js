@@ -3,6 +3,7 @@ import { Buffer } from 'node:buffer'
 import {
   ReadableRangeShape,
   SpanProjectedRangeShape,
+  VirtualRangeShape,
   spanTypeOfRange,
   spansOfRange,
 } from '@kingjs/cursor-shape'
@@ -15,13 +16,17 @@ import {
 import { SizedIterableProbe } from '@kingjs/probe'
 
 export const findSequence = overload([
-  AnyOf(ReadableRangeShape, SpanProjectedRangeShape),
+  AnyOf(ReadableRangeShape, SpanProjectedRangeShape, VirtualRangeShape),
   SizedIterableProbe,
   OptionalOf(AnyObject),
 ], [
   {
     where: canFindByteSequence,
     use: findByteSequence,
+  },
+  {
+    where: canFindVirtualSequence,
+    use: findVirtualSequence,
   },
 ],
 function findSequence(range, sequence, { from = range.begin() } = { }) {
@@ -32,6 +37,27 @@ function findSequence(range, sequence, { from = range.begin() } = { }) {
 
   return findSequenceByCursor(range, sequence, { from })
 })
+
+function canFindVirtualSequence(range) {
+  return range instanceof VirtualRangeShape
+}
+
+function findVirtualSequence(range, sequence, { from = range.begin() } = { }) {
+  for (const { range: page, cursorAt } of from.pages(range.end())) {
+    const match = findSequence(page, sequence)
+    if (!match)
+      continue
+
+    const begin = offsetOf(page, match.begin)
+    const end = offsetOf(page, match.end)
+    return {
+      begin: cursorAt(begin),
+      end: cursorAt(end),
+    }
+  }
+
+  return findSequenceByCursor(range, sequence, { from })
+}
 
 function findSequenceByCursor(
   range,
@@ -49,6 +75,18 @@ function findSequenceByCursor(
   }
 
   return null
+}
+
+function offsetOf(range, cursor) {
+  const current = range.begin()
+  let offset = 0
+
+  while (!current.equals(cursor)) {
+    current.step()
+    offset++
+  }
+
+  return offset
 }
 
 function canFindByteSequence(range, sequence, { from = range.begin() } = { }) {
