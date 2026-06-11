@@ -2,6 +2,7 @@ import { compose } from '@kingjs/partial-compose'
 import { implement } from '@kingjs/partial-implement'
 import { define, defineAbstract } from '@kingjs/partial-define'
 import { EquatableConcept } from '@kingjs/partial-concept'
+import { assert } from '@kingjs/assert'
 import {
   CloneableCursorPart,
   CursorPart,
@@ -80,10 +81,18 @@ export const ProjectedRangeCursorOf = genericType(TSpan => {
           const range = typeof begin.materialize == 'function'
             ? begin.materialize(end)
             : subrange(begin, end)
+          const pageBegin = range.begin()
+          const pageEnd = range.end()
 
           yield {
-            range,
+            begin: pageBegin,
+            end: pageEnd,
             cursorAt: offset => {
+              // The page currently starts at this projected cursor's source.
+              // If a future virtual layer trims the page begin without
+              // consuming that prefix, this mapping must account for it.
+              assert(offset == 0 || !pageBegin.equals(pageEnd),
+                'Projected page offsets are relative to page begin.')
               const cursor = begin.clone()
               advance(cursor, offset)
               return new this.constructor(this.container, cursor)

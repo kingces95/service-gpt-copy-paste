@@ -3,7 +3,10 @@ import {
   iterate,
   toArray,
 } from '@kingjs/cursor-algorithm'
-import { SnapshotView } from '@kingjs/cursor-view'
+import {
+  SnapshotView,
+  subrange,
+} from '@kingjs/cursor-view'
 import {
   BidirectionalRangeShape,
 } from '@kingjs/cursor-shape'
@@ -142,7 +145,7 @@ describe('RangeContainer', () => {
 
     const pages = [...ranges.begin().pages(ranges.end())]
 
-    expect(pages.map(({ range }) => valuesOf(range)))
+    expect(pages.map(({ begin, end }) => valuesOf(subrange(begin, end))))
       .toEqual([[1, 2], [3, 4]])
     expect(pages[1].cursorAt(1).value).toBe(4)
   })

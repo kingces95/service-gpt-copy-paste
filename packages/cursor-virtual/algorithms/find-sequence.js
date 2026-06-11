@@ -1,5 +1,6 @@
 import { assert } from '@kingjs/assert'
 import { Buffer } from 'node:buffer'
+import { subrange } from '@kingjs/cursor-view'
 import {
   iterate,
 } from '@kingjs/cursor-algorithm'
@@ -50,7 +51,9 @@ function findVirtualSequence(range, sequence, { from = range.begin() } = { }) {
     ? [...iterate(sequence.begin().materialize(sequence.end()))]
     : sequence
 
-  for (const { range: page, cursorAt } of from.pages(range.end())) {
+  for (const { begin: pageBegin, end: pageEnd, cursorAt } of
+    from.pages(range.end())) {
+    const page = subrange(pageBegin, pageEnd)
     const match = findSequence(page, lowerSequence)
     if (!match)
       continue
