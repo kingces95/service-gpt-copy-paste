@@ -18,12 +18,12 @@ export function cursorPrototypeOf(range) {
 
 // span_type_t<R>
 export function spanTypeOfRangeType(type) {
-  return type?.spanType ??
-    spanTypeOfCursorType(cursorTypeOfRangeType(type))
+  return spanTypeOfCursorType(cursorTypeOfRangeType(type)) ??
+    type?.spanType
 }
 export function spanTypeOfRange(range) {
-  return spanTypeOfRangeType(range.constructor) ??
-    spanTypeOfCursor(range.begin?.())
+  return spanTypeOfCursorType(cursorTypeOf(range)) ??
+    spanTypeOfRangeType(range.constructor)
 }
 
 // span_range_t<R>
@@ -62,7 +62,4 @@ function cursorAtOffset(range, offset) {
 // span_type_t<I>
 export function spanTypeOfCursorType(type) {
   return type?.spanType
-}
-export function spanTypeOfCursor(cursor) {
-  return cursor?.spanType
 }

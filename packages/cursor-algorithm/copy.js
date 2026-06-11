@@ -7,7 +7,7 @@ import {
   OutputCursorShape,
   ReadableRangeShape,
   spanTypeOfRange,
-  spanTypeOfCursor,
+  spanTypeOfCursorType,
   WritableContiguousCursorShape,
 } from '@kingjs/cursor-shape'
 
@@ -34,7 +34,7 @@ export const copy = overload([
       ContiguousRangeShape,
     ],
     where(target, range) {
-      return spanTypeOfRange(range) == spanTypeOfCursor(target)
+      return spanTypeOfRange(range) == spanTypeOfCursorType(target.constructor)
     },
     use: function copyContiguous(target, range) {
       return memcopy(target, range.begin(), range.end())

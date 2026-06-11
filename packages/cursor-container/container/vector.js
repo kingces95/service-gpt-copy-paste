@@ -11,7 +11,7 @@ import {
   RangeConcept,
 } from '@kingjs/cursor'
 import {
-  ContiguousCursor,
+  ContiguousCursorOf,
 } from '../cursor/contiguous-cursor.js'
 import {
   SizedContainerPart,
@@ -41,6 +41,8 @@ export const VectorOf = genericType([
 (
   TArray = Float64Array,
 ) => {
+  const ContiguousCursor = ContiguousCursorOf(TArray)
+
   return class Vector extends PartialProxy {
     static cursorType = ContiguousCursor
     static valueType = typedArrayValueTypeOf(TArray)
