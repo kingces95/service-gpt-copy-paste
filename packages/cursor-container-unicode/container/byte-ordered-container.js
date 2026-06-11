@@ -9,7 +9,7 @@ import {
   ProjectedRangePart,
   RangeOfRangesPartOf,
   RangeContainerOf,
-} from '@kingjs/cursor-container-ranges'
+} from '@kingjs/cursor-virtual'
 import {
   assertByteOrder,
   decodeBytes,

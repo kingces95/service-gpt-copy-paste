@@ -2,7 +2,7 @@ import { assert } from '@kingjs/assert'
 import {
   matchPrefix,
   RangeContainer,
-} from '@kingjs/cursor-container-ranges'
+} from '@kingjs/cursor-virtual'
 
 function normalizeSequences(sequences) {
   assert(sequences != null,

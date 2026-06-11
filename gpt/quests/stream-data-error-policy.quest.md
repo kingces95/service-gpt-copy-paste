@@ -28,7 +28,7 @@ throw Error
 
 ## Sweep
 
-Audit cursor-container-unicode, unicode, cursor-container-ranges, and parser-like
+Audit cursor-container-unicode, unicode, cursor-virtual, and parser-like
 packages for asserts that guard source bytes, code units, code points, records,
 or other external stream data. Convert those to named helpers or ordinary
 errors, leaving constructor option validation and internal invariants as asserts.

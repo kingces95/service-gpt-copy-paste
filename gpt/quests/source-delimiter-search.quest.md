@@ -108,7 +108,7 @@ result
 
 ```txt
 home
-├─ cursor-container-ranges algorithm
+├─ cursor-virtual algorithm
 ├─ cursor-container-unicode source-search helper
 └─ cursor-algorithm once source spans become a general shape
 ```

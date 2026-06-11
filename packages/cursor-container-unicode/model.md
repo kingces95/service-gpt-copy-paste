@@ -15,7 +15,7 @@ Contents
 
 ```txt
 Unicode Byte Unit And Point Extensions
-├─ set: cursor-container-ranges and cursor-container-unicode types
+├─ set: cursor-virtual and cursor-container-unicode types
 ├─ map: extensions*, byte/unit/point
 ├─ filter: unicode package types
 ├─ pivot: byte/unit/point, then type

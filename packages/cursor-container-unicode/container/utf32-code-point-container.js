@@ -1,7 +1,7 @@
 import {
   FixedStrideRangeContainerOf,
   ProjectedRangePart,
-} from '@kingjs/cursor-container-ranges'
+} from '@kingjs/cursor-virtual'
 import { assert } from '@kingjs/assert'
 import { compose } from '@kingjs/partial-compose'
 import { genericType } from '@kingjs/generic'

@@ -1,5 +1,5 @@
 {
-  "name": "@kingjs/cursor-container-ranges",
+  "name": "@kingjs/cursor-virtual",
   "version": "1.0.0",
   "description": ".",
   "main": "index.js",

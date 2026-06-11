@@ -3,7 +3,7 @@ import {
   RangeOfRangesPartOf,
   VariableStrideRangeContainerOf,
   RangeContainerOf,
-} from '@kingjs/cursor-container-ranges'
+} from '@kingjs/cursor-virtual'
 import { compose } from '@kingjs/partial-compose'
 import { genericType } from '@kingjs/generic'
 import { iterate } from '@kingjs/cursor-algorithm'

@@ -2,7 +2,7 @@ import { assert } from '@kingjs/assert'
 import { genericType } from '@kingjs/generic'
 import {
   FixedStrideRangeContainerOf,
-} from '@kingjs/cursor-container-ranges'
+} from '@kingjs/cursor-virtual'
 import { ByteOrderedContainerOf } from './byte-ordered-container.js'
 
 export const CodeUnitContainerOf = genericType(TSpan => {

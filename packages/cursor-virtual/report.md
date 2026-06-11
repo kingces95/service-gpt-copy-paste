@@ -135,7 +135,7 @@ Private
 
 ```txt
 Range Generic Span Type
-├─ set: cursor-container-ranges generic types
+├─ set: cursor-virtual generic types
 ├─ map: generic specializer, standard alias, spanType role
 ├─ pivot: declaration, container
 └─ display: generic roots with standard aliases as leaves
@@ -165,7 +165,7 @@ Container
 
 ```txt
 Range Span Projection Algorithms
-├─ set: cursor-shape projections and cursor-container-ranges algorithms
+├─ set: cursor-shape projections and cursor-virtual algorithms
 ├─ map: algorithm, role, expected surface
 ├─ pivot: projection, assertion
 └─ display: algorithm roots with role leaves
