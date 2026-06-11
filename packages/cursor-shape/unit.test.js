@@ -75,7 +75,9 @@ implement(MyWritableRandomAccessCursor, WritableAtCursorConcept, {
 })
 
 class MySpanProjectedRange {
-  static spanType = Uint8Array
+  static cursorType = class {
+    static spanType = Uint8Array
+  }
 
   begin() { }
   end() { }

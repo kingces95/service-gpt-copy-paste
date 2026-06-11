@@ -18,8 +18,7 @@ export function cursorPrototypeOf(range) {
 
 // span_type_t<R>
 export function spanTypeOfRangeType(type) {
-  return spanTypeOfCursorType(cursorTypeOfRangeType(type)) ??
-    type?.spanType
+  return spanTypeOfCursorType(cursorTypeOfRangeType(type))
 }
 export function spanTypeOfRange(range) {
   return spanTypeOfCursorType(cursorTypeOf(range)) ??

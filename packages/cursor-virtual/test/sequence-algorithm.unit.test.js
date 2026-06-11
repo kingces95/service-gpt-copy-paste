@@ -186,8 +186,6 @@ describe('matchPrefix', () => {
 })
 
 class ThrowingByteRange {
-  static spanType = Uint8Array
-
   constructor(bytes) {
     this.bytes = bytes
   }
@@ -203,6 +201,8 @@ class ThrowingByteRange {
 }
 
 class ThrowingByteCursor {
+  static spanType = Uint8Array
+
   constructor(range, index) {
     this.range = range
     this.index = index
@@ -224,9 +224,9 @@ class ThrowingByteCursor {
   }
 }
 
-class TailReadableByteRange {
-  static spanType = Uint8Array
+ThrowingByteRange.cursorType = ThrowingByteCursor
 
+class TailReadableByteRange {
   constructor(spans) {
     this.spansValue = spans
     this.bytes = spans.flatMap(span => [...span])
@@ -252,6 +252,8 @@ class TailReadableByteRange {
 }
 
 class TailReadableByteCursor {
+  static spanType = Uint8Array
+
   constructor(range, index) {
     this.range = range
     this.index = index
@@ -275,6 +277,8 @@ class TailReadableByteCursor {
     return this.range.bytes[this.index]
   }
 }
+
+TailReadableByteRange.cursorType = TailReadableByteCursor
 
 describe('span projections', () => {
   it('projects spans through a range of ranges', () => {
