@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { Buffer } from 'node:buffer'
 import { iterate } from '@kingjs/cursor-algorithm'
 import { TypedArrayView } from '@kingjs/cursor-view'
+import { findSequence } from '@kingjs/cursor-virtual'
 import {
   Utf16CodePointContainer,
   Utf16CodePointContainerOf,
@@ -12,6 +13,7 @@ import {
   encodeUtf16Bytes,
   encodeUtf16Sequence,
   encodeUtf32Bytes,
+  Utf8Signature,
 } from '@kingjs/unicode'
 
 const Line = 'hello 😀 world\n'
@@ -168,6 +170,24 @@ describe('Code point container integration', () => {
     expect(input.constructor.cursorType.spanType).toBe(Uint8Array)
     expect(input.source$.constructor.cursorType.spanType).toBe(Uint8Array)
     expect(split.constructor.cursorType.spanType).toBe(Uint8Array)
+  })
+
+  it('skips UTF-8 signature bytes before searching code points', () => {
+    const input = new Utf8CodePointContainer()
+    const text = 'hi'
+    const bytes = Uint8Array.from([
+      ...Utf8Signature.signature,
+      ...Buffer.from(text, 'utf8'),
+    ])
+
+    input.pushRange(rangeOf(bytes))
+
+    const match = findSequence(input, ['h'.codePointAt()])
+    const committed = input.split(match.begin)
+
+    expect(valuesOf(committed)).toEqual([])
+    expect(valuesOf(deepestSourceOf(committed))).toEqual([])
+    expect(match.begin.value).toBe('h'.codePointAt())
   })
 })
 
