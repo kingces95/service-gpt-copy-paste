@@ -17,7 +17,7 @@ import {
 import { Uint8 } from '@kingjs/simple-type'
 import { PreambleScanner } from '../preamble-scanner.js'
 import {
-  byteRangesToStrings,
+  byteRangesToStringsOf,
 } from '../source-ranges-to-string.js'
 import {
   StringMaterializationPart,
@@ -46,6 +46,7 @@ export const Utf8CodePointContainerOf = genericType(TSpan => {
   const RangeContainer = RangeContainerOf(TSpan)
   const RangeOfRangesPart = RangeOfRangesPartOf(TSpan)
   const pushRange = VariableStrideRangeContainer.prototype.pushRange
+  const byteRangesToStrings = byteRangesToStringsOf(TSpan)
 
   return class Utf8CodePointContainer extends VariableStrideRangeContainer {
     _preamble

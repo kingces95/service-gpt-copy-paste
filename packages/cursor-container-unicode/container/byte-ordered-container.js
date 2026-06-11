@@ -18,7 +18,7 @@ import {
 import { PreambleScanner } from '../preamble-scanner.js'
 import {
   byteOrderedEncodingOf,
-  byteRangesToStrings,
+  byteRangesToStringsOf,
 } from '../source-ranges-to-string.js'
 import {
   StringMaterializationPart,
@@ -41,6 +41,7 @@ export const ByteOrderedContainerOf = genericType(TSpan => {
   const RangeOfRangesPart = RangeOfRangesPartOf(TSpan)
   const RangeContainer = RangeContainerOf(TSpan)
   const pushRange = FixedStrideRangeContainer.prototype.pushRange
+  const byteRangesToStrings = byteRangesToStringsOf(TSpan)
 
   return class ByteOrderedContainer extends FixedStrideRangeContainer {
     _byteOrder

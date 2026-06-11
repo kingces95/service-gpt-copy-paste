@@ -1,24 +1,22 @@
 import { iterate } from '@kingjs/cursor-algorithm'
+import { spansOfRange } from '@kingjs/cursor-shape'
+import { assert } from '@kingjs/assert'
+import { genericMethod } from '@kingjs/generic'
 
-function toByteSpan(range) {
-  const begin = range.begin()
-  const end = range.end()
-  const source = begin.range
+function assertByteSpanType(TSpan) {
+  if (TSpan == Object)
+    return
 
-  if (source != end.range)
-    throw new Error('Expected byte range cursors to share a source range.')
-
-  if (typeof source?.span != 'function')
-    throw new Error('Expected committed byte range to expose span().')
-
-  const span = source.span(begin, end)
-  if (!(ArrayBuffer.isView(span) && span.BYTES_PER_ELEMENT == 1))
-    throw new Error('Expected committed byte range span to be bytes.')
-
-  return span
+  assert(TSpan.BYTES_PER_ELEMENT == 1,
+    'String materialization span type must be a byte span.')
 }
 
-function bufferOf(span) {
+function bufferOf(span, TSpan) {
+  assert(TSpan == Object || span instanceof TSpan,
+    'String materialization span must match span type.')
+  assert(ArrayBuffer.isView(span) && span.BYTES_PER_ELEMENT == 1,
+    'String materialization span must be bytes.')
+
   return new Uint8Array(span.buffer, span.byteOffset, span.byteLength)
 }
 
@@ -37,22 +35,31 @@ export function byteOrderedEncodingOf(encoding, byteOrder) {
   throw new Error('String materialization encoding is not supported.')
 }
 
-export function* byteRangesToStrings(ranges, encodingOf) {
-  let decoder = null
+export const byteRangesToStringsOf = genericMethod(TSpan => {
+  assertByteSpanType(TSpan)
 
-  for (const range of iterate(ranges)) {
-    decoder ??= new TextDecoder(
-      typeof encodingOf == 'function' ? encodingOf() : encodingOf
-    )
-    const decoded = decoder.decode(bufferOf(toByteSpan(range)), {
-      stream: true,
-    })
+  return function* byteRangesToStrings(ranges, encodingOf) {
+    let decoder = null
 
-    if (decoded)
-      yield decoded
+    for (const range of iterate(ranges)) {
+      decoder ??= new TextDecoder(
+        typeof encodingOf == 'function' ? encodingOf() : encodingOf
+      )
+
+      for (const { span } of spansOfRange(range)) {
+        const decoded = decoder.decode(bufferOf(span, TSpan), {
+          stream: true,
+        })
+
+        if (decoded)
+          yield decoded
+      }
+    }
+
+    const tail = decoder?.decode()
+    if (tail)
+      yield tail
   }
+})
 
-  const tail = decoder?.decode()
-  if (tail)
-    yield tail
-}
+export const byteRangesToStrings = byteRangesToStringsOf(Object)
