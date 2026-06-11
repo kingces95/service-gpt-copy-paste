@@ -63,6 +63,14 @@ describe('findSequence', () => {
     expect(valuesOf(range.popRange(match.end))).toEqual([1, 2])
   })
 
+  it('finds projected values with a plain logical needle', () => {
+    const range = projectedRangeOf([1, 2, 3])
+    const match = findSequence(range, [102])
+
+    expect(match.begin.value).toBe(102)
+    expect(valuesOf(range.popRange(match.end))).toEqual([1, 2])
+  })
+
   it('uses byte spans before reading cursor values', () => {
     const range = new ThrowingByteRange(Uint8Array.from([1, 2, 3, 4]))
     const match = findSequence(range, [2, 3])

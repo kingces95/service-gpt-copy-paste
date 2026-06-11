@@ -24,12 +24,12 @@ export const findSequence = overload([
   OptionalOf(AnyObject),
 ], [
   {
-    where: canFindByteSequence,
-    use: findByteSequence,
-  },
-  {
     where: canFindVirtualSequence,
     use: findVirtualSequence,
+  },
+  {
+    where: canFindByteSequence,
+    use: findByteSequence,
   },
 ],
 function findSequence(range, sequence, { from = range.begin() } = { }) {
