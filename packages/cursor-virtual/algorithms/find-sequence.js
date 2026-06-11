@@ -57,7 +57,7 @@ function findVirtualSequence(range, sequence, { from = range.begin() } = { }) {
     const page = subrange(pageBegin, pageEnd)
     const pageMatch = findSequence(page, lowerSequence)
     const match = pageMatch &&
-      mapPageMatch(page, pageMatch, cursorAt, range, sequence)
+      mapPageMatch(page, pageMatch, cursorAt)
 
     if (match)
       return match
@@ -111,18 +111,18 @@ function offsetOf(range, cursor) {
   return offset
 }
 
-function mapPageMatch(page, match, cursorAt, range, sequence) {
+function mapPageMatch(page, match, cursorAt) {
   const begin = cursorAt(offsetOf(page, match.begin))
   const end = cursorAt(offsetOf(page, match.end))
 
-  if (!begin || !end)
-    return null
-
-  const verifiedEnd = matchAt(range, begin, sequence)
-  if (!verifiedEnd || !verifiedEnd.equals(end))
+  if (!isSynchronizedInterval(begin, end))
     return null
 
   return { begin, end }
+}
+
+function isSynchronizedInterval(begin, end) {
+  return begin != null && end != null
 }
 
 function canFindByteSequence(range, sequence, { from = range.begin() } = { }) {
