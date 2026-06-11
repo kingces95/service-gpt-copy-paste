@@ -61,8 +61,8 @@ describe('RangeContainer', () => {
     const Uint8RangeContainer = RangeContainerOf(Uint8Array)
     const ranges = new Uint8RangeContainer()
 
-    expect(Uint8RangeContainer.spanType).toBe(Uint8Array)
-    expect(ranges.constructor.spanType).toBe(Uint8Array)
+    expect(Uint8RangeContainer.cursorType.spanType).toBe(Uint8Array)
+    expect(ranges.constructor.cursorType.spanType).toBe(Uint8Array)
     expect(ranges).toBeInstanceOf(RangeOfRangesShape)
   })
 

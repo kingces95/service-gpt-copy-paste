@@ -10,7 +10,7 @@ import {
 import { RangeOfRangesShapeOf } from '../shape/range-of-ranges-shape.js'
 import { distance, previous } from '@kingjs/cursor-algorithm'
 import {
-  FixedStrideRangeCursor,
+  FixedStrideRangeCursorOf,
 } from '../cursor/fixed-stride-range-cursor.js'
 import { ProjectedRangePart } from '../part/projected-range-part.js'
 import { RangeOfRangesPartOf } from '../part/range-of-ranges-part.js'
@@ -21,6 +21,7 @@ export const FixedStrideRangeContainerOf = genericType(TSpan => {
   const RangeOfRangesPart = RangeOfRangesPartOf(TSpan)
   const RangeOfRangesShape = RangeOfRangesShapeOf(TSpan)
   const pushRange = ProjectedRangeContainer.prototype.pushRange
+  const FixedStrideRangeCursor = FixedStrideRangeCursorOf(TSpan)
 
   return class FixedStrideRangeContainer extends ProjectedRangeContainer {
     static cursorType = FixedStrideRangeCursor

@@ -1,15 +1,16 @@
-import { RangeShape } from '@kingjs/cursor-shape'
+import {
+  RangeShape,
+  spanTypeOfRange,
+} from '@kingjs/cursor-shape'
 import { genericType } from '@kingjs/generic'
 
 export const RangeOfRangesShapeOf = genericType(TSpan => {
   return class RangeOfRangesShape extends RangeShape {
-    static spanType = TSpan
-
     static [Symbol.hasInstance](range) {
       if (!(range instanceof RangeShape))
         return false
 
-      if (TSpan != Object && range.constructor.spanType != TSpan)
+      if (TSpan != Object && spanTypeOfRange(range) != TSpan)
         return false
 
       return typeof range.pushRange == 'function' &&

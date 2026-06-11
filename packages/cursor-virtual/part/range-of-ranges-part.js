@@ -1,6 +1,9 @@
 import { assert } from '@kingjs/assert'
 import { CursorConcept } from '@kingjs/cursor'
-import { BidirectionalRangeShape } from '@kingjs/cursor-shape'
+import {
+  BidirectionalRangeShape,
+  spanTypeOfRange,
+} from '@kingjs/cursor-shape'
 import { ContainerPart } from '@kingjs/cursor-container'
 import { defaultTo } from '@kingjs/function-contract'
 import { genericType } from '@kingjs/generic'
@@ -13,7 +16,7 @@ import {
 import { members } from '@kingjs/partial-signature'
 
 function assertSpanType(range, span) {
-  assert(span instanceof range.constructor.spanType,
+  assert(span instanceof spanTypeOfRange(range),
     'Range span type must match spanType.')
 }
 
@@ -28,8 +31,6 @@ function cursorAtOffset(range, offset) {
 
 export const RangeOfRangesPartOf = genericType(TSpan => {
   return class RangeOfRangesPart extends ContainerPart {
-    static spanType = TSpan
-
     static [DefinesAbstract] = members(this, {
       pushRange: {
         types: [BidirectionalRangeShape],

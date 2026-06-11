@@ -13,13 +13,16 @@ import {
 import {
   next,
 } from '@kingjs/cursor-algorithm'
-import { spansOfRange } from '@kingjs/cursor-shape'
+import {
+  spanTypeOfRange,
+  spansOfRange,
+} from '@kingjs/cursor-shape'
 import {
   ContainerPart,
   List,
 } from '@kingjs/cursor-container'
 import {
-  RangeContainerCursor,
+  RangeContainerCursorOf,
 } from '../cursor/range-container-cursor.js'
 
 function clone(cursor) {
@@ -34,7 +37,7 @@ function toStoredRange(range) {
 }
 
 function assertSpanType(range, span) {
-  assert(span instanceof range.constructor.spanType,
+  assert(span instanceof spanTypeOfRange(range),
     'Range span type must match spanType.')
 }
 
@@ -46,10 +49,10 @@ function assertSpanType(range, span) {
 // RangeContainer containing the detached stored ranges.
 export const RangeContainerOf = genericType(TSpan => {
   const RangeOfRangesPart = RangeOfRangesPartOf(TSpan)
+  const RangeContainerCursor = RangeContainerCursorOf(TSpan)
 
   return class RangeContainer extends PartialProxy {
     static cursorType = RangeContainerCursor
-    static spanType = TSpan
 
     _ranges
     _tail

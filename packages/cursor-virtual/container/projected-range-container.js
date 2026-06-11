@@ -21,8 +21,6 @@ export const ProjectedRangeContainerOf = genericType(TSpan => {
   const RangeOfRangesShape = RangeOfRangesShapeOf(TSpan)
 
   return class ProjectedRangeContainer extends PartialProxy {
-    static spanType = TSpan
-
     _source
 
     constructor(source) {

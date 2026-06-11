@@ -10,61 +10,68 @@ import {
 } from '@kingjs/cursor'
 import { advance } from '@kingjs/cursor-algorithm'
 import { ContainerCursor } from '@kingjs/cursor-container'
+import { genericType } from '@kingjs/generic'
 
-export class ProjectedRangeCursor extends ContainerCursor {
-  _sourceCursor
+export const ProjectedRangeCursorOf = genericType(TSpan => {
+  return class ProjectedRangeCursor extends ContainerCursor {
+    static spanType = TSpan
 
-  constructor(container, sourceCursor) {
-    super(container)
-    this._sourceCursor = sourceCursor
+    _sourceCursor
+
+    constructor(container, sourceCursor) {
+      super(container)
+      this._sourceCursor = sourceCursor
+    }
+
+    static {
+      defineAbstract(this, {
+        get stride$() { },
+        get sourceCursor$() { },
+      })
+
+      define(this, {
+        get sourceCursor$() { return this._sourceCursor },
+      })
+
+      implement(this, EquatableConcept, {
+        equals(other) {
+          if (!this.equatableTo(other)) return false
+          return this.sourceCursor$.equals(other.sourceCursor$)
+        },
+      })
+
+      compose(this, CloneableCursorPart, {
+        clone() {
+          return new this.constructor(
+            this.container,
+            this.sourceCursor$.clone()
+          )
+        },
+      })
+
+      compose(this, CursorPart, {
+        get isAtEnd$() {
+          return this.sourceCursor$.equals(this.container.sourceEnd$)
+        },
+      })
+
+      compose(this, SteppableCursorPart, {
+        step() {
+          advance(this.sourceCursor$, this.stride$)
+          return this
+        },
+      })
+
+      compose(this, ReadableCursorPart, {
+        get value() {
+          return this.container.decodeToken$(
+            this.sourceCursor$.clone(),
+            this.stride$
+          )
+        },
+      })
+    }
   }
+})
 
-  static {
-    defineAbstract(this, {
-      get stride$() { },
-      get sourceCursor$() { },
-    })
-
-    define(this, {
-      get sourceCursor$() { return this._sourceCursor },
-    })
-
-    implement(this, EquatableConcept, {
-      equals(other) {
-        if (!this.equatableTo(other)) return false
-        return this.sourceCursor$.equals(other.sourceCursor$)
-      },
-    })
-
-    compose(this, CloneableCursorPart, {
-      clone() {
-        return new this.constructor(
-          this.container,
-          this.sourceCursor$.clone()
-        )
-      },
-    })
-
-    compose(this, CursorPart, {
-      get isAtEnd$() {
-        return this.sourceCursor$.equals(this.container.sourceEnd$)
-      },
-    })
-
-    compose(this, SteppableCursorPart, {
-      step() {
-        advance(this.sourceCursor$, this.stride$)
-        return this
-      },
-    })
-
-    compose(this, ReadableCursorPart, {
-      get value() {
-        return this.container.decodeToken$(
-          this.sourceCursor$.clone(),
-          this.stride$
-        )
-      },
-    })
-  }
-}
+export const ProjectedRangeCursor = ProjectedRangeCursorOf(Object)

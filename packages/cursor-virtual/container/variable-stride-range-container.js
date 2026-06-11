@@ -7,12 +7,13 @@ import {
 } from './projected-range-container.js'
 import { synchronize } from '../algorithms/synchronize.js'
 import {
-  VariableStrideRangeCursor,
+  VariableStrideRangeCursorOf,
 } from '../cursor/variable-stride-range-cursor.js'
 import { TrimmedRangePart } from '../part/trimmed-range-part.js'
 
 export const VariableStrideRangeContainerOf = genericType(TSpan => {
   const ProjectedRangeContainer = ProjectedRangeContainerOf(TSpan)
+  const VariableStrideRangeCursor = VariableStrideRangeCursorOf(TSpan)
 
   return class VariableStrideRangeContainer extends ProjectedRangeContainer {
     static cursorType = VariableStrideRangeCursor

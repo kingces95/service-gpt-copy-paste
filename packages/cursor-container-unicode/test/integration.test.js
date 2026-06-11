@@ -164,10 +164,10 @@ describe('Code point container integration', () => {
     const input = new Utf16CodePoints({ byteOrder: 'little' })
     const split = input.split()
 
-    expect(Utf16CodePoints.spanType).toBe(Uint8Array)
-    expect(input.constructor.spanType).toBe(Uint8Array)
-    expect(input.source$.constructor.spanType).toBe(Uint8Array)
-    expect(split.constructor.spanType).toBe(Uint8Array)
+    expect(Utf16CodePoints.cursorType.spanType).toBe(Uint8Array)
+    expect(input.constructor.cursorType.spanType).toBe(Uint8Array)
+    expect(input.source$.constructor.cursorType.spanType).toBe(Uint8Array)
+    expect(split.constructor.cursorType.spanType).toBe(Uint8Array)
   })
 })
 
