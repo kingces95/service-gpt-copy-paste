@@ -202,6 +202,7 @@ Assertion
 
 Virtual Search
 └─ findSequence(range, sequence)
-   ├─ factors range containers into same-space pages
-   └─ defers projected lower-space pages until needles can be materialized
+   ├─ factors virtual ranges into pages before span scans
+   ├─ materializes virtual needles into the page value space
+   └─ falls back to cursor walking for cross-page matches
 ```
