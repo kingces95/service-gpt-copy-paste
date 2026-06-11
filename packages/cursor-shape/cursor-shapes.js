@@ -11,6 +11,7 @@ import {
   ReadableCursorConcept,
   SpannableCursorConcept,
   SteppableCursorConcept,
+  VirtualCursorConcept,
   WritableAtCursorConcept,
   WritableCursorConcept,
 } from '@kingjs/cursor'
@@ -23,6 +24,7 @@ import {
 //       └─ BidirectionalCursorShape
 //          └─ RandomAccessCursorShape
 //             └─ ContiguousCursorShape
+// └─ VirtualCursorShape
 
 export class CursorShape extends Shape {
   static [Implements] = [
@@ -59,6 +61,11 @@ export class RandomAccessCursorShape extends Shape {
 export class ContiguousCursorShape extends Shape {
   static [Includes] = RandomAccessCursorShape
   static [Implements] = SpannableCursorConcept
+}
+
+export class VirtualCursorShape extends Shape {
+  static [Includes] = CursorShape
+  static [Implements] = VirtualCursorConcept
 }
 
 // Write pivot:

@@ -6,6 +6,7 @@ import {
   InputCursorShape,
   OutputCursorShape,
   RandomAccessCursorShape,
+  VirtualCursorShape,
   WritableRandomAccessCursorShape,
 } from './cursor-shapes.js'
 import {
@@ -72,6 +73,12 @@ export function isSpanProjectedRange(range) {
     spanTypeOfRange(range) != null
 }
 
+// virtual_range<R>
+export function isVirtualRange(range) {
+  return isRange(range) &&
+    cursorPrototypeOf(range) instanceof VirtualCursorShape
+}
+
 export class ReadableRangeShape extends RangeShape {
   static [Symbol.hasInstance](range) {
     return isReadableRange(range)
@@ -117,5 +124,11 @@ export class ContiguousRangeShape extends RandomAccessRangeShape {
 export class SpanProjectedRangeShape extends RangeShape {
   static [Symbol.hasInstance](range) {
     return isSpanProjectedRange(range)
+  }
+}
+
+export class VirtualRangeShape extends RangeShape {
+  static [Symbol.hasInstance](range) {
+    return isVirtualRange(range)
   }
 }

@@ -20,6 +20,7 @@ import {
   ReadableCursorConcept,
   SpannableCursorConcept,
   SteppableCursorConcept,
+  VirtualCursorConcept,
   WritableAtCursorConcept,
   WritableCursorConcept,
 } from './cursor-concept.js'
@@ -48,6 +49,7 @@ import {
 // ├─ WritableCursorPart
 // │  └─ WritableAtCursorPart
 // ├─ CloneableCursorPart
+// ├─ VirtualCursorPart
 // └─ SpannableCursorPart
 
 export class CursorPart extends PartialClass {
@@ -191,6 +193,26 @@ export class WritableAtCursorPart extends WritableCursorPart {
       if (!this.isWritableAt$(offset))
         throwWriteOutOfBounds()
     },
+  }
+}
+
+export class VirtualCursorPart extends PartialClass {
+  static [Implements] = VirtualCursorConcept
+
+  static [Preconditions] = {
+    pages(end) {
+      if (!this.canVirtualize$(end))
+        throwNotEquatableTo(end)
+    },
+
+    materialize(end) {
+      if (!this.canVirtualize$(end))
+        throwNotEquatableTo(end)
+    },
+  }
+
+  canVirtualize$(end) {
+    return this.equatableTo(end)
   }
 }
 
