@@ -9,8 +9,18 @@ import {
   CursorPart,
   ReadableCursorPart,
   SteppableCursorPart,
+  VirtualCursorPart,
 } from '@kingjs/cursor'
 import { ContainerCursor } from '@kingjs/cursor-container'
+
+function cursorAtOffset(cursor, offset) {
+  cursor = cursor.clone()
+
+  for (let i = 0; i < offset; i++)
+    cursor.step()
+
+  return cursor
+}
 
 export class RangeContainerCursor extends ContainerCursor {
   _outerCursor
@@ -149,6 +159,45 @@ export class RangeContainerCursor extends ContainerCursor {
           this.innerCursor?.clone?.() ?? this.innerCursor,
           this.innerCursorEnd?.clone?.() ?? this.innerCursorEnd
         )
+      },
+    })
+
+    compose(this, VirtualCursorPart, {
+      *pages(other) {
+        let current = this.clone()
+
+        while (!current.equals(other)) {
+          const begin = current.getInnerCursor()
+          const end = current.outerCursor.equals(other.outerCursor)
+            ? other.getInnerCursor()
+            : current.getInnerCursorEnd()
+          const outerCursor = current.outerCursor.clone()
+
+          yield {
+            range: subrange(begin, end),
+            cursorAt: offset => new this.constructor(
+              this.container,
+              outerCursor.clone(),
+              cursorAtOffset(begin, offset),
+              end.clone()
+            ),
+          }
+
+          if (current.outerCursor.equals(other.outerCursor))
+            break
+
+          current.outerCursor.step()
+          current.resetInnerCursor()
+        }
+      },
+
+      materialize(other) {
+        const result = new this.container.constructor()
+
+        for (const { range } of this.pages(other))
+          result.pushRange(range)
+
+        return result
       },
     })
   }

@@ -49,6 +49,10 @@ export const RangeOfRangesPartOf = genericType(TSpan => {
     })
 
     static [Defines] = {
+      pages() {
+        return this.begin().pages(this.end())
+      },
+
       *spans() {
         let baseOffset = 0
         const range = this

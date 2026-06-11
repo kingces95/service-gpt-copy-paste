@@ -133,6 +133,38 @@ describe('RangeContainer', () => {
     expect(rangeValuesOf(ranges.ranges())).toEqual([[3]])
   })
 
+  it('projects pages between cursors', () => {
+    const ranges = new RangeContainer()
+
+    ranges
+      .pushRange(new SnapshotView([1, 2]))
+      .pushRange(new SnapshotView([3, 4]))
+
+    const pages = [...ranges.begin().pages(ranges.end())]
+
+    expect(pages.map(({ range }) => valuesOf(range)))
+      .toEqual([[1, 2], [3, 4]])
+    expect(pages[1].cursorAt(1).value).toBe(4)
+  })
+
+  it('materializes pages between cursors', () => {
+    const ranges = new RangeContainer()
+
+    ranges
+      .pushRange(new SnapshotView([1, 2]))
+      .pushRange(new SnapshotView([3, 4]))
+
+    const end = ranges.begin()
+    end.step()
+    end.step()
+    end.step()
+
+    const materialized = ranges.begin().materialize(end)
+
+    expect(valuesOf(materialized)).toEqual([1, 2, 3])
+    expect(rangeValuesOf(materialized.ranges())).toEqual([[1, 2], [3]])
+  })
+
   it('keeps retained cursors stable when whole front ranges pop', () => {
     const ranges = new RangeContainer()
 
