@@ -43,6 +43,9 @@ function canFindVirtualSequence(range) {
 }
 
 function findVirtualSequence(range, sequence, { from = range.begin() } = { }) {
+  // Pages are currently a same-value-space optimization for range containers.
+  // Projected ranges need a future materialized-needle path before they can
+  // safely expose pages in a lower value space.
   for (const { range: page, cursorAt } of from.pages(range.end())) {
     const match = findSequence(page, sequence)
     if (!match)

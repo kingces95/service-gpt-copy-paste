@@ -199,4 +199,9 @@ Projection
 Assertion
 └─ RangeOfRangesPart.spans()
    └─ asserts each descriptor span is an instance of spanType
+
+Virtual Search
+└─ findSequence(range, sequence)
+   ├─ factors range containers into same-space pages
+   └─ defers projected lower-space pages until needles can be materialized
 ```
