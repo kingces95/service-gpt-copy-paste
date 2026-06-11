@@ -1,6 +1,9 @@
 import { assert } from '@kingjs/assert'
 import { Buffer } from 'node:buffer'
 import {
+  iterate,
+} from '@kingjs/cursor-algorithm'
+import {
   ReadableRangeShape,
   SpanProjectedRangeShape,
   VirtualRangeShape,
@@ -17,7 +20,7 @@ import { SizedIterableProbe } from '@kingjs/probe'
 
 export const findSequence = overload([
   AnyOf(ReadableRangeShape, SpanProjectedRangeShape, VirtualRangeShape),
-  SizedIterableProbe,
+  AnyOf(SizedIterableProbe, ReadableRangeShape, VirtualRangeShape),
   OptionalOf(AnyObject),
 ], [
   {
@@ -32,7 +35,7 @@ export const findSequence = overload([
 function findSequence(range, sequence, { from = range.begin() } = { }) {
   assert(sequence != null, 'Sequence is required.')
 
-  if (sequence.length == 0)
+  if (isEmptySequence(sequence))
     return { begin: from.clone(), end: from.clone() }
 
   return findSequenceByCursor(range, sequence, { from })
@@ -43,11 +46,12 @@ function canFindVirtualSequence(range) {
 }
 
 function findVirtualSequence(range, sequence, { from = range.begin() } = { }) {
-  // Pages are currently a same-value-space optimization for range containers.
-  // Projected ranges need a future materialized-needle path before they can
-  // safely expose pages in a lower value space.
+  const lowerSequence = sequence instanceof VirtualRangeShape
+    ? [...iterate(sequence.begin().materialize(sequence.end()))]
+    : sequence
+
   for (const { range: page, cursorAt } of from.pages(range.end())) {
-    const match = findSequence(page, sequence)
+    const match = findSequence(page, lowerSequence)
     if (!match)
       continue
 
@@ -96,6 +100,9 @@ function canFindByteSequence(range, sequence, { from = range.begin() } = { }) {
   if (spanTypeOfRange(range) != Uint8Array)
     return false
 
+  if (sequence instanceof VirtualRangeShape)
+    return false
+
   if (!isByteSequence(sequence))
     return false
 
@@ -106,7 +113,7 @@ function canFindByteSequence(range, sequence, { from = range.begin() } = { }) {
 }
 
 function findByteSequence(range, sequence, { from = range.begin() } = { }) {
-  const needle = Buffer.from(sequence)
+  const needle = Buffer.from([...valuesOfSequence(sequence)])
 
   for (const { span, cursorAt } of spansOfRange(range)) {
     const index = Buffer
@@ -116,10 +123,10 @@ function findByteSequence(range, sequence, { from = range.begin() } = { }) {
     if (index >= 0)
       return {
         begin: cursorAt(index),
-        end: cursorAt(index + sequence.length),
+        end: cursorAt(index + needle.length),
       }
 
-    const tailStart = Math.max(0, span.length - sequence.length + 1)
+    const tailStart = Math.max(0, span.length - needle.length + 1)
     const match = findSequenceByCursor(range, sequence, {
       from: cursorAt(tailStart),
       until: cursorAt(span.length),
@@ -133,18 +140,32 @@ function findByteSequence(range, sequence, { from = range.begin() } = { }) {
 }
 
 function isByteSequence(sequence) {
-  for (const value of sequence)
+  for (const value of valuesOfSequence(sequence))
     if (!Number.isInteger(value) || value < 0 || value > 0xff)
       return false
 
   return true
 }
 
+function isEmptySequence(sequence) {
+  if (sequence instanceof ReadableRangeShape)
+    return sequence.begin().equals(sequence.end())
+
+  return sequence.length == 0
+}
+
+function valuesOfSequence(sequence) {
+  if (sequence instanceof ReadableRangeShape)
+    return iterate(sequence)
+
+  return sequence
+}
+
 function matchAt(range, cursor, sequence) {
   const end = range.end()
   const current = cursor.clone()
 
-  for (const value of sequence) {
+  for (const value of valuesOfSequence(sequence)) {
     if (current.equals(end))
       return null
 

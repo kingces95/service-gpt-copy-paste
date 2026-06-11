@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { iterate } from '@kingjs/cursor-algorithm'
 import { SnapshotView, TypedArrayView } from '@kingjs/cursor-view'
+import { compose } from '@kingjs/partial-compose'
 import { spanTypeOfRange, spansOfRange } from '@kingjs/cursor-shape'
 import {
+  FixedStrideRangeContainerOf,
   findSequence,
   matchPrefix,
+  ProjectedRangePart,
   RangeContainer,
   RangeContainerOf,
 } from '../index.js'
@@ -51,6 +54,15 @@ describe('findSequence', () => {
     expect(valuesOf(range.popRange(match.end))).toEqual([1, 2, 3])
   })
 
+  it('finds projected values by materializing a virtual needle', () => {
+    const range = projectedRangeOf([1, 2, 3])
+    const needle = projectedRangeOf([2])
+    const match = findSequence(range, needle)
+
+    expect(match.begin.value).toBe(102)
+    expect(valuesOf(range.popRange(match.end))).toEqual([1, 2])
+  })
+
   it('uses byte spans before reading cursor values', () => {
     const range = new ThrowingByteRange(Uint8Array.from([1, 2, 3, 4]))
     const match = findSequence(range, [2, 3])
@@ -94,6 +106,31 @@ describe('findSequence', () => {
     expect(valuesOf(range.popRange(match.end))).toEqual([1, 2, 3])
   })
 })
+
+const ProjectedByteRange = (() => {
+  const Uint8RangeContainer = RangeContainerOf(Uint8Array)
+  const FixedStrideRangeContainer = FixedStrideRangeContainerOf(Uint8Array)
+
+  return class ProjectedByteRange extends FixedStrideRangeContainer {
+    constructor() {
+      super(new Uint8RangeContainer())
+    }
+
+    static {
+      compose(this, ProjectedRangePart, {
+        decodeToken$(sourceCursor, stride) {
+          return sourceCursor.value + 100
+        },
+      })
+    }
+  }
+})()
+
+function projectedRangeOf(bytes) {
+  const result = new ProjectedByteRange()
+  result.pushRange(new TypedArrayView(Uint8Array.from(bytes)))
+  return result
+}
 
 describe('matchPrefix', () => {
   it('matches a complete prefix', () => {

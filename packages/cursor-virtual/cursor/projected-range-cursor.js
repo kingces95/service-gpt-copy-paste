@@ -7,9 +7,11 @@ import {
   CursorPart,
   ReadableCursorPart,
   SteppableCursorPart,
+  VirtualCursorPart,
 } from '@kingjs/cursor'
 import { advance } from '@kingjs/cursor-algorithm'
 import { ContainerCursor } from '@kingjs/cursor-container'
+import { subrange } from '@kingjs/cursor-view'
 import { genericType } from '@kingjs/generic'
 
 export const ProjectedRangeCursorOf = genericType(TSpan => {
@@ -68,6 +70,34 @@ export const ProjectedRangeCursorOf = genericType(TSpan => {
             this.sourceCursor$.clone(),
             this.stride$
           )
+        },
+      })
+
+      compose(this, VirtualCursorPart, {
+        *pages(other) {
+          const begin = this.sourceCursor$
+          const end = other.sourceCursor$
+          const range = typeof begin.materialize == 'function'
+            ? begin.materialize(end)
+            : subrange(begin, end)
+
+          yield {
+            range,
+            cursorAt: offset => {
+              const cursor = begin.clone()
+              advance(cursor, offset)
+              return new this.constructor(this.container, cursor)
+            },
+          }
+        },
+
+        materialize(other) {
+          const begin = this.sourceCursor$
+          const end = other.sourceCursor$
+
+          return typeof begin.materialize == 'function'
+            ? begin.materialize(end)
+            : subrange(begin, end)
         },
       })
     }
