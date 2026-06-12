@@ -1,6 +1,5 @@
 import { define } from '@kingjs/partial-define'
 import { VirtualCursor } from './virtual-cursor.js'
-import { subrange } from '@kingjs/cursor-view'
 import {
   VariableStridePageContainer,
 } from '../container/variable-stride-page-container.js'
@@ -18,26 +17,18 @@ export class VariableStrideVirtualCursor extends VirtualCursor {
       },
 
       *pages(other) {
-        for (const descriptor of pages.call(this, other)) {
-          const { begin, end } = descriptor
+        for (const sourcePage of pages.call(this, other)) {
           const page = new VariableStridePageContainer(
-            descriptor.page ?? subrange(begin, end),
+            sourcePage,
             {
               isContinuation: value =>
                 this.container._isContinuation(value),
-              virtualizeOffset: offset => descriptor.virtualize(offset),
+              virtualizeOffset: offset =>
+                sourcePage.cursorAt(offset).virtualize(),
             }
           )
 
-          yield {
-            page,
-            begin: page.begin(),
-            end: page.end(),
-            cursorAt: offset => page.cursorAt(offset).virtualize(),
-            isSynchronized: offset => page.cursorAt(offset)
-              .isSynchronized(),
-            virtualize: offset => page.cursorAt(offset).virtualize(),
-          }
+          yield page
         }
       },
     })

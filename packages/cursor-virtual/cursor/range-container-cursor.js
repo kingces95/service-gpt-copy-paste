@@ -13,6 +13,7 @@ import {
 } from '@kingjs/cursor'
 import { ContainerCursor } from '@kingjs/cursor-container'
 import { genericType } from '@kingjs/generic'
+import { PageContainer } from '../container/page-container.js'
 
 function cursorAtOffset(cursor, offset) {
   cursor = cursor.clone()
@@ -201,18 +202,9 @@ export const RangeContainerCursorOf = genericType(TSpan => {
             }
             const page = subrange(begin, end)
 
-            yield {
-              page,
-              begin,
-              end,
-              cursorAt,
-              isSynchronized(offset) {
-                return cursorAt(offset) != null
-              },
-              virtualize(offset) {
-                return cursorAt(offset)
-              },
-            }
+            yield new PageContainer(page, {
+              virtualizeOffset: cursorAt,
+            })
 
             if (current.outerCursor.equals(other.outerCursor))
               break
@@ -225,8 +217,8 @@ export const RangeContainerCursorOf = genericType(TSpan => {
         materialize(other) {
           const result = new this.container.constructor()
 
-          for (const descriptor of this.pages(other))
-            result.pushRange(descriptor.page)
+          for (const page of this.pages(other))
+            result.pushRange(page)
 
           return result
         },

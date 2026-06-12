@@ -3,9 +3,11 @@ import { implement } from '@kingjs/partial-implement'
 import { define } from '@kingjs/partial-define'
 import { EquatableConcept } from '@kingjs/partial-concept'
 import {
+  BacktrackableCursorPart,
   CloneableCursorPart,
   CursorPart,
   ReadableCursorPart,
+  SpannableCursorPart,
   SteppableCursorPart,
 } from '@kingjs/cursor'
 import { ContainerCursor } from '@kingjs/cursor-container'
@@ -62,9 +64,27 @@ export class PageCursor extends ContainerCursor {
       },
     })
 
+    compose(this, BacktrackableCursorPart, {
+      isAtBegin$() {
+        return this.sourceCursor$.equals(this.container._range.begin())
+      },
+
+      stepBack() {
+        this.sourceCursor$.stepBack()
+        return this
+      },
+    })
+
     compose(this, ReadableCursorPart, {
       get value() {
         return this.sourceCursor$.value
+      },
+    })
+
+    compose(this, SpannableCursorPart, {
+      get spanType() { return this.container.spanType },
+      span(other) {
+        return this.sourceCursor$.span(other.sourceCursor$)
       },
     })
 

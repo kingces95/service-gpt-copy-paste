@@ -236,15 +236,19 @@ Virtual Search
 ```
 
 ```txt
-Page Descriptor
-├─ begin
-│  └─ lower cursor at searchable page begin
-├─ end
-│  └─ lower cursor at searchable page end
-├─ isSynchronized(offset)
-│  └─ true when the lower offset is a virtual token boundary
-├─ virtualize(offset)
-│  └─ lower offset -> virtual cursor, or null if unsynchronized
+Page Container
+├─ begin()
+│  └─ page cursor at searchable page begin
+├─ end()
+│  └─ page cursor at searchable page end
 └─ cursorAt(offset)
-   └─ compatibility alias for virtualize(offset)
+   └─ page cursor at lower offset
+
+Page Cursor
+├─ isSynchronized()
+│  └─ true when the page cursor is a virtual token boundary
+├─ synchronize()
+│  └─ page cursor snapped backward to a virtual token boundary
+└─ virtualize()
+   └─ virtual cursor, or null if unsynchronized
 ```

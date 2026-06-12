@@ -1,6 +1,5 @@
 import { assert } from '@kingjs/assert'
 import { Buffer } from 'node:buffer'
-import { subrange } from '@kingjs/cursor-view'
 import {
   distance,
   iterate,
@@ -54,20 +53,17 @@ function findVirtualSequence(range, sequence, { from = range.begin() } = { }) {
     ? [...iterate(sequence.begin().materialize(sequence.end()))]
     : sequence
 
-  for (const descriptor of from.pages(range.end())) {
-    const { begin: pageBegin, end: pageEnd } = descriptor
-    const page = descriptor.page ?? subrange(pageBegin, pageEnd)
+  for (const page of from.pages(range.end())) {
     const pageMatch = findSequence(page, lowerSequence)
-    const match = pageMatch &&
-      mapPageMatch(page, pageMatch, descriptor)
+    const match = pageMatch && mapPageMatch(pageMatch)
 
     if (match)
       return match
 
     const pageLength = distance(page)
-    const virtualEnd = virtualizePageOffset(descriptor, pageLength)
+    const virtualEnd = page.end().virtualize()
     const virtualBegin = fallbackBeginOfPage(
-      descriptor,
+      page,
       pageLength,
       sequence,
       { materializedNeedle }
@@ -89,13 +85,13 @@ function findVirtualSequence(range, sequence, { from = range.begin() } = { }) {
 }
 
 function fallbackBeginOfPage(
-  descriptor,
+  page,
   pageLength,
   sequence,
   { materializedNeedle }
 ) {
-  const virtualBegin = virtualizePageOffset(descriptor, 0)
-  const virtualEnd = virtualizePageOffset(descriptor, pageLength)
+  const virtualBegin = page.begin().virtualize()
+  const virtualEnd = page.end().virtualize()
   const tailLength = lengthOfSequence(sequence) - 1
 
   if (!materializedNeedle)
@@ -140,42 +136,18 @@ function findSequenceByCursor(
   return null
 }
 
-function offsetOf(range, cursor) {
-  const current = range.begin()
-  let offset = 0
-
-  while (!current.equals(cursor)) {
-    current.step()
-    offset++
-  }
-
-  return offset
-}
-
-function mapPageMatch(page, match, descriptor) {
-  const beginOffset = offsetOf(page, match.begin)
-  const endOffset = offsetOf(page, match.end)
-
-  if (!isSynchronizedInterval(descriptor, beginOffset, endOffset))
+function mapPageMatch(match) {
+  if (!isSynchronizedInterval(match.begin, match.end))
     return null
 
-  const begin = virtualizePageOffset(descriptor, beginOffset)
-  const end = virtualizePageOffset(descriptor, endOffset)
+  const begin = match.begin.virtualize()
+  const end = match.end.virtualize()
 
   return { begin, end }
 }
 
-function isSynchronizedInterval(descriptor, beginOffset, endOffset) {
-  return isSynchronizedPageOffset(descriptor, beginOffset) &&
-    isSynchronizedPageOffset(descriptor, endOffset)
-}
-
-function isSynchronizedPageOffset(descriptor, offset) {
-  return descriptor.isSynchronized(offset)
-}
-
-function virtualizePageOffset(descriptor, offset) {
-  return descriptor.virtualize(offset)
+function isSynchronizedInterval(begin, end) {
+  return begin.isSynchronized() && end.isSynchronized()
 }
 
 function canFindByteSequence(range, sequence, { from = range.begin() } = { }) {

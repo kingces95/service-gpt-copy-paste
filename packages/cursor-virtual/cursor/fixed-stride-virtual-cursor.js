@@ -2,7 +2,6 @@ import { compose } from '@kingjs/partial-compose'
 import { define } from '@kingjs/partial-define'
 import { BacktrackableCursorPart } from '@kingjs/cursor'
 import { distance, previous } from '@kingjs/cursor-algorithm'
-import { subrange } from '@kingjs/cursor-view'
 import { VirtualCursor } from './virtual-cursor.js'
 import {
   FixedStridePageContainer,
@@ -34,29 +33,21 @@ export class FixedStrideVirtualCursor extends VirtualCursor {
       *pages(other) {
         let modulus = 0
 
-        for (const descriptor of pages.call(this, other)) {
-          const { begin, end } = descriptor
+        for (const sourcePage of pages.call(this, other)) {
           const pageModulus = modulus
           const page = new FixedStridePageContainer(
-            descriptor.page ?? subrange(begin, end),
+            sourcePage,
             {
               modulus: pageModulus,
               strideLength: this.container._strideLength,
-              virtualizeOffset: offset => descriptor.virtualize(offset),
+              virtualizeOffset: offset =>
+                sourcePage.cursorAt(offset).virtualize(),
             }
           )
 
-          yield {
-            page,
-            begin: page.begin(),
-            end: page.end(),
-            cursorAt: offset => page.cursorAt(offset).virtualize(),
-            isSynchronized: offset => page.cursorAt(offset)
-              .isSynchronized(),
-            virtualize: offset => page.cursorAt(offset).virtualize(),
-          }
+          yield page
 
-          modulus = (modulus + distance(subrange(begin, end))) %
+          modulus = (modulus + distance(sourcePage)) %
             this.container._strideLength
         }
       },

@@ -13,6 +13,7 @@ import {
 import { advance } from '@kingjs/cursor-algorithm'
 import { ContainerCursor } from '@kingjs/cursor-container'
 import { subrange } from '@kingjs/cursor-view'
+import { PageContainer } from '../container/page-container.js'
 
 export class VirtualCursor extends ContainerCursor {
   _sourceCursor
@@ -77,37 +78,28 @@ export class VirtualCursor extends ContainerCursor {
         const range = typeof begin.materialize == 'function'
           ? begin.materialize(end)
           : subrange(begin, end)
-        const pageBegin = range.begin()
-        const pageEnd = range.end()
 
-        const cursorAt = offset => {
-          // The page currently starts at this virtual cursor's source.
-          // If a future virtual layer trims the page begin without
-          // consuming that prefix, this mapping must account for it.
-          assert(offset == 0 || !pageBegin.equals(pageEnd),
-            'Virtual page offsets are relative to page begin.')
-          const pageCursor = pageBegin.clone()
-          advance(pageCursor, offset)
-          if (pageCursor.equals(pageEnd))
-            return other.clone()
+        yield new PageContainer(range, {
+          virtualizeOffset: offset => {
+            const pageBegin = range.begin()
+            const pageEnd = range.end()
 
-          const cursor = begin.clone()
-          advance(cursor, offset)
-          return new this.constructor(this.container, cursor)
-        }
+            // The page currently starts at this virtual cursor's source.
+            // If a future virtual layer trims the page begin without
+            // consuming that prefix, this mapping must account for it.
+            assert(offset == 0 || !pageBegin.equals(pageEnd),
+              'Virtual page offsets are relative to page begin.')
 
-        yield {
-          page: range,
-          begin: pageBegin,
-          end: pageEnd,
-          cursorAt,
-          isSynchronized(offset) {
-            return cursorAt(offset) != null
+            const pageCursor = pageBegin.clone()
+            advance(pageCursor, offset)
+            if (pageCursor.equals(pageEnd))
+              return other.clone()
+
+            const cursor = begin.clone()
+            advance(cursor, offset)
+            return new this.constructor(this.container, cursor)
           },
-          virtualize(offset) {
-            return cursorAt(offset)
-          },
-        }
+        })
       },
 
       materialize(other) {

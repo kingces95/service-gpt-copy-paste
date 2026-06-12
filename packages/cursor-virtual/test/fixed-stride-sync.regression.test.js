@@ -53,11 +53,11 @@ describe('fixed stride page synchronization', () => {
     const range = pairRangeOf([0, 1, 2, 3])
     const [page] = range.begin().pages(range.end())
 
-    expect(page.isSynchronized(0)).toBe(true)
-    expect(page.isSynchronized(1)).toBe(false)
-    expect(page.isSynchronized(2)).toBe(true)
-    expect(page.virtualize(1)).toBe(null)
-    expect(page.virtualize(2)).not.toBe(null)
+    expect(page.cursorAt(0).isSynchronized()).toBe(true)
+    expect(page.cursorAt(1).isSynchronized()).toBe(false)
+    expect(page.cursorAt(2).isSynchronized()).toBe(true)
+    expect(page.cursorAt(1).virtualize()).toBe(null)
+    expect(page.cursorAt(2).virtualize()).not.toBe(null)
   })
 
   it('rejects page-space matches that start between virtual tokens', () => {
