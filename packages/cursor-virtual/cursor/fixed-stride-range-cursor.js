@@ -37,16 +37,21 @@ export const FixedStrideRangeCursorOf = genericType(TSpan => {
           for (const descriptor of pages.call(this, other)) {
             const { begin, end, cursorAt } = descriptor
             const pageModulus = modulus
+            const isSynchronized = offset =>
+              (pageModulus + offset) % this.container._strideLength == 0
+            const virtualize = offset => {
+              if (!isSynchronized(offset))
+                return null
+
+              return descriptor.virtualize?.(offset) ?? cursorAt(offset)
+            }
 
             yield {
               begin,
               end,
-              cursorAt: offset => {
-                if ((pageModulus + offset) % this.container._strideLength)
-                  return null
-
-                return cursorAt(offset)
-              },
+              cursorAt: virtualize,
+              isSynchronized,
+              virtualize,
             }
 
             modulus = (modulus + distance(subrange(begin, end))) %

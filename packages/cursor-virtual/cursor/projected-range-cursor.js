@@ -84,23 +84,31 @@ export const ProjectedRangeCursorOf = genericType(TSpan => {
           const pageBegin = range.begin()
           const pageEnd = range.end()
 
+          const cursorAt = offset => {
+            // The page currently starts at this projected cursor's source.
+            // If a future virtual layer trims the page begin without
+            // consuming that prefix, this mapping must account for it.
+            assert(offset == 0 || !pageBegin.equals(pageEnd),
+              'Projected page offsets are relative to page begin.')
+            const pageCursor = pageBegin.clone()
+            advance(pageCursor, offset)
+            if (pageCursor.equals(pageEnd))
+              return other.clone()
+
+            const cursor = begin.clone()
+            advance(cursor, offset)
+            return new this.constructor(this.container, cursor)
+          }
+
           yield {
             begin: pageBegin,
             end: pageEnd,
-            cursorAt: offset => {
-              // The page currently starts at this projected cursor's source.
-              // If a future virtual layer trims the page begin without
-              // consuming that prefix, this mapping must account for it.
-              assert(offset == 0 || !pageBegin.equals(pageEnd),
-                'Projected page offsets are relative to page begin.')
-              const pageCursor = pageBegin.clone()
-              advance(pageCursor, offset)
-              if (pageCursor.equals(pageEnd))
-                return other.clone()
-
-              const cursor = begin.clone()
-              advance(cursor, offset)
-              return new this.constructor(this.container, cursor)
+            cursorAt,
+            isSynchronized(offset) {
+              return cursorAt(offset) != null
+            },
+            virtualize(offset) {
+              return cursorAt(offset)
             },
           }
         },
