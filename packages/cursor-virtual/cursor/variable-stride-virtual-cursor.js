@@ -1,11 +1,11 @@
 import { define } from '@kingjs/partial-define'
 import { genericType } from '@kingjs/generic'
-import { ProjectedRangeCursorOf } from './projected-range-cursor.js'
+import { VirtualCursorOf } from './virtual-cursor.js'
 
-export const VariableStrideRangeCursorOf = genericType(TSpan => {
-  const ProjectedRangeCursor = ProjectedRangeCursorOf(TSpan)
+export const VariableStrideVirtualCursorOf = genericType(TSpan => {
+  const VirtualCursor = VirtualCursorOf(TSpan)
 
-  return class VariableStrideRangeCursor extends ProjectedRangeCursor {
+  return class VariableStrideVirtualCursor extends VirtualCursor {
     static {
       define(this, {
         get stride$() {
@@ -19,4 +19,4 @@ export const VariableStrideRangeCursorOf = genericType(TSpan => {
   }
 })
 
-export const VariableStrideRangeCursor = VariableStrideRangeCursorOf(Object)
+export const VariableStrideVirtualCursor = VariableStrideVirtualCursorOf(Object)

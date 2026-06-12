@@ -2,22 +2,22 @@ import { describe, expect, it } from 'vitest'
 import { TypedArrayView } from '@kingjs/cursor-view'
 import { compose } from '@kingjs/partial-compose'
 import {
-  FixedStrideRangeContainerOf,
-  ProjectedRangePart,
+  FixedStrideVirtualContainerOf,
+  VirtualPart,
   RangeContainerOf,
   findSequence,
 } from '../index.js'
 
 const Uint8RangeContainer = RangeContainerOf(Uint8Array)
-const FixedStrideRangeContainer = FixedStrideRangeContainerOf(Uint8Array)
+const FixedStrideVirtualContainer = FixedStrideVirtualContainerOf(Uint8Array)
 
-class PairRange extends FixedStrideRangeContainer {
+class PairRange extends FixedStrideVirtualContainer {
   constructor() {
     super(new Uint8RangeContainer(), { strideLength: 2 })
   }
 
   static {
-    compose(this, ProjectedRangePart, {
+    compose(this, VirtualPart, {
       decodeToken$(sourceCursor) {
         const first = sourceCursor.value
         sourceCursor.step()

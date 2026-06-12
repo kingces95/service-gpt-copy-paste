@@ -5,28 +5,28 @@ import { PartialProxy } from '@kingjs/partial-proxy'
 import { genericType } from '@kingjs/generic'
 import { RangePart } from '@kingjs/cursor'
 import { iterate } from '@kingjs/cursor-algorithm'
-import { ProjectedRangePart } from '../part/projected-range-part.js'
+import { VirtualPart } from '../part/virtual-part.js'
 import { RangeOfRangesPartOf } from '../part/range-of-ranges-part.js'
 import { CloneEmptyPart } from '../part/clone-empty-part.js'
 import { SplitContainerPart } from '../part/split-container-part.js'
 import { TrimmedRangePart } from '../part/trimmed-range-part.js'
 import { RangeOfRangesShapeOf } from '../shape/range-of-ranges-shape.js'
 
-// ProjectedRangeContainer scans a source range as projected values while
-// preserving source ownership. Cursors move in projected space, but popRange()
+// VirtualContainer scans a source range as virtual values while
+// preserving source ownership. Cursors move in virtual space, but popRange()
 // returns the original source ranges that produced the committed prefix.
 //
-export const ProjectedRangeContainerOf = genericType(TSpan => {
+export const VirtualContainerOf = genericType(TSpan => {
   const RangeOfRangesPart = RangeOfRangesPartOf(TSpan)
   const RangeOfRangesShape = RangeOfRangesShapeOf(TSpan)
 
-  return class ProjectedRangeContainer extends PartialProxy {
+  return class VirtualContainer extends PartialProxy {
     _source
 
     constructor(source) {
       super()
       assert(source instanceof RangeOfRangesShape,
-        'Projected range source must be a range of ranges.')
+        'Virtual source must be a range of ranges.')
       this._source = source
     }
 
@@ -53,7 +53,7 @@ export const ProjectedRangeContainerOf = genericType(TSpan => {
         ranges() { return this.source$.ranges() },
       })
 
-      compose(this, ProjectedRangePart, {
+      compose(this, VirtualPart, {
         get source$() { return this._source },
       }, {
         decodeToken$(sourceCursor, stride) { },
@@ -82,4 +82,4 @@ export const ProjectedRangeContainerOf = genericType(TSpan => {
   }
 })
 
-export const ProjectedRangeContainer = ProjectedRangeContainerOf(Object)
+export const VirtualContainer = VirtualContainerOf(Object)

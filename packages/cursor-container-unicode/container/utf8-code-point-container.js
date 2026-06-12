@@ -1,7 +1,7 @@
 import {
-  ProjectedRangePart,
+  VirtualPart,
   RangeOfRangesPartOf,
-  VariableStrideRangeContainerOf,
+  VariableStrideVirtualContainerOf,
   RangeContainerOf,
 } from '@kingjs/cursor-virtual'
 import { compose } from '@kingjs/partial-compose'
@@ -42,13 +42,13 @@ function readContinuation(cursor) {
 }
 
 export const Utf8CodePointContainerOf = genericType(TSpan => {
-  const VariableStrideRangeContainer = VariableStrideRangeContainerOf(TSpan)
+  const VariableStrideVirtualContainer = VariableStrideVirtualContainerOf(TSpan)
   const RangeContainer = RangeContainerOf(TSpan)
   const RangeOfRangesPart = RangeOfRangesPartOf(TSpan)
-  const pushRange = VariableStrideRangeContainer.prototype.pushRange
+  const pushRange = VariableStrideVirtualContainer.prototype.pushRange
   const byteRangesToStrings = byteRangesToStringsOf(TSpan)
 
-  return class Utf8CodePointContainer extends VariableStrideRangeContainer {
+  return class Utf8CodePointContainer extends VariableStrideVirtualContainer {
     _preamble
 
     constructor() {
@@ -86,7 +86,7 @@ export const Utf8CodePointContainerOf = genericType(TSpan => {
         },
       })
 
-      compose(this, ProjectedRangePart, {
+      compose(this, VirtualPart, {
         decodeToken$(sourceCursor, stride) {
           const first = readByte(sourceCursor)
           const parts = []

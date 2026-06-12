@@ -5,26 +5,26 @@ import {
   BidirectionalRangeShape,
 } from '@kingjs/cursor-shape'
 import {
-  ProjectedRangeContainerOf,
-} from './projected-range-container.js'
+  VirtualContainerOf,
+} from './virtual-container.js'
 import { RangeOfRangesShapeOf } from '../shape/range-of-ranges-shape.js'
 import { distance, previous } from '@kingjs/cursor-algorithm'
 import {
-  FixedStrideRangeCursorOf,
-} from '../cursor/fixed-stride-range-cursor.js'
-import { ProjectedRangePart } from '../part/projected-range-part.js'
+  FixedStrideVirtualCursorOf,
+} from '../cursor/fixed-stride-virtual-cursor.js'
+import { VirtualPart } from '../part/virtual-part.js'
 import { RangeOfRangesPartOf } from '../part/range-of-ranges-part.js'
 import { TrimmedRangePart } from '../part/trimmed-range-part.js'
 
-export const FixedStrideRangeContainerOf = genericType(TSpan => {
-  const ProjectedRangeContainer = ProjectedRangeContainerOf(TSpan)
+export const FixedStrideVirtualContainerOf = genericType(TSpan => {
+  const VirtualContainer = VirtualContainerOf(TSpan)
   const RangeOfRangesPart = RangeOfRangesPartOf(TSpan)
   const RangeOfRangesShape = RangeOfRangesShapeOf(TSpan)
-  const pushRange = ProjectedRangeContainer.prototype.pushRange
-  const FixedStrideRangeCursor = FixedStrideRangeCursorOf(TSpan)
+  const pushRange = VirtualContainer.prototype.pushRange
+  const FixedStrideVirtualCursor = FixedStrideVirtualCursorOf(TSpan)
 
-  return class FixedStrideRangeContainer extends ProjectedRangeContainer {
-    static cursorType = FixedStrideRangeCursor
+  return class FixedStrideVirtualContainer extends VirtualContainer {
+    static cursorType = FixedStrideVirtualCursor
 
     _remainder
     _strideLength
@@ -33,13 +33,13 @@ export const FixedStrideRangeContainerOf = genericType(TSpan => {
       super(source)
       assert(source instanceof RangeOfRangesShape &&
         source instanceof BidirectionalRangeShape,
-        'Fixed projected range source must be a bidirectional range of ranges.')
+        'Fixed virtual source must be a bidirectional range of ranges.')
       this._remainder = 0
       this._strideLength = strideLength
     }
 
     static {
-      compose(this, ProjectedRangePart, {
+      compose(this, VirtualPart, {
         decodeToken$(sourceCursor, stride) {
           assert(stride == 1,
             'Fixed stride range default decode requires stride one.')
@@ -66,4 +66,4 @@ export const FixedStrideRangeContainerOf = genericType(TSpan => {
   }
 })
 
-export const FixedStrideRangeContainer = FixedStrideRangeContainerOf(Object)
+export const FixedStrideVirtualContainer = FixedStrideVirtualContainerOf(Object)

@@ -4,10 +4,10 @@ import { SnapshotView } from '@kingjs/cursor-view'
 import { Uint8Vector } from '@kingjs/cursor-container-standard'
 import { define } from '@kingjs/partial-define'
 import {
-  FixedStrideRangeContainer,
-  ProjectedRangeContainer,
+  FixedStrideVirtualContainer,
+  VirtualContainer,
   RangeContainer,
-  VariableStrideRangeContainer,
+  VariableStrideVirtualContainer,
 } from '../index.js'
 
 function rangeOf(values) {
@@ -24,9 +24,9 @@ function cursorAt(range, offset) {
   return cursor
 }
 
-const projectedSplit = ProjectedRangeContainer.prototype.split
+const virtualSplit = VirtualContainer.prototype.split
 
-class FixedValueRange extends FixedStrideRangeContainer {
+class FixedValueRange extends FixedStrideVirtualContainer {
   constructor() {
     super(new RangeContainer(), { strideLength: 2 })
   }
@@ -42,7 +42,7 @@ class FixedValueRange extends FixedStrideRangeContainer {
   }
 }
 
-class VariableValueRange extends VariableStrideRangeContainer {
+class VariableValueRange extends VariableStrideVirtualContainer {
   constructor() {
     super(new RangeContainer(), {
       isContinuation: value => value == 2,
@@ -76,13 +76,13 @@ class ConfiguredFixedValueRange extends FixedValueRange {
       split(cursor = this.end(), result = null) {
         result ??= new this.constructor()
         result.configured = true
-        return projectedSplit.call(this, cursor, result)
+        return virtualSplit.call(this, cursor, result)
       },
     })
   }
 }
 
-describe('FixedStrideRangeContainer', () => {
+describe('FixedStrideVirtualContainer', () => {
   it('trims fixed-width suffixes to token boundaries', () => {
     const range = new FixedValueRange()
 
@@ -109,7 +109,7 @@ describe('FixedStrideRangeContainer', () => {
     expect([...iterate(range)]).toEqual([[2, 3]])
   })
 
-  it('rejects split cursors from another projected range', () => {
+  it('rejects split cursors from another virtual', () => {
     const range = new FixedValueRange()
     const other = new FixedValueRange()
 
@@ -121,7 +121,7 @@ describe('FixedStrideRangeContainer', () => {
   })
 })
 
-describe('VariableStrideRangeContainer', () => {
+describe('VariableStrideVirtualContainer', () => {
   it('trims incomplete continuation suffixes to token boundaries', () => {
     const range = new VariableValueRange()
 

@@ -55,15 +55,15 @@ Shape
 └─ -
 
 Naked
-├─ ProjectedRangeCursor
+├─ VirtualCursor
 │  └─ sourceCursor$
-├─ FixedStrideRangeCursor
+├─ FixedStrideVirtualCursor
 │  └─ stride$
-└─ VariableStrideRangeCursor
+└─ VariableStrideVirtualCursor
    └─ stride$
 
 Private
-├─ ProjectedRangeCursor
+├─ VirtualCursor
 │  └─ _sourceCursor
 └─ RangeContainerCursor
    ├─ _outerCursor
@@ -101,7 +101,7 @@ Part
 │  ├─ ranges()
 │  ├─ pages()
 │  └─ spans()
-├─ ProjectedRangePart
+├─ VirtualPart
 │  ├─ source$
 │  └─ decodeToken$(sourceCursor, stride)
 ├─ TrimmedRangePart
@@ -119,19 +119,19 @@ Shape
    └─ spans()
 
 Naked
-└─ VariableStrideRangeContainer
+└─ VariableStrideVirtualContainer
    └─ tokenStrideOf$(value)
 
 Private
-├─ FixedStrideRangeContainer
+├─ FixedStrideVirtualContainer
 │  ├─ _remainder
 │  └─ _strideLength
-├─ ProjectedRangeContainer
+├─ VirtualContainer
 │  └─ _source
 ├─ RangeContainer
 │  ├─ _ranges
 │  └─ _tail
-└─ VariableStrideRangeContainer
+└─ VariableStrideVirtualContainer
    ├─ _isContinuation
    └─ _continuationCountOf
 ```
@@ -152,12 +152,12 @@ Virtual Generic Span Type
 Cursor
 ├─ ContiguousCursorOf(TSpan)
 │  └─ ContiguousCursor = ContiguousCursorOf(Object)
-├─ ProjectedRangeCursorOf(TSpan)
-│  └─ ProjectedRangeCursor = ProjectedRangeCursorOf(Object)
-├─ FixedStrideRangeCursorOf(TSpan)
-│  └─ FixedStrideRangeCursor = FixedStrideRangeCursorOf(Object)
-├─ VariableStrideRangeCursorOf(TSpan)
-│  └─ VariableStrideRangeCursor = VariableStrideRangeCursorOf(Object)
+├─ VirtualCursorOf(TSpan)
+│  └─ VirtualCursor = VirtualCursorOf(Object)
+├─ FixedStrideVirtualCursorOf(TSpan)
+│  └─ FixedStrideVirtualCursor = FixedStrideVirtualCursorOf(Object)
+├─ VariableStrideVirtualCursorOf(TSpan)
+│  └─ VariableStrideVirtualCursor = VariableStrideVirtualCursorOf(Object)
 └─ RangeContainerCursorOf(TSpan)
    └─ RangeContainerCursor = RangeContainerCursorOf(Object)
 
@@ -170,12 +170,12 @@ Declaration
 Container
 ├─ RangeContainerOf(TSpan)
 │  └─ RangeContainer = RangeContainerOf(Object)
-├─ ProjectedRangeContainerOf(TSpan)
-│  └─ ProjectedRangeContainer = ProjectedRangeContainerOf(Object)
-├─ FixedStrideRangeContainerOf(TSpan)
-│  └─ FixedStrideRangeContainer = FixedStrideRangeContainerOf(Object)
-└─ VariableStrideRangeContainerOf(TSpan)
-   └─ VariableStrideRangeContainer = VariableStrideRangeContainerOf(Object)
+├─ VirtualContainerOf(TSpan)
+│  └─ VirtualContainer = VirtualContainerOf(Object)
+├─ FixedStrideVirtualContainerOf(TSpan)
+│  └─ FixedStrideVirtualContainer = FixedStrideVirtualContainerOf(Object)
+└─ VariableStrideVirtualContainerOf(TSpan)
+   └─ VariableStrideVirtualContainer = VariableStrideVirtualContainerOf(Object)
 ```
 
 ## Span Projection Algorithms

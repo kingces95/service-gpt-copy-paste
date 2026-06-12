@@ -4,10 +4,10 @@ import { SnapshotView, TypedArrayView } from '@kingjs/cursor-view'
 import { compose } from '@kingjs/partial-compose'
 import { spanTypeOfRange, spansOfRange } from '@kingjs/cursor-shape'
 import {
-  FixedStrideRangeContainerOf,
+  FixedStrideVirtualContainerOf,
   findSequence,
   matchPrefix,
-  ProjectedRangePart,
+  VirtualPart,
   RangeContainer,
   RangeContainerOf,
 } from '../index.js'
@@ -54,25 +54,25 @@ describe('findSequence', () => {
     expect(valuesOf(range.popRange(match.end))).toEqual([1, 2, 3])
   })
 
-  it('finds projected values by materializing a virtual needle', () => {
-    const range = projectedRangeOf([1, 2, 3])
-    const needle = projectedRangeOf([2])
+  it('finds virtual values by materializing a virtual needle', () => {
+    const range = virtualRangeOf([1, 2, 3])
+    const needle = virtualRangeOf([2])
     const match = findSequence(range, needle)
 
     expect(match.begin.value).toBe(102)
     expect(valuesOf(range.popRange(match.end))).toEqual([1, 2])
   })
 
-  it('finds projected values with a plain logical needle', () => {
-    const range = projectedRangeOf([1, 2, 3])
+  it('finds virtual values with a plain logical needle', () => {
+    const range = virtualRangeOf([1, 2, 3])
     const match = findSequence(range, [102])
 
     expect(match.begin.value).toBe(102)
     expect(valuesOf(range.popRange(match.end))).toEqual([1, 2])
   })
 
-  it('finds projected values across virtual pages', () => {
-    const range = projectedRangeOf([1, 2], [3, 4])
+  it('finds virtual values across virtual pages', () => {
+    const range = virtualRangeOf([1, 2], [3, 4])
     const match = findSequence(range, [102, 103])
 
     expect(match.begin.value).toBe(102)
@@ -123,17 +123,17 @@ describe('findSequence', () => {
   })
 })
 
-const ProjectedByteRange = (() => {
+const VirtualByteRange = (() => {
   const Uint8RangeContainer = RangeContainerOf(Uint8Array)
-  const FixedStrideRangeContainer = FixedStrideRangeContainerOf(Uint8Array)
+  const FixedStrideVirtualContainer = FixedStrideVirtualContainerOf(Uint8Array)
 
-  return class ProjectedByteRange extends FixedStrideRangeContainer {
+  return class VirtualByteRange extends FixedStrideVirtualContainer {
     constructor() {
       super(new Uint8RangeContainer())
     }
 
     static {
-      compose(this, ProjectedRangePart, {
+      compose(this, VirtualPart, {
         decodeToken$(sourceCursor, stride) {
           return sourceCursor.value + 100
         },
@@ -142,8 +142,8 @@ const ProjectedByteRange = (() => {
   }
 })()
 
-function projectedRangeOf(...chunks) {
-  const result = new ProjectedByteRange()
+function virtualRangeOf(...chunks) {
+  const result = new VirtualByteRange()
 
   for (const chunk of chunks)
     result.pushRange(new TypedArrayView(Uint8Array.from(chunk)))

@@ -15,8 +15,8 @@ import { ContainerCursor } from '@kingjs/cursor-container'
 import { subrange } from '@kingjs/cursor-view'
 import { genericType } from '@kingjs/generic'
 
-export const ProjectedRangeCursorOf = genericType(TSpan => {
-  return class ProjectedRangeCursor extends ContainerCursor {
+export const VirtualCursorOf = genericType(TSpan => {
+  return class VirtualCursor extends ContainerCursor {
     static spanType = TSpan
 
     _sourceCursor
@@ -85,11 +85,11 @@ export const ProjectedRangeCursorOf = genericType(TSpan => {
           const pageEnd = range.end()
 
           const cursorAt = offset => {
-            // The page currently starts at this projected cursor's source.
+            // The page currently starts at this virtual cursor's source.
             // If a future virtual layer trims the page begin without
             // consuming that prefix, this mapping must account for it.
             assert(offset == 0 || !pageBegin.equals(pageEnd),
-              'Projected page offsets are relative to page begin.')
+              'Virtual page offsets are relative to page begin.')
             const pageCursor = pageBegin.clone()
             advance(pageCursor, offset)
             if (pageCursor.equals(pageEnd))
@@ -126,4 +126,4 @@ export const ProjectedRangeCursorOf = genericType(TSpan => {
   }
 })
 
-export const ProjectedRangeCursor = ProjectedRangeCursorOf(Object)
+export const VirtualCursor = VirtualCursorOf(Object)

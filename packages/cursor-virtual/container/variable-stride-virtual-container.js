@@ -3,20 +3,20 @@ import { compose } from '@kingjs/partial-compose'
 import { define } from '@kingjs/partial-define'
 import { genericType } from '@kingjs/generic'
 import {
-  ProjectedRangeContainerOf,
-} from './projected-range-container.js'
+  VirtualContainerOf,
+} from './virtual-container.js'
 import { synchronize } from '../algorithms/synchronize.js'
 import {
-  VariableStrideRangeCursorOf,
-} from '../cursor/variable-stride-range-cursor.js'
+  VariableStrideVirtualCursorOf,
+} from '../cursor/variable-stride-virtual-cursor.js'
 import { TrimmedRangePart } from '../part/trimmed-range-part.js'
 
-export const VariableStrideRangeContainerOf = genericType(TSpan => {
-  const ProjectedRangeContainer = ProjectedRangeContainerOf(TSpan)
-  const VariableStrideRangeCursor = VariableStrideRangeCursorOf(TSpan)
+export const VariableStrideVirtualContainerOf = genericType(TSpan => {
+  const VirtualContainer = VirtualContainerOf(TSpan)
+  const VariableStrideVirtualCursor = VariableStrideVirtualCursorOf(TSpan)
 
-  return class VariableStrideRangeContainer extends ProjectedRangeContainer {
-    static cursorType = VariableStrideRangeCursor
+  return class VariableStrideVirtualContainer extends VirtualContainer {
+    static cursorType = VariableStrideVirtualCursor
 
     _isContinuation
     _continuationCountOf
@@ -56,5 +56,5 @@ export const VariableStrideRangeContainerOf = genericType(TSpan => {
   }
 })
 
-export const VariableStrideRangeContainer =
-  VariableStrideRangeContainerOf(Object)
+export const VariableStrideVirtualContainer =
+  VariableStrideVirtualContainerOf(Object)

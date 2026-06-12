@@ -4,7 +4,7 @@ import {
 import { DefinesAbstract } from '@kingjs/partial-class'
 import { members } from '@kingjs/partial-signature'
 
-export class ProjectedRangePart extends ContainerPart {
+export class VirtualPart extends ContainerPart {
   static [DefinesAbstract] = members(this, {
     get source$() { },
     decodeToken$(sourceCursor, stride) { },

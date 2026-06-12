@@ -5,11 +5,11 @@ Unicode container pivots for byte streams, code units, and code points.
 Contents
 
 - [Byte Unit And Point Extensions](#byte-unit-and-point-extensions):
-  Unicode types pivoted by projected stream role and extension root.
-- [Projected Source Type](#projected-source-type): Unicode projected
-  containers pivoted by stream role and projected source type.
+  Unicode types pivoted by virtual stream role and extension root.
+- [Virtual Source Type](#virtual-source-type): Unicode virtual
+  containers pivoted by stream role and virtual source type.
 - [Source Span Type](#source-span-type): Unicode generic containers whose
-  `TSpan` describes the committed source spans, not the projected values.
+  `TSpan` describes the committed source spans, not the virtual values.
 
 ## Byte Unit And Point Extensions
 
@@ -26,37 +26,37 @@ Unicode Byte Unit And Point Extensions
 Unicode Byte Unit And Point Extensions
 
 Byte
-└─ FixedStrideRangeContainer
+└─ FixedStrideVirtualContainer
    └─ ByteOrderedContainer
 
 Unit
-├─ FixedStrideRangeContainer
+├─ FixedStrideVirtualContainer
 │  └─ CodeUnitContainer
 └─ CodeUnitContainer
    ├─ Utf16CodeUnitContainer
    └─ Utf32CodeUnitContainer
 
 Point
-├─ VariableStrideRangeContainer
+├─ VariableStrideVirtualContainer
 │  ├─ Utf8CodePointContainer
 │  └─ Utf16CodePointContainer
-└─ FixedStrideRangeContainer
+└─ FixedStrideVirtualContainer
    └─ Utf32CodePointContainer
 ```
 
-## Projected Source Type
+## Virtual Source Type
 
 ```txt
-Unicode Projected Source Type
+Unicode Virtual Source Type
 ├─ set: cursor-container-unicode types
-├─ map: projected source type, byte/unit/point
-├─ filter: types extending ProjectedRangeContainer
-├─ pivot: byte/unit/point, then projected source type
-└─ display: projected source roots with projecting containers as leaves
+├─ map: virtual source type, byte/unit/point
+├─ filter: types extending VirtualContainer
+├─ pivot: byte/unit/point, then virtual source type
+└─ display: virtual source roots with virtual containers as leaves
 ```
 
 ```txt
-Unicode Projected Source Type
+Unicode Virtual Source Type
 
 Byte
 └─ RangeContainer

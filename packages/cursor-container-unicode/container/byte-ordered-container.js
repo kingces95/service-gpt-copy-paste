@@ -4,9 +4,9 @@ import { iterate } from '@kingjs/cursor-algorithm'
 import { genericType } from '@kingjs/generic'
 import { Uint8 } from '@kingjs/simple-type'
 import {
-  FixedStrideRangeContainerOf,
+  FixedStrideVirtualContainerOf,
   CloneEmptyPart,
-  ProjectedRangePart,
+  VirtualPart,
   RangeOfRangesPartOf,
   RangeContainerOf,
 } from '@kingjs/cursor-virtual'
@@ -37,13 +37,13 @@ function isByteOrder(value) {
 }
 
 export const ByteOrderedContainerOf = genericType(TSpan => {
-  const FixedStrideRangeContainer = FixedStrideRangeContainerOf(TSpan)
+  const FixedStrideVirtualContainer = FixedStrideVirtualContainerOf(TSpan)
   const RangeOfRangesPart = RangeOfRangesPartOf(TSpan)
   const RangeContainer = RangeContainerOf(TSpan)
-  const pushRange = FixedStrideRangeContainer.prototype.pushRange
+  const pushRange = FixedStrideVirtualContainer.prototype.pushRange
   const byteRangesToStrings = byteRangesToStringsOf(TSpan)
 
-  return class ByteOrderedContainer extends FixedStrideRangeContainer {
+  return class ByteOrderedContainer extends FixedStrideVirtualContainer {
     _byteOrder
     _byteWidth
     _preamble
@@ -118,7 +118,7 @@ export const ByteOrderedContainerOf = genericType(TSpan => {
         },
       })
 
-      compose(this, ProjectedRangePart, {
+      compose(this, VirtualPart, {
         decodeToken$(sourceCursor, stride) {
           assert(this._byteOrder != null,
             'Byte order has not been resolved.')

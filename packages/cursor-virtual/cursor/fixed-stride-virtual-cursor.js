@@ -4,13 +4,13 @@ import { BacktrackableCursorPart } from '@kingjs/cursor'
 import { distance, previous } from '@kingjs/cursor-algorithm'
 import { subrange } from '@kingjs/cursor-view'
 import { genericType } from '@kingjs/generic'
-import { ProjectedRangeCursorOf } from './projected-range-cursor.js'
+import { VirtualCursorOf } from './virtual-cursor.js'
 
-export const FixedStrideRangeCursorOf = genericType(TSpan => {
-  const ProjectedRangeCursor = ProjectedRangeCursorOf(TSpan)
-  const pages = ProjectedRangeCursor.prototype.pages
+export const FixedStrideVirtualCursorOf = genericType(TSpan => {
+  const VirtualCursor = VirtualCursorOf(TSpan)
+  const pages = VirtualCursor.prototype.pages
 
-  return class FixedStrideRangeCursor extends ProjectedRangeCursor {
+  return class FixedStrideVirtualCursor extends VirtualCursor {
     static {
       define(this, {
         get stride$() { return this.container._strideLength },
@@ -63,4 +63,4 @@ export const FixedStrideRangeCursorOf = genericType(TSpan => {
   }
 })
 
-export const FixedStrideRangeCursor = FixedStrideRangeCursorOf(Object)
+export const FixedStrideVirtualCursor = FixedStrideVirtualCursorOf(Object)

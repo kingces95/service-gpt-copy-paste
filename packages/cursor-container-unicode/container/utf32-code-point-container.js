@@ -1,6 +1,6 @@
 import {
-  FixedStrideRangeContainerOf,
-  ProjectedRangePart,
+  FixedStrideVirtualContainerOf,
+  VirtualPart,
 } from '@kingjs/cursor-virtual'
 import { assert } from '@kingjs/assert'
 import { compose } from '@kingjs/partial-compose'
@@ -16,10 +16,10 @@ import {
 } from '../part/string-materialization-part.js'
 
 export const Utf32CodePointContainerOf = genericType(TSpan => {
-  const FixedStrideRangeContainer = FixedStrideRangeContainerOf(TSpan)
+  const FixedStrideVirtualContainer = FixedStrideVirtualContainerOf(TSpan)
   const Utf32CodeUnitContainer = Utf32CodeUnitContainerOf(TSpan)
 
-  return class Utf32CodePointContainer extends FixedStrideRangeContainer {
+  return class Utf32CodePointContainer extends FixedStrideVirtualContainer {
     constructor({ source = null, byteOrder = null } = { }) {
       source ??= new Utf32CodeUnitContainer({ byteOrder })
       assert(source instanceof Utf32CodeUnitContainer,
@@ -33,7 +33,7 @@ export const Utf32CodePointContainerOf = genericType(TSpan => {
         toStrings() { return this.source$.toStrings('utf-32') },
       })
 
-      compose(this, ProjectedRangePart, {
+      compose(this, VirtualPart, {
         decodeToken$(sourceCursor) {
           const value = sourceCursor.value
           assertScalarValue(value)

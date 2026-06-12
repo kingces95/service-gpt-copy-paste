@@ -6,9 +6,9 @@ import { Uint8 } from '@kingjs/simple-type'
 import { Uint8Vector } from '@kingjs/cursor-container-standard'
 import { define } from '@kingjs/partial-define'
 import {
-  FixedStrideRangeContainer,
-  ProjectedRangeCursor,
-  ProjectedRangeContainer,
+  FixedStrideVirtualContainer,
+  VirtualCursor,
+  VirtualContainer,
   RangeContainer,
 } from '../index.js'
 
@@ -34,7 +34,7 @@ function materializeRanges(ranges) {
   return [...iterate(ranges)].map(range => textOf([...iterate(range)]))
 }
 
-class AsciiCodePointContainer extends FixedStrideRangeContainer {
+class AsciiCodePointContainer extends FixedStrideVirtualContainer {
   constructor() {
     super(new RangeContainer())
   }
@@ -52,7 +52,7 @@ class AsciiCodePointContainer extends FixedStrideRangeContainer {
   }
 }
 
-class DelimitedRecordCursor extends ProjectedRangeCursor {
+class DelimitedRecordCursor extends VirtualCursor {
   static {
     define(this, {
       get stride$() {
@@ -62,7 +62,7 @@ class DelimitedRecordCursor extends ProjectedRangeCursor {
   }
 }
 
-class DelimitedRecordContainer extends ProjectedRangeContainer {
+class DelimitedRecordContainer extends VirtualContainer {
   static cursorType = DelimitedRecordCursor
 
   get isDelimiter$() {
