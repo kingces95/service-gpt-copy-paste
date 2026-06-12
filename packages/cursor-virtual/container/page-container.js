@@ -1,7 +1,10 @@
 import { implement } from '@kingjs/partial-implement'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { RangeConcept } from '@kingjs/cursor'
-import { spansOfRange } from '@kingjs/cursor-shape'
+import {
+  spanTypeOfRange,
+  spansOfRange,
+} from '@kingjs/cursor-shape'
 import { PageCursor } from '../cursor/page-cursor.js'
 
 export class PageContainer extends PartialProxy {
@@ -18,6 +21,10 @@ export class PageContainer extends PartialProxy {
 
   virtualizeOffset(offset) {
     return this._virtualizeOffset(offset)
+  }
+
+  get spanType() {
+    return spanTypeOfRange(this._range)
   }
 
   cursorAt(offset) {

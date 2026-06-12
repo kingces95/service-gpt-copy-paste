@@ -56,7 +56,7 @@ function findVirtualSequence(range, sequence, { from = range.begin() } = { }) {
 
   for (const descriptor of from.pages(range.end())) {
     const { begin: pageBegin, end: pageEnd } = descriptor
-    const page = subrange(pageBegin, pageEnd)
+    const page = descriptor.page ?? subrange(pageBegin, pageEnd)
     const pageMatch = findSequence(page, lowerSequence)
     const match = pageMatch &&
       mapPageMatch(page, pageMatch, descriptor)

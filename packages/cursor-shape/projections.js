@@ -22,6 +22,7 @@ export function spanTypeOfRangeType(type) {
 }
 export function spanTypeOfRange(range) {
   return spanTypeOfCursorType(cursorTypeOf(range)) ??
+    range.spanType ??
     spanTypeOfRangeType(range.constructor)
 }
 

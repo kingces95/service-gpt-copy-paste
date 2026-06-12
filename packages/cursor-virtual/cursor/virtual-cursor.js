@@ -97,6 +97,7 @@ export class VirtualCursor extends ContainerCursor {
         }
 
         yield {
+          page: range,
           begin: pageBegin,
           end: pageEnd,
           cursorAt,

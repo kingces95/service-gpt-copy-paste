@@ -38,7 +38,7 @@ export class FixedStrideVirtualCursor extends VirtualCursor {
           const { begin, end } = descriptor
           const pageModulus = modulus
           const page = new FixedStridePageContainer(
-            subrange(begin, end),
+            descriptor.page ?? subrange(begin, end),
             {
               modulus: pageModulus,
               strideLength: this.container._strideLength,
@@ -47,8 +47,9 @@ export class FixedStrideVirtualCursor extends VirtualCursor {
           )
 
           yield {
-            begin,
-            end,
+            page,
+            begin: page.begin(),
+            end: page.end(),
             cursorAt: offset => page.cursorAt(offset).virtualize(),
             isSynchronized: offset => page.cursorAt(offset)
               .isSynchronized(),

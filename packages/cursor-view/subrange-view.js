@@ -30,7 +30,7 @@ export class SubrangeView extends PartialProxy {
     })
   }
 
-  get spanType() { return this.constructor.cursorType.spanType }
+  get spanType() { return this.cursorType?.spanType }
 
   span(begin = this.begin(), end = this.end()) {
     assert(typeof begin.span == 'function',

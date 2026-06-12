@@ -128,16 +128,26 @@ export const RangeContainerOf = genericType(TSpan => {
 
             for (const descriptor of spansOfRange(storedRange)) {
               const { span } = descriptor
+              const descriptorEnd = descriptor.cursorAt(span.length)
               assertSpanType(this, span)
 
               yield {
                 span,
-                cursorAt: offset => new this.cursorType(
-                  this,
-                  outerCursorForSpan.clone(),
-                  descriptor.cursorAt(offset),
-                  descriptor.cursorAt(span.length)
-                ),
+                cursorAt: offset => {
+                  if (offset == span.length &&
+                    descriptorEnd.equals(storedRange.end())) {
+                    const outerEnd = outerCursorForSpan.clone()
+                    outerEnd.step()
+                    return new this.cursorType(this, outerEnd)
+                  }
+
+                  return new this.cursorType(
+                    this,
+                    outerCursorForSpan.clone(),
+                    descriptor.cursorAt(offset),
+                    descriptorEnd
+                  )
+                },
               }
             }
           }

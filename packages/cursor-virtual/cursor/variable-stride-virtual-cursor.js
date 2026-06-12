@@ -21,7 +21,7 @@ export class VariableStrideVirtualCursor extends VirtualCursor {
         for (const descriptor of pages.call(this, other)) {
           const { begin, end } = descriptor
           const page = new VariableStridePageContainer(
-            subrange(begin, end),
+            descriptor.page ?? subrange(begin, end),
             {
               isContinuation: value =>
                 this.container._isContinuation(value),
@@ -30,8 +30,9 @@ export class VariableStrideVirtualCursor extends VirtualCursor {
           )
 
           yield {
-            begin,
-            end,
+            page,
+            begin: page.begin(),
+            end: page.end(),
             cursorAt: offset => page.cursorAt(offset).virtualize(),
             isSynchronized: offset => page.cursorAt(offset)
               .isSynchronized(),
