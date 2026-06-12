@@ -52,19 +52,19 @@ function findVirtualSequence(range, sequence, { from = range.begin() } = { }) {
     ? [...iterate(sequence.begin().materialize(sequence.end()))]
     : sequence
 
-  for (const { begin: pageBegin, end: pageEnd, cursorAt } of
-    from.pages(range.end())) {
+  for (const descriptor of from.pages(range.end())) {
+    const { begin: pageBegin, end: pageEnd } = descriptor
     const page = subrange(pageBegin, pageEnd)
     const pageMatch = findSequence(page, lowerSequence)
     const match = pageMatch &&
-      mapPageMatch(page, pageMatch, cursorAt)
+      mapPageMatch(page, pageMatch, descriptor)
 
     if (match)
       return match
 
     const pageLength = distance(page)
-    const virtualBegin = cursorAt(0)
-    const virtualEnd = cursorAt(pageLength)
+    const virtualBegin = virtualizePageOffset(descriptor, 0)
+    const virtualEnd = virtualizePageOffset(descriptor, pageLength)
 
     if (!virtualBegin || !virtualEnd)
       continue
@@ -111,18 +111,30 @@ function offsetOf(range, cursor) {
   return offset
 }
 
-function mapPageMatch(page, match, cursorAt) {
-  const begin = cursorAt(offsetOf(page, match.begin))
-  const end = cursorAt(offsetOf(page, match.end))
+function mapPageMatch(page, match, descriptor) {
+  const beginOffset = offsetOf(page, match.begin)
+  const endOffset = offsetOf(page, match.end)
 
-  if (!isSynchronizedInterval(begin, end))
+  if (!isSynchronizedInterval(descriptor, beginOffset, endOffset))
     return null
+
+  const begin = virtualizePageOffset(descriptor, beginOffset)
+  const end = virtualizePageOffset(descriptor, endOffset)
 
   return { begin, end }
 }
 
-function isSynchronizedInterval(begin, end) {
-  return begin != null && end != null
+function isSynchronizedInterval(descriptor, beginOffset, endOffset) {
+  return isSynchronizedPageOffset(descriptor, beginOffset) &&
+    isSynchronizedPageOffset(descriptor, endOffset)
+}
+
+function isSynchronizedPageOffset(descriptor, offset) {
+  return descriptor.isSynchronized(offset)
+}
+
+function virtualizePageOffset(descriptor, offset) {
+  return descriptor.virtualize(offset)
 }
 
 function canFindByteSequence(range, sequence, { from = range.begin() } = { }) {
