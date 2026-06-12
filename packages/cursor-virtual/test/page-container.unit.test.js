@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { TypedArrayView } from '@kingjs/cursor-view'
+import { spansOfRange } from '@kingjs/cursor-shape'
 import {
   FixedStridePageContainer,
   PageContainer,
@@ -27,6 +28,18 @@ describe('PageContainer', () => {
     expect(cursor.value).toBe(3)
     expect(cursor.isSynchronized()).toBe(true)
     expect(cursor.virtualize()).toEqual({ offset: 2 })
+  })
+
+  it('projects physical spans through page cursors', () => {
+    const range = new TypedArrayView(Uint8Array.from([1, 2, 3]))
+    const page = new PageContainer(range, {
+      virtualizeOffset: offset => ({ offset }),
+    })
+    const [descriptor] = spansOfRange(page)
+
+    expect([...descriptor.span]).toEqual([1, 2, 3])
+    expect(descriptor.cursorAt(1).value).toBe(2)
+    expect(descriptor.cursorAt(1).virtualize()).toEqual({ offset: 1 })
   })
 })
 
