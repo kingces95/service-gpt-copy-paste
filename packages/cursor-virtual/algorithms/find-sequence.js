@@ -19,12 +19,15 @@ import {
   OptionalOf,
 } from '@kingjs/simple-type'
 import { SizedIterableProbe } from '@kingjs/probe'
+import { VirtualContainer } from '../container/virtual-container.js'
 
 export const findSequence = overload([
   AnyOf(ReadableRangeShape, SpanProjectedRangeShape, VirtualRangeShape),
   AnyOf(SizedIterableProbe, ReadableRangeShape, VirtualRangeShape),
   OptionalOf(AnyObject),
-], [
+], {
+  precondition: assertVirtualSequenceType,
+}, [
   {
     where: canFindVirtualSequence,
     use: findVirtualSequence,
@@ -44,14 +47,27 @@ function findSequence(range, sequence, { from = range.begin() } = { }) {
 })
 
 function canFindVirtualSequence(range) {
-  return range instanceof VirtualRangeShape
+  return range instanceof VirtualContainer
+}
+
+function assertVirtualSequenceType(range, sequence) {
+  const virtualRange = range instanceof VirtualContainer
+  const virtualSequence = sequence instanceof VirtualContainer
+
+  assert(virtualRange == virtualSequence,
+    'Virtual sequence must match virtual range.')
+
+  if (!virtualRange)
+    return
+
+  assert(sequence.constructor == range.constructor,
+    'Virtual sequence type must match range type.')
 }
 
 function findVirtualSequence(range, sequence, { from = range.begin() } = { }) {
-  const materializedNeedle = sequence instanceof VirtualRangeShape
-  const lowerSequence = materializedNeedle
-    ? [...iterate(sequence.begin().materialize(sequence.end()))]
-    : sequence
+  const lowerSequence = [
+    ...iterate(sequence.begin().materialize(sequence.end())),
+  ]
 
   for (const page of from.pages(range.end())) {
     const pageMatch = findSequence(page, lowerSequence)
@@ -64,7 +80,6 @@ function findVirtualSequence(range, sequence, { from = range.begin() } = { }) {
     const virtualBegin = fallbackBeginOfPage(
       page,
       sequence,
-      { materializedNeedle }
     )
 
     if (!virtualBegin || !virtualEnd)
@@ -82,13 +97,10 @@ function findVirtualSequence(range, sequence, { from = range.begin() } = { }) {
   return null
 }
 
-function fallbackBeginOfPage(page, sequence, { materializedNeedle }) {
+function fallbackBeginOfPage(page, sequence) {
   const virtualBegin = page.begin().virtualize()
   const virtualEnd = page.end().virtualize()
   const tailLength = lengthOfSequence(sequence) - 1
-
-  if (!materializedNeedle)
-    return virtualBegin
 
   if (tailLength <= 0)
     return null

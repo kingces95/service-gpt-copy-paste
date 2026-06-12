@@ -337,4 +337,30 @@ describe('contract', () => {
     expect(checkedCompare(1, 1)).toBe('same')
     expect(checkedCompare(1, 2)).toBe('different')
   })
+
+  it('should pass metadata to the dispatcher contract', () => {
+    function compare(left, right) { return left + right }
+
+    const checkedCompare = overload([
+      Positive,
+      Positive,
+    ], {
+      precondition(left, right) {
+        if (left >= right)
+          throw new Error('left must be less than right')
+      },
+    }, [
+      {
+        where(left, right) { return left == 1 && right == 2 },
+        use: function same() { return 'special' },
+      },
+    ],
+    compare)
+
+    expect(checkedCompare(1, 2)).toBe('special')
+    expect(() => checkedCompare(0, 2)).toThrow(
+      'Argument 0 must be Positive.')
+    expect(() => checkedCompare(2, 1)).toThrow(
+      'left must be less than right')
+  })
 })

@@ -111,10 +111,11 @@ export function overload(requirements, defaults, overloads, fn) {
   }
 
   overloads = normalizeOverloads(overloads)
+  const metadata = isMetadata(defaults)
+    ? defaults
+    : { defaults }
 
-  return contract(requirements, {
-    defaults,
-  },
+  return contract(requirements, metadata,
     function dispatch(...args) {
       for (const overload of overloads)
         if (matches(overload.when, args) && overload.where.apply(this, args))

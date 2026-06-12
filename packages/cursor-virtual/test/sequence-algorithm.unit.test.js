@@ -63,20 +63,28 @@ describe('findSequence', () => {
     expect(valuesOf(range.popRange(match.end))).toEqual([1, 2])
   })
 
-  it('finds virtual values with a plain logical needle', () => {
+  it('rejects a plain logical needle for a virtual range', () => {
     const range = virtualRangeOf([1, 2, 3])
-    const match = findSequence(range, [102])
 
-    expect(match.begin.value).toBe(102)
-    expect(valuesOf(range.popRange(match.end))).toEqual([1, 2])
+    expect(() => findSequence(range, [102])).toThrow(
+      'Virtual sequence must match virtual range.')
   })
 
   it('finds virtual values across virtual pages', () => {
     const range = virtualRangeOf([1, 2], [3, 4])
-    const match = findSequence(range, [102, 103])
+    const needle = virtualRangeOf([2, 3])
+    const match = findSequence(range, needle)
 
     expect(match.begin.value).toBe(102)
     expect(valuesOf(range.popRange(match.end))).toEqual([1, 2, 3])
+  })
+
+  it('rejects a virtual needle for a non-virtual range', () => {
+    const range = rangeOf([1, 2], [3, 4])
+    const needle = virtualRangeOf([2, 3])
+
+    expect(() => findSequence(range, needle)).toThrow(
+      'Virtual sequence must match virtual range.')
   })
 
   it('uses byte spans before reading cursor values', () => {

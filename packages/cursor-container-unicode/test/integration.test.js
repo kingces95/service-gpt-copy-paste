@@ -185,7 +185,10 @@ describe('Code point container integration', () => {
 
     input.pushRange(rangeOf(bytes))
 
-    const match = findSequence(input, ['h'.codePointAt()])
+    const needle = new Utf8CodePointContainer()
+    needle.pushRange(rangeOf(Buffer.from('h', 'utf8')))
+
+    const match = findSequence(input, needle)
     const committed = input.split(match.begin)
 
     expect(valuesOf(committed)).toEqual([])
