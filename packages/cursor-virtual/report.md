@@ -214,7 +214,10 @@ Page Descriptor
 │  └─ lower cursor at searchable page begin
 ├─ end
 │  └─ lower cursor at searchable page end
+├─ isSynchronized(offset)
+│  └─ true when the lower offset is a virtual token boundary
+├─ virtualize(offset)
+│  └─ lower offset -> virtual cursor, or null if unsynchronized
 └─ cursorAt(offset)
-   ├─ offset is relative to begin
-   └─ page-length offset maps to the canonical virtual page end
+   └─ compatibility alias for virtualize(offset)
 ```
