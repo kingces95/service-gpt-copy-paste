@@ -60,11 +60,9 @@ function findVirtualSequence(range, sequence, { from = range.begin() } = { }) {
     if (match)
       return match
 
-    const pageLength = distance(page)
     const virtualEnd = page.end().virtualize()
     const virtualBegin = fallbackBeginOfPage(
       page,
-      pageLength,
       sequence,
       { materializedNeedle }
     )
@@ -84,12 +82,7 @@ function findVirtualSequence(range, sequence, { from = range.begin() } = { }) {
   return null
 }
 
-function fallbackBeginOfPage(
-  page,
-  pageLength,
-  sequence,
-  { materializedNeedle }
-) {
+function fallbackBeginOfPage(page, sequence, { materializedNeedle }) {
   const virtualBegin = page.begin().virtualize()
   const virtualEnd = page.end().virtualize()
   const tailLength = lengthOfSequence(sequence) - 1
@@ -113,7 +106,7 @@ function previousBounded(cursor, count, begin) {
   cursor = cursor.clone()
 
   for (let i = 0; i < count && !cursor.equals(begin); i++)
-    previous(cursor)
+    cursor = previous(cursor)
 
   return cursor
 }
