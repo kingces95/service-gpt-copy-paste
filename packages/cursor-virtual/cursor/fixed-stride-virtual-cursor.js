@@ -5,6 +5,18 @@ import { distance, previous } from '@kingjs/cursor-algorithm'
 import { subrange } from '@kingjs/cursor-view'
 import { genericType } from '@kingjs/generic'
 import { VirtualCursorOf } from './virtual-cursor.js'
+import {
+  FixedStridePageContainer,
+} from '../container/fixed-stride-page-container.js'
+
+function pageCursorAt(page, offset) {
+  const cursor = page.begin()
+
+  for (let i = 0; i < offset; i++)
+    cursor.step()
+
+  return cursor
+}
 
 export const FixedStrideVirtualCursorOf = genericType(TSpan => {
   const VirtualCursor = VirtualCursorOf(TSpan)
@@ -35,23 +47,24 @@ export const FixedStrideVirtualCursorOf = genericType(TSpan => {
           let modulus = 0
 
           for (const descriptor of pages.call(this, other)) {
-            const { begin, end, cursorAt } = descriptor
+            const { begin, end } = descriptor
             const pageModulus = modulus
-            const isSynchronized = offset =>
-              (pageModulus + offset) % this.container._strideLength == 0
-            const virtualize = offset => {
-              if (!isSynchronized(offset))
-                return null
-
-              return descriptor.virtualize?.(offset) ?? cursorAt(offset)
-            }
+            const page = new FixedStridePageContainer(
+              subrange(begin, end),
+              {
+                modulus: pageModulus,
+                strideLength: this.container._strideLength,
+                virtualizeOffset: offset => descriptor.virtualize(offset),
+              }
+            )
 
             yield {
               begin,
               end,
-              cursorAt: virtualize,
-              isSynchronized,
-              virtualize,
+              cursorAt: offset => pageCursorAt(page, offset).virtualize(),
+              isSynchronized: offset => pageCursorAt(page, offset)
+                .isSynchronized(),
+              virtualize: offset => pageCursorAt(page, offset).virtualize(),
             }
 
             modulus = (modulus + distance(subrange(begin, end))) %
