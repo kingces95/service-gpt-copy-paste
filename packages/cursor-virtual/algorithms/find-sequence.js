@@ -4,6 +4,7 @@ import { subrange } from '@kingjs/cursor-view'
 import {
   distance,
   iterate,
+  previous,
 } from '@kingjs/cursor-algorithm'
 import {
   ReadableRangeShape,
@@ -48,7 +49,8 @@ function canFindVirtualSequence(range) {
 }
 
 function findVirtualSequence(range, sequence, { from = range.begin() } = { }) {
-  const lowerSequence = sequence instanceof VirtualRangeShape
+  const materializedNeedle = sequence instanceof VirtualRangeShape
+  const lowerSequence = materializedNeedle
     ? [...iterate(sequence.begin().materialize(sequence.end()))]
     : sequence
 
@@ -63,8 +65,13 @@ function findVirtualSequence(range, sequence, { from = range.begin() } = { }) {
       return match
 
     const pageLength = distance(page)
-    const virtualBegin = virtualizePageOffset(descriptor, 0)
     const virtualEnd = virtualizePageOffset(descriptor, pageLength)
+    const virtualBegin = fallbackBeginOfPage(
+      descriptor,
+      pageLength,
+      sequence,
+      { materializedNeedle }
+    )
 
     if (!virtualBegin || !virtualEnd)
       continue
@@ -79,6 +86,40 @@ function findVirtualSequence(range, sequence, { from = range.begin() } = { }) {
   }
 
   return null
+}
+
+function fallbackBeginOfPage(
+  descriptor,
+  pageLength,
+  sequence,
+  { materializedNeedle }
+) {
+  const virtualBegin = virtualizePageOffset(descriptor, 0)
+  const virtualEnd = virtualizePageOffset(descriptor, pageLength)
+  const tailLength = lengthOfSequence(sequence) - 1
+
+  if (!materializedNeedle)
+    return virtualBegin
+
+  if (tailLength <= 0)
+    return null
+
+  if (!virtualBegin || !virtualEnd)
+    return null
+
+  if (typeof virtualEnd.stepBack != 'function')
+    return virtualBegin
+
+  return previousBounded(virtualEnd, tailLength, virtualBegin)
+}
+
+function previousBounded(cursor, count, begin) {
+  cursor = cursor.clone()
+
+  for (let i = 0; i < count && !cursor.equals(begin); i++)
+    previous(cursor)
+
+  return cursor
 }
 
 function findSequenceByCursor(
@@ -200,6 +241,13 @@ function valuesOfSequence(sequence) {
     return iterate(sequence)
 
   return sequence
+}
+
+function lengthOfSequence(sequence) {
+  if (sequence instanceof ReadableRangeShape)
+    return distance(sequence)
+
+  return sequence.length
 }
 
 function matchAt(range, cursor, sequence) {
