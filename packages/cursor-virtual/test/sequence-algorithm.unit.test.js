@@ -4,7 +4,7 @@ import { SnapshotView, TypedArrayView } from '@kingjs/cursor-view'
 import { compose } from '@kingjs/partial-compose'
 import { spanTypeOfRange, spansOfRange } from '@kingjs/cursor-shape'
 import {
-  FixedStrideVirtualContainerOf,
+  FixedStrideVirtualContainer,
   findSequence,
   matchPrefix,
   VirtualPart,
@@ -125,7 +125,6 @@ describe('findSequence', () => {
 
 const VirtualByteRange = (() => {
   const Uint8RangeContainer = RangeContainerOf(Uint8Array)
-  const FixedStrideVirtualContainer = FixedStrideVirtualContainerOf(Uint8Array)
 
   return class VirtualByteRange extends FixedStrideVirtualContainer {
     constructor() {

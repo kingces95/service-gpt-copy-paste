@@ -161,15 +161,18 @@ describe('Code point container integration', () => {
     expect(valuesOf(input)).toEqual(remainingCodePoints)
   })
 
-  it('carries span type through unicode generic specializations', () => {
+  it('keeps span type on the source range', () => {
     const Utf16CodePoints = Utf16CodePointContainerOf(Uint8Array)
     const input = new Utf16CodePoints({ byteOrder: 'little' })
     const split = input.split()
 
-    expect(Utf16CodePoints.cursorType.spanType).toBe(Uint8Array)
-    expect(input.constructor.cursorType.spanType).toBe(Uint8Array)
-    expect(input.source$.constructor.cursorType.spanType).toBe(Uint8Array)
-    expect(split.constructor.cursorType.spanType).toBe(Uint8Array)
+    expect(Utf16CodePoints.cursorType.spanType).toBe(undefined)
+    expect(input.constructor.cursorType.spanType).toBe(undefined)
+    expect(input.source$.constructor.cursorType.spanType).toBe(undefined)
+    expect(deepestSourceOf(input).constructor.cursorType.spanType)
+      .toBe(Uint8Array)
+    expect(deepestSourceOf(split).constructor.cursorType.spanType)
+      .toBe(Uint8Array)
   })
 
   it('skips UTF-8 signature bytes before searching code points', () => {

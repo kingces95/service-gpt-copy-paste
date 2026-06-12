@@ -1,12 +1,11 @@
 import { assert } from '@kingjs/assert'
 import { genericType } from '@kingjs/generic'
 import {
-  FixedStrideVirtualContainerOf,
+  FixedStrideVirtualContainer,
 } from '@kingjs/cursor-virtual'
 import { ByteOrderedContainerOf } from './byte-ordered-container.js'
 
 export const CodeUnitContainerOf = genericType(TSpan => {
-  const FixedStrideVirtualContainer = FixedStrideVirtualContainerOf(TSpan)
   const ByteOrderedContainer = ByteOrderedContainerOf(TSpan)
 
   return class CodeUnitContainer extends FixedStrideVirtualContainer {

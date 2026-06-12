@@ -1,7 +1,7 @@
 import {
   VirtualPart,
   RangeOfRangesPartOf,
-  VariableStrideVirtualContainerOf,
+  VariableStrideVirtualContainer,
   RangeContainerOf,
 } from '@kingjs/cursor-virtual'
 import { compose } from '@kingjs/partial-compose'
@@ -42,7 +42,6 @@ function readContinuation(cursor) {
 }
 
 export const Utf8CodePointContainerOf = genericType(TSpan => {
-  const VariableStrideVirtualContainer = VariableStrideVirtualContainerOf(TSpan)
   const RangeContainer = RangeContainerOf(TSpan)
   const RangeOfRangesPart = RangeOfRangesPartOf(TSpan)
   const pushRange = VariableStrideVirtualContainer.prototype.pushRange

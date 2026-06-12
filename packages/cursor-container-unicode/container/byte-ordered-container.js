@@ -4,7 +4,7 @@ import { iterate } from '@kingjs/cursor-algorithm'
 import { genericType } from '@kingjs/generic'
 import { Uint8 } from '@kingjs/simple-type'
 import {
-  FixedStrideVirtualContainerOf,
+  FixedStrideVirtualContainer,
   CloneEmptyPart,
   VirtualPart,
   RangeOfRangesPartOf,
@@ -37,7 +37,6 @@ function isByteOrder(value) {
 }
 
 export const ByteOrderedContainerOf = genericType(TSpan => {
-  const FixedStrideVirtualContainer = FixedStrideVirtualContainerOf(TSpan)
   const RangeOfRangesPart = RangeOfRangesPartOf(TSpan)
   const RangeContainer = RangeContainerOf(TSpan)
   const pushRange = FixedStrideVirtualContainer.prototype.pushRange

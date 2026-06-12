@@ -10,7 +10,7 @@ Contents
   applied to cursor receivers, ordered by dependency.
 - [Container Partial Type Members](#container-partial-type-members): Partial
   types applied to container receivers, ordered by dependency.
-- [Generic Span Type](#generic-span-type): Cursor types whose generic
+- [Span Type Ownership](#span-type-ownership): Cursor types whose generic
   specialization carries the homogeneous span type used by `spans()`.
 - [Span Projection Algorithms](#span-projection-algorithms): Algorithms that
   consume the span projection before any storage-specific optimization.
@@ -163,10 +163,10 @@ Private
    └─ _continuationCountOf
 ```
 
-## Generic Span Type
+## Span Type Ownership
 
 ```txt
-Virtual Generic Span Type
+Virtual Span Type Ownership
 ├─ set: cursor-virtual and cursor-container generic types
 ├─ map: generic specializer, standard alias, spanType owner
 ├─ pivot: cursor, declaration, container
@@ -174,17 +174,11 @@ Virtual Generic Span Type
 ```
 
 ```txt
-Virtual Generic Span Type
+Virtual Span Type Ownership
 
 Cursor
 ├─ ContiguousCursorOf(TSpan)
 │  └─ ContiguousCursor = ContiguousCursorOf(Object)
-├─ VirtualCursorOf(TSpan)
-│  └─ VirtualCursor = VirtualCursorOf(Object)
-├─ FixedStrideVirtualCursorOf(TSpan)
-│  └─ FixedStrideVirtualCursor = FixedStrideVirtualCursorOf(Object)
-├─ VariableStrideVirtualCursorOf(TSpan)
-│  └─ VariableStrideVirtualCursor = VariableStrideVirtualCursorOf(Object)
 └─ RangeContainerCursorOf(TSpan)
    └─ RangeContainerCursor = RangeContainerCursorOf(Object)
 
@@ -203,12 +197,12 @@ Container
 │  └─ -
 ├─ RangeContainerOf(TSpan)
 │  └─ RangeContainer = RangeContainerOf(Object)
-├─ VirtualContainerOf(TSpan)
-│  └─ VirtualContainer = VirtualContainerOf(Object)
-├─ FixedStrideVirtualContainerOf(TSpan)
-│  └─ FixedStrideVirtualContainer = FixedStrideVirtualContainerOf(Object)
-└─ VariableStrideVirtualContainerOf(TSpan)
-   └─ VariableStrideVirtualContainer = VariableStrideVirtualContainerOf(Object)
+├─ VirtualContainer
+│  └─ -
+├─ FixedStrideVirtualContainer
+│  └─ -
+└─ VariableStrideVirtualContainer
+   └─ -
 ```
 
 ## Span Projection Algorithms

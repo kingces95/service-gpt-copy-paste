@@ -1,5 +1,5 @@
 import {
-  FixedStrideVirtualContainerOf,
+  FixedStrideVirtualContainer,
   VirtualPart,
 } from '@kingjs/cursor-virtual'
 import { assert } from '@kingjs/assert'
@@ -16,7 +16,6 @@ import {
 } from '../part/string-materialization-part.js'
 
 export const Utf32CodePointContainerOf = genericType(TSpan => {
-  const FixedStrideVirtualContainer = FixedStrideVirtualContainerOf(TSpan)
   const Utf32CodeUnitContainer = Utf32CodeUnitContainerOf(TSpan)
 
   return class Utf32CodePointContainer extends FixedStrideVirtualContainer {

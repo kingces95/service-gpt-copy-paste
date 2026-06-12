@@ -1,6 +1,6 @@
 import {
   VirtualPart,
-  VariableStrideVirtualContainerOf,
+  VariableStrideVirtualContainer,
 } from '@kingjs/cursor-virtual'
 import { assert } from '@kingjs/assert'
 import { compose } from '@kingjs/partial-compose'
@@ -34,7 +34,6 @@ function readUnit(cursor) {
 }
 
 export const Utf16CodePointContainerOf = genericType(TSpan => {
-  const VariableStrideVirtualContainer = VariableStrideVirtualContainerOf(TSpan)
   const Utf16CodeUnitContainer = Utf16CodeUnitContainerOf(TSpan)
 
   return class Utf16CodePointContainer extends VariableStrideVirtualContainer {
