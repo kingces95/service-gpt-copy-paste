@@ -199,8 +199,10 @@ export const RangeContainerCursorOf = genericType(TSpan => {
                 end.clone()
               )
             }
+            const page = subrange(begin, end)
 
             yield {
+              page,
               begin,
               end,
               cursorAt,
@@ -223,8 +225,8 @@ export const RangeContainerCursorOf = genericType(TSpan => {
         materialize(other) {
           const result = new this.container.constructor()
 
-          for (const { begin, end } of this.pages(other))
-            result.pushRange(subrange(begin, end))
+          for (const descriptor of this.pages(other))
+            result.pushRange(descriptor.page)
 
           return result
         },
