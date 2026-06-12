@@ -55,6 +55,20 @@ Shape
 └─ -
 
 Naked
+├─ PageCursor
+│  ├─ sourceCursor$
+│  ├─ offset$
+│  ├─ isSynchronized()
+│  ├─ synchronize()
+│  └─ virtualize()
+├─ FixedStridePageCursor
+│  ├─ isSynchronized()
+│  ├─ synchronize()
+│  └─ virtualize()
+├─ VariableStridePageCursor
+│  ├─ isSynchronized()
+│  ├─ synchronize()
+│  └─ virtualize()
 ├─ VirtualCursor
 │  └─ sourceCursor$
 ├─ FixedStrideVirtualCursor
@@ -63,6 +77,8 @@ Naked
    └─ stride$
 
 Private
+├─ PageCursor
+│  └─ _sourceCursor
 ├─ VirtualCursor
 │  └─ _sourceCursor
 └─ RangeContainerCursor
@@ -119,10 +135,21 @@ Shape
    └─ spans()
 
 Naked
+├─ PageContainer
+│  ├─ virtualizeOffset(offset)
+│  └─ cursorAt(offset)
 └─ VariableStrideVirtualContainer
    └─ tokenStrideOf$(value)
 
 Private
+├─ PageContainer
+│  ├─ _range
+│  └─ _virtualizeOffset
+├─ FixedStridePageContainer
+│  ├─ _modulus
+│  └─ _strideLength
+├─ VariableStridePageContainer
+│  └─ _isContinuation
 ├─ FixedStrideVirtualContainer
 │  ├─ _remainder
 │  └─ _strideLength
@@ -168,6 +195,12 @@ Declaration
    └─ RangeOfRangesShape = RangeOfRangesShapeOf(Object)
 
 Container
+├─ PageContainer
+│  └─ -
+├─ FixedStridePageContainer
+│  └─ -
+├─ VariableStridePageContainer
+│  └─ -
 ├─ RangeContainerOf(TSpan)
 │  └─ RangeContainer = RangeContainerOf(Object)
 ├─ VirtualContainerOf(TSpan)

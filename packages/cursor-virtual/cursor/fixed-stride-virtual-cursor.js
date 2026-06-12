@@ -9,15 +9,6 @@ import {
   FixedStridePageContainer,
 } from '../container/fixed-stride-page-container.js'
 
-function pageCursorAt(page, offset) {
-  const cursor = page.begin()
-
-  for (let i = 0; i < offset; i++)
-    cursor.step()
-
-  return cursor
-}
-
 export const FixedStrideVirtualCursorOf = genericType(TSpan => {
   const VirtualCursor = VirtualCursorOf(TSpan)
   const pages = VirtualCursor.prototype.pages
@@ -61,10 +52,10 @@ export const FixedStrideVirtualCursorOf = genericType(TSpan => {
             yield {
               begin,
               end,
-              cursorAt: offset => pageCursorAt(page, offset).virtualize(),
-              isSynchronized: offset => pageCursorAt(page, offset)
+              cursorAt: offset => page.cursorAt(offset).virtualize(),
+              isSynchronized: offset => page.cursorAt(offset)
                 .isSynchronized(),
-              virtualize: offset => pageCursorAt(page, offset).virtualize(),
+              virtualize: offset => page.cursorAt(offset).virtualize(),
             }
 
             modulus = (modulus + distance(subrange(begin, end))) %

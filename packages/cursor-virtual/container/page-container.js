@@ -19,6 +19,15 @@ export class PageContainer extends PartialProxy {
     return this._virtualizeOffset(offset)
   }
 
+  cursorAt(offset) {
+    const cursor = this.begin()
+
+    for (let i = 0; i < offset; i++)
+      cursor.step()
+
+    return cursor
+  }
+
   static {
     implement(this, RangeConcept, {
       begin() {
