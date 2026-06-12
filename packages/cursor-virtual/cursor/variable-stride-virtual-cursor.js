@@ -1,4 +1,6 @@
+import { compose } from '@kingjs/partial-compose'
 import { define } from '@kingjs/partial-define'
+import { BacktrackableCursorPart } from '@kingjs/cursor'
 import { VirtualCursor } from './virtual-cursor.js'
 import {
   VariableStridePageContainer,
@@ -30,6 +32,21 @@ export class VariableStrideVirtualCursor extends VirtualCursor {
 
           yield page
         }
+      },
+    })
+
+    compose(this, BacktrackableCursorPart, {
+      isAtBegin$() {
+        return this.sourceCursor$.equals(this.container.source$.begin())
+      },
+
+      stepBack() {
+        this.sourceCursor$.stepBack()
+
+        while (this.container._isContinuation(this.sourceCursor$.value))
+          this.sourceCursor$.stepBack()
+
+        return this
       },
     })
   }

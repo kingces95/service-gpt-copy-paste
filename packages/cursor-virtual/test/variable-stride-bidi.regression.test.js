@@ -1,0 +1,78 @@
+import { describe, expect, it } from 'vitest'
+import { TypedArrayView } from '@kingjs/cursor-view'
+import { compose } from '@kingjs/partial-compose'
+import {
+  VariableStrideVirtualContainer,
+  VirtualPart,
+  RangeContainerOf,
+  findSequence,
+} from '../index.js'
+
+const Uint8RangeContainer = RangeContainerOf(Uint8Array)
+
+class UtfLikeRange extends VariableStrideVirtualContainer {
+  constructor({ throwOnFirst = false } = { }) {
+    super(new Uint8RangeContainer(), {
+      isContinuation: value => value >= 0x80,
+      continuationCountOf(value) {
+        return value >= 0x40 ? 1 : 0
+      },
+    })
+    this.throwOnFirst = throwOnFirst
+  }
+
+  static {
+    compose(this, VirtualPart, {
+      decodeToken$(sourceCursor, stride) {
+        const first = sourceCursor.value
+        if (this.throwOnFirst && first == 0x40)
+          throw new Error('Fallback should start at the page tail.')
+
+        for (let i = 1; i < stride; i++)
+          sourceCursor.step()
+
+        return first
+      },
+    })
+  }
+}
+
+function rangeOf(...chunks) {
+  const result = new UtfLikeRange()
+
+  for (const chunk of chunks)
+    result.pushRange(new TypedArrayView(Uint8Array.from(chunk)))
+
+  return result
+}
+
+function throwingRangeOf(...chunks) {
+  const result = new UtfLikeRange({ throwOnFirst: true })
+
+  for (const chunk of chunks)
+    result.pushRange(new TypedArrayView(Uint8Array.from(chunk)))
+
+  return result
+}
+
+describe('variable stride virtual cursor backtracking', () => {
+  it('steps back to the previous starter value', () => {
+    const range = rangeOf([0x40, 0x80, 0x41, 0x81])
+    const cursor = range.end()
+
+    cursor.stepBack()
+    expect(cursor.value).toBe(0x41)
+
+    cursor.stepBack()
+    expect(cursor.value).toBe(0x40)
+  })
+
+  it('bounds cross-page fallback to the variable-stride page tail', () => {
+    const haystack = throwingRangeOf([0x40, 0x80, 0x41, 0x81], [0x42])
+    const needle = rangeOf([0x41, 0x81, 0x42])
+    const match = findSequence(haystack, needle)
+
+    expect(match.begin.value).toBe(0x41)
+    expect(match.end.equals(haystack.end())).toBe(true)
+  })
+})
