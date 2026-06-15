@@ -56,7 +56,7 @@ function throwingPairRangeOf(...chunks) {
 describe('fixed stride page synchronization', () => {
   it('marks only fixed-stride page offsets as synchronized', () => {
     const range = pairRangeOf([0, 1, 2, 3])
-    const [page] = range.source$.begin().pages(range.source$.end())
+    const [page] = range.source$.pages()
     const projector = range.projector$
 
     expect(projector.isSynchronized(page, cursorAt(page, 0))).toBe(true)

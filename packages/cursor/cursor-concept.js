@@ -14,7 +14,6 @@ import { Defines } from '@kingjs/partial-class'
 // ├─ WritableCursorConcept
 // │  └─ WritableAtCursorConcept
 // ├─ CloneableCursorConcept
-// ├─ VirtualCursorConcept
 // └─ SpannableCursorConcept
 
 export class CursorConcept extends EquatableConcept {
@@ -67,11 +66,6 @@ export class ReadableAtCursorConcept extends ReadableCursorConcept {
 
 export class WritableAtCursorConcept extends WritableCursorConcept {
   setAt(offset, value) { }
-}
-
-export class VirtualCursorConcept extends CursorConcept {
-  pages(end) { }
-  materialize(end) { }
 }
 
 export class SpannableCursorConcept extends CursorConcept {

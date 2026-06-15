@@ -1,5 +1,6 @@
 import { assert } from '@kingjs/assert'
 import { compose } from '@kingjs/partial-compose'
+import { define } from '@kingjs/partial-define'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { RangePart } from '@kingjs/cursor'
 import { iterate } from '@kingjs/cursor-algorithm'
@@ -72,6 +73,28 @@ export class ProjectedRangeContainer extends PartialProxy {
           result.pushRange(range)
 
         return result
+      },
+    })
+
+    define(this, {
+      pages(begin = this.begin(), end = this.end()) {
+        this.ownCursorAssert$(begin)
+        this.ownCursorAssert$(end)
+
+        return this.source$.pages(
+          begin.sourceCursor$,
+          end.sourceCursor$
+        )
+      },
+
+      materialize(begin = this.begin(), end = this.end()) {
+        this.ownCursorAssert$(begin)
+        this.ownCursorAssert$(end)
+
+        return this.source$.materialize(
+          begin.sourceCursor$,
+          end.sourceCursor$
+        )
       },
     })
   }

@@ -1,4 +1,5 @@
 import { compose } from '@kingjs/partial-compose'
+import { define } from '@kingjs/partial-define'
 import { implement } from '@kingjs/partial-implement'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { RangeConcept } from '@kingjs/cursor'
@@ -8,6 +9,8 @@ import {
   subrange,
 } from '@kingjs/cursor-view'
 import {
+  distance,
+  iterate,
   next,
 } from '@kingjs/cursor-algorithm'
 import {
@@ -15,6 +18,7 @@ import {
   List,
 } from '@kingjs/cursor-container'
 import { VirtualCursor } from '../cursor/virtual-cursor.js'
+import { Page } from './page-container.js'
 
 function clone(cursor) {
   return cursor?.clone?.() ?? cursor
@@ -76,12 +80,12 @@ export class VirtualContainer extends PartialProxy {
         const result = new this.constructor()
         const before = this._ranges.beforeBegin()
 
-        while (!next(before).equals(cursor.outerCursor)) {
+        while (!next(before).equals(cursor.outerCursor$)) {
           result.pushRange(next(before).value)
           this._ranges.eraseAfter(before)
         }
 
-        if (!cursor.outerCursor.equals(this._ranges.end())) {
+        if (!cursor.outerCursor$.equals(this._ranges.end())) {
           const range = cursor.popRangePrefix()
           if (range)
             result.pushRange(range)
@@ -95,6 +99,65 @@ export class VirtualContainer extends PartialProxy {
 
       ranges() {
         return this._ranges
+      },
+    })
+
+    define(this, {
+      *pages(begin = this.begin(), end = this.end()) {
+        this.ownCursorAssert$(begin)
+        this.ownCursorAssert$(end)
+
+        let current = begin.clone()
+        let offset = 0
+
+        while (!current.equals(end)) {
+          const pageBegin = current.getInnerCursor()
+          const pageEnd = current.outerCursor$.equals(end.outerCursor$)
+            ? end.getInnerCursor()
+            : current.getInnerCursorEnd()
+          const outerCursor = current.outerCursor$.clone()
+          const virtualEnd = current.outerCursor$.equals(end.outerCursor$)
+            ? end.clone()
+            : current.clone()
+
+          if (!current.outerCursor$.equals(end.outerCursor$)) {
+            virtualEnd.outerCursor$.step()
+            virtualEnd.resetInnerCursor()
+          }
+
+          const range = subrange(pageBegin, pageEnd)
+
+          yield new Page(range, {
+            offset,
+            virtualize: cursor => {
+              if (cursor.equals(pageEnd))
+                return virtualEnd.clone()
+
+              return new this.cursorType(
+                this,
+                outerCursor.clone(),
+                cursor.clone(),
+                pageEnd.clone()
+              )
+            },
+          })
+
+          if (current.outerCursor$.equals(end.outerCursor$))
+            break
+
+          offset += distance(range)
+          current.outerCursor$.step()
+          current.resetInnerCursor()
+        }
+      },
+
+      materialize(begin = this.begin(), end = this.end()) {
+        const result = new this.constructor()
+
+        for (const page of this.pages(begin, end))
+          result.pushRange(page.range)
+
+        return result
       },
     })
   }

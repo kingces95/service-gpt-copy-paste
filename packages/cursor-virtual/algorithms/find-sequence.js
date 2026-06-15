@@ -66,11 +66,11 @@ function assertVirtualSequenceType(range, sequence) {
 
 function findVirtualSequence(range, sequence, { from = range.begin() } = { }) {
   const lowerSequence = [
-    ...iterate(sequence.begin().materialize(sequence.end())),
+    ...iterate(sequence.materialize(sequence.begin(), sequence.end())),
   ]
   const projector = range.projector$
 
-  for (const page of from.sourceCursor$.pages(range.end().sourceCursor$)) {
+  for (const page of range.pages(from, range.end())) {
     const pageMatch = findSequence(page, lowerSequence)
     const match = pageMatch && mapPageMatch(projector, page, pageMatch)
 

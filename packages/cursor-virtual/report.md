@@ -45,11 +45,8 @@ Part
 │  └─ stepBack()
 ├─ ReadableCursorPart
 │  └─ value
-├─ CloneableCursorPart
-│  └─ clone()
-└─ VirtualCursorPart
-   ├─ pages(other)
-   └─ materialize(other)
+└─ CloneableCursorPart
+   └─ clone()
 
 Shape
 └─ -
@@ -98,8 +95,7 @@ Part
 ├─ VirtualContainerPart
 │  ├─ pushRange(range)
 │  ├─ popRange(cursor)
-│  ├─ ranges()
-│  └─ pages()
+│  └─ ranges()
 ├─ ProjectedRangePart
 │  ├─ source$
 │  ├─ projector$
@@ -114,7 +110,8 @@ Shape
    ├─ pushRange(range)
    ├─ popRange(cursor)
    ├─ ranges()
-   └─ pages()
+   ├─ pages()
+   └─ materialize()
 
 Naked
 ├─ Page
@@ -132,6 +129,12 @@ Naked
 │  ├─ synchronize(page, sourceCursor)
 │  ├─ projectCursor(page, sourceCursor)
 │  └─ projectValue(sourceCursor, stride)
+├─ VirtualContainer
+│  ├─ pages(begin, end)
+│  └─ materialize(begin, end)
+├─ ProjectedRangeContainer
+│  ├─ pages(begin, end)
+│  └─ materialize(begin, end)
 └─ VariableStrideProjectedRangeContainer
    └─ tokenStrideOf$(value)
 
@@ -178,11 +181,10 @@ Virtual
 │  ├─ stores pushed physical ranges
 │  ├─ exposes one logical address space
 │  ├─ pages() yields Page descriptors
+│  ├─ materialize() returns another VirtualContainer
 │  └─ never decides token synchronization
 ├─ VirtualCursor
-│  ├─ walks physical ranges as one address space
-│  ├─ pages(other) factors the address span into Page descriptors
-│  └─ materialize(other) returns another VirtualContainer
+│  └─ walks physical ranges as one address space
 └─ Page
    ├─ has-a physical range
    ├─ carries address metadata like offset

@@ -5,7 +5,6 @@ import {
 import { ContainerPart } from '@kingjs/cursor-container'
 import { defaultTo } from '@kingjs/function-contract'
 import {
-  Defines,
   DefinesAbstract,
 } from '@kingjs/partial-class'
 import { members } from '@kingjs/partial-signature'
@@ -28,10 +27,4 @@ export class VirtualContainerPart extends ContainerPart {
 
     ranges() { },
   })
-
-  static [Defines] = {
-    pages() {
-      return this.begin().pages(this.end())
-    },
-  }
 }

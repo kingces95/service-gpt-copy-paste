@@ -7,12 +7,9 @@ import {
   CursorPart,
   ReadableCursorPart,
   SteppableCursorPart,
-  VirtualCursorPart,
 } from '@kingjs/cursor'
-import { advance, distance } from '@kingjs/cursor-algorithm'
+import { advance } from '@kingjs/cursor-algorithm'
 import { ContainerCursor } from '@kingjs/cursor-container'
-import { subrange } from '@kingjs/cursor-view'
-import { Page } from '../container/page-container.js'
 
 export class ProjectedCursor extends ContainerCursor {
   _sourceCursor
@@ -70,35 +67,5 @@ export class ProjectedCursor extends ContainerCursor {
       },
     })
 
-    compose(this, VirtualCursorPart, {
-      *pages(other) {
-        const begin = this.sourceCursor$
-        const end = other.sourceCursor$
-        const range = typeof begin.materialize == 'function'
-          ? begin.materialize(end)
-          : subrange(begin, end)
-
-        yield new Page(range, {
-          virtualize: cursor => {
-            if (cursor.equals(range.end()))
-              return other.clone()
-
-            const result = this.clone()
-            advance(result.sourceCursor$, distance(subrange(range.begin(),
-              cursor)))
-            return result
-          },
-        })
-      },
-
-      materialize(other) {
-        const begin = this.sourceCursor$
-        const end = other.sourceCursor$
-
-        return typeof begin.materialize == 'function'
-          ? begin.materialize(end)
-          : subrange(begin, end)
-      },
-    })
   }
 }

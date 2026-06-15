@@ -8,11 +8,13 @@ export class VirtualContainerShape extends RangeShape {
     return typeof range.pushRange == 'function' &&
       typeof range.popRange == 'function' &&
       typeof range.ranges == 'function' &&
-      typeof range.pages == 'function'
+      typeof range.pages == 'function' &&
+      typeof range.materialize == 'function'
   }
 
   pushRange(range) { }
   popRange(cursor) { }
   ranges() { }
   pages() { }
+  materialize() { }
 }

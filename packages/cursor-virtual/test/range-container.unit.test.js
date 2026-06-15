@@ -139,7 +139,7 @@ describe('VirtualContainer', () => {
       .pushRange(new SnapshotView([1, 2]))
       .pushRange(new SnapshotView([3, 4]))
 
-    const pages = [...ranges.begin().pages(ranges.end())]
+    const pages = [...ranges.pages()]
 
     expect(pages.map(valuesOf)).toEqual([[1, 2], [3, 4]])
     expect(cursorAt(pages[1], 1).value).toBe(4)
@@ -157,7 +157,7 @@ describe('VirtualContainer', () => {
     end.step()
     end.step()
 
-    const materialized = ranges.begin().materialize(end)
+    const materialized = ranges.materialize(ranges.begin(), end)
 
     expect(valuesOf(materialized)).toEqual([1, 2, 3])
     expect(rangeValuesOf(materialized.ranges())).toEqual([[1, 2], [3]])
