@@ -15,17 +15,16 @@ import {
   List,
 } from '@kingjs/cursor-container'
 import { VirtualCursor } from '../cursor/virtual-cursor.js'
-import { PageContainer } from './page-container.js'
 
 function clone(cursor) {
   return cursor?.clone?.() ?? cursor
 }
 
 function toStoredRange(range) {
-  return new PageContainer(subrange(
+  return subrange(
     clone(range.begin()),
     clone(range.end())
-  ))
+  )
 }
 
 // VirtualContainer stores pushed ranges and presents their values as one logical

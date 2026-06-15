@@ -56,13 +56,13 @@ function throwingPairRangeOf(...chunks) {
 describe('fixed stride page synchronization', () => {
   it('marks only fixed-stride page offsets as synchronized', () => {
     const range = pairRangeOf([0, 1, 2, 3])
-    const [page] = range.begin().pages(range.end())
+    const [page] = range.source$.begin().pages(range.source$.end())
+    const projector = range.projector$
 
-    expect(cursorAt(page, 0).isSynchronized()).toBe(true)
-    expect(cursorAt(page, 1).isSynchronized()).toBe(false)
-    expect(cursorAt(page, 2).isSynchronized()).toBe(true)
-    expect(cursorAt(page, 1).virtualize()).toBe(null)
-    expect(cursorAt(page, 2).virtualize()).not.toBe(null)
+    expect(projector.isSynchronized(page, cursorAt(page, 0))).toBe(true)
+    expect(projector.isSynchronized(page, cursorAt(page, 1))).toBe(false)
+    expect(projector.isSynchronized(page, cursorAt(page, 2))).toBe(true)
+    expect(projector.projectCursor(page, cursorAt(page, 2))).not.toBe(null)
   })
 
   it('rejects page-space matches that start between virtual tokens', () => {

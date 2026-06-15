@@ -10,6 +10,7 @@ import { distance, previous } from '@kingjs/cursor-algorithm'
 import { FixedStrideProjectedCursor } from '../cursor/fixed-stride-projected-cursor.js'
 import { ProjectedRangePart } from '../part/projected-range-part.js'
 import { VirtualContainerPart } from '../part/virtual-container-part.js'
+import { FixedStrideProjector } from '../projector/fixed-stride-projector.js'
 
 const pushRange = ProjectedRangeContainer.prototype.pushRange
 
@@ -26,6 +27,7 @@ export class FixedStrideProjectedRangeContainer extends ProjectedRangeContainer 
       'Fixed virtual source must be a bidirectional range of ranges.')
     this._remainder = 0
     this._strideLength = strideLength
+    this._projector = new FixedStrideProjector(this, { strideLength })
   }
 
   static {

@@ -65,7 +65,7 @@ describe('findSequence', () => {
     const range = virtualRangeOf([1, 2, 3])
 
     expect(() => findSequence(range, [102])).toThrow(
-      'Virtual sequence must match virtual range.')
+      'Projected sequence must match projected range.')
   })
 
   it('finds virtual values across virtual pages', () => {
@@ -82,7 +82,7 @@ describe('findSequence', () => {
     const needle = virtualRangeOf([2, 3])
 
     expect(() => findSequence(range, needle)).toThrow(
-      'Virtual sequence must match virtual range.')
+      'Projected sequence must match projected range.')
   })
 
   it('uses byte spans before reading cursor values', () => {

@@ -2,21 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { advance } from '@kingjs/cursor-algorithm'
 import { TypedArrayView } from '@kingjs/cursor-view'
 import {
-  FixedStridePageContainer,
-  PageContainer,
-  VariableStridePageContainer,
+  FixedStrideProjector,
+  Page,
+  VariableStrideProjector,
 } from '../index.js'
-import { PageCursor } from '../cursor/page-cursor.js'
-
-class OffsetPageCursor extends PageCursor {
-  virtualize() {
-    return { offset: this.offset$ }
-  }
-}
-
-class OffsetPageContainer extends PageContainer {
-  static cursorType = OffsetPageCursor
-}
 
 function cursorAt(range, offset) {
   const cursor = range.begin()
@@ -24,106 +13,102 @@ function cursorAt(range, offset) {
   return cursor
 }
 
-describe('PageContainer', () => {
-  it('virtualizes offsets through specialization', () => {
+function projectorHost() {
+  return {
+    cursorType: class {
+      constructor(container, sourceCursor) {
+        this.container = container
+        this.sourceCursor = sourceCursor
+      }
+    },
+  }
+}
+
+describe('Page', () => {
+  it('describes a physical range and virtualizes through a callback', () => {
     const range = new TypedArrayView(Uint8Array.from([1, 2, 3]))
-    const page = new OffsetPageContainer(range)
-
-    const cursor = cursorAt(page, 2)
-
-    expect(cursor.value).toBe(3)
-    expect(cursor.isSynchronized()).toBe(true)
-    expect(cursor.virtualize()).toEqual({ offset: 2 })
-  })
-
-  it('projects a physical span through page cursors', () => {
-    const range = new TypedArrayView(Uint8Array.from([1, 2, 3]))
-    const page = new OffsetPageContainer(range)
+    const page = new Page(range, {
+      virtualize: cursor => ({ offset: page.offsetOf(cursor) }),
+    })
 
     expect([...page.span()]).toEqual([1, 2, 3])
     expect(cursorAt(page, 1).value).toBe(2)
-    expect(cursorAt(page, 1).virtualize()).toEqual({ offset: 1 })
+    expect(page.virtualize(cursorAt(page, 2))).toEqual({ offset: 2 })
   })
 })
 
-describe('FixedStridePageContainer', () => {
+describe('FixedStrideProjector', () => {
   it('knows which page offsets are synchronized', () => {
     const range = new TypedArrayView(Uint8Array.from([0, 1, 2, 3]))
-    const sourcePage = new OffsetPageContainer(range)
-    const page = new FixedStridePageContainer(sourcePage, {
-      modulus: 0,
+    const page = new Page(range)
+    const projector = new FixedStrideProjector(projectorHost(), {
       strideLength: 2,
     })
 
-    expect(cursorAt(page, 0).isSynchronized()).toBe(true)
-    expect(cursorAt(page, 1).isSynchronized()).toBe(false)
-    expect(cursorAt(page, 2).isSynchronized()).toBe(true)
-    expect(cursorAt(page, 1).virtualize()).toBe(null)
-    expect(cursorAt(page, 2).virtualize()).toEqual({ offset: 2 })
+    expect(projector.isSynchronized(page, cursorAt(page, 0))).toBe(true)
+    expect(projector.isSynchronized(page, cursorAt(page, 1))).toBe(false)
+    expect(projector.isSynchronized(page, cursorAt(page, 2))).toBe(true)
   })
 
   it('synchronizes backward within the page when it can', () => {
     const range = new TypedArrayView(Uint8Array.from([0, 1, 2, 3]))
-    const sourcePage = new OffsetPageContainer(range)
-    const page = new FixedStridePageContainer(sourcePage, {
-      modulus: 0,
+    const page = new Page(range)
+    const projector = new FixedStrideProjector(projectorHost(), {
       strideLength: 2,
     })
 
-    const cursor = cursorAt(page, 3).synchronize()
+    const cursor = projector.synchronize(page, cursorAt(page, 3))
 
     expect(cursor.value).toBe(2)
-    expect(cursor.isSynchronized()).toBe(true)
+    expect(projector.isSynchronized(page, cursor)).toBe(true)
   })
 
   it('reports null when synchronization would leave the page', () => {
     const range = new TypedArrayView(Uint8Array.from([0, 1, 2, 3]))
-    const sourcePage = new OffsetPageContainer(range)
-    const page = new FixedStridePageContainer(sourcePage, {
-      modulus: 1,
+    const page = new Page(range, { offset: 1 })
+    const projector = new FixedStrideProjector(projectorHost(), {
       strideLength: 2,
     })
 
-    expect(cursorAt(page, 0).synchronize()).toBe(null)
-    expect(cursorAt(page, 1).synchronize().value).toBe(1)
+    expect(projector.synchronize(page, cursorAt(page, 0))).toBe(null)
+    expect(projector.synchronize(page, cursorAt(page, 1)).value).toBe(1)
   })
 })
 
-describe('VariableStridePageContainer', () => {
+describe('VariableStrideProjector', () => {
   it('knows starter offsets are synchronized', () => {
     const range = new TypedArrayView(Uint8Array.from([1, 2, 3]))
-    const sourcePage = new OffsetPageContainer(range)
-    const page = new VariableStridePageContainer(sourcePage, {
+    const page = new Page(range)
+    const projector = new VariableStrideProjector(projectorHost(), {
       isContinuation: value => value == 2,
     })
 
-    expect(cursorAt(page, 0).isSynchronized()).toBe(true)
-    expect(cursorAt(page, 1).isSynchronized()).toBe(false)
-    expect(cursorAt(page, 2).isSynchronized()).toBe(true)
-    expect(page.end().isSynchronized()).toBe(true)
-    expect(cursorAt(page, 1).virtualize()).toBe(null)
+    expect(projector.isSynchronized(page, cursorAt(page, 0))).toBe(true)
+    expect(projector.isSynchronized(page, cursorAt(page, 1))).toBe(false)
+    expect(projector.isSynchronized(page, cursorAt(page, 2))).toBe(true)
+    expect(projector.isSynchronized(page, page.end())).toBe(true)
   })
 
   it('synchronizes backward to the starter in the same page', () => {
     const range = new TypedArrayView(Uint8Array.from([1, 2, 3]))
-    const sourcePage = new OffsetPageContainer(range)
-    const page = new VariableStridePageContainer(sourcePage, {
+    const page = new Page(range)
+    const projector = new VariableStrideProjector(projectorHost(), {
       isContinuation: value => value == 2,
     })
 
-    const cursor = cursorAt(page, 1).synchronize()
+    const cursor = projector.synchronize(page, cursorAt(page, 1))
 
     expect(cursor.value).toBe(1)
-    expect(cursor.isSynchronized()).toBe(true)
+    expect(projector.isSynchronized(page, cursor)).toBe(true)
   })
 
   it('reports null when the starter is before the page', () => {
     const range = new TypedArrayView(Uint8Array.from([2, 3]))
-    const sourcePage = new OffsetPageContainer(range)
-    const page = new VariableStridePageContainer(sourcePage, {
+    const page = new Page(range)
+    const projector = new VariableStrideProjector(projectorHost(), {
       isContinuation: value => value == 2,
     })
 
-    expect(page.begin().synchronize()).toBe(null)
+    expect(projector.synchronize(page, page.begin())).toBe(null)
   })
 })

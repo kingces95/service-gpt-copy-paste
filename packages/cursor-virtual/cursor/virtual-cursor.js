@@ -11,8 +11,9 @@ import {
   SteppableCursorPart,
   VirtualCursorPart,
 } from '@kingjs/cursor'
+import { distance } from '@kingjs/cursor-algorithm'
 import { ContainerCursor } from '@kingjs/cursor-container'
-import { RangePageContainer } from '../container/range-page-container.js'
+import { Page } from '../container/page-container.js'
 
 export class VirtualCursor extends ContainerCursor {
   _outerCursor
@@ -75,24 +76,8 @@ export class VirtualCursor extends ContainerCursor {
     if (begin.equals(inner))
       return null
 
-    this.outerCursor.value = new RangePageContainer(
-      subrange(inner, range.end()),
-      {
-        container: this.container,
-        outerCursor: this.outerCursor.clone(),
-        innerCursorEnd: range.end(),
-        virtualEnd: new this.constructor(
-          this.container,
-          this.outerCursor.clone()
-        ),
-      }
-    )
-    return new RangePageContainer(subrange(begin, inner), {
-      container: this.container,
-      outerCursor: this.outerCursor.clone(),
-      innerCursorEnd: inner.clone(),
-      virtualEnd: this.clone(),
-    })
+    this.outerCursor.value = subrange(inner, range.end())
+    return subrange(begin, inner)
   }
 
   static {
@@ -174,6 +159,7 @@ export class VirtualCursor extends ContainerCursor {
     compose(this, VirtualCursorPart, {
       *pages(other) {
         let current = this.clone()
+        let offset = 0
 
         while (!current.equals(other)) {
           const begin = current.getInnerCursor()
@@ -190,16 +176,27 @@ export class VirtualCursor extends ContainerCursor {
             virtualEnd.resetInnerCursor()
           }
 
-          yield new RangePageContainer(subrange(begin, end), {
-            container: this.container,
-            outerCursor,
-            innerCursorEnd: end.clone(),
-            virtualEnd,
+          const range = subrange(begin, end)
+
+          yield new Page(range, {
+            offset,
+            virtualize: cursor => {
+              if (cursor.equals(end))
+                return virtualEnd.clone()
+
+              return new this.constructor(
+                this.container,
+                outerCursor.clone(),
+                cursor.clone(),
+                end.clone()
+              )
+            },
           })
 
           if (current.outerCursor.equals(other.outerCursor))
             break
 
+          offset += distance(range)
           current.outerCursor.step()
           current.resetInnerCursor()
         }
@@ -209,7 +206,7 @@ export class VirtualCursor extends ContainerCursor {
         const result = new this.container.constructor()
 
         for (const page of this.pages(other))
-          result.pushRange(page)
+          result.pushRange(page.range)
 
         return result
       },

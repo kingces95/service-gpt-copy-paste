@@ -9,6 +9,7 @@ import { CloneEmptyPart } from '../part/clone-empty-part.js'
 import { SplitContainerPart } from '../part/split-container-part.js'
 import { VirtualContainerShape } from '../shape/virtual-container-shape.js'
 import { ProjectedCursor } from '../cursor/projected-cursor.js'
+import { Projector } from '../projector/projector.js'
 
 // ProjectedRangeContainer scans a source range as projected values while
 // preserving source ownership. Cursors move in projected space, but popRange()
@@ -18,12 +19,14 @@ export class ProjectedRangeContainer extends PartialProxy {
   static cursorType = ProjectedCursor
 
   _source
+  _projector
 
   constructor(source) {
     super()
     assert(source instanceof VirtualContainerShape,
       'Virtual source must be a range of ranges.')
     this._source = source
+    this._projector = new Projector(this)
   }
 
   static {
@@ -47,6 +50,7 @@ export class ProjectedRangeContainer extends PartialProxy {
 
     compose(this, ProjectedRangePart, {
       get source$() { return this._source },
+      get projector$() { return this._projector },
     }, {
       decodeToken$(sourceCursor, stride) { },
     })

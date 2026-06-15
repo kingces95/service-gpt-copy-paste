@@ -51,33 +51,35 @@ function canFindVirtualSequence(range) {
 }
 
 function assertVirtualSequenceType(range, sequence) {
-  const virtualRange = range instanceof ProjectedRangeContainer
-  const virtualSequence = sequence instanceof ProjectedRangeContainer
+  const projectedRange = range instanceof ProjectedRangeContainer
+  const projectedSequence = sequence instanceof ProjectedRangeContainer
 
-  assert(virtualRange == virtualSequence,
-    'Virtual sequence must match virtual range.')
+  assert(projectedRange == projectedSequence,
+    'Projected sequence must match projected range.')
 
-  if (!virtualRange)
+  if (!projectedRange)
     return
 
   assert(sequence.constructor == range.constructor,
-    'Virtual sequence type must match range type.')
+    'Projected sequence type must match range type.')
 }
 
 function findVirtualSequence(range, sequence, { from = range.begin() } = { }) {
   const lowerSequence = [
     ...iterate(sequence.begin().materialize(sequence.end())),
   ]
+  const projector = range.projector$
 
-  for (const page of from.pages(range.end())) {
+  for (const page of from.sourceCursor$.pages(range.end().sourceCursor$)) {
     const pageMatch = findSequence(page, lowerSequence)
-    const match = pageMatch && mapPageMatch(pageMatch)
+    const match = pageMatch && mapPageMatch(projector, page, pageMatch)
 
     if (match)
       return match
 
-    const virtualEnd = page.end().virtualize()
+    const virtualEnd = projector.projectCursor(page, page.end())
     const virtualBegin = fallbackBeginOfPage(
+      projector,
       page,
       sequence,
     )
@@ -97,9 +99,9 @@ function findVirtualSequence(range, sequence, { from = range.begin() } = { }) {
   return null
 }
 
-function fallbackBeginOfPage(page, sequence) {
-  const virtualBegin = page.begin().virtualize()
-  const virtualEnd = page.end().virtualize()
+function fallbackBeginOfPage(projector, page, sequence) {
+  const virtualBegin = projector.projectCursor(page, page.begin())
+  const virtualEnd = projector.projectCursor(page, page.end())
   const tailLength = lengthOfSequence(sequence) - 1
 
   if (tailLength <= 0)
@@ -141,18 +143,19 @@ function findSequenceByCursor(
   return null
 }
 
-function mapPageMatch(match) {
-  if (!isSynchronizedInterval(match.begin, match.end))
+function mapPageMatch(projector, page, match) {
+  if (!isSynchronizedInterval(projector, page, match.begin, match.end))
     return null
 
-  const begin = match.begin.virtualize()
-  const end = match.end.virtualize()
+  const begin = projector.projectCursor(page, match.begin)
+  const end = projector.projectCursor(page, match.end)
 
   return { begin, end }
 }
 
-function isSynchronizedInterval(begin, end) {
-  return begin.isSynchronized() && end.isSynchronized()
+function isSynchronizedInterval(projector, page, begin, end) {
+  return projector.isSynchronized(page, begin) &&
+    projector.isSynchronized(page, end)
 }
 
 function canFindByteSequence(range, sequence, { from = range.begin() } = { }) {
@@ -212,7 +215,7 @@ function* byteSpanDescriptorsOf(range) {
       yield {
         span: page.span(),
         cursorAt(offset) {
-          return pageCursorAt(page, offset).virtualize()
+          return page.virtualize(pageCursorAt(page, offset))
         },
       }
     return

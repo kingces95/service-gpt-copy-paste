@@ -5,6 +5,7 @@ import { RangePart } from '@kingjs/cursor'
 import { ProjectedRangeContainer } from './projected-range-container.js'
 import { synchronize } from '../algorithms/synchronize.js'
 import { VariableStrideProjectedCursor } from '../cursor/variable-stride-projected-cursor.js'
+import { VariableStrideProjector } from '../projector/variable-stride-projector.js'
 
 export class VariableStrideProjectedRangeContainer extends ProjectedRangeContainer {
   static cursorType = VariableStrideProjectedCursor
@@ -19,6 +20,7 @@ export class VariableStrideProjectedRangeContainer extends ProjectedRangeContain
     super(source)
     this._isContinuation = isContinuation
     this._continuationCountOf = continuationCountOf
+    this._projector = new VariableStrideProjector(this, { isContinuation })
   }
 
   static {
