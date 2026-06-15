@@ -4,10 +4,10 @@ import { SnapshotView } from '@kingjs/cursor-view'
 import { Uint8Vector } from '@kingjs/cursor-container-standard'
 import { define } from '@kingjs/partial-define'
 import {
-  FixedStrideVirtualContainer,
+  FixedStrideProjectedRangeContainer,
+  ProjectedRangeContainer,
   VirtualContainer,
-  RangeContainer,
-  VariableStrideVirtualContainer,
+  VariableStrideProjectedRangeContainer,
 } from '../index.js'
 
 function rangeOf(values) {
@@ -24,11 +24,11 @@ function cursorAt(range, offset) {
   return cursor
 }
 
-const virtualSplit = VirtualContainer.prototype.split
+const virtualSplit = ProjectedRangeContainer.prototype.split
 
-class FixedValueRange extends FixedStrideVirtualContainer {
+class FixedValueRange extends FixedStrideProjectedRangeContainer {
   constructor() {
-    super(new RangeContainer(), { strideLength: 2 })
+    super(new VirtualContainer(), { strideLength: 2 })
   }
 
   static {
@@ -42,9 +42,9 @@ class FixedValueRange extends FixedStrideVirtualContainer {
   }
 }
 
-class VariableValueRange extends VariableStrideVirtualContainer {
+class VariableValueRange extends VariableStrideProjectedRangeContainer {
   constructor() {
-    super(new RangeContainer(), {
+    super(new VirtualContainer(), {
       isContinuation: value => value == 2,
       continuationCountOf(value) {
         if (value == 1) return 1
@@ -82,7 +82,7 @@ class ConfiguredFixedValueRange extends FixedValueRange {
   }
 }
 
-describe('FixedStrideVirtualContainer', () => {
+describe('FixedStrideProjectedRangeContainer', () => {
   it('trims fixed-width suffixes to token boundaries', () => {
     const range = new FixedValueRange()
 
@@ -121,7 +121,7 @@ describe('FixedStrideVirtualContainer', () => {
   })
 })
 
-describe('VariableStrideVirtualContainer', () => {
+describe('VariableStrideProjectedRangeContainer', () => {
   it('trims incomplete continuation suffixes to token boundaries', () => {
     const range = new VariableValueRange()
 

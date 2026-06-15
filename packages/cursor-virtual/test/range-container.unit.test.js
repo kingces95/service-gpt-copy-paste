@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  advance,
   iterate,
   toArray,
 } from '@kingjs/cursor-algorithm'
@@ -13,9 +14,8 @@ import {
   TrivialForwardRange,
 } from '../../cursor/trivial-cursors.js'
 import {
-  RangeOfRangesShape,
-  RangeContainerOf,
-  RangeContainer,
+  VirtualContainerShape,
+  VirtualContainer,
 } from '../index.js'
 
 function valuesOf(range) {
@@ -26,9 +26,15 @@ function rangeValuesOf(ranges) {
   return toArray(ranges, valuesOf)
 }
 
-describe('RangeContainer', () => {
+function cursorAt(range, offset) {
+  const cursor = range.begin()
+  advance(cursor, offset)
+  return cursor
+}
+
+describe('VirtualContainer', () => {
   it('allows repeated reads until the client commits consumption', () => {
-    const ranges = new RangeContainer()
+    const ranges = new VirtualContainer()
 
     ranges
       .pushRange(new SnapshotView(['a', 'b']))
@@ -46,7 +52,7 @@ describe('RangeContainer', () => {
   })
 
   it('iterates pushed ranges as one joined range', () => {
-    const ranges = new RangeContainer()
+    const ranges = new VirtualContainer()
 
     ranges
       .pushRange(new SnapshotView([1, 2]))
@@ -55,21 +61,12 @@ describe('RangeContainer', () => {
 
     expect([...iterate(ranges)]).toEqual([1, 2, 3, 4, 5])
     expect(ranges).toBeInstanceOf(BidirectionalRangeShape)
-    expect(ranges).toBeInstanceOf(RangeOfRangesShape)
+    expect(ranges).toBeInstanceOf(VirtualContainerShape)
     expect(ranges.isEmpty).toBe(false)
   })
 
-  it('carries span type on generic specializations', () => {
-    const Uint8RangeContainer = RangeContainerOf(Uint8Array)
-    const ranges = new Uint8RangeContainer()
-
-    expect(Uint8RangeContainer.cursorType.spanType).toBe(Uint8Array)
-    expect(ranges.constructor.cursorType.spanType).toBe(Uint8Array)
-    expect(ranges).toBeInstanceOf(RangeOfRangesShape)
-  })
-
   it('steps backward within a stored range', () => {
-    const ranges = new RangeContainer()
+    const ranges = new VirtualContainer()
 
     ranges.pushRange(new SnapshotView([1, 2]))
 
@@ -84,7 +81,7 @@ describe('RangeContainer', () => {
   })
 
   it('steps backward across stored ranges', () => {
-    const ranges = new RangeContainer()
+    const ranges = new VirtualContainer()
 
     ranges
       .pushRange(new SnapshotView([1]))
@@ -103,7 +100,7 @@ describe('RangeContainer', () => {
   })
 
   it('pops a committed prefix while preserving the remaining suffix', () => {
-    const ranges = new RangeContainer()
+    const ranges = new VirtualContainer()
 
     ranges
       .pushRange(new SnapshotView([1, 2]))
@@ -119,7 +116,7 @@ describe('RangeContainer', () => {
   })
 
   it('returns consumed stored ranges through ranges()', () => {
-    const ranges = new RangeContainer()
+    const ranges = new VirtualContainer()
 
     ranges
       .pushRange(new SnapshotView([1]))
@@ -136,7 +133,7 @@ describe('RangeContainer', () => {
   })
 
   it('projects pages between cursors', () => {
-    const ranges = new RangeContainer()
+    const ranges = new VirtualContainer()
 
     ranges
       .pushRange(new SnapshotView([1, 2]))
@@ -145,11 +142,11 @@ describe('RangeContainer', () => {
     const pages = [...ranges.begin().pages(ranges.end())]
 
     expect(pages.map(valuesOf)).toEqual([[1, 2], [3, 4]])
-    expect(pages[1].cursorAt(1).value).toBe(4)
+    expect(cursorAt(pages[1], 1).value).toBe(4)
   })
 
   it('materializes pages between cursors', () => {
-    const ranges = new RangeContainer()
+    const ranges = new VirtualContainer()
 
     ranges
       .pushRange(new SnapshotView([1, 2]))
@@ -167,7 +164,7 @@ describe('RangeContainer', () => {
   })
 
   it('keeps retained cursors stable when whole front ranges pop', () => {
-    const ranges = new RangeContainer()
+    const ranges = new VirtualContainer()
 
     ranges
       .pushRange(new SnapshotView([1, 2]))
@@ -185,7 +182,7 @@ describe('RangeContainer', () => {
   })
 
   it('clones cursors without sharing their inner cursor position', () => {
-    const ranges = new RangeContainer()
+    const ranges = new VirtualContainer()
 
     ranges.pushRange(new SnapshotView([1, 2]))
 
@@ -201,8 +198,8 @@ describe('RangeContainer', () => {
   })
 
   it('asserts public argument contracts', () => {
-    const ranges = new RangeContainer()
-    const other = new RangeContainer()
+    const ranges = new VirtualContainer()
+    const other = new VirtualContainer()
 
     expect(() => ranges.pushRange([1, 2])).toThrow(
       'Argument 0 must be BidirectionalRangeShape.')
@@ -213,7 +210,7 @@ describe('RangeContainer', () => {
   })
 
   it('asserts when stepping back before begin', () => {
-    const ranges = new RangeContainer()
+    const ranges = new VirtualContainer()
 
     ranges.pushRange(new SnapshotView([1]))
 
@@ -222,7 +219,7 @@ describe('RangeContainer', () => {
   })
 
   it('asserts when reading a cursor at end', () => {
-    const ranges = new RangeContainer()
+    const ranges = new VirtualContainer()
 
     ranges.pushRange(new SnapshotView([1]))
 

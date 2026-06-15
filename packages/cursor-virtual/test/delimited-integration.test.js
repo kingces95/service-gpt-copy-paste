@@ -5,11 +5,13 @@ import { SnapshotView } from '@kingjs/cursor-view'
 import { Uint8 } from '@kingjs/simple-type'
 import { Uint8Vector } from '@kingjs/cursor-container-standard'
 import { define } from '@kingjs/partial-define'
+import { RangePart } from '@kingjs/cursor'
+import { compose } from '@kingjs/partial-compose'
 import {
-  FixedStrideVirtualContainer,
-  VirtualCursor,
+  FixedStrideProjectedRangeContainer,
+  ProjectedCursor,
+  ProjectedRangeContainer,
   VirtualContainer,
-  RangeContainer,
 } from '../index.js'
 
 const Backslash = '\\'.codePointAt()
@@ -34,9 +36,9 @@ function materializeRanges(ranges) {
   return [...iterate(ranges)].map(range => textOf([...iterate(range)]))
 }
 
-class AsciiCodePointContainer extends FixedStrideVirtualContainer {
+class AsciiCodePointContainer extends FixedStrideProjectedRangeContainer {
   constructor() {
-    super(new RangeContainer())
+    super(new VirtualContainer())
   }
 
   static {
@@ -52,7 +54,7 @@ class AsciiCodePointContainer extends FixedStrideVirtualContainer {
   }
 }
 
-class DelimitedRecordCursor extends VirtualCursor {
+class DelimitedRecordCursor extends ProjectedCursor {
   static {
     define(this, {
       get stride$() {
@@ -62,7 +64,7 @@ class DelimitedRecordCursor extends VirtualCursor {
   }
 }
 
-class DelimitedRecordContainer extends VirtualContainer {
+class DelimitedRecordContainer extends ProjectedRangeContainer {
   static cursorType = DelimitedRecordCursor
 
   get isDelimiter$() {
@@ -78,8 +80,8 @@ class DelimitedRecordContainer extends VirtualContainer {
   }
 
   static {
-    define(this, {
-      get sourceEnd$() {
+    compose(this, RangePart, {
+      end() {
         const cursor = this.source$.begin()
         const end = this.source$.end()
 
@@ -92,12 +94,14 @@ class DelimitedRecordContainer extends VirtualContainer {
             end
           )
           if (stride == null)
-            return cursor.clone()
+            return new this.cursorType(this, cursor.clone())
 
           advance(cursor, stride)
         }
       },
+    })
 
+    define(this, {
       decodeStride$(sourceCursor) {
         if (sourceCursor.equals(this.source$.end()))
           return null

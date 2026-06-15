@@ -1,13 +1,13 @@
 import { assert } from '@kingjs/assert'
 import { compose } from '@kingjs/partial-compose'
 import { define } from '@kingjs/partial-define'
-import { VirtualContainer } from './virtual-container.js'
+import { RangePart } from '@kingjs/cursor'
+import { ProjectedRangeContainer } from './projected-range-container.js'
 import { synchronize } from '../algorithms/synchronize.js'
-import { VariableStrideVirtualCursor } from '../cursor/variable-stride-virtual-cursor.js'
-import { TrimmedRangePart } from '../part/trimmed-range-part.js'
+import { VariableStrideProjectedCursor } from '../cursor/variable-stride-projected-cursor.js'
 
-export class VariableStrideVirtualContainer extends VirtualContainer {
-  static cursorType = VariableStrideVirtualCursor
+export class VariableStrideProjectedRangeContainer extends ProjectedRangeContainer {
+  static cursorType = VariableStrideProjectedCursor
 
   _isContinuation
   _continuationCountOf
@@ -22,15 +22,18 @@ export class VariableStrideVirtualContainer extends VirtualContainer {
   }
 
   static {
-    compose(this, TrimmedRangePart, {
-      get sourceEnd$() {
-        return synchronize(
-          this.source$,
-          this.source$.end(),
-          {
-            isContinuation: this._isContinuation,
-            continuationCountOf: this._continuationCountOf,
-          }
+    compose(this, RangePart, {
+      end() {
+        return new this.cursorType(
+          this,
+          synchronize(
+            this.source$,
+            this.source$.end(),
+            {
+              isContinuation: this._isContinuation,
+              continuationCountOf: this._continuationCountOf,
+            }
+          )
         )
       },
     })

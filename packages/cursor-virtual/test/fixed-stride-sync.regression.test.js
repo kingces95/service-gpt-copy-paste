@@ -1,23 +1,28 @@
 import { describe, expect, it } from 'vitest'
+import { advance } from '@kingjs/cursor-algorithm'
 import { TypedArrayView } from '@kingjs/cursor-view'
 import { compose } from '@kingjs/partial-compose'
 import {
-  FixedStrideVirtualContainer,
-  VirtualPart,
-  RangeContainerOf,
+  FixedStrideProjectedRangeContainer,
+  ProjectedRangePart,
+  VirtualContainer,
   findSequence,
 } from '../index.js'
 
-const Uint8RangeContainer = RangeContainerOf(Uint8Array)
+function cursorAt(range, offset) {
+  const cursor = range.begin()
+  advance(cursor, offset)
+  return cursor
+}
 
-class PairRange extends FixedStrideVirtualContainer {
+class PairRange extends FixedStrideProjectedRangeContainer {
   constructor({ throwOnFirst = false } = { }) {
-    super(new Uint8RangeContainer(), { strideLength: 2 })
+    super(new VirtualContainer(), { strideLength: 2 })
     this.throwOnFirst = throwOnFirst
   }
 
   static {
-    compose(this, VirtualPart, {
+    compose(this, ProjectedRangePart, {
       decodeToken$(sourceCursor) {
         const first = sourceCursor.value
         if (this.throwOnFirst && first == 0)
@@ -53,11 +58,11 @@ describe('fixed stride page synchronization', () => {
     const range = pairRangeOf([0, 1, 2, 3])
     const [page] = range.begin().pages(range.end())
 
-    expect(page.cursorAt(0).isSynchronized()).toBe(true)
-    expect(page.cursorAt(1).isSynchronized()).toBe(false)
-    expect(page.cursorAt(2).isSynchronized()).toBe(true)
-    expect(page.cursorAt(1).virtualize()).toBe(null)
-    expect(page.cursorAt(2).virtualize()).not.toBe(null)
+    expect(cursorAt(page, 0).isSynchronized()).toBe(true)
+    expect(cursorAt(page, 1).isSynchronized()).toBe(false)
+    expect(cursorAt(page, 2).isSynchronized()).toBe(true)
+    expect(cursorAt(page, 1).virtualize()).toBe(null)
+    expect(cursorAt(page, 2).virtualize()).not.toBe(null)
   })
 
   it('rejects page-space matches that start between virtual tokens', () => {

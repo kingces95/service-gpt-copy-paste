@@ -10,10 +10,9 @@ Contents
   applied to cursor receivers, ordered by dependency.
 - [Container Partial Type Members](#container-partial-type-members): Partial
   types applied to container receivers, ordered by dependency.
-- [Span Type Ownership](#span-type-ownership): Cursor types whose generic
-  specialization carries the homogeneous span type used by `spans()`.
-- [Span Projection Algorithms](#span-projection-algorithms): Algorithms that
-  consume the span projection before any storage-specific optimization.
+- [Page Projection](#page-projection): Types that expose virtual page structure.
+- [Page Search Algorithms](#page-search-algorithms): Algorithms that consume
+  pages before any storage-specific leaf span optimization.
 
 ## Cursor Partial Type Members
 
@@ -69,19 +68,19 @@ Naked
 │  ├─ isSynchronized()
 │  ├─ synchronize()
 │  └─ virtualize()
-├─ VirtualCursor
+├─ ProjectedCursor
 │  └─ sourceCursor$
-├─ FixedStrideVirtualCursor
+├─ FixedStrideProjectedCursor
 │  └─ stride$
-└─ VariableStrideVirtualCursor
+└─ VariableStrideProjectedCursor
    └─ stride$
 
 Private
 ├─ PageCursor
 │  └─ _sourceCursor
-├─ VirtualCursor
+├─ ProjectedCursor
 │  └─ _sourceCursor
-└─ RangeContainerCursor
+└─ VirtualCursor
    ├─ _outerCursor
    ├─ _innerCursor
    └─ _innerCursorEnd
@@ -111,121 +110,131 @@ Concept
 Part
 ├─ ContainerPart
 │  └─ isEmpty
-├─ RangeOfRangesPart
+├─ VirtualContainerPart
 │  ├─ pushRange(range)
 │  ├─ popRange(cursor)
 │  ├─ ranges()
-│  ├─ pages()
-│  └─ spans()
-├─ VirtualPart
+│  └─ pages()
+├─ ProjectedRangePart
 │  ├─ source$
 │  └─ decodeToken$(sourceCursor, stride)
-├─ TrimmedRangePart
-│  └─ sourceEnd$
 ├─ SplitContainerPart
 │  └─ split(cursor, result)
 └─ CloneEmptyPart
    └─ cloneEmpty()
 
 Shape
-└─ RangeOfRangesShape
+└─ VirtualContainerShape
    ├─ pushRange(range)
    ├─ popRange(cursor)
    ├─ ranges()
-   └─ spans()
+   └─ pages()
 
 Naked
 ├─ PageContainer
-│  ├─ virtualizeOffset(offset)
-│  └─ cursorAt(offset)
-└─ VariableStrideVirtualContainer
+│  └─ span(begin, end)
+├─ RangePageContainer
+│  └─ -
+├─ VirtualPageContainer
+│  └─ -
+├─ FixedStridePageContainer
+│  └─ -
+├─ VariableStridePageContainer
+│  └─ -
+└─ VariableStrideProjectedRangeContainer
    └─ tokenStrideOf$(value)
 
 Private
 ├─ PageContainer
-│  ├─ _range
-│  └─ _virtualizeOffset
+│  └─ _range
+├─ RangePageContainer
+│  ├─ _container
+│  ├─ _outerCursor
+│  ├─ _innerCursorEnd
+│  └─ _virtualEnd
+├─ VirtualPageContainer
+│  ├─ _virtualBegin
+│  └─ _virtualEnd
 ├─ FixedStridePageContainer
 │  ├─ _modulus
+│  ├─ _sourcePage
 │  └─ _strideLength
 ├─ VariableStridePageContainer
-│  └─ _isContinuation
-├─ FixedStrideVirtualContainer
+│  ├─ _isContinuation
+│  └─ _sourcePage
+├─ FixedStrideProjectedRangeContainer
 │  ├─ _remainder
 │  └─ _strideLength
-├─ VirtualContainer
+├─ ProjectedRangeContainer
 │  └─ _source
-├─ RangeContainer
+├─ VirtualContainer
 │  ├─ _ranges
 │  └─ _tail
-└─ VariableStrideVirtualContainer
+└─ VariableStrideProjectedRangeContainer
    ├─ _isContinuation
    └─ _continuationCountOf
 ```
 
-## Span Type Ownership
+## Page Projection
 
 ```txt
-Virtual Span Type Ownership
-├─ set: cursor-virtual and cursor-container generic types
-├─ map: generic specializer, standard alias, spanType owner
-├─ pivot: cursor, declaration, container
-└─ display: generic roots with standard aliases as leaves
+Virtual Page Projection
+├─ set: cursor-virtual range and virtual types
+├─ map: type, page projection role
+├─ pivot: range, virtual, page
+└─ display: type roots with projected page leaves
 ```
 
 ```txt
-Virtual Span Type Ownership
+Virtual Page Projection
 
-Cursor
-├─ ContiguousCursorOf(TSpan)
-│  └─ ContiguousCursor = ContiguousCursorOf(Object)
-└─ RangeContainerCursorOf(TSpan)
-   └─ RangeContainerCursor = RangeContainerCursorOf(Object)
-
-Declaration
-├─ RangeOfRangesPartOf(TSpan)
-│  └─ RangeOfRangesPart = RangeOfRangesPartOf(Object)
-└─ RangeOfRangesShapeOf(TSpan)
-   └─ RangeOfRangesShape = RangeOfRangesShapeOf(Object)
-
-Container
-├─ PageContainer
-│  └─ -
-├─ FixedStridePageContainer
-│  └─ -
-├─ VariableStridePageContainer
-│  └─ -
-├─ RangeContainerOf(TSpan)
-│  └─ RangeContainer = RangeContainerOf(Object)
+Range
 ├─ VirtualContainer
-│  └─ -
-├─ FixedStrideVirtualContainer
-│  └─ -
-└─ VariableStrideVirtualContainer
-   └─ -
+│  ├─ stores pushed ranges as PageContainer instances
+│  └─ pages() returns page cursors in VirtualContainer space
+└─ VirtualCursor
+   ├─ pages(other)
+   └─ materialize(other)
+
+Virtual
+├─ ProjectedCursor
+│  ├─ pages(other)
+│  └─ materialize(other)
+├─ FixedStrideProjectedCursor
+│  └─ pages(other) yields FixedStridePageContainer
+└─ VariableStrideProjectedCursor
+   └─ pages(other) yields VariableStridePageContainer
+
+Page
+├─ PageContainer
+├─ RangePageContainer
+├─ VirtualPageContainer
+├─ FixedStridePageContainer
+└─ VariableStridePageContainer
 ```
 
-## Span Projection Algorithms
+## Page Search Algorithms
 
 ```txt
-Virtual Span Projection Algorithms
+Virtual Page Search Algorithms
 ├─ set: cursor-shape projections and cursor-virtual algorithms
 ├─ map: algorithm, role, expected surface
-├─ pivot: projection, assertion
+├─ pivot: page, leaf span, virtual search
 └─ display: algorithm roots with role leaves
 ```
 
 ```txt
-Virtual Span Projection Algorithms
+Virtual Page Search Algorithms
 
-Projection
-└─ spansOfRange(range)
-   ├─ uses range.spans() descriptors
-   └─ falls back to range.span() as one descriptor
+Page
+└─ pages()
+   ├─ exposes lower-space page ranges
+   └─ maps page offsets back into the caller cursor space
 
-Assertion
-└─ RangeOfRangesPart.spans()
-   └─ asserts each descriptor span is an instance of spanType
+Leaf Span
+└─ page.span() / page cursor walking
+   ├─ exposes page-local contiguous storage when available
+   └─ maps byte offsets back into virtual cursor space
 
 Virtual Search
 └─ findSequence(range, sequence)
@@ -239,10 +248,8 @@ Virtual Search
 Page Container
 ├─ begin()
 │  └─ page cursor at searchable page begin
-├─ end()
-│  └─ page cursor at searchable page end
-└─ cursorAt(offset)
-   └─ page cursor at lower offset
+└─ end()
+   └─ page cursor at searchable page end
 
 Page Cursor
 ├─ isSynchronized()

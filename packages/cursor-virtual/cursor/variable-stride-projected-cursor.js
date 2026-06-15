@@ -1,14 +1,14 @@
 import { compose } from '@kingjs/partial-compose'
 import { define } from '@kingjs/partial-define'
 import { BacktrackableCursorPart } from '@kingjs/cursor'
-import { VirtualCursor } from './virtual-cursor.js'
+import { ProjectedCursor } from './projected-cursor.js'
 import {
   VariableStridePageContainer,
 } from '../container/variable-stride-page-container.js'
 
-const pages = VirtualCursor.prototype.pages
+const pages = ProjectedCursor.prototype.pages
 
-export class VariableStrideVirtualCursor extends VirtualCursor {
+export class VariableStrideProjectedCursor extends ProjectedCursor {
   static {
     define(this, {
       get stride$() {
@@ -25,8 +25,6 @@ export class VariableStrideVirtualCursor extends VirtualCursor {
             {
               isContinuation: value =>
                 this.container._isContinuation(value),
-              virtualizeOffset: offset =>
-                sourcePage.cursorAt(offset).virtualize(),
             }
           )
 

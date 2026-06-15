@@ -1,114 +1,217 @@
 import { compose } from '@kingjs/partial-compose'
 import { implement } from '@kingjs/partial-implement'
-import { define, defineAbstract } from '@kingjs/partial-define'
 import { EquatableConcept } from '@kingjs/partial-concept'
-import { assert } from '@kingjs/assert'
+import { subrange } from '@kingjs/cursor-view'
 import {
+  BacktrackableCursorConcept,
+  BacktrackableCursorPart,
   CloneableCursorPart,
   CursorPart,
   ReadableCursorPart,
   SteppableCursorPart,
   VirtualCursorPart,
 } from '@kingjs/cursor'
-import { advance } from '@kingjs/cursor-algorithm'
 import { ContainerCursor } from '@kingjs/cursor-container'
-import { subrange } from '@kingjs/cursor-view'
-import { PageContainer } from '../container/page-container.js'
+import { RangePageContainer } from '../container/range-page-container.js'
 
 export class VirtualCursor extends ContainerCursor {
-  _sourceCursor
+  _outerCursor
+  _innerCursor
+  _innerCursorEnd
 
-  constructor(container, sourceCursor) {
+  constructor(
+    container,
+    outerCursor,
+    innerCursor = null,
+    innerCursorEnd = null
+  ) {
     super(container)
-    this._sourceCursor = sourceCursor
+    this._outerCursor = outerCursor
+    this._innerCursor = innerCursor
+    this._innerCursorEnd = innerCursorEnd
+  }
+
+  get outerCursor() { return this._outerCursor }
+  set outerCursor(outerCursor) { this._outerCursor = outerCursor }
+  get innerCursor() { return this._innerCursor }
+  set innerCursor(innerCursor) { this._innerCursor = innerCursor }
+  get innerCursorEnd() { return this._innerCursorEnd }
+  set innerCursorEnd(innerCursorEnd) { this._innerCursorEnd = innerCursorEnd }
+
+  get storedRange() { return this.outerCursor.value }
+
+  getOuterBegin() {
+    return this.outerCursor.range.begin()
+  }
+
+  getOuterEnd() {
+    return this.outerCursor.range.end()
+  }
+
+  getInnerCursor() {
+    if (!this.innerCursor)
+      this.innerCursor = this.storedRange.begin()
+
+    return this.innerCursor
+  }
+
+  getInnerCursorEnd() {
+    if (!this.innerCursorEnd)
+      this.innerCursorEnd = this.storedRange.end()
+
+    return this.innerCursorEnd
+  }
+
+  resetInnerCursor() {
+    this.innerCursor = null
+    this.innerCursorEnd = null
+  }
+
+  popRangePrefix() {
+    const range = this.storedRange
+    const begin = range.begin()
+    const inner = this.getInnerCursor()
+
+    if (begin.equals(inner))
+      return null
+
+    this.outerCursor.value = new RangePageContainer(
+      subrange(inner, range.end()),
+      {
+        container: this.container,
+        outerCursor: this.outerCursor.clone(),
+        innerCursorEnd: range.end(),
+        virtualEnd: new this.constructor(
+          this.container,
+          this.outerCursor.clone()
+        ),
+      }
+    )
+    return new RangePageContainer(subrange(begin, inner), {
+      container: this.container,
+      outerCursor: this.outerCursor.clone(),
+      innerCursorEnd: inner.clone(),
+      virtualEnd: this.clone(),
+    })
   }
 
   static {
-    defineAbstract(this, {
-      get stride$() { },
-      get sourceCursor$() { },
-    })
-
-    define(this, {
-      get sourceCursor$() { return this._sourceCursor },
-    })
-
     implement(this, EquatableConcept, {
       equals(other) {
         if (!this.equatableTo(other)) return false
-        return this.sourceCursor$.equals(other.sourceCursor$)
+        if (!this.outerCursor.equals(other.outerCursor)) return false
+        if (this.outerCursor.equals(this.outerCursor.range.end()))
+          return true
+
+        return this.getInnerCursor().equals(other.getInnerCursor())
       },
+    })
+
+    implement(this, BacktrackableCursorConcept, {
+      stepBack() {
+        if (this.outerCursor.equals(this.getOuterEnd())) {
+          this.outerCursor.stepBack()
+          this.innerCursor = this.storedRange.end()
+          this.innerCursorEnd = this.innerCursor.clone?.()
+            ?? this.innerCursor
+        }
+        else if (this.getInnerCursor().equals(this.storedRange.begin())) {
+          this.outerCursor.stepBack()
+          this.innerCursor = this.storedRange.end()
+          this.innerCursorEnd = this.innerCursor.clone?.()
+            ?? this.innerCursor
+        }
+
+        this.getInnerCursor().stepBack()
+        return this
+      },
+    })
+
+    compose(this, CursorPart, {
+      get isAtEnd$() {
+        return this.outerCursor.isAtEnd$
+      },
+    })
+
+    compose(this, SteppableCursorPart, {
+      step() {
+        this.getInnerCursor().step()
+
+        if (!this.getInnerCursor().equals(this.getInnerCursorEnd()))
+          return this
+
+        this.outerCursor.step()
+        this.resetInnerCursor()
+        return this
+      },
+    })
+
+    compose(this, BacktrackableCursorPart, {
+      isAtBegin$() {
+        if (!this.outerCursor.equals(this.getOuterBegin()))
+          return false
+
+        return !this.innerCursor
+          || this.innerCursor.equals(this.storedRange.begin())
+      },
+    })
+
+    compose(this, ReadableCursorPart, {
+      get value() { return this.getInnerCursor().value },
     })
 
     compose(this, CloneableCursorPart, {
       clone() {
         return new this.constructor(
           this.container,
-          this.sourceCursor$.clone()
-        )
-      },
-    })
-
-    compose(this, CursorPart, {
-      get isAtEnd$() {
-        return this.sourceCursor$.equals(this.container.sourceEnd$)
-      },
-    })
-
-    compose(this, SteppableCursorPart, {
-      step() {
-        advance(this.sourceCursor$, this.stride$)
-        return this
-      },
-    })
-
-    compose(this, ReadableCursorPart, {
-      get value() {
-        return this.container.decodeToken$(
-          this.sourceCursor$.clone(),
-          this.stride$
+          this.outerCursor.clone(),
+          this.innerCursor?.clone?.() ?? this.innerCursor,
+          this.innerCursorEnd?.clone?.() ?? this.innerCursorEnd
         )
       },
     })
 
     compose(this, VirtualCursorPart, {
       *pages(other) {
-        const begin = this.sourceCursor$
-        const end = other.sourceCursor$
-        const range = typeof begin.materialize == 'function'
-          ? begin.materialize(end)
-          : subrange(begin, end)
+        let current = this.clone()
 
-        yield new PageContainer(range, {
-          virtualizeOffset: offset => {
-            const pageBegin = range.begin()
-            const pageEnd = range.end()
+        while (!current.equals(other)) {
+          const begin = current.getInnerCursor()
+          const end = current.outerCursor.equals(other.outerCursor)
+            ? other.getInnerCursor()
+            : current.getInnerCursorEnd()
+          const outerCursor = current.outerCursor.clone()
+          const virtualEnd = current.outerCursor.equals(other.outerCursor)
+            ? other.clone()
+            : current.clone()
 
-            // The page currently starts at this virtual cursor's source.
-            // If a future virtual layer trims the page begin without
-            // consuming that prefix, this mapping must account for it.
-            assert(offset == 0 || !pageBegin.equals(pageEnd),
-              'Virtual page offsets are relative to page begin.')
+          if (!current.outerCursor.equals(other.outerCursor)) {
+            virtualEnd.outerCursor.step()
+            virtualEnd.resetInnerCursor()
+          }
 
-            const pageCursor = pageBegin.clone()
-            advance(pageCursor, offset)
-            if (pageCursor.equals(pageEnd))
-              return other.clone()
+          yield new RangePageContainer(subrange(begin, end), {
+            container: this.container,
+            outerCursor,
+            innerCursorEnd: end.clone(),
+            virtualEnd,
+          })
 
-            const cursor = begin.clone()
-            advance(cursor, offset)
-            return new this.constructor(this.container, cursor)
-          },
-        })
+          if (current.outerCursor.equals(other.outerCursor))
+            break
+
+          current.outerCursor.step()
+          current.resetInnerCursor()
+        }
       },
 
       materialize(other) {
-        const begin = this.sourceCursor$
-        const end = other.sourceCursor$
+        const result = new this.container.constructor()
 
-        return typeof begin.materialize == 'function'
-          ? begin.materialize(end)
-          : subrange(begin, end)
+        for (const page of this.pages(other))
+          result.pushRange(page)
+
+        return result
       },
     })
   }

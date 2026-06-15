@@ -1,27 +1,33 @@
 import { describe, expect, it } from 'vitest'
+import { advance } from '@kingjs/cursor-algorithm'
 import { TypedArrayView } from '@kingjs/cursor-view'
-import { spansOfRange } from '@kingjs/cursor-shape'
 import {
   FixedStridePageContainer,
   PageContainer,
   VariableStridePageContainer,
 } from '../index.js'
+import { PageCursor } from '../cursor/page-cursor.js'
+
+class OffsetPageCursor extends PageCursor {
+  virtualize() {
+    return { offset: this.offset$ }
+  }
+}
+
+class OffsetPageContainer extends PageContainer {
+  static cursorType = OffsetPageCursor
+}
 
 function cursorAt(range, offset) {
   const cursor = range.begin()
-
-  for (let i = 0; i < offset; i++)
-    cursor.step()
-
+  advance(cursor, offset)
   return cursor
 }
 
 describe('PageContainer', () => {
-  it('virtualizes offsets through its activation callback', () => {
+  it('virtualizes offsets through specialization', () => {
     const range = new TypedArrayView(Uint8Array.from([1, 2, 3]))
-    const page = new PageContainer(range, {
-      virtualizeOffset: offset => ({ offset }),
-    })
+    const page = new OffsetPageContainer(range)
 
     const cursor = cursorAt(page, 2)
 
@@ -30,26 +36,23 @@ describe('PageContainer', () => {
     expect(cursor.virtualize()).toEqual({ offset: 2 })
   })
 
-  it('projects physical spans through page cursors', () => {
+  it('projects a physical span through page cursors', () => {
     const range = new TypedArrayView(Uint8Array.from([1, 2, 3]))
-    const page = new PageContainer(range, {
-      virtualizeOffset: offset => ({ offset }),
-    })
-    const [descriptor] = spansOfRange(page)
+    const page = new OffsetPageContainer(range)
 
-    expect([...descriptor.span]).toEqual([1, 2, 3])
-    expect(descriptor.cursorAt(1).value).toBe(2)
-    expect(descriptor.cursorAt(1).virtualize()).toEqual({ offset: 1 })
+    expect([...page.span()]).toEqual([1, 2, 3])
+    expect(cursorAt(page, 1).value).toBe(2)
+    expect(cursorAt(page, 1).virtualize()).toEqual({ offset: 1 })
   })
 })
 
 describe('FixedStridePageContainer', () => {
   it('knows which page offsets are synchronized', () => {
     const range = new TypedArrayView(Uint8Array.from([0, 1, 2, 3]))
-    const page = new FixedStridePageContainer(range, {
+    const sourcePage = new OffsetPageContainer(range)
+    const page = new FixedStridePageContainer(sourcePage, {
       modulus: 0,
       strideLength: 2,
-      virtualizeOffset: offset => ({ offset }),
     })
 
     expect(cursorAt(page, 0).isSynchronized()).toBe(true)
@@ -61,10 +64,10 @@ describe('FixedStridePageContainer', () => {
 
   it('synchronizes backward within the page when it can', () => {
     const range = new TypedArrayView(Uint8Array.from([0, 1, 2, 3]))
-    const page = new FixedStridePageContainer(range, {
+    const sourcePage = new OffsetPageContainer(range)
+    const page = new FixedStridePageContainer(sourcePage, {
       modulus: 0,
       strideLength: 2,
-      virtualizeOffset: offset => ({ offset }),
     })
 
     const cursor = cursorAt(page, 3).synchronize()
@@ -75,10 +78,10 @@ describe('FixedStridePageContainer', () => {
 
   it('reports null when synchronization would leave the page', () => {
     const range = new TypedArrayView(Uint8Array.from([0, 1, 2, 3]))
-    const page = new FixedStridePageContainer(range, {
+    const sourcePage = new OffsetPageContainer(range)
+    const page = new FixedStridePageContainer(sourcePage, {
       modulus: 1,
       strideLength: 2,
-      virtualizeOffset: offset => ({ offset }),
     })
 
     expect(cursorAt(page, 0).synchronize()).toBe(null)
@@ -89,9 +92,9 @@ describe('FixedStridePageContainer', () => {
 describe('VariableStridePageContainer', () => {
   it('knows starter offsets are synchronized', () => {
     const range = new TypedArrayView(Uint8Array.from([1, 2, 3]))
-    const page = new VariableStridePageContainer(range, {
+    const sourcePage = new OffsetPageContainer(range)
+    const page = new VariableStridePageContainer(sourcePage, {
       isContinuation: value => value == 2,
-      virtualizeOffset: offset => ({ offset }),
     })
 
     expect(cursorAt(page, 0).isSynchronized()).toBe(true)
@@ -103,9 +106,9 @@ describe('VariableStridePageContainer', () => {
 
   it('synchronizes backward to the starter in the same page', () => {
     const range = new TypedArrayView(Uint8Array.from([1, 2, 3]))
-    const page = new VariableStridePageContainer(range, {
+    const sourcePage = new OffsetPageContainer(range)
+    const page = new VariableStridePageContainer(sourcePage, {
       isContinuation: value => value == 2,
-      virtualizeOffset: offset => ({ offset }),
     })
 
     const cursor = cursorAt(page, 1).synchronize()
@@ -116,9 +119,9 @@ describe('VariableStridePageContainer', () => {
 
   it('reports null when the starter is before the page', () => {
     const range = new TypedArrayView(Uint8Array.from([2, 3]))
-    const page = new VariableStridePageContainer(range, {
+    const sourcePage = new OffsetPageContainer(range)
+    const page = new VariableStridePageContainer(sourcePage, {
       isContinuation: value => value == 2,
-      virtualizeOffset: offset => ({ offset }),
     })
 
     expect(page.begin().synchronize()).toBe(null)

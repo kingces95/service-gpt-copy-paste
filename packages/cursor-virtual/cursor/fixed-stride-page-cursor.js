@@ -1,8 +1,14 @@
 import { compose } from '@kingjs/partial-compose'
 import { define } from '@kingjs/partial-define'
 import { BacktrackableCursorPart } from '@kingjs/cursor'
-import { previous } from '@kingjs/cursor-algorithm'
+import { advance, previous } from '@kingjs/cursor-algorithm'
 import { PageCursor } from './page-cursor.js'
+
+function cursorAt(page, offset) {
+  const cursor = page.begin()
+  advance(cursor, offset)
+  return cursor
+}
 
 export class FixedStridePageCursor extends PageCursor {
   static {
@@ -32,7 +38,8 @@ export class FixedStridePageCursor extends PageCursor {
         if (!this.isSynchronized())
           return null
 
-        return this.container.virtualizeOffset(this.offset$)
+        return cursorAt(this.container._sourcePage, this.offset$)
+          .virtualize()
       },
     })
 

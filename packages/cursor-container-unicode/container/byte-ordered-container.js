@@ -4,11 +4,11 @@ import { iterate } from '@kingjs/cursor-algorithm'
 import { genericType } from '@kingjs/generic'
 import { Uint8 } from '@kingjs/simple-type'
 import {
-  FixedStrideVirtualContainer,
+  FixedStrideProjectedRangeContainer,
   CloneEmptyPart,
-  VirtualPart,
-  RangeOfRangesPartOf,
-  RangeContainerOf,
+  ProjectedRangePart,
+  VirtualContainerPart,
+  VirtualContainer,
 } from '@kingjs/cursor-virtual'
 import {
   assertByteOrder,
@@ -37,12 +37,10 @@ function isByteOrder(value) {
 }
 
 export const ByteOrderedContainerOf = genericType(TSpan => {
-  const RangeOfRangesPart = RangeOfRangesPartOf(TSpan)
-  const RangeContainer = RangeContainerOf(TSpan)
-  const pushRange = FixedStrideVirtualContainer.prototype.pushRange
+  const pushRange = FixedStrideProjectedRangeContainer.prototype.pushRange
   const byteRangesToStrings = byteRangesToStringsOf(TSpan)
 
-  return class ByteOrderedContainer extends FixedStrideVirtualContainer {
+  return class ByteOrderedContainer extends FixedStrideProjectedRangeContainer {
     _byteOrder
     _byteWidth
     _preamble
@@ -54,8 +52,8 @@ export const ByteOrderedContainerOf = genericType(TSpan => {
         typeof byteOrder == 'object',
         'Byte order must be null, big, little, or preambles.')
 
-      source ??= new RangeContainer()
-      assert(source instanceof RangeContainer,
+      source ??= new VirtualContainer()
+      assert(source instanceof VirtualContainer,
         'Byte ordered source must be a range container.')
 
       super(source, { strideLength: byteWidth })
@@ -96,7 +94,7 @@ export const ByteOrderedContainerOf = genericType(TSpan => {
         },
       })
 
-      compose(this, RangeOfRangesPart, {
+      compose(this, VirtualContainerPart, {
         pushRange(range) {
           if (this._preamble)
             this._preamble.pushRange(range)
@@ -117,7 +115,7 @@ export const ByteOrderedContainerOf = genericType(TSpan => {
         },
       })
 
-      compose(this, VirtualPart, {
+      compose(this, ProjectedRangePart, {
         decodeToken$(sourceCursor, stride) {
           assert(this._byteOrder != null,
             'Byte order has not been resolved.')

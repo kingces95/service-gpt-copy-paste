@@ -1,7 +1,7 @@
 import { assert } from '@kingjs/assert'
 import {
   matchPrefix,
-  RangeContainer,
+  VirtualContainer,
 } from '@kingjs/cursor-virtual'
 
 function normalizeSequences(sequences) {
@@ -39,7 +39,7 @@ export class PreambleScanner {
     for (const sequence of values)
       assertSequence(sequence)
 
-    this._buffer = new RangeContainer()
+    this._buffer = new VirtualContainer()
     this._onPreamble = onPreamble
     this._resolved = false
   }

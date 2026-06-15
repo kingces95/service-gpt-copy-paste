@@ -2,14 +2,14 @@ import { compose } from '@kingjs/partial-compose'
 import { define } from '@kingjs/partial-define'
 import { BacktrackableCursorPart } from '@kingjs/cursor'
 import { distance, previous } from '@kingjs/cursor-algorithm'
-import { VirtualCursor } from './virtual-cursor.js'
+import { ProjectedCursor } from './projected-cursor.js'
 import {
   FixedStridePageContainer,
 } from '../container/fixed-stride-page-container.js'
 
-const pages = VirtualCursor.prototype.pages
+const pages = ProjectedCursor.prototype.pages
 
-export class FixedStrideVirtualCursor extends VirtualCursor {
+export class FixedStrideProjectedCursor extends ProjectedCursor {
   static {
     define(this, {
       get stride$() { return this.container._strideLength },
@@ -40,8 +40,6 @@ export class FixedStrideVirtualCursor extends VirtualCursor {
             {
               modulus: pageModulus,
               strideLength: this.container._strideLength,
-              virtualizeOffset: offset =>
-                sourcePage.cursorAt(offset).virtualize(),
             }
           )
 

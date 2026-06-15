@@ -26,21 +26,21 @@ Unicode Byte Unit And Point Extensions
 Unicode Byte Unit And Point Extensions
 
 Byte
-└─ FixedStrideVirtualContainer
+└─ FixedStrideProjectedRangeContainer
    └─ ByteOrderedContainer
 
 Unit
-├─ FixedStrideVirtualContainer
+├─ FixedStrideProjectedRangeContainer
 │  └─ CodeUnitContainer
 └─ CodeUnitContainer
    ├─ Utf16CodeUnitContainer
    └─ Utf32CodeUnitContainer
 
 Point
-├─ VariableStrideVirtualContainer
+├─ VariableStrideProjectedRangeContainer
 │  ├─ Utf8CodePointContainer
 │  └─ Utf16CodePointContainer
-└─ FixedStrideVirtualContainer
+└─ FixedStrideProjectedRangeContainer
    └─ Utf32CodePointContainer
 ```
 
@@ -50,7 +50,7 @@ Point
 Unicode Virtual Source Type
 ├─ set: cursor-container-unicode types
 ├─ map: virtual source type, byte/unit/point
-├─ filter: types extending VirtualContainer
+├─ filter: types extending ProjectedRangeContainer
 ├─ pivot: byte/unit/point, then virtual source type
 └─ display: virtual source roots with virtual containers as leaves
 ```
@@ -59,7 +59,7 @@ Unicode Virtual Source Type
 Unicode Virtual Source Type
 
 Byte
-└─ RangeContainer
+└─ VirtualContainer
    └─ ByteOrderedContainer
 
 Unit
@@ -69,7 +69,7 @@ Unit
    └─ Utf32CodeUnitContainer
 
 Point
-├─ RangeContainer
+├─ VirtualContainer
 │  └─ Utf8CodePointContainer
 ├─ Utf16CodeUnitContainer
 │  └─ Utf16CodePointContainer

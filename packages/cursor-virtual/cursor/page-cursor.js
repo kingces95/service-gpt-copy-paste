@@ -40,7 +40,7 @@ export class PageCursor extends ContainerCursor {
       },
 
       virtualize() {
-        return this.container.virtualizeOffset(this.offset$)
+        return null
       },
     })
 

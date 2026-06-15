@@ -5,12 +5,13 @@ export class VariableStridePageContainer extends PageContainer {
   static cursorType = VariableStridePageCursor
 
   _isContinuation
+  _sourcePage
 
-  constructor(range, {
+  constructor(sourcePage, {
     isContinuation,
-    virtualizeOffset,
   }) {
-    super(range, { virtualizeOffset })
+    super(sourcePage)
     this._isContinuation = isContinuation
+    this._sourcePage = sourcePage
   }
 }

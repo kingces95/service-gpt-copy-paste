@@ -2,18 +2,16 @@ import { describe, expect, it } from 'vitest'
 import { iterate } from '@kingjs/cursor-algorithm'
 import { SnapshotView, TypedArrayView } from '@kingjs/cursor-view'
 import { compose } from '@kingjs/partial-compose'
-import { spanTypeOfRange, spansOfRange } from '@kingjs/cursor-shape'
 import {
-  FixedStrideVirtualContainer,
+  FixedStrideProjectedRangeContainer,
   findSequence,
   matchPrefix,
-  VirtualPart,
-  RangeContainer,
-  RangeContainerOf,
+  ProjectedRangePart,
+  VirtualContainer,
 } from '../index.js'
 
 function rangeOf(...chunks) {
-  const result = new RangeContainer()
+  const result = new VirtualContainer()
   for (const chunk of chunks)
     result.pushRange(new SnapshotView(chunk))
   return result
@@ -96,8 +94,8 @@ describe('findSequence', () => {
   })
 
   it('falls back when a byte match crosses spans', () => {
-    const Uint8RangeContainer = RangeContainerOf(Uint8Array)
-    const range = new Uint8RangeContainer()
+
+    const range = new VirtualContainer()
 
     range
       .pushRange(new TypedArrayView(Uint8Array.from([1, 2])))
@@ -120,8 +118,8 @@ describe('findSequence', () => {
   })
 
   it('returns range container cursors from a byte span match', () => {
-    const Uint8RangeContainer = RangeContainerOf(Uint8Array)
-    const range = new Uint8RangeContainer()
+
+    const range = new VirtualContainer()
 
     range.pushRange(new TypedArrayView(Uint8Array.from([1, 2, 3, 4])))
 
@@ -132,15 +130,15 @@ describe('findSequence', () => {
 })
 
 const VirtualByteRange = (() => {
-  const Uint8RangeContainer = RangeContainerOf(Uint8Array)
 
-  return class VirtualByteRange extends FixedStrideVirtualContainer {
+
+  return class VirtualByteRange extends FixedStrideProjectedRangeContainer {
     constructor() {
-      super(new Uint8RangeContainer())
+      super(new VirtualContainer())
     }
 
     static {
-      compose(this, VirtualPart, {
+      compose(this, ProjectedRangePart, {
         decodeToken$(sourceCursor, stride) {
           return sourceCursor.value + 100
         },
@@ -286,33 +284,3 @@ class TailReadableByteCursor {
 }
 
 TailReadableByteRange.cursorType = TailReadableByteCursor
-
-describe('span projections', () => {
-  it('projects spans through a range of ranges', () => {
-    const Uint8RangeContainer = RangeContainerOf(Uint8Array)
-    const range = new Uint8RangeContainer()
-
-    range
-      .pushRange(new TypedArrayView(Uint8Array.from([1, 2])))
-      .pushRange(new TypedArrayView(Uint8Array.from([3])))
-
-    expect([...spansOfRange(range)].map(({ span }) => [...span]))
-      .toEqual([[1, 2], [3]])
-  })
-
-  it('reports the declared span type', () => {
-    const Uint8RangeContainer = RangeContainerOf(Uint8Array)
-
-    expect(spanTypeOfRange(new Uint8RangeContainer())).toBe(Uint8Array)
-  })
-
-  it('asserts homogeneous spans', () => {
-    const Uint8RangeContainer = RangeContainerOf(Uint8Array)
-    const range = new Uint8RangeContainer()
-
-    range.pushRange(new TypedArrayView(Int8Array.from([1])))
-
-    expect(() => [...spansOfRange(range)]).toThrow(
-      'Range span type must match spanType.')
-  })
-})

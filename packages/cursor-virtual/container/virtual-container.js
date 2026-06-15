@@ -1,79 +1,101 @@
-import { assert } from '@kingjs/assert'
-import { define } from '@kingjs/partial-define'
 import { compose } from '@kingjs/partial-compose'
+import { implement } from '@kingjs/partial-implement'
 import { PartialProxy } from '@kingjs/partial-proxy'
-import { RangePart } from '@kingjs/cursor'
-import { iterate } from '@kingjs/cursor-algorithm'
-import { VirtualPart } from '../part/virtual-part.js'
-import { RangeOfRangesPart } from '../part/range-of-ranges-part.js'
+import { RangeConcept } from '@kingjs/cursor'
+import { VirtualContainerPart } from '../part/virtual-container-part.js'
 import { CloneEmptyPart } from '../part/clone-empty-part.js'
-import { SplitContainerPart } from '../part/split-container-part.js'
-import { TrimmedRangePart } from '../part/trimmed-range-part.js'
-import { RangeOfRangesShape } from '../shape/range-of-ranges-shape.js'
+import {
+  subrange,
+} from '@kingjs/cursor-view'
+import {
+  next,
+} from '@kingjs/cursor-algorithm'
+import {
+  ContainerPart,
+  List,
+} from '@kingjs/cursor-container'
 import { VirtualCursor } from '../cursor/virtual-cursor.js'
+import { PageContainer } from './page-container.js'
 
-// VirtualContainer scans a source range as virtual values while
-// preserving source ownership. Cursors move in virtual space, but popRange()
-// returns the original source ranges that produced the committed prefix.
+function clone(cursor) {
+  return cursor?.clone?.() ?? cursor
+}
+
+function toStoredRange(range) {
+  return new PageContainer(subrange(
+    clone(range.begin()),
+    clone(range.end())
+  ))
+}
+
+// VirtualContainer stores pushed ranges and presents their values as one logical
+// range. ranges() exposes the live stored-range view; mutating the container
+// invalidates previously returned ranges views.
 //
+// popRange(cursor) removes everything before the cursor and returns another
+// VirtualContainer containing the detached stored ranges.
 export class VirtualContainer extends PartialProxy {
   static cursorType = VirtualCursor
 
-  _source
+  _ranges
+  _tail
 
-  constructor(source) {
+  constructor() {
     super()
-    assert(source instanceof RangeOfRangesShape,
-      'Virtual source must be a range of ranges.')
-    this._source = source
+    this._ranges = new List()
+    this._tail = this._ranges.beforeBegin()
   }
 
   static {
-    compose(this, RangePart, { }, {
-      begin() { },
-      end() { },
+    implement(this, RangeConcept, {
+      begin() { return new this.cursorType(this, this._ranges.begin()) },
+      end() { return new this.cursorType(this, this._ranges.end()) },
     })
 
-    compose(this, TrimmedRangePart, { }, {
-      get sourceEnd$() { },
-    })
-
-    compose(this, RangeOfRangesPart, {
-      pushRange(range) {
-        this.source$.pushRange(range)
-        return this
-      },
-
-      popRange(cursor = this.end()) {
-        return this.source$.popRange(cursor.sourceCursor$)
-      },
-
-      ranges() { return this.source$.ranges() },
-    })
-
-    compose(this, VirtualPart, {
-      get source$() { return this._source },
-    }, {
-      decodeToken$(sourceCursor, stride) { },
+    compose(this, ContainerPart, {
+      get isEmpty() { return this._ranges.isEmpty },
     })
 
     compose(this, CloneEmptyPart, {
       cloneEmpty() {
-        return new this.constructor({
-          source: this.source$.cloneEmpty(),
-        })
+        return new this.constructor()
       },
     })
 
-    compose(this, SplitContainerPart, {
-      split(cursor = this.end(), result = null) {
-        const source = this.popRange(cursor)
-        result ??= this.cloneEmpty()
+    compose(this, VirtualContainerPart, {
+      pushRange(range) {
+        const storedRange = toStoredRange(range)
+        if (storedRange.begin().equals(storedRange.end()))
+          return this
 
-        for (const range of iterate(source.ranges()))
-          result.pushRange(range)
+        this._ranges.insertValueAfter(this._tail, storedRange)
+        this._tail.step()
+        return this
+      },
+
+      popRange(cursor = this.end()) {
+        const result = new this.constructor()
+        const before = this._ranges.beforeBegin()
+
+        while (!next(before).equals(cursor.outerCursor)) {
+          result.pushRange(next(before).value)
+          this._ranges.eraseAfter(before)
+        }
+
+        if (!cursor.outerCursor.equals(this._ranges.end())) {
+          const range = cursor.popRangePrefix()
+          if (range)
+            result.pushRange(range)
+        }
+
+        if (this._ranges.isEmpty)
+          this._tail = this._ranges.beforeBegin()
 
         return result
+      },
+
+      ranges() {
+        return this._ranges
       },
     })
   }

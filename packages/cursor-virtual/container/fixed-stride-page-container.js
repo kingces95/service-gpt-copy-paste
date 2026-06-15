@@ -5,15 +5,16 @@ export class FixedStridePageContainer extends PageContainer {
   static cursorType = FixedStridePageCursor
 
   _modulus
+  _sourcePage
   _strideLength
 
-  constructor(range, {
+  constructor(sourcePage, {
     modulus,
     strideLength,
-    virtualizeOffset,
   }) {
-    super(range, { virtualizeOffset })
+    super(sourcePage)
     this._modulus = modulus
+    this._sourcePage = sourcePage
     this._strideLength = strideLength
   }
 }

@@ -1,6 +1,7 @@
 import { assert } from '@kingjs/assert'
 import { Buffer } from 'node:buffer'
 import {
+  advance,
   distance,
   iterate,
   previous,
@@ -9,7 +10,6 @@ import {
   ReadableRangeShape,
   SpanProjectedRangeShape,
   VirtualRangeShape,
-  spanTypeOfRange,
   spansOfRange,
 } from '@kingjs/cursor-shape'
 import { overload } from '@kingjs/function-contract'
@@ -19,7 +19,7 @@ import {
   OptionalOf,
 } from '@kingjs/simple-type'
 import { SizedIterableProbe } from '@kingjs/probe'
-import { VirtualContainer } from '../container/virtual-container.js'
+import { ProjectedRangeContainer } from '../container/projected-range-container.js'
 
 export const findSequence = overload([
   AnyOf(ReadableRangeShape, SpanProjectedRangeShape, VirtualRangeShape),
@@ -47,12 +47,12 @@ function findSequence(range, sequence, { from = range.begin() } = { }) {
 })
 
 function canFindVirtualSequence(range) {
-  return range instanceof VirtualContainer
+  return range instanceof ProjectedRangeContainer
 }
 
 function assertVirtualSequenceType(range, sequence) {
-  const virtualRange = range instanceof VirtualContainer
-  const virtualSequence = sequence instanceof VirtualContainer
+  const virtualRange = range instanceof ProjectedRangeContainer
+  const virtualSequence = sequence instanceof ProjectedRangeContainer
 
   assert(virtualRange == virtualSequence,
     'Virtual sequence must match virtual range.')
@@ -156,9 +156,6 @@ function isSynchronizedInterval(begin, end) {
 }
 
 function canFindByteSequence(range, sequence, { from = range.begin() } = { }) {
-  if (spanTypeOfRange(range) != Uint8Array)
-    return false
-
   if (sequence instanceof VirtualRangeShape)
     return false
 
@@ -168,13 +165,24 @@ function canFindByteSequence(range, sequence, { from = range.begin() } = { }) {
   if (!from.equals(range.begin()))
     return false
 
-  return true
+  try {
+    for (const { span } of byteSpanDescriptorsOf(range))
+      return span instanceof Uint8Array
+  }
+  catch {
+    return false
+  }
+
+  return false
 }
 
 function findByteSequence(range, sequence, { from = range.begin() } = { }) {
   const needle = Buffer.from([...valuesOfSequence(sequence)])
 
-  for (const { span, cursorAt } of spansOfRange(range)) {
+  for (const { span, cursorAt } of byteSpanDescriptorsOf(range)) {
+    assert(span instanceof Uint8Array,
+      'Byte sequence search requires Uint8Array spans.')
+
     const index = Buffer
       .from(span.buffer, span.byteOffset, span.byteLength)
       .indexOf(needle)
@@ -196,6 +204,27 @@ function findByteSequence(range, sequence, { from = range.begin() } = { }) {
   }
 
   return null
+}
+
+function* byteSpanDescriptorsOf(range) {
+  if (typeof range.pages == 'function') {
+    for (const page of range.pages())
+      yield {
+        span: page.span(),
+        cursorAt(offset) {
+          return pageCursorAt(page, offset).virtualize()
+        },
+      }
+    return
+  }
+
+  yield* spansOfRange(range)
+}
+
+function pageCursorAt(page, offset) {
+  const cursor = page.begin()
+  advance(cursor, offset)
+  return cursor
 }
 
 function isByteSequence(sequence) {

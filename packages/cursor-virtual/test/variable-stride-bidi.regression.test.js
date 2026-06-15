@@ -2,17 +2,15 @@ import { describe, expect, it } from 'vitest'
 import { TypedArrayView } from '@kingjs/cursor-view'
 import { compose } from '@kingjs/partial-compose'
 import {
-  VariableStrideVirtualContainer,
-  VirtualPart,
-  RangeContainerOf,
+  VariableStrideProjectedRangeContainer,
+  ProjectedRangePart,
+  VirtualContainer,
   findSequence,
 } from '../index.js'
 
-const Uint8RangeContainer = RangeContainerOf(Uint8Array)
-
-class UtfLikeRange extends VariableStrideVirtualContainer {
+class UtfLikeRange extends VariableStrideProjectedRangeContainer {
   constructor({ throwOnFirst = false } = { }) {
-    super(new Uint8RangeContainer(), {
+    super(new VirtualContainer(), {
       isContinuation: value => value >= 0x80,
       continuationCountOf(value) {
         return value >= 0x40 ? 1 : 0
@@ -22,7 +20,7 @@ class UtfLikeRange extends VariableStrideVirtualContainer {
   }
 
   static {
-    compose(this, VirtualPart, {
+    compose(this, ProjectedRangePart, {
       decodeToken$(sourceCursor, stride) {
         const first = sourceCursor.value
         if (this.throwOnFirst && first == 0x40)

@@ -1,27 +1,27 @@
 import { compose } from '@kingjs/partial-compose'
 import { assert } from '@kingjs/assert'
+import { RangePart } from '@kingjs/cursor'
 import {
   BidirectionalRangeShape,
 } from '@kingjs/cursor-shape'
-import { VirtualContainer } from './virtual-container.js'
-import { RangeOfRangesShape } from '../shape/range-of-ranges-shape.js'
+import { ProjectedRangeContainer } from './projected-range-container.js'
+import { VirtualContainerShape } from '../shape/virtual-container-shape.js'
 import { distance, previous } from '@kingjs/cursor-algorithm'
-import { FixedStrideVirtualCursor } from '../cursor/fixed-stride-virtual-cursor.js'
-import { VirtualPart } from '../part/virtual-part.js'
-import { RangeOfRangesPart } from '../part/range-of-ranges-part.js'
-import { TrimmedRangePart } from '../part/trimmed-range-part.js'
+import { FixedStrideProjectedCursor } from '../cursor/fixed-stride-projected-cursor.js'
+import { ProjectedRangePart } from '../part/projected-range-part.js'
+import { VirtualContainerPart } from '../part/virtual-container-part.js'
 
-const pushRange = VirtualContainer.prototype.pushRange
+const pushRange = ProjectedRangeContainer.prototype.pushRange
 
-export class FixedStrideVirtualContainer extends VirtualContainer {
-  static cursorType = FixedStrideVirtualCursor
+export class FixedStrideProjectedRangeContainer extends ProjectedRangeContainer {
+  static cursorType = FixedStrideProjectedCursor
 
   _remainder
   _strideLength
 
   constructor(source, { strideLength = 1 } = { }) {
     super(source)
-    assert(source instanceof RangeOfRangesShape &&
+    assert(source instanceof VirtualContainerShape &&
       source instanceof BidirectionalRangeShape,
       'Fixed virtual source must be a bidirectional range of ranges.')
     this._remainder = 0
@@ -29,7 +29,7 @@ export class FixedStrideVirtualContainer extends VirtualContainer {
   }
 
   static {
-    compose(this, VirtualPart, {
+    compose(this, ProjectedRangePart, {
       decodeToken$(sourceCursor, stride) {
         assert(stride == 1,
           'Fixed stride range default decode requires stride one.')
@@ -37,7 +37,7 @@ export class FixedStrideVirtualContainer extends VirtualContainer {
       },
     })
 
-    compose(this, RangeOfRangesPart, {
+    compose(this, VirtualContainerPart, {
       pushRange(range) {
         pushRange.call(this, range)
         this._remainder =
@@ -47,9 +47,12 @@ export class FixedStrideVirtualContainer extends VirtualContainer {
       },
     })
 
-    compose(this, TrimmedRangePart, {
-      get sourceEnd$() {
-        return previous(this.source$.end(), this._remainder)
+    compose(this, RangePart, {
+      end() {
+        return new this.cursorType(
+          this,
+          previous(this.source$.end(), this._remainder)
+        )
       },
     })
   }

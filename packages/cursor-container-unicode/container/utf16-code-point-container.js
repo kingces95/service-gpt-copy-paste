@@ -1,6 +1,6 @@
 import {
-  VirtualPart,
-  VariableStrideVirtualContainer,
+  ProjectedRangePart,
+  VariableStrideProjectedRangeContainer,
 } from '@kingjs/cursor-virtual'
 import { assert } from '@kingjs/assert'
 import { compose } from '@kingjs/partial-compose'
@@ -36,7 +36,7 @@ function readUnit(cursor) {
 export const Utf16CodePointContainerOf = genericType(TSpan => {
   const Utf16CodeUnitContainer = Utf16CodeUnitContainerOf(TSpan)
 
-  return class Utf16CodePointContainer extends VariableStrideVirtualContainer {
+  return class Utf16CodePointContainer extends VariableStrideProjectedRangeContainer {
     constructor({ source = null, byteOrder = null } = { }) {
       source ??= new Utf16CodeUnitContainer({ byteOrder })
       assert(source instanceof Utf16CodeUnitContainer,
@@ -53,7 +53,7 @@ export const Utf16CodePointContainerOf = genericType(TSpan => {
         toStrings() { return this.source$.toStrings('utf-16') },
       })
 
-      compose(this, VirtualPart, {
+      compose(this, ProjectedRangePart, {
         decodeToken$(sourceCursor, stride) {
           const first = readUnit(sourceCursor)
 

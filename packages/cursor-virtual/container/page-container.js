@@ -1,50 +1,25 @@
 import { implement } from '@kingjs/partial-implement'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { RangeConcept } from '@kingjs/cursor'
-import {
-  spanTypeOfRange,
-  spansOfRange,
-} from '@kingjs/cursor-shape'
+import { spanTypeOfRange } from '@kingjs/cursor-shape'
 import { PageCursor } from '../cursor/page-cursor.js'
 
 export class PageContainer extends PartialProxy {
   static cursorType = PageCursor
 
   _range
-  _virtualizeOffset
 
-  constructor(range, { virtualizeOffset = () => null } = { }) {
+  constructor(range) {
     super()
     this._range = range
-    this._virtualizeOffset = virtualizeOffset
-  }
-
-  virtualizeOffset(offset) {
-    return this._virtualizeOffset(offset)
   }
 
   get spanType() {
     return spanTypeOfRange(this._range)
   }
 
-  cursorAt(offset) {
-    const cursor = this.begin()
-
-    for (let i = 0; i < offset; i++)
-      cursor.step()
-
-    return cursor
-  }
-
-  *spans() {
-    for (const descriptor of spansOfRange(this._range))
-      yield {
-        span: descriptor.span,
-        cursorAt: offset => new this.cursorType(
-          this,
-          descriptor.cursorAt(offset)
-        ),
-      }
+  span(begin = this.begin(), end = this.end()) {
+    return begin.span(end)
   }
 
   static {
