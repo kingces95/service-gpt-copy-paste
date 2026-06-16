@@ -8,18 +8,18 @@ export class VariableStrideProjector extends Projector {
     this._isContinuation = isContinuation
   }
 
-  isSynchronized(page, sourceCursor) {
-    if (sourceCursor.equals(page.end()))
+  isSynchronized(sourceCursor) {
+    if (sourceCursor.equals(this.container.source.end()))
       return true
 
     return !this._isContinuation(sourceCursor.value)
   }
 
-  synchronize(page, sourceCursor) {
+  synchronize(sourceCursor) {
     const cursor = sourceCursor.clone()
 
-    while (!this.isSynchronized(page, cursor)) {
-      if (cursor.equals(page.begin()))
+    while (!this.isSynchronized(cursor)) {
+      if (cursor.equals(this.container.source.begin()))
         return null
 
       cursor.stepBack()

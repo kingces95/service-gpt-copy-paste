@@ -8,6 +8,8 @@ export class ProjectedRangePart extends ContainerPart {
   static [DefinesAbstract] = members(this, {
     get source$() { },
     get projector$() { },
+    get source() { },
+    get projector() { },
     decodeToken$(sourceCursor, stride) { },
   })
 }

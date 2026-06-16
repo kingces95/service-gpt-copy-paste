@@ -1,4 +1,5 @@
-import { previous } from '@kingjs/cursor-algorithm'
+import { distance, previous } from '@kingjs/cursor-algorithm'
+import { subrange } from '@kingjs/cursor-view'
 import { Projector } from './projector.js'
 
 export class FixedStrideProjector extends Projector {
@@ -9,21 +10,24 @@ export class FixedStrideProjector extends Projector {
     this._strideLength = strideLength
   }
 
-  isSynchronized(page, sourceCursor) {
-    return (page.offset + page.offsetOf(sourceCursor)) %
-      this._strideLength == 0
+  isSynchronized(sourceCursor) {
+    return this.offsetOf(sourceCursor) % this._strideLength == 0
   }
 
-  synchronize(page, sourceCursor) {
-    const remainder = (page.offset + page.offsetOf(sourceCursor)) %
-      this._strideLength
+  synchronize(sourceCursor) {
+    const offset = this.offsetOf(sourceCursor)
+    const remainder = offset % this._strideLength
 
     if (!remainder)
       return sourceCursor.clone()
 
-    if (remainder > page.offsetOf(sourceCursor))
+    if (remainder > offset)
       return null
 
     return previous(sourceCursor, remainder)
+  }
+
+  offsetOf(sourceCursor) {
+    return distance(subrange(this.container.source.begin(), sourceCursor))
   }
 }

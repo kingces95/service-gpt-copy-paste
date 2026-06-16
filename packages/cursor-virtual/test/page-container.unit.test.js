@@ -13,8 +13,9 @@ function cursorAt(range, offset) {
   return cursor
 }
 
-function projectorHost() {
+function projectorHost(source) {
   return {
+    source,
     cursorType: class {
       constructor(container, sourceCursor) {
         this.container = container
@@ -38,77 +39,61 @@ describe('Page', () => {
 })
 
 describe('FixedStrideProjector', () => {
-  it('knows which page offsets are synchronized', () => {
-    const range = new TypedArrayView(Uint8Array.from([0, 1, 2, 3]))
-    const page = new Page(range)
-    const projector = new FixedStrideProjector(projectorHost(), {
+  it('knows which source offsets are synchronized', () => {
+    const source = new TypedArrayView(Uint8Array.from([0, 1, 2, 3]))
+    const projector = new FixedStrideProjector(projectorHost(source), {
       strideLength: 2,
     })
 
-    expect(projector.isSynchronized(page, cursorAt(page, 0))).toBe(true)
-    expect(projector.isSynchronized(page, cursorAt(page, 1))).toBe(false)
-    expect(projector.isSynchronized(page, cursorAt(page, 2))).toBe(true)
+    expect(projector.isSynchronized(cursorAt(source, 0))).toBe(true)
+    expect(projector.isSynchronized(cursorAt(source, 1))).toBe(false)
+    expect(projector.isSynchronized(cursorAt(source, 2))).toBe(true)
   })
 
-  it('synchronizes backward within the page when it can', () => {
-    const range = new TypedArrayView(Uint8Array.from([0, 1, 2, 3]))
-    const page = new Page(range)
-    const projector = new FixedStrideProjector(projectorHost(), {
+  it('synchronizes backward within the source', () => {
+    const source = new TypedArrayView(Uint8Array.from([0, 1, 2, 3]))
+    const projector = new FixedStrideProjector(projectorHost(source), {
       strideLength: 2,
     })
 
-    const cursor = projector.synchronize(page, cursorAt(page, 3))
+    const cursor = projector.synchronize(cursorAt(source, 3))
 
     expect(cursor.value).toBe(2)
-    expect(projector.isSynchronized(page, cursor)).toBe(true)
-  })
-
-  it('reports null when synchronization would leave the page', () => {
-    const range = new TypedArrayView(Uint8Array.from([0, 1, 2, 3]))
-    const page = new Page(range, { offset: 1 })
-    const projector = new FixedStrideProjector(projectorHost(), {
-      strideLength: 2,
-    })
-
-    expect(projector.synchronize(page, cursorAt(page, 0))).toBe(null)
-    expect(projector.synchronize(page, cursorAt(page, 1)).value).toBe(1)
+    expect(projector.isSynchronized(cursor)).toBe(true)
   })
 })
 
 describe('VariableStrideProjector', () => {
   it('knows starter offsets are synchronized', () => {
-    const range = new TypedArrayView(Uint8Array.from([1, 2, 3]))
-    const page = new Page(range)
-    const projector = new VariableStrideProjector(projectorHost(), {
+    const source = new TypedArrayView(Uint8Array.from([1, 2, 3]))
+    const projector = new VariableStrideProjector(projectorHost(source), {
       isContinuation: value => value == 2,
     })
 
-    expect(projector.isSynchronized(page, cursorAt(page, 0))).toBe(true)
-    expect(projector.isSynchronized(page, cursorAt(page, 1))).toBe(false)
-    expect(projector.isSynchronized(page, cursorAt(page, 2))).toBe(true)
-    expect(projector.isSynchronized(page, page.end())).toBe(true)
+    expect(projector.isSynchronized(cursorAt(source, 0))).toBe(true)
+    expect(projector.isSynchronized(cursorAt(source, 1))).toBe(false)
+    expect(projector.isSynchronized(cursorAt(source, 2))).toBe(true)
+    expect(projector.isSynchronized(source.end())).toBe(true)
   })
 
   it('synchronizes backward to the starter in the same page', () => {
-    const range = new TypedArrayView(Uint8Array.from([1, 2, 3]))
-    const page = new Page(range)
-    const projector = new VariableStrideProjector(projectorHost(), {
+    const source = new TypedArrayView(Uint8Array.from([1, 2, 3]))
+    const projector = new VariableStrideProjector(projectorHost(source), {
       isContinuation: value => value == 2,
     })
 
-    const cursor = projector.synchronize(page, cursorAt(page, 1))
+    const cursor = projector.synchronize(cursorAt(source, 1))
 
     expect(cursor.value).toBe(1)
-    expect(projector.isSynchronized(page, cursor)).toBe(true)
+    expect(projector.isSynchronized(cursor)).toBe(true)
   })
 
-  it('reports null when the starter is before the page', () => {
-    const range = new TypedArrayView(Uint8Array.from([2, 3]))
-    const page = new Page(range)
-    const projector = new VariableStrideProjector(projectorHost(), {
+  it('reports null when the starter is before the source', () => {
+    const source = new TypedArrayView(Uint8Array.from([2, 3]))
+    const projector = new VariableStrideProjector(projectorHost(source), {
       isContinuation: value => value == 2,
     })
 
-    expect(projector.synchronize(page, page.begin())).toBe(null)
+    expect(projector.synchronize(source.begin())).toBe(null)
   })
 })

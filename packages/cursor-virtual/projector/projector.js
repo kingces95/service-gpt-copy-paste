@@ -13,14 +13,14 @@ export class Projector {
     return sourceCursor.clone()
   }
 
-  projectCursor(page, pageCursor) {
-    const sourceCursor = page.virtualize(pageCursor)
-    if (!sourceCursor)
-      return null
+  sourceCursorOf(projectedCursor) {
+    return projectedCursor.sourceCursor$.clone()
+  }
 
+  projectCursor(sourceCursor) {
     return new this.container.cursorType(
       this.container,
-      sourceCursor
+      sourceCursor.clone()
     )
   }
 

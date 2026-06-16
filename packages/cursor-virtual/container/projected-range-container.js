@@ -52,6 +52,8 @@ export class ProjectedRangeContainer extends PartialProxy {
     compose(this, ProjectedRangePart, {
       get source$() { return this._source },
       get projector$() { return this._projector },
+      get source() { return this._source },
+      get projector() { return this._projector },
     }, {
       decodeToken$(sourceCursor, stride) { },
     })
