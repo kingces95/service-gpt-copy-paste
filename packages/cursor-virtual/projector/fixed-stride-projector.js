@@ -28,6 +28,9 @@ export class FixedStrideProjector extends Projector {
   }
 
   offsetOf(sourceCursor) {
+    if (typeof this.container.source.offsetOf == 'function')
+      return this.container.source.offsetOf(sourceCursor)
+
     return distance(subrange(this.container.source.begin(), sourceCursor))
   }
 }

@@ -163,6 +163,25 @@ describe('VirtualContainer', () => {
     expect(rangeValuesOf(materialized.ranges())).toEqual([[1, 2], [3]])
   })
 
+  it('tracks physical offsets after committed prefixes are popped', () => {
+    const ranges = new VirtualContainer()
+
+    ranges
+      .pushRange(new SnapshotView([1, 2]))
+      .pushRange(new SnapshotView([3, 4, 5]))
+
+    expect(ranges.offsetOf(cursorAt(ranges, 0))).toBe(0)
+    expect(ranges.offsetOf(cursorAt(ranges, 3))).toBe(3)
+    expect(ranges.offsetOf(ranges.end())).toBe(5)
+
+    const commit = cursorAt(ranges, 3)
+    ranges.popRange(commit)
+
+    expect(valuesOf(ranges)).toEqual([4, 5])
+    expect(ranges.offsetOf(ranges.begin())).toBe(3)
+    expect(ranges.offsetOf(ranges.end())).toBe(5)
+  })
+
   it('keeps retained cursors stable when whole front ranges pop', () => {
     const ranges = new VirtualContainer()
 

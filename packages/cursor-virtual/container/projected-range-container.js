@@ -3,7 +3,11 @@ import { compose } from '@kingjs/partial-compose'
 import { define } from '@kingjs/partial-define'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { RangePart } from '@kingjs/cursor'
-import { iterate } from '@kingjs/cursor-algorithm'
+import {
+  distance,
+  iterate,
+} from '@kingjs/cursor-algorithm'
+import { subrange } from '@kingjs/cursor-view'
 import { ProjectedRangePart } from '../part/projected-range-part.js'
 import { VirtualContainerPart } from '../part/virtual-container-part.js'
 import { CloneEmptyPart } from '../part/clone-empty-part.js'
@@ -109,6 +113,14 @@ export class ProjectedRangeContainer extends PartialProxy {
           this._comb(begin),
           this._comb(end)
         )
+      },
+
+      offsetOf(cursor) {
+        const sourceCursor = this._comb(cursor)
+        if (typeof this.source.offsetOf == 'function')
+          return this.source.offsetOf(sourceCursor)
+
+        return distance(subrange(this.source.begin(), sourceCursor))
       },
 
       findSequence(sequence, { from = this.begin() } = { }) {

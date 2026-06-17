@@ -1,7 +1,6 @@
 import { compose } from '@kingjs/partial-compose'
 import { implement } from '@kingjs/partial-implement'
 import { EquatableConcept } from '@kingjs/partial-concept'
-import { subrange } from '@kingjs/cursor-view'
 import {
   BacktrackableCursorConcept,
   BacktrackableCursorPart,
@@ -73,8 +72,11 @@ export class VirtualCursor extends ContainerCursor {
     if (begin.equals(inner))
       return null
 
-    this.outerCursor$.value = subrange(inner, range.end())
-    return subrange(begin, inner)
+    return this.container._replaceStoredRange(
+      this.outerCursor$,
+      range,
+      inner
+    )
   }
 
   static {

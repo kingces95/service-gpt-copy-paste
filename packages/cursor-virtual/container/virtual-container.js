@@ -1,6 +1,7 @@
 import { compose } from '@kingjs/partial-compose'
 import { define } from '@kingjs/partial-define'
 import { implement } from '@kingjs/partial-implement'
+import { assert } from '@kingjs/assert'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { RangeConcept } from '@kingjs/cursor'
 import { VirtualContainerPart } from '../part/virtual-container-part.js'
@@ -48,11 +49,15 @@ export class VirtualContainer extends PartialProxy {
 
   _ranges
   _tail
+  _rangeOffsets
+  _tailOffset
 
   constructor() {
     super()
     this._ranges = new List()
     this._tail = this._ranges.beforeBegin()
+    this._rangeOffsets = new WeakMap()
+    this._tailOffset = 0
   }
 
   _realize(cursor) {
@@ -62,6 +67,25 @@ export class VirtualContainer extends PartialProxy {
 
   _virtualize(page, cursor) {
     return page.virtualize(cursor)
+  }
+
+  _pushStoredRange(storedRange) {
+    this._rangeOffsets.set(storedRange, this._tailOffset)
+    this._tailOffset += distance(storedRange)
+    this._ranges.insertValueAfter(this._tail, storedRange)
+    this._tail.step()
+  }
+
+  _replaceStoredRange(outerCursor, range, inner) {
+    const prefix = subrange(range.begin(), inner)
+    const retained = subrange(inner, range.end())
+    const offset = this._rangeOffsets.get(range)
+
+    assert(offset != null, 'Stored range offset is required.')
+
+    this._rangeOffsets.set(retained, offset + distance(prefix))
+    outerCursor.value = retained
+    return prefix
   }
 
   _virtualizeMatch(page, match) {
@@ -110,8 +134,7 @@ export class VirtualContainer extends PartialProxy {
         if (storedRange.begin().equals(storedRange.end()))
           return this
 
-        this._ranges.insertValueAfter(this._tail, storedRange)
-        this._tail.step()
+        this._pushStoredRange(storedRange)
         return this
       },
 
@@ -197,6 +220,19 @@ export class VirtualContainer extends PartialProxy {
           result.pushRange(page.range)
 
         return result
+      },
+
+      offsetOf(cursor) {
+        this.ownCursorAssert$(cursor)
+
+        if (cursor.outerCursor$.equals(this._ranges.end()))
+          return this._tailOffset
+
+        const range = cursor.storedRange
+        const offset = this._rangeOffsets.get(range)
+
+        assert(offset != null, 'Stored range offset is required.')
+        return offset + distance(subrange(range.begin(), this._realize(cursor)))
       },
 
       findSequence(sequence, { from = this.begin() } = { }) {
