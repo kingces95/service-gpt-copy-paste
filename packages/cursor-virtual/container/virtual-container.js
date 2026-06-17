@@ -12,6 +12,7 @@ import {
   distance,
   iterate,
   next,
+  previous,
 } from '@kingjs/cursor-algorithm'
 import {
   ContainerPart,
@@ -19,6 +20,11 @@ import {
 } from '@kingjs/cursor-container'
 import { VirtualCursor } from '../cursor/virtual-cursor.js'
 import { Page } from './page-container.js'
+import {
+  findSequence,
+  findSequenceByCursor,
+  lengthOfSequence,
+} from '../algorithms/find-sequence.js'
 
 function clone(cursor) {
   return cursor?.clone?.() ?? cursor
@@ -47,6 +53,39 @@ export class VirtualContainer extends PartialProxy {
     super()
     this._ranges = new List()
     this._tail = this._ranges.beforeBegin()
+  }
+
+  _realize(cursor) {
+    this.ownCursorAssert$(cursor)
+    return cursor.getInnerCursor()
+  }
+
+  _virtualize(page, cursor) {
+    return page.virtualize(cursor)
+  }
+
+  _virtualizeMatch(page, match) {
+    const begin = this._virtualize(page, match.begin)
+    const end = this._virtualize(page, match.end)
+
+    return begin && end ? { begin, end } : null
+  }
+
+  _fallbackBeginOfPage(page, sequence) {
+    const virtualBegin = this._virtualize(page, page.begin())
+    const virtualEnd = this._virtualize(page, page.end())
+    const tailLength = lengthOfSequence(sequence) - 1
+
+    if (tailLength <= 0)
+      return null
+
+    if (!virtualBegin || !virtualEnd)
+      return null
+
+    if (typeof virtualEnd.stepBack != 'function')
+      return virtualBegin
+
+    return previousBounded(virtualEnd, tailLength, virtualBegin)
   }
 
   static {
@@ -111,9 +150,9 @@ export class VirtualContainer extends PartialProxy {
         let offset = 0
 
         while (!current.equals(end)) {
-          const pageBegin = current.getInnerCursor()
+          const pageBegin = this._realize(current)
           const pageEnd = current.outerCursor$.equals(end.outerCursor$)
-            ? end.getInnerCursor()
+            ? this._realize(end)
             : current.getInnerCursorEnd()
           const outerCursor = current.outerCursor$.clone()
           const virtualEnd = current.outerCursor$.equals(end.outerCursor$)
@@ -159,6 +198,41 @@ export class VirtualContainer extends PartialProxy {
 
         return result
       },
+
+      findSequence(sequence, { from = this.begin() } = { }) {
+        for (const page of this.pages(from, this.end())) {
+          const pageMatch = findSequence(page, sequence)
+          const match = pageMatch && this._virtualizeMatch(page, pageMatch)
+
+          if (match)
+            return match
+
+          const virtualBegin = this._fallbackBeginOfPage(page, sequence)
+          const virtualEnd = this._virtualize(page, page.end())
+
+          if (!virtualBegin || !virtualEnd)
+            continue
+
+          const virtualMatch = findSequenceByCursor(this, sequence, {
+            from: virtualBegin,
+            until: virtualEnd,
+          })
+
+          if (virtualMatch)
+            return virtualMatch
+        }
+
+        return null
+      },
     })
   }
+}
+
+function previousBounded(cursor, count, begin) {
+  cursor = cursor.clone()
+
+  for (let i = 0; i < count && !cursor.equals(begin); i++)
+    cursor = previous(cursor)
+
+  return cursor
 }

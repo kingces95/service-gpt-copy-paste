@@ -77,12 +77,11 @@ describe('findSequence', () => {
     expect(valuesOf(range.popRange(match.end))).toEqual([1, 2, 3])
   })
 
-  it('rejects a virtual needle for a non-virtual range', () => {
+  it('does not special-case a virtual needle for a non-virtual range', () => {
     const range = rangeOf([1, 2], [3, 4])
     const needle = virtualRangeOf([2, 3])
 
-    expect(() => findSequence(range, needle)).toThrow(
-      'Projected sequence must match projected range.')
+    expect(findSequence(range, needle)).toBe(null)
   })
 
   it('uses byte spans before reading cursor values', () => {

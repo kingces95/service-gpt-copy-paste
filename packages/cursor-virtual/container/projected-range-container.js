@@ -11,6 +11,7 @@ import { SplitContainerPart } from '../part/split-container-part.js'
 import { VirtualContainerShape } from '../shape/virtual-container-shape.js'
 import { ProjectedCursor } from '../cursor/projected-cursor.js'
 import { Projector } from '../projector/projector.js'
+import { findSequence } from '../algorithms/find-sequence.js'
 
 // ProjectedRangeContainer scans a source range as projected values while
 // preserving source ownership. Cursors move in projected space, but popRange()
@@ -28,6 +29,17 @@ export class ProjectedRangeContainer extends PartialProxy {
       'Virtual source must be a range of ranges.')
     this._source = source
     this._projector = new Projector(this)
+  }
+
+  _comb(cursor) {
+    this.ownCursorAssert$(cursor)
+    return cursor.sourceCursor$.clone()
+  }
+
+  _clump(sourceCursor) {
+    return this.projector.isSynchronized(sourceCursor)
+      ? this.projector.projectCursor(sourceCursor)
+      : null
   }
 
   static {
@@ -94,9 +106,38 @@ export class ProjectedRangeContainer extends PartialProxy {
         this.ownCursorAssert$(end)
 
         return this.source$.materialize(
-          begin.sourceCursor$,
-          end.sourceCursor$
+          this._comb(begin),
+          this._comb(end)
         )
+      },
+
+      findSequence(sequence, { from = this.begin() } = { }) {
+        assert(sequence instanceof this.constructor,
+          'Projected sequence must match projected range.')
+
+        const sourceNeedle = sequence.materialize()
+        let sourceFrom = this._comb(from)
+
+        while (true) {
+          const sourceMatch = findSequence(this.source, sourceNeedle, {
+            from: sourceFrom,
+          })
+
+          if (!sourceMatch)
+            return null
+
+          const begin = this._clump(sourceMatch.begin)
+          const end = this._clump(sourceMatch.end)
+
+          if (begin && end)
+            return { begin, end }
+
+          sourceFrom = sourceMatch.begin.clone()
+          sourceFrom.step()
+
+          if (sourceFrom.equals(this.source.end()))
+            return null
+        }
       },
     })
   }

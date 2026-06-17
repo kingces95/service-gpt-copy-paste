@@ -3,7 +3,6 @@ import { Buffer } from 'node:buffer'
 import {
   distance,
   iterate,
-  previous,
 } from '@kingjs/cursor-algorithm'
 import {
   ReadableRangeShape,
@@ -18,23 +17,15 @@ import {
   OptionalOf,
 } from '@kingjs/simple-type'
 import { SizedIterableProbe } from '@kingjs/probe'
-import { ProjectedRangeContainer } from '../container/projected-range-container.js'
-import { VirtualContainer } from '../container/virtual-container.js'
 
 export const findSequence = overload([
   AnyOf(ReadableRangeShape, SpanProjectedRangeShape, VirtualRangeShape),
   AnyOf(SizedIterableProbe, ReadableRangeShape, VirtualRangeShape),
   OptionalOf(AnyObject),
-], {
-  precondition: assertProjectedSequenceType,
-}, [
+], [
   {
-    where: canFindProjectedSequence,
-    use: findProjectedSequence,
-  },
-  {
-    where: canFindVirtualSequence,
-    use: findVirtualSequence,
+    where: hasContainerFindSequence,
+    use: callContainerFindSequence,
   },
   {
     where: canFindByteSequence,
@@ -50,116 +41,19 @@ function findSequence(range, sequence, { from = range.begin() } = { }) {
   return findSequenceByCursor(range, sequence, { from })
 })
 
-function canFindProjectedSequence(range) {
-  return range instanceof ProjectedRangeContainer
+function hasContainerFindSequence(range) {
+  return typeof range.findSequence == 'function'
 }
 
-function assertProjectedSequenceType(range, sequence) {
-  const projectedRange = range instanceof ProjectedRangeContainer
-  const projectedSequence = sequence instanceof ProjectedRangeContainer
-
-  assert(projectedRange == projectedSequence,
-    'Projected sequence must match projected range.')
-
-  if (!projectedRange)
-    return
-
-  assert(sequence.constructor == range.constructor,
-    'Projected sequence type must match range type.')
+function callContainerFindSequence(
+  range,
+  sequence,
+  options,
+) {
+  return range.findSequence(sequence, options)
 }
 
-function findProjectedSequence(range, sequence, { from = range.begin() } = { }) {
-  const projector = range.projector
-  const sourceNeedle = materializeProjectedSequence(sequence)
-  let sourceFrom = projector.sourceCursorOf(from)
-
-  while (true) {
-    const sourceMatch = findSequence(range.source, sourceNeedle, {
-      from: sourceFrom,
-    })
-
-    if (!sourceMatch)
-      return null
-
-    if (isSynchronizedInterval(projector, sourceMatch.begin, sourceMatch.end))
-      return {
-        begin: projector.projectCursor(sourceMatch.begin),
-        end: projector.projectCursor(sourceMatch.end),
-      }
-
-    sourceFrom = sourceMatch.begin.clone()
-    sourceFrom.step()
-
-    if (sourceFrom.equals(range.source.end()))
-      return null
-  }
-}
-
-function materializeProjectedSequence(sequence) {
-  const projector = sequence.projector
-  return sequence.source.materialize(
-    projector.sourceCursorOf(sequence.begin()),
-    projector.sourceCursorOf(sequence.end())
-  )
-}
-
-function canFindVirtualSequence(range) {
-  return range instanceof VirtualContainer
-}
-
-function findVirtualSequence(range, sequence, { from = range.begin() } = { }) {
-  for (const page of range.pages(from, range.end())) {
-    const pageMatch = findSequence(page, sequence)
-    const match = pageMatch && virtualizeMatch(page, pageMatch)
-
-    if (match)
-      return match
-
-    const virtualBegin = fallbackBeginOfPage(page, sequence)
-    const virtualEnd = page.virtualize(page.end())
-
-    if (!virtualBegin || !virtualEnd)
-      continue
-
-    const virtualMatch = findSequenceByCursor(range, sequence, {
-      from: virtualBegin,
-      until: virtualEnd,
-    })
-
-    if (virtualMatch)
-      return virtualMatch
-  }
-
-  return null
-}
-
-function fallbackBeginOfPage(page, sequence) {
-  const virtualBegin = page.virtualize(page.begin())
-  const virtualEnd = page.virtualize(page.end())
-  const tailLength = lengthOfSequence(sequence) - 1
-
-  if (tailLength <= 0)
-    return null
-
-  if (!virtualBegin || !virtualEnd)
-    return null
-
-  if (typeof virtualEnd.stepBack != 'function')
-    return virtualBegin
-
-  return previousBounded(virtualEnd, tailLength, virtualBegin)
-}
-
-function previousBounded(cursor, count, begin) {
-  cursor = cursor.clone()
-
-  for (let i = 0; i < count && !cursor.equals(begin); i++)
-    cursor = previous(cursor)
-
-  return cursor
-}
-
-function findSequenceByCursor(
+export function findSequenceByCursor(
   range,
   sequence,
   { from = range.begin(), until = range.end() } = { }
@@ -175,18 +69,6 @@ function findSequenceByCursor(
   }
 
   return null
-}
-
-function virtualizeMatch(page, match) {
-  const begin = page.virtualize(match.begin)
-  const end = page.virtualize(match.end)
-
-  return begin && end ? { begin, end } : null
-}
-
-function isSynchronizedInterval(projector, begin, end) {
-  return projector.isSynchronized(begin) &&
-    projector.isSynchronized(end)
 }
 
 function canFindByteSequence(range, sequence, { from = range.begin() } = { }) {
@@ -263,7 +145,7 @@ function valuesOfSequence(sequence) {
   return sequence
 }
 
-function lengthOfSequence(sequence) {
+export function lengthOfSequence(sequence) {
   if (sequence instanceof ReadableRangeShape)
     return distance(sequence)
 

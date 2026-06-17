@@ -13,10 +13,6 @@ export class Projector {
     return sourceCursor.clone()
   }
 
-  sourceCursorOf(projectedCursor) {
-    return projectedCursor.sourceCursor$.clone()
-  }
-
   projectCursor(sourceCursor) {
     return new this.container.cursorType(
       this.container,
