@@ -1,34 +1,33 @@
 import { assert } from '@kingjs/assert'
+import { contract } from '@kingjs/function-contract'
 import {
-  distance,
   iterate,
 } from '@kingjs/cursor-algorithm'
 import {
   ReadableRangeShape,
 } from '@kingjs/cursor-shape'
+import {
+  AnyObject,
+  OptionalOf,
+} from '@kingjs/simple-type'
 
-export function findSequence(
+export const findSequence = contract([
+  ReadableRangeShape,
+  ReadableRangeShape,
+  OptionalOf(AnyObject),
+],
+function findSequence(
   range,
   sequence,
   { from = range.begin(), until = range.end() } = { },
 ) {
   assert(sequence != null, 'Sequence is required.')
 
-  if (isEmptySequence(sequence))
+  if (sequence.begin().equals(sequence.end()))
     return { begin: from.clone(), end: from.clone() }
 
-  if (typeof range.findSequence == 'function')
-    return range.findSequence(sequence, { from, until })
-
   return findSequenceByCursor(range, sequence, { from, until })
-}
-
-function isEmptySequence(sequence) {
-  if (sequence instanceof ReadableRangeShape)
-    return sequence.begin().equals(sequence.end())
-
-  return sequence.length == 0
-}
+})
 
 function findSequenceByCursor(
   range,
@@ -54,7 +53,7 @@ function matchAt(range, cursor, sequence) {
   const end = range.end()
   const current = cursor.clone()
 
-  for (const value of valuesOfSequence(sequence)) {
+  for (const value of iterate(sequence)) {
     if (current.equals(end))
       return null
 
@@ -65,11 +64,4 @@ function matchAt(range, cursor, sequence) {
   }
 
   return current
-}
-
-function valuesOfSequence(sequence) {
-  if (sequence instanceof ReadableRangeShape)
-    return iterate(sequence)
-
-  return sequence
 }

@@ -18,6 +18,10 @@ function rangeOf(...chunks) {
   return result
 }
 
+function bytesOf(values) {
+  return new TypedArrayView(Uint8Array.from(values))
+}
+
 function valuesOf(range) {
   return [...iterate(range)]
 }
@@ -25,7 +29,7 @@ function valuesOf(range) {
 describe('findSequence', () => {
   it('finds a sequence within a range', () => {
     const range = rangeOf([1, 2], [3, 4])
-    const match = findSequence(range, [2, 3])
+    const match = findSequence(range, bytesOf([2, 3]))
 
     expect(valuesOf(range.popRange(match.end))).toEqual([1, 2, 3])
   })
@@ -33,7 +37,15 @@ describe('findSequence', () => {
   it('returns null when a sequence is absent', () => {
     const range = rangeOf([1, 2], [3, 4])
 
-    expect(findSequence(range, [2, 4])).toBe(null)
+    expect(findSequence(range, bytesOf([2, 4]))).toBe(null)
+  })
+
+  it('returns begin/begin for an empty sequence', () => {
+    const range = rangeOf([1, 2])
+    const match = findSequence(range, bytesOf([]))
+
+    expect(match.begin.equals(range.begin())).toBe(true)
+    expect(match.end.equals(range.begin())).toBe(true)
   })
 
   it('can start from an existing cursor', () => {
@@ -41,14 +53,14 @@ describe('findSequence', () => {
     const from = range.begin()
     from.step()
 
-    const match = findSequence(range, [1, 2], { from })
+    const match = findSequence(range, bytesOf([1, 2]), { from })
 
     expect(valuesOf(range.popRange(match.begin))).toEqual([1, 2])
   })
 
   it('finds through virtual pages', () => {
     const range = rangeOf([1, 2], [3, 4])
-    const match = findSequence(range, [3])
+    const match = findSequence(range, bytesOf([3]))
 
     expect(valuesOf(range.popRange(match.end))).toEqual([1, 2, 3])
   })
@@ -56,7 +68,7 @@ describe('findSequence', () => {
   it('finds virtual values by materializing a virtual needle', () => {
     const range = virtualRangeOf([1, 2, 3])
     const needle = virtualRangeOf([2])
-    const match = findSequence(range, needle)
+    const match = range.findSequence(needle)
 
     expect(match.begin.value).toBe(102)
     expect(valuesOf(range.popRange(match.end))).toEqual([1, 2])
@@ -65,14 +77,14 @@ describe('findSequence', () => {
   it('rejects a plain logical needle for a virtual range', () => {
     const range = virtualRangeOf([1, 2, 3])
 
-    expect(() => findSequence(range, [102])).toThrow(
+    expect(() => range.findSequence(bytesOf([102]))).toThrow(
       'Projected sequence must match projected range.')
   })
 
   it('finds virtual values across virtual pages', () => {
     const range = virtualRangeOf([1, 2], [3, 4])
     const needle = virtualRangeOf([2, 3])
-    const match = findSequence(range, needle)
+    const match = range.findSequence(needle)
 
     expect(match.begin.value).toBe(102)
     expect(valuesOf(range.popRange(match.end))).toEqual([1, 2, 3])
@@ -85,14 +97,14 @@ describe('findSequence', () => {
     expect(findSequence(range, needle)).toBe(null)
   })
 
-  it('uses byte spans before reading cursor values', () => {
+  it('uses page byte spans for local matches', () => {
     const page = new Page(
-      new ThrowingByteRange(Uint8Array.from([1, 2, 3, 4]))
+      new TypedArrayView(Uint8Array.from([1, 2, 3, 4]))
     )
-    const match = findSequence(page, [2, 3])
+    const match = page.findSequence(bytesOf([2, 3]))
 
-    expect(match.begin.index).toBe(1)
-    expect(match.end.index).toBe(3)
+    expect(match.begin.value).toBe(2)
+    expect(match.end.value).toBe(4)
   })
 
   it('falls back when a byte match crosses spans', () => {
@@ -103,24 +115,24 @@ describe('findSequence', () => {
       .pushRange(new TypedArrayView(Uint8Array.from([1, 2])))
       .pushRange(new TypedArrayView(Uint8Array.from([3, 4])))
 
-    const match = findSequence(range, [2, 3])
+    const match = range.findSequence(bytesOf([2, 3]))
 
     expect(valuesOf(range.popRange(match.end))).toEqual([1, 2, 3])
   })
 
   it('uses page-local byte spans within the requested bounds', () => {
     const page = new Page(
-      new TailReadableByteRange(Uint8Array.from([0, 0, 1, 2]))
+      new TypedArrayView(Uint8Array.from([0, 0, 1, 2]))
     )
     const from = page.begin()
     const until = page.end()
 
     from.step()
 
-    const match = findSequence(page, [1, 2], { from, until })
+    const match = page.findSequence(bytesOf([1, 2]), { from, until })
 
-    expect(match.begin.index).toBe(2)
-    expect(match.end.index).toBe(4)
+    expect(match.begin.value).toBe(1)
+    expect(match.end.equals(page.end())).toBe(true)
   })
 
   it('bounds candidate starts while letting matches cross the bound', () => {
@@ -132,7 +144,7 @@ describe('findSequence', () => {
     until.step()
     until.step()
 
-    const match = findSequence(range, [2, 3], { from, until })
+    const match = range.findSequence(bytesOf([2, 3]), { from, until })
 
     expect(valuesOf(range.popRange(match.end))).toEqual([1, 2, 3])
   })
@@ -143,12 +155,11 @@ describe('findSequence', () => {
 
     range.pushRange(new TypedArrayView(Uint8Array.from([1, 2, 3, 4])))
 
-    const match = findSequence(range, [2, 3])
+    const match = range.findSequence(bytesOf([2, 3]))
 
     expect(valuesOf(range.popRange(match.end))).toEqual([1, 2, 3])
   })
 })
-
 const VirtualByteRange = (() => {
 
 
@@ -209,68 +220,3 @@ describe('matchPrefix', () => {
     expect(match.state).toBe('missed')
   })
 })
-
-class ThrowingByteRange {
-  constructor(bytes) {
-    this.bytes = bytes
-  }
-
-  begin() { return new ThrowingByteCursor(this, 0) }
-  end() { return new ThrowingByteCursor(this, this.bytes.length) }
-  *spans() {
-    yield {
-      span: this.bytes,
-      cursorAt: offset => new ThrowingByteCursor(this, offset),
-    }
-  }
-}
-
-class ThrowingByteCursor {
-  static spanType = Uint8Array
-
-  constructor(range, index) {
-    this.range = range
-    this.index = index
-  }
-
-  clone() { return new this.constructor(this.range, this.index) }
-  equals(other) {
-    return other instanceof ThrowingByteCursor &&
-      this.range == other.range &&
-      this.index == other.index
-  }
-  step() {
-    this.index++
-    return this
-  }
-
-  span(end) {
-    return this.range.bytes.subarray(this.index, end.index)
-  }
-
-  get value() {
-    throw new Error('Cursor value should not be read.')
-  }
-}
-
-ThrowingByteRange.cursorType = ThrowingByteCursor
-
-class TailReadableByteRange extends ThrowingByteRange {
-  constructor(bytes) {
-    super(bytes)
-  }
-
-  begin() { return new TailReadableByteCursor(this, 0) }
-  end() { return new TailReadableByteCursor(this, this.bytes.length) }
-}
-
-class TailReadableByteCursor extends ThrowingByteCursor {
-  get value() {
-    if (this.index < 2)
-      throw new Error('Page byte search should not read prefix values.')
-
-    return this.range.bytes[this.index]
-  }
-}
-
-TailReadableByteRange.cursorType = TailReadableByteCursor

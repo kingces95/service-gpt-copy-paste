@@ -233,7 +233,7 @@ export class VirtualContainer extends PartialProxy {
         { from = this.begin(), until = this.end() } = { },
       ) {
         for (const page of this.pages(from, until)) {
-          const pageMatch = findSequence(page, sequence)
+          const pageMatch = page.findSequence(sequence)
           const match = pageMatch && this._virtualizeMatch(page, pageMatch)
 
           if (match)

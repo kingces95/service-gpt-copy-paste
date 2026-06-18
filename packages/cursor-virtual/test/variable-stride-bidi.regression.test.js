@@ -5,7 +5,6 @@ import {
   VariableStrideProjectedRangeContainer,
   ProjectedRangePart,
   VirtualContainer,
-  findSequence,
 } from '../index.js'
 
 class UtfLikeRange extends VariableStrideProjectedRangeContainer {
@@ -68,7 +67,7 @@ describe('variable stride virtual cursor backtracking', () => {
   it('bounds cross-page fallback to the variable-stride page tail', () => {
     const haystack = throwingRangeOf([0x40, 0x80, 0x41, 0x81], [0x42])
     const needle = rangeOf([0x41, 0x81, 0x42])
-    const match = findSequence(haystack, needle)
+    const match = haystack.findSequence(needle)
 
     expect(match.begin.value).toBe(0x41)
     expect(match.end.equals(haystack.end())).toBe(true)

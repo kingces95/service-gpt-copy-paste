@@ -6,7 +6,6 @@ import {
   FixedStrideProjectedRangeContainer,
   ProjectedRangePart,
   VirtualContainer,
-  findSequence,
 } from '../index.js'
 
 function cursorAt(range, offset) {
@@ -68,13 +67,13 @@ describe('fixed stride page synchronization', () => {
     const haystack = pairRangeOf([0, 1, 2, 3])
     const needle = pairRangeOf([1, 2])
 
-    expect(findSequence(haystack, needle)).toBe(null)
+    expect(haystack.findSequence(needle)).toBe(null)
   })
 
   it('bounds cross-page fallback to the fixed-stride page tail', () => {
     const haystack = throwingPairRangeOf([0, 1, 2, 3], [4, 5])
     const needle = pairRangeOf([2, 3, 4, 5])
-    const match = findSequence(haystack, needle)
+    const match = haystack.findSequence(needle)
 
     expect(match.begin.value).toBe(2)
     expect(match.end.equals(haystack.end())).toBe(true)

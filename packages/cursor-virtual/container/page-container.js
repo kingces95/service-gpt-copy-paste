@@ -2,9 +2,6 @@ import { Buffer } from 'node:buffer'
 import {
   iterate,
 } from '@kingjs/cursor-algorithm'
-import {
-  ReadableRangeShape,
-} from '@kingjs/cursor-shape'
 
 export class Page {
   _offset
@@ -54,7 +51,7 @@ export class Page {
     if (!isByteSequence(sequence))
       return null
 
-    const needle = Buffer.from([...valuesOfSequence(sequence)])
+    const needle = Buffer.from([...iterate(sequence)])
     const span = this.span(from, until)
 
     assertByteSpan(span)
@@ -97,16 +94,9 @@ function assertByteSpan(span) {
 }
 
 function isByteSequence(sequence) {
-  for (const value of valuesOfSequence(sequence))
+  for (const value of iterate(sequence))
     if (!Number.isInteger(value) || value < 0 || value > 0xff)
       return false
 
   return true
-}
-
-function valuesOfSequence(sequence) {
-  if (sequence instanceof ReadableRangeShape)
-    return iterate(sequence)
-
-  return sequence
 }

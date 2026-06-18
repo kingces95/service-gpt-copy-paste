@@ -131,7 +131,7 @@ export class ProjectedRangeContainer extends PartialProxy {
         let sourceFrom = this._comb(from)
 
         while (true) {
-          const sourceMatch = findSequence(this.source, sourceNeedle, {
+          const sourceMatch = this.source.findSequence(sourceNeedle, {
             from: sourceFrom,
           })
 
