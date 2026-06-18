@@ -17,6 +17,9 @@ import {
   previous,
 } from '@kingjs/cursor-algorithm'
 import {
+  ReadableRangeShape,
+} from '@kingjs/cursor-shape'
+import {
   ContainerPart,
   List,
 } from '@kingjs/cursor-container'
@@ -24,8 +27,6 @@ import { VirtualCursor } from '../cursor/virtual-cursor.js'
 import { Page } from './page-container.js'
 import {
   findSequence,
-  findSequenceByCursor,
-  lengthOfSequence,
 } from '../algorithms/find-sequence.js'
 
 // VirtualContainer stores pushed ranges and presents their values as one logical
@@ -55,10 +56,6 @@ export class VirtualContainer extends PartialProxy {
     return cursor.getInnerCursor()
   }
 
-  _virtualize(page, cursor) {
-    return page.virtualize(cursor)
-  }
-
   _pushStoredRange(storedRange) {
     this._rangeOffsets.set(storedRange, this._tailOffset)
     this._tailOffset += distance(storedRange)
@@ -79,15 +76,15 @@ export class VirtualContainer extends PartialProxy {
   }
 
   _virtualizeMatch(page, match) {
-    const begin = this._virtualize(page, match.begin)
-    const end = this._virtualize(page, match.end)
+    const begin = page.virtualize(match.begin)
+    const end = page.virtualize(match.end)
 
     return begin && end ? { begin, end } : null
   }
 
-  _fallbackBeginOfPage(page, sequence) {
-    const virtualBegin = this._virtualize(page, page.begin())
-    const virtualEnd = this._virtualize(page, page.end())
+  _fallbackWindowOfPage(page, sequence) {
+    const virtualBegin = page.virtualize(page.begin())
+    const virtualEnd = page.virtualize(page.end())
     const tailLength = lengthOfSequence(sequence) - 1
 
     if (tailLength <= 0)
@@ -97,9 +94,12 @@ export class VirtualContainer extends PartialProxy {
       return null
 
     if (typeof virtualEnd.stepBack != 'function')
-      return virtualBegin
+      return { from: virtualBegin, until: virtualEnd }
 
-    return previousBounded(virtualEnd, tailLength, virtualBegin)
+    return {
+      from: previousBounded(virtualEnd, tailLength, virtualBegin),
+      until: virtualEnd,
+    }
   }
 
   static {
@@ -228,23 +228,27 @@ export class VirtualContainer extends PartialProxy {
         return offset + distance(subrange(range.begin(), this._realize(cursor)))
       },
 
-      findSequence(sequence, { from = this.begin() } = { }) {
-        for (const page of this.pages(from, this.end())) {
+      findSequence(
+        sequence,
+        { from = this.begin(), until = this.end() } = { },
+      ) {
+        for (const page of this.pages(from, until)) {
           const pageMatch = findSequence(page, sequence)
           const match = pageMatch && this._virtualizeMatch(page, pageMatch)
 
           if (match)
             return match
 
-          const virtualBegin = this._fallbackBeginOfPage(page, sequence)
-          const virtualEnd = this._virtualize(page, page.end())
+          const window = this._fallbackWindowOfPage(page, sequence)
 
-          if (!virtualBegin || !virtualEnd)
+          if (!window)
             continue
 
-          const virtualMatch = findSequenceByCursor(this, sequence, {
-            from: virtualBegin,
-            until: virtualEnd,
+          const virtualMatch = findSequence(subrange(
+            window.from,
+            this.end(),
+          ), sequence, {
+            until: window.until,
           })
 
           if (virtualMatch)
@@ -264,4 +268,11 @@ function previousBounded(cursor, count, begin) {
     cursor = previous(cursor)
 
   return cursor
+}
+
+function lengthOfSequence(sequence) {
+  if (sequence instanceof ReadableRangeShape)
+    return distance(sequence)
+
+  return sequence.length
 }

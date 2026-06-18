@@ -6,6 +6,7 @@ import {
   FixedStrideProjectedRangeContainer,
   findSequence,
   matchPrefix,
+  Page,
   ProjectedRangePart,
   VirtualContainer,
 } from '../index.js'
@@ -85,8 +86,10 @@ describe('findSequence', () => {
   })
 
   it('uses byte spans before reading cursor values', () => {
-    const range = new ThrowingByteRange(Uint8Array.from([1, 2, 3, 4]))
-    const match = findSequence(range, [2, 3])
+    const page = new Page(
+      new ThrowingByteRange(Uint8Array.from([1, 2, 3, 4]))
+    )
+    const match = findSequence(page, [2, 3])
 
     expect(match.begin.index).toBe(1)
     expect(match.end.index).toBe(3)
@@ -105,15 +108,33 @@ describe('findSequence', () => {
     expect(valuesOf(range.popRange(match.end))).toEqual([1, 2, 3])
   })
 
-  it('scopes byte fallback to candidate starts in the span tail', () => {
-    const range = new TailReadableByteRange([
-      Uint8Array.from([0, 0, 1]),
-      Uint8Array.from([2]),
-    ])
-    const match = findSequence(range, [1, 2])
+  it('uses page-local byte spans within the requested bounds', () => {
+    const page = new Page(
+      new TailReadableByteRange(Uint8Array.from([0, 0, 1, 2]))
+    )
+    const from = page.begin()
+    const until = page.end()
+
+    from.step()
+
+    const match = findSequence(page, [1, 2], { from, until })
 
     expect(match.begin.index).toBe(2)
     expect(match.end.index).toBe(4)
+  })
+
+  it('bounds candidate starts while letting matches cross the bound', () => {
+    const range = rangeOf([1, 2], [3])
+    const from = range.begin()
+    const until = from.clone()
+
+    from.step()
+    until.step()
+    until.step()
+
+    const match = findSequence(range, [2, 3], { from, until })
+
+    expect(valuesOf(range.popRange(match.end))).toEqual([1, 2, 3])
   })
 
   it('returns range container cursors from a byte span match', () => {
@@ -223,6 +244,10 @@ class ThrowingByteCursor {
     return this
   }
 
+  span(end) {
+    return this.range.bytes.subarray(this.index, end.index)
+  }
+
   get value() {
     throw new Error('Cursor value should not be read.')
   }
@@ -230,53 +255,19 @@ class ThrowingByteCursor {
 
 ThrowingByteRange.cursorType = ThrowingByteCursor
 
-class TailReadableByteRange {
-  constructor(spans) {
-    this.spansValue = spans
-    this.bytes = spans.flatMap(span => [...span])
+class TailReadableByteRange extends ThrowingByteRange {
+  constructor(bytes) {
+    super(bytes)
   }
 
   begin() { return new TailReadableByteCursor(this, 0) }
   end() { return new TailReadableByteCursor(this, this.bytes.length) }
-  *spans() {
-    let base = 0
-
-    for (const span of this.spansValue) {
-      const spanBase = base
-
-      yield {
-        span,
-        cursorAt: offset =>
-          new TailReadableByteCursor(this, spanBase + offset),
-      }
-
-      base += span.length
-    }
-  }
 }
 
-class TailReadableByteCursor {
-  static spanType = Uint8Array
-
-  constructor(range, index) {
-    this.range = range
-    this.index = index
-  }
-
-  clone() { return new this.constructor(this.range, this.index) }
-  equals(other) {
-    return other instanceof TailReadableByteCursor &&
-      this.range == other.range &&
-      this.index == other.index
-  }
-  step() {
-    this.index++
-    return this
-  }
-
+class TailReadableByteCursor extends ThrowingByteCursor {
   get value() {
     if (this.index < 2)
-      throw new Error('Byte fallback should start at the span tail.')
+      throw new Error('Page byte search should not read prefix values.')
 
     return this.range.bytes[this.index]
   }
