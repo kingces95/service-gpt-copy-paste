@@ -1,29 +1,20 @@
 import { describe, expect, it } from 'vitest'
 import { Buffer } from 'node:buffer'
 import { iterate } from '@kingjs/cursor-algorithm'
-import { SnapshotView } from '@kingjs/cursor-view'
+import { TypedArrayView } from '@kingjs/cursor-view'
 import {
   encodeUtf16Bytes,
   encodeUtf16Sequence,
   encodeUtf32Bytes,
 } from '@kingjs/unicode'
 import {
-  Uint8Vector,
-} from '@kingjs/cursor-container-standard'
-import {
   Utf16CodePointContainer,
   Utf32CodePointContainer,
   Utf8CodePointContainer,
 } from '../index.js'
 
-function rangeOf(Type, values) {
-  const result = new Type()
-  result.assignRange(new SnapshotView(values))
-  return result
-}
-
 function bytesOf(values) {
-  return rangeOf(Uint8Vector, values)
+  return new TypedArrayView(Uint8Array.from(values))
 }
 
 function utf8Of(text) {

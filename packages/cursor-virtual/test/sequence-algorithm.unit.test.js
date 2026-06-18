@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { iterate } from '@kingjs/cursor-algorithm'
-import { SnapshotView, TypedArrayView } from '@kingjs/cursor-view'
+import { TypedArrayView } from '@kingjs/cursor-view'
 import { compose } from '@kingjs/partial-compose'
 import {
   FixedStrideProjectedRangeContainer,
@@ -13,7 +13,7 @@ import {
 function rangeOf(...chunks) {
   const result = new VirtualContainer()
   for (const chunk of chunks)
-    result.pushRange(new SnapshotView(chunk))
+    result.pushRange(new TypedArrayView(Uint8Array.from(chunk)))
   return result
 }
 

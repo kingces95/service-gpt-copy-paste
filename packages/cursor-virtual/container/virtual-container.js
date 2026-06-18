@@ -8,6 +8,7 @@ import { VirtualContainerPart } from '../part/virtual-container-part.js'
 import { CloneEmptyPart } from '../part/clone-empty-part.js'
 import {
   subrange,
+  TypedArrayView,
 } from '@kingjs/cursor-view'
 import {
   distance,
@@ -26,17 +27,6 @@ import {
   findSequenceByCursor,
   lengthOfSequence,
 } from '../algorithms/find-sequence.js'
-
-function clone(cursor) {
-  return cursor?.clone?.() ?? cursor
-}
-
-function toStoredRange(range) {
-  return subrange(
-    clone(range.begin()),
-    clone(range.end())
-  )
-}
 
 // VirtualContainer stores pushed ranges and presents their values as one logical
 // range. ranges() exposes the live stored-range view; mutating the container
@@ -77,13 +67,13 @@ export class VirtualContainer extends PartialProxy {
   }
 
   _replaceStoredRange(outerCursor, range, inner) {
-    const prefix = subrange(range.begin(), inner)
-    const retained = subrange(inner, range.end())
+    const prefix = new TypedArrayView(range.span(range.begin(), inner))
+    const retained = new TypedArrayView(range.span(inner, range.end()))
     const offset = this._rangeOffsets.get(range)
 
     assert(offset != null, 'Stored range offset is required.')
 
-    this._rangeOffsets.set(retained, offset + distance(prefix))
+    this._rangeOffsets.set(retained, offset + prefix.size)
     outerCursor.value = retained
     return prefix
   }
@@ -130,11 +120,14 @@ export class VirtualContainer extends PartialProxy {
 
     compose(this, VirtualContainerPart, {
       pushRange(range) {
-        const storedRange = toStoredRange(range)
-        if (storedRange.begin().equals(storedRange.end()))
+        const span = range.span()
+        assert(span instanceof Uint8Array,
+          'Virtual container ranges must expose Uint8Array spans.')
+
+        if (span.length == 0)
           return this
 
-        this._pushStoredRange(storedRange)
+        this._pushStoredRange(range)
         return this
       },
 

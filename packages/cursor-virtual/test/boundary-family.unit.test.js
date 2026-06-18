@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { iterate } from '@kingjs/cursor-algorithm'
-import { SnapshotView } from '@kingjs/cursor-view'
-import { Uint8Vector } from '@kingjs/cursor-container-standard'
+import { TypedArrayView } from '@kingjs/cursor-view'
 import { define } from '@kingjs/partial-define'
 import {
   FixedStrideProjectedRangeContainer,
@@ -11,9 +10,7 @@ import {
 } from '../index.js'
 
 function rangeOf(values) {
-  const result = new Uint8Vector()
-  result.assignRange(new SnapshotView(values))
-  return result
+  return new TypedArrayView(Uint8Array.from(values))
 }
 
 function cursorAt(range, offset) {

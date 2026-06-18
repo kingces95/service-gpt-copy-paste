@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { assert } from '@kingjs/assert'
 import { iterate } from '@kingjs/cursor-algorithm'
-import { SnapshotView } from '@kingjs/cursor-view'
+import { TypedArrayView } from '@kingjs/cursor-view'
 import { Uint8 } from '@kingjs/simple-type'
-import { Uint8Vector } from '@kingjs/cursor-container-standard'
 import { define } from '@kingjs/partial-define'
 import { RangePart } from '@kingjs/cursor'
 import { compose } from '@kingjs/partial-compose'
@@ -19,9 +18,9 @@ const Comma = ','.codePointAt()
 const LineFeed = '\n'.codePointAt()
 
 function bytesOf(text) {
-  const result = new Uint8Vector()
-  result.assignRange(new SnapshotView([...text].map(c => c.codePointAt())))
-  return result
+  return new TypedArrayView(
+    Uint8Array.from([...text].map(c => c.codePointAt()))
+  )
 }
 
 function textOf(values) {

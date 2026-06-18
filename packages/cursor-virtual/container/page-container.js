@@ -1,4 +1,3 @@
-import { spanTypeOfRange } from '@kingjs/cursor-shape'
 import { distance } from '@kingjs/cursor-algorithm'
 import { subrange } from '@kingjs/cursor-view'
 
@@ -19,10 +18,6 @@ export class Page {
   get offset() { return this._offset }
   get range() { return this._range }
   get cursorType() { return this._range.cursorType }
-
-  get spanType() {
-    return spanTypeOfRange(this._range)
-  }
 
   begin() { return this._range.begin() }
   end() { return this._range.end() }

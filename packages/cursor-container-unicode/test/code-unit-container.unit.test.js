@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { iterate } from '@kingjs/cursor-algorithm'
-import { SnapshotView } from '@kingjs/cursor-view'
-import {
-  Uint8Vector,
-} from '@kingjs/cursor-container-standard'
+import { TypedArrayView } from '@kingjs/cursor-view'
 import {
   encodeUtf16Bytes,
   encodeUtf16Sequence,
@@ -14,10 +11,8 @@ import {
   Utf32CodeUnitContainer,
 } from '../index.js'
 
-function rangeOf(Type, values) {
-  const result = new Type()
-  result.assignRange(new SnapshotView(values))
-  return result
+function bytesOf(values) {
+  return new TypedArrayView(Uint8Array.from(values))
 }
 
 function codePointOf(text) {
@@ -29,8 +24,7 @@ describe('Utf16CodeUnitContainer', () => {
     const input = new Utf16CodeUnitContainer()
     const units = encodeUtf16Sequence([codePointOf('😀')])
 
-    input.pushRange(rangeOf(
-      Uint8Vector,
+    input.pushRange(bytesOf(
       [0xff, 0xfe, ...encodeUtf16Bytes([codePointOf('😀')], 'little')]
     ))
 
@@ -41,8 +35,7 @@ describe('Utf16CodeUnitContainer', () => {
     const input = new Utf16CodeUnitContainer({ byteOrder: 'big' })
     const units = encodeUtf16Sequence([codePointOf('😀')])
 
-    input.pushRange(rangeOf(
-      Uint8Vector,
+    input.pushRange(bytesOf(
       encodeUtf16Bytes([codePointOf('😀')])
     ))
 
@@ -53,7 +46,7 @@ describe('Utf16CodeUnitContainer', () => {
     const input = new Utf16CodeUnitContainer({ byteOrder: 'little' })
     const bytes = encodeUtf16Bytes([...'ab'].map(codePointOf), 'little')
 
-    input.pushRange(rangeOf(Uint8Vector, bytes))
+    input.pushRange(bytesOf(bytes))
 
     const cursor = input.begin()
     cursor.step()
@@ -70,8 +63,7 @@ describe('Utf32CodeUnitContainer', () => {
     const input = new Utf32CodeUnitContainer()
     const value = codePointOf('😀')
 
-    input.pushRange(rangeOf(
-      Uint8Vector,
+    input.pushRange(bytesOf(
       [0x00, 0x00, 0xfe, 0xff, ...encodeUtf32Bytes([value], 'big')]
     ))
 
@@ -82,7 +74,7 @@ describe('Utf32CodeUnitContainer', () => {
     const input = new Utf32CodeUnitContainer({ byteOrder: 'little' })
     const value = codePointOf('😀')
 
-    input.pushRange(rangeOf(Uint8Vector, encodeUtf32Bytes([value], 'little')))
+    input.pushRange(bytesOf(encodeUtf32Bytes([value], 'little')))
 
     expect([...iterate(input)]).toEqual([value])
   })

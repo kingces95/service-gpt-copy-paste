@@ -1,6 +1,6 @@
 import { CursorConcept } from '@kingjs/cursor'
 import {
-  BidirectionalRangeShape,
+  ContiguousRangeShape,
 } from '@kingjs/cursor-shape'
 import { ContainerPart } from '@kingjs/cursor-container'
 import { defaultTo } from '@kingjs/function-contract'
@@ -12,7 +12,7 @@ import { members } from '@kingjs/partial-signature'
 export class VirtualContainerPart extends ContainerPart {
   static [DefinesAbstract] = members(this, {
     pushRange: {
-      types: [BidirectionalRangeShape],
+      types: [ContiguousRangeShape],
       method(range) { },
     },
 

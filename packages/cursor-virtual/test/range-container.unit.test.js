@@ -5,7 +5,7 @@ import {
   toArray,
 } from '@kingjs/cursor-algorithm'
 import {
-  SnapshotView,
+  TypedArrayView,
 } from '@kingjs/cursor-view'
 import {
   BidirectionalRangeShape,
@@ -32,32 +32,36 @@ function cursorAt(range, offset) {
   return cursor
 }
 
+function bytesOf(values) {
+  return new TypedArrayView(Uint8Array.from(values))
+}
+
 describe('VirtualContainer', () => {
   it('allows repeated reads until the client commits consumption', () => {
     const ranges = new VirtualContainer()
 
     ranges
-      .pushRange(new SnapshotView(['a', 'b']))
-      .pushRange(new SnapshotView(['c']))
+      .pushRange(bytesOf([1, 2]))
+      .pushRange(bytesOf([3]))
 
-    expect([...iterate(ranges)]).toEqual(['a', 'b', 'c'])
-    expect([...iterate(ranges)]).toEqual(['a', 'b', 'c'])
+    expect([...iterate(ranges)]).toEqual([1, 2, 3])
+    expect([...iterate(ranges)]).toEqual([1, 2, 3])
 
     const commit = ranges.begin()
     commit.step()
     commit.step()
 
-    expect([...iterate(ranges.popRange(commit))]).toEqual(['a', 'b'])
-    expect([...iterate(ranges)]).toEqual(['c'])
+    expect([...iterate(ranges.popRange(commit))]).toEqual([1, 2])
+    expect([...iterate(ranges)]).toEqual([3])
   })
 
   it('iterates pushed ranges as one joined range', () => {
     const ranges = new VirtualContainer()
 
     ranges
-      .pushRange(new SnapshotView([1, 2]))
-      .pushRange(new SnapshotView([3]))
-      .pushRange(new SnapshotView([4, 5]))
+      .pushRange(bytesOf([1, 2]))
+      .pushRange(bytesOf([3]))
+      .pushRange(bytesOf([4, 5]))
 
     expect([...iterate(ranges)]).toEqual([1, 2, 3, 4, 5])
     expect(ranges).toBeInstanceOf(BidirectionalRangeShape)
@@ -68,7 +72,7 @@ describe('VirtualContainer', () => {
   it('steps backward within a stored range', () => {
     const ranges = new VirtualContainer()
 
-    ranges.pushRange(new SnapshotView([1, 2]))
+    ranges.pushRange(bytesOf([1, 2]))
 
     const cursor = ranges.end()
     cursor.stepBack()
@@ -84,8 +88,8 @@ describe('VirtualContainer', () => {
     const ranges = new VirtualContainer()
 
     ranges
-      .pushRange(new SnapshotView([1]))
-      .pushRange(new SnapshotView([2, 3]))
+      .pushRange(bytesOf([1]))
+      .pushRange(bytesOf([2, 3]))
 
     const cursor = ranges.end()
 
@@ -103,8 +107,8 @@ describe('VirtualContainer', () => {
     const ranges = new VirtualContainer()
 
     ranges
-      .pushRange(new SnapshotView([1, 2]))
-      .pushRange(new SnapshotView([3, 4, 5]))
+      .pushRange(bytesOf([1, 2]))
+      .pushRange(bytesOf([3, 4, 5]))
 
     const commit = ranges.begin()
     commit.step()
@@ -119,8 +123,8 @@ describe('VirtualContainer', () => {
     const ranges = new VirtualContainer()
 
     ranges
-      .pushRange(new SnapshotView([1]))
-      .pushRange(new SnapshotView([2, 3]))
+      .pushRange(bytesOf([1]))
+      .pushRange(bytesOf([2, 3]))
 
     const commit = ranges.begin()
     commit.step()
@@ -136,8 +140,8 @@ describe('VirtualContainer', () => {
     const ranges = new VirtualContainer()
 
     ranges
-      .pushRange(new SnapshotView([1, 2]))
-      .pushRange(new SnapshotView([3, 4]))
+      .pushRange(bytesOf([1, 2]))
+      .pushRange(bytesOf([3, 4]))
 
     const pages = [...ranges.pages()]
 
@@ -149,8 +153,8 @@ describe('VirtualContainer', () => {
     const ranges = new VirtualContainer()
 
     ranges
-      .pushRange(new SnapshotView([1, 2]))
-      .pushRange(new SnapshotView([3, 4]))
+      .pushRange(bytesOf([1, 2]))
+      .pushRange(bytesOf([3, 4]))
 
     const end = ranges.begin()
     end.step()
@@ -167,8 +171,8 @@ describe('VirtualContainer', () => {
     const ranges = new VirtualContainer()
 
     ranges
-      .pushRange(new SnapshotView([1, 2]))
-      .pushRange(new SnapshotView([3, 4, 5]))
+      .pushRange(bytesOf([1, 2]))
+      .pushRange(bytesOf([3, 4, 5]))
 
     expect(ranges.offsetOf(cursorAt(ranges, 0))).toBe(0)
     expect(ranges.offsetOf(cursorAt(ranges, 3))).toBe(3)
@@ -186,8 +190,8 @@ describe('VirtualContainer', () => {
     const ranges = new VirtualContainer()
 
     ranges
-      .pushRange(new SnapshotView([1, 2]))
-      .pushRange(new SnapshotView([3, 4]))
+      .pushRange(bytesOf([1, 2]))
+      .pushRange(bytesOf([3, 4]))
 
     const commit = ranges.begin()
     commit.step()
@@ -203,7 +207,7 @@ describe('VirtualContainer', () => {
   it('clones cursors without sharing their inner cursor position', () => {
     const ranges = new VirtualContainer()
 
-    ranges.pushRange(new SnapshotView([1, 2]))
+    ranges.pushRange(bytesOf([1, 2]))
 
     const cursor = ranges.begin()
     const clone = cursor.clone()
@@ -221,9 +225,9 @@ describe('VirtualContainer', () => {
     const other = new VirtualContainer()
 
     expect(() => ranges.pushRange([1, 2])).toThrow(
-      'Argument 0 must be BidirectionalRangeShape.')
+      'Argument 0 must be ContiguousRangeShape.')
     expect(() => ranges.pushRange(new TrivialForwardRange())).toThrow(
-      'Argument 0 must be BidirectionalRangeShape.')
+      'Argument 0 must be ContiguousRangeShape.')
     expect(() => ranges.popRange(other.begin())).toThrow(
       'Cursor is from another container.')
   })
@@ -231,7 +235,7 @@ describe('VirtualContainer', () => {
   it('asserts when stepping back before begin', () => {
     const ranges = new VirtualContainer()
 
-    ranges.pushRange(new SnapshotView([1]))
+    ranges.pushRange(bytesOf([1]))
 
     expect(() => ranges.begin().stepBack()).toThrow(
       'Cannot move cursor out of bounds.')
@@ -240,7 +244,7 @@ describe('VirtualContainer', () => {
   it('asserts when reading a cursor at end', () => {
     const ranges = new VirtualContainer()
 
-    ranges.pushRange(new SnapshotView([1]))
+    ranges.pushRange(bytesOf([1]))
 
     expect(() => ranges.end().value).toThrow(
       'Argument this must be HasValue.')
