@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  advance,
   iterate,
   toArray,
 } from '@kingjs/cursor-algorithm'
@@ -14,7 +13,7 @@ import {
   TrivialForwardRange,
 } from '../../cursor/trivial-cursors.js'
 import {
-  VirtualContainerShape,
+  RangesContainerShape,
   VirtualContainer,
 } from '../index.js'
 
@@ -24,12 +23,6 @@ function valuesOf(range) {
 
 function rangeValuesOf(ranges) {
   return toArray(ranges, valuesOf)
-}
-
-function cursorAt(range, offset) {
-  const cursor = range.begin()
-  advance(cursor, offset)
-  return cursor
 }
 
 function bytesOf(values) {
@@ -51,7 +44,7 @@ describe('VirtualContainer', () => {
     commit.step()
     commit.step()
 
-    expect([...iterate(ranges.popRange(commit))]).toEqual([1, 2])
+    expect([...iterate(ranges.popRangeAt(commit))]).toEqual([1, 2])
     expect([...iterate(ranges)]).toEqual([3])
   })
 
@@ -65,7 +58,7 @@ describe('VirtualContainer', () => {
 
     expect([...iterate(ranges)]).toEqual([1, 2, 3, 4, 5])
     expect(ranges).toBeInstanceOf(BidirectionalRangeShape)
-    expect(ranges).toBeInstanceOf(VirtualContainerShape)
+    expect(ranges).toBeInstanceOf(RangesContainerShape)
     expect(ranges.isEmpty).toBe(false)
   })
 
@@ -115,7 +108,7 @@ describe('VirtualContainer', () => {
     commit.step()
     commit.step()
 
-    expect([...iterate(ranges.popRange(commit))]).toEqual([1, 2, 3])
+    expect([...iterate(ranges.popRangeAt(commit))]).toEqual([1, 2, 3])
     expect([...iterate(ranges)]).toEqual([4, 5])
   })
 
@@ -130,60 +123,23 @@ describe('VirtualContainer', () => {
     commit.step()
     commit.step()
 
-    const consumed = ranges.popRange(commit)
+    const consumed = ranges.popRangeAt(commit)
 
     expect(rangeValuesOf(consumed.ranges())).toEqual([[1], [2]])
     expect(rangeValuesOf(ranges.ranges())).toEqual([[3]])
   })
 
-  it('projects pages between cursors', () => {
+  it('materializes ranges into a byte span', () => {
     const ranges = new VirtualContainer()
 
     ranges
       .pushRange(bytesOf([1, 2]))
       .pushRange(bytesOf([3, 4]))
 
-    const pages = [...ranges.pages()]
+    const materialized = ranges.materialize()
 
-    expect(pages.map(valuesOf)).toEqual([[1, 2], [3, 4]])
-    expect(cursorAt(pages[1], 1).value).toBe(4)
-  })
-
-  it('materializes pages between cursors', () => {
-    const ranges = new VirtualContainer()
-
-    ranges
-      .pushRange(bytesOf([1, 2]))
-      .pushRange(bytesOf([3, 4]))
-
-    const end = ranges.begin()
-    end.step()
-    end.step()
-    end.step()
-
-    const materialized = ranges.materialize(ranges.begin(), end)
-
-    expect(valuesOf(materialized)).toEqual([1, 2, 3])
-    expect(rangeValuesOf(materialized.ranges())).toEqual([[1, 2], [3]])
-  })
-
-  it('tracks physical offsets after committed prefixes are popped', () => {
-    const ranges = new VirtualContainer()
-
-    ranges
-      .pushRange(bytesOf([1, 2]))
-      .pushRange(bytesOf([3, 4, 5]))
-
-    expect(ranges.offsetOf(cursorAt(ranges, 0))).toBe(0)
-    expect(ranges.offsetOf(cursorAt(ranges, 3))).toBe(3)
-    expect(ranges.offsetOf(ranges.end())).toBe(5)
-
-    const commit = cursorAt(ranges, 3)
-    ranges.popRange(commit)
-
-    expect(valuesOf(ranges)).toEqual([4, 5])
-    expect(ranges.offsetOf(ranges.begin())).toBe(3)
-    expect(ranges.offsetOf(ranges.end())).toBe(5)
+    expect(materialized).toBeInstanceOf(Uint8Array)
+    expect([...materialized]).toEqual([1, 2, 3, 4])
   })
 
   it('keeps retained cursors stable when whole front ranges pop', () => {
@@ -200,7 +156,7 @@ describe('VirtualContainer', () => {
     const retained = commit.clone()
     retained.step()
 
-    expect([...iterate(ranges.popRange(commit))]).toEqual([1, 2])
+    expect([...iterate(ranges.popRangeAt(commit))]).toEqual([1, 2])
     expect(retained.value).toBe(4)
   })
 
@@ -228,7 +184,7 @@ describe('VirtualContainer', () => {
       'Argument 0 must be ContiguousRangeShape.')
     expect(() => ranges.pushRange(new TrivialForwardRange())).toThrow(
       'Argument 0 must be ContiguousRangeShape.')
-    expect(() => ranges.popRange(other.begin())).toThrow(
+    expect(() => ranges.popRangeAt(other.begin())).toThrow(
       'Cursor is from another container.')
   })
 

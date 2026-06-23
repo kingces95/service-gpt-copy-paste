@@ -1,24 +1,20 @@
 import { compose } from '@kingjs/partial-compose'
-import { define } from '@kingjs/partial-define'
 import { implement } from '@kingjs/partial-implement'
 import { assert } from '@kingjs/assert'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { RangeConcept } from '@kingjs/cursor'
-import { VirtualContainerPart } from '../part/virtual-container-part.js'
-import { CloneEmptyPart } from '../part/clone-empty-part.js'
+import { RangeContainerPart } from '../part/range-container-part.js'
+import { SplittableRangePart } from '../part/splittable-range-part.js'
 import {
   subrange,
   TypedArrayView,
 } from '@kingjs/cursor-view'
 import {
-  distance,
+  advance,
   iterate,
   next,
-  previous,
+  retreat,
 } from '@kingjs/cursor-algorithm'
-import {
-  ReadableRangeShape,
-} from '@kingjs/cursor-shape'
 import {
   ContainerPart,
   List,
@@ -33,246 +29,134 @@ import {
 // range. ranges() exposes the live stored-range view; mutating the container
 // invalidates previously returned ranges views.
 //
-// popRange(cursor) removes everything before the cursor and returns another
+// popRangeAt(cursor) removes everything before the cursor and returns another
 // VirtualContainer containing the detached stored ranges.
 export class VirtualContainer extends PartialProxy {
   static cursorType = VirtualCursor
 
-  _ranges
-  _tail
-  _rangeOffsets
-  _tailOffset
+  _pages
+  _pageTail
 
   constructor() {
     super()
-    this._ranges = new List()
-    this._tail = this._ranges.beforeBegin()
-    this._rangeOffsets = new WeakMap()
-    this._tailOffset = 0
+    this._pages = new List()
+    this._pageTail = this._pages.beforeBegin()
   }
 
-  _realize(cursor) {
-    this.ownCursorAssert$(cursor)
-    return cursor.getInnerCursor()
+  _pushStoredPage(page) {
+    this._pages.insertValueAfter(this._pageTail, page)
+    this._pageTail.step()
+    page._attach(this, this._pageTail)
   }
 
-  _pushStoredRange(storedRange) {
-    this._rangeOffsets.set(storedRange, this._tailOffset)
-    this._tailOffset += distance(storedRange)
-    this._ranges.insertValueAfter(this._tail, storedRange)
-    this._tail.step()
-  }
-
-  _replaceStoredRange(outerCursor, range, inner) {
+  _replaceStoredPage(outerCursor, page, inner) {
+    const range = page.range
     const prefix = new TypedArrayView(range.span(range.begin(), inner))
     const retained = new TypedArrayView(range.span(inner, range.end()))
-    const offset = this._rangeOffsets.get(range)
-
-    assert(offset != null, 'Stored range offset is required.')
-
-    this._rangeOffsets.set(retained, offset + prefix.size)
-    outerCursor.value = retained
+    outerCursor.value = new Page(retained)._attach(this, outerCursor)
     return prefix
-  }
-
-  _virtualizeMatch(page, match) {
-    const begin = page.virtualize(match.begin)
-    const end = page.virtualize(match.end)
-
-    return begin && end ? { begin, end } : null
-  }
-
-  _fallbackWindowOfPage(page, sequence) {
-    const virtualBegin = page.virtualize(page.begin())
-    const virtualEnd = page.virtualize(page.end())
-    const tailLength = lengthOfSequence(sequence) - 1
-
-    if (tailLength <= 0)
-      return null
-
-    if (!virtualBegin || !virtualEnd)
-      return null
-
-    if (typeof virtualEnd.stepBack != 'function')
-      return { from: virtualBegin, until: virtualEnd }
-
-    return {
-      from: previousBounded(virtualEnd, tailLength, virtualBegin),
-      until: virtualEnd,
-    }
   }
 
   static {
     implement(this, RangeConcept, {
-      begin() { return new this.cursorType(this, this._ranges.begin()) },
-      end() { return new this.cursorType(this, this._ranges.end()) },
+      begin() { return new this.cursorType(this, this._pages.begin()) },
+      end() { return new this.cursorType(this, this._pages.end()) },
     })
 
     compose(this, ContainerPart, {
-      get isEmpty() { return this._ranges.isEmpty },
+      get isEmpty() { return this._pages.isEmpty },
     })
 
-    compose(this, CloneEmptyPart, {
-      cloneEmpty() {
-        return new this.constructor()
-      },
-    })
-
-    compose(this, VirtualContainerPart, {
+    compose(this, RangeContainerPart, {
       pushRange(range) {
         const span = range.span()
-        assert(span instanceof Uint8Array,
-          'Virtual container ranges must expose Uint8Array spans.')
-
         if (span.length == 0)
           return this
 
-        this._pushStoredRange(range)
+        this._pushStoredPage(new Page(range))
         return this
       },
 
-      popRange(cursor = this.end()) {
+      popRangeAt(cursor = this.end()) {
         const result = new this.constructor()
-        const before = this._ranges.beforeBegin()
+        const before = this._pages.beforeBegin()
 
         while (!next(before).equals(cursor.outerCursor$)) {
-          result.pushRange(next(before).value)
-          this._ranges.eraseAfter(before)
+          result.pushRange(next(before).value.range)
+          this._pages.eraseAfter(before)
         }
 
-        if (!cursor.outerCursor$.equals(this._ranges.end())) {
+        if (!cursor.outerCursor$.equals(this._pages.end())) {
           const range = cursor.popRangePrefix()
           if (range)
             result.pushRange(range)
         }
 
-        if (this._ranges.isEmpty)
-          this._tail = this._ranges.beforeBegin()
+        if (this._pages.isEmpty)
+          this._pageTail = this._pages.beforeBegin()
 
         return result
       },
 
-      ranges() {
-        return this._ranges
-      },
-    })
+      popRange(sequence, { includeNeedle = true } = { }) {
+        const needle = sequence instanceof Uint8Array
+          ? sequence
+          : sequence instanceof this.constructor
+            ? sequence.materialize()
+            : null
 
-    define(this, {
-      *pages(begin = this.begin(), end = this.end()) {
-        this.ownCursorAssert$(begin)
-        this.ownCursorAssert$(end)
+        assert(needle,
+          'Virtual sequence must match virtual range or be a Uint8Array.')
+        assert(needle instanceof Uint8Array,
+          'Virtual sequence must materialize to a Uint8Array.')
 
-        let current = begin.clone()
-        let offset = 0
+        if (needle.length == 0)
+          return new this.constructor()
 
+        const tailLength = needle.length - 1
+        let current = this.begin()
+        const end = this.end()
         while (!current.equals(end)) {
-          const pageBegin = this._realize(current)
-          const pageEnd = current.outerCursor$.equals(end.outerCursor$)
-            ? this._realize(end)
-            : current.getInnerCursorEnd()
-          const outerCursor = current.outerCursor$.clone()
-          const virtualEnd = current.outerCursor$.equals(end.outerCursor$)
-            ? end.clone()
-            : current.clone()
+          const page = current.storedPage
+          const pageMatch = page.findSequence(needle)
+          if (pageMatch)
+            return popRange(this, pageMatch, includeNeedle)
 
-          if (!current.outerCursor$.equals(end.outerCursor$)) {
-            virtualEnd.outerCursor$.step()
-            virtualEnd.resetInnerCursor()
-          }
-
-          const range = subrange(pageBegin, pageEnd)
-
-          yield new Page(range, {
-            offset,
-            virtualize: cursor => {
-              if (cursor.equals(pageEnd))
-                return virtualEnd.clone()
-
-              return new this.cursorType(
-                this,
-                outerCursor.clone(),
-                cursor.clone(),
-                pageEnd.clone()
-              )
-            },
-          })
-
-          if (current.outerCursor$.equals(end.outerCursor$))
-            break
-
-          offset += distance(range)
-          current.outerCursor$.step()
-          current.resetInnerCursor()
-        }
-      },
-
-      materialize(begin = this.begin(), end = this.end()) {
-        const result = new this.constructor()
-
-        for (const page of this.pages(begin, end))
-          result.pushRange(page.range)
-
-        return result
-      },
-
-      offsetOf(cursor) {
-        this.ownCursorAssert$(cursor)
-
-        if (cursor.outerCursor$.equals(this._ranges.end()))
-          return this._tailOffset
-
-        const range = cursor.storedRange
-        const offset = this._rangeOffsets.get(range)
-
-        assert(offset != null, 'Stored range offset is required.')
-        return offset + distance(subrange(range.begin(), this._realize(cursor)))
-      },
-
-      findSequence(
-        sequence,
-        { from = this.begin(), until = this.end() } = { },
-      ) {
-        for (const page of this.pages(from, until)) {
-          const pageMatch = page.findSequence(sequence)
-          const match = pageMatch && this._virtualizeMatch(page, pageMatch)
-
+          const pageEnd = page.end()
+          const from = retreat(pageEnd.clone(), tailLength, current)
+          const until = advance(pageEnd.clone(), tailLength, end)
+          const match = findSequence(subrange(from, until), needle)
           if (match)
-            return match
+            return popRange(this, match, includeNeedle)
 
-          const window = this._fallbackWindowOfPage(page, sequence)
-
-          if (!window)
-            continue
-
-          const virtualMatch = findSequence(subrange(
-            window.from,
-            this.end(),
-          ), sequence, {
-            until: window.until,
-          })
-
-          if (virtualMatch)
-            return virtualMatch
+          current = pageEnd
         }
 
         return null
       },
+
+      ranges() {
+        const result = new List()
+        let tail = result.beforeBegin()
+
+        for (const page of iterate(this._pages)) {
+          result.insertValueAfter(tail, page.range)
+          tail.step()
+        }
+
+        return result
+      },
     })
+
+    compose(this, SplittableRangePart)
   }
 }
 
-function previousBounded(cursor, count, begin) {
-  cursor = cursor.clone()
+function popRange(container, match, includeNeedle) {
+  if (includeNeedle)
+    return container.popRangeAt(match.end)
 
-  for (let i = 0; i < count && !cursor.equals(begin); i++)
-    cursor = previous(cursor)
-
-  return cursor
-}
-
-function lengthOfSequence(sequence) {
-  if (sequence instanceof ReadableRangeShape)
-    return distance(sequence)
-
-  return sequence.length
+  const result = container.popRangeAt(match.begin)
+  container.popRangeAt(match.end)
+  return result
 }

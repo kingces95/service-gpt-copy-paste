@@ -43,4 +43,35 @@ describe('advance', () => {
     expect(movedBy).toBe(2)
     expect(cursor.value).toBe(3)
   })
+
+  it('should stop at an until cursor', () => {
+    const source = createContainer(ForwardList, Values)
+    const cursor = source.begin()
+    const until = source.begin()
+    until.step()
+
+    expect(advance(cursor, 2, until)).toBe(cursor)
+    expect(cursor.value).toBe(2)
+  })
+
+  it('should not move past an until cursor when random access is available', () => {
+    const source = createContainer(ArrayMap, Values)
+    const cursor = source.begin()
+    const until = source.begin()
+    until.step()
+    let moveCount = 0
+    let movedBy = 0
+
+    withMethod(cursor, 'move', move => function(offset) {
+      moveCount++
+      movedBy += offset
+      return move.call(this, offset)
+    }, () => {
+      expect(advance(cursor, 2, until)).toBe(cursor)
+    })
+
+    expect(moveCount).toBe(1)
+    expect(movedBy).toBe(1)
+    expect(cursor.value).toBe(2)
+  })
 })

@@ -26,6 +26,7 @@ export class VirtualCursor extends ContainerCursor {
     this._outerCursor = outerCursor
     this._innerCursor = innerCursor
     this._innerCursorEnd = innerCursorEnd
+    this._normalizePageEnd()
   }
 
   get outerCursor$() { return this._outerCursor }
@@ -35,7 +36,8 @@ export class VirtualCursor extends ContainerCursor {
   get innerCursorEnd$() { return this._innerCursorEnd }
   set innerCursorEnd$(innerCursorEnd) { this._innerCursorEnd = innerCursorEnd }
 
-  get storedRange() { return this.outerCursor$.value }
+  get storedPage() { return this.outerCursor$.value }
+  get storedRange() { return this.storedPage.range }
 
   getOuterBegin() {
     return this.outerCursor$.range.begin()
@@ -64,7 +66,19 @@ export class VirtualCursor extends ContainerCursor {
     this.innerCursorEnd$ = null
   }
 
+  _normalizePageEnd() {
+    if (!this.innerCursor$ || !this.innerCursorEnd$)
+      return
+
+    if (!this.innerCursor$.equals(this.innerCursorEnd$))
+      return
+
+    this.outerCursor$.step()
+    this.resetInnerCursor()
+  }
+
   popRangePrefix() {
+    const page = this.storedPage
     const range = this.storedRange
     const begin = range.begin()
     const inner = this.getInnerCursor()
@@ -72,9 +86,9 @@ export class VirtualCursor extends ContainerCursor {
     if (begin.equals(inner))
       return null
 
-    return this.container._replaceStoredRange(
+    return this.container._replaceStoredPage(
       this.outerCursor$,
-      range,
+      page,
       inner
     )
   }

@@ -2,7 +2,7 @@ import { assert } from '@kingjs/assert'
 import { distance } from '@kingjs/cursor-algorithm'
 import { subrange } from '@kingjs/cursor-view'
 
-export function synchronize(range, cursor, {
+export function trimContinuationSuffix(range, cursor, {
   isContinuation,
   continuationCountOf,
 }) {

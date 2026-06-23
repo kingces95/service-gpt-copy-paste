@@ -31,7 +31,7 @@ describe('findSequence', () => {
     const range = rangeOf([1, 2], [3, 4])
     const match = findSequence(range, bytesOf([2, 3]))
 
-    expect(valuesOf(range.popRange(match.end))).toEqual([1, 2, 3])
+    expect(valuesOf(range.popRangeAt(match.end))).toEqual([1, 2, 3])
   })
 
   it('returns null when a sequence is absent', () => {
@@ -48,46 +48,46 @@ describe('findSequence', () => {
     expect(match.end.equals(range.begin())).toBe(true)
   })
 
-  it('can start from an existing cursor', () => {
-    const range = rangeOf([1, 2, 1, 2])
-    const from = range.begin()
-    from.step()
+  it('commits an empty clone for an empty container sequence', () => {
+    const range = rangeOf([1, 2])
+    const committed = range.split(Uint8Array.from([]))
 
-    const match = findSequence(range, bytesOf([1, 2]), { from })
-
-    expect(valuesOf(range.popRange(match.begin))).toEqual([1, 2])
+    expect(committed).toBeInstanceOf(VirtualContainer)
+    expect(valuesOf(committed)).toEqual([])
+    expect(valuesOf(range)).toEqual([1, 2])
   })
 
   it('finds through virtual pages', () => {
     const range = rangeOf([1, 2], [3, 4])
     const match = findSequence(range, bytesOf([3]))
 
-    expect(valuesOf(range.popRange(match.end))).toEqual([1, 2, 3])
+    expect(valuesOf(range.popRangeAt(match.end))).toEqual([1, 2, 3])
   })
 
   it('finds virtual values by materializing a virtual needle', () => {
     const range = virtualRangeOf([1, 2, 3])
     const needle = virtualRangeOf([2])
-    const match = range.findSequence(needle)
+    const materialized = needle.materialize()
+    const committed = range.split(needle)
 
-    expect(match.begin.value).toBe(102)
-    expect(valuesOf(range.popRange(match.end))).toEqual([1, 2])
+    expect(materialized).toBeInstanceOf(Uint8Array)
+    expect([...materialized]).toEqual([2])
+    expect(valuesOf(committed)).toEqual([101, 102])
   })
 
   it('rejects a plain logical needle for a virtual range', () => {
     const range = virtualRangeOf([1, 2, 3])
 
-    expect(() => range.findSequence(bytesOf([102]))).toThrow(
+    expect(() => range.split(bytesOf([102]))).toThrow(
       'Projected sequence must match projected range.')
   })
 
   it('finds virtual values across virtual pages', () => {
     const range = virtualRangeOf([1, 2], [3, 4])
     const needle = virtualRangeOf([2, 3])
-    const match = range.findSequence(needle)
+    const committed = range.split(needle)
 
-    expect(match.begin.value).toBe(102)
-    expect(valuesOf(range.popRange(match.end))).toEqual([1, 2, 3])
+    expect(valuesOf(committed)).toEqual([101, 102, 103])
   })
 
   it('does not special-case a virtual needle for a non-virtual range', () => {
@@ -101,7 +101,7 @@ describe('findSequence', () => {
     const page = new Page(
       new TypedArrayView(Uint8Array.from([1, 2, 3, 4]))
     )
-    const match = page.findSequence(bytesOf([2, 3]))
+    const match = page.findSequence(Uint8Array.from([2, 3]))
 
     expect(match.begin.value).toBe(2)
     expect(match.end.value).toBe(4)
@@ -115,38 +115,23 @@ describe('findSequence', () => {
       .pushRange(new TypedArrayView(Uint8Array.from([1, 2])))
       .pushRange(new TypedArrayView(Uint8Array.from([3, 4])))
 
-    const match = range.findSequence(bytesOf([2, 3]))
+    const committed = range.split(Uint8Array.from([2, 3]))
 
-    expect(valuesOf(range.popRange(match.end))).toEqual([1, 2, 3])
+    expect(valuesOf(committed)).toEqual([1, 2, 3])
   })
 
-  it('uses page-local byte spans within the requested bounds', () => {
-    const page = new Page(
-      new TypedArrayView(Uint8Array.from([0, 0, 1, 2]))
-    )
-    const from = page.begin()
-    const until = page.end()
+  it('continues after a failed cross-page fallback', () => {
 
-    from.step()
+    const range = new VirtualContainer()
 
-    const match = page.findSequence(bytesOf([1, 2]), { from, until })
+    range
+      .pushRange(new TypedArrayView(Uint8Array.from([1, 2])))
+      .pushRange(new TypedArrayView(Uint8Array.from([3, 4])))
+      .pushRange(new TypedArrayView(Uint8Array.from([5, 6])))
 
-    expect(match.begin.value).toBe(1)
-    expect(match.end.equals(page.end())).toBe(true)
-  })
+    const committed = range.split(Uint8Array.from([5, 6]))
 
-  it('bounds candidate starts while letting matches cross the bound', () => {
-    const range = rangeOf([1, 2], [3])
-    const from = range.begin()
-    const until = from.clone()
-
-    from.step()
-    until.step()
-    until.step()
-
-    const match = range.findSequence(bytesOf([2, 3]), { from, until })
-
-    expect(valuesOf(range.popRange(match.end))).toEqual([1, 2, 3])
+    expect(valuesOf(committed)).toEqual([1, 2, 3, 4, 5, 6])
   })
 
   it('returns range container cursors from a byte span match', () => {
@@ -155,9 +140,25 @@ describe('findSequence', () => {
 
     range.pushRange(new TypedArrayView(Uint8Array.from([1, 2, 3, 4])))
 
-    const match = range.findSequence(bytesOf([2, 3]))
+    const committed = range.split(Uint8Array.from([2, 3]))
 
-    expect(valuesOf(range.popRange(match.end))).toEqual([1, 2, 3])
+    expect(valuesOf(committed)).toEqual([1, 2, 3])
+  })
+
+  it('can omit the matched needle from the committed range', () => {
+    const range = rangeOf([1, 2], [3, 4])
+    const committed = range.split(Uint8Array.from([2, 3]), {
+      includeNeedle: false,
+    })
+
+    expect(valuesOf(committed)).toEqual([1])
+    expect(valuesOf(range)).toEqual([4])
+  })
+
+  it('returns null for absent virtual byte needles', () => {
+    const range = rangeOf([1], [2])
+
+    expect(range.split(Uint8Array.from([9]))).toBe(null)
   })
 })
 const VirtualByteRange = (() => {
@@ -197,7 +198,7 @@ describe('matchPrefix', () => {
 
     expect(match.state).toBe('matched')
     expect(match.key).toBe('little')
-    expect(valuesOf(range.popRange(match.end))).toEqual([0xff, 0xfe])
+    expect(valuesOf(range.popRangeAt(match.end))).toEqual([0xff, 0xfe])
   })
 
   it('reports pending when a prefix can still match', () => {

@@ -66,8 +66,8 @@ export class PreambleScanner {
 
   _resolve(match) {
     const preamble = match.state == 'matched'
-      ? this._buffer.popRange(match.end)
-      : this._buffer.cloneEmpty()
+      ? this._buffer.popRangeAt(match.end)
+      : new VirtualContainer()
     const remainder = this._buffer
 
     this._resolved = true

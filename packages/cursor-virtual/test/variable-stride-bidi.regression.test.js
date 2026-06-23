@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { TypedArrayView } from '@kingjs/cursor-view'
+import { iterate } from '@kingjs/cursor-algorithm'
 import { compose } from '@kingjs/partial-compose'
 import {
   VariableStrideProjectedRangeContainer,
@@ -52,6 +53,10 @@ function throwingRangeOf(...chunks) {
   return result
 }
 
+function valuesOf(range) {
+  return [...iterate(range)]
+}
+
 describe('variable stride virtual cursor backtracking', () => {
   it('steps back to the previous starter value', () => {
     const range = rangeOf([0x40, 0x80, 0x41, 0x81])
@@ -65,11 +70,14 @@ describe('variable stride virtual cursor backtracking', () => {
   })
 
   it('bounds cross-page fallback to the variable-stride page tail', () => {
-    const haystack = throwingRangeOf([0x40, 0x80, 0x41, 0x81], [0x42])
-    const needle = rangeOf([0x41, 0x81, 0x42])
-    const match = haystack.findSequence(needle)
+    const haystack = throwingRangeOf(
+      [0x40, 0x80, 0x41, 0x81],
+      [0x42, 0x82]
+    )
+    const needle = rangeOf([0x41, 0x81, 0x42, 0x82])
+    const committed = haystack.split(needle)
 
-    expect(match.begin.value).toBe(0x41)
-    expect(match.end.equals(haystack.end())).toBe(true)
+    expect(valuesOf(committed)).toEqual([0x40, 0x41, 0x42])
+    expect(haystack.isEmpty).toBe(true)
   })
 })

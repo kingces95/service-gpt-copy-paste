@@ -5,12 +5,11 @@ import {
   BidirectionalRangeShape,
 } from '@kingjs/cursor-shape'
 import { ProjectedRangeContainer } from './projected-range-container.js'
-import { VirtualContainerShape } from '../shape/virtual-container-shape.js'
+import { SplittableRangeShape } from '../shape/ranges-container-shape.js'
 import { distance, previous } from '@kingjs/cursor-algorithm'
 import { FixedStrideProjectedCursor } from '../cursor/fixed-stride-projected-cursor.js'
 import { ProjectedRangePart } from '../part/projected-range-part.js'
-import { VirtualContainerPart } from '../part/virtual-container-part.js'
-import { FixedStrideProjector } from '../projector/fixed-stride-projector.js'
+import { RangeContainerPart } from '../part/range-container-part.js'
 
 const pushRange = ProjectedRangeContainer.prototype.pushRange
 
@@ -22,12 +21,11 @@ export class FixedStrideProjectedRangeContainer extends ProjectedRangeContainer 
 
   constructor(source, { strideLength = 1 } = { }) {
     super(source)
-    assert(source instanceof VirtualContainerShape &&
+    assert(source instanceof SplittableRangeShape &&
       source instanceof BidirectionalRangeShape,
       'Fixed virtual source must be a bidirectional range of ranges.')
     this._remainder = 0
     this._strideLength = strideLength
-    this._projector = new FixedStrideProjector(this, { strideLength })
   }
 
   static {
@@ -39,7 +37,7 @@ export class FixedStrideProjectedRangeContainer extends ProjectedRangeContainer 
       },
     })
 
-    compose(this, VirtualContainerPart, {
+    compose(this, RangeContainerPart, {
       pushRange(range) {
         pushRange.call(this, range)
         this._remainder =

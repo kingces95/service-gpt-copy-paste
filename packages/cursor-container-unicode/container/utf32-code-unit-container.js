@@ -28,3 +28,15 @@ export class Utf32CodeUnitContainer extends CodeUnitContainer {
     })
   }
 }
+
+export class Utf32BECodeUnitContainer extends Utf32CodeUnitContainer {
+  constructor({ source = null } = { }) {
+    super({ source, byteOrder: 'big' })
+  }
+}
+
+export class Utf32LECodeUnitContainer extends Utf32CodeUnitContainer {
+  constructor({ source = null } = { }) {
+    super({ source, byteOrder: 'little' })
+  }
+}

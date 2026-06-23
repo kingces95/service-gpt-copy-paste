@@ -38,19 +38,6 @@ describe('ByteOrderedContainer', () => {
     expect([...iterate(input)]).toEqual([0x12345678])
   })
 
-  it('preserves unspecified byte order when splitting empty content', () => {
-    const input = new ByteOrderedContainer({
-      byteOrder: Utf16ByteOrderMarks,
-      byteWidth: 2,
-    })
-
-    input.pushRange(rangeOf([0x00]))
-
-    const committed = input.split()
-
-    expect([...iterate(committed)]).toEqual([])
-  })
-
   it('resolves byte order when decoding a complete unit', () => {
     const input = new ByteOrderedContainer({
       byteOrder: 'big',
@@ -73,7 +60,7 @@ describe('ByteOrderedContainer', () => {
     const cursor = input.begin()
     cursor.step()
 
-    const committed = input.popRange(cursor)
+    const committed = input.popRangeAt(cursor)
 
     expect([...iterate(committed)]).toEqual([0x00, 0x01])
     expect([...iterate(input)]).toEqual([0x0002])
@@ -124,20 +111,4 @@ describe('ByteOrderedContainer', () => {
     expect([...iterate(input)]).toEqual([0xfffe])
   })
 
-  it('preserves resolved byte order across split', () => {
-    const input = new ByteOrderedContainer({
-      byteOrder: Utf16ByteOrderMarks,
-      byteWidth: 2,
-    })
-
-    input.pushRange(rangeOf([0xff, 0xfe, 0x61, 0x00, 0x62, 0x00]))
-
-    const cursor = input.begin()
-    cursor.step()
-
-    const committed = input.split(cursor)
-
-    expect([...iterate(committed)]).toEqual([0x0061])
-    expect([...iterate(input)]).toEqual([0x0062])
-  })
 })

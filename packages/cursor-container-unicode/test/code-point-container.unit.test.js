@@ -8,7 +8,10 @@ import {
   encodeUtf32Bytes,
 } from '@kingjs/unicode'
 import {
+  Utf16BECodePointContainer,
   Utf16CodePointContainer,
+  Utf16LECodePointContainer,
+  Utf32LECodePointContainer,
   Utf32CodePointContainer,
   Utf8CodePointContainer,
 } from '../index.js'
@@ -60,7 +63,7 @@ describe('Utf8CodePointContainer', () => {
     commit.step()
     commit.step()
 
-    const committed = input.split(commit)
+    const committed = input.splitAt(commit)
     expect(committed.toString()).toBe('😀\n')
     expect([...iterate(input)]).toEqual([])
   })
@@ -75,7 +78,7 @@ describe('Utf8CodePointContainer', () => {
     const commit = input.begin()
     commit.step()
 
-    const committed = input.split(commit)
+    const committed = input.splitAt(commit)
 
     expect([...committed.toStrings()]).toEqual(['😀'])
   })
@@ -92,7 +95,7 @@ describe('Utf8CodePointContainer', () => {
     const commit = input.begin()
     commit.step()
 
-    const committed = input.split(commit)
+    const committed = input.splitAt(commit)
     expect(committed.toString()).toBe('a')
   })
 
@@ -102,7 +105,7 @@ describe('Utf8CodePointContainer', () => {
     input.pushRange(bytesOf(GrinningFaceBytes.slice(0, 2)))
 
     expect([...iterate(input)]).toEqual([])
-    expect([...iterate(input.popRange())]).toEqual([])
+    expect([...iterate(input.popRangeAt())]).toEqual([])
 
     input.pushRange(bytesOf(GrinningFaceBytes.slice(2)))
 
@@ -146,7 +149,7 @@ describe('Utf16CodePointContainer', () => {
   const GrinningFaceUnits = utf16Of('😀')
 
   it('excludes a dangling high surrogate', () => {
-    const input = new Utf16CodePointContainer({ byteOrder: 'big' })
+    const input = new Utf16BECodePointContainer()
 
     input
       .pushRange(bytesOf(utf16BytesOf('a')))
@@ -157,7 +160,7 @@ describe('Utf16CodePointContainer', () => {
   })
 
   it('finds the complete end across one-unit surrogate ranges', () => {
-    const input = new Utf16CodePointContainer({ byteOrder: 'little' })
+    const input = new Utf16LECodePointContainer()
 
     input
       .pushRange(bytesOf(utf16BytesOf('😀', 'little').slice(0, 2)))
@@ -173,7 +176,7 @@ describe('Utf32CodePointContainer', () => {
   const GrinningFace = codePointOf('😀')
 
   it('uses the source end as its complete end', () => {
-    const input = new Utf32CodePointContainer({ byteOrder: 'little' })
+    const input = new Utf32LECodePointContainer()
 
     input.pushRange(bytesOf(utf32BytesOf('a😀', 'little')))
 
@@ -182,7 +185,7 @@ describe('Utf32CodePointContainer', () => {
   })
 
   it('does not support string materialization', () => {
-    const input = new Utf32CodePointContainer({ byteOrder: 'little' })
+    const input = new Utf32LECodePointContainer()
     const message = 'UTF-32 string materialization is not supported.'
 
     input.pushRange(bytesOf(utf32BytesOf('a', 'little')))

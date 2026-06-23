@@ -7,7 +7,10 @@ import {
   encodeUtf32Bytes,
 } from '@kingjs/unicode'
 import {
+  Utf16BECodeUnitContainer,
   Utf16CodeUnitContainer,
+  Utf16LECodeUnitContainer,
+  Utf32LECodeUnitContainer,
   Utf32CodeUnitContainer,
 } from '../index.js'
 
@@ -32,7 +35,7 @@ describe('Utf16CodeUnitContainer', () => {
   })
 
   it('decodes ordered source bytes to UTF-16 code units', () => {
-    const input = new Utf16CodeUnitContainer({ byteOrder: 'big' })
+    const input = new Utf16BECodeUnitContainer()
     const units = encodeUtf16Sequence([codePointOf('😀')])
 
     input.pushRange(bytesOf(
@@ -43,7 +46,7 @@ describe('Utf16CodeUnitContainer', () => {
   })
 
   it('returns committed source bytes', () => {
-    const input = new Utf16CodeUnitContainer({ byteOrder: 'little' })
+    const input = new Utf16LECodeUnitContainer()
     const bytes = encodeUtf16Bytes([...'ab'].map(codePointOf), 'little')
 
     input.pushRange(bytesOf(bytes))
@@ -51,7 +54,7 @@ describe('Utf16CodeUnitContainer', () => {
     const cursor = input.begin()
     cursor.step()
 
-    const committed = input.popRange(cursor)
+    const committed = input.popRangeAt(cursor)
 
     expect([...iterate(committed)]).toEqual(bytes.slice(0, 2))
     expect([...iterate(input)]).toEqual([codePointOf('b')])
@@ -71,7 +74,7 @@ describe('Utf32CodeUnitContainer', () => {
   })
 
   it('decodes ordered source bytes to UTF-32 code units', () => {
-    const input = new Utf32CodeUnitContainer({ byteOrder: 'little' })
+    const input = new Utf32LECodeUnitContainer()
     const value = codePointOf('😀')
 
     input.pushRange(bytesOf(encodeUtf32Bytes([value], 'little')))

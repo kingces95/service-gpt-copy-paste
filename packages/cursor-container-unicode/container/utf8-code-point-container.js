@@ -1,6 +1,6 @@
 import {
   ProjectedRangePart,
-  VirtualContainerPart,
+  RangeContainerPart,
   VariableStrideProjectedRangeContainer,
   VirtualContainer,
 } from '@kingjs/cursor-virtual'
@@ -63,7 +63,7 @@ export class Utf8CodePointContainer extends VariableStrideProjectedRangeContaine
   }
 
   static {
-    compose(this, VirtualContainerPart, {
+    compose(this, RangeContainerPart, {
       pushRange(range) {
         if (this._preamble)
           this._preamble.pushRange(range)

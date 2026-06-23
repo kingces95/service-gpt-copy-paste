@@ -3,9 +3,10 @@ import { compose } from '@kingjs/partial-compose'
 import { define } from '@kingjs/partial-define'
 import { RangePart } from '@kingjs/cursor'
 import { ProjectedRangeContainer } from './projected-range-container.js'
-import { synchronize } from '../algorithms/synchronize.js'
+import {
+  trimContinuationSuffix,
+} from '../algorithms/trim-continuation-suffix.js'
 import { VariableStrideProjectedCursor } from '../cursor/variable-stride-projected-cursor.js'
-import { VariableStrideProjector } from '../projector/variable-stride-projector.js'
 
 export class VariableStrideProjectedRangeContainer extends ProjectedRangeContainer {
   static cursorType = VariableStrideProjectedCursor
@@ -20,7 +21,6 @@ export class VariableStrideProjectedRangeContainer extends ProjectedRangeContain
     super(source)
     this._isContinuation = isContinuation
     this._continuationCountOf = continuationCountOf
-    this._projector = new VariableStrideProjector(this, { isContinuation })
   }
 
   static {
@@ -28,7 +28,7 @@ export class VariableStrideProjectedRangeContainer extends ProjectedRangeContain
       end() {
         return new this.cursorType(
           this,
-          synchronize(
+          trimContinuationSuffix(
             this.source$,
             this.source$.end(),
             {

@@ -1,25 +1,18 @@
 import { assert } from '@kingjs/assert'
+import { contract } from '@kingjs/function-contract'
 import { compose } from '@kingjs/partial-compose'
-import { define } from '@kingjs/partial-define'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { RangePart } from '@kingjs/cursor'
-import {
-  distance,
-  iterate,
-} from '@kingjs/cursor-algorithm'
-import { subrange } from '@kingjs/cursor-view'
 import { ProjectedRangePart } from '../part/projected-range-part.js'
-import { VirtualContainerPart } from '../part/virtual-container-part.js'
-import { CloneEmptyPart } from '../part/clone-empty-part.js'
-import { SplitContainerPart } from '../part/split-container-part.js'
-import { VirtualContainerShape } from '../shape/virtual-container-shape.js'
+import { RangeContainerPart } from '../part/range-container-part.js'
+import { SplittableRangePart } from '../part/splittable-range-part.js'
+import { SplittableRangeShape } from '../shape/ranges-container-shape.js'
 import { ProjectedCursor } from '../cursor/projected-cursor.js'
 import { Projector } from '../projector/projector.js'
-import { findSequence } from '../algorithms/find-sequence.js'
 
 // ProjectedRangeContainer scans a source range as projected values while
-// preserving source ownership. Cursors move in projected space, but popRange()
-// returns the source ranges that produced the committed prefix.
+// preserving source ownership. Cursors move in projected space, but
+// popRangeAt() returns the source ranges that produced the committed prefix.
 //
 export class ProjectedRangeContainer extends PartialProxy {
   static cursorType = ProjectedCursor
@@ -29,21 +22,10 @@ export class ProjectedRangeContainer extends PartialProxy {
 
   constructor(source) {
     super()
-    assert(source instanceof VirtualContainerShape,
-      'Virtual source must be a range of ranges.')
+    assert(source instanceof SplittableRangeShape,
+      'Virtual source must be a splittable range container.')
     this._source = source
     this._projector = new Projector(this)
-  }
-
-  _comb(cursor) {
-    this.ownCursorAssert$(cursor)
-    return cursor.sourceCursor$.clone()
-  }
-
-  _clump(sourceCursor) {
-    return this.projector.isSynchronized(sourceCursor)
-      ? this.projector.projectCursor(sourceCursor)
-      : null
   }
 
   static {
@@ -52,18 +34,31 @@ export class ProjectedRangeContainer extends PartialProxy {
       end() { return new this.cursorType(this, this.source$.end()) },
     })
 
-    compose(this, VirtualContainerPart, {
+    compose(this, RangeContainerPart, {
       pushRange(range) {
         this.source$.pushRange(range)
         return this
       },
 
-      popRange(cursor = this.end()) {
-        return this.source$.popRange(cursor.sourceCursor$)
+      popRangeAt(cursor = this.end()) {
+        return this.source$.popRangeAt(cursor.sourceCursor$)
       },
+
+      popRange: contract({
+        precondition(sequence) {
+          assert(sequence instanceof this.constructor,
+            'Projected sequence must match projected range.')
+        },
+      },
+      function popRange(sequence, options) {
+        const sourceNeedle = sequence.materialize()
+        return this.source$.popRange(sourceNeedle, options)
+      }),
 
       ranges() { return this.source$.ranges() },
     })
+
+    compose(this, SplittableRangePart)
 
     compose(this, ProjectedRangePart, {
       get source$() { return this._source },
@@ -72,85 +67,6 @@ export class ProjectedRangeContainer extends PartialProxy {
       get projector() { return this._projector },
     }, {
       decodeToken$(sourceCursor, stride) { },
-    })
-
-    compose(this, CloneEmptyPart, {
-      cloneEmpty() {
-        return new this.constructor({
-          source: this.source$.cloneEmpty(),
-        })
-      },
-    })
-
-    compose(this, SplitContainerPart, {
-      split(cursor = this.end(), result = null) {
-        const source = this.popRange(cursor)
-        result ??= this.cloneEmpty()
-
-        for (const range of iterate(source.ranges()))
-          result.pushRange(range)
-
-        return result
-      },
-    })
-
-    define(this, {
-      pages(begin = this.begin(), end = this.end()) {
-        this.ownCursorAssert$(begin)
-        this.ownCursorAssert$(end)
-
-        return this.source$.pages(
-          begin.sourceCursor$,
-          end.sourceCursor$
-        )
-      },
-
-      materialize(begin = this.begin(), end = this.end()) {
-        this.ownCursorAssert$(begin)
-        this.ownCursorAssert$(end)
-
-        return this.source$.materialize(
-          this._comb(begin),
-          this._comb(end)
-        )
-      },
-
-      offsetOf(cursor) {
-        const sourceCursor = this._comb(cursor)
-        if (typeof this.source.offsetOf == 'function')
-          return this.source.offsetOf(sourceCursor)
-
-        return distance(subrange(this.source.begin(), sourceCursor))
-      },
-
-      findSequence(sequence, { from = this.begin() } = { }) {
-        assert(sequence instanceof this.constructor,
-          'Projected sequence must match projected range.')
-
-        const sourceNeedle = sequence.materialize()
-        let sourceFrom = this._comb(from)
-
-        while (true) {
-          const sourceMatch = this.source.findSequence(sourceNeedle, {
-            from: sourceFrom,
-          })
-
-          if (!sourceMatch)
-            return null
-
-          const begin = this._clump(sourceMatch.begin)
-          const end = this._clump(sourceMatch.end)
-
-          if (begin && end)
-            return { begin, end }
-
-          sourceFrom = sourceMatch.begin.clone()
-          sourceFrom.step()
-
-          if (sourceFrom.equals(this.source.end()))
-            return null
-        }
-      },
     })
   }
 }

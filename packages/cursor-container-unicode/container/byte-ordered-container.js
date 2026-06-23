@@ -4,9 +4,9 @@ import { iterate } from '@kingjs/cursor-algorithm'
 import { Uint8 } from '@kingjs/simple-type'
 import {
   FixedStrideProjectedRangeContainer,
-  CloneEmptyPart,
   ProjectedRangePart,
-  VirtualContainerPart,
+  RangeContainerPart,
+  SplittableRangePart,
   VirtualContainer,
 } from '@kingjs/cursor-virtual'
 import {
@@ -90,7 +90,7 @@ export class ByteOrderedContainer extends FixedStrideProjectedRangeContainer {
       },
     })
 
-    compose(this, VirtualContainerPart, {
+    compose(this, RangeContainerPart, {
       pushRange(range) {
         if (this._preamble)
           this._preamble.pushRange(range)
@@ -101,15 +101,7 @@ export class ByteOrderedContainer extends FixedStrideProjectedRangeContainer {
       },
     })
 
-    compose(this, CloneEmptyPart, {
-      cloneEmpty() {
-        return new this.constructor({
-          source: this.source$.cloneEmpty(),
-          byteOrder: this._byteOrder,
-          byteWidth: this._byteWidth,
-        })
-      },
-    })
+    compose(this, SplittableRangePart)
 
     compose(this, ProjectedRangePart, {
       decodeToken$(sourceCursor, stride) {

@@ -197,7 +197,7 @@ describe('Delimited record regression', () => {
 
     record.step()
 
-    const committed = input.popRange(record)
+    const committed = input.popRangeAt(record)
 
     expect(materializeRanges(committed.ranges())).toEqual(['a,b', ',c\n'])
     expect([...iterate(input.source$)]).toEqual(['n'.codePointAt()])
@@ -218,7 +218,7 @@ describe('Delimited record regression', () => {
 
     record.step()
 
-    const committed = input.popRange(record)
+    const committed = input.popRangeAt(record)
 
     expect(materializeRanges(committed.ranges())).toEqual(['a\\', '\nb\n'])
     expect([...iterate(input.source$)]).toEqual(['x'.codePointAt()])

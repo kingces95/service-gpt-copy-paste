@@ -11,7 +11,11 @@ import {
   isLowSurrogate,
 } from '@kingjs/unicode'
 import { Uint16 } from '@kingjs/simple-type'
-import { Utf16CodeUnitContainer } from './utf16-code-unit-container.js'
+import {
+  Utf16BECodeUnitContainer,
+  Utf16CodeUnitContainer,
+  Utf16LECodeUnitContainer,
+} from './utf16-code-unit-container.js'
 import {
   StringMaterializationPart,
 } from '../part/string-materialization-part.js'
@@ -69,5 +73,23 @@ export class Utf16CodePointContainer extends VariableStrideProjectedRangeContain
         return decodeSurrogatePair(first, second)
       },
     })
+  }
+}
+
+export class Utf16BECodePointContainer extends Utf16CodePointContainer {
+  constructor({ source = null } = { }) {
+    source ??= new Utf16BECodeUnitContainer()
+    assert(source instanceof Utf16BECodeUnitContainer,
+      'UTF-16BE code point source must be a UTF-16BE code unit container.')
+    super({ source })
+  }
+}
+
+export class Utf16LECodePointContainer extends Utf16CodePointContainer {
+  constructor({ source = null } = { }) {
+    source ??= new Utf16LECodeUnitContainer()
+    assert(source instanceof Utf16LECodeUnitContainer,
+      'UTF-16LE code point source must be a UTF-16LE code unit container.')
+    super({ source })
   }
 }

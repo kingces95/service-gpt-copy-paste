@@ -1,0 +1,20 @@
+{
+  "name": "@kingjs/cursor-container-unicode-rx",
+  "version": "1.0.0",
+  "description": "RxJS operators for Unicode cursor containers.",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {
+    "@kingjs/cursor-container-unicode": "1.0.0",
+    "@kingjs/cursor-view": "1.0.0",
+    "@kingjs/unicode": "1.0.0",
+    "rxjs": "^7.5.0"
+  },
+  "devDependencies": { },
+  "peerDependencies": { },
+  "author": "Chris King",
+  "license": "MIT"
+}

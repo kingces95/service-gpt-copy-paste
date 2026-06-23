@@ -8,6 +8,7 @@ Contents
   Unicode types pivoted by virtual stream role and extension root.
 - [Virtual Source Type](#virtual-source-type): Unicode virtual
   containers pivoted by stream role and virtual source type.
+- [Activation](#activation): Unicode activator and concrete type selection.
 - [Source Span Type](#source-span-type): Unicode generic containers whose
   `TSpan` describes the committed source spans, not the virtual values.
 
@@ -34,14 +35,22 @@ Unit
 │  └─ CodeUnitContainer
 └─ CodeUnitContainer
    ├─ Utf16CodeUnitContainer
+   │  ├─ Utf16BECodeUnitContainer
+   │  └─ Utf16LECodeUnitContainer
    └─ Utf32CodeUnitContainer
+      ├─ Utf32BECodeUnitContainer
+      └─ Utf32LECodeUnitContainer
 
 Point
 ├─ VariableStrideProjectedRangeContainer
 │  ├─ Utf8CodePointContainer
 │  └─ Utf16CodePointContainer
+│     ├─ Utf16BECodePointContainer
+│     └─ Utf16LECodePointContainer
 └─ FixedStrideProjectedRangeContainer
    └─ Utf32CodePointContainer
+      ├─ Utf32BECodePointContainer
+      └─ Utf32LECodePointContainer
 ```
 
 ## Virtual Source Type
@@ -66,15 +75,57 @@ Unit
 └─ ByteOrderedContainer
    ├─ CodeUnitContainer
    ├─ Utf16CodeUnitContainer
-   └─ Utf32CodeUnitContainer
+   ├─ Utf16BECodeUnitContainer
+   ├─ Utf16LECodeUnitContainer
+   ├─ Utf32CodeUnitContainer
+   ├─ Utf32BECodeUnitContainer
+   └─ Utf32LECodeUnitContainer
 
 Point
 ├─ VirtualContainer
 │  └─ Utf8CodePointContainer
 ├─ Utf16CodeUnitContainer
-│  └─ Utf16CodePointContainer
+│  ├─ Utf16CodePointContainer
+│  ├─ Utf16BECodePointContainer
+│  └─ Utf16LECodePointContainer
 └─ Utf32CodeUnitContainer
-   └─ Utf32CodePointContainer
+   ├─ Utf32CodePointContainer
+   ├─ Utf32BECodePointContainer
+   └─ Utf32LECodePointContainer
+```
+
+## Activation
+
+```txt
+Unicode Activation
+├─ set: Unicode activator and concrete code point containers
+├─ map: preamble/default key, activated container type
+├─ pivot: signature, byte order mark, default
+└─ display: activation keys with concrete code point container leaves
+```
+
+```txt
+Unicode Activation
+
+Signature
+└─ utf8
+   └─ Utf8CodePointContainer
+
+Byte Order Mark
+├─ utf16be
+│  └─ Utf16BECodePointContainer
+├─ utf16le
+│  └─ Utf16LECodePointContainer
+├─ utf32be
+│  └─ Utf32BECodePointContainer
+└─ utf32le
+   └─ Utf32LECodePointContainer
+
+Default
+├─ supplied defaultEncoding
+│  └─ used only after all known preambles are ruled out
+└─ requirePreamble
+   └─ rejects streams with no known preamble
 ```
 
 ## Source Span Type

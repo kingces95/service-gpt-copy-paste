@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { Buffer } from 'node:buffer'
 import { iterate } from '@kingjs/cursor-algorithm'
 import { TypedArrayView } from '@kingjs/cursor-view'
-import { findSequence } from '@kingjs/cursor-virtual'
 import {
-  Utf16CodePointContainer,
-  Utf32CodePointContainer,
+  Utf16BECodePointContainer,
+  Utf16LECodePointContainer,
+  Utf32BECodePointContainer,
+  Utf32LECodePointContainer,
   Utf8CodePointContainer,
 } from '../index.js'
 import {
@@ -24,11 +25,8 @@ const FirstChunkCount = 6
 const FirstCodePoints = CodePoints.slice(0, FirstChunkCount)
 const CommittedCodePoints = CodePoints.slice(0, BeforeLineEnd)
 const RemainingCodePoints = CodePoints.slice(BeforeLineEnd)
-const BigEndian = { options: { byteOrder: 'big' } }
-const LittleEndian = { options: { byteOrder: 'little' } }
 const Utf8Strings = { hasStrings: true }
-const BigEndianStrings = { ...BigEndian, hasStrings: true }
-const LittleEndianStrings = { ...LittleEndian, hasStrings: true }
+const Strings = { hasStrings: true }
 
 function rangeOf(values) {
   return new TypedArrayView(values)
@@ -70,13 +68,11 @@ function same(values) {
 }
 
 function encoding(name, Type, encodeBytes, encodeUnits, {
-  options = { },
   hasStrings = false,
 } = { }) {
   return {
     name,
     Type,
-    options,
     sourceBytes: Uint8Array.from(encodeBytes(CodePoints)),
     firstCodePoints: FirstCodePoints,
     committedSourceUnits: encodeUnits(CommittedCodePoints),
@@ -108,15 +104,13 @@ const Encodings = [
   encoding('UTF-8',
     Utf8CodePointContainer, encodeUtf8, encodeUtf8, Utf8Strings),
   encoding('UTF-16BE',
-    Utf16CodePointContainer, encodeUtf16BE, encodeUtf16Units,
-    BigEndianStrings),
+    Utf16BECodePointContainer, encodeUtf16BE, encodeUtf16Units, Strings),
   encoding('UTF-16LE',
-    Utf16CodePointContainer, encodeUtf16LE, encodeUtf16Units,
-    LittleEndianStrings),
+    Utf16LECodePointContainer, encodeUtf16LE, encodeUtf16Units, Strings),
   encoding('UTF-32BE',
-    Utf32CodePointContainer, encodeUtf32BE, same, BigEndian),
+    Utf32BECodePointContainer, encodeUtf32BE, same),
   encoding('UTF-32LE',
-    Utf32CodePointContainer, encodeUtf32LE, same, LittleEndian),
+    Utf32LECodePointContainer, encodeUtf32LE, same),
 ]
 
 describe('Code point container integration', () => {
@@ -124,7 +118,6 @@ describe('Code point container integration', () => {
     '$name buffers source chunks until a line can be committed',
   ({
     Type,
-    options = { },
     sourceBytes,
     firstCodePoints,
     committedSourceUnits,
@@ -134,7 +127,7 @@ describe('Code point container integration', () => {
     split,
     hasStrings,
   }) => {
-    const input = new Type(options)
+    const input = new Type()
     const [first, second] = chunk(sourceBytes, split)
 
     input.pushRange(rangeOf(first))
@@ -145,7 +138,7 @@ describe('Code point container integration', () => {
     input.pushRange(rangeOf(second))
 
     const lineEnd = findLineEnd(input)
-    const committed = input.split(lineEnd)
+    const committed = input.splitAt(lineEnd)
 
     expect(valuesOf(committed)).toEqual(committedCodePoints)
     expect(valuesOf(committed.source$)).toEqual(committedSourceUnits)
@@ -173,12 +166,13 @@ describe('Code point container integration', () => {
     const needle = new Utf8CodePointContainer()
     needle.pushRange(rangeOf(Buffer.from('h', 'utf8')))
 
-    const match = findSequence(input, needle)
-    const committed = input.split(match.begin)
+    const committed = input.split(needle, {
+      includeNeedle: false,
+    })
 
     expect(valuesOf(committed)).toEqual([])
     expect(valuesOf(deepestSourceOf(committed))).toEqual([])
-    expect(match.begin.value).toBe('h'.codePointAt())
+    expect(valuesOf(input)).toEqual(['i'].map(char => char.codePointAt()))
   })
 })
 

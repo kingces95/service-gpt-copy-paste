@@ -21,7 +21,7 @@ function cursorAt(range, offset) {
   return cursor
 }
 
-const virtualSplit = ProjectedRangeContainer.prototype.split
+const virtualSplitAt = ProjectedRangeContainer.prototype.splitAt
 
 class FixedValueRange extends FixedStrideProjectedRangeContainer {
   constructor() {
@@ -70,10 +70,10 @@ class ConfiguredFixedValueRange extends FixedValueRange {
 
   static {
     define(this, {
-      split(cursor = this.end(), result = null) {
-        result ??= new this.constructor()
+      splitAt(cursor) {
+        const result = virtualSplitAt.call(this, cursor)
         result.configured = true
-        return virtualSplit.call(this, cursor, result)
+        return result
       },
     })
   }
@@ -90,7 +90,15 @@ describe('FixedStrideProjectedRangeContainer', () => {
     expect([...iterate(range)]).toEqual([[0, 1], [2, 3]])
   })
 
-  it('lets overrides configure split results before delegating', () => {
+  it('materializes dangling fixed-width suffix bytes', () => {
+    const range = new FixedValueRange()
+
+    range.pushRange(rangeOf([0, 1, 2]))
+
+    expect([...range.materialize()]).toEqual([0, 1, 2])
+  })
+
+  it('lets overrides configure split results after delegating', () => {
     const range = new ConfiguredFixedValueRange()
 
     range.pushRange(rangeOf([0, 1, 2, 3]))
@@ -98,7 +106,7 @@ describe('FixedStrideProjectedRangeContainer', () => {
     const cursor = range.begin()
     cursor.step()
 
-    const committed = range.split(cursor)
+    const committed = range.splitAt(cursor)
 
     expect(committed).toBeInstanceOf(ConfiguredFixedValueRange)
     expect(committed.configured).toBe(true)
@@ -113,7 +121,7 @@ describe('FixedStrideProjectedRangeContainer', () => {
     range.pushRange(rangeOf([0, 1]))
     other.pushRange(rangeOf([2, 3]))
 
-    expect(() => range.split(other.begin())).toThrow(
+    expect(() => range.splitAt(other.begin())).toThrow(
       'Cursor is from another container.')
   })
 })
@@ -127,6 +135,14 @@ describe('VariableStrideProjectedRangeContainer', () => {
     expect(range.end().sourceCursor$.equals(cursorAt(range.source$, 1)))
       .toBe(true)
     expect([...iterate(range)]).toEqual([[0]])
+  })
+
+  it('materializes dangling continuation suffix bytes', () => {
+    const range = new VariableValueRange()
+
+    range.pushRange(rangeOf([0, 1]))
+
+    expect([...range.materialize()]).toEqual([0, 1])
   })
 
   it('rejects continuation-only suffixes', () => {

@@ -3,18 +3,25 @@ import { assert } from '@kingjs/assert'
 export function matchPrefix(range, sequences) {
   assert(sequences != null, 'Sequences are required.')
 
+  let matched = null
   let pending = false
 
   for (const [key, sequence] of entriesOf(sequences)) {
     const result = matchSequence(range, sequence)
     if (result.state == 'matched')
-      return { state: 'matched', key, end: result.end }
+      matched ??= { state: 'matched', key, end: result.end }
 
     if (result.state == 'pending')
       pending = true
   }
 
-  return pending ? { state: 'pending' } : { state: 'missed' }
+  if (pending)
+    return { state: 'pending' }
+
+  if (matched)
+    return matched
+
+  return { state: 'missed' }
 }
 
 function* entriesOf(sequences) {

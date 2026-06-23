@@ -1,33 +1,28 @@
 import { overload } from '@kingjs/function-contract'
 import { NormalNumber } from '@kingjs/simple-type'
 import {
-  ForwardCursorShape,
+  BacktrackableCursorShape,
   RandomAccessCursorShape,
 } from '@kingjs/cursor-shape'
 
-export const advance = overload([
-  ForwardCursorShape,
+export const retreat = overload([
+  BacktrackableCursorShape,
   NormalNumber,
 ], [
   {
     when: [ RandomAccessCursorShape ],
-    use: function advanceRandomAccess(cursor, count, until = null) {
-      if (until != null)
-        count = Math.min(count, cursor.distanceTo(until))
-
-      return cursor.move(count)
+    use: function retreatRandomAccess(cursor, count) {
+      return cursor.move(-count)
     },
   },
 ],
-advanceByStepping)
-
-function advanceByStepping(cursor, count, until = null) {
+function retreat(cursor, count, until = null) {
   for (
     let i = 0;
     i < count && (until == null || !cursor.equals(until));
     i++
   )
-    cursor.step()
+    cursor.stepBack()
 
   return cursor
-}
+})

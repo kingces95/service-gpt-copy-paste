@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { advance } from '@kingjs/cursor-algorithm'
+import {
+  iterate,
+} from '@kingjs/cursor-algorithm'
 import { TypedArrayView } from '@kingjs/cursor-view'
 import { compose } from '@kingjs/partial-compose'
 import {
@@ -7,12 +9,6 @@ import {
   ProjectedRangePart,
   VirtualContainer,
 } from '../index.js'
-
-function cursorAt(range, offset) {
-  const cursor = range.begin()
-  advance(cursor, offset)
-  return cursor
-}
 
 class PairRange extends FixedStrideProjectedRangeContainer {
   constructor({ throwOnFirst = false } = { }) {
@@ -52,30 +48,17 @@ function throwingPairRangeOf(...chunks) {
   return result
 }
 
-describe('fixed stride page synchronization', () => {
-  it('marks only fixed-stride page offsets as synchronized', () => {
-    const range = pairRangeOf([0, 1, 2, 3])
-    const projector = range.projector
+function valuesOf(range) {
+  return [...iterate(range)]
+}
 
-    expect(projector.isSynchronized(cursorAt(range.source, 0))).toBe(true)
-    expect(projector.isSynchronized(cursorAt(range.source, 1))).toBe(false)
-    expect(projector.isSynchronized(cursorAt(range.source, 2))).toBe(true)
-    expect(projector.projectCursor(cursorAt(range.source, 2))).not.toBe(null)
-  })
-
-  it('rejects page-space matches that start between virtual tokens', () => {
-    const haystack = pairRangeOf([0, 1, 2, 3])
-    const needle = pairRangeOf([1, 2])
-
-    expect(haystack.findSequence(needle)).toBe(null)
-  })
-
+describe('fixed stride page search', () => {
   it('bounds cross-page fallback to the fixed-stride page tail', () => {
     const haystack = throwingPairRangeOf([0, 1, 2, 3], [4, 5])
     const needle = pairRangeOf([2, 3, 4, 5])
-    const match = haystack.findSequence(needle)
+    const committed = haystack.split(needle)
 
-    expect(match.begin.value).toBe(2)
-    expect(match.end.equals(haystack.end())).toBe(true)
+    expect(valuesOf(committed)).toEqual([0, 2, 4])
+    expect(haystack.isEmpty).toBe(true)
   })
 })

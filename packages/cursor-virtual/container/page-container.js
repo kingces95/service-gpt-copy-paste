@@ -1,64 +1,56 @@
 import { Buffer } from 'node:buffer'
-import {
-  iterate,
-} from '@kingjs/cursor-algorithm'
+import { assert } from '@kingjs/assert'
+import { advance } from '@kingjs/cursor-algorithm'
 
 export class Page {
-  _offset
+  _container
+  _outerCursor
   _range
-  _virtualize
 
-  constructor(range, {
-    offset = 0,
-    virtualize = null,
-  } = { }) {
-    this._offset = offset
+  constructor(range) {
     this._range = range
-    this._virtualize = virtualize
   }
 
-  get offset() { return this._offset }
   get range() { return this._range }
-  get cursorType() { return this._range.cursorType }
 
-  begin() { return this._range.begin() }
-  end() { return this._range.end() }
-
-  span(begin = this.begin(), end = this.end()) {
-    return begin.span(end)
+  _attach(container, outerCursor) {
+    this._container = container
+    this._outerCursor = outerCursor.clone()
+    return this
   }
 
-  offsetOf(cursor) {
-    let offset = 0
-    const current = this.begin()
+  begin() { return this._virtualizeCursor(this._range.begin()) }
+  end() { return this._virtualizeCursor(this._range.end()) }
 
-    while (!current.equals(cursor)) {
-      current.step()
-      offset++
+  _virtualizeCursor(pageCursor) {
+    assert(this._container,
+      'Page must have a virtual container to virtualize cursors.')
+    assert(this._outerCursor,
+      'Page must have an outer cursor to virtualize cursors.')
+
+    return new this._container.cursorType(
+      this._container,
+      this._outerCursor.clone(),
+      pageCursor.clone(),
+      this._range.end()
+    )
+  }
+
+  _virtualizeMatch(match) {
+    if (!this._container)
+      return match
+
+    return {
+      begin: this._virtualizeCursor(match.begin),
+      end: this._virtualizeCursor(match.end),
     }
-
-    return offset
   }
 
-  virtualize(cursor) {
-    return this._virtualize?.(cursor) ?? null
-  }
+  findSequence(needle) {
+    assert(needle instanceof Uint8Array,
+      'Page sequence search requires a Uint8Array needle.')
 
-  findSequence(sequence, {
-    from = this.begin(),
-    until = this.end(),
-  } = { }) {
-    if (!isByteSequence(sequence))
-      return null
-
-    const needle = Buffer.from([...iterate(sequence)])
-    const span = this.span(from, until)
-
-    assertByteSpan(span)
-
-    if (needle.length == 0)
-      return { begin: from.clone(), end: from.clone() }
-
+    const span = this._range.begin().span(this._range.end())
     const index = Buffer
       .from(span.buffer, span.byteOffset, span.byteLength)
       .indexOf(needle)
@@ -66,37 +58,9 @@ export class Page {
     if (index < 0)
       return null
 
-    const offset = this.offsetOf(from) + index
-
-    return {
-      begin: cursorAt(this, offset),
-      end: cursorAt(this, offset + needle.length),
-    }
+    return this._virtualizeMatch({
+      begin: advance(this._range.begin(), index),
+      end: advance(this._range.begin(), index + needle.length),
+    })
   }
-}
-
-export { Page as PageContainer }
-
-function cursorAt(range, offset) {
-  const cursor = range.begin()
-
-  for (let i = 0; i < offset; i++)
-    cursor.step()
-
-  return cursor
-}
-
-function assertByteSpan(span) {
-  if (span instanceof Uint8Array)
-    return
-
-  throw new Error('Byte sequence search requires Uint8Array spans.')
-}
-
-function isByteSequence(sequence) {
-  for (const value of iterate(sequence))
-    if (!Number.isInteger(value) || value < 0 || value > 0xff)
-      return false
-
-  return true
 }
