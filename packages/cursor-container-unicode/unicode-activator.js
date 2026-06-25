@@ -5,7 +5,6 @@ import {
   Utf32ByteOrderMarks,
   Utf8Signature,
 } from '@kingjs/unicode'
-import { iterate } from '@kingjs/cursor-algorithm'
 import { PreambleScanner } from './preamble-scanner.js'
 import { Utf8CodePointContainer } from './container/utf8-code-point-container.js'
 import {
@@ -78,7 +77,7 @@ export class UnicodeActivator {
     assert(Type, 'Unicode encoding is not supported.')
 
     this._container = new Type()
-    for (const range of iterate(remainder.ranges()))
+    for (const range of remainder.ranges())
       this._container.pushRange(range)
   }
 }

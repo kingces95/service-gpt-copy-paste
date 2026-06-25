@@ -1,5 +1,3 @@
-import { iterate } from '@kingjs/cursor-algorithm'
-import { spansOfRange } from '@kingjs/cursor-shape'
 import { assert } from '@kingjs/assert'
 
 function bufferOf(span) {
@@ -24,22 +22,20 @@ export function byteOrderedEncodingOf(encoding, byteOrder) {
   throw new Error('String materialization encoding is not supported.')
 }
 
-export function* byteRangesToStrings(ranges, encodingOf) {
+export function* byteSpansToStrings(spans, encodingOf) {
   let decoder = null
 
-  for (const range of iterate(ranges)) {
+  for (const span of spans) {
     decoder ??= new TextDecoder(
       typeof encodingOf == 'function' ? encodingOf() : encodingOf
     )
 
-    for (const { span } of spansOfRange(range)) {
-      const decoded = decoder.decode(bufferOf(span), {
-        stream: true,
-      })
+    const decoded = decoder.decode(bufferOf(span), {
+      stream: true,
+    })
 
-      if (decoded)
-        yield decoded
-    }
+    if (decoded)
+      yield decoded
   }
 
   const tail = decoder?.decode()

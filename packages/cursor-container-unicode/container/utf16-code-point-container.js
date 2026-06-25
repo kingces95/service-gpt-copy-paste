@@ -52,11 +52,13 @@ export class Utf16CodePointContainer extends VariableStrideProjectedRangeContain
     })
 
     compose(this, ProjectedRangePart, {
-      decodeToken$(sourceCursor, stride) {
+      decodeToken$(sourceCursor) {
         const first = readUnit(sourceCursor)
 
         if (isLowSurrogate(first))
           throw new Error('Unexpected UTF-16 low surrogate.')
+
+        const stride = this.tokenStrideOf$(first)
 
         if (stride == 1) {
           assertScalarValue(first)

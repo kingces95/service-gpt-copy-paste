@@ -21,10 +21,12 @@ class UtfLikeRange extends VariableStrideProjectedRangeContainer {
 
   static {
     compose(this, ProjectedRangePart, {
-      decodeToken$(sourceCursor, stride) {
+      decodeToken$(sourceCursor) {
         const first = sourceCursor.value
         if (this.throwOnFirst && first == 0x40)
           throw new Error('Fallback should start at the page tail.')
+
+        const stride = this.tokenStrideOf$(first)
 
         for (let i = 1; i < stride; i++)
           sourceCursor.step()

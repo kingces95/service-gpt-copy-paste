@@ -1,5 +1,5 @@
 import { CursorConcept } from '@kingjs/cursor'
-import { iterate } from '@kingjs/cursor-algorithm'
+import { assert } from '@kingjs/assert'
 import {
   ContiguousRangeShape,
 } from '@kingjs/cursor-shape'
@@ -10,6 +10,17 @@ import {
   DefinesAbstract,
 } from '@kingjs/partial-class'
 import { members } from '@kingjs/partial-signature'
+
+function sourceNeedle(needle) {
+  if (needle instanceof Uint8Array)
+    return needle
+
+  if (typeof needle?.materialize == 'function')
+    return needle.materialize()
+
+  assert(false,
+    'Range needle must be a Uint8Array or materializable range.')
+}
 
 export class RangeContainerPart extends ContainerPart {
   static [DefinesAbstract] = members(this, {
@@ -27,18 +38,22 @@ export class RangeContainerPart extends ContainerPart {
       method(cursor /* = this.end() */) { },
     },
 
-    popRange(sequence, options) { },
+    popRange$(needle, options) { },
 
     ranges() { },
   })
 
   static [Defines] = members(this, {
+    *spans() {
+      for (const range of this.ranges())
+        yield range.span()
+    },
+
     materialize() {
       const spans = []
       let size = 0
 
-      for (const range of iterate(this.ranges())) {
-        const span = range.span()
+      for (const span of this.spans()) {
         spans.push(span)
         size += span.length
       }
@@ -52,6 +67,13 @@ export class RangeContainerPart extends ContainerPart {
       }
 
       return result
+    },
+
+    popRange: {
+      transforms: [sourceNeedle],
+      method(needle, options) {
+        return this.popRange$(needle, options)
+      },
     },
   })
 }

@@ -5,6 +5,7 @@ import {
   Defaults,
   Preconditions,
   Signature,
+  Transforms,
 } from '@kingjs/partial-symbols'
 
 class FirstArg { }
@@ -47,12 +48,14 @@ describe('@kingjs/partial-signature', () => {
     class Type { }
     const defaults = [1]
     const precondition = () => { }
+    const transforms = [value => value]
 
     const result = members(Type, {
       member: {
         types: [FirstArg, SecondArg],
         defaults,
         precondition,
+        transforms,
         method(first, second) { return [first, second] },
       },
     })
@@ -62,6 +65,7 @@ describe('@kingjs/partial-signature', () => {
     expect(Type[ArgChecks].member).toEqual([FirstArg, SecondArg])
     expect(Type[Defaults].member).toBe(defaults)
     expect(Type[Preconditions].member).toBe(precondition)
+    expect(Type[Transforms].member).toBe(transforms)
   })
 
   it('lowers signature records to accessor halves', () => {

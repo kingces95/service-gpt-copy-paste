@@ -30,8 +30,8 @@ export class FixedStrideProjectedRangeContainer extends ProjectedRangeContainer 
 
   static {
     compose(this, ProjectedRangePart, {
-      decodeToken$(sourceCursor, stride) {
-        assert(stride == 1,
+      decodeToken$(sourceCursor) {
+        assert(this._strideLength == 1,
           'Fixed stride range default decode requires stride one.')
         return sourceCursor.value
       },

@@ -31,7 +31,8 @@ export function* spansOfRange(range) {
   assert(range != null, 'Range is required.')
 
   if (typeof range.spans == 'function') {
-    yield* range.spans()
+    for (const span of range.spans())
+      yield span?.span ? span : { span }
     return
   }
 

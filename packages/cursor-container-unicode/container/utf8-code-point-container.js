@@ -5,7 +5,6 @@ import {
   VirtualContainer,
 } from '@kingjs/cursor-virtual'
 import { compose } from '@kingjs/partial-compose'
-import { iterate } from '@kingjs/cursor-algorithm'
 import {
   decodeUtf8Sequence,
   utf8ContinuationCount,
@@ -16,7 +15,7 @@ import {
 import { Uint8 } from '@kingjs/simple-type'
 import { PreambleScanner } from '../preamble-scanner.js'
 import {
-  byteRangesToStrings,
+  byteSpansToStrings,
 } from '../source-ranges-to-string.js'
 import {
   StringMaterializationPart,
@@ -56,7 +55,7 @@ export class Utf8CodePointContainer extends VariableStrideProjectedRangeContaine
       onPreamble: ({ remainder }) => {
         this._preamble = null
 
-        for (const range of iterate(remainder.ranges()))
+        for (const range of remainder.ranges())
           pushRange.call(this, range)
       },
     })
@@ -76,14 +75,15 @@ export class Utf8CodePointContainer extends VariableStrideProjectedRangeContaine
 
     compose(this, StringMaterializationPart, {
       toStrings() {
-        return byteRangesToStrings(this.source$.ranges(), 'utf-8')
+        return byteSpansToStrings(this.source$.spans(), 'utf-8')
       },
     })
 
     compose(this, ProjectedRangePart, {
-      decodeToken$(sourceCursor, stride) {
+      decodeToken$(sourceCursor) {
         const first = readByte(sourceCursor)
         const parts = []
+        const stride = this.tokenStrideOf$(first)
 
         for (let i = 1; i < stride; i++)
           parts.push(readContinuation(sourceCursor))

@@ -32,7 +32,7 @@ function materializeRecord(fields) {
 }
 
 function materializeRanges(ranges) {
-  return [...iterate(ranges)].map(range => textOf([...iterate(range)]))
+  return [...ranges].map(range => textOf([...iterate(range)]))
 }
 
 class AsciiCodePointContainer extends FixedStrideProjectedRangeContainer {

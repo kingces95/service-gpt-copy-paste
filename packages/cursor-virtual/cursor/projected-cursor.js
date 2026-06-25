@@ -60,10 +60,7 @@ export class ProjectedCursor extends ContainerCursor {
 
     compose(this, ReadableCursorPart, {
       get value() {
-        return this.container.decodeToken$(
-          this.sourceCursor$.clone(),
-          this.stride$
-        )
+        return this.container.decodeToken$(this.sourceCursor$.clone())
       },
     })
 

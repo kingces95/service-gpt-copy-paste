@@ -13,8 +13,8 @@ Contents
   types applied to container receivers, ordered by dependency.
 - [Virtual And Projected Model](#virtual-and-projected-model): The split
   between address composition and value projection.
-- [Page Search Algorithms](#page-search-algorithms): Algorithms that consume
-  virtual pages before any storage-specific leaf span optimization.
+- [Byte Search Algorithms](#byte-search-algorithms): Algorithms that consume
+  byte page records before mapping matches back into virtual cursors.
 
 ## Cursor Partial Type Members
 
@@ -66,7 +66,10 @@ Private
 └─ VirtualCursor
    ├─ _outerCursor
    ├─ _innerCursor
-   └─ _innerCursorEnd
+   ├─ _innerCursorEnd
+   ├─ _activateInnerCursor
+   ├─ _normalizeRangeEnd
+   └─ _resetInnerCursor
 ```
 
 ## Container Partial Type Members
@@ -96,58 +99,46 @@ Part
 ├─ RangeContainerPart
 │  ├─ pushRange(range)
 │  ├─ popRangeAt(cursor)
-│  ├─ popRange(sequence, options)
+│  ├─ popRange(needle, options)
 │  ├─ ranges()
+│  ├─ spans()
 │  └─ materialize()
 ├─ SplittableRangePart
 │  ├─ splitAt(cursor)
-│  └─ split(sequence, options)
+│  └─ split(needle, options)
 ├─ ProjectedRangePart
 │  ├─ source$
-│  ├─ projector$
-│  └─ decodeToken$(sourceCursor, stride)
+│  └─ decodeToken$(sourceCursor)
 
 Shape
 ├─ RangesContainerShape
 │  ├─ pushRange(range)
 │  ├─ popRangeAt(cursor)
-│  ├─ popRange(sequence, options)
+│  ├─ popRange(needle, options)
 │  ├─ ranges()
+│  ├─ spans()
 │  └─ materialize()
 └─ SplittableRangeShape
    ├─ splitAt(cursor)
-   └─ split(sequence, options)
+   └─ split(needle, options)
 
 Naked
-├─ Page
-│  ├─ range
-│  ├─ begin()
-│  ├─ end()
-│  ├─ span(begin, end)
-│  └─ findSequence(needle)
-├─ Projector
-│  └─ projectValue(sourceCursor, stride)
 └─ VariableStrideProjectedRangeContainer
    └─ tokenStrideOf$(value)
 
 Private
-├─ Page
-│  ├─ _range
-│  ├─ _container
-│  ├─ _outerCursor
-│  ├─ _virtualizeCursor
-│  └─ _virtualizeMatch
-├─ Projector
-│  └─ _container
 ├─ FixedStrideProjectedRangeContainer
 │  ├─ _remainder
 │  └─ _strideLength
 ├─ ProjectedRangeContainer
-│  ├─ _projector
 │  └─ _source
 ├─ VirtualContainer
 │  ├─ _pages
-│  └─ _pageTail
+│  ├─ _pushStoredRange
+│  ├─ _replaceStoredRange
+│  ├─ _popRangePrefixAt
+│  ├─ _findRange
+│  └─ _cursorAt
 └─ VariableStrideProjectedRangeContainer
    ├─ _isContinuation
    └─ _continuationCountOf
@@ -168,18 +159,18 @@ Virtual
 ├─ VirtualContainer
 │  ├─ stores pushed physical ranges
 │  ├─ exposes one logical address space
+│  ├─ uses deque storage for stream-style front consumption
+│  ├─ invalidates cursors after consuming source ranges
 │  ├─ materialize() exits into a Uint8Array
 │  └─ never decides token synchronization
-├─ VirtualCursor
-│  └─ walks physical ranges as one address space
-└─ Page
-   ├─ has-a physical range
-   └─ maps page-local matches to virtual cursors when attached
+└─ VirtualCursor
+   └─ walks physical ranges as one address space
 
 Projected
 ├─ ProjectedRangeContainer
 │  ├─ has one source range
-│  ├─ has one projector
+│  ├─ owns protected source access
+│  ├─ decodes source tokens through decodeToken$()
 │  └─ exposes projected logical values
 ├─ ProjectedCursor
 │  ├─ holds a source cursor
@@ -190,33 +181,36 @@ Projected
    └─ trims pushed suffixes by backing up over continuations
 ```
 
-## Page Search Algorithms
+## Byte Search Algorithms
 
 ```txt
-Virtual Page Search Algorithms
+Virtual Byte Search Algorithms
 ├─ set: cursor-shape projections and cursor-virtual algorithms
 ├─ map: algorithm, role, expected surface
-├─ pivot: virtual page, projected search, leaf span
+├─ pivot: virtual byte page, projected search, leaf span
 └─ display: algorithm roots with role leaves
 ```
 
 ```txt
-Virtual Page
-└─ VirtualContainer.popRange(sequence)
-   ├─ searches private Page descriptors
-   ├─ receives virtual cursors from page matches
-   └─ consumes source ranges through the matched sequence
+Virtual Byte Page
+└─ VirtualContainer.popRange(needle)
+   ├─ materializes the needle into byte space
+   ├─ asks findBytesInSpans for { spanIndex, spanOffset }
+   ├─ maps page byte offsets back to virtual cursors
+   └─ consumes source ranges through the matched byte sequence
 
 Projected Search
-└─ findSequence(range, sequence)
+└─ ProjectedRangeContainer.popRange(needle)
    ├─ requires projected needles for projected ranges
    ├─ materializes projected needles into source value space
-   ├─ searches source pages
+   ├─ delegates source search to VirtualContainer.popRange(needle)
    ├─ assumes valid encoded needles are self-synchronizing
    └─ maps page matches back into projected cursors
 
 Leaf Span
-└─ Page.findSequence(needle)
-   ├─ uses private page-local contiguous storage when available
-   └─ returns virtual cursors when attached to a VirtualContainer
+└─ findBytesInSpans(spans, needle)
+   ├─ consumes byte spans yielded by RangeContainerPart.spans()
+   ├─ uses native Buffer.indexOf for page-local matches
+   ├─ carries a short byte tail for cross-page matches
+   └─ returns the page index plus byte offset
 ```

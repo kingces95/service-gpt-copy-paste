@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   iterate,
-  toArray,
 } from '@kingjs/cursor-algorithm'
 import {
   TypedArrayView,
@@ -22,7 +21,7 @@ function valuesOf(range) {
 }
 
 function rangeValuesOf(ranges) {
-  return toArray(ranges, valuesOf)
+  return [...ranges].map(valuesOf)
 }
 
 function bytesOf(values) {
@@ -142,7 +141,7 @@ describe('VirtualContainer', () => {
     expect([...materialized]).toEqual([1, 2, 3, 4])
   })
 
-  it('keeps retained cursors stable when whole front ranges pop', () => {
+  it('supports reacquiring cursors after whole front ranges pop', () => {
     const ranges = new VirtualContainer()
 
     ranges
@@ -153,10 +152,11 @@ describe('VirtualContainer', () => {
     commit.step()
     commit.step()
 
-    const retained = commit.clone()
+    expect([...iterate(ranges.popRangeAt(commit))]).toEqual([1, 2])
+
+    const retained = ranges.begin()
     retained.step()
 
-    expect([...iterate(ranges.popRangeAt(commit))]).toEqual([1, 2])
     expect(retained.value).toBe(4)
   })
 

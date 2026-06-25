@@ -1,6 +1,5 @@
 import { assert } from '@kingjs/assert'
 import { compose } from '@kingjs/partial-compose'
-import { iterate } from '@kingjs/cursor-algorithm'
 import { Uint8 } from '@kingjs/simple-type'
 import {
   FixedStrideProjectedRangeContainer,
@@ -16,7 +15,7 @@ import {
 import { PreambleScanner } from '../preamble-scanner.js'
 import {
   byteOrderedEncodingOf,
-  byteRangesToStrings,
+  byteSpansToStrings,
 } from '../source-ranges-to-string.js'
 import {
   StringMaterializationPart,
@@ -71,7 +70,7 @@ export class ByteOrderedContainer extends FixedStrideProjectedRangeContainer {
           this._byteOrder = match ?? NativeByteOrder
           this._preamble = null
 
-          for (const range of iterate(remainder.ranges()))
+          for (const range of remainder.ranges())
             pushRange.call(this, range)
         },
       })
@@ -86,7 +85,7 @@ export class ByteOrderedContainer extends FixedStrideProjectedRangeContainer {
 
         const encodingOf = () =>
           byteOrderedEncodingOf(encoding, this._byteOrder)
-        return byteRangesToStrings(this.ranges(), encodingOf)
+        return byteSpansToStrings(this.spans(), encodingOf)
       },
     })
 
@@ -104,13 +103,13 @@ export class ByteOrderedContainer extends FixedStrideProjectedRangeContainer {
     compose(this, SplittableRangePart)
 
     compose(this, ProjectedRangePart, {
-      decodeToken$(sourceCursor, stride) {
+      decodeToken$(sourceCursor) {
         assert(this._byteOrder != null,
           'Byte order has not been resolved.')
 
         const bytes = []
 
-        for (let i = 0; i < stride; i++) {
+        for (let i = 0; i < this._byteWidth; i++) {
           bytes.push(byteAt(sourceCursor))
           sourceCursor.step()
         }

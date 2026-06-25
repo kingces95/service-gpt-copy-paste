@@ -2,7 +2,6 @@ import { compose } from '@kingjs/partial-compose'
 import { implement } from '@kingjs/partial-implement'
 import { EquatableConcept } from '@kingjs/partial-concept'
 import {
-  BacktrackableCursorConcept,
   BacktrackableCursorPart,
   CloneableCursorPart,
   CursorPart,
@@ -12,159 +11,111 @@ import {
 import { ContainerCursor } from '@kingjs/cursor-container'
 
 export class VirtualCursor extends ContainerCursor {
-  _outerCursor
-  _innerCursor
-  _innerCursorEnd
+  _pageCursor
+  _rangeCursor
 
   constructor(
     container,
-    outerCursor,
-    innerCursor = null,
-    innerCursorEnd = null
+    pageCursor,
+    rangeCursor = null
   ) {
     super(container)
-    this._outerCursor = outerCursor
-    this._innerCursor = innerCursor
-    this._innerCursorEnd = innerCursorEnd
-    this._normalizePageEnd()
+    this._pageCursor = pageCursor
+    this._rangeCursor = rangeCursor
+    this._activateRangeCursor()
+    this._normalizeRangeEnd()
   }
 
-  get outerCursor$() { return this._outerCursor }
-  set outerCursor$(outerCursor) { this._outerCursor = outerCursor }
-  get innerCursor$() { return this._innerCursor }
-  set innerCursor$(innerCursor) { this._innerCursor = innerCursor }
-  get innerCursorEnd$() { return this._innerCursorEnd }
-  set innerCursorEnd$(innerCursorEnd) { this._innerCursorEnd = innerCursorEnd }
+  get _range() { return this._pageCursor.value }
 
-  get storedPage() { return this.outerCursor$.value }
-  get storedRange() { return this.storedPage.range }
-
-  getOuterBegin() {
-    return this.outerCursor$.range.begin()
+  _isAtPageBegin() {
+    return this._pageCursor.equals(this._pageCursor.range.begin())
   }
 
-  getOuterEnd() {
-    return this.outerCursor$.range.end()
+  _isAtPageEnd() {
+    return this._pageCursor.equals(this._pageCursor.range.end())
   }
 
-  getInnerCursor() {
-    if (!this.innerCursor$)
-      this.innerCursor$ = this.storedRange.begin()
-
-    return this.innerCursor$
+  _isAtRangeBegin() {
+    return !this._rangeCursor || this._rangeCursor.equals(this._range.begin())
   }
 
-  getInnerCursorEnd() {
-    if (!this.innerCursorEnd$)
-      this.innerCursorEnd$ = this.storedRange.end()
-
-    return this.innerCursorEnd$
+  _isAtRangeEnd() {
+    return !this._rangeCursor || this._rangeCursor.equals(this._range.end())
   }
 
-  resetInnerCursor() {
-    this.innerCursor$ = null
-    this.innerCursorEnd$ = null
-  }
-
-  _normalizePageEnd() {
-    if (!this.innerCursor$ || !this.innerCursorEnd$)
+  _activateRangeCursor() {
+    if (this._isAtPageEnd())
       return
 
-    if (!this.innerCursor$.equals(this.innerCursorEnd$))
+    this._rangeCursor ??= this._range.begin()
+  }
+
+  _resetRangeCursor() {
+    this._rangeCursor = null
+    this._activateRangeCursor()
+  }
+
+  _normalizeRangeEnd() {
+    if (!this._rangeCursor)
       return
 
-    this.outerCursor$.step()
-    this.resetInnerCursor()
+    if (!this._isAtRangeEnd())
+      return
+
+    this._pageCursor.step()
+    this._resetRangeCursor()
   }
 
-  popRangePrefix() {
-    const page = this.storedPage
-    const range = this.storedRange
-    const begin = range.begin()
-    const inner = this.getInnerCursor()
-
-    if (begin.equals(inner))
-      return null
-
-    return this.container._replaceStoredPage(
-      this.outerCursor$,
-      page,
-      inner
-    )
-  }
+  get pageCursor$() { return this._pageCursor }
+  get rangeCursor$() { return this._rangeCursor }
 
   static {
     implement(this, EquatableConcept, {
       equals(other) {
         if (!this.equatableTo(other)) return false
-        if (!this.outerCursor$.equals(other.outerCursor$)) return false
-        if (this.outerCursor$.equals(this.outerCursor$.range.end()))
-          return true
-
-        return this.getInnerCursor().equals(other.getInnerCursor())
-      },
-    })
-
-    implement(this, BacktrackableCursorConcept, {
-      stepBack() {
-        if (this.outerCursor$.equals(this.getOuterEnd())) {
-          this.outerCursor$.stepBack()
-          this.innerCursor$ = this.storedRange.end()
-          this.innerCursorEnd$ = this.innerCursor$.clone?.()
-            ?? this.innerCursor$
-        }
-        else if (this.getInnerCursor().equals(this.storedRange.begin())) {
-          this.outerCursor$.stepBack()
-          this.innerCursor$ = this.storedRange.end()
-          this.innerCursorEnd$ = this.innerCursor$.clone?.()
-            ?? this.innerCursor$
-        }
-
-        this.getInnerCursor().stepBack()
-        return this
+        if (!this._pageCursor.equals(other._pageCursor)) return false
+        if (!this._rangeCursor && !other._rangeCursor) return true
+        return this._rangeCursor.equals(other._rangeCursor)
       },
     })
 
     compose(this, CursorPart, {
-      get isAtEnd$() {
-        return this.outerCursor$.isAtEnd$
-      },
+      get isAtEnd$() { return this._isAtPageEnd() },
     })
 
     compose(this, SteppableCursorPart, {
       step() {
-        this.getInnerCursor().step()
-
-        if (!this.getInnerCursor().equals(this.getInnerCursorEnd()))
-          return this
-
-        this.outerCursor$.step()
-        this.resetInnerCursor()
+        this._rangeCursor.step()
+        this._normalizeRangeEnd()
         return this
       },
     })
 
     compose(this, BacktrackableCursorPart, {
-      isAtBegin$() {
-        if (!this.outerCursor$.equals(this.getOuterBegin()))
-          return false
+      isAtBegin$() { return this._isAtPageBegin() && this._isAtRangeBegin() },
 
-        return !this.innerCursor$
-          || this.innerCursor$.equals(this.storedRange.begin())
+      stepBack() {
+        if (this._isAtRangeBegin()) {
+          this._pageCursor.stepBack()
+          this._rangeCursor = this._range.end()
+        }
+
+        this._rangeCursor.stepBack()
+        return this
       },
     })
 
     compose(this, ReadableCursorPart, {
-      get value() { return this.getInnerCursor().value },
+      get value() { return this._rangeCursor.value },
     })
 
     compose(this, CloneableCursorPart, {
       clone() {
         return new this.constructor(
           this.container,
-          this.outerCursor$.clone(),
-          this.innerCursor$?.clone?.() ?? this.innerCursor$,
-          this.innerCursorEnd$?.clone?.() ?? this.innerCursorEnd$
+          this._pageCursor.clone(),
+          this._rangeCursor?.clone?.() ?? this._rangeCursor
         )
       },
     })

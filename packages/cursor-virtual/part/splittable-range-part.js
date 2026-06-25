@@ -1,5 +1,4 @@
 import { CursorConcept } from '@kingjs/cursor'
-import { iterate } from '@kingjs/cursor-algorithm'
 import {
   ContainerPart,
 } from '@kingjs/cursor-container'
@@ -17,22 +16,22 @@ export class SplittableRangePart extends ContainerPart {
         const source = this.popRangeAt(cursor)
         const result = new this.constructor()
 
-        for (const range of iterate(source.ranges()))
+        for (const range of source.ranges())
           result.pushRange(range)
 
         return result
       },
     },
 
-    split(sequence, options) {
-      const source = this.popRange(sequence, options)
+    split(needle, options) {
+      const source = this.popRange(needle, options)
 
       if (!source)
         return null
 
       const result = new this.constructor()
 
-      for (const range of iterate(source.ranges()))
+      for (const range of source.ranges())
         result.pushRange(range)
 
       return result

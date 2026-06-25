@@ -4,9 +4,7 @@ import { TypedArrayView } from '@kingjs/cursor-view'
 import { compose } from '@kingjs/partial-compose'
 import {
   FixedStrideProjectedRangeContainer,
-  findSequence,
   matchPrefix,
-  Page,
   ProjectedRangePart,
   VirtualContainer,
 } from '../index.js'
@@ -26,28 +24,7 @@ function valuesOf(range) {
   return [...iterate(range)]
 }
 
-describe('findSequence', () => {
-  it('finds a sequence within a range', () => {
-    const range = rangeOf([1, 2], [3, 4])
-    const match = findSequence(range, bytesOf([2, 3]))
-
-    expect(valuesOf(range.popRangeAt(match.end))).toEqual([1, 2, 3])
-  })
-
-  it('returns null when a sequence is absent', () => {
-    const range = rangeOf([1, 2], [3, 4])
-
-    expect(findSequence(range, bytesOf([2, 4]))).toBe(null)
-  })
-
-  it('returns begin/begin for an empty sequence', () => {
-    const range = rangeOf([1, 2])
-    const match = findSequence(range, bytesOf([]))
-
-    expect(match.begin.equals(range.begin())).toBe(true)
-    expect(match.end.equals(range.begin())).toBe(true)
-  })
-
+describe('VirtualContainer split', () => {
   it('commits an empty clone for an empty container sequence', () => {
     const range = rangeOf([1, 2])
     const committed = range.split(Uint8Array.from([]))
@@ -57,11 +34,11 @@ describe('findSequence', () => {
     expect(valuesOf(range)).toEqual([1, 2])
   })
 
-  it('finds through virtual pages', () => {
+  it('commits through a virtual byte needle', () => {
     const range = rangeOf([1, 2], [3, 4])
-    const match = findSequence(range, bytesOf([3]))
+    const committed = range.split(Uint8Array.from([2, 3]))
 
-    expect(valuesOf(range.popRangeAt(match.end))).toEqual([1, 2, 3])
+    expect(valuesOf(committed)).toEqual([1, 2, 3])
   })
 
   it('finds virtual values by materializing a virtual needle', () => {
@@ -79,7 +56,7 @@ describe('findSequence', () => {
     const range = virtualRangeOf([1, 2, 3])
 
     expect(() => range.split(bytesOf([102]))).toThrow(
-      'Projected sequence must match projected range.')
+      'Range needle must be a Uint8Array or materializable range.')
   })
 
   it('finds virtual values across virtual pages', () => {
@@ -90,25 +67,7 @@ describe('findSequence', () => {
     expect(valuesOf(committed)).toEqual([101, 102, 103])
   })
 
-  it('does not special-case a virtual needle for a non-virtual range', () => {
-    const range = rangeOf([1, 2], [3, 4])
-    const needle = virtualRangeOf([2, 3])
-
-    expect(findSequence(range, needle)).toBe(null)
-  })
-
-  it('uses page byte spans for local matches', () => {
-    const page = new Page(
-      new TypedArrayView(Uint8Array.from([1, 2, 3, 4]))
-    )
-    const match = page.findSequence(Uint8Array.from([2, 3]))
-
-    expect(match.begin.value).toBe(2)
-    expect(match.end.value).toBe(4)
-  })
-
   it('falls back when a byte match crosses spans', () => {
-
     const range = new VirtualContainer()
 
     range
@@ -121,7 +80,6 @@ describe('findSequence', () => {
   })
 
   it('continues after a failed cross-page fallback', () => {
-
     const range = new VirtualContainer()
 
     range
@@ -135,7 +93,6 @@ describe('findSequence', () => {
   })
 
   it('returns range container cursors from a byte span match', () => {
-
     const range = new VirtualContainer()
 
     range.pushRange(new TypedArrayView(Uint8Array.from([1, 2, 3, 4])))
@@ -162,8 +119,6 @@ describe('findSequence', () => {
   })
 })
 const VirtualByteRange = (() => {
-
-
   return class VirtualByteRange extends FixedStrideProjectedRangeContainer {
     constructor() {
       super(new VirtualContainer())
@@ -171,7 +126,7 @@ const VirtualByteRange = (() => {
 
     static {
       compose(this, ProjectedRangePart, {
-        decodeToken$(sourceCursor, stride) {
+        decodeToken$(sourceCursor) {
           return sourceCursor.value + 100
         },
       })

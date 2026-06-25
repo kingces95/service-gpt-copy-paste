@@ -52,8 +52,10 @@ class VariableValueRange extends VariableStrideProjectedRangeContainer {
 
   static {
     define(this, {
-      decodeToken$(sourceCursor, stride) {
+      decodeToken$(sourceCursor) {
         const values = []
+        const stride = this.tokenStrideOf$(sourceCursor.value)
+
         for (let i = 0; i < stride; i++) {
           values.push(sourceCursor.value)
           sourceCursor.step()

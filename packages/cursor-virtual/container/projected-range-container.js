@@ -1,5 +1,4 @@
 import { assert } from '@kingjs/assert'
-import { contract } from '@kingjs/function-contract'
 import { compose } from '@kingjs/partial-compose'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { RangePart } from '@kingjs/cursor'
@@ -8,7 +7,6 @@ import { RangeContainerPart } from '../part/range-container-part.js'
 import { SplittableRangePart } from '../part/splittable-range-part.js'
 import { SplittableRangeShape } from '../shape/ranges-container-shape.js'
 import { ProjectedCursor } from '../cursor/projected-cursor.js'
-import { Projector } from '../projector/projector.js'
 
 // ProjectedRangeContainer scans a source range as projected values while
 // preserving source ownership. Cursors move in projected space, but
@@ -18,14 +16,12 @@ export class ProjectedRangeContainer extends PartialProxy {
   static cursorType = ProjectedCursor
 
   _source
-  _projector
 
   constructor(source) {
     super()
     assert(source instanceof SplittableRangeShape,
       'Virtual source must be a splittable range container.')
     this._source = source
-    this._projector = new Projector(this)
   }
 
   static {
@@ -44,16 +40,12 @@ export class ProjectedRangeContainer extends PartialProxy {
         return this.source$.popRangeAt(cursor.sourceCursor$)
       },
 
-      popRange: contract({
-        precondition(sequence) {
-          assert(sequence instanceof this.constructor,
-            'Projected sequence must match projected range.')
-        },
+      popRange$(needle, options) {
+        assert(needle,
+          'Projected needle must match projected range.')
+
+        return this.source$.popRange(needle, options)
       },
-      function popRange(sequence, options) {
-        const sourceNeedle = sequence.materialize()
-        return this.source$.popRange(sourceNeedle, options)
-      }),
 
       ranges() { return this.source$.ranges() },
     })
@@ -62,11 +54,8 @@ export class ProjectedRangeContainer extends PartialProxy {
 
     compose(this, ProjectedRangePart, {
       get source$() { return this._source },
-      get projector$() { return this._projector },
-      get source() { return this._source },
-      get projector() { return this._projector },
     }, {
-      decodeToken$(sourceCursor, stride) { },
+      decodeToken$(sourceCursor) { },
     })
   }
 }

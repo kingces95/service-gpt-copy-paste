@@ -72,12 +72,12 @@ function cursorAfter(cursor, count) {
   return cursor
 }
 
-function findCodePointSequence(range, sequence) {
+function findCodePointSequence(range, needle) {
   const cursor = range.begin()
   const end = range.end()
 
   while (!cursor.equals(end)) {
-    const matchEnd = matchAt(cursor, end, sequence)
+    const matchEnd = matchAt(cursor, end, needle)
     if (matchEnd)
       return {
         begin: cursor.clone(),
@@ -90,10 +90,10 @@ function findCodePointSequence(range, sequence) {
   return null
 }
 
-function matchAt(cursor, end, sequence) {
+function matchAt(cursor, end, needle) {
   const current = cursor.clone()
 
-  for (const codePoint of sequence) {
+  for (const codePoint of needle) {
     if (current.equals(end))
       return null
 

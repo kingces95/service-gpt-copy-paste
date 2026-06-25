@@ -5,12 +5,14 @@ import {
   Defaults,
   Preconditions,
   Signature,
+  Transforms,
 } from '@kingjs/partial-symbols'
 
 const MetadataSymbols = {
   types: ArgChecks,
   defaults: Defaults,
   precondition: Preconditions,
+  transforms: Transforms,
 }
 
 const SignatureKeys = Object.keys(MetadataSymbols)
