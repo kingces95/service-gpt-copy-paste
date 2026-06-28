@@ -8,6 +8,12 @@ class BasePart extends PartialClass {
   }
 }
 
+class DefaultPart extends PartialClass {
+  static [Defines] = {
+    member() { return 'default' },
+  }
+}
+
 class DerivedPart extends PartialClass {
   static [Composes] = BasePart
   static {
@@ -37,6 +43,16 @@ class DefaultType {
   }
 }
 
+class ReappliedDefaultType {
+  static {
+    compose(this, DefaultPart, {
+      member() { return 'specialized' },
+    })
+
+    compose(this, DefaultPart)
+  }
+}
+
 describe('Partial composition default specializations', () => {
   it('preserves a concrete implementation attached with a base part', () => {
     expect(new SpecializedType().member()).toBe('specialized')
@@ -44,5 +60,9 @@ describe('Partial composition default specializations', () => {
 
   it('uses a derived default when the base part is left abstract', () => {
     expect(new DefaultType().member()).toBe('default')
+  })
+
+  it('reapplies an own default when the same part is composed again', () => {
+    expect(new ReappliedDefaultType().member()).toBe('default')
   })
 })

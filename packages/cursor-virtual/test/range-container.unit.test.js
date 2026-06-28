@@ -111,6 +111,26 @@ describe('VirtualContainer', () => {
     expect([...iterate(ranges)]).toEqual([4, 5])
   })
 
+  it('tracks pushed and popped byte counts', () => {
+    const ranges = new VirtualContainer()
+
+    ranges
+      .pushRange(bytesOf([1, 2]))
+      .pushRange(bytesOf([3, 4, 5]))
+
+    const commit = ranges.begin()
+    commit.step()
+    commit.step()
+    commit.step()
+
+    const consumed = ranges.popRangeAt(commit)
+
+    expect(ranges.bytesPushed).toBe(5)
+    expect(ranges.bytesPopped).toBe(3)
+    expect(consumed.bytesPushed).toBe(3)
+    expect(consumed.bytesPopped).toBe(0)
+  })
+
   it('returns consumed stored ranges through ranges()', () => {
     const ranges = new VirtualContainer()
 

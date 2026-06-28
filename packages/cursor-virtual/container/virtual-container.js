@@ -4,7 +4,6 @@ import { assert } from '@kingjs/assert'
 import { PartialProxy } from '@kingjs/partial-proxy'
 import { RangeConcept } from '@kingjs/cursor'
 import { RangeContainerPart } from '../part/range-container-part.js'
-import { SplittableRangePart } from '../part/splittable-range-part.js'
 import {
   TypedArrayView,
 } from '@kingjs/cursor-view'
@@ -32,10 +31,14 @@ import {
 export class VirtualContainer extends PartialProxy {
   static cursorType = VirtualCursor
 
+  _bytesPopped
+  _bytesPushed
   _pages
 
   constructor() {
     super()
+    this._bytesPopped = 0
+    this._bytesPushed = 0
     this._pages = new Deque()
   }
 
@@ -54,12 +57,16 @@ export class VirtualContainer extends PartialProxy {
     })
 
     compose(this, RangeContainerPart, {
+      get bytesPopped() { return this._bytesPopped },
+      get bytesPushed() { return this._bytesPushed },
+
       pushRange(range) {
         const span = range.span()
         if (span.length == 0)
           return this
 
         this._pushStoredRange(range)
+        this._bytesPushed += span.length
         return this
       },
 
@@ -87,6 +94,7 @@ export class VirtualContainer extends PartialProxy {
           }
         }
 
+        this._bytesPopped += result.bytesPushed
         return result
       },
 
@@ -120,7 +128,5 @@ export class VirtualContainer extends PartialProxy {
           yield range
       },
     })
-
-    compose(this, SplittableRangePart)
   }
 }

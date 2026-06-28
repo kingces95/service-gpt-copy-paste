@@ -4,7 +4,6 @@ import { PartialProxy } from '@kingjs/partial-proxy'
 import { RangePart } from '@kingjs/cursor'
 import { ProjectedRangePart } from '../part/projected-range-part.js'
 import { RangeContainerPart } from '../part/range-container-part.js'
-import { SplittableRangePart } from '../part/splittable-range-part.js'
 import { SplittableRangeShape } from '../shape/ranges-container-shape.js'
 import { ProjectedCursor } from '../cursor/projected-cursor.js'
 
@@ -27,10 +26,33 @@ export class ProjectedRangeContainer extends PartialProxy {
   static {
     compose(this, RangePart, {
       begin() { return new this.cursorType(this, this.source$.begin()) },
-      end() { return new this.cursorType(this, this.source$.end()) },
+      end() {
+        return new this.cursorType(this, this.trimEnd$(this.source$.end()))
+      },
+    })
+
+    compose(this, ProjectedRangePart, {
+      get source$() { return this._source },
+
+      stepValue$(sourceCursor) {
+        sourceCursor.step()
+      },
+
+      stepBackValue$(sourceCursor) {
+        sourceCursor.stepBack()
+      },
+
+      trimEnd$(sourceCursor) {
+        return sourceCursor
+      },
+    }, {
+      decodeValue$(sourceCursor) { },
     })
 
     compose(this, RangeContainerPart, {
+      get bytesPopped() { return this.source$.bytesPopped },
+      get bytesPushed() { return this.source$.bytesPushed },
+
       pushRange(range) {
         this.source$.pushRange(range)
         return this
@@ -48,14 +70,6 @@ export class ProjectedRangeContainer extends PartialProxy {
       },
 
       ranges() { return this.source$.ranges() },
-    })
-
-    compose(this, SplittableRangePart)
-
-    compose(this, ProjectedRangePart, {
-      get source$() { return this._source },
-    }, {
-      decodeToken$(sourceCursor) { },
     })
   }
 }

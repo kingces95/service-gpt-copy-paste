@@ -90,4 +90,19 @@ describe('UnicodeActivator', () => {
     expect(forwarded).toBe(input)
     expect(valuesOf(input)).toEqual([0x61, 0x62])
   })
+
+  it('consumes a split UTF-8 signature before activation', () => {
+    const activator = new UnicodeActivator()
+
+    expect(activator.pushRange(rangeOf([0xef]))).toBe(null)
+
+    const input = activator.pushRange(rangeOf([
+      0xbb,
+      0xbf,
+      0x61,
+    ]))
+
+    expect(input).toBeInstanceOf(Utf8CodePointContainer)
+    expect(valuesOf(input)).toEqual([0x61])
+  })
 })

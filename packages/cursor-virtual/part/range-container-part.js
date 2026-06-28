@@ -24,6 +24,9 @@ function sourceNeedle(needle) {
 
 export class RangeContainerPart extends ContainerPart {
   static [DefinesAbstract] = members(this, {
+    get bytesPushed() { },
+    get bytesPopped() { },
+
     pushRange: {
       types: [ContiguousRangeShape],
       method(range) { },
@@ -74,6 +77,36 @@ export class RangeContainerPart extends ContainerPart {
       method(needle, options) {
         return this.popRange$(needle, options)
       },
+    },
+
+    splitAt: {
+      types: [CursorConcept],
+      precondition(cursor) {
+        this.ownCursorAssert$(cursor)
+      },
+      method(cursor) {
+        const source = this.popRangeAt(cursor)
+        const result = new this.constructor()
+
+        for (const range of source.ranges())
+          result.pushRange(range)
+
+        return result
+      },
+    },
+
+    split(needle, options) {
+      const source = this.popRange(needle, options)
+
+      if (!source)
+        return null
+
+      const result = new this.constructor()
+
+      for (const range of source.ranges())
+        result.pushRange(range)
+
+      return result
     },
   })
 }

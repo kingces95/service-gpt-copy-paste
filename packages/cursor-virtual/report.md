@@ -55,10 +55,6 @@ Shape
 Naked
 ├─ ProjectedCursor
 │  └─ sourceCursor$
-├─ FixedStrideProjectedCursor
-│  └─ stride$
-└─ VariableStrideProjectedCursor
-   └─ stride$
 
 Private
 ├─ ProjectedCursor
@@ -97,18 +93,22 @@ Part
 ├─ ContainerPart
 │  └─ isEmpty
 ├─ RangeContainerPart
+│  ├─ bytesPushed
+│  ├─ bytesPopped
 │  ├─ pushRange(range)
 │  ├─ popRangeAt(cursor)
 │  ├─ popRange(needle, options)
 │  ├─ ranges()
 │  ├─ spans()
-│  └─ materialize()
-├─ SplittableRangePart
+│  ├─ materialize()
 │  ├─ splitAt(cursor)
 │  └─ split(needle, options)
 ├─ ProjectedRangePart
 │  ├─ source$
-│  └─ decodeToken$(sourceCursor)
+│  ├─ decodeValue$(sourceCursor)
+│  ├─ stepValue$(sourceCursor)
+│  ├─ stepBackValue$(sourceCursor)
+│  └─ trimEnd$(sourceCursor)
 
 Shape
 ├─ RangesContainerShape
@@ -123,25 +123,21 @@ Shape
    └─ split(needle, options)
 
 Naked
-└─ VariableStrideProjectedRangeContainer
-   └─ tokenStrideOf$(value)
+└─ <none>
 
 Private
-├─ FixedStrideProjectedRangeContainer
-│  ├─ _remainder
-│  └─ _strideLength
 ├─ ProjectedRangeContainer
 │  └─ _source
 ├─ VirtualContainer
+│  ├─ _bytesPopped
+│  ├─ _bytesPushed
 │  ├─ _pages
 │  ├─ _pushStoredRange
 │  ├─ _replaceStoredRange
 │  ├─ _popRangePrefixAt
 │  ├─ _findRange
 │  └─ _cursorAt
-└─ VariableStrideProjectedRangeContainer
-   ├─ _isContinuation
-   └─ _continuationCountOf
+└─ <none>
 ```
 
 ## Virtual And Projected Model
@@ -170,15 +166,15 @@ Projected
 ├─ ProjectedRangeContainer
 │  ├─ has one source range
 │  ├─ owns protected source access
-│  ├─ decodes source tokens through decodeToken$()
+│  ├─ decodes source values through decodeValue$()
+│  ├─ trims projected end through trimEnd$()
+│  ├─ defaults to one-source-value stride
 │  └─ exposes projected logical values
 ├─ ProjectedCursor
 │  ├─ holds a source cursor
 │  └─ asks the container to decode the current source token
-├─ FixedStrideProjectedRangeContainer
-│  └─ trims pushed suffixes by tracking fixed-stride remainder
-└─ VariableStrideProjectedRangeContainer
-   └─ trims pushed suffixes by backing up over continuations
+└─ Projection-specific containers
+   └─ override projection hooks directly
 ```
 
 ## Byte Search Algorithms

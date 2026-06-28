@@ -1,32 +1,50 @@
 import { describe, expect, it } from 'vitest'
 import { TypedArrayView } from '@kingjs/cursor-view'
-import { iterate } from '@kingjs/cursor-algorithm'
+import { advance, iterate } from '@kingjs/cursor-algorithm'
 import { compose } from '@kingjs/partial-compose'
 import {
-  VariableStrideProjectedRangeContainer,
+  ProjectedRangeContainer,
   ProjectedRangePart,
+  trimContinuationSuffix,
   VirtualContainer,
 } from '../index.js'
 
-class UtfLikeRange extends VariableStrideProjectedRangeContainer {
+class UtfLikeRange extends ProjectedRangeContainer {
   constructor({ throwOnFirst = false } = { }) {
-    super(new VirtualContainer(), {
-      isContinuation: value => value >= 0x80,
-      continuationCountOf(value) {
-        return value >= 0x40 ? 1 : 0
-      },
-    })
+    super(new VirtualContainer())
     this.throwOnFirst = throwOnFirst
   }
 
   static {
     compose(this, ProjectedRangePart, {
-      decodeToken$(sourceCursor) {
+      trimEnd$(sourceCursor) {
+        return trimContinuationSuffix(
+          this.source$,
+          sourceCursor,
+          {
+            isContinuation: isContinuation,
+            lengthOf: codePointLengthOf,
+          }
+        )
+      },
+
+      stepValue$(sourceCursor) {
+        advance(sourceCursor, codePointLengthOf(sourceCursor.value))
+      },
+
+      stepBackValue$(sourceCursor) {
+        sourceCursor.stepBack()
+
+        while (isContinuation(sourceCursor.value))
+          sourceCursor.stepBack()
+      },
+
+      decodeValue$(sourceCursor) {
         const first = sourceCursor.value
         if (this.throwOnFirst && first == 0x40)
           throw new Error('Fallback should start at the page tail.')
 
-        const stride = this.tokenStrideOf$(first)
+        const stride = codePointLengthOf(first)
 
         for (let i = 1; i < stride; i++)
           sourceCursor.step()
@@ -35,6 +53,14 @@ class UtfLikeRange extends VariableStrideProjectedRangeContainer {
       },
     })
   }
+}
+
+function isContinuation(value) {
+  return value >= 0x80
+}
+
+function codePointLengthOf(value) {
+  return value >= 0x40 ? 2 : 1
 }
 
 function rangeOf(...chunks) {

@@ -4,11 +4,9 @@ import { iterate } from '@kingjs/cursor-algorithm'
 import { TypedArrayView } from '@kingjs/cursor-view'
 import { Uint8 } from '@kingjs/simple-type'
 import { define } from '@kingjs/partial-define'
-import { RangePart } from '@kingjs/cursor'
 import { compose } from '@kingjs/partial-compose'
 import {
-  FixedStrideProjectedRangeContainer,
-  ProjectedCursor,
+  ProjectedRangePart,
   ProjectedRangeContainer,
   VirtualContainer,
 } from '../index.js'
@@ -35,14 +33,14 @@ function materializeRanges(ranges) {
   return [...ranges].map(range => textOf([...iterate(range)]))
 }
 
-class AsciiCodePointContainer extends FixedStrideProjectedRangeContainer {
+class AsciiCodePointContainer extends ProjectedRangeContainer {
   constructor() {
     super(new VirtualContainer())
   }
 
   static {
     define(this, {
-      decodeToken$(sourceCursor) {
+      decodeValue$(sourceCursor) {
         const value = sourceCursor.value
         assert(value instanceof Uint8 && value <= 0x7f,
           'Expected ASCII byte.')
@@ -53,19 +51,7 @@ class AsciiCodePointContainer extends FixedStrideProjectedRangeContainer {
   }
 }
 
-class DelimitedRecordCursor extends ProjectedCursor {
-  static {
-    define(this, {
-      get stride$() {
-        return this.container.decodeStride$(this.sourceCursor$)
-      },
-    })
-  }
-}
-
 class DelimitedRecordContainer extends ProjectedRangeContainer {
-  static cursorType = DelimitedRecordCursor
-
   get isDelimiter$() {
     return this.constructor.isDelimiter
   }
@@ -79,10 +65,9 @@ class DelimitedRecordContainer extends ProjectedRangeContainer {
   }
 
   static {
-    compose(this, RangePart, {
-      end() {
+    compose(this, ProjectedRangePart, {
+      trimEnd$(sourceCursor) {
         const cursor = this.source$.begin()
-        const end = this.source$.end()
 
         while (true) {
           const stride = delimitedTokenStrideOf(
@@ -90,13 +75,17 @@ class DelimitedRecordContainer extends ProjectedRangeContainer {
             cursor,
             this.isDelimiter$,
             this.isEscape$,
-            end
+            sourceCursor
           )
           if (stride == null)
-            return new this.cursorType(this, cursor.clone())
+            return cursor
 
           advance(cursor, stride)
         }
+      },
+
+      stepValue$(sourceCursor) {
+        advance(sourceCursor, this.decodeStride$(sourceCursor))
       },
     })
 
@@ -121,7 +110,7 @@ class CsvRecordContainer extends DelimitedRecordContainer {
 
   static {
     define(this, {
-      decodeToken$(sourceCursor) {
+      decodeValue$(sourceCursor) {
         const cursor = sourceCursor
         const end = this.source$.end()
         const fields = [[]]
@@ -153,7 +142,7 @@ class ReadRecordContainer extends DelimitedRecordContainer {
 
   static {
     define(this, {
-      decodeToken$(sourceCursor) {
+      decodeValue$(sourceCursor) {
         const values = []
         let escaped = false
 

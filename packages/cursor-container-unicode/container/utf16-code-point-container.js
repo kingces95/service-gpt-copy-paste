@@ -1,8 +1,10 @@
 import {
+  ProjectedRangeContainer,
   ProjectedRangePart,
-  VariableStrideProjectedRangeContainer,
+  trimContinuationSuffix,
 } from '@kingjs/cursor-virtual'
 import { assert } from '@kingjs/assert'
+import { advance } from '@kingjs/cursor-algorithm'
 import { compose } from '@kingjs/partial-compose'
 import {
   assertScalarValue,
@@ -12,9 +14,7 @@ import {
 } from '@kingjs/unicode'
 import { Uint16 } from '@kingjs/simple-type'
 import {
-  Utf16BECodeUnitContainer,
   Utf16CodeUnitContainer,
-  Utf16LECodeUnitContainer,
 } from './utf16-code-unit-container.js'
 import {
   StringMaterializationPart,
@@ -34,16 +34,13 @@ function readUnit(cursor) {
   return value
 }
 
-export class Utf16CodePointContainer extends VariableStrideProjectedRangeContainer {
-  constructor({ source = null, byteOrder = null } = { }) {
-    source ??= new Utf16CodeUnitContainer({ byteOrder })
-    assert(source instanceof Utf16CodeUnitContainer,
-      'UTF-16 code point source must be a UTF-16 code unit container.')
+function codePointLengthOf(unit) {
+  return isHighSurrogate(unit) ? 2 : 1
+}
 
-    super(source, {
-      isContinuation: isLowSurrogate,
-      continuationCountOf: unit => isHighSurrogate(unit) ? 1 : 0,
-    })
+export class Utf16CodePointContainer extends ProjectedRangeContainer {
+  constructor({ byteOrder = null } = { }) {
+    super(new Utf16CodeUnitContainer({ byteOrder }))
   }
 
   static {
@@ -52,13 +49,35 @@ export class Utf16CodePointContainer extends VariableStrideProjectedRangeContain
     })
 
     compose(this, ProjectedRangePart, {
-      decodeToken$(sourceCursor) {
+      trimEnd$(sourceCursor) {
+        return trimContinuationSuffix(
+          this.source$,
+          sourceCursor,
+          {
+            isContinuation: isLowSurrogate,
+            lengthOf: codePointLengthOf,
+          }
+        )
+      },
+
+      stepValue$(sourceCursor) {
+        advance(sourceCursor, codePointLengthOf(sourceCursor.value))
+      },
+
+      stepBackValue$(sourceCursor) {
+        sourceCursor.stepBack()
+
+        while (isLowSurrogate(sourceCursor.value))
+          sourceCursor.stepBack()
+      },
+
+      decodeValue$(sourceCursor) {
         const first = readUnit(sourceCursor)
 
         if (isLowSurrogate(first))
           throw new Error('Unexpected UTF-16 low surrogate.')
 
-        const stride = this.tokenStrideOf$(first)
+        const stride = codePointLengthOf(first)
 
         if (stride == 1) {
           assertScalarValue(first)
@@ -79,19 +98,13 @@ export class Utf16CodePointContainer extends VariableStrideProjectedRangeContain
 }
 
 export class Utf16BECodePointContainer extends Utf16CodePointContainer {
-  constructor({ source = null } = { }) {
-    source ??= new Utf16BECodeUnitContainer()
-    assert(source instanceof Utf16BECodeUnitContainer,
-      'UTF-16BE code point source must be a UTF-16BE code unit container.')
-    super({ source })
+  constructor() {
+    super({ byteOrder: 'big' })
   }
 }
 
 export class Utf16LECodePointContainer extends Utf16CodePointContainer {
-  constructor({ source = null } = { }) {
-    source ??= new Utf16LECodeUnitContainer()
-    assert(source instanceof Utf16LECodeUnitContainer,
-      'UTF-16LE code point source must be a UTF-16LE code unit container.')
-    super({ source })
+  constructor() {
+    super({ byteOrder: 'little' })
   }
 }

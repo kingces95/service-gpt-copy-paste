@@ -27,13 +27,11 @@ Unicode Byte Unit And Point Extensions
 Unicode Byte Unit And Point Extensions
 
 Byte
-└─ FixedStrideProjectedRangeContainer
+└─ ProjectedRangeContainer
    └─ ByteOrderedContainer
 
 Unit
-├─ FixedStrideProjectedRangeContainer
-│  └─ CodeUnitContainer
-└─ CodeUnitContainer
+└─ ByteOrderedContainer
    ├─ Utf16CodeUnitContainer
    │  ├─ Utf16BECodeUnitContainer
    │  └─ Utf16LECodeUnitContainer
@@ -42,12 +40,12 @@ Unit
       └─ Utf32LECodeUnitContainer
 
 Point
-├─ VariableStrideProjectedRangeContainer
+├─ ProjectedRangeContainer
 │  ├─ Utf8CodePointContainer
 │  └─ Utf16CodePointContainer
 │     ├─ Utf16BECodePointContainer
 │     └─ Utf16LECodePointContainer
-└─ FixedStrideProjectedRangeContainer
+└─ ProjectedRangeContainer
    └─ Utf32CodePointContainer
       ├─ Utf32BECodePointContainer
       └─ Utf32LECodePointContainer
@@ -73,7 +71,6 @@ Byte
 
 Unit
 └─ ByteOrderedContainer
-   ├─ CodeUnitContainer
    ├─ Utf16CodeUnitContainer
    ├─ Utf16BECodeUnitContainer
    ├─ Utf16LECodeUnitContainer
@@ -146,8 +143,6 @@ Byte
    └─ ByteOrderedContainer = ByteOrderedContainerOf(Object)
 
 Unit
-├─ CodeUnitContainerOf(TSpan)
-│  └─ CodeUnitContainer = CodeUnitContainerOf(Object)
 ├─ Utf16CodeUnitContainerOf(TSpan)
 │  └─ Utf16CodeUnitContainer = Utf16CodeUnitContainerOf(Object)
 └─ Utf32CodeUnitContainerOf(TSpan)

@@ -123,6 +123,12 @@ PreambleConsumerPart
 ├─ initializes the scanner during construction
 ├─ transforms pushRange(range) to feed the scanner while unresolved
 └─ clears the scanner, then replays remainder ranges through pushRange
+
+RangeSourcePart
+├─ owns or queries source$ for range-like forwarding Parts
+├─ lets RangeContainerPart-style Parts declare their own source$ requirement
+├─ asserts the resolved source shape once after activation
+└─ avoids smearing one shared source$ contract across unrelated Parts
 ```
 
 Preamble consumption is a proof-of-completion win. UTF-8 signatures and
@@ -133,6 +139,15 @@ existing argument transform pipeline may be enough for the interception: while
 the scanner is active, the transform feeds it and returns an empty range; the
 scanner callback clears the field before replaying ranges through `pushRange`,
 so the replayed calls fall through normally.
+
+`source$` is another proof case. As projected containers flatten, multiple
+Parts may want their own source query surface: one Part may need a splittable
+range source, another may need a byte-spannable source, and another may only
+need a readable range. Today they all share one informal `source$` vocabulary,
+and the only available assertion point is per-member preconditions, which is
+too hacky for component-level wiring. A construction hook would let each Part
+declare and validate the shape of the source it queries once, after the
+receiver is initialized but before normal use.
 
 Open questions:
 

@@ -5,20 +5,33 @@ import {
 import { TypedArrayView } from '@kingjs/cursor-view'
 import { compose } from '@kingjs/partial-compose'
 import {
-  FixedStrideProjectedRangeContainer,
+  ProjectedRangeContainer,
   ProjectedRangePart,
   VirtualContainer,
 } from '../index.js'
+import { advance, previous, retreat } from '@kingjs/cursor-algorithm'
 
-class PairRange extends FixedStrideProjectedRangeContainer {
+class PairRange extends ProjectedRangeContainer {
   constructor({ throwOnFirst = false } = { }) {
-    super(new VirtualContainer(), { strideLength: 2 })
+    super(new VirtualContainer())
     this.throwOnFirst = throwOnFirst
   }
 
   static {
     compose(this, ProjectedRangePart, {
-      decodeToken$(sourceCursor) {
+      trimEnd$(sourceCursor) {
+        return previous(sourceCursor, this.bytesPushed % 2)
+      },
+
+      stepValue$(sourceCursor) {
+        advance(sourceCursor, 2)
+      },
+
+      stepBackValue$(sourceCursor) {
+        retreat(sourceCursor, 2)
+      },
+
+      decodeValue$(sourceCursor) {
         const first = sourceCursor.value
         if (this.throwOnFirst && first == 0)
           throw new Error('Fallback should start at the page tail.')

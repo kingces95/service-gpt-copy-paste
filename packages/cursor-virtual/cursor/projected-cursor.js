@@ -1,14 +1,13 @@
 import { compose } from '@kingjs/partial-compose'
 import { implement } from '@kingjs/partial-implement'
-import { define, defineAbstract } from '@kingjs/partial-define'
+import { define } from '@kingjs/partial-define'
 import { EquatableConcept } from '@kingjs/partial-concept'
 import {
   CloneableCursorPart,
-  CursorPart,
+  BacktrackableCursorPart,
   ReadableCursorPart,
   SteppableCursorPart,
 } from '@kingjs/cursor'
-import { advance } from '@kingjs/cursor-algorithm'
 import { ContainerCursor } from '@kingjs/cursor-container'
 
 export class ProjectedCursor extends ContainerCursor {
@@ -20,11 +19,6 @@ export class ProjectedCursor extends ContainerCursor {
   }
 
   static {
-    defineAbstract(this, {
-      get stride$() { },
-      get sourceCursor$() { },
-    })
-
     define(this, {
       get sourceCursor$() { return this._sourceCursor },
     })
@@ -33,6 +27,20 @@ export class ProjectedCursor extends ContainerCursor {
       equals(other) {
         if (!this.equatableTo(other)) return false
         return this.sourceCursor$.equals(other.sourceCursor$)
+      },
+    })
+
+    compose(this, SteppableCursorPart, {
+      step() {
+        this.container.stepValue$(this.sourceCursor$)
+        return this
+      },
+    })
+
+    compose(this, BacktrackableCursorPart, {
+      stepBack() {
+        this.container.stepBackValue$(this.sourceCursor$)
+        return this
       },
     })
 
@@ -45,24 +53,10 @@ export class ProjectedCursor extends ContainerCursor {
       },
     })
 
-    compose(this, CursorPart, {
-      get isAtEnd$() {
-        return this.sourceCursor$.equals(this.container.end().sourceCursor$)
-      },
-    })
-
-    compose(this, SteppableCursorPart, {
-      step() {
-        advance(this.sourceCursor$, this.stride$)
-        return this
-      },
-    })
-
     compose(this, ReadableCursorPart, {
       get value() {
-        return this.container.decodeToken$(this.sourceCursor$.clone())
+        return this.container.decodeValue$(this.sourceCursor$.clone())
       },
     })
-
   }
 }

@@ -1,7 +1,6 @@
 export * from './preamble-scanner.js'
 export * from './unicode-activator.js'
 export * from './container/byte-ordered-container.js'
-export * from './container/code-unit-container.js'
 export * from './container/utf16-code-unit-container.js'
 export * from './container/utf32-code-unit-container.js'
 export * from './container/utf8-code-point-container.js'

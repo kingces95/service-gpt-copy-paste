@@ -2,12 +2,12 @@ import { assert } from '@kingjs/assert'
 import { compose } from '@kingjs/partial-compose'
 import { Uint8 } from '@kingjs/simple-type'
 import {
-  FixedStrideProjectedRangeContainer,
+  ProjectedRangeContainer,
   ProjectedRangePart,
   RangeContainerPart,
-  SplittableRangePart,
   VirtualContainer,
 } from '@kingjs/cursor-virtual'
+import { advance, previous, retreat } from '@kingjs/cursor-algorithm'
 import {
   decodeBytes,
   NativeByteOrder,
@@ -21,7 +21,7 @@ import {
   StringMaterializationPart,
 } from '../part/string-materialization-part.js'
 
-const pushRange = FixedStrideProjectedRangeContainer.prototype.pushRange
+const pushRange = ProjectedRangeContainer.prototype.pushRange
 
 function byteAt(cursor) {
   const value = cursor.value
@@ -35,23 +35,19 @@ function isByteOrder(value) {
   return value == 'big' || value == 'little'
 }
 
-export class ByteOrderedContainer extends FixedStrideProjectedRangeContainer {
+export class ByteOrderedContainer extends ProjectedRangeContainer {
   _byteOrder
   _byteWidth
   _preamble
 
-  constructor({ source = null, byteOrder = null, byteWidth }) {
+  constructor({ byteOrder = null, byteWidth }) {
     assert(byteWidth > 1,
       'Byte width must be greater than one.')
     assert(byteOrder == null || isByteOrder(byteOrder) ||
       typeof byteOrder == 'object',
       'Byte order must be null, big, little, or preambles.')
 
-    source ??= new VirtualContainer()
-    assert(source instanceof VirtualContainer,
-      'Byte ordered source must be a range container.')
-
-    super(source, { strideLength: byteWidth })
+    super(new VirtualContainer())
     this._preamble = null
     this._byteWidth = byteWidth
     this._byteOrder = isByteOrder(byteOrder)
@@ -100,10 +96,20 @@ export class ByteOrderedContainer extends FixedStrideProjectedRangeContainer {
       },
     })
 
-    compose(this, SplittableRangePart)
-
     compose(this, ProjectedRangePart, {
-      decodeToken$(sourceCursor) {
+      trimEnd$(sourceCursor) {
+        return previous(sourceCursor, this.bytesPushed % this._byteWidth)
+      },
+
+      stepValue$(sourceCursor) {
+        advance(sourceCursor, this._byteWidth)
+      },
+
+      stepBackValue$(sourceCursor) {
+        retreat(sourceCursor, this._byteWidth)
+      },
+
+      decodeValue$(sourceCursor) {
         assert(this._byteOrder != null,
           'Byte order has not been resolved.')
 

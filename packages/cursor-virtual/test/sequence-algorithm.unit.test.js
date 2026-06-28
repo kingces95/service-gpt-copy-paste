@@ -3,8 +3,8 @@ import { iterate } from '@kingjs/cursor-algorithm'
 import { TypedArrayView } from '@kingjs/cursor-view'
 import { compose } from '@kingjs/partial-compose'
 import {
-  FixedStrideProjectedRangeContainer,
   matchPrefix,
+  ProjectedRangeContainer,
   ProjectedRangePart,
   VirtualContainer,
 } from '../index.js'
@@ -119,14 +119,14 @@ describe('VirtualContainer split', () => {
   })
 })
 const VirtualByteRange = (() => {
-  return class VirtualByteRange extends FixedStrideProjectedRangeContainer {
+  return class VirtualByteRange extends ProjectedRangeContainer {
     constructor() {
       super(new VirtualContainer())
     }
 
     static {
       compose(this, ProjectedRangePart, {
-        decodeToken$(sourceCursor) {
+        decodeValue$(sourceCursor) {
           return sourceCursor.value + 100
         },
       })

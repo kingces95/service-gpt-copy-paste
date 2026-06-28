@@ -3,6 +3,7 @@ import { Buffer } from 'node:buffer'
 import { iterate } from '@kingjs/cursor-algorithm'
 import { TypedArrayView } from '@kingjs/cursor-view'
 import {
+  UnicodeActivator,
   Utf16BECodePointContainer,
   Utf16LECodePointContainer,
   Utf32BECodePointContainer,
@@ -154,14 +155,14 @@ describe('Code point container integration', () => {
   })
 
   it('skips UTF-8 signature bytes before searching code points', () => {
-    const input = new Utf8CodePointContainer()
+    const activator = new UnicodeActivator()
     const text = 'hi'
     const bytes = Uint8Array.from([
       ...Utf8Signature.signature,
       ...Buffer.from(text, 'utf8'),
     ])
 
-    input.pushRange(rangeOf(bytes))
+    const input = activator.pushRange(rangeOf(bytes))
 
     const needle = new Utf8CodePointContainer()
     needle.pushRange(rangeOf(Buffer.from('h', 'utf8')))

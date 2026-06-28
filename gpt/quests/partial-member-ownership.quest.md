@@ -1,5 +1,20 @@
 # Partial Member Ownership
 
+Status:
+
+Done. Implemented across:
+
+- [0471c9c](https://github.com/kingces95/service-gpt-copy-paste/commit/0471c9c):
+  Assert implementations declare own members.
+- [b69e98c](https://github.com/kingces95/service-gpt-copy-paste/commit/b69e98c):
+  Account for abstract declaration members.
+- [3dd5851](https://github.com/kingces95/service-gpt-copy-paste/commit/3dd5851):
+  Enforce topological part attachment.
+
+See also:
+
+- [partial-override-discipline.quest.md](partial-override-discipline.quest.md)
+
 Quest:
 
 Make partial declarations account for the members they touch.

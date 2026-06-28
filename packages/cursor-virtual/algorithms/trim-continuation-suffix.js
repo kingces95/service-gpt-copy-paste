@@ -4,7 +4,7 @@ import { subrange } from '@kingjs/cursor-view'
 
 export function trimContinuationSuffix(range, cursor, {
   isContinuation,
-  continuationCountOf,
+  lengthOf,
 }) {
   const boundary = cursor.clone()
   const begin = range.begin()
@@ -17,7 +17,7 @@ export function trimContinuationSuffix(range, cursor, {
     return boundary
 
   const available = distance(subrange(starter, boundary))
-  const expected = 1 + continuationCountOf(starter.value)
+  const expected = lengthOf(starter.value)
 
   assert(available <= expected, 'Invalid continuation value.')
 

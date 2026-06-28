@@ -1,27 +1,24 @@
 import {
+  ProjectedRangeContainer,
   ProjectedRangePart,
-  RangeContainerPart,
-  VariableStrideProjectedRangeContainer,
   VirtualContainer,
+  trimContinuationSuffix,
 } from '@kingjs/cursor-virtual'
+import { advance } from '@kingjs/cursor-algorithm'
 import { compose } from '@kingjs/partial-compose'
 import {
   decodeUtf8Sequence,
   utf8ContinuationCount,
   utf8ContinuationPayload,
   isUtf8ContinuationByte,
-  Utf8Signature,
 } from '@kingjs/unicode'
 import { Uint8 } from '@kingjs/simple-type'
-import { PreambleScanner } from '../preamble-scanner.js'
 import {
   byteSpansToStrings,
 } from '../source-ranges-to-string.js'
 import {
   StringMaterializationPart,
 } from '../part/string-materialization-part.js'
-
-const pushRange = VariableStrideProjectedRangeContainer.prototype.pushRange
 
 function byteAt(cursor) {
   const value = cursor.value
@@ -41,38 +38,16 @@ function readContinuation(cursor) {
   return utf8ContinuationPayload(readByte(cursor))
 }
 
-export class Utf8CodePointContainer extends VariableStrideProjectedRangeContainer {
-  _preamble
+function codePointLengthOf(byte) {
+  return 1 + utf8ContinuationCount(byte)
+}
 
+export class Utf8CodePointContainer extends ProjectedRangeContainer {
   constructor() {
-    super(new VirtualContainer(), {
-      isContinuation: isUtf8ContinuationByte,
-      continuationCountOf: utf8ContinuationCount,
-    })
-
-    this._preamble = new PreambleScanner({
-      sequences: Utf8Signature,
-      onPreamble: ({ remainder }) => {
-        this._preamble = null
-
-        for (const range of remainder.ranges())
-          pushRange.call(this, range)
-      },
-    })
+    super(new VirtualContainer())
   }
 
   static {
-    compose(this, RangeContainerPart, {
-      pushRange(range) {
-        if (this._preamble)
-          this._preamble.pushRange(range)
-        else
-          pushRange.call(this, range)
-
-        return this
-      },
-    })
-
     compose(this, StringMaterializationPart, {
       toStrings() {
         return byteSpansToStrings(this.source$.spans(), 'utf-8')
@@ -80,10 +55,32 @@ export class Utf8CodePointContainer extends VariableStrideProjectedRangeContaine
     })
 
     compose(this, ProjectedRangePart, {
-      decodeToken$(sourceCursor) {
+      trimEnd$(sourceCursor) {
+        return trimContinuationSuffix(
+          this.source$,
+          sourceCursor,
+          {
+            isContinuation: isUtf8ContinuationByte,
+            lengthOf: codePointLengthOf,
+          }
+        )
+      },
+
+      stepValue$(sourceCursor) {
+        advance(sourceCursor, codePointLengthOf(sourceCursor.value))
+      },
+
+      stepBackValue$(sourceCursor) {
+        sourceCursor.stepBack()
+
+        while (isUtf8ContinuationByte(sourceCursor.value))
+          sourceCursor.stepBack()
+      },
+
+      decodeValue$(sourceCursor) {
         const first = readByte(sourceCursor)
         const parts = []
-        const stride = this.tokenStrideOf$(first)
+        const stride = codePointLengthOf(first)
 
         for (let i = 1; i < stride; i++)
           parts.push(readContinuation(sourceCursor))

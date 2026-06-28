@@ -1,12 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { iterate } from '@kingjs/cursor-algorithm'
+import {
+  advance,
+  iterate,
+  previous,
+  retreat,
+} from '@kingjs/cursor-algorithm'
 import { TypedArrayView } from '@kingjs/cursor-view'
 import { define } from '@kingjs/partial-define'
+import { compose } from '@kingjs/partial-compose'
 import {
-  FixedStrideProjectedRangeContainer,
+  ProjectedRangePart,
   ProjectedRangeContainer,
+  trimContinuationSuffix,
   VirtualContainer,
-  VariableStrideProjectedRangeContainer,
 } from '../index.js'
 
 function rangeOf(values) {
@@ -23,14 +29,26 @@ function cursorAt(range, offset) {
 
 const virtualSplitAt = ProjectedRangeContainer.prototype.splitAt
 
-class FixedValueRange extends FixedStrideProjectedRangeContainer {
+class FixedValueRange extends ProjectedRangeContainer {
   constructor() {
-    super(new VirtualContainer(), { strideLength: 2 })
+    super(new VirtualContainer())
   }
 
   static {
-    define(this, {
-      decodeToken$(sourceCursor) {
+    compose(this, ProjectedRangePart, {
+      trimEnd$(sourceCursor) {
+        return previous(sourceCursor, this.bytesPushed % 2)
+      },
+
+      stepValue$(sourceCursor) {
+        advance(sourceCursor, 2)
+      },
+
+      stepBackValue$(sourceCursor) {
+        retreat(sourceCursor, 2)
+      },
+
+      decodeValue$(sourceCursor) {
         const first = sourceCursor.value
         sourceCursor.step()
         return [first, sourceCursor.value]
@@ -39,22 +57,38 @@ class FixedValueRange extends FixedStrideProjectedRangeContainer {
   }
 }
 
-class VariableValueRange extends VariableStrideProjectedRangeContainer {
+class VariableValueRange extends ProjectedRangeContainer {
   constructor() {
-    super(new VirtualContainer(), {
-      isContinuation: value => value == 2,
-      continuationCountOf(value) {
-        if (value == 1) return 1
-        return 0
-      },
-    })
+    super(new VirtualContainer())
   }
 
   static {
-    define(this, {
-      decodeToken$(sourceCursor) {
+    compose(this, ProjectedRangePart, {
+      trimEnd$(sourceCursor) {
+        return trimContinuationSuffix(
+          this.source$,
+          sourceCursor,
+          {
+            isContinuation: isContinuation,
+            lengthOf: codePointLengthOf,
+          }
+        )
+      },
+
+      stepValue$(sourceCursor) {
+        advance(sourceCursor, codePointLengthOf(sourceCursor.value))
+      },
+
+      stepBackValue$(sourceCursor) {
+        sourceCursor.stepBack()
+
+        while (isContinuation(sourceCursor.value))
+          sourceCursor.stepBack()
+      },
+
+      decodeValue$(sourceCursor) {
         const values = []
-        const stride = this.tokenStrideOf$(sourceCursor.value)
+        const stride = codePointLengthOf(sourceCursor.value)
 
         for (let i = 0; i < stride; i++) {
           values.push(sourceCursor.value)
@@ -81,7 +115,15 @@ class ConfiguredFixedValueRange extends FixedValueRange {
   }
 }
 
-describe('FixedStrideProjectedRangeContainer', () => {
+function isContinuation(value) {
+  return value == 2
+}
+
+function codePointLengthOf(value) {
+  return value == 1 ? 2 : 1
+}
+
+describe('fixed stride projected range policy', () => {
   it('trims fixed-width suffixes to token boundaries', () => {
     const range = new FixedValueRange()
 
@@ -98,6 +140,22 @@ describe('FixedStrideProjectedRangeContainer', () => {
     range.pushRange(rangeOf([0, 1, 2]))
 
     expect([...range.materialize()]).toEqual([0, 1, 2])
+  })
+
+  it('keeps fixed-width trim aligned to bytes pushed', () => {
+    const range = new FixedValueRange()
+
+    range.pushRange(rangeOf([0, 1]))
+
+    const commit = range.begin()
+    commit.step()
+
+    range.popRangeAt(commit)
+    range.pushRange(rangeOf([2]))
+
+    expect(range.end().sourceCursor$.equals(range.source$.begin()))
+      .toBe(true)
+    expect([...iterate(range)]).toEqual([])
   })
 
   it('lets overrides configure split results after delegating', () => {
@@ -128,7 +186,7 @@ describe('FixedStrideProjectedRangeContainer', () => {
   })
 })
 
-describe('VariableStrideProjectedRangeContainer', () => {
+describe('variable stride projected range policy', () => {
   it('trims incomplete continuation suffixes to token boundaries', () => {
     const range = new VariableValueRange()
 

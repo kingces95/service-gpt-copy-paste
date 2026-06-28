@@ -1,6 +1,6 @@
-import { implement } from '@kingjs/partial-implement'
+import { compose } from '@kingjs/partial-compose'
 import { PartialProxy } from '@kingjs/partial-proxy'
-import { CursorConcept } from '@kingjs/cursor'
+import { CursorPart } from '@kingjs/cursor'
 
 export class ContainerCursor extends PartialProxy {
   _container
@@ -13,9 +13,11 @@ export class ContainerCursor extends PartialProxy {
   get container() { return this._container }
 
   static {
-    implement(this, CursorConcept, {
+    compose(this, CursorPart, {
       get range() { return this.container },
     }, {
+      equals(other) { },
+      get isAtEnd$() { },
       step() { },
     })
   }
