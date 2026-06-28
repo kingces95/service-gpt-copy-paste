@@ -1,9 +1,11 @@
 ﻿import { assert } from '@kingjs/assert'
 import { trimPojo } from '@kingjs/pojo-trim'
 import { Prototype } from '@kingjs/prototype'
+import { methodDescriptor } from '@kingjs/es6-define'
 import { PartialType } from '@kingjs/partial-type'
 import { contract } from '@kingjs/function-contract'
 import { asIterable } from '@kingjs/as-iterable'
+import { createFieldInitializer } from './field-initializer.js'
 import {
   Preconditions,
   Postconditions,
@@ -14,6 +16,8 @@ import {
   Transforms,
   TypePrecondition,
   TypePostcondition,
+  PartPrecondition,
+  Fields,
 
   // this file intentially does not import
   //    Composes
@@ -24,6 +28,8 @@ import {
   // itself with querying metadata across all extensions of PartialTypes in
   // the abstract.
 } from '@kingjs/partial-symbols'
+
+export { initialize } from './field-initializer.js'
 
 // ____________________________________________________________________________
 // METADATA
@@ -211,6 +217,50 @@ export function createPartialMetadata(PartialReflect) {
     })
   }
 
+  function partialReflectOnPartCondition(symbol) {
+    return PartialMetadata.map({
+      knownKeys: [ 'constructor' ],
+      getPrototype: function(type) {
+        const values = [...this.findValues(type, symbol, {
+          includeOverridden: true,
+          reverseHierarchy: true,
+          descriptorType: 'field',
+          instanceOf: Function,
+        })].reverse()
+
+        return values.reduce((prototype, { host, value }) => {
+          const descriptors = { }
+          for (const key of PartialReflect.keys(host))
+            descriptors[key] = methodDescriptor(value)
+          
+          return Prototype.create(host, prototype, descriptors)
+        }, null) ?? Prototype.create(type)
+      }
+    })
+  }
+
+  function partialReflectOnPartFields() {
+    return PartialMetadata.map({
+      knownKeys: [ 'constructor' ],
+      getPrototype: function(type) {
+        const values = [...this.findValues(type, Fields, {
+          includeOverridden: true,
+          reverseHierarchy: true,
+          descriptorType: 'field',
+        })].reverse()
+
+        return values.reduce((prototype, { host, value }) => {
+          const initializeFields = createFieldInitializer(host, value)
+          const descriptors = { }
+          for (const key of PartialReflect.keys(host))
+            descriptors[key] = methodDescriptor(initializeFields)
+
+          return Prototype.create(host, prototype, descriptors)
+        }, null) ?? Prototype.create(type)
+      }
+    })
+  }
+
   const PartialPreconditions
     = partialReflectOnMetaObject(Preconditions)
 
@@ -228,6 +278,12 @@ export function createPartialMetadata(PartialReflect) {
 
   const PartialTransforms
     = partialReflectOnMetaObject(Transforms)
+
+  const PartialPartPreconditions =
+    partialReflectOnPartCondition(PartPrecondition)
+
+  const PartialFieldInitializers =
+    partialReflectOnPartFields()
 
   function getTypeConditions(type, symbol) {
     return [...PartialMetadata.findValues(type, symbol, {
@@ -332,6 +388,10 @@ export function createPartialMetadata(PartialReflect) {
     const typeCheck = getTypeChecks(type)
     const typePrecondition = getTypeConditions(type, TypePrecondition)
     const typePostcondition = getTypeConditions(type, TypePostcondition)
+    const partPrecondition = getMemberConditions(
+      PartialPartPreconditions, type, key)
+    const fieldInitializer = getMemberConditions(
+      PartialFieldInitializers, type, key)
     const precondition = getMemberConditions(PartialPreconditions, type, key)
     const postcondition = getMemberConditions(PartialPostconditions, type, key)
     const thisCheck = getMemberChecks(PartialThisChecks, type, key)
@@ -344,6 +404,8 @@ export function createPartialMetadata(PartialReflect) {
         ...typePrecondition,
       ],
       precondition: [
+        ...fieldInitializer.value,
+        ...partPrecondition.value,
         ...thisCheck.value.map(createThisCheck),
         ...argCheck.value.map(value => createArgCheck(value, defaults)),
         ...precondition.value,

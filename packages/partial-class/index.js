@@ -18,7 +18,12 @@ export {
   Defines,
   Implements,
   DefinesAbstract,
+  PartPrecondition,
+  Fields,
+  Initializer,
 } from '@kingjs/partial-symbols'
+
+export { initialize } from '@kingjs/partial-metadata'
 
 export class PartialClass extends PartialType {
   static [Declarative] = Composes

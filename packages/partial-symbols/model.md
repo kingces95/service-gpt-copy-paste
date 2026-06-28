@@ -43,6 +43,9 @@ Runtime Pipeline
 ├─ Argument Preparation
 │  ├─ Defaults
 │  └─ Transforms
+├─ Receiver State
+│  ├─ Fields
+│  └─ Initializer
 ├─ Checks
 │  ├─ TypeChecks
 │  ├─ ThisChecks
@@ -51,7 +54,8 @@ Runtime Pipeline
    ├─ Preconditions
    ├─ Postconditions
    ├─ TypePrecondition
-   └─ TypePostcondition
+   ├─ TypePostcondition
+   └─ PartPrecondition
 ```
 
 ## Declaration Edge
