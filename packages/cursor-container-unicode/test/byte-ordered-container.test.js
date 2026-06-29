@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { iterate } from '@kingjs/cursor-algorithm'
 import { TypedArrayView } from '@kingjs/cursor-view'
-import { Utf16ByteOrderMarks } from '@kingjs/unicode'
 import { ByteOrderedContainer } from '../index.js'
 
 function rangeOf(values) {
@@ -14,6 +13,12 @@ describe('ByteOrderedContainer', () => {
       byteOrder: 'big',
       byteWidth: 1,
     })).toThrow('Byte width must be greater than one.')
+  })
+
+  it('requires explicit byte order', () => {
+    expect(() => new ByteOrderedContainer({
+      byteWidth: 2,
+    })).toThrow('Byte order must be big or little.')
   })
 
   it('decodes fixed-width big-endian byte units', () => {
@@ -77,29 +82,6 @@ describe('ByteOrderedContainer', () => {
     expect([...iterate(input)]).toEqual([0x0001])
   })
 
-  it('waits for enough bytes before resolving a byte order mark', () => {
-    const input = new ByteOrderedContainer({
-      byteOrder: Utf16ByteOrderMarks,
-      byteWidth: 2,
-    })
-
-    input.pushRange(rangeOf([0xfe]))
-
-    expect([...iterate(input)]).toEqual([])
-  })
-
-  it('consumes a detected byte order mark', () => {
-    const input = new ByteOrderedContainer({
-      byteOrder: Utf16ByteOrderMarks,
-      byteWidth: 2,
-    })
-
-    input.pushRange(rangeOf([0xfe]))
-    input.pushRange(rangeOf([0xff, 0x00, 0x61]))
-
-    expect([...iterate(input)]).toEqual([0x0061])
-  })
-
   it('treats explicit byte order as already resolved', () => {
     const input = new ByteOrderedContainer({
       byteOrder: 'big',
@@ -111,4 +93,14 @@ describe('ByteOrderedContainer', () => {
     expect([...iterate(input)]).toEqual([0xfffe])
   })
 
+  it('materializes strings using byte-width encoding defaults', () => {
+    const input = new ByteOrderedContainer({
+      byteOrder: 'big',
+      byteWidth: 2,
+    })
+
+    input.pushRange(rangeOf([0x00, 0x68, 0x00, 0x69]))
+
+    expect(input.toString()).toBe('hi')
+  })
 })

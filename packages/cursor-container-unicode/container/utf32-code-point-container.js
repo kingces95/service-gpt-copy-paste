@@ -7,20 +7,21 @@ import {
   assertScalarValue,
 } from '@kingjs/unicode'
 import {
-  Utf32CodeUnitContainer,
+  Utf32BECodeUnitContainer,
+  Utf32LECodeUnitContainer,
 } from './utf32-code-unit-container.js'
 import {
   StringMaterializationPart,
 } from '../part/string-materialization-part.js'
 
 export class Utf32CodePointContainer extends ProjectedRangeContainer {
-  constructor({ byteOrder = null } = { }) {
-    super(new Utf32CodeUnitContainer({ byteOrder }))
+  constructor(source) {
+    super(source)
   }
 
   static {
     compose(this, StringMaterializationPart, {
-      toStrings() { return this.source$.toStrings('utf-32') },
+      toStrings() { return this.source$.toStrings() },
     })
 
     compose(this, ProjectedRangePart, {
@@ -35,12 +36,12 @@ export class Utf32CodePointContainer extends ProjectedRangeContainer {
 
 export class Utf32BECodePointContainer extends Utf32CodePointContainer {
   constructor() {
-    super({ byteOrder: 'big' })
+    super(new Utf32BECodeUnitContainer())
   }
 }
 
 export class Utf32LECodePointContainer extends Utf32CodePointContainer {
   constructor() {
-    super({ byteOrder: 'little' })
+    super(new Utf32LECodeUnitContainer())
   }
 }

@@ -12,6 +12,7 @@ import {
   isLowSurrogate,
   isScalarValue,
   isSurrogate,
+  utfEncodingOfByteWidth,
   utf16LastCodePointOffset,
   utf8LastCodePointOffset,
   utf8ContinuationCount,
@@ -72,6 +73,15 @@ describe('UTF-16 surrogates', () => {
     expect(decodeUint32([0x00, 0xf6, 0x01, 0x00], 'little')).toBe(0x1f600)
   })
 
+})
+
+describe('UTF encoding byte width', () => {
+  it('maps byte width to UTF encoding family', () => {
+    expect(utfEncodingOfByteWidth(2)).toBe('utf-16')
+    expect(utfEncodingOfByteWidth(4)).toBe('utf-32')
+    expect(() => utfEncodingOfByteWidth(1))
+      .toThrow('UTF encoding byte width is not supported.')
+  })
 })
 
 describe('UTF-8 sequences', () => {

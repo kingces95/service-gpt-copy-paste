@@ -9,10 +9,13 @@ import {
 } from '@kingjs/unicode'
 import {
   Utf16BECodePointContainer,
-  Utf16CodePointContainer,
+  Utf16BECodeUnitContainer,
   Utf16LECodePointContainer,
+  Utf16LECodeUnitContainer,
+  Utf32BECodePointContainer,
+  Utf32BECodeUnitContainer,
   Utf32LECodePointContainer,
-  Utf32CodePointContainer,
+  Utf32LECodeUnitContainer,
   Utf8CodePointContainer,
 } from '../index.js'
 
@@ -132,6 +135,13 @@ describe('Utf16CodePointContainer', () => {
   const GrinningFace = codePointOf('😀')
   const GrinningFaceUnits = utf16Of('😀')
 
+  it('uses endian UTF-16 code unit sources', () => {
+    expect(new Utf16BECodePointContainer().source$)
+      .toBeInstanceOf(Utf16BECodeUnitContainer)
+    expect(new Utf16LECodePointContainer().source$)
+      .toBeInstanceOf(Utf16LECodeUnitContainer)
+  })
+
   it('excludes a dangling high surrogate', () => {
     const input = new Utf16BECodePointContainer()
 
@@ -158,6 +168,13 @@ describe('Utf16CodePointContainer', () => {
 describe('Utf32CodePointContainer', () => {
   const A = codePointOf('a')
   const GrinningFace = codePointOf('😀')
+
+  it('uses endian UTF-32 code unit sources', () => {
+    expect(new Utf32BECodePointContainer().source$)
+      .toBeInstanceOf(Utf32BECodeUnitContainer)
+    expect(new Utf32LECodePointContainer().source$)
+      .toBeInstanceOf(Utf32LECodeUnitContainer)
+  })
 
   it('uses the source end as its complete end', () => {
     const input = new Utf32LECodePointContainer()

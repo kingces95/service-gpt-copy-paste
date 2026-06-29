@@ -47,6 +47,15 @@ export function decodeUint32(bytes, byteOrder) {
   return decodeBytes(bytes, byteOrder)
 }
 
+export function utfEncodingOfByteWidth(byteWidth) {
+  switch (byteWidth) {
+    case 2: return 'utf-16'
+    case 4: return 'utf-32'
+  }
+
+  throw new Error('UTF encoding byte width is not supported.')
+}
+
 export function encodeUnitsAsBytes(values, width, byteOrder) {
   assertByteOrder(byteOrder)
 

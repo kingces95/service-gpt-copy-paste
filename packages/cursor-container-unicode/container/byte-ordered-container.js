@@ -4,15 +4,13 @@ import { Uint8 } from '@kingjs/simple-type'
 import {
   ProjectedRangeContainer,
   ProjectedRangePart,
-  RangeContainerPart,
   VirtualContainer,
 } from '@kingjs/cursor-virtual'
 import { advance, previous, retreat } from '@kingjs/cursor-algorithm'
 import {
   decodeBytes,
-  NativeByteOrder,
+  utfEncodingOfByteWidth,
 } from '@kingjs/unicode'
-import { PreambleScanner } from '../preamble-scanner.js'
 import {
   byteOrderedEncodingOf,
   byteSpansToStrings,
@@ -20,8 +18,6 @@ import {
 import {
   StringMaterializationPart,
 } from '../part/string-materialization-part.js'
-
-const pushRange = ProjectedRangeContainer.prototype.pushRange
 
 function byteAt(cursor) {
   const value = cursor.value
@@ -38,61 +34,24 @@ function isByteOrder(value) {
 export class ByteOrderedContainer extends ProjectedRangeContainer {
   _byteOrder
   _byteWidth
-  _preamble
 
-  constructor({ byteOrder = null, byteWidth }) {
+  constructor({ byteOrder, byteWidth }) {
     assert(byteWidth > 1,
       'Byte width must be greater than one.')
-    assert(byteOrder == null || isByteOrder(byteOrder) ||
-      typeof byteOrder == 'object',
-      'Byte order must be null, big, little, or preambles.')
+    assert(isByteOrder(byteOrder),
+      'Byte order must be big or little.')
 
     super(new VirtualContainer())
-    this._preamble = null
     this._byteWidth = byteWidth
-    this._byteOrder = isByteOrder(byteOrder)
-      ? byteOrder
-      : byteOrder == null
-        ? NativeByteOrder
-        : null
-
-    if (this._byteOrder == null) {
-      assert(byteOrder.big.length == byteWidth &&
-        byteOrder.little.length == byteWidth,
-        'Byte order mark length must match byte width.')
-      this._preamble = new PreambleScanner({
-        sequences: byteOrder,
-        onPreamble: ({ match, remainder }) => {
-          this._byteOrder = match ?? NativeByteOrder
-          this._preamble = null
-
-          for (const range of remainder.ranges())
-            pushRange.call(this, range)
-        },
-      })
-    }
+    this._byteOrder = byteOrder
   }
 
   static {
     compose(this, StringMaterializationPart, {
       toStrings(encoding) {
-        if (this._byteOrder == null)
-          return []
-
-        const encodingOf = () =>
-          byteOrderedEncodingOf(encoding, this._byteOrder)
-        return byteSpansToStrings(this.spans(), encodingOf)
-      },
-    })
-
-    compose(this, RangeContainerPart, {
-      pushRange(range) {
-        if (this._preamble)
-          this._preamble.pushRange(range)
-        else
-          pushRange.call(this, range)
-
-        return this
+        encoding ??= utfEncodingOfByteWidth(this._byteWidth)
+        encoding = byteOrderedEncodingOf(encoding, this._byteOrder)
+        return byteSpansToStrings(this.spans(), encoding)
       },
     })
 
@@ -110,9 +69,6 @@ export class ByteOrderedContainer extends ProjectedRangeContainer {
       },
 
       decodeValue$(sourceCursor) {
-        assert(this._byteOrder != null,
-          'Byte order has not been resolved.')
-
         const bytes = []
 
         for (let i = 0; i < this._byteWidth; i++) {

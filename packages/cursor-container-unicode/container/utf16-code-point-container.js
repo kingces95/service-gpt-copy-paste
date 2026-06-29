@@ -14,7 +14,8 @@ import {
 } from '@kingjs/unicode'
 import { Uint16 } from '@kingjs/simple-type'
 import {
-  Utf16CodeUnitContainer,
+  Utf16BECodeUnitContainer,
+  Utf16LECodeUnitContainer,
 } from './utf16-code-unit-container.js'
 import {
   StringMaterializationPart,
@@ -39,13 +40,13 @@ function codePointLengthOf(unit) {
 }
 
 export class Utf16CodePointContainer extends ProjectedRangeContainer {
-  constructor({ byteOrder = null } = { }) {
-    super(new Utf16CodeUnitContainer({ byteOrder }))
+  constructor(source) {
+    super(source)
   }
 
   static {
     compose(this, StringMaterializationPart, {
-      toStrings() { return this.source$.toStrings('utf-16') },
+      toStrings() { return this.source$.toStrings() },
     })
 
     compose(this, ProjectedRangePart, {
@@ -99,12 +100,12 @@ export class Utf16CodePointContainer extends ProjectedRangeContainer {
 
 export class Utf16BECodePointContainer extends Utf16CodePointContainer {
   constructor() {
-    super({ byteOrder: 'big' })
+    super(new Utf16BECodeUnitContainer())
   }
 }
 
 export class Utf16LECodePointContainer extends Utf16CodePointContainer {
   constructor() {
-    super({ byteOrder: 'little' })
+    super(new Utf16LECodeUnitContainer())
   }
 }
