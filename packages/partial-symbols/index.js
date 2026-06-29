@@ -111,6 +111,7 @@ export const TypePostcondition = Symbol('PartialProxy.TypePostcondition')
 export const PartPrecondition = Symbol('PartialClass.PartPrecondition')
 export const Fields = Symbol('PartialClass.Fields')
 export const Initializer = Symbol('PartialClass.Initializer')
+export const Self = Symbol('PartialClass.Self')
 
 export const Implements = Symbol('Concept.Implements')
 export const Includes = Symbol('Shape.Includes')

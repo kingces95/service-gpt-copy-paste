@@ -21,6 +21,7 @@ export {
   PartPrecondition,
   Fields,
   Initializer,
+  Self,
 } from '@kingjs/partial-symbols'
 
 export { initialize } from '@kingjs/partial-metadata'

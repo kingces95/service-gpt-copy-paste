@@ -45,7 +45,8 @@ Runtime Pipeline
 │  └─ Transforms
 ├─ Receiver State
 │  ├─ Fields
-│  └─ Initializer
+│  ├─ Initializer
+│  └─ Self
 ├─ Checks
 │  ├─ TypeChecks
 │  ├─ ThisChecks

@@ -71,6 +71,29 @@ class GoodCursor extends PartialProxy {
   }
 }
 
+class OtherGoodCursor extends PartialProxy {
+  constructor(index) {
+    super()
+    initialize(this, IndexedCursorPart, index)
+  }
+
+  static {
+    compose(this, IndexedCursorPart)
+  }
+}
+
+class DoubleInitializeCursor extends PartialProxy {
+  constructor(index) {
+    super()
+    initialize(this, IndexedCursorPart, index)
+    initialize(this, IndexedCursorPart, index + 1)
+  }
+
+  static {
+    compose(this, IndexedCursorPart)
+  }
+}
+
 class BadCursor extends PartialProxy {
   static {
     compose(this, IndexedCursorPart)
@@ -107,6 +130,32 @@ describe('part constructor fields', () => {
     expect(cursor.index$).toBe(3)
     expect(cursor.readIndex()).toBe(3)
     expect(cursor._initializerCount).toBe(1)
+  })
+
+  it('keeps field initialization scoped to each receiver', () => {
+    const cursor = new DoubleInitializeCursor(1)
+
+    expect(cursor.index$).toBe(1)
+    expect(cursor._initializerCount).toBe(1)
+
+    cursor.step()
+
+    expect(cursor.index$).toBe(2)
+    expect(cursor._initializerCount).toBe(1)
+  })
+
+  it('does not share field initialization across target classes', () => {
+    const cursor = new GoodCursor(1)
+    const other = new OtherGoodCursor(10)
+    const bad = new BadCursor()
+
+    cursor.step()
+    other.step()
+
+    expect(cursor.index$).toBe(2)
+    expect(other.index$).toBe(11)
+    expect(() => bad.step())
+      .toThrow("IndexedCursorPart field '_index' not initialized.")
   })
 
   it('fails clearly when the host skips the part constructor', () => {

@@ -6,6 +6,7 @@ import { PartialType } from '@kingjs/partial-type'
 import { contract } from '@kingjs/function-contract'
 import { asIterable } from '@kingjs/as-iterable'
 import { createFieldInitializer } from './field-initializer.js'
+import { createSelfCheck } from './self-check.js'
 import {
   Preconditions,
   Postconditions,
@@ -18,6 +19,7 @@ import {
   TypePostcondition,
   PartPrecondition,
   Fields,
+  Self,
 
   // this file intentially does not import
   //    Composes
@@ -217,7 +219,7 @@ export function createPartialMetadata(PartialReflect) {
     })
   }
 
-  function partialReflectOnPartCondition(symbol) {
+  function partialReflectOnPartMembers(symbol, { find = { }, create }) {
     return PartialMetadata.map({
       knownKeys: [ 'constructor' ],
       getPrototype: function(type) {
@@ -225,35 +227,14 @@ export function createPartialMetadata(PartialReflect) {
           includeOverridden: true,
           reverseHierarchy: true,
           descriptorType: 'field',
-          instanceOf: Function,
+          ...find,
         })].reverse()
 
         return values.reduce((prototype, { host, value }) => {
+          const memberValue = create(host, value)
           const descriptors = { }
           for (const key of PartialReflect.keys(host))
-            descriptors[key] = methodDescriptor(value)
-          
-          return Prototype.create(host, prototype, descriptors)
-        }, null) ?? Prototype.create(type)
-      }
-    })
-  }
-
-  function partialReflectOnPartFields() {
-    return PartialMetadata.map({
-      knownKeys: [ 'constructor' ],
-      getPrototype: function(type) {
-        const values = [...this.findValues(type, Fields, {
-          includeOverridden: true,
-          reverseHierarchy: true,
-          descriptorType: 'field',
-        })].reverse()
-
-        return values.reduce((prototype, { host, value }) => {
-          const initializeFields = createFieldInitializer(host, value)
-          const descriptors = { }
-          for (const key of PartialReflect.keys(host))
-            descriptors[key] = methodDescriptor(initializeFields)
+            descriptors[key] = methodDescriptor(memberValue)
 
           return Prototype.create(host, prototype, descriptors)
         }, null) ?? Prototype.create(type)
@@ -280,10 +261,20 @@ export function createPartialMetadata(PartialReflect) {
     = partialReflectOnMetaObject(Transforms)
 
   const PartialPartPreconditions =
-    partialReflectOnPartCondition(PartPrecondition)
+    partialReflectOnPartMembers(PartPrecondition, {
+      find: { instanceOf: Function },
+      create: (host, value) => value,
+    })
 
   const PartialFieldInitializers =
-    partialReflectOnPartFields()
+    partialReflectOnPartMembers(Fields, {
+      create: createFieldInitializer,
+    })
+
+  const PartialSelfChecks =
+    partialReflectOnPartMembers(Self, {
+      create: createSelfCheck,
+    })
 
   function getTypeConditions(type, symbol) {
     return [...PartialMetadata.findValues(type, symbol, {
@@ -316,9 +307,9 @@ export function createPartialMetadata(PartialReflect) {
         case 'function': break
         case 'object':
           const { get, set, value } = current
-          if (get) result.get.push(...asIterable(get))
-          if (set) result.set.push(...asIterable(set))
-          if (value) result.value.push(...asIterable(value))
+          if (get) result.get.push(get)
+          if (set) result.set.push(set)
+          if ('value' in current) result.value.push(...asIterable(value))
           break
         default:
           assert(false, 'Unexpected type: ' + typeof current)
@@ -341,12 +332,10 @@ export function createPartialMetadata(PartialReflect) {
       switch (typeof current) {
         case 'function': break
         case 'object':
-          if (current.get)
-            result.get.push(current.get())
-          if (current.set)
-            result.set.push(current.set())
-          if ('value' in current)
-            result.value.push(current.value)
+          const { get, set, value } = current
+          if (get) result.get.push(get())
+          if (set) result.set.push(set())
+          if ('value' in current) result.value.push(value)
           break
         default:
           assert(false, 'Unexpected type: ' + typeof current)
@@ -392,6 +381,8 @@ export function createPartialMetadata(PartialReflect) {
       PartialPartPreconditions, type, key)
     const fieldInitializer = getMemberConditions(
       PartialFieldInitializers, type, key)
+    const selfCheck = getMemberConditions(
+      PartialSelfChecks, type, key)
     const precondition = getMemberConditions(PartialPreconditions, type, key)
     const postcondition = getMemberConditions(PartialPostconditions, type, key)
     const thisCheck = getMemberChecks(PartialThisChecks, type, key)
@@ -405,6 +396,7 @@ export function createPartialMetadata(PartialReflect) {
       ],
       precondition: [
         ...fieldInitializer.value,
+        ...selfCheck.value,
         ...partPrecondition.value,
         ...thisCheck.value.map(createThisCheck),
         ...argCheck.value.map(value => createArgCheck(value, defaults)),
