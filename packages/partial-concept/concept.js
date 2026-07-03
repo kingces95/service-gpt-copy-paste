@@ -14,6 +14,7 @@ import {
   Declarative,
   Procedural,
   Precondition,
+  Self,
 } from '@kingjs/partial-symbols'
 
 export { Defines, Implements } from '@kingjs/partial-symbols'
@@ -23,6 +24,9 @@ export { Defines, Implements } from '@kingjs/partial-symbols'
 function satisfiesAssociations(ctor, partialType) {
   for (const { value: associatedPartialType, key } of PartialMetadata.values(
     partialType, { extensionOf: PartialType, includeOverridden: true })) {
+
+    if (key == Self)
+      continue
 
     const associatedType = ctor[key]
     if (!(typeof associatedType == 'function'))

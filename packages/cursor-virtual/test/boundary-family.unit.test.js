@@ -9,7 +9,7 @@ import { TypedArrayView } from '@kingjs/cursor-view'
 import { define } from '@kingjs/partial-define'
 import { compose } from '@kingjs/partial-compose'
 import {
-  ProjectedRangePart,
+  ProjectedRangeContainerPart,
   ProjectedRangeContainer,
   trimContinuationSuffix,
   VirtualContainer,
@@ -35,7 +35,7 @@ class FixedValueRange extends ProjectedRangeContainer {
   }
 
   static {
-    compose(this, ProjectedRangePart, {
+    compose(this, ProjectedRangeContainerPart, {
       trimEnd$(sourceCursor) {
         return previous(sourceCursor, this.bytesPushed % 2)
       },
@@ -63,7 +63,7 @@ class VariableValueRange extends ProjectedRangeContainer {
   }
 
   static {
-    compose(this, ProjectedRangePart, {
+    compose(this, ProjectedRangeContainerPart, {
       trimEnd$(sourceCursor) {
         return trimContinuationSuffix(
           this.source$,

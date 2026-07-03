@@ -1,5 +1,5 @@
 export * from './part/range-container-part.js'
-export * from './part/projected-range-part.js'
+export * from './part/projected-range-container-part.js'
 export * from './shape/ranges-container-shape.js'
 export * from './container/virtual-container.js'
 export * from './container/projected-range-container.js'

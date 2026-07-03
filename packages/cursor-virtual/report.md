@@ -103,7 +103,7 @@ Part
 │  ├─ materialize()
 │  ├─ splitAt(cursor)
 │  └─ split(needle, options)
-├─ ProjectedRangePart
+├─ ProjectedRangeContainerPart
 │  ├─ source$
 │  ├─ decodeValue$(sourceCursor)
 │  ├─ stepValue$(sourceCursor)

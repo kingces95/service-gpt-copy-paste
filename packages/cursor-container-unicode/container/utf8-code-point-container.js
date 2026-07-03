@@ -1,6 +1,6 @@
 import {
   ProjectedRangeContainer,
-  ProjectedRangePart,
+  ProjectedRangeContainerPart,
   VirtualContainer,
   trimContinuationSuffix,
 } from '@kingjs/cursor-virtual'
@@ -54,7 +54,7 @@ export class Utf8CodePointContainer extends ProjectedRangeContainer {
       },
     })
 
-    compose(this, ProjectedRangePart, {
+    compose(this, ProjectedRangeContainerPart, {
       trimEnd$(sourceCursor) {
         return trimContinuationSuffix(
           this.source$,

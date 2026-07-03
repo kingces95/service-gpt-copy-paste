@@ -5,7 +5,7 @@ import { compose } from '@kingjs/partial-compose'
 import {
   matchPrefix,
   ProjectedRangeContainer,
-  ProjectedRangePart,
+  ProjectedRangeContainerPart,
   VirtualContainer,
 } from '../index.js'
 
@@ -125,7 +125,7 @@ const VirtualByteRange = (() => {
     }
 
     static {
-      compose(this, ProjectedRangePart, {
+      compose(this, ProjectedRangeContainerPart, {
         decodeValue$(sourceCursor) {
           return sourceCursor.value + 100
         },

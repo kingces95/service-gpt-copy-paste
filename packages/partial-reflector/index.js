@@ -472,6 +472,18 @@ function shouldCopyDescriptor(
   return !isAbstract(descriptor)
 }
 
+function descriptorHost(prototype, key) {
+  while (prototype) {
+    const descriptor = Object.getOwnPropertyDescriptor(prototype, key)
+    if (descriptor)
+      return prototype
+
+    prototype = Object.getPrototypeOf(prototype)
+  }
+
+  return null
+}
+
 function resolve(descriptor, existing) {
   return shouldCopyDescriptor(descriptor, existing)
     ? descriptor : existing
@@ -850,7 +862,10 @@ export function create({
       },
       filter: (host, key, descriptor) => {
         const isInherited = host != partialType
-        const existing = Descriptor.get(prototype, key)
+        let existing = Descriptor.get(prototype, key)
+
+        if (descriptorHost(prototype, key) == Object.prototype)
+          existing = null
 
         return shouldCopyDescriptor(descriptor, existing, {
           inherited: isInherited,

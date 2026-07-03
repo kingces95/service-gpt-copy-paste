@@ -66,6 +66,15 @@ class CounterClientPart extends PartialClass {
   }
 }
 
+class CounterSummaryPart extends PartialClass {
+  static [Self] = CounterPart
+
+  summary() {
+    const cp = this
+    return `count:${cp.count}`
+  }
+}
+
 class Counter extends PartialProxy {
   constructor(count) {
     super()
@@ -75,6 +84,7 @@ class Counter extends PartialProxy {
   static {
     compose(this, CounterPart)
     compose(this, CounterClientPart)
+    compose(this, CounterSummaryPart)
   }
 }
 
@@ -96,6 +106,7 @@ describe('part requirements', () => {
     expect(counter.count).toBe(5)
     expect(counter.double()).toBe(10)
     expect(counter.triple).toBe(15)
+    expect(counter.summary()).toBe('count:5')
     expect(counterShapeCheckCount).toBe(1)
   })
 

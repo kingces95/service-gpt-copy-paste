@@ -1,6 +1,6 @@
 import {
   ProjectedRangeContainer,
-  ProjectedRangePart,
+  ProjectedRangeContainerPart,
   trimContinuationSuffix,
 } from '@kingjs/cursor-virtual'
 import { assert } from '@kingjs/assert'
@@ -16,7 +16,7 @@ import { Uint16 } from '@kingjs/simple-type'
 import {
   Utf16BECodeUnitContainer,
   Utf16LECodeUnitContainer,
-} from './utf16-code-unit-container.js'
+} from './code-unit-container.js'
 import {
   StringMaterializationPart,
 } from '../part/string-materialization-part.js'
@@ -49,7 +49,7 @@ export class Utf16CodePointContainer extends ProjectedRangeContainer {
       toStrings() { return this.source$.toStrings() },
     })
 
-    compose(this, ProjectedRangePart, {
+    compose(this, ProjectedRangeContainerPart, {
       trimEnd$(sourceCursor) {
         return trimContinuationSuffix(
           this.source$,

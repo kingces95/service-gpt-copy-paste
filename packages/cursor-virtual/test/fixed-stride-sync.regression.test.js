@@ -6,7 +6,7 @@ import { TypedArrayView } from '@kingjs/cursor-view'
 import { compose } from '@kingjs/partial-compose'
 import {
   ProjectedRangeContainer,
-  ProjectedRangePart,
+  ProjectedRangeContainerPart,
   VirtualContainer,
 } from '../index.js'
 import { advance, previous, retreat } from '@kingjs/cursor-algorithm'
@@ -18,7 +18,7 @@ class PairRange extends ProjectedRangeContainer {
   }
 
   static {
-    compose(this, ProjectedRangePart, {
+    compose(this, ProjectedRangeContainerPart, {
       trimEnd$(sourceCursor) {
         return previous(sourceCursor, this.bytesPushed % 2)
       },

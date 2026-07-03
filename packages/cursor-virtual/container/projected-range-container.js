@@ -1,10 +1,8 @@
-import { assert } from '@kingjs/assert'
+import { initialize } from '@kingjs/partial-class'
 import { compose } from '@kingjs/partial-compose'
 import { PartialProxy } from '@kingjs/partial-proxy'
-import { RangePart } from '@kingjs/cursor'
-import { ProjectedRangePart } from '../part/projected-range-part.js'
+import { ProjectedRangeContainerPart } from '../part/projected-range-container-part.js'
 import { RangeContainerPart } from '../part/range-container-part.js'
-import { SplittableRangeShape } from '../shape/ranges-container-shape.js'
 import { ProjectedCursor } from '../cursor/projected-cursor.js'
 
 // ProjectedRangeContainer scans a source range as projected values while
@@ -14,38 +12,14 @@ import { ProjectedCursor } from '../cursor/projected-cursor.js'
 export class ProjectedRangeContainer extends PartialProxy {
   static cursorType = ProjectedCursor
 
-  _source
-
   constructor(source) {
     super()
-    assert(source instanceof SplittableRangeShape,
-      'Virtual source must be a splittable range container.')
-    this._source = source
+    const cursorType = this.constructor.cursorType
+    initialize(this, ProjectedRangeContainerPart, cursorType, source)
   }
 
   static {
-    compose(this, RangePart, {
-      begin() { return new this.cursorType(this, this.source$.begin()) },
-      end() {
-        return new this.cursorType(this, this.trimEnd$(this.source$.end()))
-      },
-    })
-
-    compose(this, ProjectedRangePart, {
-      get source$() { return this._source },
-
-      stepValue$(sourceCursor) {
-        sourceCursor.step()
-      },
-
-      stepBackValue$(sourceCursor) {
-        sourceCursor.stepBack()
-      },
-
-      trimEnd$(sourceCursor) {
-        return sourceCursor
-      },
-    }, {
+    compose(this, ProjectedRangeContainerPart, { }, {
       decodeValue$(sourceCursor) { },
     })
 
@@ -63,9 +37,6 @@ export class ProjectedRangeContainer extends PartialProxy {
       },
 
       popRange$(needle, options) {
-        assert(needle,
-          'Projected needle must match projected range.')
-
         return this.source$.popRange(needle, options)
       },
 

@@ -6,7 +6,7 @@ import { Uint8 } from '@kingjs/simple-type'
 import { define } from '@kingjs/partial-define'
 import { compose } from '@kingjs/partial-compose'
 import {
-  ProjectedRangePart,
+  ProjectedRangeContainerPart,
   ProjectedRangeContainer,
   VirtualContainer,
 } from '../index.js'
@@ -65,7 +65,7 @@ class DelimitedRecordContainer extends ProjectedRangeContainer {
   }
 
   static {
-    compose(this, ProjectedRangePart, {
+    compose(this, ProjectedRangeContainerPart, {
       trimEnd$(sourceCursor) {
         const cursor = this.source$.begin()
 

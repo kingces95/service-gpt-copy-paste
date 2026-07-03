@@ -1,6 +1,6 @@
 import {
   ProjectedRangeContainer,
-  ProjectedRangePart,
+  ProjectedRangeContainerPart,
 } from '@kingjs/cursor-virtual'
 import { compose } from '@kingjs/partial-compose'
 import {
@@ -9,7 +9,7 @@ import {
 import {
   Utf32BECodeUnitContainer,
   Utf32LECodeUnitContainer,
-} from './utf32-code-unit-container.js'
+} from './code-unit-container.js'
 import {
   StringMaterializationPart,
 } from '../part/string-materialization-part.js'
@@ -24,7 +24,7 @@ export class Utf32CodePointContainer extends ProjectedRangeContainer {
       toStrings() { return this.source$.toStrings() },
     })
 
-    compose(this, ProjectedRangePart, {
+    compose(this, ProjectedRangeContainerPart, {
       decodeValue$(sourceCursor) {
         const value = sourceCursor.value
         assertScalarValue(value)

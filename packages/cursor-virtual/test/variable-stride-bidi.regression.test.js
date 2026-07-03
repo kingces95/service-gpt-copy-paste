@@ -4,7 +4,7 @@ import { advance, iterate } from '@kingjs/cursor-algorithm'
 import { compose } from '@kingjs/partial-compose'
 import {
   ProjectedRangeContainer,
-  ProjectedRangePart,
+  ProjectedRangeContainerPart,
   trimContinuationSuffix,
   VirtualContainer,
 } from '../index.js'
@@ -16,7 +16,7 @@ class UtfLikeRange extends ProjectedRangeContainer {
   }
 
   static {
-    compose(this, ProjectedRangePart, {
+    compose(this, ProjectedRangeContainerPart, {
       trimEnd$(sourceCursor) {
         return trimContinuationSuffix(
           this.source$,

@@ -46,6 +46,15 @@ describe('UTF-16 code unit containers', () => {
     expect([...iterate(committed)]).toEqual(bytes.slice(0, 2))
     expect([...iterate(input)]).toEqual([codePointOf('b')])
   })
+
+  it('materializes strings using byte-width encoding defaults', () => {
+    const input = new Utf16BECodeUnitContainer()
+
+    input.pushRange(bytesOf(encodeUtf16Bytes(
+      [...'hi'].map(codePointOf), 'big')))
+
+    expect(input.toString()).toBe('hi')
+  })
 })
 
 describe('UTF-32 code unit containers', () => {
@@ -56,5 +65,14 @@ describe('UTF-32 code unit containers', () => {
     input.pushRange(bytesOf(encodeUtf32Bytes([value], 'little')))
 
     expect([...iterate(input)]).toEqual([value])
+  })
+
+  it('rejects string materialization on demand', () => {
+    const input = new Utf32LECodeUnitContainer()
+
+    input.pushRange(bytesOf(encodeUtf32Bytes([codePointOf('a')], 'little')))
+
+    expect(() => input.toString())
+      .toThrow('UTF-32 string materialization is not supported.')
   })
 })

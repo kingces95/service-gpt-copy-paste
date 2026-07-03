@@ -1,18 +1,39 @@
 import {
-  Defines,
-  DefinesAbstract,
+  Fields,
+  Initializer,
   PartialClass,
+  Self,
 } from '@kingjs/partial-class'
-import { members } from '@kingjs/partial-signature'
+import {
+  RangeContainerPart,
+} from '@kingjs/cursor-virtual'
+import {
+  byteSpansToStrings,
+} from '../source-ranges-to-string.js'
+
+export const Encoding = Symbol('StringMaterializationPart.Encoding')
 
 export class StringMaterializationPart extends PartialClass {
-  static [DefinesAbstract] = members(this, {
-    toStrings(encoding = null) { },
-  })
+  static [Self] = RangeContainerPart
 
-  static [Defines] = {
-    toString(encoding = null) {
-      return [...this.toStrings(encoding)].join('')
-    },
+  static [Fields] = {
+    [Encoding]: null,
+  }
+
+  static [Initializer](encoding) {
+    this[Encoding] = encoding
+  }
+
+  toStrings(encoding = this[Encoding]) {
+    const rcp = this
+    return byteSpansToStrings(rcp.spans(), encoding)
+  }
+
+  toString(encoding = null) {
+    const strings = encoding == null
+      ? this.toStrings()
+      : this.toStrings(encoding)
+
+    return [...strings].join('')
   }
 }
