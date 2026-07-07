@@ -1,15 +1,44 @@
-import { sip } from '@kingjs/stream-sip'
 import { CliParser } from '@kingjs/cli-parser'
 import { CliFieldType } from '@kingjs/cli-field-type'
+import { PreambleScanner } from '@kingjs/cursor-container-unicode'
+import { LazyPromise } from '@kingjs/lazy-promise'
+import { toArray } from './to-array.js'
+import { CliSipper } from './cli-sipper.js'
+import {
+  Utf8Signature,
+  Utf16ByteOrderMarks,
+} from '@kingjs/unicode'
 
-const LINE_FEED_BYTE = 0x0A
-const CARRAGE_RETURN_BYTE = 0x0D
+const DEFAULT_ENCODING = 'utf-8'
+const PREAMBLES = {
+  'utf-8': Utf8Signature.signature,
+  'utf-16be': Utf16ByteOrderMarks.big,
+  'utf-16le': Utf16ByteOrderMarks.little,
+}
 
 export class CliReader {
-  #generator
+  #stream
+  #sipper
 
   constructor(stream) {
-    this.#generator = sip(stream)
+    this.#stream = stream
+    const chunkIterator = stream[Symbol.asyncIterator]()
+    this.#sipper = new LazyPromise(async () => {
+      const scanner = new PreambleScanner({
+        sequences: PREAMBLES,
+        defaultMetadata: DEFAULT_ENCODING,
+      })
+  
+      while (true) {
+        const { done, value } = await chunkIterator.next()
+        if (done) return new CliSipper(chunkIterator, DEFAULT_ENCODING)
+
+        const result = scanner.pushBytes(value)
+        if (!result) continue
+
+        return new CliSipper(chunkIterator, result.key, result.data)
+      }
+    })
   }
 
   async *#generate(parser) {
@@ -19,60 +48,28 @@ export class CliReader {
       yield parser.parse(line)
     }
   }
-  async #spread(iterator) {
-    const result = []
-    for await (const item of iterator)
-      result.push(item)
-    return result
+
+  async read() { 
+    return (await this.#sipper).read()
   }
 
   async readString(charCount = Infinity) {
-    if (!charCount) 
+    if (!charCount)
       throw new TypeError('charCount must be a positive integer.')
 
-    let count = 0
-    while (true) {
-      const { done, value: { decoder, eof } = { } } 
-        = await this.#generator.next()
-
-      if (done || (eof && decoder.isEmpty)) 
-        return null
-
-      if (eof || ++count == charCount) {
-        const result = decoder.toString()
-        decoder.clear()
-        return result
-      }
-    }
+    return (await this.#sipper).sipString(charCount)
   }
+
   async readLine({
     keepNewLines = false,
     keepCarriageReturns = false
   } = {}) {  
-    const stripNewLines = !keepNewLines
-    const stripCarriageReturns = !keepCarriageReturns
-
-    while (true) {
-      const { done, value: { decoder, eof } = { } } 
-        = await this.#generator.next()
-      if (done || (eof && decoder.isEmpty)) return null
-
-      if (decoder.peek() != LINE_FEED_BYTE && !eof)
-        continue
-
-      if (stripNewLines) {
-        if (decoder.peek() === LINE_FEED_BYTE)
-          decoder.pop() // remove the new line byte
-
-        if (stripCarriageReturns && decoder.peek() === CARRAGE_RETURN_BYTE)
-          decoder.pop() // remove the carriage return byte
-      }
-
-      const result = decoder.toString()
-      decoder.clear()
-      return result
-    }
+    return (await this.#sipper).sipLine({
+      keepNewLines,
+      keepCarriageReturns
+    })
   }
+
   async readChar() {
     return await this.readString(1)
   }
@@ -111,6 +108,7 @@ export class CliReader {
       yield line
     }
   }
+
   async *lines(options = { 
     count: Infinity,
     keepNewLines: false,
@@ -118,6 +116,7 @@ export class CliReader {
   }) {
     yield* this[Symbol.asyncIterator](options)
   }
+
   async *chars(charCount = Infinity) {
     while (charCount-- > 0) {
       const char = await this.readChar()
@@ -125,12 +124,15 @@ export class CliReader {
       yield char
     }
   }
+
   async *lists() {
     yield* this.#generate(CliParser.create(Infinity))
   }
+
   async *comments() {
     yield* this.#generate(CliParser.create())
   }
+
   async *tuples(metadata = 0) {
     const parser = CliParser.create(metadata)
     const { info } = parser
@@ -139,6 +141,7 @@ export class CliReader {
 
     yield* this.#generate(parser)
   }
+  
   async *records(metadata = {}) {
     if (Array.isArray(metadata)) {
       if (metadata.find(name => typeof name != 'string') != null)
@@ -156,25 +159,22 @@ export class CliReader {
   }
 
   async readLines(options) {
-    return this.#spread(this.lines(options))
+    return toArray(this.lines(options))
   }
   async readLists() {
-    return this.#spread(this.lists())
+    return toArray(this.lists())
   }
   async readComments() {
-    return this.#spread(this.comments())
+    return toArray(this.comments())
   }
   async readTuples(metadata = 0) {
-    return this.#spread(this.tuples(metadata))
+    return toArray(this.tuples(metadata))
   }
   async readRecords(metadata = {}) {
-    return this.#spread(this.records(metadata))
-  }
-  async readAll() { 
-    return await this.#generator.readAll()
+    return toArray(this.records(metadata))
   }
 
   async dispose() {
-    await this.#generator.dispose()
+    this.#stream.destroy?.()
   }
 }

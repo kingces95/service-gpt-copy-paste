@@ -1,146 +1,60 @@
 # Cursor Container Unicode Model
 
-Unicode container pivots for byte streams, code units, and code points.
+Unicode-aware read support for byte streams.
 
 Contents
 
-- [Type Extensions](#type-extensions): Unicode container types pivoted by
-  byte/unit/point role and extension root.
-- [Part Composition](#part-composition): Unicode container types pivoted by
-  component part.
-- [Virtual Source Type](#virtual-source-type): Unicode projected containers
-  pivoted by stream role and source type.
-- [Activation](#activation): Unicode activator and concrete type selection.
+- [Batch Read Flow](#batch-read-flow): How stream bytes become committed
+  records.
+- [Preamble Scan](#preamble-scan): How the stream encoding is discovered.
 
-## Type Extensions
+## Batch Read Flow
 
 ```txt
-Unicode Type Extensions
-├─ set: cursor-container-unicode container types
-├─ map: extensions*, byte/unit/point
-├─ pivot: byte/unit/point, then type
-└─ display: type roots with direct extensions as leaves
+Unicode-Aware Batch Read Flow
+├─ set: byte stream chunks
+├─ map: preamble, encoding, delimiter bytes, committed bytes
+├─ pivot: scanner, virtual container, unicode helpers
+└─ display: runtime flow
 ```
 
 ```txt
-Unicode Type Extensions
-
-Byte
-└─ ProjectedRangeContainer
-   └─ CodeUnitContainer
-
-Unit
-└─ CodeUnitContainer
-   ├─ Utf16BECodeUnitContainer
-   ├─ Utf16LECodeUnitContainer
-   ├─ Utf32BECodeUnitContainer
-   └─ Utf32LECodeUnitContainer
-
-Point
-├─ ProjectedRangeContainer
-│  ├─ Utf8CodePointContainer
-│  └─ Utf16CodePointContainer
-│     ├─ Utf16BECodePointContainer
-│     └─ Utf16LECodePointContainer
-└─ ProjectedRangeContainer
-   └─ Utf32CodePointContainer
-      ├─ Utf32BECodePointContainer
-      └─ Utf32LECodePointContainer
+Stream Chunks
+├─ PreambleScanner
+│  ├─ resolves encoding metadata
+│  └─ returns a VirtualContainer containing data bytes
+├─ UnicodeEncoding.from(encoding).encodeString(delimiter)
+│  └─ lowers the delimiter into a Uint8Array needle
+├─ VirtualContainer.popRange(needle)
+│  ├─ searches byte spans
+│  ├─ ignores incomplete trailing byte sequences naturally
+│  └─ commits exact byte ranges
+└─ UnicodeEncoding.from(encoding).decodeChunks(committed.spans())
+   └─ decodes committed byte spans after a delimiter is found
 ```
 
-## Part Composition
+## Preamble Scan
 
 ```txt
-Unicode Part Composition
-├─ set: cursor-container-unicode container types
-├─ map: directly composed parts, byte/unit/point
-├─ pivot: part, then byte/unit/point
-└─ display: part roots with composing container leaves
-```
-
-```txt
-Unicode Part Composition
-
-ByteOrderedPart
-└─ Unit
-   └─ CodeUnitContainer
-
-StringMaterializationPart
-└─ Point
-   ├─ Utf8CodePointContainer
-   ├─ Utf16CodePointContainer
-   └─ Utf32CodePointContainer
-
-ProjectedRangeContainerPart
-└─ Point
-   ├─ Utf8CodePointContainer
-   ├─ Utf16CodePointContainer
-   └─ Utf32CodePointContainer
-```
-
-## Virtual Source Type
-
-```txt
-Unicode Virtual Source Type
-├─ set: cursor-container-unicode projected containers
-├─ map: virtual source type, byte/unit/point
-├─ pivot: byte/unit/point, then virtual source type
-└─ display: virtual source roots with projected container leaves
-```
-
-```txt
-Unicode Virtual Source Type
-
-Unit
-└─ VirtualContainer
-   ├─ Utf16BECodeUnitContainer
-   ├─ Utf16LECodeUnitContainer
-   ├─ Utf32BECodeUnitContainer
-   └─ Utf32LECodeUnitContainer
-
-Point
-├─ VirtualContainer
-│  └─ Utf8CodePointContainer
-├─ Utf16BECodeUnitContainer
-│  └─ Utf16BECodePointContainer
-├─ Utf16LECodeUnitContainer
-│  └─ Utf16LECodePointContainer
-├─ Utf32BECodeUnitContainer
-│  └─ Utf32BECodePointContainer
-└─ Utf32LECodeUnitContainer
-   └─ Utf32LECodePointContainer
-```
-
-## Activation
-
-```txt
-Unicode Activation
-├─ set: Unicode activator and concrete code point containers
-├─ map: preamble/default key, activated container type
+Unicode Preamble Scan
+├─ set: supported leading Unicode signatures
+├─ map: preamble bytes to encoding metadata
 ├─ pivot: signature, byte order mark, default
-└─ display: activation keys with concrete code point container leaves
+└─ display: metadata returned to the read layer
 ```
 
 ```txt
-Unicode Activation
-
 Signature
-└─ utf8
-   └─ Utf8CodePointContainer
+└─ EF BB BF
+   └─ utf-8
 
 Byte Order Mark
-├─ utf16be
-│  └─ Utf16BECodePointContainer
-├─ utf16le
-│  └─ Utf16LECodePointContainer
-├─ utf32be
-│  └─ Utf32BECodePointContainer
-└─ utf32le
-   └─ Utf32LECodePointContainer
+├─ FE FF
+│  └─ utf-16be
+└─ FF FE
+   └─ utf-16le
 
 Default
-├─ supplied defaultEncoding
-│  └─ used only after all known preambles are ruled out
-└─ requirePreamble
-   └─ rejects streams with no known preamble
+└─ no matching preamble
+   └─ utf-8
 ```

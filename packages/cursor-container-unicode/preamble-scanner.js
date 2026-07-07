@@ -3,6 +3,7 @@ import {
   matchPrefix,
   VirtualContainer,
 } from '@kingjs/cursor-virtual'
+import { TypedArrayView } from '@kingjs/cursor-view'
 
 function normalizeSequences(sequences) {
   assert(sequences != null,
@@ -23,13 +24,15 @@ function assertSequence(sequence) {
 
 export class PreambleScanner {
   _buffer
+  _defaultMetadata
   _onPreamble
   _resolved
+  _result
   _sequences
 
-  constructor({ sequences, onPreamble }) {
-    assert(typeof onPreamble == 'function',
-      'Preamble callback is required.')
+  constructor({ sequences, defaultMetadata = null, onPreamble = null }) {
+    assert(onPreamble == null || typeof onPreamble == 'function',
+      'Preamble callback must be a function.')
 
     this._sequences = normalizeSequences(sequences)
     const values = Object.values(this._sequences)
@@ -40,9 +43,13 @@ export class PreambleScanner {
       assertSequence(sequence)
 
     this._buffer = new VirtualContainer()
+    this._defaultMetadata = defaultMetadata
+    this._result = null
     this._onPreamble = onPreamble
     this._resolved = false
   }
+
+  get result() { return this._result }
 
   pushRange(range) {
     assert(!this._resolved,
@@ -50,7 +57,11 @@ export class PreambleScanner {
 
     this._buffer.pushRange(range)
     this._tryResolve()
-    return this
+    return this._result
+  }
+
+  pushBytes(bytes) {
+    return this.pushRange(new TypedArrayView(bytes))
   }
 
   _tryResolve() {
@@ -65,16 +76,21 @@ export class PreambleScanner {
   }
 
   _resolve(match) {
-    const preamble = match.state == 'matched'
-      ? this._buffer.popRangeAt(match.end)
-      : new VirtualContainer()
-    const remainder = this._buffer
+    const key = match.state == 'matched'
+      ? match.key
+      : null
+
+    if (match.state == 'matched')
+      this._buffer.popRangeAt(match.end)
+
+    const data = this._buffer
 
     this._resolved = true
-    this._onPreamble({
-      match: match.key ?? null,
-      preamble,
-      remainder,
-    })
+    this._result = {
+      key: key ?? this._defaultMetadata,
+      data,
+    }
+
+    this._onPreamble?.(this._result)
   }
 }

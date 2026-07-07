@@ -1,54 +1,43 @@
 # Cursor Container Unicode Policy
 
-## Byte Order Mark
+## Preamble Metadata
 
-UTF code unit containers may normalize an optional stream prefix before code
-units are exposed. A byte order mark is treated as stream metadata, not as a
-virtual value. The byte stream stays hidden until enough source bytes have
-been pushed to match a known preamble or rule all known preambles out.
-
-The byte ordered layer accepts either a resolved byte order or a preamble map:
-
-```txt
-byteOrder
-├─ big | little
-│  └─ already resolved; do not inspect or consume leading bytes
-├─ null
-│  └─ use native byte order immediately
-└─ { big, little }
-   └─ scan for an optional preamble before exposing bytes
-```
-
-```txt
-optional preamble map
-├─ matching big/little preamble: consume preamble and use matched order
-├─ no preamble once decidable: use native byte order
-└─ insufficient bytes: expose no units yet
-```
-
-## Unicode Activation
-
-`UnicodeActivator` treats leading Unicode signatures and byte order marks as
-type-selection metadata. It buffers pushed byte ranges until a known preamble
-matches or all known preambles are ruled out, then activates a concrete code
-point container and replays the undecorated remainder into it.
+Unicode-aware read support treats leading Unicode signatures and byte order
+marks as stream metadata. The scanner buffers pushed byte ranges until a
+known preamble matches or all known preambles are ruled out. It consumes the
+matched preamble and returns a `VirtualContainer` containing the undecorated
+data.
 
 ```txt
 known preambles
-├─ UTF-32BE: 00 00 FE FF
-├─ UTF-32LE: FF FE 00 00
 ├─ UTF-8:    EF BB BF
 ├─ UTF-16BE: FE FF
 └─ UTF-16LE: FF FE
 ```
 
-Longer preambles are considered before shorter overlapping preambles, so
-`FF FE` remains pending until `UTF-32LE` can be ruled out.
+```txt
+scan result
+├─ preamble matched
+│  ├─ key: matched encoding
+│  └─ data: bytes after the preamble
+└─ no preamble once decidable
+   ├─ key: default encoding, normally utf-8
+   └─ data: all buffered bytes
+```
+
+## Read Flow
+
+The read layer lowers its delimiter to source bytes using the resolved
+encoding, then asks `VirtualContainer` to search those bytes. This keeps
+storage and cursor accounting byte-native.
 
 ```txt
-activation
-├─ preamble matched: consume preamble and activate matching concrete type
-├─ no preamble and defaultEncoding: activate the default concrete type
-├─ no preamble and requirePreamble: reject
-└─ activated: forward later pushed ranges to the concrete container
+read flow
+├─ resolve encoding metadata from preamble/default
+├─ UnicodeEncoding.from(encoding).encodeString(delimiter) -> Uint8Array
+├─ VirtualContainer.popRange(needle)
+└─ UnicodeEncoding.from(encoding).decodeChunks(committed.spans())
 ```
+
+UTF-32 preambles and string decoding are intentionally out of scope for now
+because Node does not provide the same direct decoding support for UTF-32.

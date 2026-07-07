@@ -70,6 +70,18 @@ export class VirtualContainer extends PartialProxy {
         return this
       },
 
+      pushBytes(bytes) {
+        return this.pushRange(new TypedArrayView(bytes))
+      },
+
+      popAll() {
+        return this.popRangeAt(this.end())
+      },
+
+      popBytes(byteCount) {
+        return this.popRangeAt(advance(this.begin(), byteCount))
+      },
+
       popRangeAt(cursor = this.end()) {
         const result = new this.constructor()
         const atEnd = cursor.pageCursor$.equals(this._pages.end())
@@ -98,7 +110,7 @@ export class VirtualContainer extends PartialProxy {
         return result
       },
 
-      popRange$(needle, { includeNeedle = true } = { }) {
+      popRange$(needle) {
         assert(needle,
           'Virtual needle must match virtual range or be a Uint8Array.')
         assert(needle instanceof Uint8Array,
@@ -115,12 +127,7 @@ export class VirtualContainer extends PartialProxy {
         const rangeCursor = advance(pageCursor.value.begin(), match.spanOffset)
         const begin = new this.cursorType(this, pageCursor, rangeCursor)
 
-        if (includeNeedle)
-          return this.popRangeAt(advance(begin.clone(), needle.length))
-
-        const result = this.popRangeAt(begin)
-        this.popRangeAt(advance(this.begin(), needle.length))
-        return result
+        return this.popRangeAt(advance(begin.clone(), needle.length))
       },
 
       *ranges() {

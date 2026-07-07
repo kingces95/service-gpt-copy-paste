@@ -22,6 +22,24 @@ const HELLO = 'hello'
 const WORLD = 'world'
 const processCwd = Path.create(process.cwd())
 
+describe('reader builtins', () => {
+  let $
+  beforeEach(() => {
+    const { signal } = new AbortController()
+    $ = new CliShell({ signal })
+  })
+
+  it.fails('should read a counted prefix then the remaining line', async () => {
+    await $(async $ => {
+      const prefix = await $.readString(5)
+      const line = await $.readLine()
+
+      expect(prefix).toBe(HELLO)
+      expect(line).toBe(` ${WORLD}`)
+    })(`${HELLO_WORLD}\n`)
+  })
+})
+
 // Fossil suite postponed after the CLI shell/subshell redirect rewrite drifted
 // from these expectations. Keep it quiet while active package work runs full
 // Vitest; refresh this suite as a dedicated CLI-shell quest.

@@ -15,18 +15,13 @@
     "@kingjs/cursor-shape": "1.0.0",
     "@kingjs/cursor-view": "1.0.0",
     "@kingjs/function-contract": "1.0.0",
-    "@kingjs/generic": "1.0.0",
-    "@kingjs/lazy": "1.0.0",
     "@kingjs/partial-class": "1.0.0",
     "@kingjs/partial-compose": "1.0.0",
-    "@kingjs/partial-define": "1.0.0",
+    "@kingjs/partial-concept": "1.0.0",
     "@kingjs/partial-implement": "1.0.0",
     "@kingjs/partial-proxy": "1.0.0"
   },
-  "devDependencies": {
-    "@kingjs/cursor-container-standard": "1.0.0",
-    "@kingjs/simple-type": "1.0.0"
-  },
+  "devDependencies": { },
   "peerDependencies": { },
   "author": "Chris King",
   "license": "MIT"

@@ -200,9 +200,20 @@ class CliFdReadable extends CliReadable {
 
 class CliFileHandleReader extends CliFdReadable {
   #fileHandle
+  #autoClose
 
   constructor(fileHandle, { autoClose = true } = { }) {
     super(fileHandle.fd, { autoClose })
     this.#fileHandle = fileHandle
+    this.#autoClose = autoClose
+  }
+
+  _destroy(error, callback) {
+    if (!this.#autoClose)
+      return callback(error)
+
+    this.#fileHandle.close().then(
+      () => callback(error),
+      closeError => callback(error ?? closeError))
   }
 }

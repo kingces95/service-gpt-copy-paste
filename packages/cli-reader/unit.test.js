@@ -2,10 +2,32 @@ import { CliReader } from './index.js'
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { Readable } from 'stream'
 import { CliProcess } from '@kingjs/cli-process'
+import {
+  UnicodeEncoding,
+  Utf16ByteOrderMarks,
+  Utf8Signature,
+} from '@kingjs/unicode'
 
 function getReader(value) {
   const readable = Readable.from(Buffer.from(value))
   return new CliReader(readable)
+}
+
+function getChunkReader(...chunks) {
+  return new CliReader(Readable.from(chunks))
+}
+
+function concatBytes(...spans) {
+  const size = spans.reduce((total, span) => total + span.length, 0)
+  const result = new Uint8Array(size)
+  let offset = 0
+
+  for (const span of spans) {
+    result.set(span, offset)
+    offset += span.length
+  }
+
+  return result
 }
 
 describe('A cli reader', () => {
@@ -44,6 +66,43 @@ describe('A cli reader', () => {
     it('should return "hello" for a stream with "hello world<nl> and count 5"', async () => {
       const result = await helloWorldReaderNl.readString(5)
       expect(result).toBe('hello')
+    })
+    it('should leave the remaining bytes for a line read after count 5', async () => {
+      const prefix = await helloWorldReaderNl.readString(5)
+      const line = await helloWorldReaderNl.readLine()
+
+      expect(prefix).toBe('hello')
+      expect(line).toBe(' world')
+    })
+    it('should throw on non-fixed-width UTF-8 counted text', async () => {
+      const reader = getChunkReader(
+        UnicodeEncoding.from('utf-8').encodeString('a😀b')
+      )
+
+      await expect(reader.readString(2)).rejects.toThrow(
+        'Counted string reads only support fixed-width text.')
+    })
+    it('should wait for UTF-8 chunks before committing fixed-width text', async () => {
+      const encoding = UnicodeEncoding.from('utf-8')
+      const reader = getChunkReader(
+        encoding.encodeString('a'),
+        encoding.encodeString('bc')
+      )
+
+      const prefix = await reader.readString(2)
+      const suffix = await reader.readString()
+
+      expect(prefix).toBe('ab')
+      expect(suffix).toBe('c')
+    })
+    it('should throw on UTF-16 surrogate pairs in counted text', async () => {
+      const reader = getChunkReader(
+        Uint8Array.from(Utf16ByteOrderMarks.little),
+        UnicodeEncoding.from('utf-16le').encodeString('a😀b')
+      )
+
+      await expect(reader.readString(2)).rejects.toThrow(
+        'Counted string reads only support fixed-width text.')
     })
     it('should return "hello world<nl>" for a stream with "hello world<nl>"', async () => {
       const result = await helloWorldReaderNl.readString()
@@ -113,6 +172,47 @@ describe('A cli reader', () => {
       it('should return <lf> when keepCarriageReturns is true', async () => {
         const result = await lfNlReader.readLine({ keepCarriageReturns: true })
         expect(result).toBe('\r')
+      })
+    })
+    describe('when reading Unicode byte streams', () => {
+      it('should ignore a UTF-8 signature', async () => {
+        const reader = getChunkReader(
+          Uint8Array.from(Utf8Signature.signature),
+          UnicodeEncoding.from('utf-8').encodeString('hello world\n')
+        )
+
+        const result = await reader.readLine()
+
+        expect(result).toBe('hello world')
+      })
+      it('should decode UTF-16LE lines after a split BOM', async () => {
+        const bom = Uint8Array.from(Utf16ByteOrderMarks.little)
+        const text = UnicodeEncoding.from('utf-16le')
+          .encodeString('hello world\nnext line\n')
+        const reader = getChunkReader(
+          bom.subarray(0, 1),
+          concatBytes(bom.subarray(1), text.subarray(0, 11)),
+          text.subarray(11)
+        )
+
+        const first = await reader.readLine()
+        const second = await reader.readLine()
+
+        expect(first).toBe('hello world')
+        expect(second).toBe('next line')
+      })
+      it('should split UTF-16BE records using the decoded line parser', async () => {
+        const bom = Uint8Array.from(Utf16ByteOrderMarks.big)
+        const text = UnicodeEncoding.from('utf-16be')
+          .encodeString('hello world\n')
+        const reader = getChunkReader(
+          concatBytes(bom, text.subarray(0, 9)),
+          text.subarray(9)
+        )
+
+        const result = await reader.readList()
+
+        expect(result).toEqual(['hello', 'world'])
       })
     })
     describe('when in a CliProcess context with IFS=", "', () => {

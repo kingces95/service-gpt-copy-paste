@@ -1,16 +1,18 @@
 export class LazyPromise {
   #loadFn
-  #resource
+  #promise
 
   constructor(loadFn) {
-    this.#loadFn = async function() {
-      if (!this.#resource) this.#resource = await loadFn.call(this)
-      return this.#resource
-    }
-    this.#resource = null
+    this.#loadFn = loadFn
+    this.#promise = null
   }
 
-  then(...args) { return this.#loadFn().then(...args) }
-  catch(...args) { return this.#loadFn().catch(...args) }
-  finally(...args) { return this.#loadFn().finally(...args) }
+  get value() {
+    this.#promise ??= Promise.resolve().then(() => this.#loadFn())
+    return this.#promise
+  }
+
+  then(...args) { return this.value.then(...args) }
+  catch(...args) { return this.value.catch(...args) }
+  finally(...args) { return this.value.finally(...args) }
 }

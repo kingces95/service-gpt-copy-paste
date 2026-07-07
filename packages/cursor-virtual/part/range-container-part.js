@@ -15,11 +15,8 @@ function sourceNeedle(needle) {
   if (needle instanceof Uint8Array)
     return needle
 
-  if (typeof needle?.materialize == 'function')
-    return needle.materialize()
-
   assert(false,
-    'Range needle must be a Uint8Array or materializable range.')
+    'Range needle must be a Uint8Array.')
 }
 
 export class RangeContainerPart extends ContainerPart {
@@ -32,6 +29,12 @@ export class RangeContainerPart extends ContainerPart {
       method(range) { },
     },
 
+    pushBytes(bytes) { },
+
+    popAll() { },
+
+    popBytes(byteCount) { },
+
     popRangeAt: {
       types: [CursorConcept],
       defaults: [defaultTo(({ self }) => self.end())],
@@ -41,7 +44,7 @@ export class RangeContainerPart extends ContainerPart {
       method(cursor /* = this.end() */) { },
     },
 
-    popRange$(needle, options) { },
+    popRange$(needle) { },
 
     ranges() { },
   })
@@ -52,11 +55,20 @@ export class RangeContainerPart extends ContainerPart {
         yield range.span()
     },
 
-    materialize() {
+    materialize(maxCount = Infinity) {
       const spans = []
       let size = 0
 
       for (const span of this.spans()) {
+        if (size == maxCount)
+          break
+
+        if (size + span.length > maxCount) {
+          spans.push(span.subarray(0, maxCount - size))
+          size = maxCount
+          break
+        }
+
         spans.push(span)
         size += span.length
       }
@@ -74,8 +86,8 @@ export class RangeContainerPart extends ContainerPart {
 
     popRange: {
       transforms: [sourceNeedle],
-      method(needle, options) {
-        return this.popRange$(needle, options)
+      method(needle) {
+        return this.popRange$(needle)
       },
     },
 
@@ -95,8 +107,8 @@ export class RangeContainerPart extends ContainerPart {
       },
     },
 
-    split(needle, options) {
-      const source = this.popRange(needle, options)
+    split(needle) {
+      const source = this.popRange(needle)
 
       if (!source)
         return null

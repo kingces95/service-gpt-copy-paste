@@ -2,20 +2,11 @@ import { describe, expect, it } from 'vitest'
 import {
   assertScalarValue,
   decodeSurrogatePair,
-  decodeUint16,
-  decodeUint32,
-  decodeUtf8Sequence,
-  encodeUtf16Bytes,
-  encodeUtf16Sequence,
-  encodeUtf32Bytes,
   isHighSurrogate,
   isLowSurrogate,
   isScalarValue,
   isSurrogate,
-  utfEncodingOfByteWidth,
-  utf16LastCodePointOffset,
-  utf8LastCodePointOffset,
-  utf8ContinuationCount,
+  UnicodeEncoding,
 } from './index.js'
 
 describe('Unicode scalar values', () => {
@@ -52,85 +43,61 @@ describe('UTF-16 surrogates', () => {
   it('decodes a surrogate pair', () => {
     expect(decodeSurrogatePair(0xd83d, 0xde00)).toBe(0x1f600)
   })
-
-  it('encodes scalar values to UTF-16 code units', () => {
-    expect(encodeUtf16Sequence([0x61, 0x1f600]))
-      .toEqual([0x61, 0xd83d, 0xde00])
-  })
-
-  it('encodes scalar values to bytes', () => {
-    expect(encodeUtf16Bytes([0x61, 0x1f600]))
-      .toEqual([0x00, 0x61, 0xd8, 0x3d, 0xde, 0x00])
-    expect(encodeUtf32Bytes([0x61, 0x1f600]))
-      .toEqual([0x00, 0x00, 0x00, 0x61, 0x00, 0x01, 0xf6, 0x00])
-  })
-
-  it('decodes unsigned integers from ordered bytes', () => {
-    expect(decodeUint16([0xd8, 0x3d], 'big')).toBe(0xd83d)
-    expect(decodeUint16([0x3d, 0xd8], 'little')).toBe(0xd83d)
-
-    expect(decodeUint32([0x00, 0x01, 0xf6, 0x00], 'big')).toBe(0x1f600)
-    expect(decodeUint32([0x00, 0xf6, 0x01, 0x00], 'little')).toBe(0x1f600)
-  })
-
 })
 
-describe('UTF encoding byte width', () => {
-  it('maps byte width to UTF encoding family', () => {
-    expect(utfEncodingOfByteWidth(2)).toBe('utf-16')
-    expect(utfEncodingOfByteWidth(4)).toBe('utf-32')
-    expect(() => utfEncodingOfByteWidth(1))
-      .toThrow('UTF encoding byte width is not supported.')
-  })
-})
-
-describe('UTF-8 sequences', () => {
-  it('classifies leading bytes by continuation count', () => {
-    expect(utf8ContinuationCount(0x7f)).toBe(0)
-    expect(utf8ContinuationCount(0xc2)).toBe(1)
-    expect(utf8ContinuationCount(0xe0)).toBe(2)
-    expect(utf8ContinuationCount(0xf0)).toBe(3)
+describe('Unicode string encoding', () => {
+  it('normalizes encoding names once', () => {
+    expect(UnicodeEncoding.from('utf8').name).toBe('utf-8')
+    expect(UnicodeEncoding.from('ucs2').name).toBe('utf-16le')
+    expect(UnicodeEncoding.from('utf-16be').name).toBe('utf-16be')
   })
 
-  it('decodes sequences to scalar values', () => {
-    expect(decodeUtf8Sequence(0x61)).toBe(0x61)
-    expect(decodeUtf8Sequence(0xc3, [0x29])).toBe(0xe9)
-    expect(decodeUtf8Sequence(0xe2, [0x02, 0x2c])).toBe(0x20ac)
-    expect(decodeUtf8Sequence(0xf0, [0x1f, 0x18, 0x00])).toBe(0x1f600)
+  it.each([
+    ['utf-8'],
+    ['utf-16le'],
+    ['utf-16be'],
+  ])('encodes and decodes strings as %s', encoding => {
+    const text = 'alpha😀'
+    const unicode = UnicodeEncoding.from(encoding)
+    const bytes = unicode.encodeString(text)
+
+    expect(bytes).toBeInstanceOf(Uint8Array)
+    expect(unicode.decodeBytes(bytes)).toBe(text)
   })
 
-  it('rejects invalid or non-shortest forms', () => {
-    expect(() => utf8ContinuationCount(0x80)).toThrow(
-      'Invalid UTF-8 leading byte.')
-    expect(() => decodeUtf8Sequence(0xc2, [])).toThrow(
-      'Unexpected UTF-8 continuation count.')
-    expect(() => decodeUtf8Sequence(0xe0, [0x00, 0x00])).toThrow(
-      'Overlong UTF-8 sequence.')
+  it('decodes chunks across split code units', () => {
+    const unicode = UnicodeEncoding.from('utf-16be')
+    const bytes = unicode.encodeString('a😀b')
+    const text = unicode.decodeChunks([
+      bytes.subarray(0, 3),
+      bytes.subarray(3, 6),
+      bytes.subarray(6),
+    ])
+
+    expect(text).toBe('a😀b')
   })
 
-  it('finds the complete boundary in a suffix', () => {
-    expect(utf8LastCodePointOffset([])).toBe(0)
-    expect(utf8LastCodePointOffset([0x61])).toBe(1)
-    expect(utf8LastCodePointOffset([0xf0])).toBe(null)
-    expect(utf8LastCodePointOffset([0xf0, 0x9f])).toBe(null)
-    expect(utf8LastCodePointOffset([0x61, 0xf0, 0x9f])).toBe(1)
-    expect(utf8LastCodePointOffset([0xf0, 0x9f, 0x98, 0x80]))
-      .toBe(4)
+  it('decodes a chunk without flushing a partial code point', () => {
+    const unicode = UnicodeEncoding.from('utf-8')
+    const bytes = unicode.encodeString('ab😀')
 
-    expect(() => utf8LastCodePointOffset([0x80])).toThrow(
-      'Invalid UTF-8 continuation byte.')
+    expect(unicode.decodeChunk(bytes.subarray(0, 3))).toBe('ab')
   })
-})
 
-describe('UTF-16 suffixes', () => {
-  it('finds the complete boundary in a suffix', () => {
-    expect(utf16LastCodePointOffset([])).toBe(0)
-    expect(utf16LastCodePointOffset([0x61])).toBe(1)
-    expect(utf16LastCodePointOffset([0xd83d])).toBe(null)
-    expect(utf16LastCodePointOffset([0x61, 0xd83d])).toBe(1)
-    expect(utf16LastCodePointOffset([0xd83d, 0xde00])).toBe(2)
+  it('reports byte width for counted reads', () => {
+    expect(UnicodeEncoding.from('utf-8').countByteWidth).toBe(1)
+    expect(UnicodeEncoding.from('utf-16le').countByteWidth).toBe(2)
+    expect(UnicodeEncoding.from('utf-16be').countByteWidth).toBe(2)
+  })
 
-    expect(() => utf16LastCodePointOffset([0xde00])).toThrow(
-      'Unexpected UTF-16 low surrogate.')
+  it('reuses encoding instances passed to from', () => {
+    const text = 'alpha😀'
+    const unicode = UnicodeEncoding.from('utf-16be')
+    const bytes = unicode.encodeString(text)
+
+    expect(UnicodeEncoding.from(unicode)).toBe(unicode)
+    expect(unicode.decodeBytes(bytes)).toBe(text)
+    expect(unicode.decodeChunks([bytes.subarray(0, 3),
+      bytes.subarray(3)])).toBe(text)
   })
 })

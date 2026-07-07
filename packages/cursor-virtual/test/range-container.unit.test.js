@@ -12,7 +12,6 @@ import {
   TrivialForwardRange,
 } from '../../cursor/trivial-cursors.js'
 import {
-  RangesContainerShape,
   VirtualContainer,
 } from '../index.js'
 
@@ -57,7 +56,6 @@ describe('VirtualContainer', () => {
 
     expect([...iterate(ranges)]).toEqual([1, 2, 3, 4, 5])
     expect(ranges).toBeInstanceOf(BidirectionalRangeShape)
-    expect(ranges).toBeInstanceOf(RangesContainerShape)
     expect(ranges.isEmpty).toBe(false)
   })
 
@@ -131,6 +129,17 @@ describe('VirtualContainer', () => {
     expect(consumed.bytesPopped).toBe(0)
   })
 
+  it('pushes and pops byte spans directly', () => {
+    const ranges = new VirtualContainer()
+
+    ranges
+      .pushBytes(Uint8Array.from([1, 2]))
+      .pushBytes(Uint8Array.from([3]))
+
+    expect(valuesOf(ranges.popBytes(2))).toEqual([1, 2])
+    expect(valuesOf(ranges.popAll())).toEqual([3])
+  })
+
   it('returns consumed stored ranges through ranges()', () => {
     const ranges = new VirtualContainer()
 
@@ -159,6 +168,17 @@ describe('VirtualContainer', () => {
 
     expect(materialized).toBeInstanceOf(Uint8Array)
     expect([...materialized]).toEqual([1, 2, 3, 4])
+  })
+
+  it('materializes at most a requested byte count', () => {
+    const ranges = new VirtualContainer()
+
+    ranges
+      .pushRange(bytesOf([1, 2]))
+      .pushRange(bytesOf([3, 4]))
+
+    expect([...ranges.materialize(3)]).toEqual([1, 2, 3])
+    expect([...ranges.materialize(9)]).toEqual([1, 2, 3, 4])
   })
 
   it('supports reacquiring cursors after whole front ranges pop', () => {

@@ -9,22 +9,13 @@
   },
   "dependencies": {
     "@kingjs/assert": "1.0.0",
-    "@kingjs/cursor-algorithm": "1.0.0",
-    "@kingjs/cursor-container": "1.0.0",
     "@kingjs/cursor-virtual": "1.0.0",
-    "@kingjs/cursor-container-standard": "1.0.0",
-    "@kingjs/cursor-shape": "1.0.0",
-    "@kingjs/cursor-view": "1.0.0",
-    "@kingjs/generic": "1.0.0",
-    "@kingjs/partial-class": "1.0.0",
-    "@kingjs/partial-compose": "1.0.0",
-    "@kingjs/partial-define": "1.0.0",
-    "@kingjs/partial-override": "1.0.0",
-    "@kingjs/partial-signature": "1.0.0",
-    "@kingjs/simple-type": "1.0.0",
     "@kingjs/unicode": "1.0.0"
   },
-  "devDependencies": { },
+  "devDependencies": {
+    "@kingjs/cursor-algorithm": "1.0.0",
+    "@kingjs/cursor-view": "1.0.0"
+  },
   "peerDependencies": { },
   "author": "Chris King",
   "license": "MIT"

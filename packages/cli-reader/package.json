@@ -7,7 +7,15 @@
   "exports": {
     ".": "./index.js"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@kingjs/cli-field-type": "1.0.0",
+    "@kingjs/cli-parser": "1.0.0",
+    "@kingjs/cursor-algorithm": "1.0.0",
+    "@kingjs/cursor-container-unicode": "1.0.0",
+    "@kingjs/cursor-virtual": "1.0.0",
+    "@kingjs/lazy-promise": "1.0.0",
+    "@kingjs/unicode": "1.0.0"
+  },
   "devDependencies": {},
   "peerDependencies": {},
   "author": "Chris King",
